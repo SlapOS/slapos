@@ -3,6 +3,7 @@ import copy
 import json
 import mock
 import os
+import pickle
 import shutil
 import unittest
 import tempfile
@@ -41,6 +42,11 @@ class SlapConfigurationTestCase(unittest.TestCase):
     os.rmdir(self.instance_root)
     shutil.rmtree(self.software_root)
 
+  def isBuildoutSerializable(self, obj):
+    try:
+      pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
+    except Exception as e:
+      self.fail(f"Object is not pickle-serializable: {e} \n Object: {str(obj)}")
 
 class SlapConfigurationTest(SlapConfigurationTestCase):
 
@@ -293,6 +299,8 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
     self.assertNotIn('slave-instance-list', options)
     valid = options['valid-shared-instance-list']
     invalid = options['invalid-shared-instance-list']
+    self.isBuildoutSerializable(valid)
+    self.isBuildoutSerializable(invalid)
     valid = {d['reference']: d['parameters'] for d in valid}
     invalid = {d['reference']: d['parameters'] for d in invalid}
     return valid, invalid
