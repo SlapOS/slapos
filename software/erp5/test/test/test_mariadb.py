@@ -853,7 +853,10 @@ class TestMariaDBExternalCaucased(MariaDBReplicationTestCase):
 
 class TestMariaDBReplicationChain(MariaDBReplicationTestCase):
   def test(self):
-    primary = upstream = self.requestPrimary(caucased=False)
+    primary = upstream = self.requestPrimary(
+      caucased=False,
+      backup={'enable': False}, # check disabled backup along the way
+    )
     cnx = self.getDatabaseConnection(primary)
     with contextlib.closing(cnx):
       cursor = cnx.cursor()
@@ -874,6 +877,7 @@ class TestMariaDBReplicationChain(MariaDBReplicationTestCase):
         upstream,
         name='replica%d' % i,
         caucased=False,
+        backup={'enable': False}, # check disabled backup along the way
       )
       replicas.append(replica)
       self.checkReplicaState(replica)
