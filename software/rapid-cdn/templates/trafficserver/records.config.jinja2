@@ -70,32 +70,6 @@ CONFIG proxy.config.http.forward.proxy_auth_to_parent INT 0
 CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
 
 ##############################################################################
-# HTTP connection timeouts (secs). Docs:
-#    https://docs.trafficserver.apache.org/records.config#http-connection-timeouts
-##############################################################################
-CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
-CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
-CONFIG proxy.config.http.transaction_no_activity_timeout_in INT {{ ats_configuration['request-timeout'] }}
-CONFIG proxy.config.http.transaction_no_activity_timeout_out INT {{ ats_configuration['request-timeout'] }}
-CONFIG proxy.config.http.transaction_active_timeout_in INT 900
-CONFIG proxy.config.http.transaction_active_timeout_out INT 0
-CONFIG proxy.config.http.accept_no_activity_timeout INT 120
-CONFIG proxy.config.net.default_inactivity_timeout INT 86400
-
-##############################################################################
-# Origin server connect attempts. Docs:
-#    https://docs.trafficserver.apache.org/records.config#origin-server-connect-attempts
-##############################################################################
-# workaround for lost connection to haproxy by reconnecting
-CONFIG proxy.config.http.connect_attempts_max_retries INT 3
-CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 1
-CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
-CONFIG proxy.config.http.connect_attempts_timeout INT {{ ats_configuration['request-timeout'] }}
-CONFIG proxy.config.http.post_connect_attempts_timeout INT {{ ats_configuration['request-timeout'] }}
-CONFIG proxy.config.http.down_server.cache_time INT 60
-CONFIG proxy.config.http.down_server.abort_threshold INT 10
-
-##############################################################################
 # Negative response caching, for redirects and errors. Docs:
 #    https://docs.trafficserver.apache.org/records.config#negative-response-caching
 ##############################################################################
@@ -211,3 +185,26 @@ CONFIG proxy.config.http.slow.log.threshold INT 0
 # Cache inspections
 CONFIG proxy.config.http_ui_enabled INT 3
 CONFIG proxy.config.http.enable_http_info INT 1
+
+# Timeouts
+# By default allow to stick the connection for 2 days
+CONFIG proxy.config.net.default_inactivity_timeout INT 172800
+# Configurable timeouts
+CONFIG proxy.config.http.transaction_no_activity_timeout_in INT {{ ats_configuration['request-timeout'] }}
+CONFIG proxy.config.http.transaction_no_activity_timeout_out INT {{ ats_configuration['request-timeout'] }}
+CONFIG proxy.config.http.connect_attempts_timeout INT {{ ats_configuration['request-timeout'] }}
+CONFIG proxy.config.http.post_connect_attempts_timeout INT {{ ats_configuration['request-timeout'] }}
+# rapid-cdn selected timeouts
+# inactive keep-alive for 1 hour
+CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 3600
+CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 3600
+# active transfer for 2 days
+CONFIG proxy.config.http.transaction_active_timeout_in INT 172800
+CONFIG proxy.config.http.transaction_active_timeout_out INT 172800
+# inactive transfer for 12 hours
+CONFIG proxy.config.http.accept_no_activity_timeout INT 43200
+# workaround for lost connection to haproxy by reconnecting
+CONFIG proxy.config.http.connect_attempts_max_retries INT 3
+CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 1
+CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
+CONFIG proxy.config.http.down_server.cache_time INT 60
