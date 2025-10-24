@@ -813,7 +813,11 @@ config-cert-file = ${caucase-mariadb-on-renew:crt-and-key-path}
 config-key-file = ${:config-cert-file}
 # Connection information
 url = ${:config-url}
+{% if logical_backup['enable'] -%}
 bootstrap-url = ${:url}/mariadb-full/${mariadb-dump-script:most-recent}
+{%- else %}
+bootstrap-url =
+{%- endif %}
 mariabackup-url = ${:url}/mariabackup/
 
 [haproxy-cfg]
