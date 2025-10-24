@@ -1,8 +1,10 @@
 # coding: utf-8
+from zc.buildout import buildout
 import copy
 import json
 import mock
 import os
+import pickle
 import shutil
 import unittest
 import tempfile
@@ -41,6 +43,14 @@ class SlapConfigurationTestCase(unittest.TestCase):
     os.rmdir(self.instance_root)
     shutil.rmtree(self.software_root)
 
+  def isBuildoutSerializable(self, obj):
+    try:
+      buildout.dumps(obj)
+    except Exception as e:
+      self.fail("Object is not serializable by buildout: {e} \n Object: {obj}".format(**{
+        "e": e,
+        "obj": str(obj)
+      }))
 
 class SlapConfigurationTest(SlapConfigurationTestCase):
 
@@ -293,6 +303,8 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
     self.assertNotIn('slave-instance-list', options)
     valid = options['valid-shared-instance-list']
     invalid = options['invalid-shared-instance-list']
+    self.isBuildoutSerializable(valid)
+    self.isBuildoutSerializable(invalid)
     valid = {d['reference']: d['parameters'] for d in valid}
     invalid = {d['reference']: d['parameters'] for d in invalid}
     return valid, invalid

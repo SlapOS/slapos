@@ -604,7 +604,7 @@ class JsonSchema(Recipe):
         errors = list(e.args)
       shared_item = {'reference': reference, 'parameters': instance}
       if errors:
-        shared_item['errors'] = errors
+        shared_item['errors'] = [str(e) for e in errors]
         invalid.append(shared_item)
       else:
         valid.append(shared_item)
