@@ -256,12 +256,12 @@ class TestLog(BalancerTestCase, CrontabMixin):
     # the request - but our test machines can be slow sometimes, so we tolerate
     # it can take up to 20 seconds.
     match = re.match(
-        r'([(\da-fA-F:\.)]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "(.*?)" "(.*?)" (\d+)',
+        r'^([(\da-fA-F:\.)]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "(.*?)" "(.*?)" (\d+) ([(\da-fA-F:\.)]+)$',
         access_line
     )
     self.assertTrue(match)
     assert match
-    request_time = int(match.groups()[-1])
+    request_time = int(match.groups()[-2])
     self.assertGreater(request_time, 2 * 1000)
     self.assertLess(request_time, 20 * 1000)
 
@@ -831,6 +831,12 @@ class TestFrontendXForwardedFor(BalancerTestCase):
     parameter_dict['ssl']['frontend-caucase-url-list'] = [frontend_caucase.url]
     return parameter_dict
 
+  def _get_last_access_log_line(self):
+    time.sleep(.5) # wait a bit more until access is logged
+    with open(os.path.join(self.computer_partition_root_path, 'var', 'log', 'apache-access.log')) as access_log_file:
+      access_line = access_log_file.read().splitlines()[-1]
+    return access_line
+
   def test_x_forwarded_for_added_when_verified_connection(self) -> None:
     client_certificate = self.getManagedResource('client_certificate', CaucaseCertificate)
 
@@ -843,6 +849,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
         verify=False,
       ).json()
       self.assertEqual(result['Incoming Headers'].get('x-forwarded-for', '').split(', ')[0], '1.2.3.4')
+      self.assertIn('1.2.3.4', self._get_last_access_log_line())
 
   def test_x_forwarded_for_stripped_when_no_certificate(self) -> None:
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default']
@@ -851,7 +858,8 @@ class TestFrontendXForwardedFor(BalancerTestCase):
       headers={'X-Forwarded-For': '1.2.3.4'},
       verify=False,
     ).json()
-    self.assertNotIn('x-fowarded-for', [k.lower() for k in result['Incoming Headers'].keys()])
+    self.assertNotIn('x-forwarded-for', [k.lower() for k in result['Incoming Headers'].keys()])
+    self.assertNotIn('1.2.3.4', self._get_last_access_log_line())
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default-auth']
     with self.assertRaisesRegex(Exception, "certificate required"):
       requests.get(
@@ -859,6 +867,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
         headers={'X-Forwarded-For': '1.2.3.4'},
         verify=False,
       )
+    self.assertNotIn('1.2.3.4', self._get_last_access_log_line())
 
   def test_x_forwarded_for_stripped_when_not_verified_certificate(self) -> None:
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default']
@@ -874,7 +883,8 @@ class TestFrontendXForwardedFor(BalancerTestCase):
       cert=(unknown_client_certificate.cert_file, unknown_client_certificate.key_file),
       verify=False,
     ).json()
-    self.assertNotIn('x-fowarded-for', [k.lower() for k in result['Incoming Headers'].keys()])
+    self.assertNotIn('x-forwarded-for', [k.lower() for k in result['Incoming Headers'].keys()])
+    self.assertNotIn('1.2.3.4', self._get_last_access_log_line())
 
     balancer_url = json.loads(self.computer_partition.getConnectionParameterDict()['_'])['default-auth']
     with self.assertRaisesRegex(Exception, "unknown ca"):
@@ -884,6 +894,7 @@ class TestFrontendXForwardedFor(BalancerTestCase):
         cert=(unknown_client_certificate.cert_file, unknown_client_certificate.key_file),
         verify=False,
       )
+    self.assertNotIn('1.2.3.4', self._get_last_access_log_line())
 
 
 class TestServerTLSProvidedCertificate(BalancerTestCase):
@@ -1154,6 +1165,14 @@ class TestRateLimiting(BalancerTestCase):
           "table-name": "errors",
           "expire": "10s"
         },
+        # one based on both path and HTTP status code
+        {
+          "max-requests": 3,
+          "time-window": "10s",
+          "url-path-pattern": "/.*/limited",
+          "status-code": "202",
+          "expire": "10s"
+        },
       ],
     }
 
@@ -1223,6 +1242,20 @@ class TestRateLimiting(BalancerTestCase):
         text=True,
       )
     )
+
+  def test_backend_rate_limiting_per_url_and_status_code(self) -> None:
+    for client_ip in ('1.2.3.5', '::2', None):
+      with self.subTest(client_ip):
+        # requests not matching the path do not count
+        for _ in range(5):
+          self.assertEqual(self.do_get('/202', client_ip).status_code, 202)
+        # requests not matching the status code do not count
+        for _ in range(5):
+          self.assertEqual(self.do_get('/201/limited', client_ip).status_code, 201)
+        for _ in range(3):
+          self.assertEqual(self.do_get('/202/limited', client_ip).status_code, 202)
+        limited_request = self.do_get('/202/limited', client_ip)
+        self.assertEqual(limited_request.status_code, requests.codes.too_many_requests)
 
   @expectedFailure
   def test_status_code_only_track_matching_status_code(self):
