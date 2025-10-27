@@ -18,6 +18,7 @@
     "_": {
       "caucase_port": "15090",
       "cluster-identification": "testing partition 0",
+      "cluster-reference": "local-T-0",
       "kedifa_port": "15080",
       "monitor-cors-domains": "monitor.app.officejs.com",
       "monitor-httpd-port": "8402",
@@ -39,6 +40,7 @@
     "_": {
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
       "cluster-identification": "testing partition 0",
+      "cluster-reference": "local-T-0",
       "enable-http3": "false",
       "extra_slave_instance_list": "[]",
       "frontend-name": "caddy-frontend-1",
