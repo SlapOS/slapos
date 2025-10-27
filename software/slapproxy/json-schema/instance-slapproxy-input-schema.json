@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Slapproxy Input Parameters",
+  "properties": {
+    "accepted-client-ipv6": {
+      "title": "Accepted client IPv6 Address or Network",
+      "description": "The address range from which connections will be accepted",
+      "type": "string"
+    }
+  },
+  "required": ["accepted-client-ipv6"]
+}
