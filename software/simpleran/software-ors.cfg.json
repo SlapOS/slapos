@@ -45,9 +45,9 @@
       "index": 6
     },
     "test-model": {
-      "title": "SDR Play",
+      "title": "Test Model",
       "software-type": "test-model",
-      "description": "SDR Play",
+      "description": "Play 3GPP Test Models, allows to measure power or radio quality",
       "request": "instance-test-model-input-schema.json",
       "response": "instance-test-model-schema.json",
       "index": 7
