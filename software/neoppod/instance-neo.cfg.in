@@ -86,7 +86,7 @@ command = mysql
 {%     do extra_dict.setdefault('synchronous', 'OFF') -%}
 {%     do extra_dict.setdefault('journal_mode', 'MEMORY') -%}
 {%   endif -%}
-{%   set query_string = urllib.urlencode(extra_dict) -%}
+{%   set query_string = urllib_parse.urlencode(extra_dict) -%}
 
 [{{ section('sqlite3-cksumvfs') }}]
 recipe = slapos.recipe.build
