@@ -37,14 +37,15 @@ osie_coupler_software_release_url = os.path.abspath(
   os.path.join(os.path.dirname(__file__), '..', '..', 'osie-coupler', 'software.cfg'))
 
 
-_, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+_setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(beremiz_runtime_software_release_url))
 
 
 def setUpModule():
+  _setUpModule()
   installSoftwareUrlList(
     SlapOSInstanceTestCase,
-    [beremiz_runtime_software_release_url, osie_coupler_software_release_url],
+    [osie_coupler_software_release_url],
     debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
   )
 
