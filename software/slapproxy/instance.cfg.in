@@ -1,0 +1,48 @@
+[buildout]
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+parts =
+  switch-softwaretype
+
+
+[slap-configuration]
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = ${software.cfg.json:location}
+validate-parameters = main
+set-default = main
+unstringify = none
+
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = instance-slapproxy.cfg:output
+
+
+[validate-parameters]
+recipe = slapos.recipe.build
+configuration = $${slap-configuration:configuration}
+init =
+  import ipaddress
+  from zc.buildout import UserError
+  configuration = options['configuration']
+  # Validate accepted-client-ipv6
+  accepted_client_ipv6 = configuration['accepted-client-ipv6']
+  try:
+    ipaddress.IPv6Network(accepted_client_ipv6)
+  except ValueError as e:
+    raise UserError(
+      "Value for accepted-client-ipv6 is not a valid IPv6 Network:\n"
+      "%r: %s" % (accepted_client_ipv6, e)
+    )
+
+
+[instance-slapproxy.cfg]
+recipe = slapos.recipe.template:jinja2
+url = ${instance-slapproxy.cfg.jinja:output}
+output = $${buildout:directory}/$${:_buildout_section_name_}
+context =
+  key private_ipv4 slap-configuration:ipv4-random
+  key public_ipv6 slap-configuration:ipv6-random
+  key slapparameter_dict validate-parameters:configuration
+  section slap_connection slap-connection
