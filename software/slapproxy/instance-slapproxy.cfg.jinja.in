@@ -29,6 +29,13 @@ run = $${:var}/run
 name = $${:_buildout_section_name_}.py
 
 
+[json-schema-repository]
+recipe = slapos.recipe.build:gitclone
+repository = {{ slapparameter_dict['json-schema-repository']['url'] }}
+revision = {{ slapparameter_dict['json-schema-repository']['revision'] }}
+git-executable = ${git:location}/bin/git
+
+
 [slapproxy.cfg]
 recipe = slapos.recipe.template:jinja2
 output = $${directory:etc}/$${:_buildout_section_name_}
@@ -38,6 +45,7 @@ inline =
   host = $${:ipv4}
   port = $${:port}
   database_uri = $${directory:etc}/slapproxy.db
+  public_directory_path = $${json-schema-repository:location}
 ipv4 = {{ private_ipv4 }}
 port = 4000
 
