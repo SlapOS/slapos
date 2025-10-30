@@ -43,6 +43,10 @@ class TestSlapproxy(SlapOSInstanceTestCase):
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
       'accepted-client-ipv6': cls._ipv6_address,
+      'json-schema-repository': {
+        'url': os.path.abspath(os.path.join(__file__, '../' * 4)),
+        'revision': '',
+      },
     })}
 
   def test(self):
