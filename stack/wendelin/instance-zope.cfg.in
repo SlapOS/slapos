@@ -16,6 +16,7 @@
 {% set test_runner_node_count = slapparameter_dict['test-runner-node-count'] -%}
 {% set test_runner_random_activity_priority = slapparameter_dict['test-runner-random-activity-priority'] -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
+{% set zope_expect_backingup_zodb = slapparameter_dict['zope-expect-backingup-zodb'] -%}
 {% if webdav -%}
 {%   set timerserver_interval = 0 -%}
 {% else -%}
@@ -286,6 +287,9 @@ deadlock-debugger-password = {{ dumps(slapparameter_dict['deadlock-debugger-pass
 tidstorage-ip = {{ dumps(slapparameter_dict['tidstorage-ip']) }}
 tidstorage-port = {{ dumps(slapparameter_dict['tidstorage-port']) }}
 {% endif -%}
+{% if slapparameter_dict.get('dos-protection') -%}
+dos-protection  = {{ dumps(slapparameter_dict['dos-protection']) }}
+{% endif -%}
 
 [zope-conf-base]
 < = jinja2-template-base
@@ -352,6 +356,7 @@ wrapped-command-line =
     {% if longrequest_logger_interval > 0 %} --long-request-log-file={{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }} {% endif %}
     {% if webdav %}-w{% endif %}
     {% if slapparameter_dict['xml-rpc'] %}--enable-xml-rpc{% endif %}
+    {% if slapparameter_dict['python2-data-compatibility'] %}--zodbupdate{% endif %}
     {% if with_max_rlimit_nofile %}--with-max-rlimit-nofile{% endif %}
     {{ ipv4 }}:${:port}
     {% if timerserver_interval %}--timerserver-interval={{ timerserver_interval }}{% endif %}
@@ -363,7 +368,7 @@ wrapped-command-line =
 {%- if private_dev_shm %}
 private-tmpfs = {{ private_dev_shm }} /dev/shm
 {%- endif %}
-wrapper-path = ${directory:service-on-watch}/{{ name }}
+wrapper-path = ${directory:services}/{{ name }}
 hash-files =
   ${:configuration-file}
 hash-existing-files =
@@ -373,12 +378,14 @@ configuration-file = {{ '${' ~ conf_name ~ ':output}' }}
 instance-home = ${directory:instance}
 port = {{ port }}
 
+{% if not zope_expect_backingup_zodb -%}
 [{{ section("promise-" ~ name) }}]
 <= monitor-promise-base
 promise = check_socket_listening
 name = {{ name }}.py
 config-host = {{ ipv4 }}
 config-port = {{ port }}
+{%- endif %}
 
 {% if use_ipv6 -%}
 [{{ zope_tunnel_section_name }}]

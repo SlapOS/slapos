@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Common SIM Card Parameters",
   "required": [
     "sim_algo",
@@ -71,6 +71,11 @@
     },
     "domain": {
       "title": "IMS Domain",
+      "type": "string"
+    },
+    "force_ip": {
+      "title": "Force IP",
+      "description": "Force IP of the SIM: Fixed IP for the UE needs to be enabled on the core network to use force the IP and the IP should be within the PDN IPv4 sub network",
       "type": "string"
     },
     "authent_type": {

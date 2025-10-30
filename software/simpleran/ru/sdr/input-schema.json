@@ -12,14 +12,15 @@
     "rx_gain",
     "sdr_dev_list"
   ],
+  "unevaluatedProperties": false,
+  "allOf": [{ "$ref": "../../ru/common.json" }],
   "properties": {
-    "$ref": "../../ru/common.json#/properties",
     "ru_type": {
-      "$ref": "#/properties/ru_type",
+      "$ref": "../../ru/common.json#/$defs/ru_type",
       "const": "sdr"
     },
     "ru_link_type": {
-      "$ref": "#/properties/ru_link_type",
+      "$ref": "../../ru/common.json#/$defs/ru_link_type",
       "const": "sdr"
     },
     "sdr_dev_list": {
@@ -32,6 +33,15 @@
       },
       "minItems": 1,
       "uniqueItems": true
+    },
+    "cpri_link": {
+      "$ref": "../../ru/common.json#/$defs/cpri_link"
+    },
+    "n_antenna_dl": {
+      "$ref": "../../ru/common.json#/$defs/n_antenna_dl"
+    },
+    "n_antenna_ul": {
+      "$ref": "../../ru/common.json#/$defs/n_antenna_ul"
     }
   }
 }

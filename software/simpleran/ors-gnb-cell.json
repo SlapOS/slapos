@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "NR Cell",
+  "title": "ORS NR Cell",
   "type": "object",
   "properties": {
     "pci": {
@@ -8,8 +8,7 @@
       "description": "Physical Cell ID. Range 0 to 1007. Equal to ORS Serial number modulo 1008 by default"
     },
     "nr_bandwidth": {
-      "$ref": "cell/common.json#/properties/bandwidth",
-      "default": 50
+      "$ref": "cell/common.json#/$defs/bandwidth"
     },
     "nr_band": {
       "$ref": "cell/nr/input-schema.json#/properties/nr_band",
@@ -31,15 +30,14 @@
     },
     "ssb_pos_bitmap": {
       "title": "Expert: SSB Position Bitmap",
-      "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap",
-      "default": "10000000"
+      "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap"
     },
     "tdd_ul_dl_config": {
       "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
     },
     "root_sequence_index": {
       "title": "Expert: Root Sequence Index",
-      "$ref": "cell/common.json#/properties/root_sequence_index",
+      "$ref": "cell/common.json#/$defs/root_sequence_index",
       "description": "Range: 0 to 137. Equal to ORS serial number modulo 138 by default. Sets prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
     },
     "cipher_algo_pref": {

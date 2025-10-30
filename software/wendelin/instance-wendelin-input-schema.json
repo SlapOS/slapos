@@ -119,6 +119,11 @@
         }
       ]
     },
+    "python2-data-compatibility": {
+      "description": "Enable compatibility for ZODB data created with Python 2 when running under Python 3. By default, compatibility is disabled, which is the recommended option for instances that only use Python 3.",
+      "default": false,
+      "type": "boolean"
+    },
     "family-override": {
       "description": "Family-wide options, possibly overriding global options",
       "default": {},
@@ -271,6 +276,35 @@
               "description": "Requests bigger than this size get saved into a temporary file instead of being read completely into memory, in bytes",
               "default": "10MB",
               "type": "string"
+            },
+            "dos-protection": {
+              "type": "object",
+              "title": "DoS Protection settings, only when run with python3",
+              "description": "Key/value pairs controlling DoS protection limits",
+              "properties": {
+                "form-memory-limit": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(KB|MB|GB)$",
+                  "description": "The maximum size for each part in a multipart post request, for the complete body in an urlencoded post request and for the complete request body when accessed as bytes (rather than a file).",
+                  "default": "1MB"
+                },
+                "form-disk-limit": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(KB|MB|GB)$",
+                  "description": "The maximum size of a POST request body",
+                  "default": "1GB"
+                },
+                "form-memfile-limit": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(KB|MB|GB)$",
+                  "description": "The value of form variables of type file with larger size are stored on disk rather than in memory.",
+                  "default": "4KB"
+                },
+                "additionalProperties": false
+              },
+              "default": {
+                "form-memory-limit": "10MB"
+              }
             },
             "port-base": {
               "allOf": [
@@ -767,7 +801,7 @@
             "rules": {
               "type": "array",
               "items": {
-                "oneOf": [
+                "anyOf": [
                   {
                     "required": [
                       "url-path-pattern",
@@ -900,6 +934,11 @@
           "type": "number",
           "title": "See `zope-longrequest-logger-error-threshold`",
           "default": 0
+        },
+        "zope-expect-backingup-zodb": {
+          "type": "boolean",
+          "description": "Whether zope should expect the zodb to be a neo in BACKINGUP mode",
+          "default": false
         },
         "apachedex-promise-threshold": {
           "type": "number",

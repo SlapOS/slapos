@@ -1,6 +1,27 @@
 Changelog
 =========
 
+Version 1.0.442 (2025-10-13)
+-------------
+
+* Add SUCI encryption (ECC parameters support)
+
+Version 1.0.441 (2025-10-06)
+-------------
+
+* Add test-model software type
+* Fix tx power offset not being taken into account
+* Fix wrong slice differentiator default value causing gNB to not connect to MME when choosing a PLMN in input parameters
+* Fix UE websocket
+* Add force IP option for SIM Cards (allows making sure a PDN IPv4 never changes for a specific IMSI)
+
+Version 1.0.438 (2025-09-29)
+-------------
+
+* Publish Amarisoft configurations along with the logs
+* Ensure all defaults are set correctly
+* Fix GPS promise always failing when GPS was enabled
+
 Version 1.0.432 (2025-08-14)
 -------------
 

@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Core Network Input Parameters",
   "type": "object",
   "properties": {
@@ -85,9 +85,15 @@
         }
       },
       "default": [
-        "internet",
-        "default",
-        "sos"
+        {
+          "name": "internet"
+        },
+        {
+          "name": "default"
+        },
+        {
+          "name": "sos"
+        }
       ]
     },
     "qci": {
@@ -126,6 +132,68 @@
       "title": "S6 Origin Host",
       "description": "Defines the string sent in the Origin-Host AVP for S6 messages. Default is set to epc.mnc<MNC>.mcc<MCC>.3gppnetwork.org.",
       "type": "string"
+    },
+    "ecc_params": {
+      "title": "ECC Parameters",
+      "description": "Set the ECC network configuration for the SUPI protection and de-concealment of the SUCI. Applicable to 5GC only",
+      "type": "array",
+      "items": {
+        "title": "Profile",
+        "type": "object",
+        "unevaluatedProperties": false,
+        "oneOf": [
+          {
+            "type": "object",
+            "title": "Profile A",
+            "description": "Home network private key for profile A protection scheme",
+            "required": [
+              "profile_a_pk"
+            ],
+            "properties": {
+              "profile_a_pk": {
+                "$ref": "#/$defs/private_key"
+              },
+              "profile_a_id": {
+                "$ref": "#/$defs/key_id"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "Profile B",
+            "description": "Home network private key for profile B protection scheme",
+            "required": [
+              "profile_b_pk"
+            ],
+            "properties": {
+              "profile_b_pk": {
+                "$ref": "#/$defs/private_key"
+              },
+              "profile_b_id": {
+                "$ref": "#/$defs/key_id"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "lock": {
+      "title": "Force reprocess",
+      "description": "Expert only: change this parameter value to force reprocess of partition",
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "private_key": {
+      "title": "Private Key",
+      "description": "Home network private key in hexadecimal format (32 bytes)",
+      "type": "string"
+    },
+    "key_id": {
+      "title": "Key ID",
+      "description": "Home network key identifier (range 0 to 255)",
+      "type": "number",
+      "default": 1
     }
   }
 }

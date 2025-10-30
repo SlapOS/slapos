@@ -54,6 +54,12 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.slap.standalone import SlapOSNodeCommandError
 from slapos.testing.utils import findFreeTCPPort
 
+# To be in sync with component/vm-img/debian.cfg
+DEFAULT_IMAGE_ISONAME = 'debian-12.12.0-amd64-netinst.iso'
+DEFAULT_IMAGE_TITLE = 'Debian Bookworm 12 netinst x86_64'
+DEFAULT_IMAGE_MD5SUM = 'fed10490abd508da793071df57e9cb70'
+##
+
 has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
 skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 
@@ -394,10 +400,7 @@ i0:whitelist-firewall-{hash} RUNNING""",
 
     # assure that the default image is used
     self.assertEqual(
-      [
-        '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
-      ],
+      ['${inst}/srv/boot-image-url-select-repository/' + DEFAULT_IMAGE_MD5SUM],
       self.getRunningImageList()
     )
 
@@ -1591,10 +1594,7 @@ class TestBootImageUrlList(FakeImageServerMixin, KVMTestCase):
 
     # again only default image is available in the running process
     self.assertEqual(
-      [
-        '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
-      ],
+      ['${inst}/srv/boot-image-url-select-repository/' + DEFAULT_IMAGE_MD5SUM],
       self.getRunningImageList()
     )
 
@@ -1690,19 +1690,14 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
       self.slap.instance_directory, self.kvm_instance_partition_reference,
       'srv', 'boot-image-url-select-repository')
     self.assertEqual(
-      ['6b6604d894b6d861e357be1447b370db'],
+      [DEFAULT_IMAGE_MD5SUM],
       os.listdir(image_repository)
     )
-    image = os.path.join(image_repository, '6b6604d894b6d861e357be1447b370db')
-    self.assertTrue(os.path.exists(image))
-    with open(image, 'rb') as fh:
+    with open(os.path.join(image_repository, DEFAULT_IMAGE_MD5SUM), 'rb') as fh:
       image_md5sum = hashlib.md5(fh.read()).hexdigest()
-    self.assertEqual(image_md5sum, '6b6604d894b6d861e357be1447b370db')
+    self.assertEqual(image_md5sum, DEFAULT_IMAGE_MD5SUM)
     self.assertEqual(
-      [
-        '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
-      ],
+      ['${inst}/srv/boot-image-url-select-repository/' + DEFAULT_IMAGE_MD5SUM],
       self.getRunningImageList()
     )
     # switch the image
@@ -1834,7 +1829,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
     self.assertEqual(
       os.listdir(os.path.join(
         kvm_instance_partition, 'srv', 'boot-image-url-select-repository')),
-      ['6b6604d894b6d861e357be1447b370db']
+      [DEFAULT_IMAGE_MD5SUM]
     )
     self.assertEqual(
       os.listdir(os.path.join(
@@ -1844,10 +1839,7 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
 
     # again only default image is available in the running process
     self.assertEqual(
-      [
-        '${inst}/srv/boot-image-url-select-repository/'
-        '6b6604d894b6d861e357be1447b370db'
-      ],
+      ['${inst}/srv/boot-image-url-select-repository/' + DEFAULT_IMAGE_MD5SUM],
       self.getRunningImageList()
     )
 
@@ -1966,7 +1958,7 @@ class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
         },
         "KVM1": {
             "disable-ansible-promise": True,
-            "boot-image-url-select": "Debian Bookworm 12 netinst x86_64"
+            "boot-image-url-select": DEFAULT_IMAGE_TITLE,
         }
       }
     })})
@@ -1992,7 +1984,7 @@ class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
         config
       )
       self.assertIn(
-        'debian-12.10.0-amd64-netinst.iso#6b6604d894b6d861e357be1447b370db"]',
+        '%s#%s"]' % (DEFAULT_IMAGE_ISONAME, DEFAULT_IMAGE_MD5SUM),
         config
       )
 

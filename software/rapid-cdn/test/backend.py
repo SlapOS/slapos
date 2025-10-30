@@ -58,7 +58,9 @@ class TestHandler(BaseHTTPRequestHandler):
   DEFAULT_CONFIGURATION = {
    'Status-Code': '200',
    'Protocol-Version': 'HTTP/1.0',
-   'Timeout': '0',
+   'Response-Timeout': '0',
+   'Header-Timeout': '0',
+   'Body-Timeout': '0',
   }
 
   log_message = logging.getLogger(__name__ + '.TestHandler').info
@@ -70,7 +72,8 @@ class TestHandler(BaseHTTPRequestHandler):
       # clients can drop connection during sending data, ignore it
       pass
 
-  def do_DELETE(self):
+  # Special verb for internal usage
+  def do_REMOVE(self):
     config = self.configuration.pop(self.path, None)
     if config is None:
       self.send_response(204)
@@ -81,6 +84,7 @@ class TestHandler(BaseHTTPRequestHandler):
       self.end_headers()
       self.wfile_write(json.dumps({self.path: config}, indent=2))
 
+  # Special verb for internal usage
   def do_CONFIG(self):
     config = self.DEFAULT_CONFIGURATION.copy()
     incoming_headers = http.client.HTTPMessage()
@@ -113,9 +117,30 @@ class TestHandler(BaseHTTPRequestHandler):
     self.wfile_write(response)
 
   def do_POST(self):
-    return self.do_GET()
+    return self.do_GET(verb='POST')
 
-  def do_GET(self):
+  def do_PUT(self):
+    return self.do_GET(verb='PUT')
+
+  def do_DELETE(self):
+    return self.do_GET(verb='DELETE')
+
+  def do_PATCH(self):
+    return self.do_GET(verb='PATCH')
+
+  def do_HEAD(self):
+    return self.do_GET(verb='HEAD')
+
+  def do_OPTIONS(self):
+    return self.do_GET(verb='OPTIONS')
+
+  def do_TRACE(self):
+    return self.do_GET(verb='TRACE')
+
+  def do_CONNECT(self):
+    return self.do_GET(verb='CONNECT')
+
+  def do_GET(self, verb='GET'):
     def generateDefaultResponse():
       header_dict = {}
       for header in list(self.headers.keys()):
@@ -130,7 +155,8 @@ class TestHandler(BaseHTTPRequestHandler):
       return json.dumps(
         {
           'Path': self.path,
-          'Incoming Headers': header_dict
+          'Incoming Headers': header_dict,
+          'Verb': verb
         },
         indent=2).encode()
 
@@ -146,7 +172,7 @@ class TestHandler(BaseHTTPRequestHandler):
       return
 
     self.protocol_version = config['configuration']['Protocol-Version']
-    time.sleep(int(config['configuration']['Timeout']))
+    time.sleep(int(config['configuration']['Response-Timeout']))
     self.send_response_only(int(config['configuration']['Status-Code']))
     if isinstance(config['configuration']['Body'], str):
       if config['configuration']['Body'] == 'calculate':
@@ -157,6 +183,7 @@ class TestHandler(BaseHTTPRequestHandler):
         body = config['configuration']['Body'].encode()
     else:
       body = config['configuration']['Body']
+    time.sleep(int(config['configuration']['Header-Timeout']))
     for header, value in config['headers'].items():
       for header_type in ['Date', 'Last-Modified']:
         if header == header_type:
@@ -172,6 +199,7 @@ class TestHandler(BaseHTTPRequestHandler):
           value = '%s' % (len(body),)
       self.send_header(header, value)
     self.end_headers()
+    time.sleep(int(config['configuration']['Body-Timeout']))
     self.wfile_write(body)
 
 

@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.431'
+version = '1.0.448'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -67,6 +67,7 @@ setup(name=name,
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
         'inotify_simple',
+        "legacy-cgi; python_version >= '3.13'",
         'lock_file', #another lockfile implementation for multiprocess
         'slapos.core', # uses internally
         'zc.buildout', # plays with buildout

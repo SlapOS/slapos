@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NR Cell",
+  "type": "object",
+  "properties": {
+    "enable_cell": {
+      "$ref": "ors-cell.json#/properties/enable_cell"
+    },
+    "tx_gain": {
+      "$ref": "ors-cell.json#/properties/tx_gain"
+    },
+    "dl_frequency": {
+      "$ref": "ors-enb-cell.json#/properties/dl_frequency"
+    },
+    "file": {
+      "title": "Test Model",
+      "description": "3GPP Test Model to play",
+      "enum": [
+        "LTE Test Mode 31  - 10 MHz  - FDD",
+        "LTE Test Mode 31  - 10 MHz  - TDD",
+        "LTE Test Mode 31  - 1.4 MHz - TDD",
+        "LTE Test Mode 31  - 20 MHz  - FDD",
+        "LTE Test Mode 31  - 3 MHz   - TDD",
+        "LTE Test Mode 31  - 5 MHz   - TDD",
+        "LTE Test Mode 32  - 10 MHz  - TDD",
+        "LTE Test Mode 32  - 20 MHz  - TDD",
+        "LTE Test Mode 33  - 10 MHz  - TDD",
+        "LTE Test Mode 33  - 20 MHz  - TDD",
+        "LTE Test Mode 31  - 20 MHz  - TDD",
+        "NR  Test Mode 11  - 20 MHz  - TDD",
+        "NR  Test Mode 11  - 5 MHz   - FDD",
+        "NR  Test Mode 12  - 20 MHz  - TDD",
+        "NR  Test Mode 2   - 20 MHz  - TDD",
+        "NR  Test Mode 2a  - 20 MHz  - TDD",
+        "NR  Test Mode 2b  - 20 MHz  - TDD",
+        "NR  Test Mode 31  - 100 MHz - FDD",
+        "NR  Test Mode 31  - 20 MHz  - FDD",
+        "NR  Test Mode 31  - 20 MHz  - TDD",
+        "NR  Test Mode 31  - 40 MHz  - TDD",
+        "NR  Test Mode 31  - 5 MHz   - FDD",
+        "NR  Test Mode 31a - 20 MHz  - FDD",
+        "NR  Test Mode 31a - 20 MHz  - FDD - SCS 15 kHz",
+        "NR  Test Mode 31a - 20 MHz  - TDD",
+        "NR  Test Mode 31a - 5 MHz   - FDD",
+        "NR  Test Mode 31b - 20 MHz  - TDD",
+        "NR  Test Mode 32  - 20 MHz  - TDD",
+        "NR  Test Mode 33  - 20 MHz  - TDD"
+      ],
+      "default": "LTE Test Mode 31  - 20 MHz  - FDD",
+      "type": "string"
+    }
+  }
+}
+

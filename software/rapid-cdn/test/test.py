@@ -50,6 +50,8 @@ import lzma
 from slapos.slap.standalone import SlapOSNodeInstanceError
 import caucase.client
 import caucase.utils
+from bs4 import BeautifulSoup
+import furl
 
 import datetime
 
@@ -232,7 +234,12 @@ def subprocess_output(*args, **kwargs):
   return subprocess_status_output(*args, **kwargs)[1]
 
 
-mimikra = Recurls()
+class OwnRecurls(Recurls):
+  def config(self, url, **kwargs):
+    return self.request('CONFIG', url, **kwargs)
+
+
+mimikra = OwnRecurls()
 
 
 class AtsMixin(object):
@@ -410,6 +417,16 @@ class TestDataMixin(object):
       ] = generateHashFromFiles(
         [rejected_slave_publish_path, rejected_slave_pem_path] + hash_file_list
       )
+    for trafficserver_config_path in glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'trafficserver')):
+      records_config = os.path.join(
+        trafficserver_config_path, 'records.config')
+      storage_config = os.path.join(
+        trafficserver_config_path, 'storage.config')
+      partition_id = trafficserver_config_path.split('/')[-3]
+      data_replacement_dict['{hash-trafficserver-%s}' % (partition_id)] =  \
+          generateHashFromFiles([
+            storage_config, records_config] + hash_file_list)
 
     runtime_data = self.getTrimmedProcessInfo()
     self.assertTestData(
@@ -510,11 +527,13 @@ def fakeSetupHeaders(headers):
 
 
 def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
-                    headers=None, source_ip=SOURCE_IP):
+                    headers=None, source_ip=SOURCE_IP, verb='GET',
+                    timeout=None, http3=True):
   headers = fakeSetupHeaders(headers)
   url = 'https://%s:%s/%s' % (domain, port, path)
 
-  return mimikra.get(
+  return mimikra.request(
+    verb,
     url,
     headers=headers,
     verify=False,
@@ -522,7 +541,9 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
     source_ip=source_ip,
     resolve_all={
       port: TEST_IP
-    }
+    },
+    timeout=timeout,
+    http3=http3
   )
   # XXX: Reassert below
   # Use a prepared request, to disable path normalization.
@@ -533,11 +554,13 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
 
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
-                   headers=None, source_ip=SOURCE_IP):
+                   headers=None, source_ip=SOURCE_IP, verb='GET',
+                   timeout=None):
   headers = fakeSetupHeaders(headers)
   headers.setdefault('Host', '%s:%s' % (domain, port))
   url = 'http://%s:%s/%s' % (TEST_IP, port, path)
-  return mimikra.get(
+  return mimikra.request(
+    verb,
     url,
     headers=headers,
     verify=False,
@@ -545,7 +568,8 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
     source_ip=source_ip,
     resolve_all={
       port: TEST_IP
-    }
+    },
+    timeout=timeout
   )
 
 
@@ -888,9 +912,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         assertAndPopSingleHeader('Alternate-Protocol')
       )
 
+    assertAndPopSingleHeader('Date')
     if backend_reached:
       self.assertEqual('TestBackend', assertAndPopSingleHeader('Server'))
-      assertAndPopSingleHeader('Date')
 
     via_id = '%s-%s' % (
       self.node_information_dict['node-id'],
@@ -903,24 +927,26 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
     if via:
       pop_header_list.append('Via'.lower())
-      via = ' '.join(result.headers.get_all('Via'))
+      via_header = ' '.join(result.headers.get_all('Via'))
+      if backend_reached:
+        expected_via = 'http/1.1 backendvia '
+      else:
+        expected_via = ''
       if cached:
+        # ATS adds to existing header, so ","
         self.assertEqual(
-          'http/1.1 backendvia '
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '  # ATS adds to existing
-                                                     # header, so ","
+          expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
           'http/1.0 rapid-cdn-cache-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          via
+          via_header
         )
       else:
         self.assertEqual(
-          'http/1.1 backendvia '
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s '
+          expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          via
+          via_header
         )
     else:
       self.assertNotIn('Via', result.headers)
@@ -1030,6 +1056,89 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     self.assertEqual(http.client.OK, result.status_code)
     self.assertIn('testing partition 0', result.text)
     self.assertIn('Statistics Report for HAProxy', result.text)
+
+    furled = furl.furl(backend_haproxy_statistic_url)
+    furled.username = None
+    furled.password = None
+    backend_haproxy_statistic_url_no_auth = furled.tostr()
+    self.assertEqual(
+      http.client.UNAUTHORIZED,
+      mimikra.get(
+        backend_haproxy_statistic_url_no_auth, verify=False).status_code
+    )
+
+  def assertTrafficserverIntrospectionUrl(self, parameter_dict):
+    url_key = 'frontend-node-1-trafficserver-introspection-url'
+    trafficserver_introspection_url_dict = {}
+    for key in list(parameter_dict.keys()):
+      if key.startswith('frontend-node') and key.endswith(
+        'trafficserver-introspection-url'):
+        trafficserver_introspection_url_dict[key] = parameter_dict.pop(key)
+    self.assertEqual(
+      [url_key],
+      list(trafficserver_introspection_url_dict.keys())
+    )
+
+    trafficserver_introspection_url = trafficserver_introspection_url_dict[
+      url_key]
+    furled = furl.furl(trafficserver_introspection_url)
+    furled.username = None
+    furled.password = None
+    trafficserver_introspection_url_no_auth = furled.tostr()
+    result = mimikra.get(
+      trafficserver_introspection_url,
+      verify=False,
+    )
+    self.assertEqual(http.client.OK, result.status_code)
+    self.assertIn('testing partition 0', result.text)
+    self.assertIn('TrafficServer Introspection Index', result.text)
+    self.assertEqual(
+      http.client.UNAUTHORIZED,
+      mimikra.get(
+        trafficserver_introspection_url_no_auth, verify=False).status_code
+    )
+
+    parsed_result = BeautifulSoup(result.text)
+    link_list = [q.get('href') for q in parsed_result.find_all('a')]
+    self.assertEqual(
+      [
+        '/inspect-cache-internal/',
+        '/inspect-cache/',
+        '/inspect-hostdb/',
+        '/inspect-http/',
+        '/inspect-net/'
+      ],
+      sorted(link_list)
+    )
+
+    def assertResult(link, *text_list):
+      result = mimikra.get(
+        trafficserver_introspection_url + link, verify=False)
+      self.assertEqual(result.status_code, http.client.OK)
+      for text in text_list:
+        self.assertIn(text, result.text)
+      self.assertEqual(
+        http.client.UNAUTHORIZED,
+        mimikra.get(
+          trafficserver_introspection_url_no_auth + link, verify=False
+        ).status_code
+      )
+
+    assertResult(
+      '/inspect-cache-internal/',
+      'Cache', 'Evacuations', 'Volumes')
+    assertResult(
+      '/inspect-cache/',
+      'Cache', 'Lookup url', 'Regex lookup')
+    assertResult(
+      '/inspect-hostdb/',
+      'HostDB', 'Lookup by name', 'Show all HostDB records')
+    assertResult(
+      '/inspect-http/',
+      'Http:SM List')
+    assertResult(
+      '/inspect-net/',
+      'Net', 'Connections', 'from IP', 'from Port')
 
   def assertKeyWithPop(self, key, d):
     self.assertTrue(key in d, 'Key %r is missing in %r' % (key, d))
@@ -1213,8 +1322,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         partition_parameter_kw=partition_parameter_kw,
       )
 
-  x_config_timeout = '10'  # more than default backend-connect-timeout == 5
-
   @classmethod
   def setUpClass(cls):
     super(SlaveHttpFrontendTestCase, cls).setUpClass()
@@ -1225,7 +1332,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         verify=None,
         headers={
           'X-Config-Global': '1',
-          'X-Config-Timeout': cls.x_config_timeout,
           'X-Config-Body': 'calculate',
           'X-Config-Reply-Header-Server': 'TestBackend',
           'X-Config-Reply-Header-Content-Length': 'calculate',
@@ -1243,7 +1349,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         backend_url,
         headers={
           'X-Config-Global': '1',
-          'X-Config-Timeout': cls.x_config_timeout,
           'X-Config-Body': 'calculate',
           'X-Config-Reply-Header-Server': 'TestBackend',
           'X-Config-Reply-Header-Content-Length': 'calculate',
@@ -1407,6 +1512,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
@@ -1440,6 +1546,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
@@ -1552,6 +1659,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
@@ -1577,14 +1685,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
 
 
 class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
-  parameter_dict = {
-    'domain': 'example.com',
-    'port': HTTPS_PORT,
-    'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
-    'request-timeout': '12',
-  }
+  request_timeout = 12
   max_client_version = '2.0'
   max_http_version = '2'
   alt_svc = False
@@ -1595,7 +1696,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return cls.parameter_dict
+    return {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'request-timeout': str(cls.request_timeout),
+    }
 
   @classmethod
   def prepareCertificate(cls):
@@ -1618,7 +1726,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url': {
         # make URL "incorrect", with whitespace, nevertheless it shall be
         # correctly handled
-        'url': ' ' + cls.backend_url + '/?a=b&c=' + ' ',
+        'url': ' ' + cls.backend_url + '?a=b&c=' + ' ',
         # authenticating to http backend shall be no-op
         'authenticate-to-backend': True,
       },
@@ -2097,6 +2205,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
@@ -2113,8 +2222,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'warning-slave-dict': {
         '_Url': [
-          "slave url ' %(backend)s/?a=b&c= ' has been converted to "
-          "'%(backend)s/?a=b&c='" % {'backend': self.backend_url}],
+          "slave url ' %(backend)s?a=b&c= ' has been converted to "
+          "'%(backend)s?a=b&c='" % {'backend': self.backend_url}],
         '_ciphers': [
           "Cipher 'RSA-3DES-EDE-CBC-SHA' translated to 'DES-CBC3-SHA'",
           "Cipher 'RSA-AES128-CBC-SHA' translated to 'AES128-SHA'"],
@@ -2330,7 +2439,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url',
       {
         'warning-list': [
-          "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
+          "slave url ' %s?a=b&c= ' has been converted to '%s?a=b&c='" % (
             self.backend_url, self.backend_url)],
       }
     )
@@ -2350,7 +2459,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     headers = self.assertResponseHeaders(result)
     self.assertNotIn('Strict-Transport-Security', headers)
     self.assertEqualResultJson(
-      result, 'Path', '?a=b&c=' + '/test-path/deeper' * 250)
+      result, 'Path', '/?a=b&c=' + '/test-path/deeper' * 250)
 
     try:
       j = result.json()
@@ -2444,6 +2553,94 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j['Incoming Headers']['x-forwarded-for']
     )
 
+    # check all verbs
+    for verb in [
+      'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']:
+      result_verb = fakeHTTPSResult(
+        parameter_dict['domain'], '/' + verb, verb=verb)
+      if verb == 'CONNECT':
+        if self.max_http_version == '1':
+          self.assertEqual(
+            http.client.BAD_REQUEST, result_verb.status_code, verb)
+          self.assertIn(
+            'Your browser sent an invalid request', result_verb.text, verb)
+        else:
+          self.assertEqual(
+            http.client.NOT_FOUND, result_verb.status_code, verb)
+          self.assertIn('Instance not found', result_verb.text, verb)
+      else:
+        self.assertEqual(http.client.OK, result_verb.status_code, verb)
+        if verb != 'HEAD':
+          try:
+            j = result_verb.json()
+          except Exception:
+            raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+          self.assertEqual('/?a=b&c=/' + verb, j['Path'], verb)
+          self.assertEqual(verb, j['Verb'], verb)
+    # check backend timeout behaviour
+    small_timeout_text = "Small timeout"
+    small_timeout = self.request_timeout - 5
+    self.assertGreater(small_timeout, 0)
+    big_timeout = self.request_timeout + 5
+    big_timeout_text = "Big timeout"
+    mimikra.config(
+      self.backend_url + '?a=b&c=' + '/small-timeout',
+      headers={
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Body-Timeout': str(small_timeout),
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+        'X-Config-Reply-Header-Set-Cookie':
+        'secured=value;secure, nonsecured=value',
+      },
+      data=small_timeout_text,
+    )
+    mimikra.config(
+      self.backend_url + '?a=b&c=' + '/big-timeout',
+      headers={
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Body-Timeout': str(big_timeout),
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+        'X-Config-Reply-Header-Set-Cookie':
+        'secured=value;secure, nonsecured=value',
+      },
+      data=big_timeout_text,
+    )
+    small_timeout_result = fakeHTTPSResult(
+      parameter_dict['domain'], '/small-timeout',
+      timeout=small_timeout + 2)
+    self.assertEqual(
+      small_timeout_result.status_code,
+      http.client.OK
+    )
+    self.assertGreater(
+      small_timeout_result.time_total,
+      small_timeout
+    )
+    self.assertEqual(
+      small_timeout_result.text,
+      small_timeout_text
+    )
+
+    begin = time.time()
+    with self.assertRaises(CurlException):
+      fakeHTTPSResult(
+        parameter_dict['domain'], '/big-timeout',
+        timeout=big_timeout + 2,
+      )
+    elapsed = time.time() - begin
+    self.assertGreater(elapsed, self.request_timeout)
+    if self.max_client_version != '3.0':
+      # curl behaviour for HTTP/3 is different than for HTTP/2.0 and below
+      self.assertLess(elapsed, big_timeout)
+
+  def test_bad_backend(self):
+    parameter_dict = self.assertSlaveBase('bad-backend')
+    result = fakeHTTPSResult(
+      parameter_dict['domain'], '/down')
+    self.assertResponseHeaders(result, backend_reached=False)
+
   def test_url_trailing_slash_absent(self):
     parameter_dict = self.assertSlaveBase('url-trailing-slash-absent')
     self.assertEqual(
@@ -2487,7 +2684,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     try:
       # allow SSL downgrade on the backend...
-      instance_parameter_dict = self.parameter_dict.copy()
+      instance_parameter_dict = self.getInstanceParameterDict()
       instance_parameter_dict[
         "-frontend-config-1-expert-backend-allow-downgrade-ssl"] = "true"
       self.slap.request(
@@ -2645,7 +2842,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url',
       {
         'warning-list': [
-          "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
+          "slave url ' %s?a=b&c= ' has been converted to '%s?a=b&c='" % (
             self.backend_url, self.backend_url)],
       }
     )
@@ -2658,7 +2855,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     path = '/compressed'
     config_result = mimikra.config(
-      self.backend_url.rstrip('/') + '?a=b&c=' + path,
+      self.backend_url.rstrip('/') + '/?a=b&c=' + path,
       data=data_compressed,
       headers={
         'X-Config-Reply-Header-Content-Encoding': 'gzip',
@@ -2690,15 +2887,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url',
       {
         'warning-list': [
-          "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
+          "slave url ' %s?a=b&c= ' has been converted to '%s?a=b&c='" % (
             self.backend_url, self.backend_url)],
       }
     )
     path = '/test_no_content_type_alter'
     config_result = mimikra.config(
-      self.backend_url.rstrip('/') + '?a=b&c=' + path,
+      self.backend_url.rstrip('/') + '/?a=b&c=' + path,
       headers={
-        'X-Config-Timeout': self.x_config_timeout,
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Content-Length': 'calculate',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
@@ -4101,6 +4297,36 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertRegex(ats_log, direct_pattern)
     # END: Check that squid.log is correctly filled in
 
+    # check all verbs
+    for verb in [
+      'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']:
+      if verb in ['POST', 'PUT']:
+        headers = {'Content-Length': '0'}  # To satisfy TrafficServer
+      else:
+        headers = None
+      result_verb = fakeHTTPSResult(
+        parameter_dict['domain'], '/' + verb, verb=verb, headers=headers
+      )
+      if verb == 'CONNECT':
+        if self.max_http_version == '1':
+          self.assertEqual(
+            http.client.BAD_REQUEST, result_verb.status_code, verb)
+          self.assertIn(
+            'Your browser sent an invalid request', result_verb.text, verb)
+        else:
+          self.assertEqual(
+            http.client.NOT_FOUND, result_verb.status_code, verb)
+          self.assertIn('Instance not found', result_verb.text, verb)
+      else:
+        self.assertEqual(http.client.OK, result_verb.status_code, verb)
+        if verb != 'HEAD':
+          try:
+            j = result_verb.json()
+          except Exception:
+            raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+          self.assertEqual('/' + verb, j['Path'], verb)
+          self.assertEqual(verb, j['Verb'], verb)
+
   def test_enable_cache_ims_request(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
     path = 'ims'
@@ -4358,14 +4584,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_enable_cache_ats_timeout(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
+    big_timeout = self.request_timeout + 5
     config_result = mimikra.config(
       self.backend_url + 'test_enable_cache_ats_timeout',
       headers={
+        'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Cache-Control':
         'max-age=1, stale-while-revalidate=3600, stale-if-error=3600',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
-        'X-Config-Timeout': '15',
+        'X-Config-Response-Timeout': str(big_timeout),
         'X-Config-Reply-Header-Content-Length': 'calculate',
       }
     )
@@ -4373,7 +4601,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # check that timeout seen by ATS does not result in many queries done
     # to the backend and that next request works like a charm
     result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test_enable_cache_ats_timeout')
+      parameter_dict['domain'], 'test_enable_cache_ats_timeout',
+      timeout=big_timeout + 2)
 
     # ATS timed out
     self.assertEqual(
@@ -5048,7 +5277,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result_configure = mimikra.config(
       backend_url.rstrip('/') + with_date_path, headers={
         'X-Config-Reply-Header-Date': specific_date,
-        'X-Config-Timeout': self.x_config_timeout,
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Content-Length': 'calculate',
@@ -5082,16 +5310,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
 
 class TestSlaveHttp3(TestSlave):
-  parameter_dict = {
-    'domain': 'example.com',
-    'port': HTTPS_PORT,
-    'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
-    'request-timeout': '12',
-    'enable-http3': 'True',
-    'http3-port': HTTPS_PORT,
-  }
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'request-timeout': '12',
+      'enable-http3': 'True',
+      'http3-port': HTTPS_PORT,
+    }
   max_client_version = '3.0'
   max_http_version = '3'
   alt_svc = True
@@ -5102,15 +5332,17 @@ class TestSlaveHttp3(TestSlave):
 
 
 class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
-  parameter_dict = {
-    'domain': 'example.com',
-    'port': HTTPS_PORT,
-    'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
-    'request-timeout': '12',
-    'enable-http2-by-default': 'false',
-  }
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'request-timeout': '12',
+      'enable-http2-by-default': 'false',
+    }
   max_client_version = '1.1'
   max_http_version = '1'
   alt_svc = False
@@ -5614,6 +5846,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
@@ -6121,6 +6354,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
@@ -6213,6 +6447,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
@@ -6471,6 +6706,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
@@ -7177,8 +7413,6 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
 
 
 class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
-  x_config_timeout = '0'
-
   @classmethod
   def getInstanceParameterDict(cls):
     return {
