@@ -1,8 +1,30 @@
 {
-  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "description": "Parameters to instantiate JS drone",
   "additionalProperties": false,
+  "definitions": {
+    "entitie-list": {
+      "description": "List of entities able to listen/send OPC-UA messages from/to the swarm",
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "guid": {
+            "description": "Computer ID",
+            "type": "string"
+          },
+          "netIf": {
+            "description": "Interface used for multicast traffic.",
+            "type": "string",
+            "default": "eth0"
+          }
+        }
+      },
+      "uniqueItems": true
+    }
+  },
   "properties": {
     "autopilotType": {
       "title": "Type of the drone's autopilot",
@@ -26,23 +48,9 @@
       "type": "integer",
       "default": 7909
     },
-    "droneGuidList": {
-      "title": "List of drones computer ID",
-      "description": "List of computer ID of drones in the swarm",
-      "type": "array",
-      "default": []
-    },
-    "droneNetIf": {
-      "title": "Drones Network interface",
-      "description": "Interface used for multicast traffic.",
-      "type": "string",
-      "default": "eth0"
-    },
-    "isASimulation": {
-      "title": "Set the flight as a simulation",
-      "description": "The option used to determine if the flight is real or if it is a simulation. This affects the context of the flight (e.g. if the take off is manual or automatic).",
-      "type": "boolean",
-      "default": false
+    "droneList": {
+      "$ref": "#/definitions/entitie-list",
+      "title": "List of drones in the swarm"
     },
     "debug": {
       "title": "Set debug mode",
@@ -56,11 +64,29 @@
       "type": "string",
       "default": "ff15::1111"
     },
+    "operatorScript": {
+      "title": "Script's URL to prepare the flight",
+      "description": "URL of the operator script. The operator script is used to send a first message to the swarm.\nThis can be useful to determine some path planning depending on map informations.\nThis URL must be publicly accesible so that the drone can fetch the script.",
+      "type": "string",
+      "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.3/operator.js"
+    },
+    "mapJson": {
+      "title": "Map's URL",
+      "description": "URL of the terrain's map. It is used as a data source by the operator script.",
+      "type": "string",
+      "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.3/map.json"
+    },
     "flightScript": {
       "title": "Script's URL of the flight",
       "description": "URL of the script which will be executed for the flight. This URL must be publicly accesible so that the drone can fetch the script.",
       "type": "string",
-      "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.0/default.js"
+      "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.3/default.js"
+    },
+    "subscriptionScript": {
+      "title": "Script's URL for subscribers",
+      "description": "URL of the script which will be executed by subscribers.",
+      "type": "string",
+      "default": "https://lab.nexedi.com/nexedi/flight-scripts/-/raw/operator_script/subscribe.js"
     },
     "loopPeriod": {
       "title": "Loop execution period",
@@ -68,17 +94,9 @@
       "type": "integer",
       "default": 200
     },
-    "subscriberGuidList": {
-      "title": "List of subscribers computer ID",
-      "description": "List of computer ID of swarms subscribers (entities able to listen/send OPC-UA messages from/to the swarm)",
-      "type": "array",
-      "default": []
-    },
-    "subscriberNetIf": {
-      "title": "Subscribers Network interface",
-      "description": "Interface used for multicast traffic.",
-      "type": "string",
-      "default": "eth0"
+    "subscriberList": {
+      "$ref": "#/definitions/entitie-list",
+      "title": "List of swarm subscribers"
     }
   }
 }
