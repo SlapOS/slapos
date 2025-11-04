@@ -241,6 +241,17 @@ class KvmMixin:
       'kvm-export', 'srv', 'backup', 'kvm',
       cls.disk_type_backup_mapping[cls.disk_type], *paths)
 
+  @classmethod
+  def getAuthenticatedUrl(cls, connection_parameter_dict, prefix='', additional=False):
+    parsed_url = urlparse(connection_parameter_dict['%surl%s' % (prefix, '-additional' if additional else '')])
+    return parsed_url._replace(
+    netloc='{}:{}@[{}]:{}'.format(
+      connection_parameter_dict['%susername' % prefix],
+      connection_parameter_dict['%spassword' % prefix],
+      parsed_url.hostname,
+      parsed_url.port,
+    )).geturl()
+
   def getConnectionParameterDictJson(self):
     return json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
@@ -330,7 +341,7 @@ class TestInstance(KVMTestCase, KvmMixin):
     connection_parameter_dict = self.getConnectionParameterDictJson()
     present_key_list = []
     assert_key_list = [
-     'backend-url', 'url', 'monitor-setup-url', 'ipv6-network-info',
+     'backend-url', 'url', 'username', 'password', 'monitor-setup-url', 'ipv6-network-info',
      'tap-ipv4', 'tap-ipv6']
     for k in assert_key_list:
       if k in connection_parameter_dict:
@@ -555,7 +566,8 @@ class TestAccessDefault(MonitorAccessMixin, KVMTestCase):
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
-    result = requests.get(connection_parameter_dict['url'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict)
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
@@ -577,16 +589,16 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, KVMTestCase):
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
-
-    result = requests.get(connection_parameter_dict['url'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict)
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
-    result = requests.get(
-      connection_parameter_dict['url-additional'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, additional=True)
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
@@ -628,8 +640,8 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
     # END: mock .slapos-resource with tap.ipv4_addr
 
     connection_parameter_dict = self.getConnectionParameterDictJson()
-
-    result = requests.get(connection_parameter_dict['url'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict)
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
@@ -665,7 +677,8 @@ class TestAccessKvmCluster(MonitorAccessMixin, KVMTestCase):
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
-    result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, prefix='KVM0-')
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
@@ -699,21 +712,21 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, KVMTestCase):
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
-    result = requests.get(connection_parameter_dict['KVM0-url'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, prefix='KVM0-')
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
-    result = requests.get(
-      connection_parameter_dict['KVM0-url-additional'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, prefix='KVM0-', additional=True)
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
-
 
 @skipUnlessKvm
 class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
@@ -754,15 +767,16 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
-    result = requests.get(
-      connection_parameter_dict['test-machine1-url'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, prefix='test-machine1-')
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
-    result = requests.get(
-      connection_parameter_dict['test-machine2-url'], verify=False)
+
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, prefix='test-machine2-')
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
@@ -1152,7 +1166,7 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
     present_key_list = []
     assert_key_list = [
      'monitor-password', 'takeover-kvm-1-password', 'backend-url', 'url',
-     'monitor-setup-url', 'ipv6-network-info']
+     'monitor-setup-url', 'ipv6-network-info', 'username', 'password']
     for k in assert_key_list:
       if k in connection_parameter_dict:
         present_key_list.append(k)

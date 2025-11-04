@@ -12,7 +12,6 @@ from slapos.qemuqmpclient import QemuQMPWrapper, getInitialQemuResourceDict
 
 qmp_socket_path = '{{ parameter_dict.get("qmp-socket-path") }}'
 pid_file = '{{ parameter_dict.get("pid-file") }}'
-vnc_password = '{{ parameter_dict.get("vnc-passwd") }}'
 status_path = '{{ parameter_dict.get("kvm-status-path") }}'
 cpu_amount = {{ parameter_dict.get("cpu-count") }}
 cpu_model = '{{ parameter_dict.get("cpu-model", "qemu64") }}'
@@ -42,7 +41,6 @@ def update():
       raise ValueError("RAM size cannot be less than the initial value %s MB" % init_ram_size)
 
     qemu_wrapper = QemuQMPWrapper(qmp_socket_path)
-    qemu_wrapper.setVNCPassword(vnc_password)
     if enable_device_hotplug == 'true':
       write("Qemu Controller is still running...")
       qemu_wrapper.updateDevice({
