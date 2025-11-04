@@ -279,6 +279,15 @@ class TestMariaDB(MariaDBTestCase):
           """)
       self.assertEqual((('à',),), cnx.store_result().fetch_row(maxrows=2))
 
+  def test_timezone(self) -> None:
+    cnx = self.getDatabaseConnection()
+    with contextlib.closing(cnx):
+      cnx.query("SELECT CONVERT_TZ('2001-01-01 00:0O:00', 'UTC', 'France/Paris')")
+      self.assertEqual(
+        (datetime.datetime(2001, 1, 1, 1, 0),),
+        cnx.store_result().fetch_row(maxrows=2),
+      )
+
 
 class TestMroonga(MariaDBTestCase):
   def test_mroonga_plugin_loaded(self) -> None:
