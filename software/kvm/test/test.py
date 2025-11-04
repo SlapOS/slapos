@@ -477,10 +477,10 @@ class TestMemoryManagement(KVMTestCase, KvmMixin):
     )
 
     parameter_dict = {
-      'enable-device-hotplug': 'true',
+      'enable-device-hotplug': True,
       # to avoid restarts the max RAM and CPU has to be static
-      'ram-max-size': '8192',
-      'cpu-max-count': '6',
+      'ram-max-size': 8192,
+      'cpu-max-count': 6,
     }
     self.rerequestInstance(parameter_dict)
     self.slap.waitForInstance(max_retry=2)
