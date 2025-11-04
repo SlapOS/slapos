@@ -377,7 +377,8 @@ config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
 [kvm-controller-parameter-dict]
 python-path = {{ python_eggs_executable }}
 vnc-passwd = ${gen-passwd:passwd}
-socket-path = ${directory:var}/qmp_socket
+qmp-socket-path = ${directory:run}/qmp_socket
+vnc-socket-path = ${directory:run}/vnc_socket
 pid-file = ${directory:run}/pid_file
 kvm-status-path = ${directory:var}/qemu-vm-is-ready
 cpu-count = ${slap-parameter:cpu-count}
@@ -390,8 +391,6 @@ enable-device-hotplug = ${slap-parameter:enable-device-hotplug}
 python-path = {{ python_executable }}
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
-vnc-ip = ${:ipv4}
-vnc-websocket-port = 5701
 
 {% if virtual_hard_drive_url_enabled %}
 virtual-hard-drive-url-json-config = ${virtual-hard-drive-url-json-config:output}
@@ -413,7 +412,8 @@ disk-path = ${directory:srv}/virtual.${slap-parameter:disk-format}
 network-adapter = ${slap-parameter:network-adapter}
 
 pid-file-path = ${kvm-controller-parameter-dict:pid-file}
-socket-path = ${kvm-controller-parameter-dict:socket-path}
+qmp-socket-path = ${kvm-controller-parameter-dict:qmp-socket-path}
+vnc-socket-path = ${kvm-controller-parameter-dict:vnc-socket-path}
 
 {%- set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', False) %}
 smp-max-count = {{ cpu_max_count }}
@@ -542,7 +542,6 @@ depends =
   {{ depend_section }}
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
-socket-path = ${kvm-controller-parameter-dict:socket-path}
 wrapper-path = ${directory:services}/kvm
 command-line = ${kvm-run:output}
 kvm-controller = ${kvm-controller-wrapper:wrapper-path}
@@ -562,8 +561,7 @@ command-line = ${kvm-controller:output}
 <= monitor-promise-base
 promise = check_socket_listening
 name = vnc_promise.py
-config-host = ${kvm-parameter-dict:vnc-ip}
-config-port = ${kvm-parameter-dict:vnc-websocket-port}
+config-pathname = ${kvm-parameter-dict:vnc-socket-path}
 
 [kvm-disk-image-corruption-bin]
 recipe = slapos.recipe.template:jinja2
@@ -641,8 +639,7 @@ path-error-log = ${directory:log}/nginx-error.log
 path-access-log = ${directory:log}/nginx-access.log
 ip = ${slap-network-information:global-ipv6}
 port = 6080
-websocket-ip = ${kvm-parameter-dict:vnc-ip}
-websocket-port = ${kvm-parameter-dict:vnc-websocket-port}
+websocket-unix-path = ${kvm-parameter-dict:vnc-socket-path}
 websocket-path = websockify
 nb-workers = 2
 
