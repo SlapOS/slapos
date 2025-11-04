@@ -21,6 +21,9 @@ http {
         server unix:{{ params['websocket-unix-path'] }};
     }
     server {
+        auth_basic "NoVNC Access";
+        auth_basic_user_file {{ htpasswd_file }};
+
         listen [{{ params['ip'] }}]:{{ params['port'] }} ssl http2;
         server_name _;
 
