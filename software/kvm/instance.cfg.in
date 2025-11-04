@@ -84,6 +84,7 @@ extra-context =
   raw logrotate_cfg ${template-logrotate-base:output}
   raw novnc_location ${noVNC:location}
   raw netcat_bin ${netcat:location}/bin/netcat
+  raw htpasswd_executable ${apache:location}/bin/htpasswd
   raw nginx_executable ${nginx-output:nginx}
   raw nginx_mime ${nginx-output:mime}
   raw python_executable ${buildout:executable}
