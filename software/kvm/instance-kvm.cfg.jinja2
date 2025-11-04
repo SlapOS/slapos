@@ -377,7 +377,8 @@ config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
 [kvm-controller-parameter-dict]
 python-path = {{ python_eggs_executable }}
 vnc-passwd = ${gen-passwd:passwd}
-socket-path = ${directory:var}/qmp_socket
+qmp-socket-path = ${directory:run}/qmp_socket
+vnc-socket-path = ${directory:run}/vnc_socket
 pid-file = ${directory:run}/pid_file
 kvm-status-path = ${directory:var}/qemu-vm-is-ready
 cpu-count = ${slap-parameter:cpu-count}
@@ -390,8 +391,6 @@ enable-device-hotplug = ${slap-parameter:enable-device-hotplug}
 python-path = {{ python_executable }}
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
-vnc-ip = ${:ipv4}
-vnc-websocket-port = 5701
 
 {% if virtual_hard_drive_url_enabled %}
 virtual-hard-drive-url-json-config = ${virtual-hard-drive-url-json-config:output}
@@ -413,7 +412,8 @@ disk-path = ${directory:srv}/virtual.${slap-parameter:disk-format}
 network-adapter = ${slap-parameter:network-adapter}
 
 pid-file-path = ${kvm-controller-parameter-dict:pid-file}
-socket-path = ${kvm-controller-parameter-dict:socket-path}
+qmp-socket-path = ${kvm-controller-parameter-dict:qmp-socket-path}
+vnc-socket-path = ${kvm-controller-parameter-dict:vnc-socket-path}
 
 {%- set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', False) %}
 smp-max-count = {{ cpu_max_count }}
@@ -542,7 +542,6 @@ depends =
   {{ depend_section }}
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
-socket-path = ${kvm-controller-parameter-dict:socket-path}
 wrapper-path = ${directory:services}/kvm
 command-line = ${kvm-run:output}
 kvm-controller = ${kvm-controller-wrapper:wrapper-path}
@@ -562,8 +561,7 @@ command-line = ${kvm-controller:output}
 <= monitor-promise-base
 promise = check_socket_listening
 name = vnc_promise.py
-config-host = ${kvm-parameter-dict:vnc-ip}
-config-port = ${kvm-parameter-dict:vnc-websocket-port}
+config-pathname = ${kvm-parameter-dict:vnc-socket-path}
 
 [kvm-disk-image-corruption-bin]
 recipe = slapos.recipe.template:jinja2
@@ -641,8 +639,7 @@ path-error-log = ${directory:log}/nginx-error.log
 path-access-log = ${directory:log}/nginx-access.log
 ip = ${slap-network-information:global-ipv6}
 port = 6080
-websocket-ip = ${kvm-parameter-dict:vnc-ip}
-websocket-port = ${kvm-parameter-dict:vnc-websocket-port}
+websocket-unix-path = ${kvm-parameter-dict:vnc-socket-path}
 websocket-path = websockify
 nb-workers = 2
 
@@ -854,8 +851,8 @@ tap-ipv6 = {{ slap_configuration.get('tap-ipv6-addr', '') }}
 {%   if use_nat -%}
 {%     set kvm_http = 'http://10.0.2.100' -%}
 {%   endif %}
-{%   if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' -%}
-key_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/authorized_keys
+{%   if slapparameter_dict.get('authorized-keys', '') and slapparameter_dict.get('type', '') == 'cluster' -%}
+key_info = Get the public keys file in your VM with the command: wget {{ kvm_http }}/authorized_keys
 {%   endif %}
 {% endif %}
 
@@ -941,9 +938,9 @@ mode = {{ mode }}
 # write vm-data into file public/data
 {{ writefile('vm-data-content', '${directory:public}/data', slapparameter_dict.get('data-to-vm', '')) }}
 
-{% if slapparameter_dict.get('authorized-key', '') -%}
+{% if slapparameter_dict.get('authorized-keys', '') -%}
 # write public key for vms to public/authorized_keys
-{{   writefile('get-authorized-key', '${directory:public}/authorized_keys', slapparameter_dict.get('authorized-key', ''), '700') }}
+{{   writefile('get-authorized-keys', '${directory:public}/authorized_keys', '${slap-parameter:authorized-keys}', '700') }}
 {% endif -%}
 
 {% if use_tap and nat_restrict -%}
@@ -1090,17 +1087,16 @@ external-disk = {}
 # Help to get some configuration files into the vm from http
 enable-http-server = False
 httpd-port = 8081
-# for auto config, the public key file will be available in the VM via url http://10.0.2.100/authorized_key if use-nat = True
-authorized-key =
+# for auto config, the public key file will be available in the VM via url http://10.0.2.100/authorized_keys if use-nat = True
+authorized-keys =
 
 # send some content which will be accessible to the vm through static url: http://10.0.2.100/data
 data-to-vm =
 
 {% for k, v in slapparameter_dict.items() -%}
-{% if k == 'authorized-key' and v -%}
-{% set key_list =  v.split('\n') -%}
+{% if k == 'authorized-keys' and v -%}
 {{ k }} =
-  {{ key_list | join('\n  ') }}
+  {{ v | join('\n  ') }}
 {% elif k in ['boot-image-url-list', 'boot-image-url-select', 'whitelist-domains', 'data-to-vm'] %}
 {# needs to decorate possibly multiline or maybe unsafe value #}
 {{ k }} = {{ dumps(v) }}
@@ -1127,8 +1123,8 @@ data-to-vm =
 {% if not disable_ansible_promise %}
 {%   do part_list.extend(['ansible-vm-promise', 'logrotate-vm-bootstrap']) -%}
 {% endif -%}
-{% if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' %}
-{%   do part_list.append('get-authorized-key') -%}
+{% if slapparameter_dict.get('authorized-keys', '') %}
+{%   do part_list.append('get-authorized-keys') -%}
 {% endif -%}
 {% if bootstrap_script_url -%}
 {%   do part_list.append('download-bootstrap-script') -%}
