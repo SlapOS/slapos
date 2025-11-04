@@ -487,7 +487,11 @@ context =
 recipe = slapos.recipe.template:jinja2
 output = ${directory:bin}/${:_buildout_section_name_}
 url = {{ mariadb['mariadb-background-template'] }}
+shebang =
+  #!{{ bash }}
+  set -euo pipefail
 context =
+  key shebang :shebang
   key mariadb_socket my-cnf-parameters:socket
   key defaults_file my-cnf:output
   key foreground_script :foreground-script
@@ -509,7 +513,11 @@ init =
 recipe = slapos.recipe.template:jinja2
 output = ${directory:bin}/${:_buildout_section_name_}
 url = {{ mariadb['mariadb-background-template'] }}
+shebang =
+  #!{{ bash }}
+  set -euo pipefail
 context =
+  key shebang :shebang
   key mariadb_socket my-cnf-parameters:socket
   key defaults_file my-cnf:output
   key foreground_script :foreground-script
