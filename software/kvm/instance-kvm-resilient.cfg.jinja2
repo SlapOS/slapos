@@ -4,14 +4,10 @@
 {% import 'replicated' as replicated with context %}
 
 {% set backup_amount = slapparameter_dict.pop('resilient-clone-number', "1")|int + 1 -%}
-{% set monitor_dict = {} -%}
-{% set monitor_return = [] -%}
 
-{% if slapparameter_dict.get('enable-monitor', True) == True -%}
 {% set monitor_return = ['monitor-base-url'] -%}
 {% set monitor_parameter = {'monitor-cors-domains': slapparameter_dict.pop('monitor-cors-domains', "monitor.app.officejs.com")} -%}
 {% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return} -%}
-{% endif -%}
 {% set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
 {% set additional_frontend = slapparameter_dict.get('frontend-additional-instance-guid') or slapparameter_dict.get('frontend-additional-software-type') or slapparameter_dict.get('frontend-additional-software-url')%}
 
@@ -75,7 +71,7 @@ return =
 {{ '  ' }}ipv6-network-info
 
 [publish-connection-information]
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 backend-url = ${request-kvm:connection-backend-url}
 url = ${request-kvm:connection-url}
 ipv6 = ${request-kvm:connection-ip}
