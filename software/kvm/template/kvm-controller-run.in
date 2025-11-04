@@ -10,7 +10,7 @@ from slapos.qemuqmpclient import QemuQMPWrapper, getInitialQemuResourceDict
 
 # XXX: to be factored with slapos.toolbox qemu qmp wrapper.
 
-socket_path = '{{ parameter_dict.get("socket-path") }}'
+qmp_socket_path = '{{ parameter_dict.get("qmp-socket-path") }}'
 pid_file = '{{ parameter_dict.get("pid-file") }}'
 vnc_password = '{{ parameter_dict.get("vnc-passwd") }}'
 status_path = '{{ parameter_dict.get("kvm-status-path") }}'
@@ -41,7 +41,7 @@ def update():
     if hotplug_ram < 0:
       raise ValueError("RAM size cannot be less than the initial value %s MB" % init_ram_size)
 
-    qemu_wrapper = QemuQMPWrapper(socket_path)
+    qemu_wrapper = QemuQMPWrapper(qmp_socket_path)
     qemu_wrapper.setVNCPassword(vnc_password)
     if enable_device_hotplug == 'true':
       write("Qemu Controller is still running...")
