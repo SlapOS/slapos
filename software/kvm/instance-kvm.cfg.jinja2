@@ -81,12 +81,6 @@ storage-path = ${directory:srv}/mac
 recipe = slapos.cookbook:generate.mac
 storage-path = ${directory:srv}/tap_mac
 
-[gen-passwd]
-recipe = slapos.cookbook:generate.password
-storage-path = ${directory:srv}/.vncpasswd
-# VNC protocol supports passwords of 8 characters max
-bytes = 8
-
 ## boot-image-url-select support BEGIN
 [empty-file-state-base-select-promise]
 <= monitor-promise-base
@@ -376,7 +370,6 @@ config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
 
 [kvm-controller-parameter-dict]
 python-path = {{ python_eggs_executable }}
-vnc-passwd = ${gen-passwd:passwd}
 qmp-socket-path = ${directory:run}/qmp_socket
 vnc-socket-path = ${directory:run}/vnc_socket
 pid-file = ${directory:run}/pid_file
@@ -839,12 +832,12 @@ blank-line =
 <= monitor-publish
 recipe = slapos.cookbook:publish.serialised
 ipv6 = ${slap-network-information:global-ipv6}
-backend-url = https://[${nginx-params:ip}]:${nginx-params:port}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
-url = ${request-slave-frontend:connection-secure_access}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+backend-url = https://[${nginx-params:ip}]:${nginx-params:port}/vnc.html?encrypt=1
+url = ${request-slave-frontend:connection-secure_access}/vnc.html?encrypt=1
 user = ${nginx-password:user}
 password = ${nginx-password:passwd}
 {% if additional_frontend %}
-url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?encrypt=1
 {% endif %}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
