@@ -70,8 +70,8 @@ KVM instance parameters:
     require use-nat = True
     All files in the document_root folder of the server will be accessible to the vm: http://10.0.2.100/PATH_TO_FILE
 - httpd-port (default: 8081)
-- authorized-key
-    the public key file will be available in the VM via url http://10.0.2.100/authorized_key
+- authorized-keys
+    the public key file will be available in the VM via url http://10.0.2.100/authorized_keys
 - data-to-vm
     send some text content which will be accessible to the vm through the file: http://10.0.2.100/data
 
@@ -117,17 +117,11 @@ Updating boot-image-url-select
 Migration to modern external-disk parameter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Note**: ``external-disk`` and old way are mutually exclusive, thus it will
-result with not starting kvm and failing partition for sake of data
-consistency.
+The old parameters ``external-disk-number``, ``external-disk-size`` and
+``external-disk-format`` are not supported anymore and you need to migrate to
+external-disk parameter.
 
-Despite ``external-disk-number``, ``external-disk-size`` and
-``external-disk-format`` are supported fully until unknown moment in the
-future, it's advised to migrate to external-disk parameter as soon as possible,
-as slapos.core ``slapos.cfg`` ``instance_storage_home`` can become obsoleted
-and removed in future versions.
-
-**Note**: Due to how technically ``instance_storage_home`` is implemented, such
+**Note**: Due to how technically ``instance_storage_home`` was implemented, such
 migration requires full access to the Compute Node hosting given KVM instance.
 
 Let's imagine that there is a kvm instance which was requested with parameters::
