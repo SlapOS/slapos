@@ -155,6 +155,8 @@ sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access
 
 return =
   url
+  username
+  password
 {% if additional_frontend %}
   url-additional
 {% endif %}
@@ -183,6 +185,8 @@ return =
 {% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-username', '${' ~ section ~ ':connection-username}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-password', '${' ~ section ~ ':connection-password}') -%}
 {% if additional_frontend %}
 {% do publish_dict.__setitem__(instance_name ~ '-url-additional', '${' ~ section ~ ':connection-url-additional}') -%}
 {% endif %}
