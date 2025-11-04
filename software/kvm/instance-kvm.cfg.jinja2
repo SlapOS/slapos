@@ -78,12 +78,6 @@ storage-path = ${directory:srv}/mac
 recipe = slapos.cookbook:generate.mac
 storage-path = ${directory:srv}/tap_mac
 
-[gen-passwd]
-recipe = slapos.cookbook:generate.password
-storage-path = ${directory:srv}/.vncpasswd
-# VNC protocol supports passwords of 8 characters max
-bytes = 8
-
 ## boot-image-url-select support BEGIN
 [empty-file-state-base-select-promise]
 <= monitor-promise-base
@@ -373,7 +367,6 @@ config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
 
 [kvm-controller-parameter-dict]
 python-path = {{ python_eggs_executable }}
-vnc-passwd = ${gen-passwd:passwd}
 qmp-socket-path = ${directory:run}/qmp_socket
 vnc-socket-path = ${directory:run}/vnc_socket
 pid-file = ${directory:run}/pid_file
@@ -605,6 +598,10 @@ promise = check_command_execute
 name = qemu-virtual-machine-is-ready.py
 config-command = ${kvm-started-bin:output}
 
+#-------------------------
+#--
+#-- Deploy Nginx frontend.
+
 [nginx-tempdir]
 recipe = slapos.cookbook:mkdirectory
 tmp = ${buildout:directory}/tmp
@@ -629,6 +626,18 @@ context =
     section tempdir nginx-tempdir
     raw docroot {{ novnc_location }}
     raw mime {{ nginx_mime }}
+    key htpasswd_file nginx-htpasswd:output
+
+[nginx-password]
+recipe = slapos.cookbook:generate.password
+user = admin
+storage-path = ${buildout:parts-directory}/.${:_buildout_section_name_}
+
+[nginx-htpasswd]
+recipe = slapos.recipe.template
+inline =
+  ${nginx-password:user}:${nginx-password:passwd-sha512-crypt}
+output = ${directory:var}/nginx.htpasswd
 
 [nginx-params]
 path-pid = ${directory:run}/nginx.pid
@@ -711,9 +720,9 @@ recipe = slapos.cookbook:simplelogger
 wrapper = ${directory:bin}/cron_simplelogger
 log = ${directory:log}/crond.log
 
-#----------------
+#-----------------------
 #--
-#-- Deploy frontend.
+#-- Deploy CDN frontend.
 
 [request-slave-frontend-base]
 recipe = slapos.cookbook:requestoptional
@@ -741,12 +750,16 @@ sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 promise = check_url_available
 name = frontend_promise.py
 config-url = ${request-slave-frontend:connection-secure_access}/vnc.html
+config-username = ${nginx-password:user}
+config-password = ${nginx-password:passwd}
 
 [frontend-websocket-promise]
 <= monitor-promise-base
 promise = check_websocket_available
 name = frontend_websocket_promise.py
 config-url = wss://${request-slave-frontend:connection-domain}/websockify
+config-username = ${nginx-password:user}
+config-password = ${nginx-password:passwd}
 config-content-to-send = RFB 003.008
 # Jinja cannot parse byte literal so use encode()
 config-content-to-receive = {{ dumps('RFB 003.008\n'.encode()) }}
@@ -766,6 +779,8 @@ sla-instance_guid = ${slap-parameter:frontend-additional-instance-guid}
 promise = check_url_available
 name = frontend_additional_promise.py
 config-url = ${request-slave-frontend-additional:connection-secure_access}/vnc.html
+config-username = ${nginx-password:user}
+config-password = ${nginx-password:passwd}
 {% endif %}
 
 {% if enable_http %}
@@ -812,10 +827,12 @@ blank-line =
 <= monitor-publish
 recipe = slapos.cookbook:publish.serialised
 ipv6 = ${slap-network-information:global-ipv6}
-backend-url = https://[${nginx-params:ip}]:${nginx-params:port}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
-url = ${request-slave-frontend:connection-secure_access}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+backend-url = https://[${nginx-params:ip}]:${nginx-params:port}/vnc.html?encrypt=1
+url = ${request-slave-frontend:connection-secure_access}/vnc.html?encrypt=1
+username = ${nginx-password:user}
+password = ${nginx-password:passwd}
 {% if additional_frontend %}
-url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?encrypt=1
 {% endif %}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
