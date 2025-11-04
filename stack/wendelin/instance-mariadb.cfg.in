@@ -522,7 +522,7 @@ foreground-script =
   if [ -z "$("$mysql" -e "SHOW SLAVE STATUS")" ]
   then
     "$mysql_upgrade" || true
-    "mysql_tzinfo_to_sql" "$zoneinfo" | "$mysql" -B mysql || true
+    "$mysql_tzinfo_to_sql" "$zoneinfo" | "$mysql" -B mysql || true
   fi
 
 {% if replication -%}
