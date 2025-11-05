@@ -28,13 +28,12 @@ storage-home =
 global-ipv4-network =
 
 [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = $${slap-connection:computer-id}
-partition = $${slap-connection:partition-id}
-url = $${slap-connection:server-url}
-key = $${slap-connection:key-file}
-cert = $${slap-connection:cert-file}
-storage-home = $${storage-configuration:storage-home}
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = ${software.json:target}
+set-default = none
+validate-parameters = main
+unstringify = main
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -49,7 +48,7 @@ context =
   key global_ipv4_prefix network-information:global-ipv4-network
   key storage_dict slap-configuration:storage-dict
   key slapparameter_dict slap-configuration:configuration
-  key computer_id slap-configuration:computer
+  key computer_id slap-connection:computer-id
   raw openssl_executable_location ${openssl:location}/bin/openssl
   $${:extra-context}
 
@@ -85,6 +84,7 @@ extra-context =
   raw logrotate_cfg ${template-logrotate-base:output}
   raw novnc_location ${noVNC:location}
   raw netcat_bin ${netcat:location}/bin/netcat
+  raw htpasswd_executable ${apache:location}/bin/htpasswd
   raw nginx_executable ${nginx-output:nginx}
   raw nginx_mime ${nginx-output:mime}
   raw python_executable ${buildout:executable}
