@@ -686,6 +686,46 @@ class TestAccessKvmCluster(MonitorAccessMixin, KVMTestCase):
     self.assertIn('<title>noVNC</title>', result.text)
     self.assertNotIn('KVM0-url-additional', connection_parameter_dict)
 
+    disable_novnc_server_parameters = {
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True,
+            "enable-novnc-server": False
+        }
+      }
+    }
+    self.rerequestInstance(disable_novnc_server_parameters)
+    self.waitForInstanceWithPropagation()
+    self.computer_partition = self.rerequestInstance(disable_novnc_server_parameters)
+
+    connection_parameter_dict = self.getConnectionParameterDictJson()
+    self.assertNotIn('KVM0-url', connection_parameter_dict)
+    self.assertNotIn('KVM0-url-additional', connection_parameter_dict)
+    # check also that old URL is not working anymore
+    with self.assertRaises(requests.exceptions.ConnectionError):
+      requests.get(authenticated_url, verify=False)
+
+    enable_novnc_server_parameters = {
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True,
+            "enable-novnc-server": True
+        }
+      }
+    }
+    self.rerequestInstance(enable_novnc_server_parameters)
+    self.waitForInstanceWithPropagation()
+    self.computer_partition = self.rerequestInstance(enable_novnc_server_parameters)
+
+    connection_parameter_dict = self.getConnectionParameterDictJson()
+    self.assertIn('KVM0-url', connection_parameter_dict)
+    self.assertNotIn('KVM0-url-additional', connection_parameter_dict)
+    self.assertEqual(authenticated_url, self.getAuthenticatedUrl(connection_parameter_dict, prefix='KVM0-'))
+    result = requests.get(authenticated_url, verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
 
 @skipUnlessKvm
 class TestAccessKvmClusterAdditional(MonitorAccessMixin, KVMTestCase):
@@ -1199,6 +1239,12 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict)
+    result = requests.get(authenticated_url, verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
     present_key_list = []
     assert_key_list = [
      'monitor-password', 'takeover-kvm-1-password', 'backend-url', 'url',
@@ -1281,6 +1327,47 @@ ir3:sshd-on-watch RUNNING""",
         'var/boot-image-url-select/boot-image-url-select.json'
       ])
     )
+    disable_novnc_server_parameters = {
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True,
+            "enable-novnc-server": False
+        }
+      }
+    }
+    self.rerequestInstance({"enable-novnc-server": False})
+    self.waitForInstanceWithPropagation()
+    self.computer_partition = self.rerequestInstance(disable_novnc_server_parameters)
+
+    connection_parameter_dict = self.getConnectionParameterDictJson()
+    self.assertNotIn('url', connection_parameter_dict)
+    self.assertNotIn('url-additional', connection_parameter_dict)
+    # check also that old URL is not working anymore
+    with self.assertRaises(requests.exceptions.ConnectionError):
+      requests.get(authenticated_url, verify=False)
+
+    enable_novnc_server_parameters = {
+      "kvm-partition-dict": {
+        "KVM0": {
+            "disable-ansible-promise": True,
+            "enable-novnc-server": True
+        }
+      }
+    }
+    self.rerequestInstance({"enable-novnc-server": True})
+    self.waitForInstanceWithPropagation()
+    self.computer_partition = self.rerequestInstance(enable_novnc_server_parameters)
+
+    connection_parameter_dict = self.getConnectionParameterDictJson()
+    self.assertIn('url', connection_parameter_dict)
+    self.assertNotIn('url-additional', connection_parameter_dict)
+    self.assertEqual(authenticated_url, self.getAuthenticatedUrl(connection_parameter_dict))
+    result = requests.get(authenticated_url, verify=False)
+    self.assertEqual(
+      httplib.OK,
+      result.status_code
+    )
+
 
 
 @skipUnlessKvm
@@ -1309,16 +1396,16 @@ class TestAccessResilientAdditional(MonitorAccessMixin, KVMTestCase):
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
-
-    result = requests.get(connection_parameter_dict['url'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict)
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
-    result = requests.get(
-      connection_parameter_dict['url-additional'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, additional=True)
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
