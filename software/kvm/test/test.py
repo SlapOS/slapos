@@ -1271,16 +1271,16 @@ class TestAccessResilientAdditional(KVMTestCase):
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
-
-    result = requests.get(connection_parameter_dict['url'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict)
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
-    result = requests.get(
-      connection_parameter_dict['url-additional'], verify=False)
+    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, additional=True)
+    result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
