@@ -134,7 +134,7 @@ config-wipe-disk-iterations = {{ dumps(kvm_parameter_dict.get('wipe-disk-iterati
 config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
-{%- for k in ['boot-image-url-list', 'boot-image-url-select', 'whitelist-domains', 'external-disk'] %}
+{%- for k in ['boot-image-url-list', 'boot-image-url-select', 'whitelist-domains', 'external-disk', 'enable-novnc-server'] %}
 {#-   play nice - use parameter only if present #}
 {%-   if k in kvm_parameter_dict %}
 {#-     play safe - dumps value #}
