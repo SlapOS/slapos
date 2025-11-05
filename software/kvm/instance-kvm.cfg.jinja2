@@ -6,6 +6,7 @@
 {%   endif %}
 {% endfor %}
 {% set additional_frontend = slapparameter_dict.get('frontend-additional-instance-guid') or slapparameter_dict.get('frontend-additional-software-type') or slapparameter_dict.get('frontend-additional-software-url')%}
+{% set enable_novnc_server = slapparameter_dict.get('enable-novnc-server', True) -%}
 {% set enable_http = slapparameter_dict.get('enable-http-server', False) -%}
 {% set use_tap = slapparameter_dict.get('use-tap', True) -%}
 {% set use_nat = slapparameter_dict.get('use-nat', True) -%}
@@ -605,6 +606,7 @@ config-command = ${kvm-started-bin:output}
 #--
 #-- Deploy Nginx frontend.
 
+{% if enable_novnc_server %}
 [nginx-tempdir]
 recipe = slapos.cookbook:mkdirectory
 tmp = ${buildout:directory}/tmp
@@ -659,6 +661,14 @@ inline =
   #!/bin/sh
   exec kill -s SIGHUP $(cat ${nginx-params:path-pid})
 
+[novnc-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = novnc_promise.py
+config-host = ${nginx-params:ip}
+config-port = ${nginx-params:port}
+{% endif %}
+
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = {{ openssl_executable_location }}
@@ -692,12 +702,6 @@ cert-file = ${directory:novnc-conf}/novnc.crt
 executable = {{ nginx_executable }}
 wrapper = ${directory:bin}/nginx-with-ca
 
-[novnc-promise]
-<= monitor-promise-base
-promise = check_socket_listening
-name = novnc_promise.py
-config-host = ${nginx-params:ip}
-config-port = ${nginx-params:port}
 
 
 #----------------
@@ -727,6 +731,7 @@ log = ${directory:log}/crond.log
 #--
 #-- Deploy CDN frontend.
 
+{% if enable_novnc_server %}
 [request-slave-frontend-base]
 recipe = slapos.cookbook:requestoptional
 server-url = ${slap-connection:server-url}
@@ -785,6 +790,11 @@ config-url = ${request-slave-frontend-additional:connection-secure_access}/vnc.h
 config-username = ${nginx-password:user}
 config-password = ${nginx-password:passwd}
 {% endif %}
+{% endif %}
+
+#----------------------------------------
+#--
+#-- Local HTTP server accessed by the VM.
 
 {% if enable_http %}
 [httpd]
@@ -829,6 +839,7 @@ blank-line =
 [publish-connection-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish.serialised
+{% if enable_novnc_server %}
 ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${nginx-params:ip}]:${nginx-params:port}/vnc.html?encrypt=1
 url = ${request-slave-frontend:connection-secure_access}/vnc.html?encrypt=1
@@ -837,6 +848,10 @@ password = ${nginx-password:passwd}
 {% if additional_frontend %}
 url-additional = ${request-slave-frontend-additional:connection-secure_access}/vnc.html?encrypt=1
 {% endif %}
+{% else %}
+novnc_info = The NoVNC server is currently disabled, you need to enable it if you want to access your VM through the GUI.
+{% endif %}
+
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'ens3' -%}
@@ -1246,15 +1261,19 @@ parts =
   kvm-controller-wrapper
   kvm-vnc-promise
   kvm-disk-image-corruption-promise
+{% if enable_novnc_server %}
   nginx-launcher
   nginx-graceful
   novnc-promise
+{% endif %}
   kvm-started-promise
   cron
   cron-service
   cron-entry-logrotate
+{% if enable_novnc_server %}
   frontend-promise
   frontend-websocket-promise
+{% endif %}
 {% if virtual_hard_drive_url_enabled %}
   virtual-hard-drive-url-download-wrapper
   virtual-hard-drive-url-config-state-promise
