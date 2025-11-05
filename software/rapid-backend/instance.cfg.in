@@ -1,0 +1,59 @@
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+parts +=
+  cron-entry-logrotate-httpbin
+
+extends =
+  {{ profile_monitor }}
+  {{ profile_logrotate_base }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+service = ${:etc}/service
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+tmp = ${buildout:directory}/tmp
+var = ${buildout:directory}/var
+log = ${:var}/log
+
+[rapid-backend]
+recipe = slapos.cookbook:wrapper
+access-log = ${directory:log}/httpbin-access.log 
+error-log = ${directory:log}/httpbin-error.log 
+pid-file = ${directory:var}/httpbin.pid 
+
+command-line =
+  {{ gunicorn }} --bind [${slap-configuration:ipv6-random}]:${slap-configuration:httpbin-port} --worker-class gevent --access-logfile ${:access-log} --error-logfile ${:error-log} --pid ${:pid-file} httpbin:app
+wrapper-path = ${directory:service}/httpbin
+
+[cron-entry-logrotate-httpbin]
+<= logrotate-entry-base
+name = logrotate-httpbin
+log = ${rapid-backend:access-log} ${rapid-backend:error-log}
+rotate-num = 365
+post = kill -USR1 $(cat ${rapid-backend:pid-file})
+delaycompress =
+
+[slap_connection]
+# Kept for backward compatibility
+computer_id = ${slap-connection:computer-id}
+partition_id = ${slap-connection:partition-id}
+server_url = ${slap-connection:server-url}
+software_release_url = ${slap-connection:software-release-url}
+key_file = ${slap-connection:key-file}
+cert_file = ${slap-connection:cert-file}
+
+[slap-configuration]
+# Fetches parameters defined in SlapOS Master for this instance.
+# Always the same.
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+# defaults
+httpbin-port = 8080
