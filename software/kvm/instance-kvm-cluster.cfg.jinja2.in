@@ -44,6 +44,7 @@ partition-id = ${slap-connection:partition-id}
 {% for instance_name, kvm_parameter_dict in slapparameter_dict.get('kvm-partition-dict', {'kvm-default': {}}).items() -%}
 {% set section = 'request-' ~ instance_name -%}
 {% set use_nat = kvm_parameter_dict.get('use-nat', True) -%}
+{% set enable_novnc_server = kvm_parameter_dict.get('enable-novnc-server', True) -%}
 [{{ section }}]
 <= request-common
 recipe = slapos.cookbook:request.serialised
@@ -134,7 +135,7 @@ config-wipe-disk-iterations = {{ dumps(kvm_parameter_dict.get('wipe-disk-iterati
 config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
-{%- for k in ['boot-image-url-list', 'boot-image-url-select', 'whitelist-domains', 'external-disk'] %}
+{%- for k in ['boot-image-url-list', 'boot-image-url-select', 'whitelist-domains', 'external-disk', 'enable-novnc-server'] %}
 {#-   play nice - use parameter only if present #}
 {%-   if k in kvm_parameter_dict %}
 {#-     play safe - dumps value #}
@@ -154,6 +155,7 @@ sla-fw_rejected_sources = {{ rejected_source_list | join(' ') }}
 sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access', 'off')) }}
 
 return =
+{% if enable_novnc_server %}
   url
   username
   password
@@ -161,6 +163,7 @@ return =
   url-additional
 {% endif %}
   backend-url
+{% endif %}
 {% if use_nat -%}
 {%   for port in nat_rules_list -%}
 {%     if ':' in port -%}
@@ -183,12 +186,14 @@ return =
 {% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% endif -%}
 {% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
+{% if enable_novnc_server %}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-username', '${' ~ section ~ ':connection-username}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-password', '${' ~ section ~ ':connection-password}') -%}
 {% if additional_frontend %}
 {% do publish_dict.__setitem__(instance_name ~ '-url-additional', '${' ~ section ~ ':connection-url-additional}') -%}
+{% endif %}
 {% endif %}
 {% do kvm_instance_dict.__setitem__(instance_name, (use_nat, nat_rules_list)) -%}
 {% endfor %}
