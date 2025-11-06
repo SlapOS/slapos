@@ -47,7 +47,7 @@ dns-entries =
 [request-relay-{{ relay_name }}]
 <= request-relay-base
 name = {{ relay_name }}
-state = {{ config.get('state', 'started') }}
+state = {{ config['state'] }}
 
 {% for key, value in config.get('config', {}).items() -%}
 config-{{ key }} = {{ dumps(value) }}
