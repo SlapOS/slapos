@@ -25,7 +25,8 @@
     "relay-sr-url": {
       "title": "Relay SR URL",
       "description": "A custom URL to use for the relay SR",
-      "type": "string"
+      "type": "string",
+      "default": "urn:slapos:mail-relay"
     },
     "test-account": {
       "title": "Builtin Test Account",
