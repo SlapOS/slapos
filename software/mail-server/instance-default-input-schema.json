@@ -29,13 +29,20 @@
           "type": "integer",
           "default": 25
         }
-      }
+      },
+      "default": {}
     },
     "relay-sr-url": {
       "title": "Relay SR URL",
       "description": "A custom URL to use for the relay SR instead of the latest stable version",
       "type": "string",
       "default": "urn:slapos:mail-relay"
+    },
+    "no-relay": {
+      "title": "Do not request a relay at all",
+      "description": "If set to true, no relay will be requested at all. The mail server will only receive and send mail directly.",
+      "type": "boolean",
+      "default": false
     },
     "test-account": {
       "title": "Builtin Test Account",
