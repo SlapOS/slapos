@@ -162,7 +162,7 @@ init =
   options['new-account-dict'] = new_account_dict
   options['error-dict'] = error_dict
 
-  if {{ slapparameter_dict.get('test-account', False) }}:
+  if {{ slapparameter_dict['test-account'] }}:
     for domain in {{ repr(slapparameter_dict['mail-domains']) }}:
       test_mail = f"testmail@{domain}"
       if test_mail not in existing_users:
@@ -276,13 +276,13 @@ context =
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
 
-[relay-info]
-host-override = {{ slapparameter_dict.get('relay-host', '') }}
-port-override = {{ slapparameter_dict.get('relay-port', '') }}
-{% if not (slapparameter_dict.get('relay-host') and slapparameter_dict.get('relay-port')) -%}
+[outbound-relay-info]
+outbound-host-override = {{ slapparameter_dict['outbound-relay']['host'] }}
+outbound-port-override = {{ slapparameter_dict['outbound-relay']['port'] }}
+{% if not slapparameter_dict['outbound-relay']['host'] -%}
 {% for domain in slapparameter_dict['mail-domains'] -%}
-host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
+outbound-host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
+outbound-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
 {% endfor -%}
 {% endif -%}
 
@@ -291,7 +291,7 @@ recipe = slapos.recipe.template:jinja2
 url = ${postfix_relays.in:target}
 output = $${postfix-directory:etc}/relay_by_sender
 context =
-  section relay_info relay-info
+  section outbound_relay_info outbound-relay-info
   raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
 
 [postfix-symlinks-libexec]
