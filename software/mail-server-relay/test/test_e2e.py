@@ -119,6 +119,7 @@ class E2E(SlapOSInstanceTestCase):
     param_dict = {
       "mail-domains": [domain],
       "relay-sr-url": cls.getSoftwareURL(),
+      "outbound-relay": {},
       "test-account": True,
     }
     return cls.slap.request(
@@ -135,8 +136,10 @@ class E2E(SlapOSInstanceTestCase):
       "mail-domains": [
         "example.com"
       ],
-      "relay-host": "::1",
-      "relay-port": 1234,
+      "outbound-relay": {
+        "host": "::1",
+        "port": 1234
+      },
       "test-account": True,
     }
     return cls.slap.request(

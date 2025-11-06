@@ -1,9 +1,9 @@
 {% for domain in mail_domains.split(",") -%}
 
-{% if relay_info['host-override'] and relay_info['port-override'] -%}
-@{{ domain }} smtp:[{{ relay_info['host-override'] }}]:{{ relay_info['port-override'] }}
-{% elif relay_info['host-' + domain] and relay_info['port-' + domain] -%}
-@{{ domain }} smtp:[{{ relay_info['host-' + domain] }}]:{{ relay_info['port-' + domain] }}
+{% if outbound_relay_info['outbound-host-override'] and outbound_relay_info['outbound-port-override'] -%}
+@{{ domain }} smtp:[{{ outbound_relay_info['outbound-host-override'] }}]:{{ outbound_relay_info['outbound-port-override'] }}
+{% elif outbound_relay_info['outbound-host-' + domain] and outbound_relay_info['outbound-port-' + domain] -%}
+@{{ domain }} smtp:[{{ outbound_relay_info['outbound-host-' + domain] }}]:{{ outbound_relay_info['outbound-port-' + domain] }}
 {% endif -%}
 
 {% endfor -%}
