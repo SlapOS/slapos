@@ -14,7 +14,8 @@
         "relay-port": {
           "title": "Relay Port",
           "description": "The port used by the relay",
-          "type": "integer"
+          "type": "integer",
+          "default": 25
         },
         "relay-user": {
           "title": "Relay User",

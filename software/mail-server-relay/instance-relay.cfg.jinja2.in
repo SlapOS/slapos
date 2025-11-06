@@ -217,7 +217,7 @@ config-port = $${postfix-conf-main:submission-port}
 <= monitor-promise-base
 promise = check_socket_listening
 name = smtp_listen.py
-config-host = {{ ipv6 }}
+config-host = {{ ipv6 }}
 config-port = $${postfix-conf-main:smtp-port}
 
 [postfix]

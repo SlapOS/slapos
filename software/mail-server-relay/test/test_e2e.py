@@ -135,8 +135,7 @@ class E2E(SlapOSInstanceTestCase):
       "mail-domains": [
         "example.com"
       ],
-      "relay-host": "::1",
-      "relay-port": 1234,
+      "no-relay": True,
       "test-account": True,
     }
     return cls.slap.request(
