@@ -18,6 +18,7 @@ parts =
 {% if slapparameter_dict['request-dns']['enable'] %}
   request-dns-entry
 {% endif %}
+  request-relays
 
 
 eggs-directory = ${buildout:eggs-directory}
@@ -277,14 +278,20 @@ context =
   raw ipv6 {{ ipv6 }}
 
 [outbound-relay-info]
-outbound-host-override = {{ slapparameter_dict['outbound-relay']['host'] }}
-outbound-port-override = {{ slapparameter_dict['outbound-relay']['port'] }}
-{% if not slapparameter_dict['outbound-relay']['host'] -%}
 {% for domain in slapparameter_dict['mail-domains'] -%}
+# if there's an outbound override, it's used in priority
+{% if slapparameter_dict['outbound-relay']['host'] -%}
+outbound-host-{{ domain }} = {{ slapparameter_dict['outbound-relay']['host'] }}
+outbound-port-{{ domain }} = {{ slapparameter_dict['outbound-relay']['port'] }}
+{% elif not slapparameter_dict['no-relay'] %}
+# else we use the result of request if it exists
 outbound-host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
 outbound-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
-{% endfor -%}
+{% else -%}
+outbound-host-{{ domain }} = 
+outbound-port-{{ domain }} = 
 {% endif -%}
+{% endfor -%}
 
 [postfix-relays]
 recipe = slapos.recipe.template:jinja2
@@ -610,12 +617,13 @@ init =
 # Request relay
 # -------------
 
+
 {% set relay_requests = [] -%}
 {% for mail_domain in slapparameter_dict['mail-domains'] -%}
 {%   do relay_requests.append('request-relay-' ~ mail_domain) %}
 [request-relay-{{ mail_domain }}]
 <= slap-connection
-recipe = slapos.cookbook:request.serialised
+recipe = slapos.cookbook:requestoptional.serialised
 software-url = {{ slapparameter_dict['relay-sr-url'] }}
 software-type = cluster
 shared = true
@@ -623,12 +631,19 @@ name = mail-server-relay-{{ mail_domain }}
 config-name = {{ mail_domain }}
 config-mail-server-host = {{ ipv6 }}
 config-mail-server-port = {{ dumps(smtp_port) }}
+{% if not slapparameter_dict['no-relay'] %}
 return =
   outbound-host
   outbound-smtp-port
+{% else -%}
+state = destroyed
+{% endif %}
 {% endfor %}
 
 [request-relays]
+recipe = slapos.recipe.build
+init =
+  ""
 depends =
 {% for relay_request in relay_requests -%}
   {{ "  $${" + relay_request + ":recipe" }}

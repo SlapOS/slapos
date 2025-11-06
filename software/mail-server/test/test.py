@@ -75,10 +75,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
           "mail-domains": [
             "example.com"
           ],
-          "outbound-relay": {
-            "host": "::1",
-            "port": 1234
-          },
+          "no-relay": True,
           "test-account": True,  # Enable test account creation
         }
       )
