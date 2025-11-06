@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Values returned by Slapproxy",
+  "properties": {
+    "ipv4-url": {
+      "title": "Slapproxy IPv4 URL",
+        "description": "Local IPv4 URL of the slapproxy",
+        "type": "string"
+    },
+    "ipv6-url": {
+      "title": "Slapproxy IPv6 URL",
+        "description": "Public IPv6 URL of the slapproxy",
+        "type": "string"
+    }
+  }
+}
