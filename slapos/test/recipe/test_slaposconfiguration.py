@@ -8,8 +8,11 @@ import pickle
 import shutil
 import unittest
 import tempfile
+import time
+import hashlib
 from collections import defaultdict
 from slapos.recipe import slapconfiguration
+from slapos.recipe.hostedinstancedb import SharedInstanceResultDB
 from slapos import format as slapformat
 
 
@@ -39,8 +42,7 @@ class SlapConfigurationTestCase(unittest.TestCase):
     self.software_root = tempfile.mkdtemp()
 
   def tearDown(self):
-    os.unlink(self.resource_file)
-    os.rmdir(self.instance_root)
+    shutil.rmtree(self.instance_root)
     shutil.rmtree(self.software_root)
 
   def isBuildoutSerializable(self, obj):
@@ -803,3 +805,216 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
         self.receiveParameters,
         {'validate-parameters': 'shared'},
       )
+
+
+class JsonSchemaWithDBTestCase(JsonSchemaTestCase):
+  """Test case for JsonSchemaWithDB that adds database functionality."""
+
+  def runJsonSchemaRecipe(self, options=()):
+    options = defaultdict(str, options)
+    options['jsonschema'] = self.software_json_file
+    # Set instance-db-path for JsonSchemaWithDB
+    if 'instance-db-path' not in options:
+      options['instance-db-path'] = os.path.join(self.instance_root, 'shared-instance-db.sqlite')
+    slapconfiguration.JsonSchemaWithDB(self.buildout, "slapconfiguration", options)
+    self.last_options = options
+    return options
+
+class JsonSchemaWithDBSharedTest(JsonSchemaWithDBTestCase):
+  """Tests for JsonSchemaWithDB with shared instance validation."""
+
+  def test_jsonschema_with_db_shared_valid_instances(self):
+    """Test that valid shared instances are stored in database."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}, {"kind": 2}]
+    now = time.time()
+    with self.patchSlap(parameters, shared):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'shared'})
+
+      self.assertNotIn('valid-shared-instance-list', options)
+      self.assertNotIn('invalid-shared-instance-list', options)
+      db = SharedInstanceResultDB(options['instance-db-path'])
+      valid = db.getInstanceList(valid_only=True)
+      invalid = db.getInstanceList(invalid_only=True)
+      self.assertEqual(len(valid), 2, "Should have 2 valid instances")
+      self.assertEqual(len(invalid), 0, "Should have 0 invalid instances")
+      # Verify references
+      refs = {v['reference'] for v in valid}
+      self.assertEqual(refs, {'SHARED0', 'SHARED1'})
+
+    # Check the content of each line of the db using getInstanceList
+    all_instances = db.getInstanceList(select_tuple_string="*")
+    self.assertEqual(len(all_instances), 2)
+    # Each entry should match expected data
+    expected = [
+      {'reference': 'SHARED0', 'json_parameters': json.dumps({'kind': 1})},
+      {'reference': 'SHARED1', 'json_parameters': json.dumps({'kind': 2})},
+    ]
+    instances_sorted = sorted(all_instances, key=lambda x: x['reference'])
+    expected_sorted = sorted(expected, key=lambda x: x['reference'])
+    for got, want in zip(instances_sorted, expected_sorted):
+      self.assertEqual(got['reference'], want['reference'])
+      self.assertEqual(got['json_parameters'], want['json_parameters'])
+      self.assertTrue(got['valid_parameter'])
+      self.assertIsNotNone(got['json_connection_parameters'])
+      self.assertIsNotNone(got['hash'])
+      self.assertAlmostEqual(float(got['timestamp']), now, delta=1)
+
+  def test_jsonschema_with_db_shared_invalid_instances(self):
+    """Test that invalid shared instances are stored in database."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 0}, {"kind": 1, "thing": {}}]
+    now = time.time()
+    with self.patchSlap(parameters, shared):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'shared'})
+
+      self.assertNotIn('valid-shared-instance-list', options)
+      self.assertNotIn('invalid-shared-instance-list', options)
+      db = SharedInstanceResultDB(options['instance-db-path'])
+      valid = db.getInstanceList(valid_only=True)
+      invalid = db.getInstanceList(invalid_only=True)
+      self.assertEqual(len(valid), 0, "Should have 0 valid instances")
+      self.assertEqual(len(invalid), 2, "Should have 2 invalid instances")
+      # Verify references
+      refs = {v['reference'] for v in invalid}
+      self.assertEqual(refs, {'SHARED0', 'SHARED1'})
+      # Check the content of each line of the db using getInstanceList
+      all_instances = db.getInstanceList(select_tuple_string="*")
+      self.assertEqual(len(all_instances), 2)
+      # Each entry should match expected data
+      expected = [
+        {'reference': 'SHARED0', 'json_parameters': json.dumps({'kind': 0})},
+        {'reference': 'SHARED1', 'json_parameters': json.dumps({'kind': 1, 'thing': {}})},
+      ]
+      instances_sorted = sorted(all_instances, key=lambda x: x['reference'])
+      expected_sorted = sorted(expected, key=lambda x: x['reference'])
+      for got, want in zip(instances_sorted, expected_sorted):
+        self.assertEqual(got['reference'], want['reference'])
+        self.assertEqual(got['json_parameters'], want['json_parameters'])
+        self.assertFalse(got['valid_parameter'])
+        self.assertIsNotNone(got['json_connection_parameters'])
+        self.assertIsNotNone(got['hash'])
+        self.assertAlmostEqual(float(got['timestamp']), now, delta=1)
+
+  def test_jsonschema_with_db_shared_mixed_instances(self):
+    """Test that mixed valid/invalid instances are stored correctly."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
+    now = time.time()
+    with self.patchSlap(parameters, shared):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'shared'})
+
+      self.assertNotIn('valid-shared-instance-list', options)
+      self.assertNotIn('invalid-shared-instance-list', options)
+      db = SharedInstanceResultDB(options['instance-db-path'])
+      valid = db.getInstanceList(valid_only=True)
+      invalid = db.getInstanceList(invalid_only=True)
+      self.assertEqual(len(valid), 1, "Should have 1 valid instance")
+      self.assertEqual(len(invalid), 1, "Should have 1 invalid instance")
+      self.assertEqual(valid[0]['reference'], 'SHARED0')
+      self.assertEqual(invalid[0]['reference'], 'SHARED1')
+      # Check the content of each line of the db using getInstanceList
+      all_instances = sorted(
+        db.getInstanceList(select_tuple_string="*"), key=lambda x: x['reference'])
+      self.assertEqual(len(all_instances), 2)
+      # Each entry should match expected data
+      expected = [
+        {
+          'reference': 'SHARED0', 
+          'json_parameters': json.dumps({'kind': 1}), 
+          'hash': hashlib.sha256(
+            json.dumps({'kind': 1}, sort_keys=True).encode()).hexdigest(),
+          'valid_parameter': True,
+        },
+        {
+          'reference': 'SHARED1', 
+          'json_parameters': json.dumps({'kind': 2, 'thing': 'hello'}), 
+          'hash': hashlib.sha256(
+            json.dumps({'kind': 2, 'thing': 'hello'}, sort_keys=True).encode()).hexdigest(),
+          'valid_parameter': False,
+        },
+      ]
+      for got, want in zip(all_instances, expected):
+        self.assertEqual(got['reference'], want['reference'])
+        self.assertEqual(got['json_parameters'], want['json_parameters'])
+        self.assertEqual(got['valid_parameter'], want['valid_parameter'])
+        self.assertIsNotNone(got['json_connection_parameters'])
+        self.assertIsNotNone(got['hash'])
+        self.assertAlmostEqual(float(got['timestamp']), now, delta=1)
+
+  def test_jsonschema_with_db_no_db_path(self):
+    """Test that JsonSchemaWithDB raises error if instance-db-path is not provided when shared validation is enabled."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}]
+    with self.patchSlap(parameters, shared):
+      # Don't set instance-db-path - should raise error when shared validation is enabled
+      options = defaultdict(str, {
+        'jsonschema': self.software_json_file,
+        'validate-parameters': 'shared'
+      })
+      self.assertRaises(
+        slapconfiguration.UserError,
+        slapconfiguration.JsonSchemaWithDB,
+        self.buildout,
+        "slapconfiguration",
+        options
+      )
+
+  def test_jsonschema_with_db_no_db_path_main_only(self):
+    """Test that JsonSchemaWithDB works without instance-db-path when only main validation is enabled."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters):
+      # Don't set instance-db-path - should work when shared validation is disabled
+      options = defaultdict(str, {
+        'jsonschema': self.software_json_file,
+        'validate-parameters': 'main'
+      })
+      # Should not raise error since shared validation is disabled
+      slapconfiguration.JsonSchemaWithDB(self.buildout, "slapconfiguration", options)
+      # Should not have shared-instance-db-path since shared validation was not run
+      self.assertNotIn('shared-instance-db-path', options)
+      # Main configuration should still work
+      self.assertIn('configuration', options)
+
+  def test_jsonschema_with_db_updates_existing_database(self):
+    """Test that database is updated when instances change."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    db_path = os.path.join(self.instance_root, 'shared-instance-db.sqlite')
+    now = time.time()
+    # First run with one instance
+    shared1 = [{"kind": 1}]
+    with self.patchSlap(parameters, shared1):
+      options = self.runJsonSchemaRecipe({
+        'validate-parameters': 'shared',
+        'instance-db-path': db_path
+      })
+      db = SharedInstanceResultDB(db_path)
+      valid = db.getInstanceList(valid_only=True)
+      self.assertEqual(len(valid), 1)
+      initial_instance = db.getInstance(valid[0]['reference'])
+      self.assertEqual(json.loads(initial_instance['json_parameters'])['kind'], 1)
+      self.assertAlmostEqual(float(initial_instance['timestamp']), now, delta=1)
+
+    # Second run with different instances
+    shared2 = [{"kind": 2}]
+    with self.patchSlap(parameters, shared2):
+      options = self.runJsonSchemaRecipe({
+        'validate-parameters': 'shared',
+        'instance-db-path': db_path
+      })
+      db = SharedInstanceResultDB(db_path)
+      valid = db.getInstanceList(valid_only=True)
+      invalid = db.getInstanceList(invalid_only=True)
+      # Should have 1 valid (SHARED0 with kind 2) and 0 invalid
+      # The old instance (SHARED0 with kind 1) should be removed
+      self.assertEqual(len(valid), 1)
+      self.assertEqual(len(invalid), 0)
+      updated_instance = db.getInstance(valid[0]['reference'])
+      self.assertEqual(json.loads(updated_instance['json_parameters'])['kind'], 2)
+      self.assertAlmostEqual(float(updated_instance['timestamp']), float(initial_instance['timestamp']), delta=1)
