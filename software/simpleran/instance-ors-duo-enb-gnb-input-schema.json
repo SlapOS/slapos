@@ -7,12 +7,40 @@
       "title": "First Cell",
       "description": "Radio parameters of the first cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
       "unevaluatedProperties": false,
-      "allOf": [
+      "oneOf": [
         {
-          "$ref": "ors-cell.json"
+          "title": "gNB Cell",
+          "unevaluatedProperties": false,
+          "required": [
+            "dl_earfcn"
+          ],
+          "allOf": [
+            {
+              "$ref": "ors-cell.json"
+            },
+            {
+              "$ref": "ors-enb-cell.json"
+            }
+          ],
+          "type": "object",
+          "default": {}
         },
         {
-          "$ref": "ors-enb-cell.json"
+          "title": "eNB Cell",
+          "unevaluatedProperties": false,
+          "required": [
+            "dl_nr_arfcn"
+          ],
+          "allOf": [
+            {
+              "$ref": "ors-cell.json"
+            },
+            {
+              "$ref": "ors-gnb-cell.json"
+            }
+          ],
+          "type": "object",
+          "default": {}
         }
       ],
       "type": "object",
