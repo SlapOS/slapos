@@ -5,7 +5,7 @@
   "software-type": {
     "enb-gnb": {
       "title": "eNB / gNB",
-      "software-type": "gnb",
+      "software-type": "enb-gnb",
       "description": "eNodeB / gNodeB Configuration",
       "request": "instance-ors-duo-enb-gnb-input-schema.json",
       "response": "instance-ors-enb-gnb-schema.json",
