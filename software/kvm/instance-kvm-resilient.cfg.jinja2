@@ -71,13 +71,15 @@ return =
 {% if additional_frontend %}
   url-additional
 {% endif %}
-  backend-url url ip
+  backend-url url ip user password
 {{ '  ' }}ipv6-network-info
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 backend-url = ${request-kvm:connection-backend-url}
 url = ${request-kvm:connection-url}
+user = ${request-kvm:connection-user}
+password = ${request-kvm:connection-password}
 ipv6 = ${request-kvm:connection-ip}
 ipv6-network-info = ${request-kvm:connection-ipv6-network-info}
 monitor-password = ${publish-early:monitor-password}
@@ -113,3 +115,5 @@ config-command = ${kvm-frontend-url-bin:output}
 promise = check_url_available
 name = frontend_promise.py
 config-url = ${publish-connection-information:url}
+config-username = ${publish-connection-information:user}
+config-password = ${publish-connection-information:password}

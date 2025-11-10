@@ -218,6 +218,18 @@
           "type": "string",
           "default": "monitor.app.officejs.com"
         },
+        "monitor-username": {
+          "title": "Monitor username",
+          "description": "Username used for basic auth in monitoring web server",
+          "type": "string",
+          "default": "admin"
+        },
+        "monitor-password": {
+          "title": "Monitor password",
+          "description": "Password used for basic auth in monitoring web server",
+          "type": "string",
+          "default": "RANDOM value"
+        },
         "enable-http-server": {
           "title": "Enable local http server",
           "description": "Set if local http server which serve files to the vm should be deployed. If set to true, get file into the vm with URL: http://10.0.2.100/FILE.",
@@ -242,6 +254,12 @@
           "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
           "type": "string",
           "format": "uri"
+        },
+        "name": {
+          "title": "Hostname of the VM",
+          "description": "Hostname of the VM, will be used by generic scripts setting up the VM.",
+          "type": "string",
+          "default": "localhost"
         },
         "data-to-vm": {
           "title": "Text content to send to this virtual machine.",
