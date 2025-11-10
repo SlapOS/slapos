@@ -24,6 +24,9 @@
       "unevaluatedProperties": false,
       "allOf": [
         {
+          "$ref": "ors-gnb-classic.json"
+        },
+        {
           "$ref": "ors-enb-gnb-classic.json"
         },
         {
