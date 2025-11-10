@@ -3,19 +3,27 @@
   "description": "4G and 5G amarisoft stack for ORS DUO",
   "serialisation": "json-in-xml",
   "software-type": {
+    "enb-gnb": {
+      "title": "eNB / gNB",
+      "software-type": "enb-gnb",
+      "description": "eNodeB / gNodeB Configuration",
+      "request": "instance-ors-duo-enb-gnb-input-schema.json",
+      "response": "instance-ors-enb-schema.json",
+      "index": 1
+    },
     "gnb": {
-      "title": "gNB",
+      "title": "eNB / gNB",
       "software-type": "gnb",
-      "description": "gNodeB Configuration",
-      "request": "instance-ors-duo-gnb-input-schema.json",
+      "description": "eNodeB / gNodeB Configuration",
+      "request": "instance-ors-duo-enb-gnb-input-schema.json",
       "response": "instance-ors-gnb-schema.json",
       "index": 1
     },
     "enb": {
-      "title": "eNB",
+      "title": "eNB / gNB",
       "software-type": "enb",
-      "description": "eNodeB Configuration",
-      "request": "instance-ors-duo-enb-input-schema.json",
+      "description": "eNodeB / eNodeB Configuration",
+      "request": "instance-ors-duo-enb-gnb-input-schema.json",
       "response": "instance-ors-enb-schema.json",
       "index": 2
     },
