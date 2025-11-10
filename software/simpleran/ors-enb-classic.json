@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "plmn_list": {
+      "$ref": "instance-enb-input-schema.json#/properties/plmn_list",
+      "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
+      "default": [
+        {
+          "plmn": "00101"
+        }
+      ]
+    }
+  }
+}
