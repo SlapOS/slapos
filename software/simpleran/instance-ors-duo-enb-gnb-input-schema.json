@@ -11,6 +11,9 @@
         {
           "title": "gNB Cell",
           "unevaluatedProperties": false,
+          "required": [
+            "dl_earfcn"
+          ],
           "allOf": [
             {
               "$ref": "ors-cell.json"
@@ -25,6 +28,9 @@
         {
           "title": "eNB Cell",
           "unevaluatedProperties": false,
+          "required": [
+            "dl_nr_arfcn"
+          ],
           "allOf": [
             {
               "$ref": "ors-cell.json"
