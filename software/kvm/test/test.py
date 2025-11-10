@@ -458,7 +458,7 @@ class TestMemoryManagement(KVMTestCase, KvmMixin):
   def test_enable_device_hotplug(self):
     def getHotpluggedCpuRamValue():
       qemu_wrapper = QemuQMPWrapper(os.path.join(
-        self.computer_partition_root_path, 'var', 'qmp_socket'))
+        self.computer_partition_root_path, 'var', 'run', 'qmp_socket'))
       ram_mb = sum(
         q['size']
         for q in qemu_wrapper.getMemoryInfo()['hotplugged']) / 1024 / 1024
@@ -477,10 +477,10 @@ class TestMemoryManagement(KVMTestCase, KvmMixin):
     )
 
     parameter_dict = {
-      'enable-device-hotplug': 'true',
+      'enable-device-hotplug': True,
       # to avoid restarts the max RAM and CPU has to be static
-      'ram-max-size': '8192',
-      'cpu-max-count': '6',
+      'ram-max-size': 8192,
+      'cpu-max-count': 6,
     }
     self.rerequestInstance(parameter_dict)
     self.slap.waitForInstance(max_retry=2)
