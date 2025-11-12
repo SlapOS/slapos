@@ -6,14 +6,16 @@ develop-eggs-directory = ${buildout:develop-eggs-directory}
 parts =
   publish
   slapproxy_promise
+  monitor_app_promise
   haproxy_promise
 
 
 [publish]
 <= monitor-publish
 recipe = slapos.cookbook:publish
-ipv4-url = $${slapproxy:url}
-ipv6-url = $${haproxy:url}
+slapproxy-ipv4-url = $${slapproxy:url}
+slapproxy-ipv6-url = $${haproxy:slapproxy-url}
+monitor.app-url = $${haproxy:monitor.app-url}
 
 
 [directory]
@@ -22,6 +24,7 @@ etc = $${buildout:directory}/etc
 service = $${:etc}/service
 var = $${buildout:directory}/var
 run = $${:var}/run
+log = $${:var}/log
 
 
 [macro.promise]
@@ -69,6 +72,20 @@ promise = check_url_available
 config-url = $${slapproxy:url}
 
 
+[monitor.app]
+recipe = slapos.cookbook:simplehttpserver
+wrapper = $${directory:service}/$${:_buildout_section_name_}
+base-path = ${monitor.app:location}
+log-file = $${directory:log}/monitor.app.log
+socketpath = $${directory:run}/monitor.app.sock
+
+
+[monitor_app_promise]
+<= macro.promise
+promise = check_socket_listening
+config-pathname = $${monitor.app:socketpath}
+
+
 [haproxy.cfg]
 recipe = slapos.recipe.template:jinja2
 url = ${stack-haproxy-default-backend-config:target}
@@ -81,14 +98,22 @@ pidfile = $${directory:run}/haproxy.pid
 content =
   listen slapproxy
     log global
-    bind $${:ipv6}:$${:port}
+    bind $${:ipv6}:$${:slapproxy-port}
     mode http
     option httplog
     server slapproxy $${slapproxy:ipv4}:$${slapproxy:port}
     tcp-request connection reject if !{ src $${:accepted-ipv6} }
+  listen monitor
+    log global
+    bind $${:ipv6}:$${:monitor.app-port}
+    mode http
+    option httplog
+    server slapproxy unix@$${monitor.app:socketpath}
+    tcp-request connection reject if !{ src $${:accepted-ipv6} }
 accepted-ipv6 = {{ slapparameter_dict['accepted-client-ipv6'] }}
 ipv6 = {{ public_ipv6 }}
-port = 4000
+slapproxy-port = 4000
+monitor.app-port = 4001
 
 
 [haproxy]
@@ -100,7 +125,9 @@ command-line =
     -S $${:socket-path},level,operator
     -f $${haproxy.cfg:output}
 hash-files = $${haproxy.cfg:output}
-url = http://[$${haproxy.cfg:ipv6}]:$${haproxy.cfg:port}
+ipv6 = $${haproxy.cfg:ipv6}
+slapproxy-url = http://[$${:ipv6}]:$${haproxy.cfg:slapproxy-port}
+monitor.app-url = http://[$${:ipv6}]:$${haproxy.cfg:monitor.app-port}
 
 
 [haproxy_promise]
