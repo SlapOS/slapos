@@ -39,7 +39,6 @@ key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
-config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
 # Request kvm instances
 {% for instance_name, kvm_parameter_dict in slapparameter_dict.get('kvm-partition-dict', {'kvm-default': {}}).items() -%}
@@ -48,7 +47,7 @@ config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 [{{ section }}]
 <= request-common
 recipe = slapos.cookbook:request.serialised
-software-type = kvm
+software-type = default
 name = {{ instance_name }}
 {% if kvm_parameter_dict.get('sticky-compute-node', '') -%}
 sla-computer_guid = ${slap-connection:computer-id}
@@ -76,7 +75,7 @@ config-frontend-additional-instance-name = {{ instance_name ~ ' VNC Real Fronten
 
 config-name = {{ instance_name }}
 {% if slapparameter_dict.get('authorized-keys', []) -%}
-config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | join('\n')) }}
+config-authorized-keys = {{ dumps(slapparameter_dict.get('authorized-keys')) }}
 {% endif -%}
 config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 4096)) }}
 config-ram-max-size = {{ dumps(kvm_parameter_dict.get('ram-max-size', int(kvm_parameter_dict.get('ram-size', 4096)) + 512)) }}
@@ -109,7 +108,7 @@ config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True
 {%   do nat_rules_list.extend(nat_rule.split()) %}
 {% endfor %}
 {{ setconfig('nat-rules', nat_rules_list | join(' ')) }}
-config-publish-nat-url = True
+config-publish-nat-url = {{ dumps(True) }}
 config-use-nat = {{ dumps(use_nat) }}
 config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', True)) }}
 config-nat-restrict-mode = {{ dumps(kvm_parameter_dict.get('nat-restrict-mode', False)) }}
@@ -117,9 +116,6 @@ config-enable-vhost = {{ dumps(kvm_parameter_dict.get('enable-vhost', False)) }}
 {{ setconfig('virtual-hard-drive-url', kvm_parameter_dict.get('virtual-hard-drive-url', '')) }}
 {{ setconfig('virtual-hard-drive-md5sum', kvm_parameter_dict.get('virtual-hard-drive-md5sum', '')) }}
 config-virtual-hard-drive-gzipped = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-gzipped', False)) }}
-config-external-disk-number = {{ dumps(kvm_parameter_dict.get('external-disk-number', 0)) }}
-config-external-disk-size = {{ dumps(kvm_parameter_dict.get('external-disk-size', 20)) }}
-config-external-disk-format = {{ dumps(kvm_parameter_dict.get('external-disk-format', 'qcow2')) }}
 config-enable-http-server = {{ dumps(kvm_parameter_dict.get('enable-http-server', True)) }}
 config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
 
@@ -145,7 +141,6 @@ config-document-path = ${hash-code:passwd}
 config-{{ k }} = {{ dumps(kvm_parameter_dict[k]) }}
 {%-   endif %}
 {%- endfor %}
-config-type = cluster
 
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url', kvm_parameter_dict.get('bootstrap-script-url', '')) -%}
 {% if bootstrap_script_url -%}
@@ -160,6 +155,8 @@ sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access
 
 return =
   url
+  username
+  password
 {% if additional_frontend %}
   url-additional
 {% endif %}
@@ -188,6 +185,8 @@ return =
 {% do monitor_base_url_dict.__setitem__(instance_name, '${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-username', '${' ~ section ~ ':connection-username}') -%}
+{% do publish_dict.__setitem__(instance_name ~ '-password', '${' ~ section ~ ':connection-password}') -%}
 {% if additional_frontend %}
 {% do publish_dict.__setitem__(instance_name ~ '-url-additional', '${' ~ section ~ ':connection-url-additional}') -%}
 {% endif %}
