@@ -76,7 +76,7 @@ config-frontend-additional-instance-name = {{ instance_name ~ ' VNC Real Fronten
 
 config-name = {{ instance_name }}
 {% if slapparameter_dict.get('authorized-keys', []) -%}
-config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | join('\n')) }}
+config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') }}
 {% endif -%}
 config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 4096)) }}
 config-ram-max-size = {{ dumps(kvm_parameter_dict.get('ram-max-size', int(kvm_parameter_dict.get('ram-size', 4096)) + 512)) }}
