@@ -691,7 +691,7 @@ init =
           },
           {
             "state": "continuation",
-            "regex": "^[^-]+",
+            "regex": "^([^-]+.*|)$",
             "next_state": "continuation"
           }
         ]
