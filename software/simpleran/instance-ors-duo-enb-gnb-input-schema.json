@@ -47,9 +47,6 @@
   "$defs": {
     "ors_duo_cell": {
       "unevaluatedProperties": false,
-      "required": [
-        "cell_type"
-      ],
       "oneOf": [
         {
           "title": "gNB Cell",
@@ -64,7 +61,7 @@
               "type": "object",
               "properties": {
                 "cell_type": {
-                  "title": "Cell Type",
+                  "title": "Cell Type (You must select this parameter to enable the cell)",
                   "type": "string",
                   "const": "gNB"
                 }
