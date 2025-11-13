@@ -26,6 +26,9 @@
         },
         {
           "$ref": "ors-enb.json"
+        },
+        {
+          "$ref": "ors-gnb.json"
         }
       ],
       "type": "object",
