@@ -1,0 +1,58 @@
+From 27873465250a62047bb3e1aee288bf873189c928 Mon Sep 17 00:00:00 2001
+From: Even Rouault <even.rouault@spatialys.com>
+Date: Sat, 18 Nov 2023 15:38:46 +0100
+Subject: Fix build error with libxml2 2.12
+
+(cherry picked from commit cbed9fc91dffba30d0f9a6a06a412a04d9cd36fa)
+---
+ port/cpl_xml_validate.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/port/cpl_xml_validate.cpp b/port/cpl_xml_validate.cpp
+index 5d084a8628..6af87abb02 100644
+--- a/port/cpl_xml_validate.cpp
++++ b/port/cpl_xml_validate.cpp
+@@ -920,7 +920,7 @@ static void CPLLibXMLWarningErrorCallback ( void * ctx, const char * msg, ... )
+ 
+     if( strstr(pszStr, "since this namespace was already imported") == nullptr )
+     {
+-        xmlErrorPtr pErrorPtr = xmlGetLastError();
++        const xmlError *pErrorPtr = xmlGetLastError();
+         const char* pszFilename = static_cast<char *>(ctx);
+         char* pszStrDup = CPLStrdup(pszStr);
+         int nLen = static_cast<int>(strlen(pszStrDup));
+-- 
+2.48.0
+
+
+From 5d672d61c06a637b6f151523437995815c29c2b3 Mon Sep 17 00:00:00 2001
+From: Even Rouault <even.rouault@spatialys.com>
+Date: Sat, 18 Nov 2023 16:33:25 +0100
+Subject: Fix build error with libxml2 2.12 (cont'd)
+
+(cherry picked from commit ec33f6d6dfe944f59dc5454d01b4d000d9479c02)
+---
+ gcore/gdaljp2metadatagenerator.cpp | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/gcore/gdaljp2metadatagenerator.cpp b/gcore/gdaljp2metadatagenerator.cpp
+index 26db3afe17..5e168a2b3a 100644
+--- a/gcore/gdaljp2metadatagenerator.cpp
++++ b/gcore/gdaljp2metadatagenerator.cpp
+@@ -345,7 +345,12 @@ static CPLString GDALGMLJP2EvalExpr(const CPLString& osTemplate,
+ /************************************************************************/
+ 
+ static void GDALGMLJP2XPathErrorHandler( void * /* userData */,
+-                                         xmlErrorPtr error)
++#if LIBXML_VERSION >= 21200
++                                        const xmlError *error
++#else
++                                        xmlErrorPtr error
++#endif
++)
+ {
+     if( error->domain == XML_FROM_XPATH &&
+         error->str1 != nullptr &&
+-- 
+2.48.0
+

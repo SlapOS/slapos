@@ -279,6 +279,15 @@ class TestMariaDB(MariaDBTestCase):
           """)
       self.assertEqual((('à',),), cnx.store_result().fetch_row(maxrows=2))
 
+  def test_timezone(self) -> None:
+    cnx = self.getDatabaseConnection()
+    with contextlib.closing(cnx):
+      cnx.query("SELECT CONVERT_TZ('2001-01-01', 'UTC', 'Europe/Paris')")
+      self.assertEqual(
+        ((datetime.datetime(2001, 1, 1, 1, 0),),),
+        cnx.store_result().fetch_row(maxrows=2),
+      )
+
 
 class TestMroonga(MariaDBTestCase):
   def test_mroonga_plugin_loaded(self) -> None:
@@ -662,9 +671,9 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
 
 class TestMariaDBReplication(MariaDBReplicationTestCase):
   def checkReplication(self, caucased=True, bootstrap=None, backups=1, **kw):
-    ipv6 = kw.get('ipv6', True)
+    kw.setdefault('ipv6', True)
     # Request primary Mariadb
-    primary = self.requestPrimary(caucased=caucased, ipv6=ipv6)
+    primary = self.requestPrimary(caucased=caucased, **kw)
     connectors = json.loads(primary.getConnectionParameterDict()['_'])
     if caucased:
       # Assert bootstrap http server requires mTLS over IPv6
@@ -692,12 +701,12 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
       primary,
       strict=not caucased, # allow promises to fail
       bootstrap=bootstrap,
-      ipv6=ipv6,
+      **kw,
     )
     # Let primary sign replica CSR
     # This asserts that all partitions, including replica, converge
     if caucased:
-      primary = self.requestPrimary(caucased=replica, ipv6=ipv6)
+      primary = self.requestPrimary(caucased=replica, **kw)
     # Check (primary --> replica) replication
     self.checkReplicaState(replica)
     self.checkDataReplication(primary, replica)
@@ -706,7 +715,14 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
     self.destroyMariaDBInstances()
 
   def test_caucase_no_bootstrap(self):
-    self.checkReplication(bootstrap=None)
+    # Check disabled mysql-dump & mariabackup along the way
+    self.checkReplication(
+      bootstrap=None,
+      backup={
+        'logical': {'enable': False},
+        'physical': {'enable': False},
+      },
+    )
 
   def test_caucase_bootstrap_from_dump(self):
     self.checkReplication(bootstrap='bootstrap-url')

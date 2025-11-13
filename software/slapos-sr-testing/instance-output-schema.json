@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by SlapOS SR Testing instantiation",
+  "additionalProperties": false,
+  "properties": {
+    "environment-script": {
+      "description": "Script to source in the shell to load environment variables",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
