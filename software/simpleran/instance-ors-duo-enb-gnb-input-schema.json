@@ -12,15 +12,15 @@
           "title": "gNB Cell",
           "unevaluatedProperties": false,
           "required": [
-            "gnb"
+            "cell_type"
           ],
           "allOf": [
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "title": "gNB",
+              "title": "Cell Type",
               "type": "object",
               "properties": {
-                "gnb": {
+                "cell_type": {
                   "title": "Cell Type",
                   "type": "string",
                   "const": "gNB"
@@ -41,15 +41,15 @@
           "title": "eNB Cell",
           "unevaluatedProperties": false,
           "required": [
-            "enb"
+            "cell_type"
           ],
           "allOf": [
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "title": "eNB",
+              "title": "Cell Type",
               "type": "object",
               "properties": {
-                "enb": {
+                "cell_type": {
                   "title": "Cell Type",
                   "type": "string",
                   "const": "eNB"
