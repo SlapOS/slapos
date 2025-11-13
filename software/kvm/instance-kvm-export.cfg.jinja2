@@ -49,7 +49,7 @@ output = ${directory:bin}/${slap-parameter:namebase}-exporter-real
 context =
     section directory directory
     section buildout buildout
-    key socket_path kvm-instance:socket-path
+    key qmp_socket_path kvm-parameter-dict:qmp-socket-path
     key backup_info backup-info:file
     section disk disk
     raw qmpbackup {{ qmpbackup }}
