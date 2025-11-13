@@ -64,7 +64,7 @@
               "type": "object",
               "properties": {
                 "cell_type": {
-                  "title": "Cell Type (You must select this parameter to enable the cell)",
+                  "title": "Cell Type: you must select this parameter to enable the cell",
                   "type": "string",
                   "const": "gNB"
                 }
@@ -93,7 +93,7 @@
               "type": "object",
               "properties": {
                 "cell_type": {
-                  "title": "Cell Type",
+                  "title": "Cell Type: you must select this parameter to enable the cell",
                   "type": "string",
                   "const": "eNB"
                 }
