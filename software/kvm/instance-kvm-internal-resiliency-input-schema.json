@@ -1,0 +1,46 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema#",
+  "description": "Parameters to instantiate resilient KVM",
+  "unevaluatedProperties": false,
+  "allOf": [
+    {
+      "$ref": "./boot-image-input-schema.json#/$defs/instance-parameters"
+    },
+    {
+      "$ref": "./instance-kvm-input-schema.json#/$defs/instance-parameters"
+    }
+  ],
+  "properties": {
+    "number": {
+      "title": "Index of this resiliency instance",
+      "description": "Internal parameter for resiliency",
+      "type": "integer"
+    },
+    "authorized-key": {
+      "title": "SSH key used for resiliency",
+      "description": "Internal parameter for resiliency",
+      "type": "string"
+    },
+    "monitor-title": {
+      "title": "Title used in monitoring",
+      "description": "Internal parameter for resiliency (used in PBS)",
+      "type": "string"
+    },
+    "namebase": {
+      "title": "Base name of the instance",
+      "description": "Internal parameter for resiliency",
+      "type": "string"
+    },
+    "notify": {
+      "title": "URL for notify",
+      "description": "Internal parameter for resiliency",
+      "type": "string"
+    },
+    "on-notification": {
+      "title": "Script to execute on notification",
+      "description": "Internal parameter for resiliency",
+      "type": "string"
+    }
+  }
+}
