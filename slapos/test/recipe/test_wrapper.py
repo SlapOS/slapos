@@ -56,6 +56,24 @@ class TestSimpleCommandLineWrapper(WrapperTestCase):
       'hello world\n')
 
 
+class TestRecipeOptions(WrapperTestCase):
+  options = None
+  def getOptions(self):
+    if self.options is None:
+      self.options = {
+        'command-line': ':',
+        'wrapper-path': self.wrapper_path,
+      }
+    return self.options
+
+  def test_egg_directory_saved_in_options(self):
+    self.recipe.install()
+    self.assertEqual(
+      self.options['_d'], os.environ['SLAPOS_TEST_DEVELOP_EGGS_DIRECTORY'])
+    self.assertEqual(
+      self.options['_e'], os.environ['SLAPOS_TEST_EGGS_DIRECTORY'])
+
+
 class TestEscapeCommandLine(WrapperTestCase):
   def getOptions(self):
     return {
