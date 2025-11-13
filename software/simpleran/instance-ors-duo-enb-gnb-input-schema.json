@@ -12,14 +12,25 @@
           "title": "gNB Cell",
           "unevaluatedProperties": false,
           "required": [
-            "dl_earfcn"
+            "nr"
           ],
           "allOf": [
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "NR",
+              "type": "object",
+              "properties": {
+                "nr": {
+                  "type": "string",
+                  "const": "nr"
+                }
+              }
+            },
             {
               "$ref": "ors-cell.json"
             },
             {
-              "$ref": "ors-enb-cell.json"
+              "$ref": "ors-gnb-cell.json"
             }
           ],
           "type": "object",
@@ -29,14 +40,25 @@
           "title": "eNB Cell",
           "unevaluatedProperties": false,
           "required": [
-            "dl_nr_arfcn"
+            "lte"
           ],
           "allOf": [
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "LTE",
+              "type": "object",
+              "properties": {
+                "lte": {
+                  "type": "string",
+                  "const": "lte"
+                }
+              }
+            },
             {
               "$ref": "ors-cell.json"
             },
             {
-              "$ref": "ors-gnb-cell.json"
+              "$ref": "ors-enb-cell.json"
             }
           ],
           "type": "object",
