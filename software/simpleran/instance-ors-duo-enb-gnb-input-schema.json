@@ -47,6 +47,9 @@
   "$defs": {
     "ors_duo_cell": {
       "unevaluatedProperties": false,
+      "required": [
+        "cell_type"
+      ],
       "oneOf": [
         {
           "title": "gNB Cell",
