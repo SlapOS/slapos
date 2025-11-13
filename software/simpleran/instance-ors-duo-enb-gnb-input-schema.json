@@ -11,17 +11,7 @@
     "cell2": {
       "title": "Second Cell",
       "description": "Radio parameters of the second cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
-      "unevaluatedProperties": false,
-      "allOf": [
-        {
-          "$ref": "ors-cell.json"
-        },
-        {
-          "$ref": "ors-enb-cell.json"
-        }
-      ],
-      "type": "object",
-      "default": {}
+      "$ref": "#/$defs/ors_duo_cell"
     },
     "nodeb": {
       "title": "eNB Parameters",
@@ -56,7 +46,6 @@
   },
   "$defs": {
     "ors_duo_cell": {
-      "title": "Cell",
       "unevaluatedProperties": false,
       "oneOf": [
         {
