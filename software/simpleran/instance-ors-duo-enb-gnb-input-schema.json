@@ -16,7 +16,6 @@
     "nodeb": {
       "title": "eNB Parameters",
       "description": "Parameters not related to a single cell but to the eNB",
-      "unevaluatedProperties": false,
       "allOf": [
         {
           "$ref": "ors-enb-gnb-duo.json"
@@ -37,7 +36,6 @@
     "management": {
       "title": "ORS Management Parameters",
       "description": "Parameters which are not related to radio, such as promise thresholds, statistical collection, log verbosity etc...",
-      "unevaluatedProperties": false,
       "allOf": [
         {
           "$ref": "ors-params.json"
@@ -49,14 +47,12 @@
   },
   "$defs": {
     "ors_duo_cell": {
-      "unevaluatedProperties": false,
       "required": [
         "cell_type"
       ],
       "oneOf": [
         {
           "title": "gNB Cell",
-          "unevaluatedProperties": false,
           "required": [
             "cell_type"
           ],
@@ -85,7 +81,6 @@
         },
         {
           "title": "eNB Cell",
-          "unevaluatedProperties": false,
           "required": [
             "cell_type"
           ],
