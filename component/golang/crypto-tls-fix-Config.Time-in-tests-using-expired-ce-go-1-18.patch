@@ -174,7 +174,7 @@ index f61b4c88ef..101f6bb0c9 100644
  		InsecureSkipVerify: true,
  		ClientSessionCache: NewLRUClientSessionCache(1),
  		ServerName:         "servername",
-    MinVersion:         VersionTLS10,
+ 		MinVersion:         VersionTLS10,
 +		Time:               testTime,
  	}
  
