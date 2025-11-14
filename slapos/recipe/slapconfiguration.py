@@ -638,6 +638,7 @@ class JsonSchema(Recipe):
         raise UserError(
           "requested software-type %r seems to have no "
           "JSON schema entry in the software.cfg.json."
+          % software_description.software_type
         )
       validator = DefaultValidator(
         set_defaults.main,

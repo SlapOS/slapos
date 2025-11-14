@@ -65,7 +65,7 @@ skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.join(os.path.dirname(__file__), 'test-software.cfg'))
+    os.path.join(os.path.dirname(__file__), 'test-software.cfg'), software_id='kvm')
 else:
   setUpModule, InstanceTestCase = None, unittest.TestCase
 
