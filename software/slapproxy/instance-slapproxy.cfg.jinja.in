@@ -25,6 +25,8 @@ service = $${:etc}/service
 var = $${buildout:directory}/var
 run = $${:var}/run
 log = $${:var}/log
+srv = $${buildout:directory}/srv
+ssl = $${:srv}/ssl
 
 
 [macro.promise]
@@ -86,6 +88,18 @@ promise = check_socket_listening
 config-pathname = $${monitor.app:socketpath}
 
 
+[certificate]
+recipe = plone.recipe.command
+stop-on-error  = true
+location = $${directory:ssl}/cert-and-key.pem
+command =
+  test -e $${:location} || \
+    ${openssl:location}/bin/openssl req \
+    -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
+    -keyout $${:location} -out $${:location}
+update-command = $${:command}
+
+
 [haproxy.cfg]
 recipe = slapos.recipe.template:jinja2
 url = ${stack-haproxy-default-backend-config:target}
@@ -105,7 +119,7 @@ content =
     tcp-request connection reject if !{ src $${:accepted-ipv6} }
   listen monitor
     log global
-    bind $${:ipv6}:$${:monitor.app-port}
+    bind $${:ipv6}:$${:monitor.app-port} ssl crt $${certificate:location}
     mode http
     option httplog
     server slapproxy unix@$${monitor.app:socketpath}
@@ -127,7 +141,7 @@ command-line =
 hash-files = $${haproxy.cfg:output}
 ipv6 = $${haproxy.cfg:ipv6}
 slapproxy-url = http://[$${:ipv6}]:$${haproxy.cfg:slapproxy-port}
-monitor.app-url = http://[$${:ipv6}]:$${haproxy.cfg:monitor.app-port}
+monitor.app-url = https://[$${:ipv6}]:$${haproxy.cfg:monitor.app-port}
 
 
 [haproxy_promise]
