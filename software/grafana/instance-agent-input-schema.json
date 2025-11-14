@@ -32,13 +32,6 @@
       },
       "description": "Glob patterns for watched log files."
     },
-    "systemd-filter": {
-      "type": "string",
-      "examples": [
-        "_SYSTEMD_UNIT=postfix@-.service"
-      ],
-      "description": "Filter for systemd journal to include. See fluentbit's systemd `Systemd_Filter` configuration"
-    },
     "static-tags": {
       "type": "object",
       "description": "Static tags for this partition",
@@ -236,6 +229,13 @@
                     },
                     "log-file-patterns": {
                       "$ref": "#/$defs/log-file-patterns"
+                    },
+                    "systemd-filter": {
+                      "type": "string",
+                      "examples": [
+                        "_SYSTEMD_UNIT=postfix@-.service"
+                      ],
+                      "description": "Filter for systemd journal to include. See fluentbit's systemd `Systemd_Filter` configuration"
                     },
                     "static-tags": {
                       "$ref": "#/$defs/static-tags"
