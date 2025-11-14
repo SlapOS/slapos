@@ -584,6 +584,7 @@ slapos-bin = ${buildout:bin-directory}/slapos
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
 computer-id = slaprunner
 abstract-socket-path = $${directory:home}/standalone-ready
+partition-amount = {{ parameter_dict['embedded-partition-amount'] }}
 
 [slapos-standalone-activate]
 recipe = slapos.recipe.template

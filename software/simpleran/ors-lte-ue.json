@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LTE UE Cell",
+  "required": [
+    "dl_earfcn"
+  ],
+  "properties": {
+    "bandwidth": {
+      "$ref": "cell/common.json#/$defs/bandwidth",
+      "enum": [
+        "1.4 MHz",
+        "3 MHz",
+        "5 MHz",
+        "10 MHz",
+        "15 MHz",
+        "20 MHz"
+      ],
+      "default": "20 MHz",
+      "type": "string"
+    },
+    "rf_mode": {
+      "$ref": "cell/common.json#/properties/rf_mode",
+      "default": "tdd"
+    },
+    "dl_earfcn": {
+      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn"
+    },
+    "tx_gain": {
+      "$ref": "ru/common.json#/properties/tx_gain",
+      "default": 50
+    },
+    "rx_gain": {
+      "$ref": "ru/common.json#/properties/rx_gain",
+      "default": 30
+    }
+  }
+}

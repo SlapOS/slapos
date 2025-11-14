@@ -49,7 +49,7 @@
       "$ref": "../../../cell/nr/input-schema.json#/properties/ul_nr_arfcn"
     },
     "pci": {
-      "$ref": "../../../cell/nr/input-schema.json#/properties/pci"
+      "$ref": "../../../cell/common.json#/properties/pci"
     },
     "tac": {
       "$ref": "../../../cell/nr/input-schema.json#/$defs/tac"

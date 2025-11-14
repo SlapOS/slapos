@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "XOR Algorithm (advanced parameters)",
   "required": [
     "sim_algo",
@@ -40,6 +40,9 @@
     },
     "multi_sim": {
       "$ref": "common.json#/properties/multi_sim"
+    },
+    "force_ip": {
+      "$ref": "common.json#/properties/force_ip"
     },
     "res_len": {
       "$ref": "common.json#/properties/res_len"

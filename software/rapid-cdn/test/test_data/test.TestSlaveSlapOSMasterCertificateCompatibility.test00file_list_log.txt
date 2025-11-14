@@ -48,4 +48,6 @@ T-2/var/log/monitor-httpd-access.log
 T-2/var/log/monitor-httpd-error.log
 T-2/var/log/slave-introspection-access.log
 T-2/var/log/slave-introspection-error.log
+T-2/var/log/trafficserver-introspection-access.log
+T-2/var/log/trafficserver-introspection-error.log
 T-2/var/log/trafficserver/manager.log

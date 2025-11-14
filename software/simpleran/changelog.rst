@@ -1,12 +1,34 @@
 Changelog
 =========
 
-Version openradio_private_1.0.429 (2025-08-08)
+Version 1.0.442 (2025-10-13)
 -------------
 
-* Merge slapos/master branch into openradio_private
-* Rename Lopcomm to Prose or ORU (for promises)
-* Fixup some bugs
+* Add SUCI encryption (ECC parameters support)
+
+Version 1.0.441 (2025-10-06)
+-------------
+
+* Add test-model software type
+* Fix tx power offset not being taken into account
+* Fix wrong slice differentiator default value causing gNB to not connect to MME when choosing a PLMN in input parameters
+* Fix UE websocket
+* Add force IP option for SIM Cards (allows making sure a PDN IPv4 never changes for a specific IMSI)
+
+Version 1.0.438 (2025-09-29)
+-------------
+
+* Publish Amarisoft configurations along with the logs
+* Ensure all defaults are set correctly
+* Fix GPS promise always failing when GPS was enabled
+
+Version 1.0.432 (2025-08-14)
+-------------
+
+* Major update on ORS UE Mode
+  * Add UE NR Support
+  * Support UE + gNB / eNB mode on ORS Duo
+* Fix bugs preventing defaults to be set correctly on ORS
 
 Version 1.0.428 (2025-08-05)
 -------------
@@ -165,7 +187,7 @@ Version 1.0.340 (2023-10-20)
 Version 1.0.339 (2023-10-16)
 -------------
 
-* Prose firmware update
+* Lopcomm firmware update
 * RRH reset (reboot) function added
 * Fix cpri_tx_dbm parameter
 * Print RRH IPv6 and firmware information
@@ -173,8 +195,8 @@ Version 1.0.339 (2023-10-16)
 Version 1.0.336 (2023-09-25)
 -------------
 
-* Support on Prose RRH via netconf
-  - Prose firmware auto-upgrade and verification
+* Support on Lopcomm RRH via netconf
+  - Lopcomm firmware auto-upgrade and verification
   - Up to 4T4R
   - Netconf access verification promise
   - PA output power alarm
@@ -206,9 +228,9 @@ Version 1.0.330 (2023-07-19)
 Version 1.0.326 (2023-06-14)
 -------------
 
-* Add DHCP for Prose RU's M-plane
+* Add DHCP for Lopcomm RU's M-plane
 * Add support for FDD
-* Add more parameters and tests for prose RU
+* Add more parameters and tests for lopcomm RU
 
 Version 1.0.323 (2023-05-17)
 -------------
@@ -246,7 +268,7 @@ Version 1.0.312 (2023-03-20)
 * Add promise to test if reception is saturated
 * Add gadget from SR to display on Monitor APP
 * Add IMSI in connection parameters when SIM gets attached
-* Add carrier control for Prose RRH
+* Add carrier control for Lopcomm RRH
 
 Version 1.0.308 (2023-02-09)
 ----------------------------
@@ -256,5 +278,5 @@ Version 1.0.308 (2023-02-09)
 * Add gnb_id_bits parameter
 * Use promises from slapos.toolbox repository
 * Rotate and add timestamps in enb-output.log, gnb-output.log, mme-output.log etc...
-* Add support for Prose RRH
+* Add support for Lopcomm RRH
 * Remove UE power emission limitation

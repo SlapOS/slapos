@@ -2,10 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "NR UE",
   "type": "object",
+  "unevaluatedProperties": false,
+  "allOf": [{ "$ref": "../../ue/common.json" }],
   "properties": {
-    "$ref": "../../ue/common.json#/properties",
     "ue_type": {
-      "$ref": "#/properties/ue_type",
+      "$ref": "../../ue/common.json#/$defs/ue_type",
       "const": "nr"
     }
   }

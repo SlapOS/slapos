@@ -3,28 +3,12 @@
   "title": "Radio Unit. Common properties",
   "type": "object",
   "required": [
-    "ru_type",
-    "ru_link_type",
     "n_antenna_dl",
     "n_antenna_ul",
     "tx_gain",
     "rx_gain"
   ],
   "properties": {
-    "ru_type": {
-      "type": "string"
-    },
-    "ru_link_type": {
-      "type": "string"
-    },
-    "n_antenna_dl": {
-      "title": "Number of DL antennas",
-      "type": "integer"
-    },
-    "n_antenna_ul": {
-      "title": "Number of UL antennas",
-      "type": "integer"
-    },
     "tx_gain": {
       "title": "Tx gain",
       "description": "Tx gain (in dB)",
@@ -45,6 +29,18 @@
       ],
       "default": "INACTIVE"
     },
+    "mac_addr": {
+      "title": "RU MAC address",
+      "description": "RU MAC address used for NETCONF",
+      "type": "string",
+      "options": {
+        "dependencies": {
+          "ru_link_type": "cpri"
+        }
+      }
+    }
+  },
+  "$defs": {
     "cpri_link": {
       "title": "CPRI link settings",
       "options": {
@@ -110,15 +106,19 @@
         }
       }
     },
-    "mac_addr": {
-      "title": "RU MAC address",
-      "description": "RU MAC address used for NETCONF",
-      "type": "string",
-      "options": {
-        "dependencies": {
-          "ru_link_type": "cpri"
-        }
-      }
+    "n_antenna_dl": {
+      "title": "Number of DL antennas",
+      "type": "integer"
+    },
+    "n_antenna_ul": {
+      "title": "Number of UL antennas",
+      "type": "integer"
+    },
+    "ru_type": {
+      "type": "string"
+    },
+    "ru_link_type": {
+      "type": "string"
     }
   }
 }

@@ -76,6 +76,8 @@ frontend https-frontend
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
 {%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-http-info')) %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
+  # setup Date
+  http-after-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
 {%-     if HTTP3 and slave_instance['enable-http3'] %}
   http-after-response set-header alt-svc "h3=\":{{ configuration['http3-port'] }}\"; ma=3600"
   {#- Ask Chromium to use HTTP3 #}

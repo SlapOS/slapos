@@ -9,6 +9,15 @@
       "request": "instance-default-input-schema.json",
       "response": "instance-default-output-schema.json",
       "index": 0
+    },
+    "default-slave": {
+      "title": "Mail account",
+      "description": "Mail account",
+      "software-type": "default",
+      "request": "instance-slave-input-schema.json",
+      "response": "instance-slave-output-schema.json",
+      "shared": true,
+      "index": 1
     }
   }
 }

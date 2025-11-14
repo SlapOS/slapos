@@ -1,4 +1,4 @@
-#!${buildout:executable}
+#!${:interpreter}
 
 from __future__ import print_function
 equeue_database = '${equeue:database}'

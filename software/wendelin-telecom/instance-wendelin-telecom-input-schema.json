@@ -4,7 +4,7 @@
   "type": "object",
   "allOf": [
     {
-      "$ref": "../erp5/instance-erp5-input-schema.json"
+      "$ref": "../wendelin/instance-wendelin-input-schema.json"
     }
   ],
   "properties": {

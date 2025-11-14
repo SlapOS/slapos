@@ -40,8 +40,11 @@ import gzip
 import lzma
 import MySQLdb
 
+import inotify_simple
+
 from slapos.testing.utils import CrontabMixin
 from slapos.testing.utils import getPromisePluginParameterDict
+from slapos.slap.standalone import SlapOSNodeCommandError
 
 from . import ERP5InstanceTestCase
 from . import setUpModule
@@ -94,6 +97,31 @@ class MariaDBTestCase(ERP5InstanceTestCase):
         charset='utf8mb4'
     )
 
+  @classmethod
+  def waitForInstance(cls) -> None:
+    # Caucase may take a bit more time to grant certificates
+    # Instead of increasing instance_max_retry, lets just wait
+    try:
+      cls.slap.waitForInstance(max_retry=cls.instance_max_retry - 1)
+    except SlapOSNodeCommandError:
+      watch_dir = os.path.join(
+        cls.getComputerPartitionPath(cls.default_partition_reference),
+        'etc', 'mariadb-ssl',
+      )
+      ca_path = os.path.join(watch_dir, 'mariadb-ca.pem')
+      inotify = inotify_simple.INotify()
+      wd = inotify.add_watch(watch_dir, inotify_simple.flags.CREATE)
+      now = time.time()
+      deadline = now + 60
+      while True:
+        timeout = deadline - now
+        if timeout < 0 or os.path.exists(ca_path):
+          break
+        for event in inotify.read(timeout): # read all events
+          pass
+        now = time.time()
+      cls.slap.waitForInstance(debug=cls._debug)
+
 
 class TestCrontabs(MariaDBTestCase, CrontabMixin):
   _save_instance_file_pattern_list = \
@@ -101,9 +129,8 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
       '*/srv/backup/*',
     )
 
-  def test_full_backup(self):
-    # type: () -> None
-    self._executeCrontabAtDate('mariadb-backup', '2050-01-01')
+  def test_full_backup(self) -> None:
+    self._executeCrontabAtDate('mariadb-dump', '2050-01-01')
     full_backup_file, = glob.glob(
       os.path.join(
         self.computer_partition_root_path,
@@ -115,6 +142,17 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
 
     with gzip.open(full_backup_file, 'rt') as dump:
       self.assertIn('CREATE TABLE', dump.read())
+
+  def test_full_mariabackup(self) -> None:
+    self._executeCrontabAtDate('mariabackup', '2050-01-01')
+    self.assertTrue(glob.glob(
+      os.path.join(
+        self.computer_partition_root_path,
+        'srv',
+        'backup',
+        'mariabackup',
+        '205001010000??.full.xb.zstd',
+    )))
 
   def test_logrotate_and_slow_query_digest(self):
     # slow query digest needs to run after logrotate, since it operates on the rotated
@@ -174,14 +212,16 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
             'check-slow-query-pt-digest-result.py',
         ))
     with self.assertRaises(subprocess.CalledProcessError) as error_context:
-      subprocess.check_output('faketime 2050-01-01 %s' % check_slow_query_promise_plugin['command'], shell=True)
+      subprocess.check_output(
+        'faketime 2050-01-01 %s' % check_slow_query_promise_plugin['command'],
+        text=True,
+        shell=True)
     self.assertEqual(
-        error_context.exception.output,
-b"""\
-Threshold is lower than expected: 
-Expected total queries : 1.0 and current is: 2
-Expected slowest query : 0.1 and current is: 3
-""")
+      error_context.exception.output,
+      "Threshold is lower than expected: \n"
+      "Expected total queries : 1.0 and current is: 2\n"
+      "Expected slowest query : 0.1 and current is: 3\n",
+    )
 
 
 class TestMariaDB(MariaDBTestCase):

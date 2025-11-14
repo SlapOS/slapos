@@ -95,7 +95,7 @@
     "request-timeout": {
       "default": 600,
       "description": "Timeout for HTTP requests.",
-      "title": "HTTP Request timeout in seconds",
+      "title": "HTTP Request timeout in seconds. Warning: Changing the parameter will lead to trafficserver service restart.",
       "type": "integer"
     },
     "authenticate-to-backend": {

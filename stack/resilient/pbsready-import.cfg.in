@@ -107,11 +107,18 @@ takeover-triggered-file-path = $${resiliency-takeover-script:takeover-triggered-
 recipe = slapos.cookbook:generate.password
 storage-path = $${directory:srv}/passwd
 
+[resilient-web-takeover-cgi-script-interpreter]
+recipe = zc.recipe.egg
+interpreter = $${buildout:bin-directory}/$${:_buildout_section_name_}
+eggs =
+  legacy-cgi; python_version >= '3.13'
+
 [resilient-web-takeover-cgi-script]
 recipe = collective.recipe.template
 input = ${resilient-web-takeover-cgi-script-download:target}
 output = $${directory:cgi-bin}/web-takeover.cgi
 password = $${resilient-web-takeover-password:passwd}
+interpreter = $${resilient-web-takeover-cgi-script-interpreter:interpreter}
 mode = 700
 proof-signature-url = $${monitor-publish-parameters:monitor-base-url}/private/resilient/backup.signature
 

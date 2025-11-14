@@ -1,7 +1,7 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "Input Parameters",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ORS eNB",
   "properties": {
     "enb_id": {
       "$ref": "instance-enb-input-schema.json#/properties/enb_id",
@@ -9,20 +9,21 @@
     },
     "mme_list": {
       "$ref": "instance-enb-input-schema.json#/properties/mme_list",
-      "default": {
-        "Local core-network": {
+      "default": [
+        {
+          "name": "Local Core Network",
           "mme_addr": "127.0.1.100"
         }
-      }
+      ]
     },
     "plmn_list": {
       "$ref": "instance-enb-input-schema.json#/properties/plmn_list",
       "description": "List of PLMNs broadcasted by the eNodeB, at most 6 (default: 00101)",
-      "default": {
-        "Test PLMN": {
+      "default": [
+        {
           "plmn": "00101"
         }
-      }
+      ]
     },
     "eutra_eutra_handover": {
       "$ref": "instance-enb-input-schema.json#/properties/eutra_eutra_handover"

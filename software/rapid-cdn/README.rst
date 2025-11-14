@@ -22,7 +22,7 @@ These parameters are:
   * ``-frontend-quantity`` : The quantity of frontends to request (defaults to "1")
   * ``-frontend-i-state``: The state of frontend i
   * ``-frontend-i-software-release-url``: Software release to be used for frontends, defaults to the current software release
-  * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo, supported parameters are:
+  * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo. Those parameters will lead to service restart. Supported parameters are:
     * ``ram-cache-size``
     * ``disk-cache-size``
     * ``enable-http3``

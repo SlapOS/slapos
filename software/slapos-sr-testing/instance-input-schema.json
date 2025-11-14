@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Parameters to instantiate SlapOS Software Release Test",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "only-sr": {
+      "description": "Only run tests for the following software releases",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "unittest-args": {
+      "description": "Arguments to pass to `python -m unittest` when running test for a software release",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "discover",
+        "-v"
+      ]
+    },
+    "sbom": {
+      "description": "Software Bill-Of-Material related Configuration.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dependency-track-url": {
+          "description": "Base URL of a dependency track instance where to upload SBOM",
+          "type": "string"
+        },
+        "dependency-track-api-key": {
+          "description": "API Key for the dependency track instance",
+          "type": "string"
+        },
+        "projects": {
+          "description": "Mapping of software ids to dependency track project",
+          "type": "object",
+          "examples": [
+            {
+              "wendelin": "567bb866-37b8-441e-9d1b-ef7e8f9dfeee",
+              "erp5-py3": "7bfa8f07-65d2-4d3e-9f20-7ce3eeaab66b"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

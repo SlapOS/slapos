@@ -215,8 +215,11 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
     # There is one haproxy per family
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
+    balancer_partition_id = self.getPartitionId('balancer')
     process_info, = (
-        p for p in all_process_info if p['name'].startswith('haproxy-')
+      p for p in all_process_info
+      if p['group'] == balancer_partition_id
+      and p['name'].startswith('haproxy-')
     )
     haproxy_process = psutil.Process(process_info['pid'])
     self.assertEqual([socket.AF_INET, socket.AF_INET], [

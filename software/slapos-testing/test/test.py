@@ -43,7 +43,8 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
   os.path.join(
     os.path.abspath(os.path.join(os.path.dirname(__file__), '..')),
     software_file,
-  )
+  ),
+  software_id=software_name, # Avoid snapshot conflict
 )
 
 

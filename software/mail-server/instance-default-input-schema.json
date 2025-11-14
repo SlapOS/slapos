@@ -3,11 +3,38 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Input Parameters",
   "properties": {
-    "request_dns": {
-      "title": "Request DNS",
-      "description": "Request local DNS to a core network running on the same node",
+    "mail-domains": {
+      "title": "Mail Domains",
+      "description": "List of domains that this mail server will host mail for",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "relay-host": {
+      "title": "Relay Host",
+      "description": "The host name of the relay server used for outbound mail",
+      "type": "string"
+    },
+    "relay-port": {
+      "title": "Relay Port",
+      "description": "The port of the relay server used for outbound mail",
+      "type": "integer"
+    },
+    "relay-sr-url": {
+      "title": "Relay SR URL",
+      "description": "A custom URL to use for the relay SR",
+      "type": "string"
+    },
+    "test-account": {
+      "title": "Builtin Test Account",
+      "description": "If set, a builtin test account will be created for each domain with address testmail@<domain> and password testmail",
       "type": "boolean",
-      "default": true
+      "default": false
     }
-  }
+  },
+  "required": [
+    "mail-domains"
+  ]
 }

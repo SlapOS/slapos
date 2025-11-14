@@ -1,10 +1,10 @@
 {
   "type": "object",
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "Input Parameters",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ORS eNB / gNB Duo",
   "properties": {
     "n_antenna_dl": {
-      "$ref": "ru/common.json#/properties/n_antenna_dl",
+      "$ref": "ru/common.json#/$defs/n_antenna_dl",
       "enum": [
         1,
         2,
@@ -13,23 +13,13 @@
       "default": 2
     },
     "n_antenna_ul": {
-      "$ref": "ru/common.json#/properties/n_antenna_ul",
+      "$ref": "ru/common.json#/$defs/n_antenna_ul",
       "enum": [
         1,
         2,
         4
       ],
       "default": 2
-    },
-    "ors_duo_mode": {
-      "title": "ORS Duo Mode",
-      "description": "Single Cell MIMO 4x4: up to 50 MHz of bandwidth in MIMO 4x4. Carrier aggregation: aggregate two cells, up to 100 MHz of bandwidth in MIMO 2x2 (number of DL or UL antennas shouldn't exceed 2 in this mode)",
-      "type": "string",
-      "enum": [
-        "Carrier Aggregation",
-        "Single Cell MIMO 4x4"
-      ],
-      "default": "Single Cell MIMO 4x4"
     }
   }
 }
