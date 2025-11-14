@@ -295,38 +295,34 @@ class DefaultValidator(object):
     # BBB Py2: Accept both str and unicode strings for unstringifying.
     self.strings = (unicode, str) if str is bytes else (str,)
 
-  def extend_typecheck(self, schema, new=False):
-    # Fetch standard validator class
-    v = self.original_validator_for(schema)
-    if self.unstringify:
-      # Create extended type checker to check unstringified values
-      original_type_checker = v.TYPE_CHECKER
-      original_is_type = original_type_checker.is_type
-      def unstringify(value, f):
-        try:
-          return f(value) if type(value) in self.strings else value
-        except ValueError:
-          return value
-      type_checker = original_type_checker.redefine_many({
-        t: lambda _, value: original_is_type(unstringify(value, f), t)
-        for t, f in self.unstringify.items()
-      })
-      # Create extended validator class with extended type checker
-      return jsonschema.validators.extend(v, type_checker=type_checker)
-    elif new:
-      # Create new validator class with identical behavior
-      return jsonschema.validators.extend(v)
-    else:
-      # Use original validator class
-      return v
+  # Due to conditional constructs like oneOf & anyOf, there may be
+  # instances with sub-sub-instances of sub-instances such that
+  # a) the instance as a whole valides the whole schema,
+  # b) the sub-instance I does not validate some sub-schema S,
+  # c) a sub-sub-instance I' of I valides a sub-sub-schema S' of S.
+  # Then I' validates S', but still the defaults of S' should not be
+  # applied to I', nor the values of I' unstringified according to S'.
+  #
+  # The defaults from a (sub)schema should only be applied to a (sub)instance
+  # if that (sub)instance and (sub)schema are on a valid validation path, and
+  # properties of a (sub)instance must only be unstringified according to the
+  # (sub)schemas that are on a valid validation path.
 
-  def create(self, schema):
-    # Obtain new validator class with extended type checking for unstringify.
-    # This class is strictly new, even when unstringify is disabled, so that
-    # it can be monkey-patched freely without altering the jsonschema module.
-    kls = self.extend_typecheck(schema, new=True)
-    # Further extend behavior to collect (sub)schemas that apply
-    #
+  def type_checker(self, v):
+    # Create extended type checker to accept stringified values
+    original_type_checker = v.TYPE_CHECKER
+    original_is_type = original_type_checker.is_type
+    def unstringify(value, f):
+      try:
+        return f(value) if type(value) in self.strings else value
+      except ValueError:
+        return value
+    return original_type_checker.redefine_many({
+      t: lambda _, value: original_is_type(unstringify(value, f), t)
+      for t, f in self.unstringify.items()
+    })
+
+  def iter_errors(self, kls):
     # Due to conditional constructs like oneOf & anyOf, there may be
     # instances with sub-sub-instances of sub-instances such that
     # a) the instance as a whole valides the whole schema,
@@ -361,11 +357,38 @@ class DefaultValidator(object):
             # of later in case it affects internal $ref that refer to $defs
             # higher in the validation path.
             self.memoize_defaults(validator, schema.get('properties'))
-    kls.iter_errors = iter_errors
+    return iter_errors
+
+  def unevaluatedProperties(self, v):
+    # Extended unevaluatedProperties to drop collected schemas:
+    # unevaluatedProperties reevaluates sub-schemas out of the context of
+    # their containing schemas, so a sub-schema that locally validates a
+    # sub-instance may be collected even though the containing schema
+    # does not validate.
+    original_unevaluated = v.VALIDATORS['unevaluatedProperties']
+    def unevaluated(validator, *args):
+      index = len(self.applied_schemas)
+      for e in original_unevaluated(validator, *args):
+        del self.applied_schemas[index:]
+        yield e
+      del self.applied_schemas[index:]
+    return unevaluated
+
+  def create(self, schema, collect_defaults=True):
+    v = self.original_validator_for(schema)
+    if not self.unstringify and not collect_defaults:
+      # Optimisation: use original validator class
+      return v
+    type_checker = self.type_checker(v) if self.unstringify else None
+    validators = {
+      'unevaluatedProperties': self.unevaluatedProperties(v),
+    } if collect_defaults else ()
+    kls = jsonschema.validators.extend(v, validators, None, type_checker)
+    kls.iter_errors = self.iter_errors(kls)
     return kls
 
   @contextmanager
-  def propagate(self, validator_factory, *fargs, **fkw):
+  def propagate(self, *fargs, **fkw):
     # Workaround https://github.com/python-jsonschema/jsonschema/issues/994
     # Reset memoized validators
     self.VALIDATORS = {}
@@ -377,7 +400,7 @@ class DefaultValidator(object):
       try:
         return self.VALIDATORS[version]
       except KeyError:
-        kls = validator_factory(schema, *fargs, **fkw)
+        kls = self.create(schema, *fargs, **fkw)
         self.VALIDATORS[version] = kls
         return kls
     try: # __enter__
@@ -410,7 +433,7 @@ class DefaultValidator(object):
     # the valid validation path was obtained with unstringification, altering
     # the type checking logic here could result in altered validation paths!
     if e is None and (self.unstringify or self.set_defaults):
-      with self.propagate(self.extend_typecheck, new=False) as validator_for:
+      with self.propagate(collect_defaults=False) as validator_for:
         for e in validator_for(schema)(schema).iter_errors(instance):
           yield e
 
