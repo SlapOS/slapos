@@ -364,7 +364,7 @@ config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
 {% endif %} {# if virtual_hard_drive_url_enabled #}
 
 [kvm-parameter-dict]
-python-path = {{ python_executable }}
+python-path = {{ python_eggs_executable }}
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 
@@ -503,6 +503,8 @@ depends =
   {{ depend_section }}
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
+qmp-socket-path = ${kvm-controller-parameter-dict:qmp-socket-path}
+controlling-socket-path = ${kvm-controller-parameter-dict:controlling-socket-path}
 wrapper-path = ${directory:services}/kvm
 command-line = ${kvm-run:output}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
