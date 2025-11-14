@@ -130,9 +130,11 @@ class KVMTestCase(InstanceTestCase):
     ):
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
+    kvm_pid_file_list = glob.glob(os.path.join(
+      self.slap._instance_root, '*', 'var', 'run', 'pid_file'))
+    self.assertEqual(1, len(kvm_pid_file_list))
+    with open(kvm_pid_file_list[0]) as fh:
+      kvm_pid = int(fh.read().strip())
     sub_shared = re.compile(r'^%s/[^/]+/[0-9a-f]{32}/'
                             % re.escape(self.slap.shared_directory)).sub
     image_list = []
@@ -974,6 +976,36 @@ class TestInstanceResilientBackupExporter(
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
       1)
+    self.assertImported()
+    # restart the VM and prove that the backup worked
+    self.requestDefaultInstance(state='stopped')
+    self.waitForInstanceWithPropagation()
+    self.requestDefaultInstance()
+    self.waitForInstanceWithPropagation()
+    # assure that gracefull stop kicked in
+    kvm_log_file_list = glob.glob(
+      self.getPartitionPath('kvm-export', '.*_kvm-*.log'))
+    self.assertEqual(1, len(kvm_log_file_list))
+    with open(kvm_log_file_list[0]) as fh:
+      kvm_log_list = fh.readlines()
+    stopping_str = 'Gracefully stopping qemu\n'
+    stopped_str = 'Gracefully stopped qemu\n'
+    stopping_list = [q for q in kvm_log_list if q == stopping_str]
+    self.assertEqual(1, len(stopping_list))
+    stopped_list = [q for q in kvm_log_list[kvm_log_list.index(stopping_str):]
+                    if q == stopped_str]
+    self.assertEqual(1, len(stopped_list))
+
+    with open(equeue_file, 'w') as fh:
+      fh.write('')
+    self.call_exporter()
+    awaitBackup(equeue_file)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      2)
     self.assertImported()
 
 
@@ -2058,13 +2090,15 @@ class TestNatRulesKvmCluster(KVMTestCase):
     })}
 
   def getRunningHostFwd(self):
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                 if 'kvm-' in q['name']][0]['pid']
-      kvm_process = psutil.Process(kvm_pid)
-      for entry in kvm_process.cmdline():
-        if 'hostfwd' in entry:
-          return entry
+    kvm_pid_file_list = glob.glob(os.path.join(
+      self.slap._instance_root, '*', 'var', 'run', 'pid_file'))
+    self.assertEqual(1, len(kvm_pid_file_list))
+    with open(kvm_pid_file_list[0]) as fh:
+      kvm_pid = int(fh.read().strip())
+    kvm_process = psutil.Process(kvm_pid)
+    for entry in kvm_process.cmdline():
+      if 'hostfwd' in entry:
+        return entry
 
   def test(self):
     host_fwd_entry = self.getRunningHostFwd()
@@ -2575,9 +2609,11 @@ class ExternalDiskMixin(KvmMixin):
 
   def getRunningDriveList(self, kvm_instance_partition):
     _match_drive = re.compile('file.*if=virtio.*').match
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = next(q for q in instance_supervisor.getAllProcessInfo()
-                     if 'kvm-' in q['name'])['pid']
+    kvm_pid_file_list = glob.glob(os.path.join(
+      self.slap._instance_root, '*', 'var', 'run', 'pid_file'))
+    self.assertEqual(1, len(kvm_pid_file_list))
+    with open(kvm_pid_file_list[0]) as fh:
+      kvm_pid = int(fh.read().strip())
     drive_list = []
     for entry in psutil.Process(kvm_pid).cmdline():
       m = _match_drive(entry)

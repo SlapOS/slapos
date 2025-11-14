@@ -509,7 +509,7 @@ depends =
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/kvm
-command-line = {{ python_executable }} {{ template_kvm_run }} ${kvm-parameter-dict:output}
+command-line = {{ python_eggs_executable }} {{ template_kvm_run }} ${kvm-parameter-dict:output}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files =
 {%- for hash_file in hash_file_list %}
