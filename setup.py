@@ -139,6 +139,7 @@ setup(name=name,
           'request = slapos.recipe.request:Recipe',
           'request.serialised = slapos.recipe.request:RequestJSONEncoded',
           'request.edge = slapos.recipe.request:RequestEdge',
+          'requestinstancelist = slapos.recipe.requestinstancelist:Recipe',
           'requestoptional = slapos.recipe.request:RequestOptional',
           'requestoptional.serialised = '
           'slapos.recipe.request:RequestOptionalJSONEncoded',
