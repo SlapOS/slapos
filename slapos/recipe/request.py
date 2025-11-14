@@ -276,68 +276,6 @@ class RequestOptional(Recipe):
 
   update = install
 
-class RequestDeferred(Recipe):
-  """
-  Request a SlapOS instance. Won't fail if request failed or is not ready.
-  Same as slapos.cookbook:request, but won't raise in case of problem.
-  """
-  def install(self):
-    return []
-    raise ValueError("Couscous")
-    if self._raise_request_exception_formatted:
-      self.logger.warning('Optional request failed.')
-      if not isinstance(self._raise_request_exception, slapmodule.NotFoundError):
-        # full traceback for optional 'not found' is too verbose and confusing
-        self.logger.debug(self._raise_request_exception_formatted)
-    elif self.failed is not None:
-      # Check instance status to know if instance has been deployed
-      try:
-        if self.instance._computer_id is not None:
-          status = self.instance.getState()
-        else:
-          status = 'not ready yet'
-      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
-        status = 'not ready yet'
-      except AttributeError:
-        status = 'unknown'
-      error_message = 'Connection parameter %s not found. '\
-          'Requested instance is currently %s. If this error persists, '\
-          'check status of this instance.' % (self.failed, status)
-      self.logger.warning(error_message)
-    return []
-
-  update = install
-
-class RequestDeferredRequestList(Recipe):
-  """
-  Request a SlapOS instance. Won't fail if request failed or is not ready.
-  Same as slapos.cookbook:request, but won't raise in case of problem.
-  """
-  def install(self):
-    if self._raise_request_exception_formatted:
-      self.logger.warning('Optional request failed.')
-      if not isinstance(self._raise_request_exception, slapmodule.NotFoundError):
-        # full traceback for optional 'not found' is too verbose and confusing
-        self.logger.debug(self._raise_request_exception_formatted)
-    elif self.failed is not None:
-      # Check instance status to know if instance has been deployed
-      try:
-        if self.instance._computer_id is not None:
-          status = self.instance.getState()
-        else:
-          status = 'not ready yet'
-      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
-        status = 'not ready yet'
-      except AttributeError:
-        status = 'unknown'
-      error_message = 'Connection parameter %s not found. '\
-          'Requested instance is currently %s. If this error persists, '\
-          'check status of this instance.' % (self.failed, status)
-      self.logger.warning(error_message)
-    return []
-
-  update = install
-
 class JSONCodec(object):
   def _filterForStorage(self, partition_parameter_kw):
     return wrap(partition_parameter_kw)
