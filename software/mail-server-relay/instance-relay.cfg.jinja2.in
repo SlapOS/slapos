@@ -5,9 +5,7 @@ extends =
 parts =
   cron-entry-logrotate
   directory
-  monitor-base
   publish-connection-information
-  certificate-authority
   postfix
 
 eggs-directory = ${buildout:eggs-directory}
