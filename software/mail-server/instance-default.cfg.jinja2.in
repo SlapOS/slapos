@@ -646,7 +646,7 @@ init =
   ""
 depends =
 {% for relay_request in relay_requests -%}
-  {{ "  $${" + relay_request + ":recipe" }}
+  {{ "  $${" + relay_request + ":recipe}" }}
 {% endfor -%}
 
 
