@@ -191,6 +191,7 @@ recipe = slapos.recipe.template:jinja2
 url = {{ monitor_https_cors }}
 output = ${directory:etc}/httpd-cors.cfg
 context =
+  import re_module re
   key domain monitor-instance-parameter:cors-domains
 
 [monitor-httpd-wrapper]
@@ -329,7 +330,7 @@ recipe = slapos.recipe.build
 url = ${monitor-parameters-propagation:config-monitor-interface-url}
 init =
   from six.moves.urllib.parse import urlparse
-  options['cors-domain'] = urlparse(options['url']).hostname
+  options['cors-domain'] = urlparse(options['url']).netloc
 
 [monitor-instance-parameter]
 monitor-title = ${slap-configuration:instance-title}
