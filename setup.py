@@ -74,6 +74,7 @@ setup(name=name,
         'zc.recipe.egg', # for scripts generation
         'pytz', # for timezone database
         'passlib',
+        'legacy-cgi; python_version >= "3.13"',
         ],
       zip_safe=True,
       entry_points={
