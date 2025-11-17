@@ -112,9 +112,10 @@ pidfile = $${directory:run}/haproxy.pid
 content =
   listen slapproxy
     log global
-    bind $${:ipv6}:$${:slapproxy-port}
+    bind $${:ipv6}:$${:slapproxy-port} ssl crt $${certificate:location}
     mode http
     option httplog
+    http-request set-header X-Forwarded-Proto https
     server slapproxy $${slapproxy:ipv4}:$${slapproxy:port}
     tcp-request connection reject if !{ src $${:accepted-ipv6} }
   listen monitor
