@@ -1,5 +1,6 @@
 {% if domain -%}
-{% set allow_domain = '|'.join(domain.replace('.', '\.').split()) -%}
+{% set character_map = str.maketrans({'.': '\\.', '[': '\\[', ']': '\\]'}) -%}
+{% set allow_domain = '|'.join(domain.translate(character_map).split()) -%}
 SetEnvIf Origin "^http(s)?://(.+\.)?({{ allow_domain }})$" ORIGIN_DOMAIN=$0
 Header always set Access-Control-Allow-Origin "%{ORIGIN_DOMAIN}e" env=ORIGIN_DOMAIN
 Header always set Access-Control-Allow-Credentials "true" env=ORIGIN_DOMAIN
