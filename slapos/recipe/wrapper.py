@@ -51,6 +51,12 @@ class Recipe(GenericBaseRecipe):
     def __init__(self, buildout, name, options):
         self.buildout = buildout
         self.options = options
+
+        # Because we'll generate a executable script setting sys.path
+        # we want to be reinstalled if the paths become different
+        options['_d'] = buildout['buildout']['develop-eggs-directory']
+        options['_e'] = buildout['buildout']['eggs-directory']
+
         hash_files = options.get('hash-files')
         if hash_files:
           self.hash_files = hash_files.split()
