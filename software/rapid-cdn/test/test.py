@@ -44,7 +44,6 @@ import re
 from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
 import urllib.parse
-import socket
 import sys
 import lzma
 from slapos.slap.standalone import SlapOSNodeInstanceError
@@ -7977,30 +7976,3 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNotIn('Installing _deleted-', slapgrid_log)
     self.assertIn('Uninstalling _deleted-', slapgrid_log)
     self.assertNotIn('Updating _deleted-', slapgrid_log)
-
-
-if __name__ == '__main__':
-  class HTTP6Server(backend.ThreadedHTTPServer):
-    address_family = socket.AF_INET6
-  ip, port = sys.argv[1], int(sys.argv[2])
-  if len(sys.argv) > 3:
-    ssl_certificate = sys.argv[3]
-    scheme = 'https'
-  else:
-    ssl_certificate = None
-    scheme = 'http'
-  if ':' in ip:
-    klass = HTTP6Server
-    url_template = '%s://[%s]:%s/'
-  else:
-    klass = backend.ThreadedHTTPServer
-    url_template = '%s://%s:%s/'
-
-  server = klass((ip, port), backend.TestHandler)
-  if ssl_certificate is not None:
-    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-    context.load_cert_chain(ssl_certificate)
-    server.socket = context.wrap_socket(server.socket, server_side=True)
-
-  print((url_template % (scheme, *server.server_address[:2])))
-  server.serve_forever()
