@@ -58,7 +58,7 @@ class TestGitlab(SlapOSInstanceTestCase):
     certificate = cls.getManagedResource("client_certificate", CaucaseCertificate)
     certificate.request("shared frontend", frontend_caucase)
     return {
-      "root-password": "admin1234",
+      "root-password": "iw1Meereesh?ae",
       "frontend-caucase-url-list": frontend_caucase.url,
     }
 
