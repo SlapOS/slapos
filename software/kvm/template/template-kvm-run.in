@@ -418,7 +418,7 @@ print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))
 # ignore signal for the subprocess
 for s in signal_list:
   signal.signal(s, signal.SIG_IGN)
-kvm_process = subprocess.Popen(kvm_argument_list, restore_signals=False)
+kvm_process = subprocess.Popen(kvm_argument_list, restore_signals=False, start_new_session=True)
 # register signals for clean shutdown
 for s in signal_list:
   signal.signal(s, clean_shutdown_handler)
