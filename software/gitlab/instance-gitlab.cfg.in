@@ -328,6 +328,7 @@ environment  =
     PATH = {{ node_bin_location }}:{{ gopath_bin }}:{{ yarn_location }}/bin:/usr/local/bin:/usr/bin:/bin
     LD_LIBRARY_PATH={{ curl_location }}/lib
     BUNDLE_GEMFILE = {{ gitlab_repository_location }}/Gemfile
+    BUNDLE_PATH={{ gitlab_repository_location }}/vendor/bundle
     HOME = ${directory:home}
     RAILS_ENV = production
     SIDEKIQ_MEMORY_KILLER_MAX_RSS = ${instance-parameter:configuration.sidekiq_memory_killer_max_rss}

@@ -38,6 +38,14 @@ internal_socket_dir = "{{ gitaly.internal_socket }}"
 bin_path = "{{ git }}"
 # catfile_cache_size = 100
 
+# # Set this setting to `true` to start ignoring gitconfig files installed in
+# # the system. This includes both system-level (e.g. '/etc/gitconffig') and
+# # global-level (e.g. `$HOME/.gitconfig`) files. This setting will become the
+# # default with v16.0. If you intend to override Git configuration you can do
+# # so via `[[git.config]]`. The default value is `false`.
+# ignore_gitconfig = false
+
+
 # [[git.config]]
 # key = fetch.fsckObjects
 # value = true
@@ -66,33 +74,11 @@ level = "warn"
 #
 # # Additionally exceptions from the Go server can be reported to Sentry
 # sentry_dsn = "https://<key>:<secret>@sentry.io/<project>"
-# # Exceptions from gitaly-ruby can also be reported to Sentry
-# ruby_sentry_dsn = "https://<key>:<secret>@sentry.io/<project>"
 
 
 # # You can optionally configure Gitaly to record histogram latencies on GRPC method calls
 # [prometheus]
 # grpc_latency_buckets = [0.001, 0.005, 0.025, 0.1, 0.5, 1.0, 10.0, 30.0, 60.0, 300.0, 1500.0]
-
-[gitaly-ruby]
-# The directory where gitaly-ruby is installed
-dir = "{{ gitaly.location }}/ruby"
-
-# # Gitaly-ruby resident set size (RSS) that triggers a memory restart (bytes)
-# max_rss = 200000000
-#
-# # Grace period before a gitaly-ruby process is forcibly terminated after exceeding max_rss (seconds)
-# graceful_restart_timeout = "10m"
-#
-# # Time that gitaly-ruby memory must remain high before a restart (seconds)
-# restart_delay = "5m"
-#
-# # Number of gitaly-ruby worker processes
-num_workers = {{ gitaly.num_workers }}
-#
-# # Search path for system gitconfig file (e.g. /etc, /opt/gitlab/embedded/etc)
-# # NOTE: This only affects RPCs that use Rugged.
-# rugged_git_config_search_path = "/etc"
 
 [gitlab-shell]
 # The directory where gitlab-shell is installed
@@ -120,6 +106,13 @@ url = "http+unix://{{ urllib.parse.unquote_plus(gitlab_workhorse.socket) }}"
 # [[concurrency]]
 # rpc = "/gitaly.RepositoryService/GarbageCollect"
 # max_per_repo = 1
+# max_queue_wait = "1m"
+# max_queue_size = 10
+
+# [[rate_limiting]]
+# rpc = "/gitaly.SmartHTTPService/PostUploadPackWithSidechannel"
+# interval = "1m"
+# burst = 5
 
 # Daily maintenance designates time slots to run daily to optimize and maintain
 # enabled storages.
@@ -130,15 +123,17 @@ url = "http+unix://{{ urllib.parse.unquote_plus(gitlab_workhorse.socket) }}"
 # storages = ["default"]
 # disabled = false
 
+# Limit the resources Gitaly can use via Linux cgroups v1
 # [cgroups]
-# count = 10
 # mountpoint = "/sys/fs/cgroup"
 # hierarchy_root = "gitaly"
+# memory_bytes = 64424509440 # 60gb
+# cpu_shares = 1024
+# cpu_quota_us = 400000
 
-# [cgroups.memory]
-# enabled = true
-# limit = 1048576
-
-# [cgroups.cpu]
-# enabled = true
-# shares = 512
+# Limit the resources each repository can use via Linux cgroups v1
+# [cgroups.repositories]
+# count = 500
+# memory_bytes = 12884901888 # 12gb
+# cpu_shares = 512
+# cpu_quota_us = 200000
