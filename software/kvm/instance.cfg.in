@@ -28,7 +28,7 @@ global-ipv4-network =
 [slap-configuration]
 <= slap-connection
 recipe = slapos.cookbook:slapconfiguration.jsonschema
-jsonschema = ${software.json:target}
+jsonschema = ${software.json:location}
 set-default = none
 validate-parameters = main
 unstringify = main
