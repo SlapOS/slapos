@@ -17,6 +17,8 @@ parts =
   publish-shared
 {% if slapparameter_dict['request-dns']['enable'] %}
   request-dns-entry
+  request-dns-entry-autoconfig
+  mail-config
 {% endif %}
   request-relays
 
@@ -459,13 +461,33 @@ output = $${directory:www}/password.php
 context =
   key dovecot_passwd dovecot-passwords:target
 
+{% if slapparameter_dict['request-dns']['enable'] %}
+# Mail Autoconfig
+# ---------------
+
+[mail-config-directory]
+recipe = slapos.cookbook:mkdirectory
+root = $${directory:www}/autoconfig
+mail = $${:root}/mail
+
+[mail-config]
+recipe = slapos.recipe.template:jinja2
+url = ${mail-config.jinja2.xml:target}
+output = $${mail-config-directory:mail}/config-v1.1.xml
+context =
+  key domain request-dns-entry:connection-domain
+  key imap_port dovecot-conf:imap-port
+  raw smtp_port {{ smtp_port }}
+{% endif %}
+
 
 # Apache/PHP server
 # -----------------
 
 [apache-network-configuration]
-listening-ip = {{ ipv6 }}
-listening-port = 9988
+listening-ip = {{ ipv6 }}
+http-port = 8080
+https-port = 8081
 
 [apache-php-service]
 recipe = slapos.cookbook:wrapper
@@ -505,11 +527,13 @@ wait-for-files =
 
 [apache-php-configuration]
 document-root = $${directory:www}
+autoconfig-root = $${directory:www}/autoconfig
 pid-file = $${directory:run}/apache.pid
 lock-file = $${directory:run}/apache.lock
 ip = $${apache-network-configuration:listening-ip}
-port = $${apache-network-configuration:listening-port}
-url = https://[$${:ip}]:$${:port}/
+http-port = $${apache-network-configuration:http-port}
+https-port = $${apache-network-configuration:https-port}
+url = https://[$${:ip}]:$${:https-port}/
 error-log = $${directory:httpd-log}/error.log
 access-log = $${directory:httpd-log}/access.log
 log-dir = $${directory:httpd-log}
@@ -571,7 +595,7 @@ wrapper = $${directory:bin}/ca-apache-php
 promise = check_socket_listening
 name = apache-httpd-port-listening.py
 config-host = $${apache-php-configuration:ip}
-config-port = $${apache-php-configuration:port}
+config-port = $${apache-php-configuration:https-port}
 depends = $${apache-php-service:recipe}
 
 [request-frontend]
@@ -662,6 +686,19 @@ software-type = {{ slapparameter_dict['request-dns']['sr-type'] }}
 shared = true
 config-name = dns-mail-entry
 config-subdomain = mail
+config-ip = {{ ipv6 }}
+sla-computer_guid = $${slap-connection:computer-id}
+return = domain ip
+
+[request-dns-entry-autoconfig]
+<= slap-connection
+name = dns-mail-entry-autoconfig
+recipe = slapos.cookbook:request.serialised
+software-url = automated_local_dns
+software-type = core-network
+shared = true
+config-name = dns-mail-entry
+config-subdomain = autoconfig.mail
 config-ip = {{ ipv6 }}
 sla-computer_guid = $${slap-connection:computer-id}
 return = domain ip
