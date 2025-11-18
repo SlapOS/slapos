@@ -1,6 +1,32 @@
-<VirtualHost *:{{ parameter_dict['port'] }}>
+# HTTP VirtualHost for autoconfig only
+<VirtualHost *:{{ parameter_dict['http-port'] }}>
+  ServerAdmin admin@example.com
+  DocumentRoot {{ parameter_dict['autoconfig-root'] }}
+
+  <Directory {{ parameter_dict['autoconfig-root'] }}>
+      Options -Indexes -FollowSymlinks
+      AllowOverride None
+      Require all denied
+  </Directory>
+
+  # Only allow access to the autoconfig XML file
+  <Location /mail/config-v1.1.xml>
+      Require all granted
+      ForceType text/xml
+  </Location>
+
+  ErrorLog "{{ parameter_dict['log-dir'] }}/lamp-error.log"
+  CustomLog "{{ parameter_dict['log-dir'] }}/lamp-access.log" combined
+</VirtualHost>
+
+# HTTPS VirtualHost for webmail and other services
+<VirtualHost *:{{ parameter_dict['https-port'] }}>
   ServerAdmin admin@example.com
   DocumentRoot {{ parameter_dict['document-root'] }}
+
+  SSLEngine on
+  SSLCertificateFile {{ parameter_dict['cert-file'] }}
+  SSLCertificateKeyFile {{ parameter_dict['key-file'] }}
 
   SetEnvIf Origin "^http(s)?://(.+\.)?(app\.officejs\.com)$" ORIGIN_DOMAIN=$0
   Header always set Access-Control-Allow-Origin "%{ORIGIN_DOMAIN}e" env=ORIGIN_DOMAIN
@@ -16,9 +42,8 @@
       SetEnv HOME {{ parameter_dict['document-root'] }}
       SetEnv HTTP_HOME {{ parameter_dict['document-root'] }}
       Dav off
-
   </Directory>
+
   ErrorLog "{{ parameter_dict['log-dir'] }}/lamp-error.log"
   CustomLog "{{ parameter_dict['log-dir'] }}/lamp-access.log" combined
-
 </VirtualHost>
