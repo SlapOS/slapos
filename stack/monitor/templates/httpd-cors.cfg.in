@@ -1,5 +1,5 @@
 {% if domain -%}
-{% set allow_domain = '|'.join(domain.replace('.', '\.').split()) -%}
+{% set allow_domain = '|'.join(re_module.escape(domain).split()) -%}
 SetEnvIf Origin "^http(s)?://(.+\.)?({{ allow_domain }})$" ORIGIN_DOMAIN=$0
 Header always set Access-Control-Allow-Origin "%{ORIGIN_DOMAIN}e" env=ORIGIN_DOMAIN
 Header always set Access-Control-Allow-Credentials "true" env=ORIGIN_DOMAIN
