@@ -1007,6 +1007,12 @@ class TestInstanceResilientBackupExporter(
       fh.write('')
     self.call_exporter()
     awaitBackup(equeue_file)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      1)
     self.assertImported()
 
 
