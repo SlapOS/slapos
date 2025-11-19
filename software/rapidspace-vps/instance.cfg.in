@@ -19,7 +19,7 @@ vpsbrute-10disks = dynamic-template-vpsbrute-10disks:output
 # we usejsonschema recipe in order to force some values for VPS (see all the const in the JSON schema)
 <= slap-connection
 recipe = slapos.cookbook:slapconfiguration.jsonschema
-jsonschema = ${software.json:target}
+jsonschema = ${software-vps.json:destination}
 set-default = main
 validate-parameters = main
 
