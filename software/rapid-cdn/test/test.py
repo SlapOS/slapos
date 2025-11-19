@@ -74,10 +74,10 @@ else:
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 # ports chosen to not collide with test systems
-HTTP_PORT = '11080'
-HTTPS_PORT = '11443'
-CAUCASE_PORT = '15090'
-KEDIFA_PORT = '15080'
+HTTP_PORT = 11080
+HTTPS_PORT = 11443
+CAUCASE_PORT = 15090
+KEDIFA_PORT = 15080
 
 # IP to originate requests from
 # has to be not partition one
@@ -1494,11 +1494,13 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+      })
     }
 
   def test(self):
@@ -1529,10 +1531,12 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
+      '_': json.dumps({
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+      })
     }
 
   def test(self):
@@ -1542,6 +1546,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
+
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
@@ -1562,12 +1567,14 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-      'automatic-internal-kedifa-caucase-csr': 'false',
-      'automatic-internal-backend-client-caucase-csr': 'false',
+      '_': json.dumps({
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'automatic-internal-kedifa-caucase-csr': False,
+        'automatic-internal-backend-client-caucase-csr': False,
+      })
     }
 
   @classmethod
@@ -1690,12 +1697,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-      'request-timeout': str(cls.request_timeout),
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': cls.request_timeout,
+      })
     }
 
   @classmethod
@@ -1854,20 +1863,20 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'type-zope-prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
+        'prefer-gzip-encoding-to-backend': True,
         'type': 'zope',
       },
       'type-zope-prefer-gzip-encoding-to-backend-https-only': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
+        'prefer-gzip-encoding-to-backend': True,
         'type': 'zope',
-        'https-only': 'false',
+        'https-only': False,
       },
       'type-zope-virtualhostroot-http-port': {
         'url': cls.backend_url,
         'type': 'zope',
         'virtualhostroot-http-port': '12345',
-        'https-only': 'false',
+        'https-only': False,
       },
       'type-zope-virtualhostroot-https-port': {
         'url': cls.backend_url,
@@ -1917,13 +1926,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'type-websocket-websocket-transparent-false': {
         'url': cls.backend_url,
         'type': 'websocket',
-        'websocket-transparent': 'false',
+        'websocket-transparent': False,
       },
       'type-websocket-websocket-path-list-websocket-transparent-false': {
         'url': cls.backend_url,
         'type': 'websocket',
         'websocket-path-list': '////ws//// /with%20space/',
-        'websocket-transparent': 'false',
+        'websocket-transparent': False,
       },
       'type-redirect': {
         'url': cls.backend_url,
@@ -2004,12 +2013,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
+        'prefer-gzip-encoding-to-backend': True,
       },
       'prefer-gzip-encoding-to-backend-https-only': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
-        'https-only': 'false',
+        'prefer-gzip-encoding-to-backend': True,
+        'https-only': False,
       },
       'disabled-cookie-list': {
         'url': cls.backend_url,
@@ -2394,7 +2403,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     self.assertEqual(
       header_dict['x-forwarded-port'],
-      port
+      str(port)
     )
     self.assertEqual(
       header_dict['x-forwarded-proto'],
@@ -5346,14 +5355,16 @@ class TestSlaveHttp3(TestSlave):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-      'request-timeout': '12',
-      'enable-http3': 'True',
-      'http3-port': HTTPS_PORT,
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': 12,
+        'enable-http3': True,
+        'http3-port': HTTPS_PORT,
+      })
     }
   max_client_version = '3.0'
   max_http_version = '3'
@@ -5368,13 +5379,15 @@ class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-      'request-timeout': '12',
-      'enable-http2-by-default': 'false',
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': 12,
+        'enable-http2-by-default': False,
+      })
     }
   max_client_version = '1.1'
   max_http_version = '1'
@@ -5436,7 +5449,9 @@ class TestReplicateSlave(
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return cls.instance_parameter_dict
+    return {
+      '_': json.dumps(cls.instance_parameter_dict)
+    }
 
   @classmethod
   def getSlaveParameterDictDict(cls):
@@ -5531,7 +5546,9 @@ class TestReplicateSlaveOtherDestroyed(
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return cls.instance_parameter_dict
+    return {
+      '_': json.dumps(cls.instance_parameter_dict)
+    }
 
   @classmethod
   def getSlaveParameterDictDict(cls):
@@ -5576,12 +5593,14 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-      're6st-verification-url': cls.re6st_test_url,
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        're6st-verification-url': cls.re6st_test_url,
+      })
     }
 
   @classmethod
@@ -5639,13 +5658,15 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'domain': 'example.com',
-      'apache-certificate': cls.certificate_pem,
-      'apache-key': cls.key_pem,
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
+      '_': json.dumps({
+        'domain': 'example.com',
+        'apache-certificate': cls.certificate_pem,
+        'apache-key': cls.key_pem,
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+      })
     }
 
   @classmethod
@@ -5797,13 +5818,15 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'domain': 'example.com',
-      'apache-certificate': cls.certificate_pem,
-      'apache-key': cls.key_pem,
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
+      '_': json.dumps({
+        'domain': 'example.com',
+        'apache-certificate': cls.certificate_pem,
+        'apache-key': cls.key_pem,
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+      })
     }
 
   @classmethod
@@ -6372,7 +6395,9 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
         'apache-certificate': cls.certificate_pem,
         'apache-key': cls.key_pem,
       })
-    return cls.instance_parameter_dict
+    return {
+      '_': json.dumps(cls.instance_parameter_dict)
+    }
 
   @classmethod
   def getSlaveParameterDictDict(cls):
@@ -6454,12 +6479,14 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-      'ciphers': 'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'ciphers': 'ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384'
+      })
     }
 
   @classmethod
@@ -6563,11 +6590,13 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+      })
     }
 
   ignore_status_code_slave_list = [
@@ -7081,12 +7110,14 @@ class TestSlaveHostHaproxyClash(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-      'request-timeout': '12',
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': 12,
+      })
     }
 
   @classmethod
@@ -7202,7 +7233,9 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return cls.instance_parameter_dict
+    return {
+      '_': json.dumps(cls.instance_parameter_dict)
+    }
 
   def test(self):
     self.instance_parameter_dict.update({
@@ -7304,89 +7337,89 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'X-software_release_url': base_software_url,
         'apache-certificate': self.certificate_pem.decode(),
         'apache-key': self.key_pem.decode(),
-        'authenticate-to-backend': 'True',
+        'authenticate-to-backend': True,
         'backend-client-caucase-url': backend_client_caucase_url,
-        'backend-connect-retries': '1',
-        'backend-connect-timeout': '2',
+        'backend-connect-retries': 1,
+        'backend-connect-timeout': 2,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
-        'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http2-by-default': True,
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-1',
-        'http3-port': '443',
+        'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8411,
         'monitor-username': 'admin',
-        'plain_http_port': '11080',
-        'port': '11443',
+        'plain_http_port': 11080,
+        'port': 11443,
         'ram-cache-size': '512K',
         're6st-verification-url': 're6st-verification-url',
-        'request-timeout': '100',
+        'request-timeout': 100,
         'slave-kedifa-information': '{}'
       },
       'caddy-frontend-2': {
         'X-software_release_url': self.frontend_2_sr,
         'apache-certificate': self.certificate_pem.decode(),
         'apache-key': self.key_pem.decode(),
-        'authenticate-to-backend': 'True',
+        'authenticate-to-backend': True,
         'backend-client-caucase-url': backend_client_caucase_url,
-        'backend-connect-retries': '1',
-        'backend-connect-timeout': '2',
+        'backend-connect-retries': 1,
+        'backend-connect-timeout': 2,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
-        'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http2-by-default': True,
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-2',
-        'http3-port': '443',
+        'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8412,
         'monitor-username': 'admin',
-        'plain_http_port': '11080',
-        'port': '11443',
+        'plain_http_port': 11080,
+        'port': 11443,
         'ram-cache-size': '256K',
         're6st-verification-url': 're6st-verification-url',
-        'request-timeout': '100',
+        'request-timeout': 100,
         'slave-kedifa-information': '{}'
       },
       'caddy-frontend-3': {
         'X-software_release_url': self.frontend_3_sr,
         'apache-certificate': self.certificate_pem.decode(),
         'apache-key': self.key_pem.decode(),
-        'authenticate-to-backend': 'True',
+        'authenticate-to-backend': True,
         'backend-client-caucase-url': backend_client_caucase_url,
-        'backend-connect-retries': '1',
-        'backend-connect-timeout': '2',
+        'backend-connect-retries': 1,
+        'backend-connect-timeout': 2,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
-        'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http2-by-default': True,
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-3',
-        'http3-port': '443',
+        'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
         'monitor-cors-domains': 'monitor.app.officejs.com',
         'monitor-httpd-port': 8413,
         'monitor-username': 'admin',
-        'plain_http_port': '11080',
-        'port': '11443',
+        'plain_http_port': 11080,
+        'port': 11443,
         're6st-verification-url': 're6st-verification-url',
-        'request-timeout': '100',
+        'request-timeout': 100,
         'slave-kedifa-information': '{}'
       },
       'kedifa': {
         'X-software_release_url': self.kedifa_sr,
-        'caucase_port': '15090',
+        'caucase_port': 15090,
         'cluster-identification': 'testing partition 0',
-        'kedifa_port': '15080',
+        'kedifa_port': 15080,
         'monitor-cors-domains': 'monitor.app.officejs.com',
-        'monitor-httpd-port': '8402',
+        'monitor-httpd-port': 8402,
         'monitor-username': 'admin',
         'slave-list': []
       },
@@ -7404,22 +7437,22 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'X-software_release_url': base_software_url,
         'apache-certificate': self.certificate_pem.decode(),
         'apache-key': self.key_pem.decode(),
-        'authenticate-to-backend': 'True',
-        'automatic-internal-backend-client-caucase-csr': 'False',
-        'automatic-internal-kedifa-caucase-csr': 'False',
-        'backend-connect-retries': '1',
-        'backend-connect-timeout': '2',
-        'caucase_port': '15090',
+        'authenticate-to-backend': True,
+        'automatic-internal-backend-client-caucase-csr': False,
+        'automatic-internal-kedifa-caucase-csr': False,
+        'backend-connect-retries': 1,
+        'backend-connect-timeout': 2,
+        'caucase_port': 15090,
         'ciphers': 'ciphers',
         'domain': 'example.com',
-        'enable-http2-by-default': 'True',
+        'enable-http2-by-default': True,
         'full_address_list': [],
         'instance_title': 'testing partition 0',
-        'kedifa_port': '15080',
-        'plain_http_port': '11080',
-        'port': '11443',
+        'kedifa_port': 15080,
+        'plain_http_port': 11080,
+        'port': 11443,
         're6st-verification-url': 're6st-verification-url',
-        'request-timeout': '100',
+        'request-timeout': 100,
         'root_instance_title': 'testing partition 0',
         'slap_computer_id': 'local',
         'slap_computer_partition_id': 'T-0',
@@ -7438,12 +7471,14 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {
-      'domain': 'example.com',
-      'port': HTTPS_PORT,
-      'plain_http_port': HTTP_PORT,
-      'kedifa_port': KEDIFA_PORT,
-      'caucase_port': CAUCASE_PORT,
-      'request-timeout': '12',
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': 12,
+      })
     }
 
   @classmethod
@@ -7932,7 +7967,7 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     'plain_http_port': HTTP_PORT,
     'kedifa_port': KEDIFA_PORT,
     'caucase_port': CAUCASE_PORT,
-    'request-timeout': '12',
+    'request-timeout': 12,
   }
 
   @classmethod
