@@ -22,7 +22,8 @@ disk_type = {{ repr(parameter_dict["disk-type"]) }}
 
 network_adapter = {{ repr(parameter_dict["network-adapter"]) }}
 
-socket_path = '{{ parameter_dict.get("socket-path") }}'
+qmp_socket_path = '{{ parameter_dict.get("qmp-socket-path") }}'
+vnc_socket_path = '{{ parameter_dict.get("vnc-socket-path") }}'
 
 nat_rules = '{{ parameter_dict.get("nat-rules") }}'.strip()
 use_tap = '{{ parameter_dict.get("use-tap") }}'.lower()
@@ -295,9 +296,9 @@ ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
 
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
-  '-vnc', '%s:1,password=on,websocket=on' % listen_ip,
+  '-vnc', 'unix:%s,websocket=unix:%s' % (vnc_socket_path, vnc_socket_path),
   '-boot', 'order=cd,menu=on',
-  '-qmp', 'unix:%s,server,nowait' % socket_path,
+  '-qmp', 'unix:%s,server,nowait' % qmp_socket_path,
   '-pidfile', pid_file_path, '-msg', 'timestamp=on',
   '-D', logfile,
   '-nodefaults',

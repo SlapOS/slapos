@@ -1,0 +1,56 @@
+{
+  "name": "KVM",
+  "description": "KVM",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "VM without backup (dangerous, only for experts)",
+      "description": "Standalone KVM",
+      "request": "instance-kvm-input-schema.json",
+      "response": "instance-kvm-output-schema.json",
+      "index": 1
+    },
+    "kvm-resilient": {
+      "title": "Resilient VM",
+      "description": "Resilient KVM",
+      "request": "instance-kvm-resilient-input-schema.json",
+      "response": "instance-kvm-output-schema.json",
+      "index": 0
+    },
+    "kvm-cluster": {
+      "title": "Cluster",
+      "description": "Cluster KVM",
+      "request": "instance-kvm-cluster-input-schema.json",
+      "response": "instance-kvm-output-schema.json",
+      "index": 2
+    },
+    "kvm-import": {
+      "title": "KVM Import (internal only, DO NOT USE)",
+      "description": "Used for resiliency",
+      "request": "instance-kvm-internal-resiliency-input-schema.json",
+      "response": "instance-kvm-output-schema.json",
+      "index": 3
+    },
+    "kvm-export": {
+      "title": "KVM Export (internal only, DO NOT USE)",
+      "description": "Used for resiliency",
+      "request": "instance-kvm-internal-resiliency-input-schema.json",
+      "response": "instance-kvm-output-schema.json",
+      "index": 4
+    },
+    "pull-backup": {
+      "title": "KVM PBS (internal only, DO NOT USE)",
+      "description": "Used for resiliency",
+      "request": "instance-kvm-internal-resiliency-input-schema.json",
+      "response": "instance-kvm-output-schema.json",
+      "index": 5
+    },
+    "frozen": {
+      "title": "Frozen instance after takeover (internal only, DO NOT USE)",
+      "description": "Used for resiliency",
+      "request": "instance-kvm-internal-resiliency-input-schema.json",
+      "response": "instance-kvm-output-schema.json",
+      "index": 6
+    }
+  }
+}
