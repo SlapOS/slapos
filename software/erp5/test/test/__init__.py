@@ -182,10 +182,7 @@ def neo(instance_parameter_dict):
 class ERP5InstanceTestCase(SlapOSInstanceTestCase, metaclass=ERP5InstanceTestMeta):
   """ERP5 base test case
   """
-  if ERP5PY3:
-    __test_matrix__ = matrix((zeo, ))  # TODO: NEO is not yet enabled for py3
-  else:
-    __test_matrix__ = matrix((zeo, neo))  # switch between NEO and ZEO mode
+  __test_matrix__ = matrix((zeo, neo))
 
   @classmethod
   def isNEO(cls):
