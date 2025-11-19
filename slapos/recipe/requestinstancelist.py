@@ -215,7 +215,26 @@ class Recipe(object):
     """
     request_options = self._createRequestOptions(instance_reference, parameters, state)
     request_recipe = RequestRecipe(self.buildout, instance_reference, request_options)
+    # Store options in the recipe for later access to connection parameters
+    request_recipe.options = request_options
     return request_recipe
+
+  def validateInstance(self, instance_reference, parameters):
+    """
+    Validate instance parameters. Can be overridden by subclasses for custom validation.
+
+    Args:
+      instance_reference: Reference name for the instance
+      parameters: Dict of parameters from the database
+
+    Returns:
+      tuple: (is_valid, error_list, conn_params)
+        - is_valid: Boolean indicating if validation passed
+        - error_list: List of error messages (empty if valid)
+        - conn_params: Dict of connection parameters or validation instructions
+    """
+    # Base implementation: no validation, always valid
+    return True, [], {}
 
   def _getConnectionParameters(self, instance_reference):
     """
@@ -232,6 +251,26 @@ class Recipe(object):
     """
     # Connection parameters are not extracted since 'return' is not a recipe option
     return "{}"
+
+  def _publishConnectionParameters(self, instance_reference, conn_params):
+    """
+    Publish connection parameters for an instance.
+    Parameters are stored in buildout options with prefix 'connection-<instance_reference>-'
+
+    Args:
+      instance_reference: Reference name for the instance
+      conn_params: Dict of connection parameters or validation instructions
+    """
+    if not conn_params:
+      return
+
+    for key, value in conn_params.items():
+      option_key = 'connection-%s-%s' % (instance_reference, key)
+      if isinstance(value, dict):
+        # Serialize dict values as JSON
+        self.options[option_key] = json.dumps(value)
+      else:
+        self.options[option_key] = str(value)
 
   def _addInstanceToDB(self, instance_reference, instance_data, instance_hash):
     """
@@ -310,21 +349,124 @@ class Recipe(object):
     """
     self.requestinstance_db.removeInstanceList([instance_reference])
 
+  def _getConnectionParamsFromRequest(self, request_recipe):
+    """
+    Extract connection parameters from a request recipe after successful install.
+
+    Args:
+      request_recipe: RequestRecipe instance that has been installed
+
+    Returns:
+      Dict of connection parameters (empty if none available)
+    """
+    conn_params = {}
+    # RequestRecipe stores connection parameters in options with 'connection-' prefix
+    # Handle case where options attribute might not exist (e.g., RequestOptional)
+    try:
+      options = getattr(request_recipe, 'options', None)
+      if options:
+        for key, value in options.items():
+          if key.startswith('connection-') and key != 'connection-':
+            # Remove 'connection-' prefix
+            param_name = key[len('connection-'):]
+            conn_params[param_name] = value
+    except (AttributeError, TypeError):
+      # If options doesn't exist or isn't iterable, return empty dict
+      pass
+    return conn_params
+
+  def _processInstance(self, instance_reference, instance_data, instance_hash, is_new=False):
+    """
+    Process a single instance: validate, request if valid, and publish results.
+
+    Args:
+      instance_reference: Reference name for the instance
+      instance_data: Dict with 'parameters' and 'valid' keys
+      instance_hash: Hash of the instance data
+      is_new: True if this is a new instance, False if modified
+
+    Returns:
+      True if instance was successfully processed, False if validation failed
+    """
+    # Get initial valid status from json schema validation
+    initial_valid = instance_data.get('valid', True)
+
+    # If instance is already invalid (from schema validation), skip custom validation
+    # and keep it invalid
+    if not initial_valid:
+      is_valid = False
+      error_list = ['Instance validation failed']
+      validation_conn_params = {}
+    else:
+      # Perform custom validation only for instances that passed schema validation
+      # Custom validation can make valid instances invalid
+      is_valid, error_list, validation_conn_params = self.validateInstance(
+        instance_reference,
+        instance_data['parameters']
+      )
+
+    # Update valid status in instance_data
+    instance_data['valid'] = is_valid
+
+    if not is_valid:
+      # Validation failed - publish validation errors
+      self.logger.warning(
+        'Instance %s failed validation: %s',
+        instance_reference, '; '.join(error_list)
+      )
+      self._publishConnectionParameters(instance_reference, validation_conn_params)
+      # Track invalid instance in DB but don't request it
+      action = 'new' if is_new else 'modified'
+      self.logger.debug('Tracking invalid %s instance (not requesting): %s', action, instance_reference)
+    else:
+      # Validation passed - make the request
+      action = 'new' if is_new else 'update'
+      self.logger.debug('%s instance: %s', action.capitalize(), instance_reference)
+      try:
+        request_recipe = self._requestInstance(
+          instance_reference,
+          instance_data['parameters']
+        )
+        self.request_instances[instance_reference] = request_recipe
+        # Call install to actually make the request
+        request_recipe.install()
+        # Get connection parameters from the request
+        request_conn_params = self._getConnectionParamsFromRequest(request_recipe)
+        # Publish connection parameters (or validation params if request didn't provide any)
+        if request_conn_params:
+          self._publishConnectionParameters(instance_reference, request_conn_params)
+        elif validation_conn_params:
+          message = 'Your instance is valid the request has been transmitted to the master'
+          self._publishConnectionParameters(instance_reference, {"message": message})
+      except Exception as e:
+        self.logger.error(
+          'Failed to %s instance %s: %s',
+          action, instance_reference, e
+        )
+        raise
+    # Update State in local database
+    if is_new:
+      self._addInstanceToDB(instance_reference, instance_data, instance_hash)
+    else:
+      self._updateInstanceInDB(instance_reference, instance_data, instance_hash)
+
   def install(self):
     """
     Compare databases, make requests, and update requestinstance-db-path.
     """
-    # Get update list from instance-db-path
+    # Get the full list of instance from instance-db-path
+    # this list is the list of instance we got from master
     update_list = self._getUpdateList()
 
-    # Get stored dict from requestinstance-db-path
+    # Get list of stored instance reference and their hash from requestinstance-db-path
     stored_dict = self._getStoredDict()
 
     # Compare using InstanceListComparator
+    # and return the new instances, the instances that are removed and the instances that are modified
     comparator = InstanceListComparator(update_list, stored_dict)
     comparison = comparator.compare()
 
-    self.logger.info(
+    self.logger.debug(
       'Comparison results: %d added, %d removed, %d modified',
       len(comparison['added']),
       len(comparison['removed']),
@@ -335,81 +477,32 @@ class Recipe(object):
     instance_map = {item['reference']: item for item in update_list}
     computed_hashes = comparator.update_dict
 
-    # Request new instances (only valid ones)
+    # Get all instances that need processing:
+    # 1. New instances (added)
+    # 2. Modified instances
+    # 3. Previously invalid instances (even if unchanged, they need re-validation)
+
+    unchanged_invalid_instances_to_process = set()
+    invalid_instance_rows = self.requestinstance_db.getInstanceList("reference", invalid_only=True)
+    for row in invalid_instance_rows:
+      if row["reference"] not in comparison['modified']:
+        unchanged_invalid_instances_to_process.add(row["reference"])
+
+    # Process new instances
     for instance_reference in comparison['added']:
       instance_data = instance_map[instance_reference]
       instance_hash = computed_hashes[instance_reference]
+      self._processInstance(instance_reference, instance_data, instance_hash, is_new=True)
 
-      if not instance_data.get('valid', True):
-        # Track invalid instances in DB but don't request them
-        self.logger.info('Tracking invalid new instance (not requesting): %s', instance_reference)
-        try:
-          self._addInstanceToDB(instance_reference, instance_data, instance_hash)
-        except Exception as e:
-          self.logger.error(
-            'Failed to track invalid instance %s: %s',
-            instance_reference, e
-          )
-          raise
-        continue
-
-      self.logger.info('Requesting new instance: %s', instance_reference)
-      try:
-        request_recipe = self._requestInstance(
-          instance_reference,
-          instance_data['parameters']
-        )
-        self.request_instances[instance_reference] = request_recipe
-        # Call install to actually make the request
-        request_recipe.install()
-        # Update DB immediately after successful request
-        self._addInstanceToDB(instance_reference, instance_data, instance_hash)
-      except Exception as e:
-        self.logger.error(
-          'Failed to request new instance %s: %s',
-          instance_reference, e
-        )
-        raise
-
-    # Update modified instances (only valid ones)
-    for instance_reference in comparison['modified']:
+    # Process modified instances and unchanged invalid instances
+    for instance_reference in set(comparison['modified']) | unchanged_invalid_instances_to_process:
       instance_data = instance_map[instance_reference]
       instance_hash = computed_hashes[instance_reference]
-
-      if not instance_data.get('valid', True):
-        # Track invalid instances in DB but don't request them
-        self.logger.info('Tracking invalid modified instance (not requesting): %s', instance_reference)
-        try:
-          self._updateInstanceInDB(instance_reference, instance_data, instance_hash)
-        except Exception as e:
-          self.logger.error(
-            'Failed to track invalid instance %s: %s',
-            instance_reference, e
-          )
-          raise
-        continue
-
-      self.logger.info('Updating instance: %s', instance_reference)
-      try:
-        request_recipe = self._requestInstance(
-          instance_reference,
-          instance_data['parameters']
-        )
-        self.request_instances[instance_reference] = request_recipe
-        # Call install to actually make the request
-        request_recipe.install()
-        # Update DB immediately after successful request
-        self._updateInstanceInDB(instance_reference, instance_data, instance_hash)
-      except Exception as e:
-        self.logger.error(
-          'Failed to update instance %s: %s',
-          instance_reference, e
-        )
-        raise
+      self._processInstance(instance_reference, instance_data, instance_hash, is_new=False)
 
     # Destroy removed instances
     for instance_reference in comparison['removed']:
-      self.logger.info('Destroying instance: %s', instance_reference)
+      self.logger.debug('Destroying instance: %s', instance_reference)
       try:
         request_recipe = self._requestInstance(
           instance_reference,
@@ -430,4 +523,3 @@ class Recipe(object):
     return []
 
   update = install
-
