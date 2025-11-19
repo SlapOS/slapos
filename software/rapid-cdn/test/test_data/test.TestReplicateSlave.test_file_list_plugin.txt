@@ -6,7 +6,6 @@ T-0/etc/plugin/aikc-user-caucase-updater.py
 T-0/etc/plugin/buildout-T-0-status.py
 T-0/etc/plugin/caucased-backend-client.py
 T-0/etc/plugin/check-backend-haproxy-statistic-url-frontend-node-1.py
-T-0/etc/plugin/check-backend-haproxy-statistic-url-frontend-node-2.py
 T-0/etc/plugin/check-free-disk-space.py
 T-0/etc/plugin/check-monitor-frontend-password.py
 T-0/etc/plugin/master-introspection-server-ip-port-listening.py
