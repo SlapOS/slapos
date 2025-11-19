@@ -142,8 +142,9 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(stored[0]['valid_parameter'], False)
 
     log.check(
-      ('test', 'INFO', 'Comparison results: 1 added, 0 removed, 0 modified'),
-      ('test', 'INFO', 'Tracking invalid new instance (not requesting): instance1'),
+      ('test', 'DEBUG', 'Comparison results: 1 added, 0 removed, 0 modified'),
+      ('test', 'WARNING', 'Instance instance1 failed validation: Instance validation failed'),
+      ('test', 'DEBUG', 'Tracking invalid new instance (not requesting): instance1'),
     )
 
   def test_modified_valid_instance(self):
@@ -255,8 +256,9 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(stored_conn, {'param1': 'old_conn1'})  # Preserved from old instance
 
     log.check(
-      ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 1 modified'),
-      ('test', 'INFO', 'Tracking invalid modified instance (not requesting): instance1'),
+      ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
+      ('test', 'WARNING', 'Instance instance1 failed validation: Instance validation failed'),
+      ('test', 'DEBUG', 'Tracking invalid modified instance (not requesting): instance1'),
     )
 
   def test_destroyed_instance(self):
@@ -563,7 +565,7 @@ class TestRequestInstanceList(unittest.TestCase):
     self.request_instance.assert_not_called()
 
     log.check(
-      ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 0 modified'),
+      ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 0 modified'),
     )
 
   def test_shared_instances(self):
