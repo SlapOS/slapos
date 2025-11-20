@@ -6,7 +6,7 @@ import tempfile
 import time
 import os
 
-from slapos.recipe.hostedinstancedb import LocalDBAccessor, HostedInstanceLocalDB, InstanceListComparator, SharedInstanceResultDB
+from slapos.recipe.localinstancedb import LocalDBAccessor, HostedInstanceLocalDB, InstanceListComparator, SharedInstanceResultDB
 
 class TestLocalDBAccessor(unittest.TestCase):
 
@@ -502,7 +502,7 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     # Insert initial instance with both json_parameters and json_connection_parameters
     initial_conn_params = {"host": "example.com", "port": 8080}
     initial_params = {"name": "test1", "value": 10}
-    
+
     # Manually insert an instance with connection parameters
     instance_row = (
       "ref1",
@@ -513,23 +513,23 @@ class TestSharedInstanceResultDB(unittest.TestCase):
       True
     )
     self.db.insertInstanceList([instance_row])
-    
+
     # Verify initial state
     instance = self.db.getInstance("ref1")
     self.assertEqual(json.loads(instance["json_parameters"]), initial_params)
     self.assertEqual(json.loads(instance["json_connection_parameters"]), initial_conn_params)
-    
+
     # Update with new json_parameters using updateFromValidationResults
     new_params = {"name": "test1", "value": 20}  # Changed value
     valid_list = [{"reference": "ref1", "parameters": new_params}]
     invalid_list = []
-    
+
     self.db.updateFromValidationResults(valid_list, invalid_list)
-    
+
     # Verify that json_parameters was updated
     updated_instance = self.db.getInstance("ref1")
     self.assertEqual(json.loads(updated_instance["json_parameters"]), new_params)
-    
+
     # Verify that json_connection_parameters was NOT modified
     self.assertEqual(
       json.loads(updated_instance["json_connection_parameters"]),
@@ -546,13 +546,13 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     instance_obj2 = {"parameters": params2, "reference": "ref2"}
     hash1 = hashlib.sha256(json.dumps(instance_obj1, sort_keys=True).encode('utf-8')).hexdigest()
     hash2 = hashlib.sha256(json.dumps(instance_obj2, sort_keys=True).encode('utf-8')).hexdigest()
-    
+
     instance_rows = [
       ("ref1", json.dumps(params1), "{}", hash1, str(int(time.time())), True),
       ("ref2", json.dumps(params2), "{}", hash2, str(int(time.time())), False)
     ]
     self.db.insertInstanceList(instance_rows)
-    
+
     stored_dict = self.db.getStoredDict()
     self.assertEqual(stored_dict["ref1"], hash1)
     self.assertEqual(stored_dict["ref2"], hash2)
@@ -567,14 +567,14 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     invalid_list = [
       {"reference": "ref3", "parameters": {"name": "test3"}}
     ]
-    
+
     self.db.updateFromValidationResults(valid_list, invalid_list)
-    
+
     # Verify all instances were added
     all_instances = self.db.getInstanceList()
     refs = {r["reference"] for r in all_instances}
     self.assertEqual(refs, {"ref1", "ref2", "ref3"})
-    
+
     # Verify valid_parameter is set correctly
     ref1 = self.db.getInstance("ref1")
     ref2 = self.db.getInstance("ref2")
@@ -592,13 +592,13 @@ class TestSharedInstanceResultDB(unittest.TestCase):
       {"reference": "ref3", "parameters": {"name": "test3"}}
     ]
     self.db.updateFromValidationResults(valid_list1, [])
-    
+
     # Now update with fewer instances - ref2 and ref3 should be removed
     valid_list2 = [
       {"reference": "ref1", "parameters": {"name": "test1"}}
     ]
     self.db.updateFromValidationResults(valid_list2, [])
-    
+
     # Verify only ref1 remains
     all_instances = self.db.getInstanceList()
     refs = {r["reference"] for r in all_instances}
@@ -611,17 +611,17 @@ class TestSharedInstanceResultDB(unittest.TestCase):
       {"reference": "ref1", "parameters": {"name": "test1", "value": 10}}
     ]
     self.db.updateFromValidationResults(valid_list1, [])
-    
+
     # Get initial hash
     initial_instance = self.db.getInstance("ref1")
     initial_hash = initial_instance["hash"]
-    
+
     # Update with modified parameters
     valid_list2 = [
       {"reference": "ref1", "parameters": {"name": "test1", "value": 20}}
     ]
     self.db.updateFromValidationResults(valid_list2, [])
-    
+
     # Verify parameters were updated
     updated_instance = self.db.getInstance("ref1")
     self.assertEqual(json.loads(updated_instance["json_parameters"])["value"], 20)
@@ -635,25 +635,25 @@ class TestSharedInstanceResultDB(unittest.TestCase):
       {"reference": "ref1", "parameters": {"name": "test1"}}
     ]
     self.db.updateFromValidationResults(valid_list1, [])
-    
+
     instance = self.db.getInstance("ref1")
     self.assertTrue(instance["valid_parameter"])
-    
+
     # Move to invalid
     invalid_list = [
       {"reference": "ref1", "parameters": {"name": 2}}
     ]
     self.db.updateFromValidationResults([], invalid_list)
-    
+
     instance = self.db.getInstance("ref1")
     self.assertFalse(instance["valid_parameter"])
-    
+
     # Move back to valid
     valid_list2 = [
       {"reference": "ref1", "parameters": {"name": "test1"}}
     ]
     self.db.updateFromValidationResults(valid_list2, [])
-    
+
     instance = self.db.getInstance("ref1")
     self.assertTrue(instance["valid_parameter"])
 
@@ -665,10 +665,10 @@ class TestSharedInstanceResultDB(unittest.TestCase):
       {"reference": "ref2", "parameters": {"name": "test2"}}
     ]
     self.db.updateFromValidationResults(valid_list1, [])
-    
+
     # Update with empty lists - all should be removed
     self.db.updateFromValidationResults([], [])
-    
+
     # Verify all instances were removed
     all_instances = self.db.getInstanceList()
     self.assertEqual(len(all_instances), 0)
@@ -682,7 +682,7 @@ class TestSharedInstanceResultDB(unittest.TestCase):
       {"reference": "ref3", "parameters": {"name": "test3"}}
     ]
     self.db.updateFromValidationResults(valid_list1, [])
-    
+
     # Update: ref1 modified, ref2 removed, ref3 stays same, ref4 added, ref5 added as invalid
     valid_list2 = [
       {"reference": "ref1", "parameters": {"name": "test1", "updated": True}},
@@ -693,24 +693,24 @@ class TestSharedInstanceResultDB(unittest.TestCase):
       {"reference": "ref5", "parameters": {"name": "test5"}}
     ]
     self.db.updateFromValidationResults(valid_list2, invalid_list2)
-    
+
     # Verify final state
     all_instances = self.db.getInstanceList()
     refs = {r["reference"] for r in all_instances}
     self.assertEqual(refs, {"ref1", "ref3", "ref4", "ref5"})
-    
+
     # Verify ref1 was modified
     ref1 = self.db.getInstance("ref1")
     self.assertTrue(json.loads(ref1["json_parameters"]).get("updated"))
-    
+
     # Verify ref3 unchanged (same hash)
     ref3 = self.db.getInstance("ref3")
     self.assertEqual(json.loads(ref3["json_parameters"])["name"], "test3")
-    
+
     # Verify ref4 added as valid
     ref4 = self.db.getInstance("ref4")
     self.assertTrue(ref4["valid_parameter"])
-    
+
     # Verify ref5 added as invalid
     ref5 = self.db.getInstance("ref5")
     self.assertFalse(ref5["valid_parameter"])
