@@ -6,8 +6,7 @@
     "tx_power_dbm": {
       "title": "Tx Power in dBm",
       "description": "Set transmission power of each antenna in dBm (Range: 0 to 30 dBm. Warning: setting TX Power above 28 dBm might impact radio signal quality)",
-      "type": "number",
-      "default": 20
+      "type": "number"
     }
   }
 }

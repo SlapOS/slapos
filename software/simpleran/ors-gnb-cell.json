@@ -10,7 +10,6 @@
         "20 MHz",
         "40 MHz"
       ],
-      "default": "40 MHz",
       "type": "string"
     },
     "dl_frequency": {
