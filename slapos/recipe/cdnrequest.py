@@ -8,7 +8,7 @@ import urllib.parse
 import subprocess
 import json
 from slapos.recipe.requestinstancelist import Recipe as RequestInstanceListRecipe
-from slapos.recipe.hostedinstancedb import LocalDBAccessor
+from slapos.recipe.localinstancedb import LocalDBAccessor
 
 # Cipher constants from instance-master.cfg.in
 GOOD_CIPHER_LIST = [
