@@ -5,21 +5,405 @@ import dns.resolver
 from testfixtures import LogCapture
 import os
 import tempfile
+import json
+import hashlib
+import time
+from slapos.recipe.hostedinstancedb import HostedInstanceLocalDB
+
+class TestCDNRequestFullScenario(unittest.TestCase):
+  def setUp(self):
+    self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
+    self.instance_db_fd, self.instance_db_path = tempfile.mkstemp()
+    self.requestinstance_db_fd, self.requestinstance_db_path = tempfile.mkstemp()
+
+    self.buildout = {
+      "buildout": {},
+      "slap-connection": {
+        "requested": "started"
+      }
+    }
+    self.options = {
+      'domainvalidation-db-path': self.domainvalidation_db_path,
+      'instance-db-path': self.instance_db_path,
+      'requestinstance-db-path': self.requestinstance_db_path,
+      'server-url': 'http://test.example.com',
+      'computer-id': 'test-computer',
+      'partition-id': 'test-partition',
+      'software-url': 'http://test.example.com/software',
+      'software-type': 'default',
+      'verification-secret': 'test-secret'
+    }
+
+  def tearDown(self):
+    os.close(self.domainvalidation_db_fd)
+    if os.path.exists(self.domainvalidation_db_path):
+      os.unlink(self.domainvalidation_db_path)
+    os.close(self.instance_db_fd)
+    if os.path.exists(self.instance_db_path):
+      os.unlink(self.instance_db_path)
+    os.close(self.requestinstance_db_fd)
+    if os.path.exists(self.requestinstance_db_path):
+      os.unlink(self.requestinstance_db_path)
+
+  def test_install_full_scenario(self):
+    self._test_full_scenario('install')
+
+  def test_update_full_scenario(self):
+    self._test_full_scenario('update')
+
+  def _test_full_scenario(self, method_id):
+    """Test full install() scenario with multiple instance states"""
+
+    # Setup instance-db (update list from master)
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    # Setup requestinstance-db (stored instances)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+    # Setup domainvalidation-db
+    domainvalidation_db = cdnrequest.DomainValidationDB(self.domainvalidation_db_path)
+
+    # 1. New instance (not in requestinstance-db)
+    new_instance_params = {'custom_domain': 'new.example.com', 'url': 'http://new.example.com'}
+    new_instance_data = {'reference': 'new-instance', 'parameters': new_instance_params}
+    # Hash calculation matches InstanceListComparator
+    new_instance_hash = hashlib.sha256(
+      json.dumps(new_instance_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'new-instance',
+      json.dumps(new_instance_params, sort_keys=True),
+      '{}',
+      new_instance_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+
+    # 2. Invalid instance with no changes (in both DBs, invalid, same hash)
+    invalid_no_change_params = {'custom_domain': 'invalid.example.com', 'url': 'http://invalid.example.com'}
+    invalid_no_change_data = {'reference': 'invalid-no-change', 'parameters': invalid_no_change_params}
+    invalid_no_change_hash = hashlib.sha256(
+      json.dumps(invalid_no_change_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'invalid-no-change',
+      json.dumps(invalid_no_change_params, sort_keys=True),
+      '{}',
+      invalid_no_change_hash,
+      str(int(time.time())),
+      False  # invalid
+    )])
+    requestinstance_db.insertInstanceList([(
+      'invalid-no-change',
+      json.dumps(invalid_no_change_params, sort_keys=True),
+      '{}',
+      invalid_no_change_hash,
+      str(int(time.time())),
+      False  # invalid
+    )])
+
+    # 3. Valid instance with no changes (in both DBs, valid, same hash, already validated)
+    valid_no_change_params = {'custom_domain': 'valid.example.com', 'url': 'http://valid.example.com'}
+    valid_no_change_data = {'reference': 'valid-no-change', 'parameters': valid_no_change_params, 'valid': True}
+    valid_no_change_hash = hashlib.sha256(
+      json.dumps(valid_no_change_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'valid-no-change',
+      json.dumps(valid_no_change_params, sort_keys=True),
+      '{}',
+      valid_no_change_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    # Valid instance with no changes (already stored)
+    requestinstance_db.insertInstanceList([(
+      'valid-no-change',
+      json.dumps(valid_no_change_params, sort_keys=True),
+      '{}',
+      valid_no_change_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+
+    # 4. Valid instance with parameter changes but same custom_domain
+    valid_changed_params = {'custom_domain': 'changed.example.com', 'url': 'http://changed.example.com', 'new_param': 'new_value'}
+    valid_changed_data = {'reference': 'valid-changed', 'parameters': valid_changed_params}
+    valid_changed_hash = hashlib.sha256(
+      json.dumps(valid_changed_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'valid-changed',
+      json.dumps(valid_changed_params, sort_keys=True),
+      '{}',
+      valid_changed_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    old_params = {'custom_domain': 'changed.example.com', 'url': 'http://changed.example.com'}
+    old_data = {'reference': 'valid-changed', 'parameters': old_params}
+    old_hash = hashlib.sha256(
+      json.dumps(old_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    requestinstance_db.insertInstanceList([(
+      'valid-changed',
+      json.dumps(old_params, sort_keys=True),
+      '{}',
+      old_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+
+    # 5. Instance to be removed (in requestinstance-db but not in instance-db)
+    to_remove_params = {'custom_domain': 'remove.example.com', 'url': 'http://remove.example.com'}
+    to_remove_data = {'reference': 'to-remove', 'parameters': to_remove_params}
+    to_remove_hash = hashlib.sha256(
+      json.dumps(to_remove_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    requestinstance_db.insertInstanceList([(
+      'to-remove',
+      json.dumps(to_remove_params, sort_keys=True),
+      '{}',
+      to_remove_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+
+    # 6. Valid instance with DNS validation pending - DNS will pass
+    dns_pass_params = {'custom_domain': 'dnspass.example.com', 'url': 'http://dnspass.example.com'}
+    dns_pass_data = {'reference': 'dns-pass', 'parameters': dns_pass_params}
+    dns_pass_hash = hashlib.sha256(
+      json.dumps(dns_pass_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'dns-pass',
+      json.dumps(dns_pass_params, sort_keys=True),
+      '{}',
+      dns_pass_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    # Already in requestinstance-db but not validated yet
+    requestinstance_db.insertInstanceList([(
+      'dns-pass',
+      json.dumps(dns_pass_params, sort_keys=True),
+      '{}',
+      dns_pass_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    # No domain validation entry yet (will be created and validated)
+
+    # 7. Valid instance with DNS validation pending - DNS will fail
+    dns_fail_params = {'custom_domain': 'dnsfail.example.com', 'url': 'http://dnsfail.example.com'}
+    dns_fail_data = {'reference': 'dns-fail', 'parameters': dns_fail_params}
+    dns_fail_hash = hashlib.sha256(
+      json.dumps(dns_fail_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'dns-fail',
+      json.dumps(dns_fail_params, sort_keys=True),
+      '{}',
+      dns_fail_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    # Already in requestinstance-db but not validated yet
+    requestinstance_db.insertInstanceList([(
+      'dns-fail',
+      json.dumps(dns_fail_params, sort_keys=True),
+      '{}',
+      dns_fail_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    # No domain validation entry yet (will be created but validation will fail)
+
+    # Pre-validate valid-no-change instance
+    domainvalidation_db.setDomainValidation('valid-no-change', 'valid.example.com', 'valid-token', True)
+    # Pre-validate valid-changed instance (same domain, will be reused)
+    domainvalidation_db.setDomainValidation('valid-changed', 'changed.example.com', 'changed-token', True)
+    # Pre-validate to-remove instance (will be removed)
+    domainvalidation_db.setDomainValidation('to-remove', 'remove.example.com', 'remove-token', True)
+
+    # Mock RequestRecipe and DNS resolver
+    with mock.patch('slapos.recipe.request.slapmodule.slap') as mock_slap:
+      with mock.patch('dns.resolver.Resolver') as MockResolver:
+        # Setup slap mock
+        slap_instance = mock.MagicMock()
+        request_instance = mock.MagicMock()
+        register_instance = mock.MagicMock()
+        requested_instance = mock.MagicMock()
+        request_instance.return_value = requested_instance
+        register_instance.request = request_instance
+        slap_instance.registerComputerPartition.return_value = register_instance
+        mock_slap.return_value = slap_instance
+
+        # Setup DNS resolver mock
+        mock_resolver_instance = MockResolver.return_value
+        mock_answer = mock.MagicMock()
+        mock_rdata = mock.MagicMock()
+
+        # Store database path for DNS mock to access
+        domainvalidation_db_path = self.options['domainvalidation-db-path']
+        # Will be set after recipe is created
+        recipe_db_instance = [None]
+
+        def get_dns_response(*args, **kwargs):
+          # Get token from database for the domain being checked
+          challenge_domain = args[0]
+          # Extract domain from challenge domain (e.g., '_slapos-challenge.example.com' -> 'example.com')
+          if challenge_domain.startswith('_slapos-challenge.'):
+            domain = challenge_domain[len('_slapos-challenge.'):]
+          else:
+            # Handle custom dns-entry-name
+            parts = challenge_domain.split('.', 1)
+            domain = parts[1] if len(parts) > 1 else challenge_domain
+
+          # Handle DNS validation:
+          # - new.example.com: DNS validation will wait (fail initially)
+          # - dnsfail.example.com: DNS will fail - return wrong token
+          # - dns-pass.example.com: DNS will pass
+          if domain == 'new.example.com' or domain == 'dnsfail.example.com':
+            # DNS will fail - return wrong token
+            mock_rdata.strings = [b'wrong-token']
+          else:
+            # For all other domains, try to get token from database
+            # Use recipe's database instance if available, otherwise create a new connection
+            db_to_use = recipe_db_instance[0]
+            if db_to_use is None:
+              db_to_use = cdnrequest.DomainValidationDB(domainvalidation_db_path)
+
+            # Try to get token by domain (most reliable since token is stored with domain)
+            all_entries = db_to_use.fetchAll(
+              "SELECT * FROM domain_validation WHERE domain=?", (domain,)
+            )
+            if all_entries:
+              mock_rdata.strings = [all_entries[0]['token'].encode('utf-8')]
+            else:
+              # If not found by domain, try by instance reference
+              found = False
+              for instance_ref in ['new-instance', 'invalid-no-change', 'valid-changed', 'dns-pass']:
+                db_entry = db_to_use.getDomainValidationForInstance(instance_ref)
+                if db_entry and db_entry['domain'] == domain:
+                  mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+                  found = True
+                  break
+
+              if not found:
+                # Token not created yet, return placeholder
+                mock_rdata.strings = [b'placeholder']
+
+          mock_answer.__iter__.return_value = iter([mock_rdata])
+          return mock_answer
+
+        mock_resolver_instance.resolve.side_effect = get_dns_response
+
+        # Create recipe and call install()
+        recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+        # Store recipe's database instance for DNS mock to use
+        recipe_db_instance[0] = recipe.domain_validation_db
+
+        with LogCapture() as log:
+          result = getattr(recipe, method_id)()
+
+        # Verify results
+        # 1. New instance should NOT be requested (DNS validation will wait)
+        self.assertNotIn('new-instance', recipe.request_instances)
+        # Verify it was added to requestinstance-db but marked as invalid
+        stored = requestinstance_db.getInstance('new-instance')
+        self.assertIsNotNone(stored)
+        self.assertEqual(stored['reference'], 'new-instance')
+        self.assertFalse(bool(stored['valid_parameter']))  # Should be invalid due to DNS failure
+        # Verify domain validation for new instance (created but not validated)
+        db_entry = domainvalidation_db.getDomainValidationForInstance('new-instance')
+        self.assertIsNotNone(db_entry)
+        self.assertEqual(db_entry['domain'], 'new.example.com')
+        self.assertFalse(bool(db_entry['validated']))  # DNS validation failed
+
+        # 2. Invalid instance with no changes should be re-validated (but not requested)
+        # Check that it's still in the database and still invalid
+        stored = requestinstance_db.getInstance('invalid-no-change')
+        self.assertIsNotNone(stored)
+        self.assertFalse(bool(stored['valid_parameter']))
+        # Should not be in request_instances (validation failed)
+        self.assertNotIn('invalid-no-change', recipe.request_instances)
+
+        # 3. Valid instance with no changes should not be requested (already validated, no changes)
+        # Should not be in request_instances
+        self.assertNotIn('valid-no-change', recipe.request_instances)
+        # Should still be in database
+        stored = requestinstance_db.getInstance('valid-no-change')
+        self.assertIsNotNone(stored)
+        # Domain validation should still exist
+        db_entry = domainvalidation_db.getDomainValidationForInstance('valid-no-change')
+        self.assertIsNotNone(db_entry)
+        self.assertTrue(bool(db_entry['validated']))
+
+        # 4. Valid instance with changes should be requested
+        self.assertIn('valid-changed', recipe.request_instances)
+        # Domain validation should still be valid (same domain)
+        db_entry = domainvalidation_db.getDomainValidationForInstance('valid-changed')
+        self.assertIsNotNone(db_entry)
+        self.assertEqual(db_entry['domain'], 'changed.example.com')
+        self.assertTrue(bool(db_entry['validated']))
+        # Verify it was updated in requestinstance-db
+        stored = requestinstance_db.getInstance('valid-changed')
+        self.assertIsNotNone(stored)
+        stored_params = json.loads(stored['json_parameters'])
+        self.assertEqual(stored_params['new_param'], 'new_value')
+
+        # 5. Instance to be removed should be destroyed
+        stored = requestinstance_db.getInstance('to-remove')
+        self.assertIsNone(stored)
+        # Domain validation should be removed
+        db_entry = domainvalidation_db.getDomainValidationForInstance('to-remove')
+        self.assertIsNone(db_entry)
+
+        # 6. Valid instance with DNS validation pending - DNS will pass
+        # Should be requested after DNS validation passes
+        self.assertIn('dns-pass', recipe.request_instances)
+        # Verify it was updated in requestinstance-db
+        stored = requestinstance_db.getInstance('dns-pass')
+        self.assertIsNotNone(stored)
+        self.assertTrue(bool(stored['valid_parameter']))
+        # Verify domain validation was created and validated
+        db_entry = domainvalidation_db.getDomainValidationForInstance('dns-pass')
+        self.assertIsNotNone(db_entry)
+        self.assertEqual(db_entry['domain'], 'dnspass.example.com')
+        self.assertTrue(bool(db_entry['validated']))
+
+        # 7. Valid instance with DNS validation pending - DNS will fail
+        # Should NOT be requested (DNS validation failed)
+        self.assertNotIn('dns-fail', recipe.request_instances)
+        # Verify it's still in requestinstance-db but invalid
+        stored = requestinstance_db.getInstance('dns-fail')
+        self.assertIsNotNone(stored)
+        self.assertFalse(bool(stored['valid_parameter']))
+        # Verify domain validation was created but not validated
+        db_entry = domainvalidation_db.getDomainValidationForInstance('dns-fail')
+        self.assertIsNotNone(db_entry)
+        self.assertEqual(db_entry['domain'], 'dnsfail.example.com')
+        self.assertFalse(bool(db_entry['validated']))
+
+        # Verify request_instance was called for modified instances only
+        # valid-changed (modified) + dns-pass (DNS validation passed)
+        # + destroyed instance (to-remove) = 3 calls
+        # Note: new-instance is not requested because DNS validation fails
+        # Note: valid-no-change is not requested because it's unchanged
+        self.assertEqual(request_instance.call_count, 3)
+
 
 class TestCDNRequestRecipe(unittest.TestCase):
 
   def setUp(self):
-    self.instance_db_fd, self.instance_db_path = tempfile.mkstemp()
-    self.requestinstance_db_fd, self.requestinstance_db_path = tempfile.mkstemp()
     self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
 
     self.buildout = {
       "buildout": {},
     }
     self.options = {
-      'instance-db-path': self.instance_db_path,
+      'instance-db-path': "/path/to/instance.db",
       'domainvalidation-db-path': self.domainvalidation_db_path,
-      'requestinstance-db-path': self.requestinstance_db_path,
+      'requestinstance-db-path': "/path/to/requestinstance.db",
       'server-url': 'http://test.example.com',
       'computer-id': 'test-computer',
       'partition-id': 'test-partition',
@@ -40,14 +424,6 @@ class TestCDNRequestRecipe(unittest.TestCase):
     # (no mocking needed - will use self.domainvalidation_db_path)
 
   def tearDown(self):
-    self.db_patch.stop()
-
-    os.close(self.instance_db_fd)
-    if os.path.exists(self.instance_db_path):
-      os.unlink(self.instance_db_path)
-    os.close(self.requestinstance_db_fd)
-    if os.path.exists(self.requestinstance_db_path):
-      os.unlink(self.requestinstance_db_path)
     os.close(self.domainvalidation_db_fd)
     if os.path.exists(self.domainvalidation_db_path):
       os.unlink(self.domainvalidation_db_path)
