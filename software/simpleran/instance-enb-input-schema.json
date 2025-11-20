@@ -622,6 +622,12 @@
       "title": "Amarisoft Version",
       "description": "Expert: force amarisoft version",
       "type": "string"
+    },
+    "websocket_url_ipv6": {
+      "title": "Websocket URL IPv6",
+      "description": "Use IPv6 for the websocket URL",
+      "type": "boolean",
+      "default": false
     }
   },
   "$defs": {
