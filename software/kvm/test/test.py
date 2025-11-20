@@ -830,7 +830,7 @@ class CronMixin(object):
       instance_type, 'var', 'cron-d-mock', cron)
     with open(
       cls.getPartitionPath(
-          'kvm-export', 'var', 'cron-environment.json')) as fh:
+          instance_type, 'var', 'cron-environment.json')) as fh:
       cron_environment = json.load(fh)
     job_list = []
     with open(jobpath, 'r') as fh:
@@ -1013,6 +1013,30 @@ class TestInstanceResilientBackupExporter(
     self.assertEqual(
       len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
       1)
+    self.assertImported()
+    # restart the VM and prove that the backup worked
+    self.requestDefaultInstance(state='stopped')
+    self.waitForInstanceWithPropagation()
+    self.requestDefaultInstance()
+    self.waitForInstanceWithPropagation()
+    # assure that gracefull stop kicked in
+    kvm_log_file_list = glob.glob(
+      self.getPartitionPath('kvm-export', '.*_kvm-*.log'))
+    self.assertEqual(1, len(kvm_log_file_list))
+    with open(kvm_log_file_list[0]) as fh:
+      kvm_log_list = fh.readlines()
+    self.assertIn('Gracefully stopping qemu\n', kvm_log_list)
+    self.assertEqual('Gracefully stopped qemu\n', kvm_log_list[-1])
+    with open(equeue_file, 'w') as fh:
+      fh.write('')
+    self.call_exporter()
+    awaitBackup(equeue_file)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      2)
     self.assertImported()
 
 
