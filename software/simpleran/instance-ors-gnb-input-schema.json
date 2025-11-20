@@ -17,36 +17,6 @@
       ],
       "type": "object",
       "default": {}
-    },
-    "nodeb": {
-      "title": "gNB Parameters",
-      "description": "Parameters not related to the cell but to the eNB",
-      "unevaluatedProperties": false,
-      "allOf": [
-        {
-          "$ref": "ors-enb-gnb-classic.json"
-        },
-        {
-          "$ref": "ors-enb-gnb.json"
-        },
-        {
-          "$ref": "ors-gnb.json"
-        }
-      ],
-      "type": "object",
-      "default": {}
-    },
-    "management": {
-      "title": "ORS Management Parameters",
-      "description": "Parameters which are not related to radio, such as promise thresholds, statistical collection, log verbosity etc...",
-      "unevaluatedProperties": false,
-      "allOf": [
-        {
-          "$ref": "ors-params.json"
-        }
-      ],
-      "type": "object",
-      "default": {}
     }
   }
 }
