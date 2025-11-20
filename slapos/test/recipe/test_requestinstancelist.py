@@ -6,7 +6,7 @@ import unittest
 from collections import defaultdict
 
 from slapos.recipe import requestinstancelist
-from slapos.recipe.hostedinstancedb import HostedInstanceLocalDB
+from slapos.recipe.localinstancedb import HostedInstanceLocalDB
 from testfixtures import LogCapture
 
 
