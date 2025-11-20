@@ -6,6 +6,7 @@ import secrets
 import re
 import urllib.parse
 import subprocess
+import json
 from slapos.recipe.requestinstancelist import Recipe as RequestInstanceListRecipe
 from slapos.recipe.hostedinstancedb import LocalDBAccessor
 
@@ -49,7 +50,14 @@ class DomainValidationDB(LocalDBAccessor):
     timestamp VARCHAR(255),
     PRIMARY KEY (instance_reference)
     );
-    CREATE INDEX IF NOT EXISTS idx_instance_reference ON domain_validation(instance_reference);"""
+    CREATE INDEX IF NOT EXISTS idx_instance_reference ON domain_validation(instance_reference);
+    CREATE TABLE IF NOT EXISTS used_hosts (
+      host VARCHAR(255),
+      instance_reference VARCHAR(255),
+      PRIMARY KEY (host, instance_reference)
+    );
+    CREATE INDEX IF NOT EXISTS idx_host ON used_hosts(host);
+    CREATE INDEX IF NOT EXISTS idx_instance_reference_hosts ON used_hosts(instance_reference);"""
 
   def __init__(self, db_path):
     super(DomainValidationDB, self).__init__(db_path, self.schema)
@@ -78,11 +86,56 @@ class DomainValidationDB(LocalDBAccessor):
   def removeDomainValidationForInstance(self, instance_reference):
     """
     Remove domain validation entry for an instance.
+    Also removes all hosts for this instance from used_hosts table.
     """
     self.execute(
       "DELETE FROM domain_validation WHERE instance_reference=?",
       (instance_reference,)
     )
+    self.execute(
+      "DELETE FROM used_hosts WHERE instance_reference=?",
+      (instance_reference,)
+    )
+
+  def addUsedHosts(self, instance_reference, hosts):
+    """
+    Add hosts for an instance to the used_hosts table.
+
+    Args:
+      instance_reference: Instance reference
+      hosts: Set or list of host names (domains and aliases)
+    """
+    if not hosts:
+      return
+    # Remove existing hosts for this instance first
+    self.execute(
+      "DELETE FROM used_hosts WHERE instance_reference=?",
+      (instance_reference,)
+    )
+    # Insert new hosts
+    host_list = [(host, instance_reference) for host in hosts]
+    self.insertMany(
+      "INSERT INTO used_hosts (host, instance_reference) VALUES (?, ?)",
+      host_list
+    )
+
+  def isHostUsedByOtherInstance(self, host, current_instance_reference):
+    """
+    Check if a host is already used by another validated instance.
+    Uses indexed lookup for O(log n) performance.
+
+    Args:
+      host: Host name to check
+      current_instance_reference: Instance reference to exclude from check
+
+    Returns:
+      True if host is used by another instance, False otherwise
+    """
+    row = self.fetchOne(
+      "SELECT instance_reference FROM used_hosts WHERE host=? AND instance_reference!=?",
+      (host, current_instance_reference)
+    )
+    return row is not None
 
   def setDomainValidation(self, instance_reference, domain, token, validated):
     timestamp = str(int(time.time()))
@@ -156,12 +209,57 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
     self.domain_validation_db.setDomainValidation(instance_reference, custom_domain, token, False)
     return token
 
+  def _verifyCustomDomainDNS(self, instance_reference, custom_domain, validation_entry=None):
+    """
+    Grouped DNS verification steps for custom domain.
+    Handles token generation, DNS checking, and validation status updates.
+
+    Args:
+      instance_reference: Instance reference
+      custom_domain: Custom domain to verify
+      validation_entry: Existing validation entry (if any)
+
+    Returns:
+      tuple: (is_valid, error_message, conn_params)
+        - is_valid: True if DNS verification passed
+        - error_message: Error message if validation failed, None otherwise
+        - conn_params: Connection parameters dict with validation instructions or success message
+    """
+    # Generate or reuse token
+    token = self._getOrGenerateToken(instance_reference, custom_domain, validation_entry)
+
+    # Check DNS
+    if self._check_custom_domain(custom_domain, token):
+      # DNS verification passed - mark as validated
+      self.domain_validation_db.setDomainValidation(instance_reference, custom_domain, token, True)
+      return True, None, {}
+    else:
+      # DNS verification failed - mark as not validated
+      self.domain_validation_db.setDomainValidation(instance_reference, custom_domain, token, False)
+      challenge_domain = '%s.%s' % (self.dns_entry_name, custom_domain)
+      error_message = (
+        'Custom domain verification failed. '
+        'Please add TXT record "%s" with value "%s".'
+        % (challenge_domain, token)
+      )
+      conn_params = {
+        'txt_record': challenge_domain,
+        'txt_value': token,
+        'message': error_message
+      }
+      return False, error_message, conn_params
+
   def _processDestroyedInstance(self, instance_reference):
     """
-    Process a destroyed instance: remove the domain validation from the database.
+    Process a destroyed instance: remove the domain validation from the database
+    and remove hosts from used_hosts table.
     """
     self.logger.debug('Destroying instance: %s', instance_reference)
+
+    # Remove domain validation and hosts (removeDomainValidationForInstance handles both)
     self.domain_validation_db.removeDomainValidationForInstance(instance_reference)
+
+    # Call parent to do the actual destruction
     super(CDNRequestRecipe, self)._processDestroyedInstance(instance_reference)
 
   def _validate_netloc(self, netloc):
@@ -187,6 +285,25 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
     # Must not start or end with dot or hyphen
     pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$'
     return bool(re.match(pattern, domain))
+
+  def _get_root_domain(self, domain):
+    """
+    Extract root domain from a domain name.
+    For example: 'www.example.com' -> 'example.com', 'example.com' -> 'example.com'
+
+    Args:
+      domain: Domain name
+
+    Returns:
+      Root domain (last two parts)
+    """
+    if not domain:
+      return None
+    parts = domain.split('.')
+    if len(parts) < 2:
+      return domain
+    # Return last two parts (e.g., 'example.com' from 'www.example.com')
+    return '.'.join(parts[-2:])
 
   def _validate_cipher(self, cipher, warning_list):
     """
@@ -262,6 +379,114 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
       self.logger.warning('SSL key/cert matching validation failed: %s', e)
       return False
 
+  def _extractHostsFromParameters(self, parameters):
+    """
+    Extract all hosts (custom_domain and server-alias) from instance parameters.
+
+    Args:
+      parameters: Instance parameters dict
+
+    Returns:
+      set: Set of host names (domains and aliases)
+    """
+    hosts = set()
+
+    # Add custom_domain if present
+    custom_domain = parameters.get('custom_domain')
+    if custom_domain:
+      hosts.add(custom_domain)
+
+    # Add server-alias entries if present
+    server_alias = parameters.get('server-alias', '')
+    if server_alias:
+      for alias in server_alias.split():
+        # Handle wildcard domains (e.g., *.example.com)
+        if alias.startswith('*.'):
+          clean_alias = alias[2:]
+        else:
+          clean_alias = alias
+        if clean_alias:
+          hosts.add(clean_alias)
+
+    return hosts
+
+  def _validate_server_alias(self, instance_reference, parameters, error_list):
+    """
+    Validate server-alias domains and check for conflicts.
+    Also handles cleanup of old hosts when server-alias changes.
+
+    Args:
+      instance_reference: Instance reference
+      parameters: Instance parameters dict
+      error_list: List to append validation errors to (modified in place)
+    """
+    # Check if server-alias changed and remove old hosts if needed
+    # This must happen before validation to ensure conflict checks use current data
+    existing_instance = self.requestinstance_db.getInstance(instance_reference)
+    if existing_instance and existing_instance['json_parameters']:
+      try:
+        existing_params = json.loads(existing_instance['json_parameters'])
+        existing_server_alias = existing_params.get('server-alias', '')
+        new_server_alias = parameters.get('server-alias', '')
+
+        # Remove hosts if server-alias changed (hosts will be re-added after validation if it passes)
+        if existing_server_alias != new_server_alias:
+          self.domain_validation_db.execute(
+            "DELETE FROM used_hosts WHERE instance_reference=?",
+            (instance_reference,)
+          )
+      except (ValueError, TypeError):
+        pass  # Skip if parameters can't be parsed
+
+    custom_domain = parameters.get('custom_domain', '')
+    server_alias = parameters.get('server-alias', '')
+
+    if not server_alias:
+      return
+
+    # server-alias requires custom_domain
+    if not custom_domain:
+      error_list.append('server-alias requires custom_domain to be set')
+      return
+
+    # Get root domain from custom_domain for server-alias validation
+    custom_root_domain = self._get_root_domain(custom_domain)
+    server_alias_list = server_alias.split()
+    unclashed_aliases = []
+
+    for alias in server_alias_list:
+      # Handle wildcard domains (e.g., *.example.com)
+      if alias.startswith('*.'):
+        clean_alias = alias[2:]
+      else:
+        clean_alias = alias
+
+      # Validate domain format
+      if not self._validate_domain(clean_alias):
+        error_list.append('server-alias \'%s\' not valid' % (alias,))
+        continue
+
+      # Check if server-alias is part of the same root domain as custom_domain
+      alias_root_domain = self._get_root_domain(clean_alias)
+      if alias_root_domain != custom_root_domain:
+        error_list.append('server-alias \'%s\' must be part of the same root domain as custom_domain (%s)' % (alias, custom_root_domain))
+        continue
+
+      # Check if alias matches current instance's custom_domain (allowed)
+      if alias == custom_domain:
+        unclashed_aliases.append(alias)
+        continue
+
+      # Check if alias is already in unclashed list (duplicate in same instance)
+      if alias in unclashed_aliases:
+        continue
+
+      # Check for conflicts using indexed database lookup (O(log n) per host)
+      if self.domain_validation_db.isHostUsedByOtherInstance(clean_alias, instance_reference):
+        error_list.append('server-alias \'%s\' clashes' % (alias,))
+      else:
+        unclashed_aliases.append(alias)
+
   def validateInstance(self, instance_reference, parameters):
     """
     Validate instance parameters and custom domain ownership.
@@ -269,7 +494,7 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
     Schema validation is handled by slapconfiguration, so we skip it here.
     This method performs additional validations that can't be done in JSON schema:
     - Custom domain DNS verification
-    - server-alias domain validation
+    - server-alias domain validation and conflict detection
     - url-netloc-list validation
 
     Returns:
@@ -281,17 +506,8 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
     error_list = []
     warning_list = []
 
-    # Validate server-alias domains
-    server_alias = parameters.get('server-alias', '')
-    if server_alias:
-      for alias in server_alias.split():
-        # Handle wildcard domains (e.g., *.example.com)
-        if alias.startswith('*.'):
-          clean_alias = alias[2:]
-        else:
-          clean_alias = alias
-        if not self._validate_domain(clean_alias):
-          error_list.append('server-alias \'%s\' not valid' % (alias,))
+    # Validate server-alias domains and check for conflicts
+    self._validate_server_alias(instance_reference, parameters, error_list)
 
     # Validate url-netloc-list fields
     for url_key in ['url-netloc-list', 'https-url-netloc-list', 'health-check-failover-url-netloc-list', 'health-check-failover-https-url-netloc-list']:
@@ -350,10 +566,14 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
     validation_entry = self.domain_validation_db.getDomainValidationForInstance(instance_reference)
     if validation_entry and validation_entry['domain'] == custom_domain and validation_entry['validated']:
       # Domain is already validated for this instance
+      # All validations passed, store aliases in DB
+      instance_hosts = self._extractHostsFromParameters(parameters)
+      self.domain_validation_db.addUsedHosts(instance_reference, instance_hosts)
       return True, [], {}
 
     # Check if domain is different from the one in the database, in that case remove the entry
     if validation_entry and validation_entry['domain'] != custom_domain:
+      # Domain changed - remove old entry (this also removes old hosts)
       self.domain_validation_db.removeDomainValidationForInstance(instance_reference)
       validation_entry = None
 
@@ -373,23 +593,16 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
         'domain': custom_domain
       }
 
-    token = self._getOrGenerateToken(instance_reference, custom_domain, validation_entry)
-
-    # Check DNS
-    if self._check_custom_domain(custom_domain, token):
-      self.domain_validation_db.setDomainValidation(instance_reference, custom_domain, token, True)
-      return True, [], {}
-
-    self.domain_validation_db.setDomainValidation(instance_reference, custom_domain, token, False)
-
-    challenge_domain = '%s.%s' % (self.dns_entry_name, custom_domain)
-    error_message = (
-      'Custom domain verification failed. '
-      'Please add TXT record "%s" with value "%s".'
-      % (challenge_domain, token)
+    # Perform DNS verification (grouped function)
+    is_valid, error_message, conn_params = self._verifyCustomDomainDNS(
+      instance_reference, custom_domain, validation_entry
     )
-    return False, [error_message], {
-      'txt_record': challenge_domain,
-      'txt_value': token,
-      'message': error_message
-    }
+
+    if is_valid:
+      # DNS verification passed - store aliases in DB now that everything is validated
+      instance_hosts = self._extractHostsFromParameters(parameters)
+      self.domain_validation_db.addUsedHosts(instance_reference, instance_hosts)
+      return True, [], {}
+    else:
+      # DNS verification failed
+      return False, [error_message], conn_params
