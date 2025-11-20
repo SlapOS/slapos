@@ -830,7 +830,7 @@ class CronMixin(object):
       instance_type, 'var', 'cron-d-mock', cron)
     with open(
       cls.getPartitionPath(
-          'kvm-export', 'var', 'cron-environment.json')) as fh:
+          instance_type, 'var', 'cron-environment.json')) as fh:
       cron_environment = json.load(fh)
     job_list = []
     with open(jobpath, 'r') as fh:
@@ -1007,6 +1007,12 @@ class TestInstanceResilientBackupExporter(
       fh.write('')
     self.call_exporter()
     awaitBackup(equeue_file)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      1)
     self.assertImported()
 
 
