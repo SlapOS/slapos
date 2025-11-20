@@ -12,7 +12,7 @@ import time
 import hashlib
 from collections import defaultdict
 from slapos.recipe import slapconfiguration
-from slapos.recipe.hostedinstancedb import SharedInstanceResultDB
+from slapos.recipe.localinstancedb import SharedInstanceResultDB
 from slapos import format as slapformat
 
 
@@ -923,15 +923,15 @@ class JsonSchemaWithDBSharedTest(JsonSchemaWithDBTestCase):
       # Each entry should match expected data
       expected = [
         {
-          'reference': 'SHARED0', 
-          'json_parameters': json.dumps({'kind': 1}), 
+          'reference': 'SHARED0',
+          'json_parameters': json.dumps({'kind': 1}),
           'hash': hashlib.sha256(
             json.dumps({'kind': 1}, sort_keys=True).encode()).hexdigest(),
           'valid_parameter': True,
         },
         {
-          'reference': 'SHARED1', 
-          'json_parameters': json.dumps({'kind': 2, 'thing': 'hello'}), 
+          'reference': 'SHARED1',
+          'json_parameters': json.dumps({'kind': 2, 'thing': 'hello'}),
           'hash': hashlib.sha256(
             json.dumps({'kind': 2, 'thing': 'hello'}, sort_keys=True).encode()).hexdigest(),
           'valid_parameter': False,
