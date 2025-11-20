@@ -8,7 +8,7 @@ import tempfile
 import json
 import hashlib
 import time
-from slapos.recipe.hostedinstancedb import HostedInstanceLocalDB
+from slapos.recipe.localinstancedb import HostedInstanceLocalDB
 
 class TestCDNRequestFullScenario(unittest.TestCase):
   def setUp(self):

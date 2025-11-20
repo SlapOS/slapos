@@ -118,7 +118,7 @@ class LocalDBAccessor(object):
     # SQLite default parameter limit is 999, use 900 to be safe
     MAX_PARAMS = 900
     keys_list = list(keys)
-    
+
     should_close = connection is None
     if connection is None:
       connection = self._connectDB()

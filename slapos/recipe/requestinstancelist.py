@@ -27,7 +27,7 @@
 import logging
 import json
 import time
-from slapos.recipe.hostedinstancedb import HostedInstanceLocalDB, InstanceListComparator
+from slapos.recipe.localinstancedb import HostedInstanceLocalDB, InstanceListComparator
 from slapos.recipe.request import RequestOptional as RequestRecipe
 import six
 
