@@ -450,6 +450,22 @@ class Recipe(object):
     else:
       self._updateInstanceInDB(instance_reference, instance_data, instance_hash)
 
+  def _processDestroyedInstance(self, instance_reference):
+    """
+    Process a destroyed instance: request the destroy and remove it from the database.
+    """
+    self.logger.debug('Destroying instance: %s', instance_reference)
+    try:
+      request_recipe = self._requestInstance(instance_reference, {}, state='destroyed')
+      request_recipe.install()
+      self._removeInstanceFromDB(instance_reference)
+    except Exception as e:
+      self.logger.error(
+        'Failed to destroy instance %s: %s',
+        instance_reference, e
+      )
+      raise
+
   def install(self):
     """
     Compare databases, make requests, and update requestinstance-db-path.
@@ -502,23 +518,7 @@ class Recipe(object):
 
     # Destroy removed instances
     for instance_reference in comparison['removed']:
-      self.logger.debug('Destroying instance: %s', instance_reference)
-      try:
-        request_recipe = self._requestInstance(
-          instance_reference,
-          {},
-          state='destroyed'
-        )
-        # Call install to actually make the destroy request
-        request_recipe.install()
-        # Remove from DB immediately after successful destroy
-        self._removeInstanceFromDB(instance_reference)
-      except Exception as e:
-        self.logger.error(
-          'Failed to destroy instance %s: %s',
-          instance_reference, e
-        )
-        raise
+      self._processDestroyedInstance(instance_reference)
 
     return []
 
