@@ -1,11 +1,10 @@
 {
   "name": "KVM",
   "description": "KVM",
-  "serialisation": "xml",
+  "serialisation": "json-in-xml",
   "software-type": {
     "default": {
       "title": "VM without backup (dangerous, only for experts)",
-      "serialisation": "json-in-xml",
       "description": "Standalone KVM",
       "request": "instance-kvm-input-schema.json",
       "response": "instance-kvm-output-schema.json",
@@ -21,7 +20,6 @@
     "kvm-cluster": {
       "title": "Cluster",
       "description": "Cluster KVM",
-      "serialisation": "json-in-xml",
       "request": "instance-kvm-cluster-input-schema.json",
       "response": "instance-kvm-output-schema.json",
       "index": 2

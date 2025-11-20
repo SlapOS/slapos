@@ -11,7 +11,7 @@ log=$(mktemp --tmpdir={{ directory['tmp'] }})
 trap "rm -f $log" EXIT TERM INT
 
 set +e
-qmpbackup="{{ qmpbackup }} --socket {{ socket_path }} backup --compress --target $BACKUP_DIR --include {{ disk['device'] }}"
+qmpbackup="{{ qmpbackup }} --socket {{ qmp_socket_path }} backup --compress --target $BACKUP_DIR --include {{ disk['device'] }}"
 $qmpbackup --level auto &> $log
 RESULT=$?
 cat $log
