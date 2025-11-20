@@ -4,11 +4,18 @@
   "type": "object",
   "properties": {
     "nr_bandwidth": {
-      "$ref": "cell/common.json#/$defs/bandwidth"
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth",
+      "enum": [
+        "20 MHz",
+        "40 MHz"
+      ],
+      "default": "40 MHz",
+      "type": "string"
     },
     "dl_frequency": {
       "title": "DL Frequency",
-      "description": "Downlink center frequency of the cell. Default depends on your ORS model, please refer to the connection parameters. Make sure to not set a value outside the range of your ORS",
+      "description": "Downlink center frequency of the cell. (Range: 4610.01 MHz - 4989.99 MHz with 20 MHz bandwidth, or 4620 MHz - 4979.985 MHz with 40 MHz bandwidth)",
       "type": "number"
     },
     "tdd_ul_dl_config": {
