@@ -744,29 +744,257 @@ class TestCDNRequestRecipe(unittest.TestCase):
         ('test', 'DEBUG', 'Destroying instance: %s' % instance_reference),
       )
 
+  def test_validate_server_alias_requires_custom_domain(self):
+    """Test validation fails when server-alias is provided without custom_domain"""
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    # server-alias without custom_domain should fail
+    parameters = {
+      'server-alias': 'example.com'
+    }
+    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    self.assertFalse(is_valid)
+    self.assertIn('server-alias requires custom_domain to be set', error_list)
+
   def test_validate_server_alias_invalid_domain(self):
     """Test validation fails for invalid server-alias domains"""
     recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
 
     # Invalid domain in server-alias
     parameters = {
-      'server-alias': 'invalid..domain.com valid.example.com'
+      'server-alias': 'invalid..domain.com valid.domain.com',
+      'custom_domain': 'domain.com'
     }
     is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
     self.assertFalse(is_valid)
     self.assertIn("server-alias 'invalid..domain.com' not valid", error_list)
 
-  def test_validate_server_alias_wildcard(self):
-    """Test validation accepts wildcard server-alias domains"""
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_server_alias_same_root_domain(self, MockResolver):
+    """Test validation accepts server-alias with same root domain as custom_domain"""
     recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
 
-    # Wildcard domain should be valid
+    # Mock DNS to return success
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      # Get token from database after it's been generated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    # server-alias with same root domain as custom_domain should be valid
     parameters = {
+      'custom_domain': 'example.com',
+      'server-alias': 'www.example.com api.example.com'
+    }
+    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+
+  def test_validate_server_alias_different_root_domain(self):
+    """Test validation fails for server-alias with different root domain"""
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    # server-alias with different root domain should fail
+    parameters = {
+      'custom_domain': 'example.com',
+      'server-alias': 'otherdomain.com'
+    }
+    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    self.assertFalse(is_valid)
+    self.assertIn("server-alias 'otherdomain.com' must be part of the same root domain as custom_domain (example.com)", error_list)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_server_alias_wildcard_same_root_domain(self, MockResolver):
+    """Test validation accepts wildcard server-alias with same root domain"""
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    # Mock DNS to return success
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      # Get token from database after it's been generated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    # Wildcard server-alias with same root domain should be valid
+    parameters = {
+      'custom_domain': 'example.com',
       'server-alias': '*.example.com'
     }
     is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
     self.assertTrue(is_valid)
     self.assertEqual(error_list, [])
+
+  def test_validate_server_alias_wildcard_different_root_domain(self):
+    """Test validation fails for wildcard server-alias with different root domain"""
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    # Wildcard server-alias with different root domain should fail
+    parameters = {
+      'custom_domain': 'example.com',
+      'server-alias': '*.otherdomain.com'
+    }
+    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    self.assertFalse(is_valid)
+    self.assertIn("server-alias '*.otherdomain.com' must be part of the same root domain as custom_domain (example.com)", error_list)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_server_alias_matches_custom_domain(self, MockResolver):
+    """Test validation accepts server-alias that matches custom_domain exactly"""
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    # Mock DNS to return success
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      # Get token from database after it's been generated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    # server-alias matching custom_domain exactly should be valid
+    parameters = {
+      'custom_domain': 'example.com',
+      'server-alias': 'example.com'
+    }
+    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_server_alias_subdomain_of_custom_domain(self, MockResolver):
+    """Test validation accepts server-alias that is subdomain of custom_domain"""
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    # Mock DNS to return success
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      # Get token from database after it's been generated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    # server-alias as subdomain of custom_domain should be valid
+    parameters = {
+      'custom_domain': 'www.example.com',
+      'server-alias': 'api.example.com'
+    }
+    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_server_alias_update_adds_new_hosts(self, MockResolver):
+    """Test that updating server-alias for already validated instance adds new hosts to used_hosts"""
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    # Mock DNS to return success
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      # Get token from database after it's been generated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    # Step 1: Create instance with initial server-alias and validate it
+    initial_params = {
+      'custom_domain': 'example.com',
+      'server-alias': 'www.example.com'
+    }
+
+    # Pre-populate requestinstance_db to simulate existing validated instance
+    recipe.requestinstance_db.insertInstanceList([(
+      'ref1',
+      json.dumps(initial_params, sort_keys=True),
+      "{}",
+      'initial-hash',
+      "1234567890",
+      True
+    )])
+
+    # Pre-populate domain_validation_db to simulate already validated domain
+    recipe.domain_validation_db.setDomainValidation('ref1', 'example.com', 'test-token', True)
+
+    # Pre-populate used_hosts with initial hosts
+    recipe.domain_validation_db.addUsedHosts('ref1', {'example.com', 'www.example.com'})
+
+    # Verify initial hosts are in used_hosts
+    hosts_before = recipe.domain_validation_db.fetchAll(
+      "SELECT host FROM used_hosts WHERE instance_reference=?",
+      ('ref1',)
+    )
+    hosts_before_set = {row['host'] for row in hosts_before}
+    self.assertEqual(hosts_before_set, {'example.com', 'www.example.com'})
+
+    # Step 2: Update server-alias with new aliases
+    updated_params = {
+      'custom_domain': 'example.com',
+      'server-alias': 'www.example.com api.example.com blog.example.com'
+    }
+
+    # Validate the updated instance (should pass DNS since domain is already validated)
+    is_valid, error_list, conn_params = recipe.validateInstance('ref1', updated_params)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+
+    # Step 3: Verify new hosts are added to used_hosts
+    # Note: The hosts are added in validateInstance when DNS validation passes
+    # Since the domain is already validated, validateInstance will return early
+    # and add the hosts. Let's check the used_hosts table
+    hosts_after = recipe.domain_validation_db.fetchAll(
+      "SELECT host FROM used_hosts WHERE instance_reference=?",
+      ('ref1',)
+    )
+    hosts_after_set = {row['host'] for row in hosts_after}
+    # Should include custom_domain and all server-alias entries
+    expected_hosts = {'example.com', 'www.example.com', 'api.example.com', 'blog.example.com'}
+    self.assertEqual(hosts_after_set, expected_hosts)
 
   def test_validate_url_netloc_list_invalid(self):
     """Test validation fails for invalid url-netloc-list"""
