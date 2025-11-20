@@ -1,29 +1,36 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
-/*global console, getAltitude, getAltitudeRel, getInitialAltitude, gpsIsOk,
-  getLatitude, getLongitude, getYaw, execUserScript, initPubsub, loiter,
-  setAirSpeed, setMessage, setTargetCoordinates, std, triggerParachute,
-  updateLogAndProjection, Drone, Worker*/
+{% if isADrone -%}
+/*global console, execUserScript, getAltitude, getClimbRate, getInitialAltitude,
+  gpsIsOk, getMaxCommandFrequency, getPosition, getSpeed, getYaw, initPubsub,
+  isLanding, isReadyToFly, land, loiter, setMessage, setTargetCoordinates, std,
+  takeOff, updateLogAndProjection, ArrayBuffer, Drone, Uint8Array, Worker*/
+{% else -%}
+/*global console, execUserScript, initPubsub, setMessage, setTargetCoordinates,
+  std, updateLogAndProjection, Drone, Worker*/
+{% endif -%}
 import {
   Drone,
 {% if isADrone -%}
-  triggerParachute,
-  getAirspeed,
   getAltitude,
   getClimbRate,
   getInitialAltitude,
   gpsIsOk,
+  getMaxCommandFrequency,
   getPosition,
+  getSpeed,
   getYaw,
 {% endif -%}
   initPubsub,
 {% if isADrone -%}
   isLanding,
+  isReadyToFly,
+  land,
   loiter,
-  setAirSpeed,
 {% endif -%}
   setMessage,
 {% if isADrone -%}
   setTargetCoordinates,
+  takeOff,
   updateLogAndProjection
 {% endif -%}
 } from "{{ qjs_wrapper }}";
@@ -42,10 +49,10 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
 {% if isADrone -%}
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-           fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition,
-           getYaw, initPubsub, isLanding, kill, loadFile, loiter, open,
-           pipe, setAirSpeed, setMessage, setReadHandler, setTargetCoordinates,
-           triggerParachute, updateLogAndProjection, waitpid) {
+           fdopen, getAltitude, getInitialAltitude, gpsIsOk,
+           getMaxCommandFrequency, getPosition, getYaw, initPubsub, isLanding,
+           kill, loadFile, loiter, open, pipe, setMessage, setReadHandler,
+           setTargetCoordinates, land, updateLogAndProjection, waitpid) {
 {% else -%}
 (function (Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
            fdopen, initPubsub, kill, loadFile, open, pipe, setMessage,
@@ -63,43 +70,48 @@ import { evalScript, fdopen, loadFile, open } from "std";
     gwsocket_r_pipe_fd,
     gwsocket_w_pipe_fd,
     handleWebSocketMessage,
-    last_message_timestamp = 0,
     last_log_timestamp = 0,
     parent = Worker.parent,
     peer_dict = {},
+    to_send_list = [],
     user_me = {
-      //required to fly
-{% if isADrone -%}
-      triggerParachute: triggerParachute,
-{% endif -%}
       exit: exitWorker,
       getDroneDict: function () { return drone_dict; },
 {% if isADrone -%}
       getAltitudeAbs: getAltitude,
-      getCurrentPosition: getPosition,
+      getClimbRate: getClimbRate,
+      getCurrentPosition: function () {
+        const position = getPosition();
+        return {
+          latitude: position.latitude,
+          longitude: position.longitude,
+          altitude: position.altitude,
+          timestamp: position.timestamp
+        };
+      },
       getInitialAltitude: getInitialAltitude,
       gpsIsOk: gpsIsOk,
+      getMaxCommandFrequency: getMaxCommandFrequency,
+      getSpeed: getSpeed,
       getYaw: getYaw,
-      getSpeed: getAirspeed,
-      getClimbRate: getClimbRate,
 {% endif -%}
       id: configuration.id,
 {% if isADrone -%}
       isLanding: isLanding,
+      isReadyToFly: isReadyToFly,
+      land: land,
       loiter: loiter,
-      setAirSpeed: setAirSpeed,
       setTargetCoordinates: setTargetCoordinates,
+      takeOff: takeOff,
 {% endif -%}
-      sendMsg: function (msg, id) {
-        if (id === undefined) { id = -1; }
-        setMessage(JSON.stringify({
-          content: msg,
-          timestamp: Date.now(),
-          dest_id: id
-        }));
-      }
+      sendMsg: sendMsg
     };
   conf_file.close();
+
+  function sendMsg(msg, id) {
+    if (id === undefined) { id = -1; }
+    to_send_list.push({ content: msg, dest_id: id });
+  }
 
   function exitWorker(exit_code) {
     if (user_me.hasOwnProperty("onWebSocketMessage")) {
@@ -172,11 +184,11 @@ import { evalScript, fdopen, loadFile, open } from "std";
     user_me.writeWebsocketMessage = function (message) {
       var buf = new ArrayBuffer(message.length);
       var bufView = new Uint8Array(buf);
-      for (var i=0; i<message.length; i++) {
+      for (var i = 0; i < message.length; i++) {
         bufView[i] = message.charCodeAt(i);
       }
       writeMessage(gwsocket_w_pipe_fd, {client: clientId, type: 1, data: buf});
-    }
+    };
     setReadHandler(gwsocket_r_pipe[0], handleWebSocketMessage);
   }
 
@@ -188,18 +200,25 @@ import { evalScript, fdopen, loadFile, open } from "std";
     waitpid(gwsocket_pid, WNOHANG);
   }
 
-  function loadUserScript(path) {
+  function getFileContent(path) {
     var script_content = loadFile(path);
     if (script_content === null) {
-      console.log("Failed to load user script " + path);
+      console.log("Failed to load script", path);
       exitWorker(1);
     }
+    return script_content;
+  }
+
+  function loadUserScript(path, timestamp) {
+    var script_content = getFileContent(path);
     try {
       evalScript(
         "function execUserScript(from, me) {" + script_content + "};"
       );
     } catch (e) {
-      console.log("Failed to evaluate user script", e);
+      console.log("Failed to evaluate user script")
+      console.log(e);
+      console.log(e.stack);
       exitWorker(1);
     }
     execUserScript(null, user_me);
@@ -210,17 +229,40 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
     // Call the drone onStart function
     if (user_me.hasOwnProperty("onStart")) {
-      user_me.onStart();
+      user_me.onStart(timestamp);
+    }
+  }
+
+  function loadOperatorScript(operator_path, map_path) {
+    var script_content = getFileContent(operator_path),
+      operator = {
+        getMapJSON: function () { return JSON.parse(getFileContent(map_path)); },
+        sendMsg: sendMsg
+      };
+    try {
+      evalScript(
+        "function execOperatorScript(operator) {" + script_content + "};"
+      );
+      user_me.execOperatorScript = execOperatorScript.bind(null, operator);
+    } catch (e) {
+      console.log("Failed to evaluate operator script");
+      console.log(e);
+      console.log(e.stack);
     }
   }
 
   function handleMainMessage(evt) {
-    var type = evt.data.type, message, peer_id, log;
+    var type = evt.data.type, parsed_message, peer_id, peer_message,
+      log, res;
 
     switch (type) {
 
     case "initPubsub":
-      initPubsub(configuration.numberOfDrones, configuration.numberOfSubscribers);
+      if (initPubsub(configuration.numberOfDrones,
+                     configuration.numberOfSubscribers
+          ) !== 0) {
+          throw new Error("Failed to initialize PubSub.");
+      }
       for (peer_id = 0; peer_id < configuration.numberOfDrones + configuration.numberOfSubscribers; peer_id++) {
         peer_dict[peer_id] = new Drone(peer_id);
         peer_dict[peer_id].init(peer_id);
@@ -232,21 +274,31 @@ import { evalScript, fdopen, loadFile, open } from "std";
       break;
 
     case "load":
-      loadUserScript(evt.data.path);
+      loadUserScript(evt.data.user_path, evt.data.timestamp);
+      if (evt.data.hasOwnProperty("operator_path") && evt.data.hasOwnProperty("map_path")) {
+        loadOperatorScript(evt.data.operator_path, evt.data.map_path);
+      }
       parent.postMessage({type: "loaded"});
       break;
 
     case "update":
       Object.entries(peer_dict).forEach(function ([id, peer]) {
-        message = peer.message;
-        if (user_me.id !== Number(id) && message.length > 0) {
-          message = JSON.parse(message);
-          if (message.timestamp != last_message_timestamp &&
-              user_me.hasOwnProperty("onGetMsg") &&
-              [-1, user_me.id].includes(message.dest_id)) {
-            last_message_timestamp = message.timestamp;
-            user_me.onGetMsg(message.content);
+        peer_message = peer.message;
+        while (peer_message.length > 0) {
+          try {
+            parsed_message = JSON.parse(peer_message);
+            parsed_message.message_list.forEach(function(message) {
+              if (user_me.hasOwnProperty("onGetMsg")
+                && [-1, user_me.id].includes(message.dest_id)) {
+                user_me.onGetMsg(message.content);
+              }
+            });
+          } catch (error) {
+            console.log("Failed to parse message", peer_message);
+            console.log(error);
+            console.log(error.stack);
           }
+          peer_message = peer.message;
         }
       });
 
@@ -255,11 +307,14 @@ import { evalScript, fdopen, loadFile, open } from "std";
         user_me.onUpdate(evt.data.timestamp);
       }
 
+      setMessage(JSON.stringify({message_list: to_send_list}));
+      to_send_list = [];
+
       if (evt.data.timestamp - last_log_timestamp >= 1000) {
 {% if isADrone -%}
         updateLogAndProjection();
 {% endif -%}
-        last_log_timestamp = evt.data.timestamp; 
+        last_log_timestamp = evt.data.timestamp;
       }
 
       parent.postMessage({type: "updated"});
@@ -271,7 +326,7 @@ import { evalScript, fdopen, loadFile, open } from "std";
 
     default:
       throw new Error("Unsupported message type", type);
-    };
+    }
   }
 
   parent.onmessage = function (evt) {
@@ -281,14 +336,15 @@ import { evalScript, fdopen, loadFile, open } from "std";
       // Catch all potential bug to exit the main process
       // if it occurs
       console.log(error);
+      console.log(error.stack);
       exitWorker(1);
     }
   };
 {% if isADrone -%}
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
-  fdopen, getAltitude, getInitialAltitude, gpsIsOk, getPosition, getYaw,
-  initPubsub, isLanding, kill, loadFile, loiter, open, pipe, setAirSpeed,
-  setMessage, setReadHandler, setTargetCoordinates, triggerParachute,
+  fdopen, getAltitude, getInitialAltitude, gpsIsOk, getMaxCommandFrequency,
+  getPosition, getYaw, initPubsub, isLanding, kill, loadFile, loiter, open,
+  pipe, setMessage, setReadHandler, setTargetCoordinates, land,
   updateLogAndProjection, waitpid));
 {% else -%}
 }(Drone, SIGTERM, WNOHANG, Worker, close, console, evalScript, exec,
