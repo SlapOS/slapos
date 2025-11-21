@@ -9,6 +9,9 @@
     },
     {
       "$ref": "./instance-kvm-input-schema.json#/$defs/instance-parameters"
+    },
+    {
+      "$ref": "./instance-kvm-resilient-input-schema.json#/$defs/resiliency-parameters"
     }
   ],
   "properties": {

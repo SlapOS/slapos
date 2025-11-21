@@ -1229,6 +1229,12 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
     return 'kvm-resilient'
 
   @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      'resiliency-backup-periodicity': '#12 1 * * *'
+      })}
+
+  @classmethod
   def setUpClass(cls):
     super().setUpClass()
     cls.pbs1_ipv6 = cls.getPartitionIPv6(cls.getPartitionIdByType(
