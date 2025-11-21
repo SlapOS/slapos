@@ -17,6 +17,18 @@
       ],
       "type": "object",
       "default": {}
+    },
+    "management": {
+      "title": "ORS Management Parameters",
+      "description": "Parameters which are not related to radio, such as promise thresholds, statistical collection, log verbosity etc...",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "ors-params.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
     }
   }
 }
