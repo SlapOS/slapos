@@ -584,8 +584,8 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
     # If domain is already validated for another instance, return an error
     if other_instance_entry:
       error_message = (
-        'Custom domain "%s" is already used and validated. '
-        'Each domain can only be validated for one instance.'
+        'Your domain "%s" can not be validated. '
+        'Please contact support.'
         % (custom_domain)
       )
       return False, [error_message], {
