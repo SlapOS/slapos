@@ -19,6 +19,9 @@ class TestCDNRequestFullScenario(unittest.TestCase):
     self.buildout = {
       "buildout": {},
       "slap-connection": {
+        "computer-id": "test-computer",
+        "partition-id": "test-partition",
+        "server-url": "http://test.example.com",
         "requested": "started"
       }
     }
@@ -228,18 +231,32 @@ class TestCDNRequestFullScenario(unittest.TestCase):
     # Mock RequestRecipe and DNS resolver
     with mock.patch('slapos.recipe.request.slapmodule.slap') as mock_slap:
       with mock.patch('dns.resolver.Resolver') as MockResolver:
-        # Setup slap mock
-        slap_instance = mock.MagicMock()
-        request_instance = mock.MagicMock()
-        register_instance = mock.MagicMock()
-        requested_instance = mock.MagicMock()
-        request_instance.return_value = requested_instance
-        register_instance.request = request_instance
-        slap_instance.registerComputerPartition.return_value = register_instance
-        mock_slap.return_value = slap_instance
+        # Mock slap library for connection publishing (used by _publishConnectionParameters)
+        with mock.patch('slapos.recipe.requestinstancelist.slap') as mock_slap_publish:
+          # Setup slap mock for RequestRecipe
+          slap_instance = mock.MagicMock()
+          request_instance = mock.MagicMock()
+          register_instance = mock.MagicMock()
+          requested_instance = mock.MagicMock()
+          request_instance.return_value = requested_instance
+          register_instance.request = request_instance
+          slap_instance.registerComputerPartition.return_value = register_instance
+          mock_slap.return_value = slap_instance
 
-        # Setup DNS resolver mock
-        mock_resolver_instance = MockResolver.return_value
+          # Setup slap mock for connection publishing
+          slap_publish_instance = mock.MagicMock()
+          computer_partition = mock.MagicMock()
+          setConnectionDict = mock.MagicMock()
+          computer_partition.setConnectionDict = setConnectionDict
+          slap_publish_instance.registerComputerPartition.return_value = computer_partition
+          mock_slap_publish.slap.return_value = slap_publish_instance
+
+          # Clear connection cache before test
+          from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
+          CONNECTION_CACHE.clear()
+
+          # Setup DNS resolver mock
+          mock_resolver_instance = MockResolver.return_value
         mock_answer = mock.MagicMock()
         mock_rdata = mock.MagicMock()
 
@@ -296,101 +313,195 @@ class TestCDNRequestFullScenario(unittest.TestCase):
           mock_answer.__iter__.return_value = iter([mock_rdata])
           return mock_answer
 
-        mock_resolver_instance.resolve.side_effect = get_dns_response
+          mock_resolver_instance.resolve.side_effect = get_dns_response
 
-        # Create recipe and call install()
-        recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
-        # Store recipe's database instance for DNS mock to use
-        recipe_db_instance[0] = recipe.domain_validation_db
+          # Create recipe and call install()
+          recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+          # Store recipe's database instance for DNS mock to use
+          recipe_db_instance[0] = recipe.domain_validation_db
 
-        with LogCapture() as log:
-          result = getattr(recipe, method_id)()
+          with LogCapture() as log:
+            result = getattr(recipe, method_id)()
 
-        # Verify results
-        # 1. New instance should NOT be requested (DNS validation will wait)
-        self.assertNotIn('new-instance', recipe.request_instances)
-        # Verify it was added to requestinstance-db but marked as invalid
-        stored = requestinstance_db.getInstance('new-instance')
-        self.assertIsNotNone(stored)
-        self.assertEqual(stored['reference'], 'new-instance')
-        self.assertFalse(bool(stored['valid_parameter']))  # Should be invalid due to DNS failure
-        # Verify domain validation for new instance (created but not validated)
-        db_entry = domainvalidation_db.getDomainValidationForInstance('new-instance')
-        self.assertIsNotNone(db_entry)
-        self.assertEqual(db_entry['domain'], 'new.example.com')
-        self.assertFalse(bool(db_entry['validated']))  # DNS validation failed
+          # Verify results
+          # 1. New instance should NOT be requested (DNS validation will wait)
+          self.assertNotIn('new-instance', recipe.request_instances)
+          # Verify it was added to requestinstance-db but marked as invalid
+          stored = requestinstance_db.getInstance('new-instance')
+          self.assertIsNotNone(stored)
+          self.assertEqual(stored['reference'], 'new-instance')
+          self.assertFalse(bool(stored['valid_parameter']))  # Should be invalid due to DNS failure
+          # Verify domain validation for new instance (created but not validated)
+          db_entry = domainvalidation_db.getDomainValidationForInstance('new-instance')
+          self.assertIsNotNone(db_entry)
+          self.assertEqual(db_entry['domain'], 'new.example.com')
+          self.assertFalse(bool(db_entry['validated']))  # DNS validation failed
 
-        # 2. Invalid instance with no changes should be re-validated (but not requested)
-        # Check that it's still in the database and still invalid
-        stored = requestinstance_db.getInstance('invalid-no-change')
-        self.assertIsNotNone(stored)
-        self.assertFalse(bool(stored['valid_parameter']))
-        # Should not be in request_instances (validation failed)
-        self.assertNotIn('invalid-no-change', recipe.request_instances)
+          # 2. Invalid instance with no changes should be re-validated (but not requested)
+          # Check that it's still in the database and still invalid
+          stored = requestinstance_db.getInstance('invalid-no-change')
+          self.assertIsNotNone(stored)
+          self.assertFalse(bool(stored['valid_parameter']))
+          # Should not be in request_instances (validation failed)
+          self.assertNotIn('invalid-no-change', recipe.request_instances)
 
-        # 3. Valid instance with no changes should not be requested (already validated, no changes)
-        # Should not be in request_instances
-        self.assertNotIn('valid-no-change', recipe.request_instances)
-        # Should still be in database
-        stored = requestinstance_db.getInstance('valid-no-change')
-        self.assertIsNotNone(stored)
-        # Domain validation should still exist
-        db_entry = domainvalidation_db.getDomainValidationForInstance('valid-no-change')
-        self.assertIsNotNone(db_entry)
-        self.assertTrue(bool(db_entry['validated']))
+          # 3. Valid instance with no changes should not be requested (already validated, no changes)
+          # Should not be in request_instances
+          self.assertNotIn('valid-no-change', recipe.request_instances)
+          # Should still be in database
+          stored = requestinstance_db.getInstance('valid-no-change')
+          self.assertIsNotNone(stored)
+          # Domain validation should still exist
+          db_entry = domainvalidation_db.getDomainValidationForInstance('valid-no-change')
+          self.assertIsNotNone(db_entry)
+          self.assertTrue(bool(db_entry['validated']))
 
-        # 4. Valid instance with changes should be requested
-        self.assertIn('valid-changed', recipe.request_instances)
-        # Domain validation should still be valid (same domain)
-        db_entry = domainvalidation_db.getDomainValidationForInstance('valid-changed')
-        self.assertIsNotNone(db_entry)
-        self.assertEqual(db_entry['domain'], 'changed.example.com')
-        self.assertTrue(bool(db_entry['validated']))
-        # Verify it was updated in requestinstance-db
-        stored = requestinstance_db.getInstance('valid-changed')
-        self.assertIsNotNone(stored)
-        stored_params = json.loads(stored['json_parameters'])
-        self.assertEqual(stored_params['new_param'], 'new_value')
+          # 4. Valid instance with changes should be requested
+          self.assertIn('valid-changed', recipe.request_instances)
+          # Domain validation should still be valid (same domain)
+          db_entry = domainvalidation_db.getDomainValidationForInstance('valid-changed')
+          self.assertIsNotNone(db_entry)
+          self.assertEqual(db_entry['domain'], 'changed.example.com')
+          self.assertTrue(bool(db_entry['validated']))
+          # Verify it was updated in requestinstance-db
+          stored = requestinstance_db.getInstance('valid-changed')
+          self.assertIsNotNone(stored)
+          stored_params = json.loads(stored['json_parameters'])
+          self.assertEqual(stored_params['new_param'], 'new_value')
 
-        # 5. Instance to be removed should be destroyed
-        stored = requestinstance_db.getInstance('to-remove')
-        self.assertIsNone(stored)
-        # Domain validation should be removed
-        db_entry = domainvalidation_db.getDomainValidationForInstance('to-remove')
-        self.assertIsNone(db_entry)
+          # 5. Instance to be removed should be destroyed
+          stored = requestinstance_db.getInstance('to-remove')
+          self.assertIsNone(stored)
+          # Domain validation should be removed
+          db_entry = domainvalidation_db.getDomainValidationForInstance('to-remove')
+          self.assertIsNone(db_entry)
 
-        # 6. Valid instance with DNS validation pending - DNS will pass
-        # Should be requested after DNS validation passes
-        self.assertIn('dns-pass', recipe.request_instances)
-        # Verify it was updated in requestinstance-db
-        stored = requestinstance_db.getInstance('dns-pass')
-        self.assertIsNotNone(stored)
-        self.assertTrue(bool(stored['valid_parameter']))
-        # Verify domain validation was created and validated
-        db_entry = domainvalidation_db.getDomainValidationForInstance('dns-pass')
-        self.assertIsNotNone(db_entry)
-        self.assertEqual(db_entry['domain'], 'dnspass.example.com')
-        self.assertTrue(bool(db_entry['validated']))
+          # 6. Valid instance with DNS validation pending - DNS will pass
+          # Should be requested after DNS validation passes
+          self.assertIn('dns-pass', recipe.request_instances)
+          # Verify it was updated in requestinstance-db
+          stored = requestinstance_db.getInstance('dns-pass')
+          self.assertIsNotNone(stored)
+          self.assertTrue(bool(stored['valid_parameter']))
+          # Verify domain validation was created and validated
+          db_entry = domainvalidation_db.getDomainValidationForInstance('dns-pass')
+          self.assertIsNotNone(db_entry)
+          self.assertEqual(db_entry['domain'], 'dnspass.example.com')
+          self.assertTrue(bool(db_entry['validated']))
 
-        # 7. Valid instance with DNS validation pending - DNS will fail
-        # Should NOT be requested (DNS validation failed)
-        self.assertNotIn('dns-fail', recipe.request_instances)
-        # Verify it's still in requestinstance-db but invalid
-        stored = requestinstance_db.getInstance('dns-fail')
-        self.assertIsNotNone(stored)
-        self.assertFalse(bool(stored['valid_parameter']))
-        # Verify domain validation was created but not validated
-        db_entry = domainvalidation_db.getDomainValidationForInstance('dns-fail')
-        self.assertIsNotNone(db_entry)
-        self.assertEqual(db_entry['domain'], 'dnsfail.example.com')
-        self.assertFalse(bool(db_entry['validated']))
+          # 7. Valid instance with DNS validation pending - DNS will fail
+          # Should NOT be requested (DNS validation failed)
+          self.assertNotIn('dns-fail', recipe.request_instances)
+          # Verify it's still in requestinstance-db but invalid
+          stored = requestinstance_db.getInstance('dns-fail')
+          self.assertIsNotNone(stored)
+          self.assertFalse(bool(stored['valid_parameter']))
+          # Verify domain validation was created but not validated
+          db_entry = domainvalidation_db.getDomainValidationForInstance('dns-fail')
+          self.assertIsNotNone(db_entry)
+          self.assertEqual(db_entry['domain'], 'dnsfail.example.com')
+          self.assertFalse(bool(db_entry['validated']))
 
-        # Verify request_instance was called for modified instances only
-        # valid-changed (modified) + dns-pass (DNS validation passed)
-        # + destroyed instance (to-remove) = 3 calls
-        # Note: new-instance is not requested because DNS validation fails
-        # Note: valid-no-change is not requested because it's unchanged
-        self.assertEqual(request_instance.call_count, 3)
+          # Verify request_instance was called for modified instances only
+          # valid-changed (modified) + dns-pass (DNS validation passed)
+          # + destroyed instance (to-remove) = 3 calls
+          # Note: new-instance is not requested because DNS validation fails
+          # Note: valid-no-change is not requested because it's unchanged
+          self.assertEqual(request_instance.call_count, 3)
+
+          # Verify published connection parameters for each instance
+          # Connection parameters are published via setConnectionDict with slave_reference
+
+          # Helper to extract published params for an instance from setConnectionDict calls
+          def get_published_params(instance_ref):
+            for call in setConnectionDict.call_args_list:
+              # call[0] is tuple of positional args, call[1] is dict of keyword args
+              if len(call[0]) > 0:
+                conn_params = call[0][0]
+                slave_ref = call[1].get('slave_reference')
+                if slave_ref == instance_ref:
+                  return conn_params
+            return None
+
+          # 1. new-instance: DNS validation failed - should publish DNS challenge info
+          new_published = get_published_params('new-instance')
+          self.assertIsNotNone(new_published, "new-instance should have published connection parameters")
+          self.assertIn('txt_record', new_published)
+          self.assertIn('txt_value', new_published)
+          self.assertIn('message', new_published)
+          self.assertEqual(new_published['txt_record'], '_slapos-challenge.new.example.com')
+          # Verify token is present (should be generated)
+          self.assertIsNotNone(new_published['txt_value'])
+          self.assertNotEqual(new_published['txt_value'], '')
+          # Verify message content
+          expected_message = (
+            'Custom domain verification failed. '
+            'Please add TXT record "%s" with value "%s".'
+            % (new_published['txt_record'], new_published['txt_value'])
+          )
+          self.assertEqual(new_published['message'], expected_message)
+
+          # 2. invalid-no-change: Validation failed - should publish DNS challenge info
+          # Note: invalid-no-change has custom_domain but is marked invalid in DB
+          # It will go through validateInstance, and DNS will fail (wrong token)
+          # So it should publish DNS challenge info, not just error message
+          invalid_published = get_published_params('invalid-no-change')
+          self.assertIsNotNone(invalid_published, "invalid-no-change should have published connection parameters")
+          # Since it has custom_domain, DNS validation will be attempted and fail
+          # So it should have DNS challenge info
+          self.assertIn('txt_record', invalid_published)
+          self.assertIn('txt_value', invalid_published)
+          self.assertIn('message', invalid_published)
+          self.assertEqual(invalid_published['txt_record'], '_slapos-challenge.invalid.example.com')
+          # Verify token is present (should be generated)
+          self.assertIsNotNone(invalid_published['txt_value'])
+          self.assertNotEqual(invalid_published['txt_value'], '')
+          # Verify message content
+          expected_message = (
+            'Custom domain verification failed. '
+            'Please add TXT record "%s" with value "%s".'
+            % (invalid_published['txt_record'], invalid_published['txt_value'])
+          )
+          self.assertEqual(invalid_published['message'], expected_message)
+
+          # 3. valid-no-change: Already validated, no changes - should not publish
+          # (no connection params returned from validateInstance, and no request_conn_params)
+          valid_no_change_published = get_published_params('valid-no-change')
+          self.assertIsNone(valid_no_change_published, "valid-no-change should not have published connection parameters")
+
+          # 4. valid-changed: Modified and validated - should publish success message
+          valid_changed_published = get_published_params('valid-changed')
+          self.assertIsNotNone(valid_changed_published, "valid-changed should have published connection parameters")
+          self.assertIn('message', valid_changed_published)
+          self.assertEqual(valid_changed_published['message'], 'Your instance is valid the request has been transmitted to the master')
+
+          # 5. to-remove: Destroyed - should not publish (instance is removed, no publishing in _processDestroyedInstance)
+          to_remove_published = get_published_params('to-remove')
+          self.assertIsNone(to_remove_published, "to-remove should not have published connection parameters")
+
+          # 6. dns-pass: DNS validation passed - should publish success message
+          dns_pass_published = get_published_params('dns-pass')
+          self.assertIsNotNone(dns_pass_published, "dns-pass should have published connection parameters")
+          self.assertIn('message', dns_pass_published)
+          self.assertEqual(dns_pass_published['message'], 'Your instance is valid the request has been transmitted to the master')
+
+          # 7. dns-fail: DNS validation failed - should publish DNS challenge info
+          dns_fail_published = get_published_params('dns-fail')
+          self.assertIsNotNone(dns_fail_published, "dns-fail should have published connection parameters")
+          self.assertIn('txt_record', dns_fail_published)
+          self.assertIn('txt_value', dns_fail_published)
+          self.assertIn('message', dns_fail_published)
+          self.assertEqual(dns_fail_published['txt_record'], '_slapos-challenge.dnsfail.example.com')
+          # Verify token is present (should be generated)
+          self.assertIsNotNone(dns_fail_published['txt_value'])
+          self.assertNotEqual(dns_fail_published['txt_value'], '')
+          # Verify message content
+          expected_message = (
+            'Custom domain verification failed. '
+            'Please add TXT record "%s" with value "%s".'
+            % (dns_fail_published['txt_record'], dns_fail_published['txt_value'])
+          )
+          self.assertEqual(dns_fail_published['message'], expected_message)
 
 
 class TestCDNRequestRecipe(unittest.TestCase):
@@ -674,7 +785,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
 
     self.assertFalse(is_valid)
     self.assertEqual(len(error_list), 1)
-    self.assertIn('already used and validated', error_list[0])
+    self.assertIn('Your domain "example.com" can not be validated. Please contact support.', error_list[0])
     self.assertIn('message', connection_parameters)
     self.assertIn('domain', connection_parameters)
     self.assertEqual(connection_parameters['domain'], 'example.com')

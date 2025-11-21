@@ -21,6 +21,9 @@ class TestRequestInstanceList(unittest.TestCase):
     self.buildout = {
       "buildout": {},
       "slap-connection": {
+        "computer-id": "test-computer",
+        "partition-id": "test-partition",
+        "server-url": "http://test.example.com",
         "requested": "started"
       }
     }
@@ -43,6 +46,29 @@ class TestRequestInstanceList(unittest.TestCase):
     # Mock getConnectionParameter
     self.instance_getConnectionParameter = \
         self.requested_instance.getConnectionParameter
+
+    # Mock slap library for connection publishing (used by _publishConnectionParameters)
+    slap_publish_patch = mock.patch('slapos.recipe.requestinstancelist.slap')
+    self.slap_publish_lib = slap_publish_patch.start()
+    self.addCleanup(slap_publish_patch.stop)
+
+    # Setup mock computer partition for publishing
+    self.computer_partition = mock.MagicMock()
+    self.setConnectionDict = mock.MagicMock()
+    self.computer_partition.setConnectionDict = self.setConnectionDict
+
+    # Setup mock slap instance for publishing
+    self.slap_instance_publish = mock.MagicMock()
+    self.slap_instance_publish.registerComputerPartition.return_value = self.computer_partition
+
+    # Setup mock slap class
+    self.slap_class = mock.MagicMock()
+    self.slap_class.return_value = self.slap_instance_publish
+    self.slap_publish_lib.slap = self.slap_class
+
+    # Clear connection cache before each test
+    from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
+    CONNECTION_CACHE.clear()
 
     # Default options
     self.options = {
@@ -679,3 +705,184 @@ class TestRequestInstanceList(unittest.TestCase):
     # But existing connection parameters should be preserved
     stored_conn = json.loads(stored[0]['json_connection_parameters'])
     self.assertEqual(stored_conn, {'param1': 'existing_conn1', 'param2': 'existing_conn2'})  # Preserved
+
+  def test_publish_connection_parameters_on_validation_failure(self):
+    """Test that connection parameters are published when validation fails"""
+    # Create a custom recipe class that returns connection parameters on validation failure
+    class TestRecipe(requestinstancelist.Recipe):
+      def validateInstance(self, instance_reference, parameters):
+        return False, ['Validation failed'], {'message': 'Error message', 'errors': ['Validation failed']}
+
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    recipe = TestRecipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify setConnectionDict was called with validation error parameters
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    conn_params = call_args[0][0]
+    slave_ref = call_args[1]['slave_reference']
+
+    self.assertEqual(slave_ref, 'instance1')
+    self.assertEqual(conn_params['message'], 'Error message')
+    self.assertEqual(conn_params['errors'], ['Validation failed'])
+
+  def test_publish_connection_parameters_on_validation_success(self):
+    """Test that success message is published when validation succeeds with validation_conn_params"""
+    # Create a custom recipe class that returns connection parameters on validation success
+    class TestRecipe(requestinstancelist.Recipe):
+      def validateInstance(self, instance_reference, parameters):
+        return True, [], {'message': 'Success message'}
+
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    recipe = TestRecipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify setConnectionDict was called with success message
+    # When validation succeeds and validation_conn_params exist, a success message is published
+    # (not the validation_conn_params themselves)
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    conn_params = call_args[0][0]
+    slave_ref = call_args[1]['slave_reference']
+
+    self.assertEqual(slave_ref, 'instance1')
+    self.assertEqual(conn_params['message'], 'Your instance is valid the request has been transmitted to the master')
+
+  def test_publish_connection_parameters_empty(self):
+    """Test that empty connection parameters are not published"""
+    # Create a custom recipe class that returns empty connection parameters
+    class TestRecipe(requestinstancelist.Recipe):
+      def validateInstance(self, instance_reference, parameters):
+        return False, ['Validation failed'], {}  # Empty conn_params
+
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    recipe = TestRecipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify setConnectionDict was NOT called (empty conn_params)
+    self.setConnectionDict.assert_not_called()
+
+  def test_publish_connection_parameters_none(self):
+    """Test that None connection parameters are not published"""
+    # Create a custom recipe class that returns None connection parameters
+    class TestRecipe(requestinstancelist.Recipe):
+      def validateInstance(self, instance_reference, parameters):
+        return False, ['Validation failed'], None  # None conn_params
+
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    recipe = TestRecipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify setConnectionDict was NOT called (None conn_params)
+    self.setConnectionDict.assert_not_called()
+
+  def test_publish_connection_parameters_error_handling(self):
+    """Test that errors during publishing are logged but don't raise"""
+    # Create a custom recipe class that returns connection parameters
+    class TestRecipe(requestinstancelist.Recipe):
+      def validateInstance(self, instance_reference, parameters):
+        return False, ['Validation failed'], {'message': 'Error message'}
+
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    # Make setConnectionDict raise an error
+    self.setConnectionDict.side_effect = Exception("Publish failed")
+
+    recipe = TestRecipe(self.buildout, 'test', self.options)
+
+    with LogCapture() as log:
+      # Should not raise
+      recipe.install()
+
+    # Verify error was logged (check it's in the log, not the only entry)
+    log.check(
+      ('test', 'DEBUG', 'Comparison results: 1 added, 0 removed, 0 modified'),
+      ('test', 'WARNING', 'Instance instance1 failed validation: Validation failed'),
+      ('test', 'WARNING', 'Failed to publish connection parameters for instance instance1: Publish failed'),
+      ('test', 'DEBUG', 'Tracking invalid new instance (not requesting): instance1'),
+    )
+
+    # Verify instance was still processed (not raised)
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['reference'], 'instance1')
+
+  def test_publish_connection_parameters_uses_connection_cache(self):
+    """Test that connection cache is used for computer partition"""
+    # Create two recipe instances
+    self._createInstanceDB([
+      ('instance1', {'key': 'value1'}, True),
+      ('instance2', {'key': 'value2'}, True)
+    ])
+
+    class TestRecipe(requestinstancelist.Recipe):
+      def validateInstance(self, instance_reference, parameters):
+        return False, ['Validation failed'], {'message': 'Error for %s' % instance_reference}
+
+    recipe = TestRecipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify registerComputerPartition was only called once (cached)
+    self.assertEqual(self.slap_instance_publish.registerComputerPartition.call_count, 1)
+
+    # Verify both calls used setConnectionDict with the same computer_partition
+    self.assertEqual(self.setConnectionDict.call_count, 2)
+    # Both should have been called with the same computer_partition instance
+    self.setConnectionDict.assert_any_call({'message': 'Error for instance1'}, slave_reference='instance1')
+    self.setConnectionDict.assert_any_call({'message': 'Error for instance2'}, slave_reference='instance2')
+
+  def test_publish_connection_parameters_missing_slap_connection(self):
+    """Test that missing slap-connection section raises KeyError"""
+    # Buildout without slap-connection section
+    buildout_no_connection = {
+      "buildout": {},
+    }
+
+    recipe = requestinstancelist.Recipe(buildout_no_connection, 'test', self.options)
+
+    # Should raise KeyError when trying to get computer partition (lazy initialization)
+    with self.assertRaises(KeyError) as cm:
+      recipe._getComputerPartition()
+
+    self.assertIn('slap-connection section is required', str(cm.exception))
+
+  def test_publish_connection_parameters_success_message(self):
+    """Test that success message is published when validation succeeds with validation_conn_params"""
+    # Create a custom recipe class that returns connection parameters on validation success
+    class TestRecipe(requestinstancelist.Recipe):
+      def validateInstance(self, instance_reference, parameters):
+        # Return validation_conn_params so success message is published
+        return True, [], {'some': 'param'}
+
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    recipe = TestRecipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify setConnectionDict was called with success message
+    # When validation succeeds and validation_conn_params exist (even if request_conn_params don't),
+    # a success message is published
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    conn_params = call_args[0][0]
+    slave_ref = call_args[1]['slave_reference']
+
+    self.assertEqual(slave_ref, 'instance1')
+    self.assertEqual(conn_params['message'], 'Your instance is valid the request has been transmitted to the master')
