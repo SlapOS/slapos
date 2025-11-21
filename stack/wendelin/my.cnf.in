@@ -28,7 +28,6 @@ slow_query_log_file = {{ parameter_dict['slow-query-log'] }}
 long_query_time = {{ parameter_dict['long-query-time'] }}
 max_allowed_packet = 128M
 query_cache_size = 32M
-innodb_file_per_table = {{ parameter_dict['innodb-file-per-table'] }}
 
 default_time_zone = '+00:00'
 
@@ -49,11 +48,24 @@ max_connections = {{ parameter_dict['max-connection-count'] }}
 # very important to allow parallel indexing
 # Note: this is compatible with binlog-based incremental backups, because Wendelin
 # doesn't use "insert ... select" (in any number of queries) pattern.
-innodb_locks_unsafe_for_binlog = 1
+# (deprecated: MariaDB 10.0)
+# (removed: MariaDB 10.5.0)
+loose_innodb_locks_unsafe_for_binlog = 1
+
+# do not use snapshot isolation for write-write conflict detection
+# the default is ON since MariaDB 11.6.2 but we disable it to avoid
+# 'Record has changed since last read in table' error and to keep the
+# behaviour on prior versions.
+# that means it is developer's responsibility to use locking read with 'FOR UPDATE'
+# if needed.
+# (introduced: MariaDB 10.6.18)
+loose_innodb_snapshot_isolation = OFF
 
 # disable innodb_change_buffering to prevent potential risk of crash or data corruption,
 # that is default from 10.5.14.
-innodb_change_buffering = none
+# (deprecated: MariaDB 10.9.0)
+# (removed: MariaDB 11.0.0)
+loose_innodb_change_buffering = none
 
 {% set log_bin = parameter_dict['binlog-path'] -%}
 {% if log_bin -%}
