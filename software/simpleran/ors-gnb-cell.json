@@ -5,12 +5,12 @@
   "properties": {
     "nr_bandwidth": {
       "title": "Bandwidth",
-      "description": "Downlink Bandwidth",
+      "description": "Downlink Bandwidth in MHz",
       "enum": [
-        "20 MHz",
-        "40 MHz"
+        20,
+        40
       ],
-      "type": "string"
+      "type": "number"
     },
     "dl_frequency": {
       "title": "DL Frequency",
