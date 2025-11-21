@@ -29,6 +29,8 @@ import json
 import time
 from slapos.recipe.localinstancedb import HostedInstanceLocalDB, InstanceListComparator
 from slapos.recipe.request import RequestOptional as RequestRecipe
+from slapos import slap
+from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
 import six
 
 class Recipe(object):
@@ -136,6 +138,9 @@ class Recipe(object):
 
     # Store requests made during install
     self.request_instances = {}
+
+    # Lazy initialization of computer_partition for publishing connection parameters
+    self._computer_partition = None
 
   def _getUpdateList(self):
     """
@@ -252,25 +257,71 @@ class Recipe(object):
     # Connection parameters are not extracted since 'return' is not a recipe option
     return "{}"
 
+  def _getComputerPartition(self):
+    """
+    Get or create the computer_partition object for publishing connection parameters.
+    Uses CONNECTION_CACHE to reuse connections.
+
+    Returns:
+      computer_partition object
+
+    Raises:
+      KeyError: If 'slap-connection' section is missing from buildout
+      Exception: If connection initialization fails
+    """
+    if self._computer_partition is not None:
+      return self._computer_partition
+
+    # Get connection info from buildout
+    try:
+      slap_connection = self.buildout['slap-connection']
+    except KeyError:
+      raise KeyError(
+        "slap-connection section is required in buildout for publishing connection parameters"
+      )
+
+    computer_id = slap_connection['computer-id']
+    partition_id = slap_connection['partition-id']
+    server_url = slap_connection['server-url']
+    key_file = slap_connection.get('key-file')
+    cert_file = slap_connection.get('cert-file')
+
+    # Use connection cache
+    cache_key = "%s_%s" % (computer_id, partition_id)
+    self._computer_partition = CONNECTION_CACHE.get(cache_key, None)
+
+    if self._computer_partition is None:
+      # Initialize slap connection
+      slap_instance = slap.slap()
+      slap_instance.initializeConnection(server_url, key_file, cert_file)
+      self._computer_partition = slap_instance.registerComputerPartition(
+        computer_id,
+        partition_id
+      )
+      CONNECTION_CACHE[cache_key] = self._computer_partition
+
+    return self._computer_partition
+
   def _publishConnectionParameters(self, instance_reference, conn_params):
     """
-    Publish connection parameters for an instance.
-    Parameters are stored in buildout options with prefix 'connection-<instance_reference>-'
+    Publish connection parameters for an instance using the slap library.
+    Parameters are published to the SlapOS master for the specified slave instance.
 
     Args:
-      instance_reference: Reference name for the instance
+      instance_reference: Reference name for the instance (used as slave_reference)
       conn_params: Dict of connection parameters or validation instructions
     """
     if not conn_params:
       return
 
-    for key, value in conn_params.items():
-      option_key = 'connection-%s-%s' % (instance_reference, key)
-      if isinstance(value, dict):
-        # Serialize dict values as JSON
-        self.options[option_key] = json.dumps(value)
-      else:
-        self.options[option_key] = str(value)
+    try:
+      computer_partition = self._getComputerPartition()
+      computer_partition.setConnectionDict(conn_params, slave_reference=instance_reference)
+    except Exception as e:
+      self.logger.warning(
+        'Failed to publish connection parameters for instance %s: %s',
+        instance_reference, e
+      )
 
   def _addInstanceToDB(self, instance_reference, instance_data, instance_hash):
     """
