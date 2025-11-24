@@ -132,7 +132,7 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
     self.assertIsNotNone(out)
     self.assertEqual(out["reference"], row[0])
     self.assertEqual(out["json_parameters"], row[1])
-    self.assertEqual(out["json_connection_parameters"], row[2])
+    self.assertEqual(out["json_error"], row[2])
     self.assertEqual(out["hash"], row[3])
     self.assertEqual(out["timestamp"], row[4])
     self.assertEqual(out["valid_parameter"], row[5])
@@ -497,29 +497,29 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     os.close(self.db_fd)
     os.unlink(self.db_path)
 
-  def test_json_connection_parameters_not_modified_on_update(self):
-    """Test that json_connection_parameters is not modified when json_parameters is updated."""
-    # Insert initial instance with both json_parameters and json_connection_parameters
-    initial_conn_params = {"host": "example.com", "port": 8080}
+  def test_json_error_cleared_for_valid_instances(self):
+    """Test that json_error is cleared for valid instances when updated."""
+    # Insert initial instance with both json_parameters and json_error (invalid)
+    initial_error = {"message": "Error message", "errors": ["Error 1"]}
     initial_params = {"name": "test1", "value": 10}
 
-    # Manually insert an instance with connection parameters
+    # Manually insert an instance with error info
     instance_row = (
       "ref1",
       json.dumps(initial_params, sort_keys=True),
-      json.dumps(initial_conn_params, sort_keys=True),
+      json.dumps(initial_error, sort_keys=True),
       "initial_hash",
       str(int(time.time())),
-      True
+      False  # Invalid
     )
     self.db.insertInstanceList([instance_row])
 
     # Verify initial state
     instance = self.db.getInstance("ref1")
     self.assertEqual(json.loads(instance["json_parameters"]), initial_params)
-    self.assertEqual(json.loads(instance["json_connection_parameters"]), initial_conn_params)
+    self.assertEqual(json.loads(instance["json_error"]), initial_error)
 
-    # Update with new json_parameters using updateFromValidationResults
+    # Update with new json_parameters using updateFromValidationResults (now valid)
     new_params = {"name": "test1", "value": 20}  # Changed value
     valid_list = [{"reference": "ref1", "parameters": new_params}]
     invalid_list = []
@@ -530,11 +530,11 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     updated_instance = self.db.getInstance("ref1")
     self.assertEqual(json.loads(updated_instance["json_parameters"]), new_params)
 
-    # Verify that json_connection_parameters was NOT modified
+    # Verify that json_error was cleared for valid instance
     self.assertEqual(
-      json.loads(updated_instance["json_connection_parameters"]),
-      initial_conn_params,
-      "json_connection_parameters should not be modified when json_parameters is updated"
+      json.loads(updated_instance["json_error"]),
+      {},
+      "json_error should be empty for valid instances"
     )
 
   def test_getStoredDict(self):

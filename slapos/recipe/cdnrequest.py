@@ -220,10 +220,10 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
       validation_entry: Existing validation entry (if any)
 
     Returns:
-      tuple: (is_valid, error_message, conn_params)
+      tuple: (is_valid, error_message, validation_info)
         - is_valid: True if DNS verification passed
         - error_message: Error message if validation failed, None otherwise
-        - conn_params: Connection parameters dict with validation instructions or success message
+        - validation_info: Dict with validation instructions or error details
     """
     # Generate or reuse token
     token = self._getOrGenerateToken(instance_reference, custom_domain, validation_entry)
@@ -242,12 +242,12 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
         'Please add TXT record "%s" with value "%s".'
         % (challenge_domain, token)
       )
-      conn_params = {
+      validation_info = {
         'txt_record': challenge_domain,
         'txt_value': token,
         'message': error_message
       }
-      return False, error_message, conn_params
+      return False, error_message, validation_info
 
   def _processDestroyedInstance(self, instance_reference):
     """
@@ -498,10 +498,10 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
     - url-netloc-list validation
 
     Returns:
-      tuple: (is_valid, error_list, conn_params)
+      tuple: (is_valid, error_list, validation_info)
         - is_valid: Boolean indicating if validation passed
         - error_list: List of error messages (empty if valid)
-        - conn_params: Dict of connection parameters or validation instructions
+        - validation_info: Dict of validation instructions or error details
     """
     error_list = []
     warning_list = []
@@ -594,7 +594,7 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
       }
 
     # Perform DNS verification (grouped function)
-    is_valid, error_message, conn_params = self._verifyCustomDomainDNS(
+    is_valid, error_message, validation_info = self._verifyCustomDomainDNS(
       instance_reference, custom_domain, validation_entry
     )
 
@@ -605,4 +605,4 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
       return True, [], {}
     else:
       # DNS verification failed
-      return False, [error_message], conn_params
+      return False, [error_message], validation_info
