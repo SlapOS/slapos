@@ -6,8 +6,8 @@
     "default": {
       "title": "Slapproxy",
       "software-type": "default",
-      "request": "json-schema/instance-slapproxy-input-schema.json",
-      "response": "json-schema/instance-slapproxy-output-schema.json",
+      "request": "instance-slapproxy-input-schema.json",
+      "response": "instance-slapproxy-output-schema.json",
       "index": 0
     }
   }
