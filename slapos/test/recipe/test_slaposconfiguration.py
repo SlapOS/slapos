@@ -857,7 +857,7 @@ class JsonSchemaWithDBSharedTest(JsonSchemaWithDBTestCase):
       self.assertEqual(got['reference'], want['reference'])
       self.assertEqual(got['json_parameters'], want['json_parameters'])
       self.assertTrue(got['valid_parameter'])
-      self.assertIsNotNone(got['json_connection_parameters'])
+      self.assertIsNotNone(got['json_error'])
       self.assertIsNotNone(got['hash'])
       self.assertAlmostEqual(float(got['timestamp']), now, delta=1)
 
@@ -894,7 +894,7 @@ class JsonSchemaWithDBSharedTest(JsonSchemaWithDBTestCase):
         self.assertEqual(got['reference'], want['reference'])
         self.assertEqual(got['json_parameters'], want['json_parameters'])
         self.assertFalse(got['valid_parameter'])
-        self.assertIsNotNone(got['json_connection_parameters'])
+        self.assertIsNotNone(got['json_error'])
         self.assertIsNotNone(got['hash'])
         self.assertAlmostEqual(float(got['timestamp']), now, delta=1)
 
@@ -941,7 +941,7 @@ class JsonSchemaWithDBSharedTest(JsonSchemaWithDBTestCase):
         self.assertEqual(got['reference'], want['reference'])
         self.assertEqual(got['json_parameters'], want['json_parameters'])
         self.assertEqual(got['valid_parameter'], want['valid_parameter'])
-        self.assertIsNotNone(got['json_connection_parameters'])
+        self.assertIsNotNone(got['json_error'])
         self.assertIsNotNone(got['hash'])
         self.assertAlmostEqual(float(got['timestamp']), now, delta=1)
 
