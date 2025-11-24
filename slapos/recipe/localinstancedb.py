@@ -172,7 +172,7 @@ class HostedInstanceLocalDB(object):
   schema = """CREATE TABLE IF NOT EXISTS instance (
     reference VARCHAR(255), -- unique instance reference
     json_parameters TEXT,
-    json_connection_parameters TEXT,
+    json_error TEXT,
     hash VARCHAR(255),
     timestamp VARCHAR(255),
     valid_parameter BOOLEAN,
@@ -206,7 +206,7 @@ class HostedInstanceLocalDB(object):
 
   def insertInstanceList(self, instance_list, connection=None, commit=True):
     self.db.insertMany(
-      "INSERT INTO instance (reference, json_parameters, json_connection_parameters, hash, timestamp, valid_parameter) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO instance (reference, json_parameters, json_error, hash, timestamp, valid_parameter) VALUES (?, ?, ?, ?, ?, ?)",
       instance_list,
       connection=connection,
       commit=commit)
@@ -337,12 +337,19 @@ class SharedInstanceResultDB(HostedInstanceLocalDB):
     computed_hashes = comparator.update_dict
 
     # Prepare data for insert/update
-    # Create a mapping of reference to (parameters, valid_parameter)
+    # Create a mapping of reference to (parameters, valid_parameter, error_info)
     instance_map = {}
     for item in valid_list:
-      instance_map[item["reference"]] = (item["parameters"], True)
+      instance_map[item["reference"]] = (item["parameters"], True, {})  # Empty error_info for valid
     for item in invalid_list:
-      instance_map[item["reference"]] = (item["parameters"], False)
+      errors = item.get("errors", [])
+      error_info = {}
+      if errors:
+        error_info = {
+          "message": "; ".join(errors),
+          "errors": errors
+        }
+      instance_map[item["reference"]] = (item["parameters"], False, error_info)
 
     # Perform all operations in a single transaction using existing methods
     connection = self.db._connectDB()
@@ -357,11 +364,17 @@ class SharedInstanceResultDB(HostedInstanceLocalDB):
       if new_instance_reference_list:
         new_instance_list = []
         for instance_reference in new_instance_reference_list:
-          params, valid = instance_map[instance_reference]
+          params, valid, error_info = instance_map[instance_reference]
           params_json = json.dumps(params, sort_keys=True)
           # Reuse hash from comparator
           instance_hash = computed_hashes[instance_reference]
-          new_instance_list.append((instance_reference, params_json, "{}", instance_hash, timestamp, valid))
+          # For valid instances, json_error should always be empty
+          # For invalid instances, use the error information (validation errors)
+          if valid:
+            error_json = "{}"
+          else:
+            error_json = json.dumps(error_info, sort_keys=True) if error_info else "{}"
+          new_instance_list.append((instance_reference, params_json, error_json, instance_hash, timestamp, valid))
         if new_instance_list:
           self.insertInstanceList(new_instance_list, connection=connection, commit=False)
 
@@ -370,13 +383,19 @@ class SharedInstanceResultDB(HostedInstanceLocalDB):
       if updated_instance_list:
         update_instance_list = []
         for instance_reference in updated_instance_list:
-          params, valid = instance_map[instance_reference]
+          params, valid, error_info = instance_map[instance_reference]
           params_json = json.dumps(params, sort_keys=True)
           # Reuse hash from comparator
           instance_hash = computed_hashes[instance_reference]
-          update_instance_list.append((params_json, instance_hash, timestamp, valid, instance_reference))
+          # For valid instances, json_error should always be empty
+          # For invalid instances, use the error information (validation errors)
+          if valid:
+            error_json = "{}"
+          else:
+            error_json = json.dumps(error_info, sort_keys=True) if error_info else "{}"
+          update_instance_list.append((params_json, error_json, instance_hash, timestamp, valid, instance_reference))
         if update_instance_list:
-          update_query = "UPDATE instance SET json_parameters = ?, hash = ?, timestamp = ?, valid_parameter = ? WHERE reference = ?"
+          update_query = "UPDATE instance SET json_parameters = ?, json_error = ?, hash = ?, timestamp = ?, valid_parameter = ? WHERE reference = ?"
           self.updateInstanceList(update_query, update_instance_list, connection=connection, commit=False)
 
       # Commit all changes at once
