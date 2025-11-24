@@ -322,13 +322,15 @@ kvm_argument_list = [
   # see https://wiki.gentoo.org/wiki/QEMU/Options#USB
   '-usbdevice', 'tablet',
 ]
+DISK_INFO_COUNT = 1
 for disk_info in disk_info_list:
   kvm_argument_list += (
     '-drive',
-    'file=%s,if=%s,discard=on%s' % (
-      disk_info['path'], disk_type,
+    'node-name=%s,file=%s,if=%s,discard=on%s' % (
+      'virtual%s' % (DISK_INFO_COUNT,), disk_info['path'], disk_type,
       ''.join(',%s=%s' % x for x in disk_info.items() if x[0] != 'path'))
   )
+  DISK_INFO_COUNT += 1
 
 rgx = re.compile(r'^[\w*\,][\=\d+\-\,\w]*$')
 for numa in numa_list:
