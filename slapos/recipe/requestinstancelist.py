@@ -145,20 +145,25 @@ class Recipe(object):
   def _getUpdateList(self):
     """
     Get update list from instance-db-path.
-    Returns list of dicts with 'reference', 'parameters', and 'valid' keys.
+    Returns list of dicts with 'reference', 'parameters', 'valid', and 'error_info' keys.
     """
-    instance_list = self.instance_db.getInstanceList("reference, json_parameters, valid_parameter")
+    instance_list = self.instance_db.getInstanceList("reference, json_parameters, json_error, valid_parameter")
     update_list = []
     for row in instance_list:
       try:
         parameters = json.loads(row['json_parameters']) if row['json_parameters'] else {}
-        # valid_parameter is explicitly selected, so it's always in the row
-        # Handle None (NULL) values by defaulting to True
+        error_info = {}
+        if row['json_error']:
+          try:
+            error_info = json.loads(row['json_error'])
+          except (ValueError, TypeError):
+            error_info = {}
         valid_parameter = row['valid_parameter'] if row['valid_parameter'] is not None else True
         update_list.append({
           'reference': row['reference'],
           'parameters': parameters,
-          'valid': bool(valid_parameter)
+          'valid': bool(valid_parameter),
+          'error_info': error_info
         })
       except (ValueError, TypeError) as e:
         self.logger.warning(
@@ -233,10 +238,10 @@ class Recipe(object):
       parameters: Dict of parameters from the database
 
     Returns:
-      tuple: (is_valid, error_list, conn_params)
+      tuple: (is_valid, error_list, validation_info)
         - is_valid: Boolean indicating if validation passed
         - error_list: List of error messages (empty if valid)
-        - conn_params: Dict of connection parameters or validation instructions
+        - validation_info: Dict of validation instructions or error details
     """
     # Base implementation: no validation, always valid
     return True, [], {}
@@ -313,7 +318,6 @@ class Recipe(object):
     """
     if not conn_params:
       return
-
     try:
       computer_partition = self._getComputerPartition()
       computer_partition.setConnectionDict(conn_params, slave_reference=instance_reference)
@@ -323,7 +327,7 @@ class Recipe(object):
         instance_reference, e
       )
 
-  def _addInstanceToDB(self, instance_reference, instance_data, instance_hash):
+  def _addInstanceToDB(self, instance_reference, instance_data, instance_hash, validation_info):
     """
     Add a new instance to requestinstance-db-path.
     Called after each successful request or when tracking invalid instances.
@@ -332,18 +336,20 @@ class Recipe(object):
       instance_reference: Reference name for the instance
       instance_data: Dict with 'parameters' and 'valid' keys
       instance_hash: Hash of the instance data
+      validation_info: Dict of validation information (errors for invalid instances)
     """
     params_json = json.dumps(instance_data['parameters'], sort_keys=True)
     valid_parameter = instance_data.get('valid', True)
     timestamp = str(int(time.time()))
-
-    # Get connection parameters if instance was successfully requested
-    connection_params_json = self._getConnectionParameters(instance_reference)
+    if valid_parameter:
+      error_json = "{}"
+    else:
+      error_json = json.dumps(validation_info, sort_keys=True) if validation_info else "{}"
 
     new_instance_list = [(
       instance_reference,
       params_json,
-      connection_params_json,
+      error_json,
       instance_hash,
       timestamp,
       valid_parameter
@@ -351,7 +357,7 @@ class Recipe(object):
 
     self.requestinstance_db.insertInstanceList(new_instance_list)
 
-  def _updateInstanceInDB(self, instance_reference, instance_data, instance_hash):
+  def _updateInstanceInDB(self, instance_reference, instance_data, instance_hash, validation_info):
     """
     Update an existing instance in requestinstance-db-path.
     Called after each successful request or when tracking invalid instances.
@@ -360,28 +366,24 @@ class Recipe(object):
       instance_reference: Reference name for the instance
       instance_data: Dict with 'parameters' and 'valid' keys
       instance_hash: Hash of the instance data
+      validation_info: Dict of validation information (errors for invalid instances)
     """
     params_json = json.dumps(instance_data['parameters'], sort_keys=True)
     valid_parameter = instance_data.get('valid', True)
     timestamp = str(int(time.time()))
-
-    # Get connection parameters if instance was successfully requested
-    connection_params_json = self._getConnectionParameters(instance_reference)
-
-    # If request failed or instance is invalid, preserve existing connection parameters
-    if connection_params_json == "{}":
-      stored_instance = self.requestinstance_db.getInstance(instance_reference)
-      if stored_instance and 'json_connection_parameters' in stored_instance.keys() and stored_instance['json_connection_parameters']:
-        connection_params_json = stored_instance['json_connection_parameters']
+    if valid_parameter:
+      error_json = "{}"
+    else:
+      error_json = json.dumps(validation_info, sort_keys=True) if validation_info else "{}"
 
     update_query = (
       "UPDATE instance SET json_parameters = ?, "
-      "json_connection_parameters = ?, hash = ?, timestamp = ?, "
+      "json_error = ?, hash = ?, timestamp = ?, "
       "valid_parameter = ? WHERE reference = ?"
     )
     update_instance_list = [(
       params_json,
-      connection_params_json,
+      error_json,
       instance_hash,
       timestamp,
       valid_parameter,
@@ -432,45 +434,39 @@ class Recipe(object):
 
     Args:
       instance_reference: Reference name for the instance
-      instance_data: Dict with 'parameters' and 'valid' keys
+      instance_data: Dict with 'parameters', 'valid', and 'error_info' keys
       instance_hash: Hash of the instance data
       is_new: True if this is a new instance, False if modified
 
     Returns:
       True if instance was successfully processed, False if validation failed
     """
-    # Get initial valid status from json schema validation
     initial_valid = instance_data.get('valid', True)
-
-    # If instance is already invalid (from schema validation), skip custom validation
-    # and keep it invalid
+    db_error_info = instance_data.get('error_info', {})
     if not initial_valid:
       is_valid = False
-      error_list = ['Instance validation failed']
-      validation_conn_params = {}
+      if db_error_info and 'errors' in db_error_info:
+        error_list = db_error_info['errors']
+      else:
+        error_list = ['Instance validation failed']
+      validation_info = db_error_info if db_error_info else {}
     else:
-      # Perform custom validation only for instances that passed schema validation
-      # Custom validation can make valid instances invalid
-      is_valid, error_list, validation_conn_params = self.validateInstance(
+      is_valid, error_list, validation_info = self.validateInstance(
         instance_reference,
         instance_data['parameters']
       )
-
-    # Update valid status in instance_data
+      if not validation_info and db_error_info:
+        validation_info = db_error_info
     instance_data['valid'] = is_valid
-
     if not is_valid:
-      # Validation failed - publish validation errors
       self.logger.warning(
         'Instance %s failed validation: %s',
         instance_reference, '; '.join(error_list)
       )
-      self._publishConnectionParameters(instance_reference, validation_conn_params)
-      # Track invalid instance in DB but don't request it
+      self._publishConnectionParameters(instance_reference, validation_info)
       action = 'new' if is_new else 'modified'
       self.logger.debug('Tracking invalid %s instance (not requesting): %s', action, instance_reference)
     else:
-      # Validation passed - make the request
       action = 'new' if is_new else 'update'
       self.logger.debug('%s instance: %s', action.capitalize(), instance_reference)
       try:
@@ -479,14 +475,11 @@ class Recipe(object):
           instance_data['parameters']
         )
         self.request_instances[instance_reference] = request_recipe
-        # Call install to actually make the request
         request_recipe.install()
-        # Get connection parameters from the request
         request_conn_params = self._getConnectionParamsFromRequest(request_recipe)
-        # Publish connection parameters (or validation params if request didn't provide any)
         if request_conn_params:
           self._publishConnectionParameters(instance_reference, request_conn_params)
-        elif validation_conn_params:
+        elif validation_info:
           message = 'Your instance is valid the request has been transmitted to the master'
           self._publishConnectionParameters(instance_reference, {"message": message})
       except Exception as e:
@@ -495,11 +488,10 @@ class Recipe(object):
           action, instance_reference, e
         )
         raise
-    # Update State in local database
     if is_new:
-      self._addInstanceToDB(instance_reference, instance_data, instance_hash)
+      self._addInstanceToDB(instance_reference, instance_data, instance_hash, validation_info)
     else:
-      self._updateInstanceInDB(instance_reference, instance_data, instance_hash)
+      self._updateInstanceInDB(instance_reference, instance_data, instance_hash, validation_info)
 
   def _processDestroyedInstance(self, instance_reference):
     """
