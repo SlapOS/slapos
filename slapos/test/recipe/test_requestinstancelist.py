@@ -88,8 +88,13 @@ class TestRequestInstanceList(unittest.TestCase):
     os.close(self.requestinstance_db_fd)
     os.unlink(self.requestinstance_db_path)
 
-  def _createInstanceDB(self, instances):
-    """Helper to populate instance database"""
+  def _createInstanceDB(self, instances, connection_params=None):
+    """Helper to populate instance database
+
+    Args:
+      instances: List of tuples (ref, params, valid)
+      connection_params: Optional dict mapping instance ref to error info dict
+    """
     db = HostedInstanceLocalDB(self.instance_db_path)
     instance_list = []
     for ref, params, valid in instances:
@@ -99,10 +104,17 @@ class TestRequestInstanceList(unittest.TestCase):
       instance_hash = hashlib.sha256(
         json.dumps({'reference': ref, 'parameters': params}, sort_keys=True).encode('utf-8')
       ).hexdigest()
+      # Use error info if provided, otherwise empty dict
+      if connection_params and ref in connection_params:
+        error_json = json.dumps(connection_params[ref], sort_keys=True)
+      elif not valid:
+        error_json = "{}"  # Invalid but no error info provided
+      else:
+        error_json = "{}"  # Valid instances have empty error
       instance_list.append((
         ref,
         params_json,
-        "{}",  # connection params
+        error_json,
         instance_hash,
         "1234567890",
         valid
@@ -112,7 +124,7 @@ class TestRequestInstanceList(unittest.TestCase):
   def _getRequestInstanceDB(self):
     """Helper to get request instance database contents"""
     db = HostedInstanceLocalDB(self.requestinstance_db_path)
-    return db.getInstanceList("reference, json_parameters, json_connection_parameters, valid_parameter")
+    return db.getInstanceList("reference, json_parameters, json_error, valid_parameter")
 
   def test_new_valid_instance(self):
     """Test requesting a new valid instance"""
@@ -141,8 +153,8 @@ class TestRequestInstanceList(unittest.TestCase):
     stored_params = json.loads(stored[0]['json_parameters'])
     self.assertEqual(stored_params['key'], 'value')
     # Connection parameters are not extracted since 'return' is not a recipe option
-    stored_conn = json.loads(stored[0]['json_connection_parameters'])
-    self.assertEqual(stored_conn, {})
+    stored_error = json.loads(stored[0]['json_error'])
+    self.assertEqual(stored_error, {})
 
   def test_new_invalid_instance(self):
     """Test that invalid instances are tracked but not requested"""
@@ -224,10 +236,9 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(len(stored), 1)
     stored_params = json.loads(stored[0]['json_parameters'])
     self.assertEqual(stored_params['key'], 'new_value')
-    # Connection parameters are not extracted since 'return' is not a recipe option
-    # But existing connection parameters should be preserved
-    stored_conn = json.loads(stored[0]['json_connection_parameters'])
-    self.assertEqual(stored_conn, {'param1': 'old_conn1'})  # Preserved from old instance
+    # Error info should be empty for valid instances
+    stored_error = json.loads(stored[0]['json_error'])
+    self.assertEqual(stored_error, {})
 
   def test_modified_invalid_instance(self):
     """Test that modified invalid instances are tracked but not requested"""
@@ -276,10 +287,9 @@ class TestRequestInstanceList(unittest.TestCase):
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
     self.assertEqual(stored[0]['valid_parameter'], False)
-    # Connection parameters are not extracted since 'return' is not a recipe option
-    # But existing connection parameters should be preserved
-    stored_conn = json.loads(stored[0]['json_connection_parameters'])
-    self.assertEqual(stored_conn, {'param1': 'old_conn1'})  # Preserved from old instance
+    # Error info should be empty for invalid instances when no errors are provided
+    stored_error = json.loads(stored[0]['json_error'])
+    self.assertEqual(stored_error, {})
 
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
@@ -653,8 +663,8 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(len(stored), 1)
     self.assertEqual(stored[0]['reference'], 'instance1')
     # Connection parameters are not extracted since 'return' is not a recipe option
-    stored_conn = json.loads(stored[0]['json_connection_parameters'])
-    self.assertEqual(stored_conn, {})
+    stored_error = json.loads(stored[0]['json_error'])
+    self.assertEqual(stored_error, {})
 
   def test_connection_parameters_preserved_on_update_failure(self):
     """Test that existing connection parameters are preserved when update fails"""
@@ -698,13 +708,12 @@ class TestRequestInstanceList(unittest.TestCase):
     )
     recipe.install()
 
-    # Verify instance was updated (connection parameters are not extracted)
+    # Verify instance was updated (error info should be empty for valid instances)
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    # Connection parameters are not extracted since 'return' is not a recipe option
-    # But existing connection parameters should be preserved
-    stored_conn = json.loads(stored[0]['json_connection_parameters'])
-    self.assertEqual(stored_conn, {'param1': 'existing_conn1', 'param2': 'existing_conn2'})  # Preserved
+    # Error info should be empty for valid instances
+    stored_error = json.loads(stored[0]['json_error'])
+    self.assertEqual(stored_error, {})
 
   def test_publish_connection_parameters_on_validation_failure(self):
     """Test that connection parameters are published when validation fails"""
@@ -886,3 +895,253 @@ class TestRequestInstanceList(unittest.TestCase):
 
     self.assertEqual(slave_ref, 'instance1')
     self.assertEqual(conn_params['message'], 'Your instance is valid the request has been transmitted to the master')
+
+  def test_publish_error_info_for_new_invalid_instance(self):
+    """Test that error info is published for new invalid instances"""
+    validation_errors = {
+      'message': 'Invalid parameters: field "name" is required',
+      'errors': ['field "name" is required']
+    }
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, False)
+    ], connection_params={'instance1': validation_errors})
+
+    recipe = requestinstancelist.Recipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify error info was published for new invalid instance
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    conn_params = call_args[0][0]
+    slave_ref = call_args[1]['slave_reference']
+
+    self.assertEqual(slave_ref, 'instance1')
+    self.assertEqual(conn_params['message'], validation_errors['message'])
+    self.assertEqual(conn_params['errors'], validation_errors['errors'])
+
+  def test_publish_error_info_for_modified_invalid_instance(self):
+    """Test that error info is published for modified invalid instances with changed error info"""
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    import hashlib
+    # New parameters (different from old)
+    new_params = {'key': 'new_value'}
+    new_hash = hashlib.sha256(
+      json.dumps({'reference': 'instance1', 'parameters': new_params}, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+
+    # New error info (different from old)
+    new_errors = {
+      'message': 'New error: field "value" is required',
+      'errors': ['field "value" is required']
+    }
+    instance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(new_params, sort_keys=True),
+      json.dumps(new_errors, sort_keys=True),
+      new_hash,
+      "1234567890",
+      False
+    )])
+
+    # Old parameters and error info in requestinstancedb
+    old_params = {'key': 'old_value'}
+    old_hash = hashlib.sha256(
+      json.dumps({'reference': 'instance1', 'parameters': old_params}, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    old_errors = {
+      'message': 'Old error: field "name" is required',
+      'errors': ['field "name" is required']
+    }
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(old_params, sort_keys=True),
+      json.dumps(old_errors, sort_keys=True),
+      old_hash,
+      "1234567890",
+      False
+    )])
+
+    recipe = requestinstancelist.Recipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify new error info was published (different from stored)
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    conn_params = call_args[0][0]
+    slave_ref = call_args[1]['slave_reference']
+
+    self.assertEqual(slave_ref, 'instance1')
+    # Should publish new error info, not old
+    self.assertEqual(conn_params['message'], new_errors['message'])
+    self.assertEqual(conn_params['errors'], new_errors['errors'])
+    self.assertNotEqual(conn_params['message'], old_errors['message'])
+
+  def test_publish_error_info_for_unchanged_invalid_instance(self):
+    """Test that error info is published for unchanged invalid instances when error info changes"""
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    import hashlib
+    # Same parameters (not modified)
+    params = {'key': 'value'}
+    instance_hash = hashlib.sha256(
+      json.dumps({'reference': 'instance1', 'parameters': params}, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+
+    # New error info (different from old, even though parameters didn't change)
+    new_errors = {
+      'message': 'New error: field "value" is required',
+      'errors': ['field "value" is required']
+    }
+    instance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(new_errors, sort_keys=True),
+      instance_hash,
+      "1234567890",
+      False
+    )])
+
+    # Old error info in requestinstancedb (same parameters, different error)
+    old_errors = {
+      'message': 'Old error: field "name" is required',
+      'errors': ['field "name" is required']
+    }
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(old_errors, sort_keys=True),
+      instance_hash,  # Same hash (parameters didn't change)
+      "1234567890",
+      False
+    )])
+
+    recipe = requestinstancelist.Recipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify new error info was published (error info changed even though parameters didn't)
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    conn_params = call_args[0][0]
+    slave_ref = call_args[1]['slave_reference']
+
+    self.assertEqual(slave_ref, 'instance1')
+    # Should publish new error info, not old
+    self.assertEqual(conn_params['message'], new_errors['message'])
+    self.assertEqual(conn_params['errors'], new_errors['errors'])
+    self.assertNotEqual(conn_params['message'], old_errors['message'])
+
+  def test_json_error_read_from_database_for_invalid_instances(self):
+    """Test that json_error is actually read from database for invalid instances"""
+    # This test directly verifies that _getUpdateList reads json_error for invalid instances
+    # If the bug is active (checking valid_parameter), this test will fail
+    validation_errors = {
+      'message': 'Test error from database',
+      'errors': ['Error 1', 'Error 2']
+    }
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, False)  # invalid instance
+    ], connection_params={'instance1': validation_errors})
+
+    recipe = requestinstancelist.Recipe(self.buildout, 'test', self.options)
+
+    # Directly test _getUpdateList to verify json_error is read
+    update_list = recipe._getUpdateList()
+
+    # Find our instance
+    instance1 = None
+    for item in update_list:
+      if item['reference'] == 'instance1':
+        instance1 = item
+        break
+
+    self.assertIsNotNone(instance1, "instance1 should be in update list")
+    self.assertFalse(instance1['valid'], "instance1 should be invalid")
+
+    # CRITICAL: Verify that error_info was read from json_error
+    # If the bug is active (if row.get('valid_parameter') and row.get('json_error')),
+    # error_info would be {} (empty) because valid_parameter is False
+    self.assertNotEqual(instance1['error_info'], {},
+                       "json_error was not read from database - bug is present! "
+                       "error_info should contain validation errors but is empty. "
+                       "This means the condition 'if row.get('valid_parameter') and row.get('json_error')' "
+                       "is preventing json_error from being read for invalid instances.")
+    self.assertEqual(instance1['error_info']['message'], validation_errors['message'])
+    self.assertEqual(instance1['error_info']['errors'], validation_errors['errors'])
+
+  def test_publish_validation_errors_from_database(self):
+    """Test that validation errors from the database (from JsonSchemaWithDB) are published for new invalid instances"""
+    validation_errors = {
+      'message': 'Invalid parameters: field "name" is required',
+      'errors': ['field "name" is required', 'field "value" must be an integer']
+    }
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, False)
+    ], connection_params={'instance1': validation_errors})
+
+    class TestRecipe(requestinstancelist.Recipe):
+      def validateInstance(self, instance_reference, parameters):
+        return False, ['Different error from validateInstance'], {'message': 'Different error'}
+
+    recipe = TestRecipe(self.buildout, 'test', self.options)
+    with LogCapture() as log:
+      recipe.install()
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    conn_params = call_args[0][0]
+    self.assertNotEqual(conn_params, {}, "json_error from database was not read - bug is present!")
+    self.assertEqual(conn_params['message'], validation_errors['message'])
+    self.assertEqual(conn_params['errors'], validation_errors['errors'])
+
+  def test_publish_validation_errors_from_database_modified(self):
+    """Test that validation errors from the database are published for modified invalid instances"""
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    import hashlib
+    new_params = {'key': 'new_value'}
+    new_hash = hashlib.sha256(
+      json.dumps({'reference': 'instance1', 'parameters': new_params}, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+
+    validation_errors = {
+      'message': 'Invalid parameters: field "name" is required',
+      'errors': ['field "name" is required']
+    }
+    instance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(new_params, sort_keys=True),
+      json.dumps(validation_errors, sort_keys=True),
+      new_hash,
+      "1234567890",
+      False
+    )])
+
+    old_params = {'key': 'old_value'}
+    old_hash = hashlib.sha256(
+      json.dumps({'reference': 'instance1', 'parameters': old_params}, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(old_params, sort_keys=True),
+      "{}",
+      old_hash,
+      "1234567890",
+      True
+    )])
+
+    class TestRecipe(requestinstancelist.Recipe):
+      def validateInstance(self, instance_reference, parameters):
+        return False, ['Different error from validateInstance'], {'message': 'Different error'}
+
+    recipe = TestRecipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify error info from database was published (not from validateInstance)
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    conn_params = call_args[0][0]
+    self.assertEqual(conn_params['message'], validation_errors['message'])
+    self.assertEqual(conn_params['errors'], validation_errors['errors'])
