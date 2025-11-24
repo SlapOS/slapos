@@ -11,22 +11,28 @@ log=$(mktemp --tmpdir={{ directory['tmp'] }})
 trap "rm -f $log" EXIT TERM INT
 
 set +e
-qmpbackup="{{ qmpbackup }} --socket {{ qmp_socket_path }} backup --compress --target $BACKUP_DIR --include {{ disk['device'] }}"
-$qmpbackup --level auto &> $log
+qmpbackup="{{ qmpbackup }} --socket {{ qmp_socket_path }}"
+if [ -d $BACKUP_DIR/virtio0 ] || [ -d $BACKUP_DIR/ide0-hd0 ] ; then
+  rm -fr $BACKUP_DIR/*
+  $qmpbackup cleanup --remove-bitmap
+  echo "Migrated from old style backup by removing backup directory and bitmaps"
+fi
+qmpbackup_backup="$qmpbackup backup --compress --target $BACKUP_DIR --include {{ disk['device'] }}"
+$qmpbackup_backup --level auto &> $log
 RESULT=$?
 cat $log
 if [ $RESULT -ne 0 ] ; then
   # recover from unfinished previous backup
-  if egrep -q 'Partial backup found in.*{{ disk['device']}}.*possible broken backup chain. Execute new full backup' $log ; then
-    find $BACKUP_DIR/{{ disk['device'] }} -name '*.partial' -delete
-    $qmpbackup --level auto || exit $?
+  if egrep -q 'Partial backup found in.*possible broken backup chain. Execute new full backup' $log ; then
+    find $BACKUP_DIR/virtual1 -name '*.partial' -delete
+    $qmpbackup_backup --level auto || exit $?
     echo "Recovered from partial backup by removing partial"
   elif egrep -q 'Incremental backup requested but no active bitmap has been found' $log ; then
-    find $BACKUP_DIR/{{ disk['device'] }} -name '*.qcow2' -delete
-    $qmpbackup --level full || exit $?
+    find $BACKUP_DIR/virtual1 -name '*.qcow2' -delete
+    $qmpbackup_backup --level full || exit $?
     echo "Post take-over or post qmpbackup upgrade cleanup"
-  elif egrep -q 'No full backup found for device.*virtual.qcow2.*in.*{{ disk['device']}}.*: Execute full backup first.' $log ; then
-    $qmpbackup --level full || exit $?
+  elif egrep -q 'No full backup found for device.*in.*: Execute full backup first.' $log ; then
+    $qmpbackup_backup --level full || exit $?
     echo "Recovered from empty backup"
   else
     echo "Unknown situation"
