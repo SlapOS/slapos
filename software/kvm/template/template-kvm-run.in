@@ -307,13 +307,15 @@ kvm_argument_list = [qemu_path,
   # switch to tablet mode for the mouse to have it synced with a client, see https://wiki.gentoo.org/wiki/QEMU/Options#USB
   '-usbdevice', 'tablet',
 ]
+DISK_INFO_COUNT = 1
 for disk_info in disk_info_list:
   kvm_argument_list += (
     '-drive',
-    'file=%s,if=%s,discard=on%s' % (
-      disk_info['path'], disk_type,
+    'node-name=%s,file=%s,if=%s,discard=on%s' % (
+      'virtual%s' % (DISK_INFO_COUNT,), disk_info['path'], disk_type,
       ''.join(',%s=%s' % x for x in disk_info.items() if x[0] != 'path'))
   )
+  DISK_INFO_COUNT += 1
 
 rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
 for numa in numa_list:
@@ -336,6 +338,7 @@ if len(external_disk) > 1:
   for key, value in external_disk.items():
     if 'index' not in value:
       raise ValueError('index is missing and more than one disk is present in external-disk configuration')
+EXTERNAL_DISK_COUNT = 1
 for disk_info in sorted(external_disk.values(), key=operator.itemgetter('index')):
   if disk_info['path'].startswith('rbd:') or disk_info['path'].startswith('/'):
     path = disk_info['path']
@@ -355,6 +358,7 @@ for disk_info in sorted(external_disk.values(), key=operator.itemgetter('index')
     '-drive',
     ",".join(drive_argument_list)
   )
+  EXTERNAL_DISK_COUNT += 1
 
 if auto_ballooning:
   kvm_argument_list.extend(['-device', 'virtio-balloon-pci,id=balloon0'])
