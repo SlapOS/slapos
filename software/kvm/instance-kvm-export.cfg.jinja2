@@ -75,7 +75,7 @@ password = {{ slapparameter_dict['monitor-password'] }}
 [check-backup-directory]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/check-backup-directory
-command-line = {{ flock }} --conflict-exit-code 0 --nonblock --no-fork ${backup-info:file} {{ check_backup_directory }} ${directory:backup}/${disk:device} ${directory:tmp} ${backup-info:file}
+command-line = {{ flock }} --conflict-exit-code 0 --nonblock --no-fork ${backup-info:file} {{ check_backup_directory }} ${directory:backup}/virtual1 ${directory:tmp} ${backup-info:file}
 
 [check-backup-directory-promise]
 # Check that disk image is not corrupted
