@@ -1231,6 +1231,12 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
   @classmethod
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
+      '-sla-0-computer_guid': 'local',
+      '-sla-1-computer_guid': 'local',
+      '-sla-2-computer_guid': 'local',
+      '-sla-pbs1-computer_guid': 'local',
+      '-sla-pbs2-computer_guid': 'local',
+      'resilient-clone-number': 2,
       'resiliency-backup-periodicity': '#12 1 * * *'
       })}
 
@@ -1239,9 +1245,18 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
     super().setUpClass()
     cls.pbs1_ipv6 = cls.getPartitionIPv6(cls.getPartitionIdByType(
       'pull-backup'))
+    # XXX order of partition is
+    #  ir0: main
+    #  ir1: PBS1
+    #  ir2: PBS2
+    #  ir3: kvm-export
+    #  ir4: kvm-import1
+    #  ir5: kvm-import2
+    cls.pbs2_ipv6 = cls.getPartitionIPv6('ir2')
     cls.kvm_instance_partition_reference = cls.getPartitionIdByType('kvm-export')
     cls.kvm0_ipv6 = cls.getPartitionIPv6(cls.kvm_instance_partition_reference)
     cls.kvm1_ipv6 = cls.getPartitionIPv6(cls.getPartitionIdByType('kvm-import'))
+    cls.kvm2_ipv6 = cls.getPartitionIPv6('ir5')
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
@@ -1253,23 +1268,38 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
     )
     present_key_list = []
     assert_key_list = [
-     'monitor-password', 'takeover-kvm-1-password', 'backend-url', 'url',
-     'monitor-setup-url', 'ipv6-network-info', 'username', 'password']
+     'monitor-password', 'takeover-kvm-1-password', 'takeover-kvm-2-password',
+     'backend-url', 'url', 'monitor-setup-url', 'ipv6-network-info',
+     'username', 'password']
     for k in assert_key_list:
       if k in connection_parameter_dict:
         present_key_list.append(k)
         connection_parameter_dict.pop(k)
+    self.maxDiff = None
     self.assertIn('feed-url-kvm-1-pull', connection_parameter_dict)
     feed_pull = connection_parameter_dict.pop('feed-url-kvm-1-pull')
     self.assertRegex(
       feed_pull,
       'http://\\[{}\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-pull'.format(
         self.pbs1_ipv6))
+    self.assertIn('feed-url-kvm-1-push', connection_parameter_dict)
     feed_push = connection_parameter_dict.pop('feed-url-kvm-1-push')
     self.assertRegex(
       feed_push,
       'http://\\[{}\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-1-push'.format(
         self.pbs1_ipv6))
+    self.assertIn('feed-url-kvm-2-pull', connection_parameter_dict)
+    feed_pull2 = connection_parameter_dict.pop('feed-url-kvm-2-pull')
+    self.assertRegex(
+      feed_pull2,
+      'http://\\[{}\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-2-pull'.format(
+        self.pbs2_ipv6))
+    self.assertIn('feed-url-kvm-2-push', connection_parameter_dict)
+    feed_push2 = connection_parameter_dict.pop('feed-url-kvm-2-push')
+    self.assertRegex(
+      feed_push2,
+      'http://\\[{}\\]:[0-9][0-9][0-9][0-9]/get/local-ir0-kvm-2-push'.format(
+        self.pbs2_ipv6))
     self.assertEqual(
       connection_parameter_dict,
       {
@@ -1278,6 +1308,7 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
         f'https://[{self.computer_partition_ipv6_address}]:8160',
         'monitor-user': 'admin',
         'takeover-kvm-1-url': f'http://[{self.kvm1_ipv6}]:9263/',
+        'takeover-kvm-2-url': f'http://[{self.kvm2_ipv6}]:9263/',
       }
     )
     self.assertEqual(set(present_key_list), set(assert_key_list))
@@ -1296,54 +1327,66 @@ ir1:monitor-httpd-{hash}-on-watch RUNNING
 ir1:monitor-httpd-graceful EXITED
 ir1:notifier-on-watch RUNNING
 ir1:pbs_sshkeys_authority-on-watch RUNNING
-ir2:6tunnel-10022-{hash}-on-watch RUNNING
-ir2:6tunnel-10080-{hash}-on-watch RUNNING
-ir2:6tunnel-10443-{hash}-on-watch RUNNING
-ir2:boot-image-url-list-updater-{hash} EXITED
-ir2:boot-image-url-select-updater-{hash} EXITED
 ir2:bootstrap-monitor EXITED
 ir2:certificate_authority-{hash}-on-watch RUNNING
 ir2:crond-{hash}-on-watch RUNNING
 ir2:equeue-on-watch RUNNING
-ir2:kvm-{kvm-hash-value}-on-watch RUNNING
-ir2:kvm_controller EXITED
 ir2:monitor-httpd-{hash}-on-watch RUNNING
 ir2:monitor-httpd-graceful EXITED
-ir2:nginx-graceful EXITED
-ir2:nginx-on-watch RUNNING
 ir2:notifier-on-watch RUNNING
-ir2:resilient_sshkeys_authority-on-watch RUNNING
-ir2:sshd-graceful EXITED
-ir2:sshd-on-watch RUNNING
-ir2:whitelist-domains-download-{hash} RUNNING
-ir2:whitelist-firewall-{hash} RUNNING
+ir2:pbs_sshkeys_authority-on-watch RUNNING
+ir3:6tunnel-10022-{hash}-on-watch RUNNING
+ir3:6tunnel-10080-{hash}-on-watch RUNNING
+ir3:6tunnel-10443-{hash}-on-watch RUNNING
+ir3:boot-image-url-list-updater-{hash} EXITED
+ir3:boot-image-url-select-updater-{hash} EXITED
 ir3:bootstrap-monitor EXITED
 ir3:certificate_authority-{hash}-on-watch RUNNING
 ir3:crond-{hash}-on-watch RUNNING
 ir3:equeue-on-watch RUNNING
+ir3:kvm-{kvm-hash-value}-on-watch RUNNING
+ir3:kvm_controller EXITED
 ir3:monitor-httpd-{hash}-on-watch RUNNING
 ir3:monitor-httpd-graceful EXITED
+ir3:nginx-graceful EXITED
+ir3:nginx-on-watch RUNNING
 ir3:notifier-on-watch RUNNING
-ir3:resilient-web-takeover-httpd-on-watch RUNNING
 ir3:resilient_sshkeys_authority-on-watch RUNNING
 ir3:sshd-graceful EXITED
-ir3:sshd-on-watch RUNNING""",
+ir3:sshd-on-watch RUNNING
+ir3:whitelist-domains-download-{hash} RUNNING
+ir3:whitelist-firewall-{hash} RUNNING
+ir4:bootstrap-monitor EXITED
+ir4:certificate_authority-{hash}-on-watch RUNNING
+ir4:crond-{hash}-on-watch RUNNING
+ir4:equeue-on-watch RUNNING
+ir4:monitor-httpd-{hash}-on-watch RUNNING
+ir4:monitor-httpd-graceful EXITED
+ir4:notifier-on-watch RUNNING
+ir4:resilient-web-takeover-httpd-on-watch RUNNING
+ir4:resilient_sshkeys_authority-on-watch RUNNING
+ir4:sshd-graceful EXITED
+ir4:sshd-on-watch RUNNING
+ir5:bootstrap-monitor EXITED
+ir5:certificate_authority-{hash}-on-watch RUNNING
+ir5:crond-{hash}-on-watch RUNNING
+ir5:equeue-on-watch RUNNING
+ir5:monitor-httpd-{hash}-on-watch RUNNING
+ir5:monitor-httpd-graceful EXITED
+ir5:notifier-on-watch RUNNING
+ir5:resilient-web-takeover-httpd-on-watch RUNNING
+ir5:resilient_sshkeys_authority-on-watch RUNNING
+ir5:sshd-graceful EXITED
+ir5:sshd-on-watch RUNNING""",
       self.getProcessInfo([
         'var/boot-image-url-list/boot-image-url-list.json',
         'var/boot-image-url-select/boot-image-url-select.json'
       ])
     )
-    disable_novnc_server_parameters = {
-      "kvm-partition-dict": {
-        "KVM0": {
-            "disable-ansible-promise": True,
-            "enable-novnc-server": False
-        }
-      }
-    }
+
     self.rerequestInstance({"enable-novnc-server": False})
     self.waitForInstanceWithPropagation()
-    self.computer_partition = self.rerequestInstance(disable_novnc_server_parameters)
+    self.computer_partition = self.rerequestInstance({"enable-novnc-server": False})
 
     connection_parameter_dict = self.getConnectionParameterDictJson()
     self.assertNotIn('url', connection_parameter_dict)
@@ -1352,17 +1395,9 @@ ir3:sshd-on-watch RUNNING""",
     with self.assertRaises(requests.exceptions.ConnectionError):
       requests.get(authenticated_url, verify=False)
 
-    enable_novnc_server_parameters = {
-      "kvm-partition-dict": {
-        "KVM0": {
-            "disable-ansible-promise": True,
-            "enable-novnc-server": True
-        }
-      }
-    }
     self.rerequestInstance({"enable-novnc-server": True})
     self.waitForInstanceWithPropagation()
-    self.computer_partition = self.rerequestInstance(enable_novnc_server_parameters)
+    self.computer_partition = self.rerequestInstance({"enable-novnc-server": True})
 
     connection_parameter_dict = self.getConnectionParameterDictJson()
     self.assertIn('url', connection_parameter_dict)
