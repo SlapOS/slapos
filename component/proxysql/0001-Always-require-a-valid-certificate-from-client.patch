@@ -1,0 +1,42 @@
+From d686fe1e7177ecc3a4800d25bcb2bcaa742fe78f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 25 Nov 2025 09:12:37 +0900
+Subject: [PATCH] Always require a valid certificate from client.
+
+This is equivalent to have REQUIRE x509 in the user definition in mysql
+---
+ lib/mysql_data_stream.cpp | 3 ++-
+ src/proxy_tls.cpp         | 3 +--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/lib/mysql_data_stream.cpp b/lib/mysql_data_stream.cpp
+index 35f87868..bd56f018 100644
+--- a/lib/mysql_data_stream.cpp
++++ b/lib/mysql_data_stream.cpp
+@@ -207,7 +207,8 @@ enum sslstatus MySQL_Data_Stream::do_ssl_handshake() {
+ 			// we currently disable this annoying error
+ 			// in future we can configure this as per user level, specifying if the certificate is mandatory or not
+ 			// see issue #3424
+-			//proxy_error("X509 error: no required certificate sent by client\n");
++			proxy_error("X509 error: no required certificate sent by client\n");
++			return SSLSTATUS_FAIL;
+ 		}
+ 		// In case the supplied certificate has a 'SAN'-'URI' identifier
+ 		// starting with 'spiffe', client certificate verification is performed.
+diff --git a/src/proxy_tls.cpp b/src/proxy_tls.cpp
+index 44143b01..08899751 100644
+--- a/src/proxy_tls.cpp
++++ b/src/proxy_tls.cpp
+@@ -88,8 +88,7 @@ struct dh_st {
+ };
+ 
+ int callback_ssl_verify_peer(int ok, X509_STORE_CTX* ctx) {
+-	// for now only return 1
+-	return 1;
++	return ok;
+ }
+ 
+ X509 * generate_x509(EVP_PKEY *pkey, const unsigned char *cn, uint32_t serial, int days, X509 *ca_x509, EVP_PKEY *ca_pkey) {
+-- 
+2.48.0
+
