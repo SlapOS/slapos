@@ -238,10 +238,9 @@ class KvmMixin:
       cls.slap._instance_root, cls.getPartitionIdByType(instance_type), *paths)
 
   @classmethod
-  def getBackupPartitionPath(cls, *paths):
+  def getKvmExportPartitionBackupPath(cls, *paths):
     return cls.getPartitionPath(
-      'kvm-export', 'srv', 'backup', 'kvm',
-      cls.disk_type_backup_mapping[cls.disk_type], *paths)
+      'kvm-export', 'srv', 'backup', 'kvm', 'virtual1', *paths)
 
   @classmethod
   def getAuthenticatedUrl(cls, connection_parameter_dict, prefix='', additional=False):
@@ -902,10 +901,6 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
   instance_max_retry = 20
 
   disk_type = 'virtio'
-  disk_type_backup_mapping = {
-    'virtio': 'virtio0',
-    'ide': 'ide0-hd0',
-  }
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -934,6 +929,38 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
       result[0].stdout.decode('utf-8'))
     return result[0].stdout.decode('utf-8')
 
+  def assertExporterStatus(
+    self, status_text,
+    post_take_over=False,
+    partial_recover=False,
+    empty_backup_recover=False,
+    migrated_old=False,
+    ):
+    take_over_text = 'Post take-over or post qmpbackup upgrade cleanup'
+    if post_take_over:
+      self.assertIn(take_over_text, status_text)
+    else:
+      self.assertNotIn(take_over_text, status_text)
+
+    partial_recover_text = 'Recovered from partial backup by removing partial'
+    if partial_recover:
+      self.assertIn(partial_recover_text, status_text)
+    else:
+      self.assertNotIn(partial_recover_text, status_text)
+
+    empty_backup_text = 'Recovered from empty backup'
+    if empty_backup_recover:
+      self.assertIn(empty_backup_text, status_text)
+    else:
+      self.assertNotIn(empty_backup_text, status_text)
+
+    migrated_old_text = \
+      'Migrated from old style backup by removing backup directory and bitmaps'
+    if migrated_old:
+      self.assertIn(migrated_old_text, status_text)
+    else:
+      self.assertNotIn(migrated_old_text, status_text)
+
 
 def awaitBackup(equeue_file):
   for f in range(30):
@@ -956,16 +983,15 @@ class TestInstanceResilientBackupImporter(
     destination_qcow2 = os.path.join(
       self.importer_partition, 'srv', 'virtual.qcow2')
     destination_backup = os.path.join(
-      self.importer_partition, 'srv', 'backup', 'kvm',
-      self.disk_type_backup_mapping[self.disk_type])
+      self.importer_partition, 'srv', 'backup', 'kvm', 'virtual1')
     # sanity check - no export/import happened yet
-    self.assertFalse(os.path.exists(self.getBackupPartitionPath()))
+    self.assertFalse(os.path.exists(self.getKvmExportPartitionBackupPath()))
     self.call_exporter()
 
     equeue_log = awaitBackup(equeue_file)
     self.assertNotIn('qemu-img rebase', equeue_log)
     self.assertEqual(
-      os.listdir(self.getBackupPartitionPath()),
+      os.listdir(self.getKvmExportPartitionBackupPath()),
       os.listdir(destination_backup)
     )
     self.assertTrue(os.path.exists(destination_qcow2))
@@ -978,7 +1004,7 @@ class TestInstanceResilientBackupImporter(
     equeue_log = awaitBackup(equeue_file)
     self.assertIn('qemu-img rebase', equeue_log)
     self.assertEqual(
-      os.listdir(self.getBackupPartitionPath()),
+      os.listdir(self.getKvmExportPartitionBackupPath()),
       os.listdir(destination_backup)
     )
     self.assertTrue(os.path.exists(destination_qcow2))
@@ -994,10 +1020,7 @@ class TestInstanceResilientBackupImporter(
     self.slap.waitForInstance(max_retry=10)
     # check that all stabilizes after backup after takeover
     status_text = self.call_exporter()
-    self.assertIn(
-      'Post take-over or post qmpbackup upgrade cleanup',
-      status_text
-    )
+    self.assertExporterStatus(status_text, post_take_over=True)
     self.slap.waitForInstance(max_retry=10)
 
 
@@ -1026,23 +1049,12 @@ class TestInstanceResilientBackupExporterMixin(
       fh.write('')
     awaitBackup(equeue_file)
     self.assertEqual(
-      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      len(glob.glob(self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))),
       1)
     self.assertEqual(
-      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
       0)
-    self.assertNotIn(
-      'Recovered from partial backup by removing partial',
-      status_text
-    )
-    self.assertNotIn(
-      'Recovered from empty backup',
-      status_text
-    )
-    self.assertNotIn(
-      'Post take-over or post qmpbackup upgrade cleanup',
-      status_text
-    )
+    self.assertExporterStatus(status_text)
     self.assertImported()
 
 
@@ -1060,10 +1072,10 @@ class TestInstanceResilientBackupExporter(
     self.call_exporter()
     awaitBackup(equeue_file)
     self.assertEqual(
-      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      len(glob.glob(self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))),
       1)
     self.assertEqual(
-      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
       1)
     self.assertImported()
     # restart the VM and prove that the backup worked
@@ -1084,10 +1096,10 @@ class TestInstanceResilientBackupExporter(
     self.call_exporter()
     awaitBackup(equeue_file)
     self.assertEqual(
-      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      len(glob.glob(self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))),
       1)
     self.assertEqual(
-      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
       2)
     self.assertImported()
 
@@ -1125,7 +1137,7 @@ class TestInstanceResilientBackupExporterMigratePre047(
     # added bitmap like old qmpbackup would do
     subprocess.check_call([
       qemu_img, "bitmap", "--add", image,
-      "qmpbackup-virtio0-8a1050f7-cabd-4e29-a825-742e5eecdfea"])
+      "qmpbackup-virtual1-8a1050f7-cabd-4e29-a825-742e5eecdfea"])
     # Simply starting the KVM will do needed migration, so all else works
     self.requestDefaultInstance(state='started')
     self.waitForInstanceWithPropagation()
@@ -1152,7 +1164,7 @@ class TestInstanceResilientBackupExporterPartialRecovery(
       )
     self.initialBackup()
     # cover .partial file in the backup directory with fallback to full
-    current_backup = glob.glob(self.getBackupPartitionPath('FULL-*'))[0]
+    current_backup = glob.glob(self.getKvmExportPartitionBackupPath('FULL-*'))[0]
 
     # assert check-backup-directory behaviour, typical...
     partition_path = self.getPartitionPath('kvm-export')
@@ -1184,15 +1196,12 @@ class TestInstanceResilientBackupExporterPartialRecovery(
 
     status_text = self.call_exporter()
     self.assertEqual(
-      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      len(glob.glob(self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))),
       1)
     self.assertEqual(
-      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
       1)
-    self.assertIn(
-      'Recovered from partial backup by removing partial',
-      status_text
-    )
+    self.assertExporterStatus(status_text, partial_recover=True)
     assertPromiseState(partition_path, 'check-backup-directory.py', 0)
 
 
@@ -1202,7 +1211,7 @@ class TestInstanceResilientBackupExporterEmptyRecovery(
   def test(self):
     self.initialBackup()
     # cover empty backup recovery
-    current_backup_list = glob.glob(self.getBackupPartitionPath('*.qcow2'))
+    current_backup_list = glob.glob(self.getKvmExportPartitionBackupPath('*.qcow2'))
     self.assertEqual(
       1,
       len(current_backup_list)
@@ -1211,15 +1220,29 @@ class TestInstanceResilientBackupExporterEmptyRecovery(
       os.unlink(file)
     status_text = self.call_exporter()
     self.assertEqual(
-      len(glob.glob(self.getBackupPartitionPath('FULL-*.qcow2'))),
+      len(glob.glob(self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))),
       1)
     self.assertEqual(
-      len(glob.glob(self.getBackupPartitionPath('INC-*.qcow2'))),
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
       0)
-    self.assertIn(
-      'Recovered from empty backup',
-      status_text
-    )
+    self.assertExporterStatus(status_text, empty_backup_recover=True)
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterOldStyleMigration(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  old_backup_name = 'virtio0'
+  def test(self):
+    backup_path = self.getPartitionPath('kvm-export', 'srv', 'backup', 'kvm')
+    os.mkdir(os.path.join(backup_path, self.old_backup_name))
+    status_text = self.call_exporter()
+    self.assertEqual(
+      len(glob.glob(self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
+      0)
+    self.assertExporterStatus(status_text, migrated_old=True)
 
 
 @skipUnlessKvm
@@ -1244,6 +1267,12 @@ class TestInstanceResilientBackupExporterPartialRecoveryIde(
 class TestInstanceResilientBackupExporterEmptyRecoveryIde(
   TestInstanceResilientBackupExporterEmptyRecovery):
   disk_type = 'ide'
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterOldStyleMigrationIde(
+  TestInstanceResilientBackupExporterOldStyleMigration):
+  old_backup_name = 'ide0-hd0'
 
 
 @skipUnlessKvm
@@ -2692,7 +2721,7 @@ class ExternalDiskMixin(KvmMixin):
       pass
 
   def getRunningDriveList(self, kvm_instance_partition):
-    _match_drive = re.compile('file.*if=virtio.*').match
+    _match_drive = re.compile('.*file.*if=virtio.*').match
     kvm_pid_file_list = glob.glob(os.path.join(
       self.slap._instance_root, '*', 'var', 'run', 'pid_file'))
     self.assertEqual(1, len(kvm_pid_file_list))
@@ -2804,8 +2833,8 @@ class TestExternalDiskModern(
     self.assertEqual(
       drive_list,
       [
-        'file=${partition}/srv/virtual.qcow2,if=virtio,discard=on,'
-        'format=qcow2',
+        'node-name=virtual1,file=${partition}/srv/virtual.qcow2,if=virtio,'
+        'discard=on,format=qcow2',
         'file={}/first_disk,if=virtio,cache=writeback,format=qcow2'.format(
           self.working_directory),
         'file=${partition}/second_disk,if=virtio,cache=writeback',
