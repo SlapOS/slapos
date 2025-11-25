@@ -378,9 +378,16 @@ class TestMariaDBTLS(MariaDBTestCase):
       ssl=ssl,
     )
 
-  def test_replication_user_require_ssl(self):
+  def test_replication_user_require_x509(self):
     with self.assertRaisesRegex(pymysql.err.OperationalError, 'SSL is required'):
       self.getReplicationUserDatabaseConnection(ssl=None).close()
+
+    ssl = {'ca': str(self.computer_partition_root_path / 'etc' / 'mariadb-ssl' / 'mariadb-ca.pem')}
+    with self.assertRaises(pymysql.err.OperationalError):
+      self.getReplicationUserDatabaseConnection(ssl=ssl).close()
+
+    ssl['cert'], ssl['key'] = self._client_cert()
+    self.getReplicationUserDatabaseConnection(ssl=ssl).close()
 
   def test_proxysql_server_certificate_renewal(self):
     ssl = {'ca': str(self.computer_partition_root_path / 'etc' / 'mariadb-ssl' / 'mariadb-ca.pem')}
