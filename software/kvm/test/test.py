@@ -846,6 +846,7 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
     partial_recover=False,
     empty_backup_recover=False,
     migrated_old=False,
+    recovered_not_ready=False
   ):
     take_over_text = 'Post take-over or post qmpbackup upgrade cleanup'
     if post_take_over:
@@ -871,6 +872,12 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
       self.assertIn(migrated_old_text, status_text)
     else:
       self.assertNotIn(migrated_old_text, status_text)
+
+    recovered_not_ready_text = 'Recovered from state not ready'
+    if recovered_not_ready:
+      self.assertIn(recovered_not_ready_text, status_text)
+    else:
+      self.assertNotIn(recovered_not_ready_text, status_text)
 
 
 def awaitBackup(equeue_file):
