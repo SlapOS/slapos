@@ -415,6 +415,9 @@ init-smp-count = 2
 init-ram-size = ${kvm-controller-parameter-dict:ram-size}
 init-smp-count = ${kvm-controller-parameter-dict:cpu-count}
 {%- endif %}
+pid-file = ${directory:run}/kvm.pid
+qmp-socket-path = ${directory:run}/qmp_socket
+vnc-socket-path = ${directory:run}/vnc_socket
 
 mac-address = ${create-mac:mac-address}
 tap-mac-address = ${create-tap-mac:mac-address}
