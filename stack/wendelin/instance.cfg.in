@@ -76,6 +76,7 @@ openssl-location = {{ openssl_location }}
 <= default-dynamic-template-parameters
 openssl = {{ openssl_location }}
 haproxy = {{ haproxy_location }}
+haproxy-reload-script = {{ haproxy_reload_script }}
 rsyslogd = {{ rsyslogd_location }}
 socat = {{ socat_location }}
 apachedex-location = {{ bin_directory }}/apachedex
