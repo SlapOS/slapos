@@ -254,6 +254,7 @@ inline =
     -S ${proxysql-cfg:socket} \
     -e 'PROXYSQL RELOAD TLS;'
 {% endif %}
+  ${haproxy-reload:output}
 
 {{  caucase.updater(
       prefix='caucase-mariadb-updater',
@@ -873,14 +874,25 @@ inline =
     server bootstrap unix@${mariadb-bootstrap-server-script:socketpath}
   {% raw %}{# BLANKLINE #}{% endraw %}
 
+[haproxy-reload]
+recipe = slapos.recipe.template:jinja2
+output = ${directory:bin}/${:_buildout_section_name_}
+mode = 700
+url = {{ parameter_dict['haproxy-reload-script'] }}
+context =
+  key python_executable buildout:executable
+  key admin_socket_path haproxy:admin-socket
+
+
 [{{ section('haproxy') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/haproxy
 command-line =
   "{{ parameter_dict['haproxy'] }}/sbin/haproxy"
-    -S ${directory:run}/h.sock,level,operator
+    -S ${:admin-socket},level,operator
     -f "${haproxy-cfg:output}"
 hash-files = ${haproxy-cfg:output}
+admin-socket = ${directory:run}/h.sock
 
 {%- if ipv6_reverse_proxy_enable %}
 [proxysql-cfg]

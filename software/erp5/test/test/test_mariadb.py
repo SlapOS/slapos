@@ -393,6 +393,28 @@ class TestMariaDBTLS(MariaDBTestCase):
       cert_after = cnx._sock.getpeercert()
     self.assertNotEqual(cert_before['notAfter'], cert_after['notAfter'])
 
+  def test_mariadbackup_url_certificate_renewal(self):
+    connection_parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()['_'])
+    mariabackup_url = connection_parameter_dict['replication-mariabackup-url']
+
+    def _getpeercert():
+      # XXX low level way to get the server certificate
+      with requests.Session() as session:
+        resp = session.get(
+          mariabackup_url,
+          verify=self.computer_partition_root_path / 'etc' / 'mariadb-ssl' / 'mariadb-ca.pem',
+          cert=self._client_cert(),
+        )
+        resp.raise_for_status()
+        with contextlib.closing(resp.raw._pool.pool.get()) as cnx:
+          return cnx.sock._sslobj.getpeercert()
+
+    cert_before = _getpeercert()
+    self._run_service('caucase-mariadb-updater', '(?s)Renewing.*Next wake-up', '+63days')
+    cert_after = _getpeercert()
+    self.assertNotEqual(cert_before['notAfter'], cert_after['notAfter'])
+
 
 class TestMroonga(MariaDBTestCase):
   def test_mroonga_plugin_loaded(self) -> None:
