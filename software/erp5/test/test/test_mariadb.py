@@ -34,11 +34,18 @@ import lzma
 import os
 import subprocess
 import time
+import tempfile
 import unittest
 import urllib.parse
 import warnings
 
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
 import inotify_simple
+import pexpect
 import pymysql
 import requests
 
@@ -284,6 +291,107 @@ class TestMariaDB(MariaDBTestCase):
           ((datetime.datetime(2001, 1, 1, 1, 0),),),
           tuple(cursor.fetchall()),
         )
+
+
+class TestMariaDBTLS(MariaDBTestCase):
+  _client_cert_crt: str|None = None
+
+  @classmethod
+  def _getInstanceParameterDict(cls) -> dict:
+    subject = x509.Name(
+      [x509.NameAttribute(NameOID.COMMON_NAME, cls.__name__)])
+    key = rsa.generate_private_key(
+      public_exponent=65537,
+      key_size=2048,
+      backend=default_backend(),
+    )
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+      f.write(
+        key.private_bytes(
+          serialization.Encoding.PEM,
+          serialization.PrivateFormat.PKCS8,
+          serialization.NoEncryption()))
+    cls._client_cert_key = f.name
+    cls.addClassCleanup(os.unlink, cls._client_cert_key)
+
+    csr = x509.CertificateSigningRequestBuilder(
+    ).subject_name(
+      subject
+    ).sign(
+      key,
+      hashes.SHA256(),
+      default_backend(),
+    )
+    cls._client_csr_txt = csr.public_bytes(serialization.Encoding.PEM).decode()
+
+    parameter_dict = super()._getInstanceParameterDict()
+    parameter_dict.setdefault('caucased', {})['csr-to-sign'] = cls._client_csr_txt
+    return parameter_dict
+
+  def _run_service(self, service_name:str, expected_output:str, when='now') -> None:
+    """execute a service from etc/run/ and wait for expected output.
+    """
+    service = self.computer_partition_root_path / 'etc' / 'run' / service_name
+    process = pexpect.spawnu(f"faketime {when} {service}")
+    logger = self.logger
+    class DebugLogFile:
+      def write(self, msg):
+        logger.info("output from %s: %s", service_name, msg)
+      def flush(self):
+        pass
+    process.logfile = DebugLogFile()
+    process.expect(expected_output)
+    process.terminate()
+    process.wait()
+
+  def _client_cert(self) -> tuple[str, str]:
+    if self._client_cert_crt is None:
+      # get the certificate from caucase
+      connection_parameter_dict = json.loads(
+        self.computer_partition.getConnectionParameterDict()['_'])
+      caucased_base_url = connection_parameter_dict['caucased-url']
+      resp = requests.put(
+        f"{caucased_base_url}/cas/csr", data=self._client_csr_txt)
+      resp.raise_for_status()
+      csr_id = resp.headers['Location']
+      self._run_service('caucase-sign-csr', 'end of signed service CSRs')
+      resp = requests.get(f"{caucased_base_url}/cas/crt/{csr_id}")
+      resp.raise_for_status()
+      with tempfile.NamedTemporaryFile(delete=False) as f:
+        f.write(resp.text.encode())
+      self._client_cert_crt = f.name
+      self.addClassCleanup(os.unlink, self._client_cert_crt)
+    return self._client_cert_crt, self._client_cert_key
+
+  def getReplicationUserDatabaseConnection(self, ssl:dict) -> pymysql.connections.Connection:
+    connection_parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()['_'])
+    db_url = urllib.parse.urlparse(
+      connection_parameter_dict['replication-primary-url'])
+    self.assertEqual('mysql', db_url.scheme)
+    return pymysql.connect(
+      user=db_url.username,
+      passwd=db_url.password,
+      host=db_url.hostname,
+      port=db_url.port,
+      use_unicode=True,
+      ssl=ssl,
+    )
+
+  def test_replication_user_require_ssl(self):
+    with self.assertRaisesRegex(pymysql.err.OperationalError, 'SSL is required'):
+      self.getReplicationUserDatabaseConnection(ssl=None).close()
+
+  def test_proxysql_server_certificate_renewal(self):
+    ssl = {'ca': str(self.computer_partition_root_path / 'etc' / 'mariadb-ssl' / 'mariadb-ca.pem')}
+    ssl['cert'], ssl['key'] = self._client_cert()
+
+    with contextlib.closing(self.getReplicationUserDatabaseConnection(ssl)) as cnx:
+      cert_before = cnx._sock.getpeercert()
+    self._run_service('caucase-mariadb-updater', '(?s)Renewing.*Next wake-up', '+63days')
+    with contextlib.closing(self.getReplicationUserDatabaseConnection(ssl)) as cnx:
+      cert_after = cnx._sock.getpeercert()
+    self.assertNotEqual(cert_before['notAfter'], cert_after['notAfter'])
 
 
 class TestMroonga(MariaDBTestCase):
