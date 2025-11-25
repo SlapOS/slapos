@@ -131,7 +131,7 @@ class KVMTestCase(InstanceTestCase):
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
     kvm_pid_file_list = glob.glob(os.path.join(
-      self.slap._instance_root, '*', 'var', 'run', 'pid_file'))
+      self.slap._instance_root, '*', 'var', 'run', 'kvm.pid'))
     self.assertEqual(1, len(kvm_pid_file_list))
     with open(kvm_pid_file_list[0]) as fh:
       kvm_pid = int(fh.read().strip())
@@ -2208,7 +2208,7 @@ class TestNatRulesKvmCluster(KVMTestCase):
 
   def getRunningHostFwd(self):
     kvm_pid_file_list = glob.glob(os.path.join(
-      self.slap._instance_root, '*', 'var', 'run', 'pid_file'))
+      self.slap._instance_root, '*', 'var', 'run', 'kvm.pid'))
     self.assertEqual(1, len(kvm_pid_file_list))
     with open(kvm_pid_file_list[0]) as fh:
       kvm_pid = int(fh.read().strip())
@@ -2734,7 +2734,7 @@ class ExternalDiskMixin(KvmMixin):
   def getRunningDriveList(self, kvm_instance_partition):
     _match_drive = re.compile('.*file.*if=virtio.*').match
     kvm_pid_file_list = glob.glob(os.path.join(
-      self.slap._instance_root, '*', 'var', 'run', 'pid_file'))
+      self.slap._instance_root, '*', 'var', 'run', 'kvm.pid'))
     self.assertEqual(1, len(kvm_pid_file_list))
     with open(kvm_pid_file_list[0]) as fh:
       kvm_pid = int(fh.read().strip())
