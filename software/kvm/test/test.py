@@ -935,6 +935,7 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
     partial_recover=False,
     empty_backup_recover=False,
     migrated_old=False,
+    migrated_not_ready=False
     ):
     take_over_text = 'Post take-over or post qmpbackup upgrade cleanup'
     if post_take_over:
@@ -960,6 +961,12 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
       self.assertIn(migrated_old_text, status_text)
     else:
       self.assertNotIn(migrated_old_text, status_text)
+
+    migrated_not_ready_text = 'Rovered from state not ready'
+    if state_not_ready:
+      self.assertIn(migrated_not_ready_text, status_text)
+    else:
+      self.assertNotIn(migrated_not_ready_text, status_text)
 
 
 def awaitBackup(equeue_file):
@@ -1246,6 +1253,14 @@ class TestInstanceResilientBackupExporterOldStyleMigration(
 
 
 @skipUnlessKvm
+class TestInstanceResilientBackupExporterStateNotReadyRecover(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  def test(self):
+    self.fail("Damage backup so it becomes state not ready")
+    self.assertExporterStatus(status_text, migrated_not_ready=True)
+
+
+@skipUnlessKvm
 class TestInstanceResilientBackupExporterIde(
   TestInstanceResilientBackupExporter):
   disk_type = 'ide'
@@ -1274,6 +1289,11 @@ class TestInstanceResilientBackupExporterOldStyleMigrationIde(
   TestInstanceResilientBackupExporterOldStyleMigration):
   disk_type = 'ide'
   old_backup_name = 'ide0-hd0'
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterStateNotReadyRecoverIde(
+  TestInstanceResilientBackupExporterOldStyleMigration):
+  disk_type = 'ide'
 
 
 @skipUnlessKvm
