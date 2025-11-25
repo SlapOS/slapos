@@ -131,7 +131,7 @@ class KVMTestCase(InstanceTestCase):
     kvm_instance_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
     kvm_pid_file_list = glob.glob(os.path.join(
-      self.slap._instance_root, '*', 'var', 'run', 'pid_file'))
+      self.slap._instance_root, '*', 'var', 'run', 'kvm.pid'))
     self.assertEqual(1, len(kvm_pid_file_list))
     with open(kvm_pid_file_list[0]) as fh:
       kvm_pid = int(fh.read().strip())
@@ -401,17 +401,19 @@ class TestMemoryManagement(KVMTestCase, KvmMixin):
 
   def getKvmProcessInfo(self, switch_list):
     return_list = []
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                 if 'kvm-' in q['name']][0]['pid']
-      kvm_process = psutil.Process(kvm_pid)
-      get_next = False
-      for entry in kvm_process.cmdline():
-        if get_next:
-          return_list.append(entry)
-          get_next = False
-        elif entry in switch_list:
-          get_next = True
+    kvm_pid_file_list = glob.glob(os.path.join(
+      self.slap._instance_root, '*', 'var', 'run', 'kvm.pid'))
+    self.assertEqual(1, len(kvm_pid_file_list))
+    with open(kvm_pid_file_list[0]) as fh:
+      kvm_pid = int(fh.read().strip())
+    kvm_process = psutil.Process(kvm_pid)
+    get_next = False
+    for entry in kvm_process.cmdline():
+      if get_next:
+        return_list.append(entry)
+        get_next = False
+      elif entry in switch_list:
+        get_next = True
     return kvm_pid, return_list
 
   def test(self):
@@ -2208,7 +2210,7 @@ class TestNatRulesKvmCluster(KVMTestCase):
 
   def getRunningHostFwd(self):
     kvm_pid_file_list = glob.glob(os.path.join(
-      self.slap._instance_root, '*', 'var', 'run', 'pid_file'))
+      self.slap._instance_root, '*', 'var', 'run', 'kvm.pid'))
     self.assertEqual(1, len(kvm_pid_file_list))
     with open(kvm_pid_file_list[0]) as fh:
       kvm_pid = int(fh.read().strip())
@@ -2734,7 +2736,7 @@ class ExternalDiskMixin(KvmMixin):
   def getRunningDriveList(self, kvm_instance_partition):
     _match_drive = re.compile('.*file.*if=virtio.*').match
     kvm_pid_file_list = glob.glob(os.path.join(
-      self.slap._instance_root, '*', 'var', 'run', 'pid_file'))
+      self.slap._instance_root, '*', 'var', 'run', 'kvm.pid'))
     self.assertEqual(1, len(kvm_pid_file_list))
     with open(kvm_pid_file_list[0]) as fh:
       kvm_pid = int(fh.read().strip())
