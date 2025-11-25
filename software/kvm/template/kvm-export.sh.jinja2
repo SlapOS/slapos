@@ -34,6 +34,11 @@ if [ $RESULT -ne 0 ] ; then
   elif egrep -q 'No full backup found for device.*in.*: Execute full backup first.' $log ; then
     $qmpbackup_backup --level full || exit $?
     echo "Recovered from empty backup"
+  elif egrep -q 'Bitmap for device .* is not in state ready for backup.' $log ; then
+    # please note that it was not possible to reproduce this situation in unit tests
+    $qmpbackup cleanup --remove-bitmap
+    $qmpbackup_backup --level full || exit $?
+    echo "Recovered from state not ready"
   else
     echo "Unknown situation"
     exit $RESULT
