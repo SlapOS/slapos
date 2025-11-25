@@ -177,6 +177,7 @@ dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
 gzip-location = {{ gzip_location }}
 haproxy = {{ haproxy_location }}
+haproxy-reload-script = {{ haproxy_reload_script }}
 xz-utils-location = {{ xz_utils_location }}
 mariadb = {{ dumps(mariadb) }}
 template-my-cnf = {{ template_my_cnf }}
