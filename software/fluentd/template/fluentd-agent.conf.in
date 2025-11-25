@@ -29,6 +29,7 @@
     flush_mode interval
     flush_interval {{ flush_interval }}
     flush_thread_count 4
+    chunk_limit_size 32k
     @type file
     path {{ buffer_file_dir }}/
   </buffer>
