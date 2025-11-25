@@ -2575,7 +2575,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             j = result_verb.json()
           except Exception:
             raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-          self.assertEqual('/?a=b&c=/' + verb, j['Path'], verb)
+          self.assertEqual('?a=b&c=/' + verb, j['Path'], verb)
           self.assertEqual(verb, j['Verb'], verb)
     # check backend timeout behaviour
     small_timeout_text = "Small timeout"
@@ -2584,7 +2584,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     big_timeout = self.request_timeout + 5
     big_timeout_text = "Big timeout"
     mimikra.config(
-      self.backend_url + '?a=b&c=' + '/small-timeout',
+      self.backend_url.rstrip('/') + '?a=b&c=' + '/small-timeout',
       headers={
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Body-Timeout': str(small_timeout),
@@ -2596,7 +2596,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       data=small_timeout_text,
     )
     mimikra.config(
-      self.backend_url + '?a=b&c=' + '/big-timeout',
+      self.backend_url.rstrip('/') + '?a=b&c=' + '/big-timeout',
       headers={
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Body-Timeout': str(big_timeout),
