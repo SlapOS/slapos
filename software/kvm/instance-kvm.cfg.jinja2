@@ -369,7 +369,7 @@ config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
 python-path = {{ python_eggs_executable }}
 qmp-socket-path = ${directory:run}/qmp_socket
 vnc-socket-path = ${directory:run}/vnc_socket
-pid-file = ${directory:run}/pid_file
+pid-file = ${directory:run}/kvm.pid
 kvm-status-path = ${directory:var}/qemu-vm-is-ready
 cpu-count = ${slap-parameter:cpu-count}
 cpu-model = ${slap-parameter:cpu-model}
@@ -415,6 +415,9 @@ init-smp-count = 2
 init-ram-size = ${kvm-controller-parameter-dict:ram-size}
 init-smp-count = ${kvm-controller-parameter-dict:cpu-count}
 {%- endif %}
+pid-file = ${kvm-controller-parameter-dict:pid-file}
+qmp-socket-path = ${directory:run}/qmp_socket
+vnc-socket-path = ${directory:run}/vnc_socket
 
 mac-address = ${create-mac:mac-address}
 tap-mac-address = ${create-tap-mac:mac-address}
