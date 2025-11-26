@@ -978,6 +978,151 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(conn_params['errors'], new_errors['errors'])
     self.assertNotEqual(conn_params['message'], old_errors['message'])
 
+  def test_removed_invalid_instance_re_validation(self):
+    """Test that removed invalid instances are not re-processed for re-validation
+    
+    Previously invalid instances that haven't changed (not in 'modified' or 'removed')
+    should not be re-processed for re-validation.
+    """
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    import hashlib
+    # Same parameters in both DBs (unchanged)
+    params = {'key': 'value'}
+    instance_hash = hashlib.sha256(
+      json.dumps({'reference': 'instance1', 'parameters': params, 'valid': False}, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+
+    # Same error info in both DBs (unchanged)
+    error_info = {
+      'message': 'Validation error: field "name" is required',
+      'errors': ['field "name" is required']
+    }
+
+    # Add to requestinstance-db (same parameters, same hash, invalid)
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(error_info, sort_keys=True),
+      instance_hash,  # Same hash (parameters didn't change)
+      "1234567890",
+      False  # invalid
+    )])
+
+
+    recipe = requestinstancelist.Recipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify instance was removed from requestinstance-db
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 0)
+
+  def test_unchanged_invalid_instance_re_validation(self):
+    """Test that unchanged invalid instances are re-processed for re-validation
+    
+    This test verifies the bug fix at lines 546-547 in requestinstancelist.py.
+    Invalid instances that haven't changed (not in 'modified' or 'removed')
+    should still be processed for re-validation. This ensures that if validation logic
+    changes or external conditions change, invalid instances get re-checked.
+    
+    Key conditions:
+    - Instance exists in both instance-db and requestinstance-db
+    - Same parameters (same hash) - NOT in 'modified'
+    - Instance exists in instance-db - NOT in 'removed'
+    - Instance is invalid in requestinstance-db
+    - Should be processed (validateInstance called)
+    """
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+
+    # Same error info in both DBs (unchanged)
+    error_info = {
+      'message': 'Validation error: field "name" is required',
+      'errors': ['field "name" is required']
+    }
+
+    import hashlib
+    # Same parameters in both DBs (unchanged - same hash)
+    params = {'key': 'value'}
+    instance_hash = hashlib.sha256(
+      json.dumps({
+        'reference': 'instance1',
+        'parameters': params,
+        'error_info': error_info,
+        'valid': True
+        }, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    # Add to instance-db (invalid, unchanged - same hash as requestinstance-db)
+    instance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(error_info, sort_keys=True),
+      instance_hash,
+      "1234567890",
+      True  # invalid
+    )])
+
+    # Add to requestinstance-db (same parameters, same hash, invalid)
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(error_info, sort_keys=True),
+      instance_hash,  # Same hash (parameters didn't change) - NOT in 'modified'
+      "1234567890",
+      False  # invalid
+    )])
+
+    # Create a custom recipe to track if validateInstance was called
+    validation_calls = []
+    class TestRecipe(requestinstancelist.Recipe):
+      def validateInstance(self, instance_reference, parameters):
+        validation_calls.append((instance_reference, parameters))
+        # Return same validation result (still invalid)
+        return False, ['Validation error: field "name" is required'], error_info
+
+    recipe = TestRecipe(self.buildout, 'test', self.options)
+    
+    with LogCapture() as log:
+      recipe.install()
+
+    # CRITICAL: Verify that validateInstance was called for the unchanged invalid instance
+    # This ensures the bug fix is working - unchanged invalid instances should be re-validated
+    # The instance is NOT in 'modified' (same hash) and NOT in 'removed' (exists in instance-db)
+    # So it should be in unchanged_invalid_instances_to_process and processed
+    self.assertEqual(len(validation_calls), 1, 
+                    "validateInstance should be called once for unchanged invalid instance. "
+                    "The instance is not in 'modified' (same hash) and not in 'removed' (exists in instance-db), "
+                    "so it should be added to unchanged_invalid_instances_to_process and processed.")
+    self.assertEqual(validation_calls[0][0], 'instance1')
+    self.assertEqual(validation_calls[0][1], params)
+
+    # Verify error info was published (re-validation happened)
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    conn_params = call_args[0][0]
+    slave_ref = call_args[1]['slave_reference']
+
+    self.assertEqual(slave_ref, 'instance1')
+    self.assertEqual(conn_params['message'], error_info['message'])
+    self.assertEqual(conn_params['errors'], error_info['errors'])
+
+    # Verify instance was NOT requested (still invalid)
+    self.request_instance.assert_not_called()
+
+    # Verify instance is still tracked in requestinstance-db
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['reference'], 'instance1')
+    self.assertEqual(stored[0]['valid_parameter'], False)
+
+    log.check(
+      ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 0 modified'),
+      ('test', 'WARNING', 'Instance instance1 failed validation: Validation error: field "name" is required'),
+      ('test', 'DEBUG', 'Tracking invalid modified instance (not requesting): instance1'),
+    )
+
   def test_publish_error_info_for_unchanged_invalid_instance(self):
     """Test that error info is published for unchanged invalid instances when error info changes"""
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
