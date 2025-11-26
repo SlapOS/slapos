@@ -34,15 +34,19 @@ import lzma
 import os
 import subprocess
 import time
+import tempfile
 import unittest
 import urllib.parse
 import warnings
 
-import MySQLdb
-import MySQLdb.connections
-
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
 import inotify_simple
-
+import pexpect
+import pymysql
 import requests
 
 from slapos.testing.utils import CrontabMixin, getPromisePluginParameterDict
@@ -89,7 +93,7 @@ class MariaDBTestCase(ERP5InstanceTestCase):
   def getInstanceParameterDict(cls) -> dict:
     return {'_': json.dumps(cls._getInstanceParameterDict())}
 
-  def getDatabaseConnection(self, computer_partition=None) -> MySQLdb.connections.Connection:
+  def getDatabaseConnection(self, computer_partition=None) -> pymysql.connections.Connection:
     computer_partition = computer_partition or self.computer_partition
     connection_parameter_dict = json.loads(
         computer_partition.getConnectionParameterDict()['_'])
@@ -97,7 +101,7 @@ class MariaDBTestCase(ERP5InstanceTestCase):
     self.assertEqual('mysql', db_url.scheme)
     self.assertTrue(db_url.path.startswith('/'))
     database_name = db_url.path[1:]
-    return MySQLdb.connect(
+    return pymysql.connect(
         user=db_url.username,
         passwd=db_url.password,
         host=db_url.hostname,
@@ -112,14 +116,14 @@ class MariaDBTestCase(ERP5InstanceTestCase):
     computer_partition = computer_partition or cls.computer_partition
     return os.path.join(cls.slap._instance_root, computer_partition.getId())
 
-  def getSocketDatabaseConnection(self, computer_partition=None) -> MySQLdb.connections.Connection:
+  def getSocketDatabaseConnection(self, computer_partition=None) -> pymysql.connections.Connection:
     partition_path = self.getComputerPartitionPath(computer_partition)
     default_file = os.path.join(partition_path, 'etc', 'mariadb.cnf')
-    return MySQLdb.connect(
-        read_default_file = default_file,
+    return pymysql.connect(
+        read_default_file=default_file,
         use_unicode=True,
         charset='utf8mb4',
-        cursorclass=MySQLdb.cursors.DictCursor,
+        cursorclass=pymysql.cursors.DictCursor,
     )
 
   @classmethod
@@ -196,9 +200,9 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
     # must take more than 3 seconds to be logged.
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
-      cnx.query("SELECT SLEEP(3.1)")
-      cnx.store_result()
-      cnx.query("SELECT SLEEP(3.2)")
+      with cnx.cursor() as cursor:
+        cursor.execute("SELECT SLEEP(3.1)")
+        cursor.execute("SELECT SLEEP(3.2)")
 
     # slow query crontab depends on crontab for log rotation
     # to be executed first.
@@ -259,57 +263,189 @@ class TestMariaDB(MariaDBTestCase):
   def test_utf8_collation(self) -> None:
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
-      cnx.query(
-          """
-          CREATE TABLE test_utf8_collation (
-            col1 CHAR(10)
-          )
-          """)
+      with cnx.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE TABLE test_utf8_collation (
+              col1 CHAR(10)
+            )
+            """)
 
-      cnx.store_result()
-      cnx.query(
-          """
-          insert into test_utf8_collation values ("à"), ("あ")
-          """)
-      cnx.store_result()
+        cursor.execute(
+            """
+            insert into test_utf8_collation values ("à"), ("あ")
+            """)
 
-      cnx.query(
-          """
-          select * from test_utf8_collation where col1 = "a"
-          """)
-      self.assertEqual((('à',),), cnx.store_result().fetch_row(maxrows=2))
+        cursor.execute(
+            """
+            select * from test_utf8_collation where col1 = "a"
+            """)
+        self.assertEqual((('à',),), tuple(cursor.fetchall()))
 
   def test_timezone(self) -> None:
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
-      cnx.query("SELECT CONVERT_TZ('2001-01-01', 'UTC', 'Europe/Paris')")
-      self.assertEqual(
-        ((datetime.datetime(2001, 1, 1, 1, 0),),),
-        cnx.store_result().fetch_row(maxrows=2),
-      )
+      with cnx.cursor() as cursor:
+        cursor.execute("SELECT CONVERT_TZ('2001-01-01', 'UTC', 'Europe/Paris')")
+        self.assertEqual(
+          ((datetime.datetime(2001, 1, 1, 1, 0),),),
+          tuple(cursor.fetchall()),
+        )
+
+
+class TestMariaDBTLS(MariaDBTestCase):
+  _client_cert_crt: str|None = None
+
+  @classmethod
+  def _getInstanceParameterDict(cls) -> dict:
+    subject = x509.Name(
+      [x509.NameAttribute(NameOID.COMMON_NAME, cls.__name__)])
+    key = rsa.generate_private_key(
+      public_exponent=65537,
+      key_size=2048,
+      backend=default_backend(),
+    )
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+      f.write(
+        key.private_bytes(
+          serialization.Encoding.PEM,
+          serialization.PrivateFormat.PKCS8,
+          serialization.NoEncryption()))
+    cls._client_cert_key = f.name
+    cls.addClassCleanup(os.unlink, cls._client_cert_key)
+
+    csr = x509.CertificateSigningRequestBuilder(
+    ).subject_name(
+      subject
+    ).sign(
+      key,
+      hashes.SHA256(),
+      default_backend(),
+    )
+    cls._client_csr_txt = csr.public_bytes(serialization.Encoding.PEM).decode()
+
+    parameter_dict = super()._getInstanceParameterDict()
+    parameter_dict.setdefault('caucased', {})['csr-to-sign'] = cls._client_csr_txt
+    return parameter_dict
+
+  def _run_service(self, service_name:str, expected_output:str, when='now') -> None:
+    """execute a service from etc/run/ and wait for expected output.
+    """
+    service = self.computer_partition_root_path / 'etc' / 'run' / service_name
+    process = pexpect.spawnu(f"faketime {when} {service}")
+    logger = self.logger
+    class DebugLogFile:
+      def write(self, msg):
+        logger.info("output from %s: %s", service_name, msg)
+      def flush(self):
+        pass
+    process.logfile = DebugLogFile()
+    process.expect(expected_output)
+    process.terminate()
+    process.wait()
+
+  def _client_cert(self) -> tuple[str, str]:
+    if self._client_cert_crt is None:
+      # get the certificate from caucase
+      connection_parameter_dict = json.loads(
+        self.computer_partition.getConnectionParameterDict()['_'])
+      caucased_base_url = connection_parameter_dict['caucased-url']
+      resp = requests.put(
+        f"{caucased_base_url}/cas/csr", data=self._client_csr_txt)
+      resp.raise_for_status()
+      csr_id = resp.headers['Location']
+      self._run_service('caucase-sign-csr', 'end of signed service CSRs')
+      resp = requests.get(f"{caucased_base_url}/cas/crt/{csr_id}")
+      resp.raise_for_status()
+      with tempfile.NamedTemporaryFile(delete=False) as f:
+        f.write(resp.text.encode())
+      self._client_cert_crt = f.name
+      self.addClassCleanup(os.unlink, self._client_cert_crt)
+    return self._client_cert_crt, self._client_cert_key
+
+  def getReplicationUserDatabaseConnection(self, ssl:dict) -> pymysql.connections.Connection:
+    connection_parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()['_'])
+    db_url = urllib.parse.urlparse(
+      connection_parameter_dict['replication-primary-url'])
+    self.assertEqual('mysql', db_url.scheme)
+    return pymysql.connect(
+      user=db_url.username,
+      passwd=db_url.password,
+      host=db_url.hostname,
+      port=db_url.port,
+      use_unicode=True,
+      ssl=ssl,
+    )
+
+  def test_replication_user_require_x509(self):
+    with self.assertRaisesRegex(pymysql.err.OperationalError, 'SSL is required'):
+      self.getReplicationUserDatabaseConnection(ssl=None).close()
+
+    ssl = {'ca': str(self.computer_partition_root_path / 'etc' / 'mariadb-ssl' / 'mariadb-ca.pem')}
+    with self.assertRaises(pymysql.err.OperationalError):
+      self.getReplicationUserDatabaseConnection(ssl=ssl).close()
+
+    ssl['cert'], ssl['key'] = self._client_cert()
+    self.getReplicationUserDatabaseConnection(ssl=ssl).close()
+
+  def test_proxysql_server_certificate_renewal(self):
+    ssl = {'ca': str(self.computer_partition_root_path / 'etc' / 'mariadb-ssl' / 'mariadb-ca.pem')}
+    ssl['cert'], ssl['key'] = self._client_cert()
+
+    with contextlib.closing(self.getReplicationUserDatabaseConnection(ssl)) as cnx:
+      cert_before = cnx._sock.getpeercert()
+    self._run_service('caucase-mariadb-updater', '(?s)Renewing.*Next wake-up', '+63days')
+    with contextlib.closing(self.getReplicationUserDatabaseConnection(ssl)) as cnx:
+      cert_after = cnx._sock.getpeercert()
+    self.assertNotEqual(cert_before['notAfter'], cert_after['notAfter'])
+
+  def test_mariadbackup_url_certificate_renewal(self):
+    connection_parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()['_'])
+    mariabackup_url = connection_parameter_dict['replication-mariabackup-url']
+
+    def _getpeercert():
+      # XXX low level way to get the server certificate
+      with requests.Session() as session:
+        resp = session.get(
+          mariabackup_url,
+          verify=self.computer_partition_root_path / 'etc' / 'mariadb-ssl' / 'mariadb-ca.pem',
+          cert=self._client_cert(),
+        )
+        resp.raise_for_status()
+        with contextlib.closing(resp.raw._pool.pool.get()) as cnx:
+          return cnx.sock._sslobj.getpeercert()
+
+    cert_before = _getpeercert()
+    self._run_service('caucase-mariadb-updater', '(?s)Renewing.*Next wake-up', '+63days')
+    cert_after = _getpeercert()
+    self.assertNotEqual(cert_before['notAfter'], cert_after['notAfter'])
 
 
 class TestMroonga(MariaDBTestCase):
   def test_mroonga_plugin_loaded(self) -> None:
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
-      cnx.query("show plugins")
-      plugins = cnx.store_result().fetch_row(maxrows=1000)
-      self.assertIn(
-          ('Mroonga', 'ACTIVE', 'STORAGE ENGINE', 'ha_mroonga.so', 'GPL'),
-          plugins)
+      with cnx.cursor() as cursor:
+        cursor.execute("show plugins")
+        plugins = tuple(cursor.fetchall())
+        self.assertIn(
+            ('Mroonga', 'ACTIVE', 'STORAGE ENGINE', 'ha_mroonga.so', 'GPL'),
+            plugins)
 
   def test_mroonga_normalize_udf(self) -> None:
     # example from https://mroonga.org/docs/reference/udf/mroonga_normalize.html#usage
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
-      cnx.query(
-          """
-          SELECT mroonga_normalize("ABCDあぃうぇ㍑")
-          """)
-      # XXX this is returned as bytes by mroonga/mariadb (this might be a bug)
-      self.assertEqual((('abcdあぃうぇリットル'.encode(),),),
-                       cnx.store_result().fetch_row(maxrows=2))
+      with cnx.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT mroonga_normalize("ABCDあぃうぇ㍑")
+            """)
+        # XXX this is returned as bytes by mroonga/mariadb (this might be a bug)
+        self.assertEqual((('abcdあぃうぇリットル'.encode(),),),
+                         tuple(cursor.fetchall()))
 
       if 0:
         # this example fail with:
@@ -328,112 +464,107 @@ class TestMroonga(MariaDBTestCase):
     # example from https://mroonga.org//docs/tutorial/storage.html#how-to-specify-the-normalizer
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
-
-      cnx.query("SET NAMES utf8")
-      cnx.store_result()
-      cnx.query(
-          """
-          CREATE TABLE diaries (
-            day DATE PRIMARY KEY,
-            content VARCHAR(64) NOT NULL,
-            FULLTEXT INDEX (content) COMMENT 'normalizer "NormalizerAuto"'
-          ) Engine=Mroonga DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
-          """)
-      cnx.store_result()
-      cnx.query(
-          """INSERT INTO diaries VALUES ("2013-04-23", "ブラックコーヒーを飲んだ。")""")
-      cnx.store_result()
-      cnx.query(
-          """
-          SELECT *
-            FROM diaries
-           WHERE MATCH (content) AGAINST ("+ふらつく" IN BOOLEAN MODE)
-          """)
-      self.assertEqual((), cnx.store_result().fetch_row(maxrows=2))
-      cnx.query(
-          """
-          SELECT *
-            FROM diaries
-           WHERE MATCH (content) AGAINST ("+ﾌﾞﾗｯｸ" IN BOOLEAN MODE)
-          """)
-      self.assertEqual(
-          ((datetime.date(2013, 4, 23), 'ブラックコーヒーを飲んだ。'),),
-          cnx.store_result().fetch_row(maxrows=2),
-      )
+      with cnx.cursor() as cursor:
+        cursor.execute("SET NAMES utf8")
+        cursor.execute(
+            """
+            CREATE TABLE diaries (
+              day DATE PRIMARY KEY,
+              content VARCHAR(64) NOT NULL,
+              FULLTEXT INDEX (content) COMMENT 'normalizer "NormalizerAuto"'
+            ) Engine=Mroonga DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
+            """)
+        cursor.execute(
+            """INSERT INTO diaries VALUES ("2013-04-23", "ブラックコーヒーを飲んだ。")""")
+        cursor.execute(
+            """
+            SELECT *
+              FROM diaries
+             WHERE MATCH (content) AGAINST ("+ふらつく" IN BOOLEAN MODE)
+            """)
+        self.assertEqual((), tuple(cursor.fetchall()))
+        cursor.execute(
+            """
+            SELECT *
+              FROM diaries
+             WHERE MATCH (content) AGAINST ("+ﾌﾞﾗｯｸ" IN BOOLEAN MODE)
+            """)
+        self.assertEqual(
+            ((datetime.date(2013, 4, 23), 'ブラックコーヒーを飲んだ。'),),
+            tuple(cursor.fetchall()),
+        )
 
   def test_mroonga_full_text_normalizer_TokenBigramSplitSymbolAlphaDigit(self) -> None:
     # Similar to as ERP5's testI18NSearch with erp5_full_text_mroonga_catalog
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
-      cnx.query(
-          """
-            CREATE TABLE `full_text` (
-              `uid` BIGINT UNSIGNED NOT NULL,
-              `SearchableText` MEDIUMTEXT,
-              PRIMARY KEY  (`uid`),
-              FULLTEXT `SearchableText` (`SearchableText`) COMMENT 'parser "TokenBigramSplitSymbolAlphaDigit"'
-            ) ENGINE=mroonga
-          """)
-      cnx.store_result()
-      cnx.query(
-          """
-            INSERT INTO full_text VALUES
-            (1, "Gabriel Fauré Quick brown fox jumps over the lazy dog"),
-            (2, "武者小路 実篤 Slow white fox jumps over the diligent dog."),
-            (3, "( - + )")""")
-      cnx.store_result()
-      cnx.query(
-          """
-          SELECT uid
-            FROM full_text
-            WHERE MATCH (`full_text`.`SearchableText`) AGAINST ('*D+ Faure' IN BOOLEAN MODE)
-          """)
-      self.assertEqual(((1,),), cnx.store_result().fetch_row(maxrows=2))
-      cnx.query(
-          """
-          SELECT uid
-            FROM full_text
-            WHERE MATCH (`full_text`.`SearchableText`) AGAINST ('*D+ 武者' IN BOOLEAN MODE)
-          """)
-      self.assertEqual(((2,),), cnx.store_result().fetch_row(maxrows=2))
-      cnx.query(
-          """
-          SELECT uid
-            FROM full_text
-            WHERE MATCH (`full_text`.`SearchableText`) AGAINST ('*D+ +quick +fox +dog' IN BOOLEAN MODE)
-          """)
-      self.assertEqual(((1,),), cnx.store_result().fetch_row(maxrows=2))
+      with cnx.cursor() as cursor:
+        cursor.execute(
+            """
+              CREATE TABLE `full_text` (
+                `uid` BIGINT UNSIGNED NOT NULL,
+                `SearchableText` MEDIUMTEXT,
+                PRIMARY KEY  (`uid`),
+                FULLTEXT `SearchableText` (`SearchableText`) COMMENT 'parser "TokenBigramSplitSymbolAlphaDigit"'
+              ) ENGINE=mroonga
+            """)
+        cursor.execute(
+            """
+              INSERT INTO full_text VALUES
+              (1, "Gabriel Fauré Quick brown fox jumps over the lazy dog"),
+              (2, "武者小路 実篤 Slow white fox jumps over the diligent dog."),
+              (3, "( - + )")""")
+        cursor.execute(
+            """
+            SELECT uid
+              FROM full_text
+              WHERE MATCH (`full_text`.`SearchableText`) AGAINST ('*D+ Faure' IN BOOLEAN MODE)
+            """)
+        self.assertEqual(((1,),), tuple(cursor.fetchall()))
+        cursor.execute(
+            """
+            SELECT uid
+              FROM full_text
+              WHERE MATCH (`full_text`.`SearchableText`) AGAINST ('*D+ 武者' IN BOOLEAN MODE)
+            """)
+        self.assertEqual(((2,),), tuple(cursor.fetchall()))
+        cursor.execute(
+            """
+            SELECT uid
+              FROM full_text
+              WHERE MATCH (`full_text`.`SearchableText`) AGAINST ('*D+ +quick +fox +dog' IN BOOLEAN MODE)
+            """)
+        self.assertEqual(((1,),), tuple(cursor.fetchall()))
 
   def test_mroonga_full_text_stem(self) -> None:
     # example from https://mroonga.org//docs/tutorial/storage.html#how-to-specify-the-token-filters
     cnx = self.getDatabaseConnection()
     with contextlib.closing(cnx):
-      cnx.query("SELECT mroonga_command('register token_filters/stem')")
-      self.assertEqual(((b'true',),), cnx.store_result().fetch_row(maxrows=2))
-      cnx.query(
-          """
-          CREATE TABLE memos (
-            id INT NOT NULL PRIMARY KEY,
-            content TEXT NOT NULL,
-            FULLTEXT INDEX (content) COMMENT 'normalizer "NormalizerAuto", token_filters "TokenFilterStem"'
-          ) Engine=Mroonga DEFAULT CHARSET=utf8
-          """)
-      cnx.store_result()
-      cnx.query(
-          """INSERT INTO memos VALUES (1, "I develop Groonga"), (2, "I'm developing Groonga"), (3, "I developed Groonga")"""
-      )
-      cnx.store_result()
-      cnx.query(
-          """
-          SELECT *
-            FROM memos
-           WHERE MATCH (content) AGAINST ("+develops" IN BOOLEAN MODE)
-          """)
-      self.assertEqual([
-          (1, "I develop Groonga"),
-          (2, "I'm developing Groonga"),
-          (3, "I developed Groonga"),
-      ], list(sorted(cnx.store_result().fetch_row(maxrows=4))))
+      with cnx.cursor() as cursor:
+        cursor.execute("SELECT mroonga_command('register token_filters/stem')")
+        self.assertEqual(((b'true',),), tuple(cursor.fetchall()))
+        cursor.execute(
+            """
+            CREATE TABLE memos (
+              id INT NOT NULL PRIMARY KEY,
+              content TEXT NOT NULL,
+              FULLTEXT INDEX (content) COMMENT 'normalizer "NormalizerAuto", token_filters "TokenFilterStem"'
+            ) Engine=Mroonga DEFAULT CHARSET=utf8
+            """)
+        cursor.execute(
+            """INSERT INTO memos VALUES (1, "I develop Groonga"), (2, "I'm developing Groonga"), (3, "I developed Groonga")"""
+        )
+        cursor.execute(
+            """
+            SELECT *
+              FROM memos
+             WHERE MATCH (content) AGAINST ("+develops" IN BOOLEAN MODE)
+            """)
+        self.assertEqual([
+            (1, "I develop Groonga"),
+            (2, "I'm developing Groonga"),
+            (3, "I developed Groonga"),
+        ], list(sorted(cursor.fetchall())))
 
 
 
@@ -616,9 +747,9 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
   def getReplicaStatus(self, replica):
     cnx = self.getSocketDatabaseConnection(replica)
     with contextlib.closing(cnx):
-      cursor = cnx.cursor()
-      cursor.execute("SHOW SLAVE STATUS")
-      return cursor.fetchone()
+      with cnx.cursor() as cursor:
+        cursor.execute("SHOW SLAVE STATUS")
+        return cursor.fetchone()
 
   def checkReplicaState(self, replica):
     replica_status = self.getReplicaStatus(replica)
@@ -633,26 +764,26 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
   def checkDataReplication(self, primary, *replicas):
     cnx = self.getDatabaseConnection(primary)
     with contextlib.closing(cnx):
-      cursor = cnx.cursor()
-      cursor.execute(
-          """
-          CREATE TABLE test_replication (
-            col1 CHAR(10)
-          )
-          """)
-      cursor.execute(
-          """
-          INSERT INTO test_replication VALUES ("a"), ("b")
-          """)
-      cnx.commit()
+      with cnx.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE TABLE test_replication (
+              col1 CHAR(10)
+            )
+            """)
+        cursor.execute(
+            """
+            INSERT INTO test_replication VALUES ("a"), ("b")
+            """)
+        cnx.commit()
     cnx = self.getDatabaseConnection(primary)
     with contextlib.closing(cnx):
-      cursor = cnx.cursor()
-      cursor.execute(
-          """
-          SELECT * FROM test_replication
-          """)
-      self.assertEqual((('a',), ('b',)), cursor.fetchall())
+      with cnx.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT * FROM test_replication
+            """)
+        self.assertEqual((('a',), ('b',)), cursor.fetchall())
     time.sleep(2)
     for replica in replicas:
       for i in range(7):
@@ -661,12 +792,12 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
         time.sleep((i + 1) ** 2)
       cnx = self.getDatabaseConnection(replica)
       with contextlib.closing(cnx):
-        cursor = cnx.cursor()
-        cursor.execute(
-            """
-            SELECT * FROM test_replication
-            """)
-        self.assertEqual((('a',), ('b',)), cursor.fetchall())
+        with cnx.cursor() as cursor:
+          cursor.execute(
+              """
+              SELECT * FROM test_replication
+              """)
+          self.assertEqual((('a',), ('b',)), cursor.fetchall())
 
 
 class TestMariaDBReplication(MariaDBReplicationTestCase):
@@ -776,30 +907,30 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
     # Add fulltext data powered by Mroonga
     cnx = self.getDatabaseConnection(primary)
     with contextlib.closing(cnx):
-      cursor = cnx.cursor()
-      cursor.execute(
-          """
-          CREATE TABLE test_mroonga_replication (
-            `uid` BIGINT UNSIGNED NOT NULL,
-            `SearchableText` MEDIUMTEXT,
-            PRIMARY KEY  (`uid`),
-            FULLTEXT `SearchableText` (`SearchableText`) COMMENT 'parser "TokenBigramSplitSymbolAlphaDigit"'
-          ) Engine=Mroonga
-          """)
-      cursor.execute(
-          """INSERT INTO test_mroonga_replication VALUES (1, "Hello")""")
-      cnx.commit()
+      with cnx.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE TABLE test_mroonga_replication (
+              `uid` BIGINT UNSIGNED NOT NULL,
+              `SearchableText` MEDIUMTEXT,
+              PRIMARY KEY  (`uid`),
+              FULLTEXT `SearchableText` (`SearchableText`) COMMENT 'parser "TokenBigramSplitSymbolAlphaDigit"'
+            ) Engine=Mroonga
+            """)
+        cursor.execute(
+            """INSERT INTO test_mroonga_replication VALUES (1, "Hello")""")
+        cnx.commit()
     # Generate mariabackup in primary
     self.runBackup(primary, 'mariabackup-script')
     # Add data in incremental mariabackup
     cnx = self.getDatabaseConnection(primary)
     with contextlib.closing(cnx):
-      cursor = cnx.cursor()
-      cursor.execute(
-          """REPLACE INTO test_mroonga_replication VALUES (1, "Hi")""")
-      cursor.execute(
-          """INSERT INTO test_mroonga_replication VALUES (2, "What's up?")""")
-      cnx.commit()
+      with cnx.cursor() as cursor:
+        cursor.execute(
+            """REPLACE INTO test_mroonga_replication VALUES (1, "Hi")""")
+        cursor.execute(
+            """INSERT INTO test_mroonga_replication VALUES (2, "What's up?")""")
+        cnx.commit()
     # Generate incremental mariabackup in primary
     self.runBackup(primary, 'mariabackup-script')
     # Request replica Mariadb
@@ -812,13 +943,13 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
     self.checkDataReplication(primary, replica)
     cnx = self.getDatabaseConnection(primary)
     with contextlib.closing(cnx):
-      cursor = cnx.cursor()
-      cursor.execute(
-          """REPLACE INTO test_mroonga_replication VALUES (1, "Hey")""")
-      cursor.execute(
-          """INSERT INTO test_mroonga_replication VALUES (3, "Bye")""")
-      cnx.commit()
-      cnx.commit()
+      with cnx.cursor() as cursor:
+        cursor.execute(
+            """REPLACE INTO test_mroonga_replication VALUES (1, "Hey")""")
+        cursor.execute(
+            """INSERT INTO test_mroonga_replication VALUES (3, "Bye")""")
+        cnx.commit()
+        cnx.commit()
     time.sleep(2)
     for i in range(7):
       if self.checkReplicaState(replica) == 0:
@@ -826,15 +957,15 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
       time.sleep((i + 1) ** 2)
     cnx = self.getDatabaseConnection(replica)
     with contextlib.closing(cnx):
-      cursor = cnx.cursor()
-      cursor.execute(
-          """
-          SELECT * FROM test_mroonga_replication
-          """)
-      self.assertEqual(
-        ((1, "Hey"),(2, "What's up?"),(3, "Bye"),),
-        cursor.fetchall()
-      )
+      with cnx.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT * FROM test_mroonga_replication
+            """)
+        self.assertEqual(
+          ((1, "Hey"),(2, "What's up?"),(3, "Bye"),),
+          cursor.fetchall()
+        )
 
 
 class TestMariaDBExternalCaucased(MariaDBReplicationTestCase):
@@ -872,18 +1003,18 @@ class TestMariaDBReplicationChain(MariaDBReplicationTestCase):
     primary = upstream = self.requestPrimary(caucased=False)
     cnx = self.getDatabaseConnection(primary)
     with contextlib.closing(cnx):
-      cursor = cnx.cursor()
-      cursor.execute(
-          """
-          CREATE TABLE test_replication2 (
-            col1 INT
-          )
-          """)
-      cursor.execute(
-          """
-          INSERT INTO test_replication2 VALUES (1), (2)
-          """)
-      cnx.commit()
+      with cnx.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE TABLE test_replication2 (
+              col1 INT
+            )
+            """)
+        cursor.execute(
+            """
+            INSERT INTO test_replication2 VALUES (1), (2)
+            """)
+        cnx.commit()
     replicas = []
     for i in range(3):
       replica = upstream = self.requestReplica(
@@ -895,10 +1026,10 @@ class TestMariaDBReplicationChain(MariaDBReplicationTestCase):
       self.checkReplicaState(replica)
       cnx = self.getDatabaseConnection(replica)
       with contextlib.closing(cnx):
-        cursor = cnx.cursor()
-        cursor.execute(
-            """
-            SELECT * FROM test_replication2
-            """)
-        self.assertEqual(((1,), (2,)), cursor.fetchall())
+        with cnx.cursor() as cursor:
+          cursor.execute(
+              """
+              SELECT * FROM test_replication2
+              """)
+          self.assertEqual(((1,), (2,)), cursor.fetchall())
     self.checkDataReplication(primary, *replicas)

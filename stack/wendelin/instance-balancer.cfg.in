@@ -346,51 +346,13 @@ context =
 extensions = jinja2.ext.do
 
 [haproxy-reload]
-recipe = slapos.recipe.template
+recipe = slapos.recipe.template:jinja2
 output = ${directory:bin}/${:_buildout_section_name_}
 mode = 700
-inline =
-  #!${buildout:executable}
-  """Restarts haproxy and waits for all workers to have been restarted"""
-  import errno
-  import contextlib
-  import socket
-  import sys
-  import time
-  ADMIN_SOCKET = '''${haproxy-cfg-parameter-dict:admin-socket}'''
-
-  def send_command(command, connect_retries=10):
-    with contextlib.closing(socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)) as sock:
-      while True:
-        connect_retries = connect_retries - 1
-        try:
-          sock.connect(ADMIN_SOCKET)
-        except OSError as e:
-          if e.errno != errno.ECONNREFUSED:
-            raise
-          if not connect_retries:
-            raise
-          time.sleep(1)
-        else:
-          break
-      sock.sendall((command + "\nquit\n").encode())
-      response = b""
-      while True:
-        data = sock.recv(4096)
-        if not data:
-          break
-        response += data
-    return response.decode()
-
-  send_command("reload")
-
-  for _ in range(360):
-    time.sleep(1)
-    proc = send_command("show proc")
-    if "old workers" not in proc:
-      sys.exit(0)
-  print(proc)
-  sys.exit(1)
+url = {{ parameter_dict['haproxy-reload-script'] }}
+context =
+  key python_executable buildout:executable
+  key admin_socket_path haproxy-cfg-parameter-dict:admin-socket
 
 
 [{{ section('haproxy') }}]
