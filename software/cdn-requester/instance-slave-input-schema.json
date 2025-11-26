@@ -9,7 +9,7 @@
     },
     "url": {
       "description": "URL of the backend",
-      "pattern": "^(http|https|ftp)://",
+      "pattern": "^(http|https|ftp)://.+",
       "title": "Backend URL",
       "type": "string"
     },
@@ -55,6 +55,7 @@
     "default-path": {
       "default": "",
       "description": "Provide default path to redirect user to when user access / (the site root)",
+      "pattern": "^$|^/.*",
       "title": "type:zope Default Path",
       "type": "string"
     },
@@ -106,7 +107,7 @@
     },
     "https-url": {
       "description": "HTTPS URL of the backend if it is different from url parameter",
-      "pattern": "^(http|https|ftp)://",
+      "pattern": "^https://.+",
       "title": "HTTPS Backend URL",
       "type": "string"
     },
@@ -183,27 +184,37 @@
     "virtualhostroot-http-port": {
       "default": 80,
       "description": "Port where http requests to frontend will be redirected.",
+      "maximum": 65535,
+      "minimum": 1,
       "title": "type:zope virtualhostroot-http-port",
       "type": "integer"
     },
     "virtualhostroot-https-port": {
       "default": 443,
       "description": "Port where https requests to frontend will be redirected.",
+      "maximum": 65535,
+      "minimum": 1,
       "title": "type:zope virtualhostroot-https-port",
       "type": "integer"
     },
     "backend-connect-timeout": {
       "description": "Time in seconds for establishing connection to the backend.",
+      "maximum": 3600,
+      "minimum": 1,
       "title": "Timeout for backend connection (seconds)",
       "type": "integer"
     },
     "backend-connect-retries": {
       "description": "Amount of retries to connect to the backend. The amount of backend-connect-timeout*backend-connect-retries seconds will be spent to connect to the backend.",
+      "maximum": 10,
+      "minimum": 0,
       "title": "Amount of retries to connect to the backend.",
       "type": "integer"
     },
     "request-timeout": {
       "description": "Timeout for HTTP requests.",
+      "maximum": 3600,
+      "minimum": 1,
       "title": "HTTP Request timeout in seconds",
       "type": "integer"
     },
@@ -247,41 +258,48 @@
       "title": "Health Check HTTP Path",
       "description": "A path on which do the active check, unused in case of CONNECT.",
       "default": "/",
+      "pattern": "^/.*",
       "type": "string"
     },
     "health-check-timeout": {
       "title": "Health Check Timeout (seconds)",
       "description": "A timeout to for the request to be fulfilled, after connection happen.",
-      "default": "2",
+      "default": 2,
+      "maximum": 300,
+      "minimum": 1,
       "type": "integer"
     },
     "health-check-interval": {
       "title": "Health Check Interval (seconds)",
       "description": "An interval of health check.",
-      "default": "5",
+      "default": 5,
+      "maximum": 3600,
+      "minimum": 1,
       "type": "integer"
     },
     "health-check-rise": {
       "title": "Health Check Rise",
       "description": "Amount of correct responses from the backend to consider it up.",
-      "default": "1",
+      "default": 1,
+      "minimum": 1,
       "type": "integer"
     },
     "health-check-fall": {
       "title": "Health Check Fall",
       "description": "Amount of bad responses from the backend to consider it down.",
-      "default": "1",
+      "default": 1,
+      "minimum": 1,
       "type": "integer"
     },
     "health-check-failover-url": {
       "description": "URL of the failover backend",
-      "pattern": "^(http|https|ftp)://",
+      "pattern": "^(http|https|ftp)://.+",
       "title": "Failover backend URL",
       "type": "string"
     },
     "health-check-failover-https-url": {
       "description": "HTTPS URL of the failover backend if it is different from health-check-failover-url parameter. Note: It requires https-url to be configured, as otherwise the differentiation does not make sense..",
-      "pattern": "^(http|https|ftp)://",
+      "pattern": "^https://.+",
       "title": "Failover HTTPS Backend URL",
       "type": "string"
     },
@@ -314,7 +332,7 @@
     "strict-transport-security": {
       "title": "Strict Transport Security",
       "description": "Enables Strict Transport Security (HSTS) on the slave, the default 0 results with option disabled. Setting the value enables HSTS and sets the value of max-age. More information: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security",
-      "default": "0",
+      "default": 0,
       "type": "integer"
     },
     "strict-transport-security-sub-domains": {
