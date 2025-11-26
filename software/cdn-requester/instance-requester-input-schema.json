@@ -10,17 +10,17 @@
       "type": "string"
     },
     "cdn-software-url": {
-      "CDN Software URL": "CDN Software URL",
+      "title": "CDN Software URL",
       "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg",
       "description": "Software URL used for requesting the CDN slaves",
       "type": "string"
     }
   },
-  "patternProperties" : {
+  "patternProperties": {
     "^\\-sla\\-.+$": {
-        "title": "SLA Properties",
-        "description": "The content after '-sla-' is passed as an sla paramater for CDN slave request",
-        "type": "string"
+      "title": "SLA Properties",
+      "description": "The content after '-sla-' is passed as an sla paramater for CDN slave request",
+      "type": "string"
     }
   },
   "additionalProperties": false
