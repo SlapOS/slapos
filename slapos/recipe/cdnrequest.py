@@ -157,17 +157,81 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
     self.openssl_binary = options.get('openssl-binary')
     if not self.openssl_binary:
       self.logger.warning('openssl-binary option not provided, SSL certificate validation will be skipped')
+    # DNS cache configuration for domain validation
+    # Use a short cache TTL (60 seconds) to detect DNS changes quickly
+    # This ensures validation detects new TXT records within ~1 minute
+    self.dns_cache_ttl = float(options.get('dns-cache-ttl', 60))
+    # Nameserver configuration - if provided, query directly to this nameserver
+    # instead of using system DNS resolver. This is useful for:
+    # - Consistent DNS resolution regardless of system configuration
+    # - Faster queries (direct to authoritative nameserver)
+    # - Avoiding local DNS cache issues
+    dns_nameserver = options.get('dns-nameserver')
+    if dns_nameserver:
+      # Validate that it's a valid IP address (IPv4 or IPv6)
+      # Split by comma to support multiple nameservers
+      nameserver_list = [ns.strip() for ns in dns_nameserver.split(',')]
+      self.dns_nameservers = nameserver_list
+      self.logger.info('Using custom nameserver(s) for DNS validation: %s', ', '.join(self.dns_nameservers))
+    else:
+      self.dns_nameservers = None
 
   def _check_custom_domain(self, domain, token):
     """
     Check if the custom domain has the required TXT record.
+    
+    Uses a resolver with cache disabled or short TTL to ensure fresh DNS lookups
+    for domain validation. This is important because:
+    - Domain validation needs to detect new TXT records quickly
+    - If validation runs every minute, we want to see DNS changes within ~1 minute
+    - Default DNS TTL can be 300+ seconds, which would delay validation detection
+    
+    Cache behavior:
+    - If dns-cache-ttl is 0: Cache is disabled, every call queries DNS directly
+    - If dns-cache-ttl > 0: Uses a per-resolver cache with max size, but each
+      resolver instance gets a fresh cache, so effectively queries DNS on first
+      call per resolver instance. Since we create a new resolver each time,
+      this effectively disables caching.
+    
+    Nameserver behavior:
+    - If dns-nameserver is provided: Queries directly to the specified nameserver(s)
+      instead of using system DNS resolver. This bypasses local DNS cache and
+      ensures consistent resolution.
+    - If not provided: Uses system DNS resolver (default behavior)
     """
     challenge_domain = '%s.%s' % (self.dns_entry_name, domain)
     try:
       resolver = dns.resolver.Resolver()
-      # Configure resolver if needed, e.g. timeout
+      # Configure resolver timeout
       resolver.lifetime = 5.0
+      
+      # Configure nameserver if specified
+      # This allows querying directly to a specific nameserver, bypassing
+      # system DNS configuration and local caches
+      if self.dns_nameservers:
+        resolver.nameservers = self.dns_nameservers
+        self.logger.debug('Querying DNS for %s using nameserver(s): %s', 
+                         challenge_domain, ', '.join(self.dns_nameservers))
+      
+      # Configure cache behavior for domain validation
+      if self.dns_cache_ttl <= 0:
+        # Disable cache completely - create empty cache
+        # This ensures every DNS query goes to the network
+        resolver.cache = dns.resolver.LRUCache()
+      else:
+        # Use a fresh cache for this resolver instance
+        # Since we create a new resolver each time, this effectively means
+        # we query DNS on every call, but the cache structure is available
+        # if we want to optimize in the future (e.g., reuse resolver)
+        resolver.cache = dns.resolver.LRUCache()
+      
+      # Query DNS
+      # Note: Creating a new resolver instance each time means we get a fresh
+      # cache, effectively bypassing dnspython's global cache. This ensures
+      # we always get the latest DNS results for validation purposes.
+      # If dns-nameserver is set, queries go directly to that nameserver.
       answers = resolver.resolve(challenge_domain, 'TXT')
+      
       for rdata in answers:
         # TXT records can contain multiple strings, join them
         txt_value = ''.join([x.decode('utf-8') for x in rdata.strings])

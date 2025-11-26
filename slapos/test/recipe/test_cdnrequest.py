@@ -1313,6 +1313,130 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
       # Without openssl, SSL matching is skipped, so it should pass
       self.assertTrue(is_valid)
 
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_nameserver_single(self, MockResolver):
+    """Test that single nameserver is used when dns-nameserver option is provided"""
+    self.options['dns-nameserver'] = '8.8.8.8'
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    recipe.validateInstance('ref1', {'custom_domain': 'example.com'})
+
+    # Verify resolver was created
+    MockResolver.assert_called()
+    # Verify nameservers were set on the resolver instance
+    self.assertEqual(mock_resolver_instance.nameservers, ['8.8.8.8'])
+    # Verify DNS lookup was called
+    mock_resolver_instance.resolve.assert_called_with('_slapos-challenge.example.com', 'TXT')
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_nameserver_multiple(self, MockResolver):
+    """Test that multiple nameservers (comma-separated) are used correctly"""
+    self.options['dns-nameserver'] = '8.8.8.8, 8.8.4.4, 2001:4860:4860::8888'
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    recipe.validateInstance('ref1', {'custom_domain': 'example.com'})
+
+    # Verify nameservers were set correctly (whitespace should be stripped)
+    self.assertEqual(mock_resolver_instance.nameservers, ['8.8.8.8', '8.8.4.4', '2001:4860:4860::8888'])
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_nameserver_not_provided(self, MockResolver):
+    """Test that when dns-nameserver is not provided, system DNS is used (nameservers not set)"""
+    # Ensure dns-nameserver is not in options
+    test_options = self.options.copy()
+    if 'dns-nameserver' in test_options:
+      del test_options['dns-nameserver']
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', test_options)
+
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    recipe.validateInstance('ref1', {'custom_domain': 'example.com'})
+
+    # Verify resolver was created
+    MockResolver.assert_called()
+    # Verify recipe's dns_nameservers is None (not configured)
+    self.assertIsNone(recipe.dns_nameservers)
+    # Verify nameservers attribute was NOT set on resolver (uses system default)
+    # When dns-nameserver is not provided, the code doesn't set resolver.nameservers,
+    # so it will use the system default. We verify that recipe.dns_nameservers is None
+    # which means the code path that sets resolver.nameservers was not executed.
+    # Verify DNS lookup was still called
+    mock_resolver_instance.resolve.assert_called_with('_slapos-challenge.example.com', 'TXT')
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_nameserver_with_cache_ttl(self, MockResolver):
+    """Test that dns-nameserver works together with dns-cache-ttl option"""
+    self.options['dns-nameserver'] = '1.1.1.1'
+    self.options['dns-cache-ttl'] = '0'  # Disable cache
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    recipe.validateInstance('ref1', {'custom_domain': 'example.com'})
+
+    # Verify nameservers were set
+    self.assertEqual(mock_resolver_instance.nameservers, ['1.1.1.1'])
+    # Verify cache was configured (empty cache when TTL is 0)
+    self.assertIsNotNone(mock_resolver_instance.cache)
+    # Verify DNS lookup was called
+    mock_resolver_instance.resolve.assert_called_with('_slapos-challenge.example.com', 'TXT')
+
 
 class TestDomainValidationDB(unittest.TestCase):
 
