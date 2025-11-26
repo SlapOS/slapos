@@ -544,7 +544,7 @@ class Recipe(object):
     unchanged_invalid_instances_to_process = set()
     invalid_instance_rows = self.requestinstance_db.getInstanceList("reference", invalid_only=True)
     for row in invalid_instance_rows:
-      if row["reference"] not in comparison['modified']:
+      if row["reference"] not in comparison['modified'] and row["reference"] not in comparison['removed']:
         unchanged_invalid_instances_to_process.add(row["reference"])
 
     # Process new instances
