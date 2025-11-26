@@ -197,7 +197,7 @@ context =
 {%- set rejected_slave_dict = {} %}
 {%- set critical_rejected_slave_dict = {} %}
 {%- set warning_slave_dict = {} %}
-{%- set used_host_list = [] %}
+{%- set used_host_dict = {} %}
 {%- for slave in sorted(instance_parameter_dict['slave-instance-list'], key=operator_module.itemgetter('slave_reference')) %}
 {%-   set slave_error_list = [] %}
 {%-   set slave_critical_error_list = [] %}
@@ -259,12 +259,13 @@ context =
 {%-       do slave_error_list.append('Wrong strict-transport-security %s' % (slave.get('strict-transport-security'),)) %}
 {%-     endif %}
 {%-   set custom_domain = slave.get('custom_domain') %}
-{%-   if custom_domain and custom_domain in used_host_list %}
+{%-   if custom_domain and custom_domain in used_host_dict %}
 {%-      set message = 'custom_domain %r clashes' % (custom_domain,) %}
 {%-      do slave_error_list.append(message) %}
-{%-      do slave_critical_error_list.append(message) %}
+{%-      do slave_critical_error_list.append('%s, others: %r' % (message, used_host_dict[custom_domain]) %}
 {%-   else %}
-{%-      do used_host_list.append(custom_domain) %}
+{%-      do used_host_dict.setdefault(custom_domain, [] %}
+{%-      do used_host_dict[custom_domain].append(slave.get('slave_reference')) %}
 {%-   endif %}
 {%-   if slave.get('server-alias') %}
 {%-     for slave_alias in ('' ~ slave['server-alias']).split() %}
@@ -278,13 +279,14 @@ context =
 {%-       else %}
 {%-         if slave_alias in slave_server_alias_unclashed or slave_alias == custom_domain %}
 {#-           optionally do something about reporting back that server-alias has been unclashed #}
-{%-         elif slave_alias in used_host_list %}
-{%-           set message = 'server-alias \'%s\' clashes' % (slave_alias,) %}
+{%-         elif slave_alias in used_host_dict %}
+{%-           set message = 'server-alias %r clashes' % (slave_alias,) %}
 {%-           do slave_error_list.append(message) %}
-{%-           do slave_critical_error_list.append(message) %}
+{%-           do slave_critical_error_list.append('%s, others: %r' % (message, used_host_dict[slave_alias]) %}
 {%-         else %}
 {%-           do slave_server_alias_unclashed.append(slave_alias) %}
-{%-           do used_host_list.append(slave_alias) %}
+{%-           do used_host_dict.setdefault(slave_alias, []) %}
+{%-           do used_host_dict[slave_alias].append(slave.get('slave_reference')) %}
 {%-         endif %}
 {%-       endif %}
 {%-     endfor %}
