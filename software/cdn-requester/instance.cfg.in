@@ -2,62 +2,46 @@
 extends = {{ software_parameter_dict['instance-common.cfg.in'] }}
 
 parts =
-  software-py
-  switch-softwaretype
+  cdn-request
 
-[software-py]
-recipe = software
 
-[jinja2-template-base]
-recipe = slapos.recipe.template:jinja2
-output = ${buildout:directory}/${:filename}
-extensions = jinja2.ext.do
-extra-context =
-context =
-    import json_module json
-    key slapparameter_dict slap-configuration:configuration
-    section instance_parameter_dict slap-configuration
-    section software_parameter_dict software-parameter-section
-    ${:extra-context}
 
 [software-parameter-section]
 {%- for key,value in software_parameter_dict.items() %}
 {{ key }} = {{ dumps(value) }}
 {%- endfor %}
 
-[dynamic-profile-master]
-< = jinja2-template-base
-depends = ${software-py:recipe}
-url = ${software-parameter-section:instance-master.cfg.in}
-filename = instance-master.cfg
-extra-context =
-    import subprocess_module subprocess
-    import functools_module functools
-    import operator_module operator
-    import validators validators
-    import software software
-# Must match the key id in [switch-softwaretype] which uses this section.
-# Keep RootSoftwareInstance for backward compatibility until all instances have
-# changed their software_type to default
-    raw software_type RootSoftwareInstance-default-custom-personal-replicate
 
 
 [slap-configuration]
 # Fetches parameters defined in SlapOS Master for this instance.
 # Always the same.
-recipe = slapos.cookbook:slapconfiguration.jsonschema
+recipe = slapos.cookbook:slapconfiguration.jsonschema.localdb
 jsonschema = {{ software_parameter_dict['software.cfg.json'] }}
 depends = 
   {{ software_parameter_dict['instance-requester-input-schema.json'] }}
   {{ software_parameter_dict['instance-slave-input-schema.json'] }}
 set-default = all
 validate-parameters = all
+instance-db-path = ${buildout:directory}/slapconfiguration-shared-instance.sqlite
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
 
-[switch-softwaretype]
-recipe = slapos.cookbook:switch-softwaretype
-requester = dynamic-profile-master:output
+[cdn-request]
+recipe = slapos.cookbook:cdnrequest
+instance-db-path = ${slap-configuration:instance-db-path}
+requestinstance-db-path = ${buildout:directory}/requestinstance-db.sqlite
+domainvalidation-db-path = ${buildout:directory}/domainvalidation-db.sqlite
+server-url = ${slap-connection:server-url}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+software-url = ${slap-configuration:configuration.cdn-software-url}
+software-type = ${slap-configuration:configuration.cdn-software-type}
+shared = true
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+openssl-binary = {{ software_parameter_dict["openssl-binary"] }}
+dns-nameserver = 8.8.8.8, 8.8.4.4, 2001:4860:4860::8888
