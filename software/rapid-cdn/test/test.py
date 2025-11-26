@@ -6691,9 +6691,12 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         result_json = result.json()
       self.assertEqual(
         {
-          '_SITE_4': ["custom_domain 'duplicate.example.com' clashes"],
-          '_SITE_2': ["custom_domain 'duplicate.example.com' clashes"],
-          '_SITE_3': ["server-alias 'duplicate.example.com' clashes"]
+          '_SITE_4': ["custom_domain 'duplicate.example.com' clashes"
+                      ", others: ['_SITE_1']"],
+          '_SITE_2': ["custom_domain 'duplicate.example.com' clashes"
+                      ", others: ['_SITE_1']"],
+          '_SITE_3': ["server-alias 'duplicate.example.com' clashes"
+                      ", others: ['_SITE_1']"]
         },
         result_json
       )
