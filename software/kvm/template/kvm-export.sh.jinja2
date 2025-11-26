@@ -11,8 +11,8 @@ log=$(mktemp --tmpdir={{ directory['tmp'] }})
 trap "rm -f $log" EXIT TERM INT
 
 set +e
-qmpbackup="{{ qmpbackup }} --socket {{ socket_path }} backup --compress --target $BACKUP_DIR --include {{ disk['device'] }}"
-$qmpbackup --level auto > $log
+qmpbackup="{{ qmpbackup }} --socket {{ qmp_socket_path }} backup --compress --target $BACKUP_DIR --include {{ disk['device'] }}"
+$qmpbackup --level auto &> $log
 RESULT=$?
 cat $log
 if [ $RESULT -ne 0 ] ; then
@@ -29,6 +29,7 @@ if [ $RESULT -ne 0 ] ; then
     $qmpbackup --level full || exit $?
     echo "Recovered from empty backup"
   else
+    echo "Unknown situation"
     exit $RESULT
   fi
 fi

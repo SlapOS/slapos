@@ -109,6 +109,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         'pci':          1,
         'cell_id':      '0x01',
         'tac':          '0x1234',
+        'rrc_configuration': 'measurement',
         'ru':           RU,         # RU definition embedded into CELL
     })
 
@@ -121,6 +122,7 @@ def iRU1_SDR_tLTE2_tNR(ienb):
         'pci':          2,
         'cell_id':      '0x02',
         'tac':          '0x1234',
+        'rrc_configuration': 'measurement',
         'ru':           {           # CELL_b shares RU with CELL_a referring to it via cell
             'ru_type':      'ruincell_ref',
             'ruincell_ref': 'CELL_a'
@@ -176,6 +178,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
         'pci':          1,
         'cell_id':      '0x01',
         'tac':          '0x1234',
+        'rrc_configuration': '',
         'ru':           {           # CELL_a links to RU1 by its reference
             'ru_type':  'ru_ref',
             'ru_ref':   'RU1'
@@ -192,6 +195,7 @@ def iRU2_SDR_tLTE_tNR(ienb):
         'pci':          2,
         'cell_id':      '0x02',
         'tac':          '0x1234',
+        'rrc_configuration': '',
         'ru':           {
             'ru_type':  'ru_ref',
             'ru_ref':   'RU2'
@@ -199,10 +203,10 @@ def iRU2_SDR_tLTE_tNR(ienb):
     })
 
 
-# LTE + NR cells that use CPRI-based Lopcomm radio units
-def iRU2_LOPCOMM_fLTE_fNR(ienb):
+# LTE + NR cells that use CPRI-based Prose radio units
+def iRU2_PROSE_fLTE_fNR(ienb):
     RU1 = {
-        'ru_type':      'lopcomm',
+        'ru_type':      'prose',
         'ru_link_type': 'cpri',
         'mac_addr':     '00:00:00:00:00:01',
         'cpri_link':    {
@@ -238,6 +242,7 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
         'pci':          21,
         'cell_id':      '0x21',
         'tac':          '0x1234',
+        'rrc_configuration': '',
         'ru':           {
             'ru_type':  'ru_ref',
             'ru_ref':   'RU1'
@@ -254,6 +259,7 @@ def iRU2_LOPCOMM_fLTE_fNR(ienb):
         'pci':          22,
         'cell_id':      '0x22',
         'tac':          '0x1234',
+        'rrc_configuration': '',
         'ru':           {
             'ru_type':  'ru_ref',
             'ru_ref':   'RU2'
@@ -284,6 +290,7 @@ def iRU1_SDR1_fLTE2(ienb):
         'pci':          1,
         'cell_id':      '0x01',
         'tac':          '0x1234',
+        'rrc_configuration': '',
         'ru':           RU,
     })
 
@@ -296,16 +303,17 @@ def iRU1_SDR1_fLTE2(ienb):
         'pci':          1,
         'cell_id':      '0x02',
         'tac':          '0x1234',
+        'rrc_configuration': '',
         'ru':           {
             'ru_type':      'ruincell_ref',
             'ruincell_ref': 'CELL_a'
         }
     })
 
-def iRU2_LOPCOMM_fLTE2(ienb):
+def iRU2_PROSE_fLTE2(ienb):
     # supports: 2110 - 2170 MHz
     RU_0002 = {
-        'ru_type':      'lopcomm',
+        'ru_type':      'prose',
         'ru_link_type': 'cpri',
         'mac_addr':     '00:00:00:00:00:01',
         'cpri_link':    {
@@ -339,6 +347,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
             'pci':          21,
             'cell_id':      '0x21',
             'tac':          '0x1234',
+            'rrc_configuration': '',
             'ru':           {
                 'ru_type':  'ru_ref',
                 'ru_ref':   'RU_0002'
@@ -356,6 +365,7 @@ def iRU2_LOPCOMM_fLTE2(ienb):
             'pci':          22,
             'cell_id':      '0x22',
             'tac':          '0x1234',
+            'rrc_configuration': '',
             'ru':           {
                 'ru_type':  'ru_ref',
                 'ru_ref':   'RU_0004'
@@ -389,6 +399,7 @@ def ORS_enb(ienb):
         'cell_id':      '0x01',
         "tdd_ul_dl_config": "[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink",
         'inactivity_timer': 10000,
+        'rrc_configuration': '',
         'ru': {
             'ru_type': 'ru_ref',
             'ru_ref':  'RU',
@@ -411,6 +422,7 @@ def ORS_gnb(ienb):
         'cell_id':      '0x01',
         "tdd_ul_dl_config": "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink",
         'inactivity_timer': 10000,
+        'rrc_configuration': '',
         'ru': {
             'ru_type': 'ru_ref',
             'ru_ref':  'RU',
@@ -421,9 +433,9 @@ def ORS_gnb(ienb):
 def do_enb():
     for f in (iRU1_SDR_tLTE2_tNR,
               iRU2_SDR_tLTE_tNR,
-              iRU2_LOPCOMM_fLTE_fNR,
+              iRU2_PROSE_fLTE_fNR,
               iRU1_SDR1_fLTE2,
-              iRU2_LOPCOMM_fLTE2,
+              iRU2_PROSE_fLTE2,
               ORS_enb,
               ORS_gnb):
         _do_enb_with(f)
@@ -464,6 +476,7 @@ def _do_enb_with(iru_icell_func):
             'pci':              35,
             'dl_earfcn':        700,
             'tac':              123,
+            'plmn':             '00101',
         })
     if want_nr:
         ienb.ishared('PEERCELL2', {
@@ -475,6 +488,7 @@ def _do_enb_with(iru_icell_func):
             'nr_band':          38,
             'pci':              75,
             'tac':              321,
+            'plmn':             '00101',
         })
 
     jshared_instance_list = json.dumps(ienb.shared_instance_list)
@@ -498,13 +512,41 @@ def _do_enb_with(iru_icell_func):
             "gnb_id_bits": 28,
             "com_ws_port": 9001,
             "com_addr": "127.0.1.2",
-            "gtp_addr":     "127.0.1.1",
+            "gtp_addr_list": ["127.0.1.1"],
             "mme_list":     [{"name": "1", "mme_addr": "127.0.1.100"}],
             "amf_list":     [{"name": "1", "amf_addr": "127.0.1.100"}],
             "plmn_list":    [{"plmn": "00101"}],
             "plmn_list_5g": [{"plmn": "00101", "tac": 100}],
-            "nssai":        [{"sst": 1}]
-        }
+            "nssai":        [{"sst": 1}],
+            "handover_a1_rsrp": -140,
+            "handover_a1_hysteresis": 0,
+            "handover_a1_time_to_trigger": 0,
+            "handover_a2_rsrp": -140,
+            "handover_a2_hysteresis": 0,
+            "handover_a2_time_to_trigger": 0,
+            "handover_meas_gap_config": "",
+            "eutra_eutra_handover": {
+                "event": {},
+                "hysteresis": 0,
+                "time_to_trigger": 0
+            },
+            "eutra_nr_handover": {
+                "event": {},
+                "hysteresis": 0,
+                "time_to_trigger": 0
+            },
+            "nr_nr_handover": {
+                "event": {},
+                "hysteresis": 0,
+                "time_to_trigger": 0
+            },
+            "nr_eutra_handover": {
+                "event": {},
+                "hysteresis": 0,
+                "time_to_trigger": 0
+            }
+        },
+        "websocket_password": "passwd"
     }""" % locals()
 
     j2render('enb.jinja2.cfg', '%s/enb.cfg' % out, json_params)
@@ -621,7 +663,10 @@ def do_ue():
             "var": "var"
         },
         "slapparameter_dict": {
-        }
+            "com_addr": "[::1]",
+            "com_ws_port": 9002
+        },
+        "websocket_password": "passwd"
     }""" % locals()
 
     j2render('ue.jinja2.cfg', 'ue.cfg', json_params)

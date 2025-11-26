@@ -1726,7 +1726,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url': {
         # make URL "incorrect", with whitespace, nevertheless it shall be
         # correctly handled
-        'url': ' ' + cls.backend_url + '?a=b&c=' + ' ',
+        'url': ' ' + cls.backend_url + '/?a=b&c=' + ' ',
         # authenticating to http backend shall be no-op
         'authenticate-to-backend': True,
       },
@@ -2222,8 +2222,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'warning-slave-dict': {
         '_Url': [
-          "slave url ' %(backend)s?a=b&c= ' has been converted to "
-          "'%(backend)s?a=b&c='" % {'backend': self.backend_url}],
+          "slave url ' %(backend)s/?a=b&c= ' has been converted to "
+          "'%(backend)s/?a=b&c='" % {'backend': self.backend_url}],
         '_ciphers': [
           "Cipher 'RSA-3DES-EDE-CBC-SHA' translated to 'DES-CBC3-SHA'",
           "Cipher 'RSA-AES128-CBC-SHA' translated to 'AES128-SHA'"],
@@ -2439,7 +2439,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url',
       {
         'warning-list': [
-          "slave url ' %s?a=b&c= ' has been converted to '%s?a=b&c='" % (
+          "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
             self.backend_url, self.backend_url)],
       }
     )
@@ -2459,7 +2459,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     headers = self.assertResponseHeaders(result)
     self.assertNotIn('Strict-Transport-Security', headers)
     self.assertEqualResultJson(
-      result, 'Path', '/?a=b&c=' + '/test-path/deeper' * 250)
+      result, 'Path', '?a=b&c=' + '/test-path/deeper' * 250)
 
     try:
       j = result.json()
@@ -2575,7 +2575,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             j = result_verb.json()
           except Exception:
             raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-          self.assertEqual('/?a=b&c=/' + verb, j['Path'], verb)
+          self.assertEqual('?a=b&c=/' + verb, j['Path'], verb)
           self.assertEqual(verb, j['Verb'], verb)
     # check backend timeout behaviour
     small_timeout_text = "Small timeout"
@@ -2584,7 +2584,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     big_timeout = self.request_timeout + 5
     big_timeout_text = "Big timeout"
     mimikra.config(
-      self.backend_url + '?a=b&c=' + '/small-timeout',
+      self.backend_url.rstrip('/') + '?a=b&c=' + '/small-timeout',
       headers={
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Body-Timeout': str(small_timeout),
@@ -2596,7 +2596,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       data=small_timeout_text,
     )
     mimikra.config(
-      self.backend_url + '?a=b&c=' + '/big-timeout',
+      self.backend_url.rstrip('/') + '?a=b&c=' + '/big-timeout',
       headers={
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Body-Timeout': str(big_timeout),
@@ -2842,7 +2842,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url',
       {
         'warning-list': [
-          "slave url ' %s?a=b&c= ' has been converted to '%s?a=b&c='" % (
+          "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
             self.backend_url, self.backend_url)],
       }
     )
@@ -2855,7 +2855,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     path = '/compressed'
     config_result = mimikra.config(
-      self.backend_url.rstrip('/') + '/?a=b&c=' + path,
+      self.backend_url.rstrip('/') + '?a=b&c=' + path,
       data=data_compressed,
       headers={
         'X-Config-Reply-Header-Content-Encoding': 'gzip',
@@ -2887,13 +2887,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url',
       {
         'warning-list': [
-          "slave url ' %s?a=b&c= ' has been converted to '%s?a=b&c='" % (
+          "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
             self.backend_url, self.backend_url)],
       }
     )
     path = '/test_no_content_type_alter'
     config_result = mimikra.config(
-      self.backend_url.rstrip('/') + '/?a=b&c=' + path,
+      self.backend_url.rstrip('/') + '?a=b&c=' + path,
       headers={
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Content-Length': 'calculate',

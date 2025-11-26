@@ -58,6 +58,16 @@
       "title": "Public Land Mobile Network",
       "description": "Public Land Mobile Network",
       "type": "string"
+    },
+    "rrc_configuration": {
+      "title": "RRC Configuration",
+      "description": "RRC Configuration",
+      "type": "string",
+      "enum": [
+        "measurement",
+        "initial"
+      ],
+      "default": "initial"
     }
   }
 }

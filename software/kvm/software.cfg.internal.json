@@ -1,0 +1,24 @@
+{
+  "software-type": {
+    "kvm-import": {
+      "title": "KVM Import (internal only, DO NOT USE)",
+      "description": "Used for resiliency",
+      "request": "instance-kvm-internal-resiliency-input-schema.json"
+    },
+    "kvm-export": {
+      "title": "KVM Export (internal only, DO NOT USE)",
+      "description": "Used for resiliency",
+      "request": "instance-kvm-internal-resiliency-input-schema.json"
+    },
+    "pull-backup": {
+      "title": "KVM PBS (internal only, DO NOT USE)",
+      "description": "Used for resiliency",
+      "request": "instance-kvm-internal-resiliency-input-schema.json"
+    },
+    "frozen": {
+      "title": "Frozen instance after takeover (internal only, DO NOT USE)",
+      "description": "Used for resiliency",
+      "request": "instance-kvm-internal-resiliency-input-schema.json"
+    }
+  }
+}
