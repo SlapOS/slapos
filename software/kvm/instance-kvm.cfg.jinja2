@@ -369,7 +369,8 @@ config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
 python-path = {{ python_eggs_executable }}
 qmp-socket-path = ${directory:run}/qmp_socket
 vnc-socket-path = ${directory:run}/vnc_socket
-pid-file = ${directory:run}/pid_file
+controlling-socket-path = ${directory:run}/c_qmp_socket
+pid-file = ${directory:run}/kvm.pid
 kvm-status-path = ${directory:var}/qemu-vm-is-ready
 cpu-count = ${slap-parameter:cpu-count}
 cpu-model = ${slap-parameter:cpu-model}
@@ -378,7 +379,7 @@ ram-size = ${slap-parameter:ram-size}
 enable-device-hotplug = ${slap-parameter:enable-device-hotplug}
 
 [kvm-parameter-dict]
-python-path = {{ python_executable }}
+python-path = {{ python_eggs_executable }}
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 
@@ -532,6 +533,8 @@ depends =
   {{ depend_section }}
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
+qmp-socket-path = ${kvm-controller-parameter-dict:qmp-socket-path}
+controlling-socket-path = ${kvm-controller-parameter-dict:controlling-socket-path}
 wrapper-path = ${directory:services}/kvm
 command-line = ${kvm-run:output}
 kvm-controller = ${kvm-controller-wrapper:wrapper-path}
