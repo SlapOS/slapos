@@ -1,0 +1,6 @@
+#! {{ param_html5as['path_shell'] }}
+# BEWARE: This file is operated by slapos node
+# BEWARE: It will be overwritten automatically
+
+# Run nginx
+exec {{ param_html5as['path_nginx'] }} -c {{ param_html5as['path_nginx_conf'] }}
