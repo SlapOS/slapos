@@ -981,6 +981,8 @@ class TestInstanceResilientBackupExporterMixin(
 @skipUnlessKvm
 class TestInstanceResilientBackupExporter(
   TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  maxDiff = None
+
   def test(self):
     self.initialBackup()
     # assure that additional backup run does not leave temporary files
@@ -1175,6 +1177,7 @@ class TestInstanceResilientBackupExporterOldStyleMigration(
 @skipUnlessKvm
 class TestInstanceResilientBackupExporterIde(
   TestInstanceResilientBackupExporter):
+  maxDiff = None
   disk_type = 'ide'
 
 
