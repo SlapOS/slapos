@@ -8,31 +8,38 @@
       "description": "Radio parameters related to the cell",
       "unevaluatedProperties": false,
       "allOf": [
-        "tx_power_dbm": {
-          "title": "Tx Power in dBm",
-          "description": "Set transmission power of each antenna in dBm (Range: 0 to 30 dBm. Warning: setting TX Power above 28 dBm might impact radio signal quality)",
-          "type": "number"
-        },
-        "rx_gain": {
-          "$ref": "ru/common.json#/properties/rx_gain",
-          "description": "Rx gain (Range: 20 to 50 dB)"
-        },
-        "nr_bandwidth": {
-          "title": "Bandwidth",
-          "description": "Downlink Bandwidth in MHz",
-          "enum": [
-            20,
-            40
-          ],
-          "type": "number"
-        },
-        "dl_frequency": {
-          "title": "DL Frequency",
-          "description": "Downlink center frequency of the cell. (Range: 4610.01 MHz - 4989.99 MHz with 20 MHz bandwidth, or 4620 MHz - 4979.985 MHz with 40 MHz bandwidth)",
-          "type": "number"
-        },
-        "tdd_ul_dl_config": {
-          "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
+        {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "ORS Cell",
+          "type": "object",
+          "properties": {
+            "tx_power_dbm": {
+              "title": "Tx Power in dBm",
+              "description": "Set transmission power of each antenna in dBm (Range: 0 to 30 dBm. Warning: setting TX Power above 28 dBm might impact radio signal quality)",
+              "type": "number"
+            },
+            "rx_gain": {
+              "$ref": "ru/common.json#/properties/rx_gain",
+              "description": "Rx gain (Range: 20 to 50 dB)"
+            },
+            "nr_bandwidth": {
+              "title": "Bandwidth",
+              "description": "Downlink Bandwidth in MHz",
+              "enum": [
+                20,
+                40
+              ],
+              "type": "number"
+            },
+            "dl_frequency": {
+              "title": "DL Frequency",
+              "description": "Downlink center frequency of the cell. (Range: 4610.01 MHz - 4989.99 MHz with 20 MHz bandwidth, or 4620 MHz - 4979.985 MHz with 40 MHz bandwidth)",
+              "type": "number"
+            },
+            "tdd_ul_dl_config": {
+              "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
+            }
+          }
         }
       ],
       "type": "object",
@@ -44,14 +51,21 @@
       "unevaluatedProperties": false,
       "allOf": [
         {
-          "xlog_enabled": {
-            "$ref": "instance-enb-input-schema.json#/properties/xlog_enabled"
-          },
-          "xlog_forwarding_enabled": {
-            "$ref": "instance-enb-input-schema.json#/properties/xlog_forwarding_enabled"
-          },
-          "websocket_url_ipv6": {
-            "$ref": "instance-enb-input-schema.json#/properties/websocket_url_ipv6"
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Management",
+          "type": "object",
+          "properties": {
+            {
+              "xlog_enabled": {
+                "$ref": "instance-enb-input-schema.json#/properties/xlog_enabled"
+              },
+              "xlog_forwarding_enabled": {
+                "$ref": "instance-enb-input-schema.json#/properties/xlog_forwarding_enabled"
+              },
+              "websocket_url_ipv6": {
+                "$ref": "instance-enb-input-schema.json#/properties/websocket_url_ipv6"
+              }
+            }
           }
         }
       ],
