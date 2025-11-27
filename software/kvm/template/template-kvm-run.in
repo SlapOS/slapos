@@ -36,9 +36,6 @@ mac_address = '{{ parameter_dict.get("mac-address") }}'
 tap_mac_address = '{{ parameter_dict.get("tap-mac-address") }}'
 tap_ipv6_addr = '{{ parameter_dict.get("tap-ipv6-addr") }}'
 numa_list = '{{ parameter_dict.get("numa", "") }}'.split()
-ram_max_size = '{{ parameter_dict.get("ram-max-size") }}'
-init_ram_size = {{ parameter_dict.get("init-ram-size") }}
-init_smp_count = {{ parameter_dict.get("init-smp-count") }}
 pid_file_path = '{{ parameter_dict.get("pid-file-path") }}'
 external_disk_number = {{ parameter_dict.get("external-disk-number") }}
 external_disk_size = {{ parameter_dict.get("external-disk-size") }}
@@ -92,11 +89,8 @@ if not disk_info_list:
 {%- endfor %}
   })
 
-smp_max_count = {{ parameter_dict.get("smp-max-count") }}
 machine_options = '{{ parameter_dict.get("machine-options", "") }}'.strip()
 cpu_model = '{{ parameter_dict.get("cpu-model") }}'.strip()
-
-enable_device_hotplug = '{{ parameter_dict.get("enable-device-hotplug") }}'.lower()
 
 logfile = '{{ parameter_dict.get("log-file") }}'
 
@@ -291,11 +285,10 @@ if use_tap == 'true':
             tap_interface, vhost),
           '-device', '%s,netdev=lan%s,mac=%s' % (network_adapter, number, tap_mac_address)]
 
-smp = '%s,maxcpus=%s' % (init_smp_count, smp_max_count)
-ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
-
 kvm_argument_list = [qemu_path,
-  '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
+  '-enable-kvm', '-name', vm_name, '-vga', 'std',
+  '-smp', '{{ parameter_dict['smp-count'] }}',
+  '-m', '%sM,slots=128' % ('{{ parameter_dict['ram-size'] }}',),
   '-vnc', 'unix:%s,websocket=unix:%s' % (vnc_socket_path, vnc_socket_path),
   '-boot', 'order=cd,menu=on',
   '-qmp', 'unix:%s,server,nowait' % qmp_socket_path,
