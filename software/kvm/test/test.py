@@ -267,7 +267,7 @@ class KvmMixin:
     kvm_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
     hash_file_list = [
-       os.path.join(kvm_partition, 'bin', 'kvm_raw')
+       os.path.join(kvm_partition, 'etc', 'kvm_raw.json')
     ] + kvm_additional_hash_file_list + [
       'software_release/buildout.cfg']
 
@@ -986,10 +986,8 @@ class TestInstanceResilientBackupExporterMigratePre047(
     image = self.getPartitionPath('kvm-export', 'srv', 'virtual.qcow2')
     with open(
       glob.glob(os.path.join(
-          self.slap._instance_root, '*', 'bin', 'kvm_raw'))[0]) as fh:
-      qemu_img = [
-        q for q in fh.readlines()
-        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
+          self.slap._instance_root, '*', 'etc', 'kvm_raw.json'))[0]) as fh:
+      qemu_img = json.load(fh)['qemu-img-path']
     # added bitmap like old qmpbackup would do
     subprocess.check_call([
       qemu_img, "bitmap", "--add", image,
@@ -2406,41 +2404,41 @@ class TestParameterDefault(KVMTestCase, KvmMixin):
   def mangleParameterDict(self, parameter_dict):
     return parameter_dict
 
-  def _test(self, parameter_dict, expected):
+  def _test(self, parameter_dict, key, value):
     self.rerequestInstance(self.mangleParameterDict(parameter_dict))
     self.waitForInstanceWithPropagation()
 
-    kvm_raw = glob.glob(os.path.join(
-      self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
-    self.assertEqual(len(kvm_raw), 1)
-    kvm_raw = kvm_raw[0]
-    with open(kvm_raw) as fh:
-      kvm_raw = fh.read()
-    self.assertIn(expected, kvm_raw)
+    kvm_raw_json = glob.glob(os.path.join(
+      self.slap.instance_directory, '*', 'etc', 'kvm_raw.json'))
+    self.assertEqual(len(kvm_raw_json), 1)
+    with open(kvm_raw_json[0]) as fh:
+      kvm_raw_data = json.load(fh)
+    self.assertIn(key, kvm_raw_data)
+    self.assertEqual(value, kvm_raw_data[key])
 
   def test_disk_type_default(self):
-    self._test({}, "disk_type = 'virtio'")
+    self._test({}, "disk-type",  "virtio")
 
   def test_disk_type_set(self):
-    self._test({'disk-type': 'ide'}, "disk_type = 'ide'")
+    self._test({'disk-type': 'ide'}, "disk-type", "ide")
 
   def test_network_adapter_default(self):
-    self._test({}, "network_adapter = 'virtio-net-pci")
+    self._test({}, "network-adapter", "virtio-net-pci")
 
   def test_network_adapter_set(self):
-    self._test({'network-adapter': 'e1000'}, "network_adapter = 'e1000'")
+    self._test({'network-adapter': 'e1000'}, "network-adapter", "e1000")
 
   def test_cpu_count_default(self):
-    self._test({}, "smp_count = 2")
+    self._test({}, "smp-count", "2")
 
   def test_cpu_count_set(self):
-    self._test({'cpu-count': 4}, "smp_count = 4")
+    self._test({'cpu-count': 4}, "smp-count", "4")
 
   def test_ram_size_default(self):
-    self._test({}, "ram_size = 4096")
+    self._test({}, "ram-size", "4096")
 
   def test_ram_size_set(self):
-    self._test({'ram-size': 2048}, "ram_size = 2048")
+    self._test({'ram-size': 2048}, "ram-size", "2048")
 
 
 @skipUnlessKvm
@@ -2450,6 +2448,12 @@ class TestParameterResilient(TestParameterDefault):
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
+
+  def test_cpu_count_set(self):
+    self._test({'cpu-count': 4}, "smp-count", 4)
+
+  def test_ram_size_set(self):
+    self._test({'ram-size': 2048}, "ram-size", 2048)
 
 
 @skipUnlessKvm
@@ -2620,10 +2624,8 @@ class ExternalDiskModernMixin(object):
     # otherwise qemu-kvm would be dependency of test suite
     with open(
       glob.glob(os.path.join(
-          self.slap._instance_root, '*', 'bin', 'kvm_raw'))[0]) as fh:
-      self.qemu_img = [
-        q for q in fh.readlines()
-        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
+          self.slap._instance_root, '*', 'etc', 'kvm_raw.json'))[0]) as fh:
+      self.qemu_img = json.load(fh)['qemu-img-path']
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
       self.qemu_img, "create", "-f", "qcow2", self.first_disk, "1M"])
@@ -2737,10 +2739,8 @@ class TestExternalDiskModernIndexRequired(KVMTestCase, ExternalDiskMixin):
     # otherwise qemu-kvm would be dependency of test suite
     with open(
       glob.glob(os.path.join(
-          self.slap._instance_root, '*', 'bin', 'kvm_raw'))[0]) as fh:
-      qemu_img = [
-        q for q in fh.readlines()
-        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
+          self.slap._instance_root, '*', 'etc', 'kvm_raw.json'))[0]) as fh:
+      qemu_img = json.load(fh)['qemu-img-path']
 
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
