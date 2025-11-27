@@ -79,14 +79,10 @@ config-name = {{ instance_name }}
 config-authorized-keys = {{ dumps(slapparameter_dict.get('authorized-keys')) }}
 {% endif -%}
 config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 4096)) }}
-config-ram-max-size = {{ dumps(kvm_parameter_dict.get('ram-max-size', int(kvm_parameter_dict.get('ram-size', 4096)) + 512)) }}
-config-enable-device-hotplug = {{ dumps(kvm_parameter_dict.get('enable-device-hotplug', False)) }}
-config-ram-hotplug-slot-size = {{ dumps(kvm_parameter_dict.get('ram-hotplug-slot-size', 512)) }}
 config-disk-size = {{ dumps(kvm_parameter_dict.get('disk-size', 40)) }}
 config-disk-type = {{ dumps(kvm_parameter_dict.get('disk-type', 'virtio')) }}
 config-disk-format = {{ dumps(kvm_parameter_dict.get('disk-format', 'qcow2')) }}
 config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 2)) }}
-config-cpu-max-count = {{ dumps(kvm_parameter_dict.get('cpu-max-count', int(kvm_parameter_dict.get('cpu-count', 2)) + 1)) }}
 config-network-adapter = {{ dumps(kvm_parameter_dict.get('network-adapter', 'virtio-net-pci')) }}
 {{ setconfig('numa', kvm_parameter_dict.get('numa', '')) }}
 {{ setconfig('machine-options', kvm_parameter_dict.get('machine-options', '')) }}
