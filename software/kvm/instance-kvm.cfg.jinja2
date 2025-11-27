@@ -452,8 +452,9 @@ log-file = ${directory:log}/qemu.log
 recipe = slapos.recipe.template:jinja2
 url = {{ template_kvm_run }}
 output = ${directory:bin}/kvm_raw
+python-path = {{ python_executable }}
 context =
-  section parameter_dict kvm-parameter-dict
+  key python_path :python-path
 
 [tunnel-6to4-base]
 recipe = slapos.cookbook:wrapper
@@ -481,7 +482,7 @@ ipv6-port = {{ external_port }}
 {% endif -%}
 
 {%- set depend_section_list = [] %}
-{%- set hash_file_list = ['${kvm-run:output}'] %}
+{%- set hash_file_list = ['${kvm-parameter-dict-json:output}'] %}
 {%- macro generate_depend_section(section, key) %}
 {%-  do depend_section_list.append('${' + section + ':command}' ) %}
 {%-  do hash_file_list.append('${' + key + '}') %}
@@ -497,6 +498,17 @@ command = [ ! -f {{ '${' + key + '}' }} ] && touch {{ '${' +  key + '}' }}
 {{    generate_depend_section('virtual-hard-drive-url-depend', 'virtual-hard-drive-url-download-wrapper:config') }}
 {%- endif %}
 
+[kvm-parameter-dict-json]
+recipe = slapos.recipe.build
+input-section = kvm-parameter-dict
+output = ${directory:etc}/kvm_raw.json
+update = ${:install}
+install =
+  import json
+  output = {}
+  with open(options['output'], 'w') as fh:
+    json.dump(output, fh, indent=2)
+
 [kvm-instance]
 depends =
 {%- for depend_section in depend_section_list %}
@@ -504,7 +516,7 @@ depends =
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/kvm
-command-line = ${kvm-run:output}
+command-line = ${kvm-run:output} ${kvm-parameter-dict-json:output}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files =
 {%- for hash_file in hash_file_list %}
