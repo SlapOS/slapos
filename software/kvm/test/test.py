@@ -267,7 +267,7 @@ class KvmMixin:
     kvm_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
     hash_file_list = [
-       os.path.join(kvm_partition, 'bin', 'kvm_raw')
+       os.path.join(kvm_partition, 'etc', 'kvm_raw.json')
     ] + kvm_additional_hash_file_list + [
       'software_release/buildout.cfg']
 
