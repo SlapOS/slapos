@@ -55,16 +55,14 @@
           "title": "Management",
           "type": "object",
           "properties": {
-            {
-              "xlog_enabled": {
-                "$ref": "instance-enb-input-schema.json#/properties/xlog_enabled"
-              },
-              "xlog_forwarding_enabled": {
-                "$ref": "instance-enb-input-schema.json#/properties/xlog_forwarding_enabled"
-              },
-              "websocket_url_ipv6": {
-                "$ref": "instance-enb-input-schema.json#/properties/websocket_url_ipv6"
-              }
+            "xlog_enabled": {
+              "$ref": "instance-enb-input-schema.json#/properties/xlog_enabled"
+            },
+            "xlog_forwarding_enabled": {
+              "$ref": "instance-enb-input-schema.json#/properties/xlog_forwarding_enabled"
+            },
+            "websocket_url_ipv6": {
+              "$ref": "instance-enb-input-schema.json#/properties/websocket_url_ipv6"
             }
           }
         }
