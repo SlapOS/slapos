@@ -1,0 +1,15 @@
+{
+  "name": "Simpleran C1",
+  "description": "4G and 5G amarisoft stack for ORS",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "gnb": {
+      "title": "gNB",
+      "software-type": "gnb",
+      "description": "gNodeB Configuration",
+      "request": "instance-ors-gnb-c1-input-schema.json",
+      "response": "instance-ors-gnb-schema.json",
+      "index": 1
+    }
+  }
+}
