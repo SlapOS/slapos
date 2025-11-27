@@ -364,7 +364,19 @@ config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
 {% endif %} {# if virtual_hard_drive_url_enabled #}
 
 [kvm-parameter-dict]
-python-path = {{ python_executable }}
+recipe = slapos.recipe.build
+output = ${directory:etc}/kvm_raw.json
+install =
+  import os
+  import json
+  os.mkdir(location)
+  d = {}
+  for key, value in options.items():
+    if key not in ['recipe', 'output', 'install']:
+      d[key] = value
+  with open(options['output'], 'w') as fh:
+    json.dump(d, fh, indent=2)
+  
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 
@@ -448,13 +460,6 @@ cpu-model = ${slap-parameter:cpu-model}
 
 log-file = ${directory:log}/qemu.log
 
-[kvm-run]
-recipe = slapos.recipe.template:jinja2
-url = {{ template_kvm_run }}
-output = ${directory:bin}/kvm_raw
-context =
-  section parameter_dict kvm-parameter-dict
-
 [tunnel-6to4-base]
 recipe = slapos.cookbook:wrapper
 ipv4 = ${slap-network-information:local-ipv4}
@@ -481,7 +486,7 @@ ipv6-port = {{ external_port }}
 {% endif -%}
 
 {%- set depend_section_list = [] %}
-{%- set hash_file_list = ['${kvm-run:output}'] %}
+{%- set hash_file_list = ['${kvm-parameter-dict:output}'] %}
 {%- macro generate_depend_section(section, key) %}
 {%-  do depend_section_list.append('${' + section + ':command}' ) %}
 {%-  do hash_file_list.append('${' + key + '}') %}
@@ -504,7 +509,7 @@ depends =
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/kvm
-command-line = ${kvm-run:output}
+command-line = {{ python_executable }} {{ template_kvm_run }} ${kvm-parameter-dict:output}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files =
 {%- for hash_file in hash_file_list %}
