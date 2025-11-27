@@ -357,6 +357,8 @@ class DefaultValidator(object):
             # of later in case it affects internal $ref that refer to $defs
             # higher in the validation path.
             self.memoize_defaults(validator, schema.get('properties'))
+      else:
+        del self.applied_schemas[index:]
     return iter_errors
 
   def unevaluatedProperties(self, v):
