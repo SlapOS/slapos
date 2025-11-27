@@ -341,10 +341,20 @@ class DefaultValidator(object):
       schema = args[0] if args else validator.schema
       e = None
       index = len(self.applied_schemas)
+      uri = validator.resolver.base_uri
       for e in original_iter_errors(validator, instance, *args):
+        # In case of error, drop all collected subschema *before* yielding
+        # control back to the caller.
         del self.applied_schemas[index:]
         yield e
-      if e is None:
+      if e is not None:
+        # In case of error, drop all collected subschema *before* yielding
+        # control back to the caller. Note that subschema may be collected
+        # even after yielding the last error above: control will return to
+        # original_iter_errors after the last yield. These must be dropped
+        # as well, if any.
+        del self.applied_schemas[index:]
+      else:
         if not isinstance(schema, bool) and schema.get('properties'):
           # Only collect schemas with properties: we don't need the others.
           # Keep validator to reuse validator, and base_uri to reconstruct
