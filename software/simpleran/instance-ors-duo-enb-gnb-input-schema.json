@@ -8,6 +8,11 @@
       "description": "Radio parameters of the first cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
       "$ref": "#/$defs/ors_duo_cell"
     },
+    "cell2": {
+      "title": "Second Cell",
+      "description": "Radio parameters of the second cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
+      "$ref": "#/$defs/ors_duo_cell"
+    },
     "nodeb": {
       "title": "eNB Parameters",
       "description": "Parameters not related to a single cell but to the eNB",
