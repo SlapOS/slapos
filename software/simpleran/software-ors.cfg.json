@@ -53,7 +53,7 @@
       "index": 7
     },
     "gnb-custom-1": {
-      "title": "gNB",
+      "title": "gNB (Custom 1)",
       "software-type": "gnb-custom-1",
       "description": "gNodeB Configuration",
       "request": "instance-ors-gnb-custom-1-input-schema.json",
