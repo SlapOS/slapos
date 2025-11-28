@@ -51,6 +51,14 @@
       "request": "instance-test-model-input-schema.json",
       "response": "instance-test-model-schema.json",
       "index": 7
+    },
+    "gnb-c1": {
+      "title": "gNB C1",
+      "software-type": "gnb-c1",
+      "description": "gNodeB Configuration",
+      "request": "instance-ors-gnb-c1-input-schema.json",
+      "response": "instance-ors-gnb-schema.json",
+      "index": 2
     }
   }
 }
