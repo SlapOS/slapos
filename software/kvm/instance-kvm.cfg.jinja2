@@ -25,8 +25,6 @@
 {%   set boot_image_url_select_default = 'Debian Bookworm 12 netinst x86_64' %}
 {% endif %}
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url') -%}
-{% set cpu_max_count = dumps(slapparameter_dict.get('cpu-max-count', int(slapparameter_dict.get('cpu-count', 2)) + 1)) %}
-{% set ram_max_size = dumps(slapparameter_dict.get('ram-max-size', int(slapparameter_dict.get('ram-size', 4096)) + 512)) %}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
 
@@ -365,20 +363,20 @@ config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
 ## virtual-hard-drive-url support END
 {% endif %} {# if virtual_hard_drive_url_enabled #}
 
-[kvm-controller-parameter-dict]
-python-path = {{ python_eggs_executable }}
-qmp-socket-path = ${directory:run}/qmp_socket
-vnc-socket-path = ${directory:run}/vnc_socket
-pid-file = ${directory:run}/pid_file
-kvm-status-path = ${directory:var}/qemu-vm-is-ready
-cpu-count = ${slap-parameter:cpu-count}
-cpu-model = ${slap-parameter:cpu-model}
-ram-hotplug-slot-size = ${slap-parameter:ram-hotplug-slot-size}
-ram-size = ${slap-parameter:ram-size}
-enable-device-hotplug = ${slap-parameter:enable-device-hotplug}
-
 [kvm-parameter-dict]
-python-path = {{ python_executable }}
+recipe = slapos.recipe.build
+output = ${directory:etc}/kvm_raw.json
+install =
+  import os
+  import json
+  os.mkdir(location)
+  d = {}
+  for key, value in options.items():
+    if key not in ['recipe', 'output', 'install']:
+      d[key] = value
+  with open(options['output'], 'w') as fh:
+    json.dump(d, fh, indent=2)
+  
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 
@@ -401,20 +399,12 @@ disk-path = ${directory:srv}/virtual.${slap-parameter:disk-format}
 
 network-adapter = ${slap-parameter:network-adapter}
 
-pid-file-path = ${kvm-controller-parameter-dict:pid-file}
-qmp-socket-path = ${kvm-controller-parameter-dict:qmp-socket-path}
-vnc-socket-path = ${kvm-controller-parameter-dict:vnc-socket-path}
+ram-size = ${slap-parameter:ram-size}
+smp-count = ${slap-parameter:cpu-count}
 
-{%- set enable_device_hotplug = slapparameter_dict.get('enable-device-hotplug', False) %}
-smp-max-count = {{ cpu_max_count }}
-ram-max-size = {{ ram_max_size }}
-{%- if enable_device_hotplug %}
-init-ram-size = 4096
-init-smp-count = 2
-{%- else %}
-init-ram-size = ${kvm-controller-parameter-dict:ram-size}
-init-smp-count = ${kvm-controller-parameter-dict:cpu-count}
-{%- endif %}
+pid-file = ${directory:run}/pid_file
+qmp-socket-path = ${directory:run}/qmp_socket
+vnc-socket-path = ${directory:run}/vnc_socket
 
 mac-address = ${create-mac:mac-address}
 tap-mac-address = ${create-tap-mac:mac-address}
@@ -470,20 +460,6 @@ cpu-model = ${slap-parameter:cpu-model}
 
 log-file = ${directory:log}/qemu.log
 
-[kvm-run]
-recipe = slapos.recipe.template:jinja2
-url = {{ template_kvm_run }}
-output = ${directory:bin}/kvm_raw
-context =
-  section parameter_dict kvm-parameter-dict
-
-[kvm-controller]
-recipe = slapos.recipe.template:jinja2
-url = {{ template_kvm_controller_run }}
-output = ${directory:bin}/kvm_controller_raw
-context =
-  section parameter_dict kvm-controller-parameter-dict
-
 [tunnel-6to4-base]
 recipe = slapos.cookbook:wrapper
 ipv4 = ${slap-network-information:local-ipv4}
@@ -510,7 +486,7 @@ ipv6-port = {{ external_port }}
 {% endif -%}
 
 {%- set depend_section_list = [] %}
-{%- set hash_file_list = ['${kvm-run:output}'] %}
+{%- set hash_file_list = ['${kvm-parameter-dict:output}'] %}
 {%- macro generate_depend_section(section, key) %}
 {%-  do depend_section_list.append('${' + section + ':command}' ) %}
 {%-  do hash_file_list.append('${' + key + '}') %}
@@ -533,19 +509,12 @@ depends =
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/kvm
-command-line = ${kvm-run:output}
-kvm-controller = ${kvm-controller-wrapper:wrapper-path}
+command-line = {{ python_executable }} {{ template_kvm_run }} ${kvm-parameter-dict:output}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files =
 {%- for hash_file in hash_file_list %}
   {{ hash_file }}
 {%- endfor %}
-
-[kvm-controller-wrapper]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:scripts}/kvm_controller
-command-line = ${kvm-controller:output}
-
 
 [kvm-vnc-promise]
 <= monitor-promise-base
@@ -580,16 +549,17 @@ config-command = ${kvm-disk-image-corruption-bin:output}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:prerm}/slapos_wipe_qemu_disk
 command-line =
-  {{ wipe_disk_wrapper }} -n {{ slapparameter_dict.get('wipe-disk-iterations', 1) }} -suz --check-pid-file ${kvm-parameter-dict:pid-file-path} --file {{ wipe_file_list }}
+  {{ wipe_disk_wrapper }} -n {{ slapparameter_dict.get('wipe-disk-iterations', 1) }} -suz --check-pid-file ${kvm-parameter-dict:pid-file} --file {{ wipe_file_list }}
 {% endif -%}
 
 [kvm-started-bin]
 recipe = slapos.recipe.template:jinja2
 url = {{ qemu_start_promise_tpl }}
 output = ${directory:bin}/qemu-virtual-machine-is-ready
+kvm-status-path = ${directory:var}/qemu-vm-is-ready
 context =
   raw dash {{ dash_executable_location }}
-  raw qemu_ready_path ${kvm-controller-parameter-dict:kvm-status-path}
+  key qemu_ready_path :kvm-status-path
   raw qemu_service_log_file ${buildout:directory}/.${slap-connection:partition-id}_kvm.log
 
 [kvm-started-promise]
@@ -1080,9 +1050,7 @@ frontend-additional-instance-guid =
 frontend-additional-instance-name = VNC Real Frontend Additional
 boot-image-url-list =
 
-enable-device-hotplug = False
 ram-size = 4096
-ram-hotplug-slot-size = 512
 disk-size = 40
 disk-type = virtio
 disk-format = qcow2
@@ -1254,7 +1222,6 @@ parts =
   certificate-authority-service
   publish-connection-information
   kvm-instance
-  kvm-controller-wrapper
   kvm-vnc-promise
   kvm-disk-image-corruption-promise
 {% if enable_novnc_server %}
