@@ -2429,16 +2429,16 @@ class TestParameterDefault(KVMTestCase, KvmMixin):
     self._test({'network-adapter': 'e1000'}, "network_adapter = 'e1000'")
 
   def test_cpu_count_default(self):
-    self._test({}, "init_smp_count = 2")
+    self._test({}, "smp_count = 2")
 
   def test_cpu_count_set(self):
-    self._test({'cpu-count': 4}, "init_smp_count = 4")
+    self._test({'cpu-count': 4}, "smp_count = 4")
 
   def test_ram_size_default(self):
-    self._test({}, "init_ram_size = 4096")
+    self._test({}, "ram_size = 4096")
 
   def test_ram_size_set(self):
-    self._test({'ram-size': 2048}, "init_ram_size = 2048")
+    self._test({'ram-size': 2048}, "ram_size = 2048")
 
 
 @skipUnlessKvm
