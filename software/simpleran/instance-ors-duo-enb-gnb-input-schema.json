@@ -3,6 +3,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
   "properties": {
+    "cell1": {
+      "title": "First Cell",
+      "description": "Radio parameters of the first cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
+      "$ref": "#/$defs/ors_duo_cell"
+    },
     "cell2": {
       "title": "Second Cell",
       "description": "Radio parameters of the second cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
@@ -71,8 +76,7 @@
               "$ref": "ors-gnb-cell.json"
             }
           ],
-          "type": "object",
-          "default": {}
+          "type": "object"
         },
         {
           "title": "eNB Cell",
@@ -99,8 +103,7 @@
               "$ref": "ors-enb-cell.json"
             }
           ],
-          "type": "object",
-          "default": {}
+          "type": "object"
         }
       ],
       "type": "object",
