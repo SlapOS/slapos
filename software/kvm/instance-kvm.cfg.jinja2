@@ -378,7 +378,7 @@ ram-size = ${slap-parameter:ram-size}
 enable-device-hotplug = ${slap-parameter:enable-device-hotplug}
 
 [kvm-parameter-dict]
-python-path = {{ python_executable }}
+python-path = {{ python_eggs_executable }}
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 
@@ -415,6 +415,9 @@ init-smp-count = 2
 init-ram-size = ${kvm-controller-parameter-dict:ram-size}
 init-smp-count = ${kvm-controller-parameter-dict:cpu-count}
 {%- endif %}
+pid-file = ${directory:run}/kvm.pid
+qmp-socket-path = ${directory:run}/qmp_socket
+vnc-socket-path = ${directory:run}/vnc_socket
 
 mac-address = ${create-mac:mac-address}
 tap-mac-address = ${create-tap-mac:mac-address}
@@ -532,6 +535,7 @@ depends =
   {{ depend_section }}
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
+qmp-socket-path = ${kvm-controller-parameter-dict:qmp-socket-path}
 wrapper-path = ${directory:services}/kvm
 command-line = ${kvm-run:output}
 kvm-controller = ${kvm-controller-wrapper:wrapper-path}
