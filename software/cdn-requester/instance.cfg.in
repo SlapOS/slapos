@@ -21,7 +21,7 @@ jsonschema = {{ software_parameter_dict['software.cfg.json'] }}
 depends = 
   {{ software_parameter_dict['instance-requester-input-schema.json'] }}
   {{ software_parameter_dict['instance-slave-input-schema.json'] }}
-set-default = all
+set-default = main
 validate-parameters = all
 instance-db-path = ${buildout:directory}/slapconfiguration-shared-instance.sqlite
 computer = ${slap-connection:computer-id}
