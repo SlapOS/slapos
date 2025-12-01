@@ -6,34 +6,12 @@
     "instance-parameters": {
       "type": "object",
       "properties": {
-        "enable-device-hotplug": {
-          "title": "Enable device hotplug mode",
-          "description": "Allows to increase amount of RAM (ram-size) and CPU (cmp-count) without restart of the VM process, up to defined maximums (ram-max-size and cpu-max-count). Operation system have to support online addition of RAM and CPU.",
-          "type": "boolean",
-          "default": false
-        },
         "ram-size": {
           "title": "RAM size",
           "description": "RAM size, in MB.",
           "type": "integer",
           "default": 4096,
           "minimum": 1024,
-          "multipleOf": 512
-        },
-        "ram-max-size": {
-          "title": "Maximum RAM size, in MB",
-          "description": "Define the maximum size of the memory. The size is in MB and should be a multiple of 512. Defaults to ram-size + 512",
-          "type": "integer",
-          "default": 4608,
-          "minimum": 1024,
-          "multipleOf": 512
-        },
-        "ram-hotplug-slot-size": {
-          "title": "Size of Hotpluggable RAM slot, in MB",
-          "description": "Define the RAM size to plug on one hotpluggable slot in MB, understand the size of one RAM bar. The RAM hotplugged on each slot will always have the same RAM size.",
-          "type": "integer",
-          "default": 512,
-          "minimum": 512,
           "multipleOf": 512
         },
         "auto-ballooning": {
@@ -106,12 +84,6 @@
           "type": "integer",
           "minimum": 1,
           "default": 2
-        },
-        "cpu-max-count": {
-          "title": "Maximum CPU amount",
-          "description": "Specifies the maximum number of CPUs. Defaults to cpu-count + 1",
-          "type": "integer",
-          "minimum": 1
         },
         "numa": {
           "title": "Simulate a multi node NUMA system.",
