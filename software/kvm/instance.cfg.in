@@ -93,7 +93,6 @@ extra-context =
   raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
   raw template_httpd_cfg ${template-httpd:output}
   raw template_content ${template-content:target}
-  raw template_kvm_controller_run ${template-kvm-controller:target}
   raw template_kvm_run ${template-kvm-run:target}
   raw template_monitor ${monitor2-template:output}
   raw template_nginx ${template-nginx:target}
