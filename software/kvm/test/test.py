@@ -1046,12 +1046,14 @@ class TestInstanceResilientBackupExporterMixin(
     )
 
   def initialBackup(self):
-    status_text = self.call_exporter()
     equeue_file = self.getPartitionPath(
       'kvm-import', 'var', 'log', 'equeue.log')
     # clean up equeue file for precise assertion
-    with open(equeue_file, 'w') as fh:
-      fh.write('')
+    if os.path.exists(equeue_file):
+      shutil.copy(equeue_file, '%s.%s' % (equeue_file, time.time()))
+      with open(equeue_file, 'w') as fh:
+        fh.write('')
+    status_text = self.call_exporter()
     awaitBackup(equeue_file)
     self.assertEqual(
       len(glob.glob(self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))),
