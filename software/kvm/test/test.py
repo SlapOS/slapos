@@ -47,7 +47,6 @@ import time
 import shutil
 import sys
 
-from slapos.qemuqmpclient import QemuQMPWrapper
 from slapos.proxy.db_version import DB_VERSION
 from slapos.recipe.librecipe import generateHashFromFiles
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -65,7 +64,8 @@ skipUnlessKvm = unittest.skipUnless(has_kvm, 'kvm not loaded or not allowed')
 
 if has_kvm:
   setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.join(os.path.dirname(__file__), 'test-software.cfg'), software_id='kvm')
+    os.path.join(
+      os.path.dirname(__file__), 'test-software.cfg'), software_id='kvm')
 else:
   setUpModule, InstanceTestCase = None, unittest.TestCase
 
@@ -242,15 +242,18 @@ class KvmMixin:
       cls.disk_type_backup_mapping[cls.disk_type], *paths)
 
   @classmethod
-  def getAuthenticatedUrl(cls, connection_parameter_dict, prefix='', additional=False):
-    parsed_url = urlparse(connection_parameter_dict['%surl%s' % (prefix, '-additional' if additional else '')])
+  def getAuthenticatedUrl(cls, connection_parameter_dict, prefix='',
+                          additional=False):
+    parsed_url = urlparse(
+      connection_parameter_dict['%surl%s' % (
+        prefix, '-additional' if additional else '')])
     return parsed_url._replace(
-    netloc='{}:{}@[{}]:{}'.format(
-      connection_parameter_dict['%susername' % prefix],
-      connection_parameter_dict['%spassword' % prefix],
-      parsed_url.hostname,
-      parsed_url.port,
-    )).geturl()
+      netloc='{}:{}@[{}]:{}'.format(
+        connection_parameter_dict['%susername' % prefix],
+        connection_parameter_dict['%spassword' % prefix],
+        parsed_url.hostname,
+        parsed_url.port,
+      )).geturl()
 
   def getConnectionParameterDictJson(self):
     return json.loads(
@@ -268,7 +271,7 @@ class KvmMixin:
     kvm_partition = os.path.join(
       self.slap.instance_directory, self.kvm_instance_partition_reference)
     hash_file_list = [
-       os.path.join(kvm_partition, 'bin', 'kvm_raw')
+       os.path.join(kvm_partition, 'etc', 'kvm_raw.json')
     ] + kvm_additional_hash_file_list + [
       'software_release/buildout.cfg']
 
@@ -341,8 +344,8 @@ class TestInstance(KVMTestCase, KvmMixin):
     connection_parameter_dict = self.getConnectionParameterDictJson()
     present_key_list = []
     assert_key_list = [
-     'backend-url', 'url', 'username', 'password', 'monitor-setup-url', 'ipv6-network-info',
-     'tap-ipv4', 'tap-ipv6']
+     'backend-url', 'url', 'username', 'password', 'monitor-setup-url',
+     'ipv6-network-info', 'tap-ipv4', 'tap-ipv6']
     for k in assert_key_list:
       if k in connection_parameter_dict:
         present_key_list.append(k)
@@ -373,7 +376,6 @@ i0:bootstrap-monitor EXITED
 i0:certificate_authority-{hash}-on-watch RUNNING
 i0:crond-{hash}-on-watch RUNNING
 i0:kvm-{kvm-hash-value}-on-watch RUNNING
-i0:kvm_controller EXITED
 i0:monitor-httpd-{hash}-on-watch RUNNING
 i0:monitor-httpd-graceful EXITED
 i0:nginx-graceful EXITED
@@ -392,108 +394,6 @@ i0:whitelist-firewall-{hash} RUNNING""",
       self.getRunningImageList()
     )
 
-
-@skipUnlessKvm
-class TestMemoryManagement(KVMTestCase, KvmMixin):
-  __partition_reference__ = 'i'
-  kvm_instance_partition_reference = 'i0'
-
-  def getKvmProcessInfo(self, switch_list):
-    return_list = []
-    with self.slap.instance_supervisor_rpc as instance_supervisor:
-      kvm_pid = [q for q in instance_supervisor.getAllProcessInfo()
-                 if 'kvm-' in q['name']][0]['pid']
-      kvm_process = psutil.Process(kvm_pid)
-      get_next = False
-      for entry in kvm_process.cmdline():
-        if get_next:
-          return_list.append(entry)
-          get_next = False
-        elif entry in switch_list:
-          get_next = True
-    return kvm_pid, return_list
-
-  def test(self):
-    kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
-    self.assertEqual(
-      ['2,maxcpus=3', '4096M,slots=128,maxmem=4608M'],
-      info_list
-    )
-    self.rerequestInstance({
-      'ram-size': '1536',
-      'cpu-count': '2',
-    })
-    self.slap.waitForInstance(max_retry=10)
-    kvm_pid_2, info_list = self.getKvmProcessInfo(['-smp', '-m'])
-    self.assertEqual(
-      ['2,maxcpus=3', '1536M,slots=128,maxmem=2048M'],
-      info_list
-    )
-
-    # assert that process was restarted
-    self.assertNotEqual(kvm_pid_1, kvm_pid_2, "Unexpected: KVM not restarted")
-
-  def tearDown(self):
-    self.rerequestInstance()
-    self.slap.waitForInstance(max_retry=10)
-
-  def test_enable_device_hotplug(self):
-    def getHotpluggedCpuRamValue():
-      qemu_wrapper = QemuQMPWrapper(os.path.join(
-        self.computer_partition_root_path, 'var', 'run', 'qmp_socket'))
-      ram_mb = sum(
-        q['size']
-        for q in qemu_wrapper.getMemoryInfo()['hotplugged']) / 1024 / 1024
-      cpu_count = len(
-        [q['CPU'] for q in qemu_wrapper.getCPUInfo()['hotplugged']])
-      return {'cpu_count': cpu_count, 'ram_mb': ram_mb}
-
-    kvm_pid_1, info_list = self.getKvmProcessInfo(['-smp', '-m'])
-    self.assertEqual(
-      ['2,maxcpus=3', '4096M,slots=128,maxmem=4608M'],
-      info_list
-    )
-    self.assertEqual(
-      getHotpluggedCpuRamValue(),
-      {'cpu_count': 0, 'ram_mb': 0}
-    )
-
-    parameter_dict = {
-      'enable-device-hotplug': True,
-      # to avoid restarts the max RAM and CPU has to be static
-      'ram-max-size': 8192,
-      'cpu-max-count': 6,
-    }
-    self.rerequestInstance(parameter_dict)
-    self.slap.waitForInstance(max_retry=2)
-    kvm_pid_2, info_list = self.getKvmProcessInfo(['-smp', '-m'])
-
-    self.assertEqual(
-      ['2,maxcpus=6', '4096M,slots=128,maxmem=8192M'],
-      info_list
-    )
-    self.assertEqual(
-      getHotpluggedCpuRamValue(),
-      {'cpu_count': 0, 'ram_mb': 0}
-    )
-    self.assertNotEqual(kvm_pid_1, kvm_pid_2, "Unexpected: KVM not restarted")
-    parameter_dict.update(**{
-      'ram-size': '5120',
-      'cpu-count': '4'
-    })
-    self.rerequestInstance(parameter_dict)
-    self.slap.waitForInstance(max_retry=10)
-    kvm_pid_3, info_list = self.getKvmProcessInfo(['-smp', '-m'])
-
-    self.assertEqual(
-      ['2,maxcpus=6', '4096M,slots=128,maxmem=8192M'],
-      info_list
-    )
-    self.assertEqual(kvm_pid_2, kvm_pid_3, "Unexpected: KVM restarted")
-    self.assertEqual(
-      getHotpluggedCpuRamValue(),
-      {'cpu_count': 2, 'ram_mb': 1024}
-    )
 
 class MonitorAccessMixin(KvmMixin):
   def sqlite3_connect(self):
@@ -575,6 +475,7 @@ class TestAccessDefault(MonitorAccessMixin, KVMTestCase):
     self.assertIn('<title>noVNC</title>', result.text)
     self.assertNotIn('url-additional', connection_parameter_dict)
 
+
 @skipUnlessKvm
 class TestAccessDefaultAdditional(MonitorAccessMixin, KVMTestCase):
   __partition_reference__ = 'ada'
@@ -597,7 +498,8 @@ class TestAccessDefaultAdditional(MonitorAccessMixin, KVMTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
-    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, additional=True)
+    authenticated_url = self.getAuthenticatedUrl(
+      connection_parameter_dict, additional=True)
     result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
@@ -677,7 +579,8 @@ class TestAccessKvmCluster(MonitorAccessMixin, KVMTestCase):
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
-    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, prefix='KVM0-')
+    authenticated_url = self.getAuthenticatedUrl(
+      connection_parameter_dict, prefix='KVM0-')
     result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
@@ -696,7 +599,8 @@ class TestAccessKvmCluster(MonitorAccessMixin, KVMTestCase):
     }
     self.rerequestInstance(disable_novnc_server_parameters)
     self.waitForInstanceWithPropagation()
-    self.computer_partition = self.rerequestInstance(disable_novnc_server_parameters)
+    self.computer_partition = self.rerequestInstance(
+      disable_novnc_server_parameters)
 
     connection_parameter_dict = self.getConnectionParameterDictJson()
     self.assertNotIn('KVM0-url', connection_parameter_dict)
@@ -715,17 +619,20 @@ class TestAccessKvmCluster(MonitorAccessMixin, KVMTestCase):
     }
     self.rerequestInstance(enable_novnc_server_parameters)
     self.waitForInstanceWithPropagation()
-    self.computer_partition = self.rerequestInstance(enable_novnc_server_parameters)
+    self.computer_partition = self.rerequestInstance(
+      enable_novnc_server_parameters)
 
     connection_parameter_dict = self.getConnectionParameterDictJson()
     self.assertIn('KVM0-url', connection_parameter_dict)
     self.assertNotIn('KVM0-url-additional', connection_parameter_dict)
-    self.assertEqual(authenticated_url, self.getAuthenticatedUrl(connection_parameter_dict, prefix='KVM0-'))
+    self.assertEqual(authenticated_url, self.getAuthenticatedUrl(
+      connection_parameter_dict, prefix='KVM0-'))
     result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
+
 
 @skipUnlessKvm
 class TestAccessKvmClusterAdditional(MonitorAccessMixin, KVMTestCase):
@@ -752,7 +659,8 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, KVMTestCase):
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
-    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, prefix='KVM0-')
+    authenticated_url = self.getAuthenticatedUrl(
+      connection_parameter_dict, prefix='KVM0-')
     result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
@@ -760,13 +668,15 @@ class TestAccessKvmClusterAdditional(MonitorAccessMixin, KVMTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
-    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, prefix='KVM0-', additional=True)
+    authenticated_url = self.getAuthenticatedUrl(
+      connection_parameter_dict, prefix='KVM0-', additional=True)
     result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
+
 
 @skipUnlessKvm
 class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
@@ -797,7 +707,8 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
 
   def test(self):
     connection_parameter_dict = self.getConnectionParameterDictJson()
-    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, prefix='test-machine1-')
+    authenticated_url = self.getAuthenticatedUrl(
+      connection_parameter_dict, prefix='test-machine1-')
     result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
@@ -838,14 +749,16 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
     self.computer_partition = self.rerequestInstance(parameters_2machines)
 
     connection_parameter_dict = self.getConnectionParameterDictJson()
-    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, prefix='test-machine1-')
+    authenticated_url = self.getAuthenticatedUrl(
+      connection_parameter_dict, prefix='test-machine1-')
     result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
     self.assertIn('<title>noVNC</title>', result.text)
-    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, prefix='test-machine2-')
+    authenticated_url = self.getAuthenticatedUrl(
+      connection_parameter_dict, prefix='test-machine2-')
     result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
@@ -1009,8 +922,8 @@ class TestInstanceResilientBackupExporterMixin(
     self.assertEqual(
       set(sorted(os.listdir(self.getPartitionPath('kvm-import', 'srv')))),
       set([
-        'backup', 'proof.signature', 'virtual.qcow2', 'sshkeys', 'backup.diff'
-        ,'monitor', 'cgi-bin', 'passwd', 'ssl', 'equeue.db'])
+        'backup', 'proof.signature', 'virtual.qcow2', 'sshkeys',
+        'backup.diff', 'monitor', 'cgi-bin', 'passwd', 'ssl', 'equeue.db'])
     )
 
   def initialBackup(self):
@@ -1090,10 +1003,8 @@ class TestInstanceResilientBackupExporterMigratePre047(
     image = self.getPartitionPath('kvm-export', 'srv', 'virtual.qcow2')
     with open(
       glob.glob(os.path.join(
-          self.slap._instance_root, '*', 'bin', 'kvm_raw'))[0]) as fh:
-      qemu_img = [
-        q for q in fh.readlines()
-        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
+          self.slap._instance_root, '*', 'etc', 'kvm_raw.json'))[0]) as fh:
+      qemu_img = json.load(fh)['qemu-img-path']
     # added bitmap like old qmpbackup would do
     subprocess.check_call([
       qemu_img, "bitmap", "--add", image,
@@ -1238,7 +1149,7 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
       '-sla-pbs2-computer_guid': 'local',
       'resilient-clone-number': 2,
       'resiliency-backup-periodicity': '#12 1 * * *'
-      })}
+    })}
 
   @classmethod
   def setUpClass(cls):
@@ -1246,16 +1157,18 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
     cls.pbs1_ipv6 = cls.getPartitionIPv6(cls.getPartitionIdByType(
       'pull-backup'))
     # XXX order of partition is
-    #  ir0: main
-    #  ir1: PBS1
-    #  ir2: PBS2
-    #  ir3: kvm-export
-    #  ir4: kvm-import1
-    #  ir5: kvm-import2
+    # ir0: main
+    # ir1: PBS1
+    # ir2: PBS2
+    # ir3: kvm-export
+    # ir4: kvm-import1
+    # ir5: kvm-import2
     cls.pbs2_ipv6 = cls.getPartitionIPv6('ir2')
-    cls.kvm_instance_partition_reference = cls.getPartitionIdByType('kvm-export')
+    cls.kvm_instance_partition_reference = cls.getPartitionIdByType(
+      'kvm-export')
     cls.kvm0_ipv6 = cls.getPartitionIPv6(cls.kvm_instance_partition_reference)
-    cls.kvm1_ipv6 = cls.getPartitionIPv6(cls.getPartitionIdByType('kvm-import'))
+    cls.kvm1_ipv6 = cls.getPartitionIPv6(cls.getPartitionIdByType(
+      'kvm-import'))
     cls.kvm2_ipv6 = cls.getPartitionIPv6('ir5')
 
   def test(self):
@@ -1345,7 +1258,6 @@ ir3:certificate_authority-{hash}-on-watch RUNNING
 ir3:crond-{hash}-on-watch RUNNING
 ir3:equeue-on-watch RUNNING
 ir3:kvm-{kvm-hash-value}-on-watch RUNNING
-ir3:kvm_controller EXITED
 ir3:monitor-httpd-{hash}-on-watch RUNNING
 ir3:monitor-httpd-graceful EXITED
 ir3:nginx-graceful EXITED
@@ -1386,7 +1298,8 @@ ir5:sshd-on-watch RUNNING""",
 
     self.rerequestInstance({"enable-novnc-server": False})
     self.waitForInstanceWithPropagation()
-    self.computer_partition = self.rerequestInstance({"enable-novnc-server": False})
+    self.computer_partition = self.rerequestInstance(
+      {"enable-novnc-server": False})
 
     connection_parameter_dict = self.getConnectionParameterDictJson()
     self.assertNotIn('url', connection_parameter_dict)
@@ -1397,18 +1310,19 @@ ir5:sshd-on-watch RUNNING""",
 
     self.rerequestInstance({"enable-novnc-server": True})
     self.waitForInstanceWithPropagation()
-    self.computer_partition = self.rerequestInstance({"enable-novnc-server": True})
+    self.computer_partition = self.rerequestInstance(
+      {"enable-novnc-server": True})
 
     connection_parameter_dict = self.getConnectionParameterDictJson()
     self.assertIn('url', connection_parameter_dict)
     self.assertNotIn('url-additional', connection_parameter_dict)
-    self.assertEqual(authenticated_url, self.getAuthenticatedUrl(connection_parameter_dict))
+    self.assertEqual(
+      authenticated_url, self.getAuthenticatedUrl(connection_parameter_dict))
     result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
       result.status_code
     )
-
 
 
 @skipUnlessKvm
@@ -1418,6 +1332,7 @@ class TestInstanceResilientDiskTypeIde(KVMTestCase, KvmMixin):
     return {'_': json.dumps({
       'disk-type': 'ide'
     })}
+
 
 @skipUnlessKvm
 class TestAccessResilientAdditional(MonitorAccessMixin, KVMTestCase):
@@ -1445,7 +1360,8 @@ class TestAccessResilientAdditional(MonitorAccessMixin, KVMTestCase):
     )
     self.assertIn('<title>noVNC</title>', result.text)
 
-    authenticated_url = self.getAuthenticatedUrl(connection_parameter_dict, additional=True)
+    authenticated_url = self.getAuthenticatedUrl(
+      connection_parameter_dict, additional=True)
     result = requests.get(authenticated_url, verify=False)
     self.assertEqual(
       httplib.OK,
@@ -1575,7 +1491,8 @@ class TestVirtualHardDriveUrl(FakeImageServerMixin, KVMTestCase):
       kvm_partition,
       'srv', 'virtual-hard-drive-url-repository')
     self.assertEqual(
-      [json.loads(self.getInstanceParameterDict()['_'])['virtual-hard-drive-md5sum']],
+      [json.loads(self.getInstanceParameterDict()['_'])[
+        'virtual-hard-drive-md5sum']],
       os.listdir(image_repository)
     )
     destination_image = os.path.join(kvm_partition, 'srv', 'virtual.qcow2')
@@ -1804,7 +1721,8 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
       [DEFAULT_IMAGE_MD5SUM],
       os.listdir(image_repository)
     )
-    with open(os.path.join(image_repository, DEFAULT_IMAGE_MD5SUM), 'rb') as fh:
+    with open(os.path.join(
+      image_repository, DEFAULT_IMAGE_MD5SUM), 'rb') as fh:
       image_md5sum = hashlib.md5(fh.read()).hexdigest()
     self.assertEqual(image_md5sum, DEFAULT_IMAGE_MD5SUM)
     self.assertEqual(
@@ -1840,7 +1758,8 @@ class TestBootImageUrlSelect(FakeImageServerMixin, KVMTestCase):
       'boot-image-url-select': 'DOESNOTEXISTS'
     })
     self.raising_waitForInstance(2)
-    # we check that buildout fails in the top level partition (because it is a problem of parameter)
+    # we check that buildout fails in the top level partition (because it is
+    # a problem of parameter)
     partition_id = self.getPartitionIdByType(self.getInstanceSoftwareType())
     partition_path = self.getPartitionPath(self.getInstanceSoftwareType())
     buildout_promise = 'buildout-%s-status.py' % partition_id
@@ -2079,7 +1998,8 @@ class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
       )
     with open(KVM1_config) as fh:
       config = fh.read().strip()
-      # we don't know where the shared directly will be so just assert begin and end of the path
+      # we don't know where the shared directly will be so just assert begin
+      # and end of the path
       self.assertIn(
         '["file://',
         config
@@ -2088,7 +2008,6 @@ class TestBootImageUrlSelectKvmCluster(KvmMixin, KVMTestCase):
         '%s#%s"]' % (DEFAULT_IMAGE_ISONAME, DEFAULT_IMAGE_MD5SUM),
         config
       )
-
 
 
 @skipUnlessKvm
@@ -2229,7 +2148,6 @@ class TestWhitelistFirewallRequestResilient(TestWhitelistFirewallRequest):
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
-
 
 
 @skipUnlessKvm
@@ -2511,53 +2429,41 @@ class TestParameterDefault(KVMTestCase, KvmMixin):
   def mangleParameterDict(self, parameter_dict):
     return parameter_dict
 
-  def _test(self, parameter_dict, expected):
+  def _test(self, parameter_dict, key, value):
     self.rerequestInstance(self.mangleParameterDict(parameter_dict))
     self.waitForInstanceWithPropagation()
 
-    kvm_raw = glob.glob(os.path.join(
-      self.slap.instance_directory, '*', 'bin', 'kvm_raw'))
-    self.assertEqual(len(kvm_raw), 1)
-    kvm_raw = kvm_raw[0]
-    with open(kvm_raw) as fh:
-      kvm_raw = fh.read()
-    self.assertIn(expected, kvm_raw)
+    kvm_raw_json = glob.glob(os.path.join(
+      self.slap.instance_directory, '*', 'etc', 'kvm_raw.json'))
+    self.assertEqual(len(kvm_raw_json), 1)
+    with open(kvm_raw_json[0]) as fh:
+      kvm_raw_data = json.load(fh)
+    self.assertIn(key, kvm_raw_data)
+    self.assertEqual(value, kvm_raw_data[key])
 
   def test_disk_type_default(self):
-    self._test({}, "disk_type = 'virtio'")
+    self._test({}, "disk-type", "virtio")
 
   def test_disk_type_set(self):
-    self._test({'disk-type': 'ide'}, "disk_type = 'ide'")
+    self._test({'disk-type': 'ide'}, "disk-type", "ide")
 
   def test_network_adapter_default(self):
-    self._test({}, "network_adapter = 'virtio-net-pci")
+    self._test({}, "network-adapter", "virtio-net-pci")
 
   def test_network_adapter_set(self):
-    self._test({'network-adapter': 'e1000'}, "network_adapter = 'e1000'")
+    self._test({'network-adapter': 'e1000'}, "network-adapter", "e1000")
 
   def test_cpu_count_default(self):
-    self._test({}, "init_smp_count = 2")
-
-  def test_cpu_count_default_max(self):
-    self._test({}, "smp_max_count = 3")
+    self._test({}, "smp-count", "2")
 
   def test_cpu_count_set(self):
-    self._test({'cpu-count': 4}, "init_smp_count = 4")
-
-  def test_cpu_count_set_max(self):
-    self._test({'cpu-count': 4}, "smp_max_count = 5")
+    self._test({'cpu-count': 4}, "smp-count", "4")
 
   def test_ram_size_default(self):
-    self._test({}, "init_ram_size = 4096")
-
-  def test_ram_size_default_max(self):
-    self._test({}, "ram_max_size = '4608'")
+    self._test({}, "ram-size", "4096")
 
   def test_ram_size_set(self):
-    self._test({'ram-size': 2048}, "init_ram_size = 2048")
-
-  def test_ram_size_set_max(self):
-    self._test({'ram-size': 2048}, "ram_max_size = '2560'")
+    self._test({'ram-size': 2048}, "ram-size", "2048")
 
 
 @skipUnlessKvm
@@ -2567,6 +2473,12 @@ class TestParameterResilient(TestParameterDefault):
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'kvm-resilient'
+
+  def test_cpu_count_set(self):
+    self._test({'cpu-count': 4}, "smp-count", 4)
+
+  def test_ram_size_set(self):
+    self._test({'ram-size': 2048}, "ram-size", 2048)
 
 
 @skipUnlessKvm
@@ -2737,10 +2649,8 @@ class ExternalDiskModernMixin(object):
     # otherwise qemu-kvm would be dependency of test suite
     with open(
       glob.glob(os.path.join(
-          self.slap._instance_root, '*', 'bin', 'kvm_raw'))[0]) as fh:
-      self.qemu_img = [
-        q for q in fh.readlines()
-        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
+          self.slap._instance_root, '*', 'etc', 'kvm_raw.json'))[0]) as fh:
+      self.qemu_img = json.load(fh)['qemu-img-path']
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
       self.qemu_img, "create", "-f", "qcow2", self.first_disk, "1M"])
@@ -2781,6 +2691,7 @@ class TestExternalDiskModern(
           self.working_directory)
       ]
     )
+
 
 @skipUnlessKvm
 class TestExternalDiskModernCluster(TestExternalDiskModern):
@@ -2854,10 +2765,8 @@ class TestExternalDiskModernIndexRequired(KVMTestCase, ExternalDiskMixin):
     # otherwise qemu-kvm would be dependency of test suite
     with open(
       glob.glob(os.path.join(
-          self.slap._instance_root, '*', 'bin', 'kvm_raw'))[0]) as fh:
-      qemu_img = [
-        q for q in fh.readlines()
-        if 'qemu_img_path = ' in q][0].split()[-1].replace("'", "")
+          self.slap._instance_root, '*', 'etc', 'kvm_raw.json'))[0]) as fh:
+      qemu_img = json.load(fh)['qemu-img-path']
 
     self.first_disk = os.path.join(self.working_directory, 'first_disk')
     subprocess.check_call([
@@ -2980,7 +2889,6 @@ ihs0:certificate_authority-{hash}-on-watch RUNNING
 ihs0:crond-{hash}-on-watch RUNNING
 ihs0:http-server-{hash}-on-watch RUNNING
 ihs0:kvm-{kvm-hash-value}-on-watch RUNNING
-ihs0:kvm_controller EXITED
 ihs0:monitor-httpd-{hash}-on-watch RUNNING
 ihs0:monitor-httpd-graceful EXITED
 ihs0:nginx-graceful EXITED
