@@ -646,6 +646,7 @@ post = $${directory:script}/apache-httpd-graceful
 recipe = slapos.recipe.build
 new-account-dict = $${dovecot-passwords:new-account-dict}
 error-dict = $${dovecot-passwords:error-dict}
+pw-url = $${publish-connection-information:webmail-url}/password.php
 init =
   for ref, content in options['new-account-dict'].items():
     self.buildout.parse(f"""
@@ -654,6 +655,7 @@ init =
   -slave-reference = {ref}
   address = {content['address']}
   token = {content['token']}
+  setup-url = {options['pw-url']}?user={content['address']}&token={content['token']}
     """)
   
   for ref, content in options['error-dict'].items():
