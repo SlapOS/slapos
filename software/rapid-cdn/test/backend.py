@@ -31,14 +31,10 @@ from socketserver import ThreadingMixIn
 import http.client
 import json
 import logging
-import os
+import socket
 import ssl
 import sys
 import time
-
-
-class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-  pass
 
 
 class ConfigurationReplyEncoder(json.JSONEncoder):
@@ -203,19 +199,37 @@ class TestHandler(BaseHTTPRequestHandler):
     self.wfile_write(body)
 
 
-def server_https_weak_method(ip, port):
-  server_https_weak = ThreadedHTTPServer(
-    (ip, port),
-    TestHandler)
-  context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-  context.load_cert_chain(
-    os.path.join(
-      os.path.dirname(
-        os.path.realpath(__file__)), 'test_data', 'sha1-2048.pem'))
-  server_https_weak.socket = context.wrap_socket(
-    server_https_weak.socket, server_side=True)
-  server_https_weak.serve_forever()
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+  pass
 
 
 if __name__ == '__main__':
-  server_https_weak_method(sys.argv[1], int(sys.argv[2]))
+  class HTTP6Server(ThreadedHTTPServer):
+    address_family = socket.AF_INET6
+  ip, port = sys.argv[1], int(sys.argv[2])
+  if len(sys.argv) > 3:
+    ssl_certificate = sys.argv[3]
+    scheme = 'https'
+  else:
+    ssl_certificate = None
+    scheme = 'http'
+  if ':' in ip:
+    klass = HTTP6Server
+    url_template = '%s://[%s]:%s/'
+  else:
+    klass = ThreadedHTTPServer
+    url_template = '%s://%s:%s/'
+
+  server = klass((ip, port), TestHandler)
+  if ssl_certificate is not None:
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    context.load_cert_chain(ssl_certificate)
+    server.socket = context.wrap_socket(server.socket, server_side=True)
+
+  url = url_template % (scheme, *server.server_address[:2])
+  print(url)
+  print("You can configure the backend with:")
+  print(
+    'curl -X CONFIG -H "X-Config-Global: 1" -H "X-Config-Body: calculate" '
+    '-H "X-Config-Reply-HEader-Content-Length: calculate" %s' % (url,))
+  server.serve_forever()
