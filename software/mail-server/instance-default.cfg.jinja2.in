@@ -420,9 +420,13 @@ copytruncate = true
 [snappymail-files]
 recipe = plone.recipe.command
 target = $${directory:www}
-command = cp -ax ${snappymail:location}/. $${:target}
+command = cp -ax ${snappymail:location}/. $${:target} && mkdir -p $${:target}/data/_data_/_default_/plugins/ && cp -ax ${snappymail-plugins:location}/plugins/* $${:target}/data/_data_/_default_/plugins/
 update-command = $${:command}
 stop-on-error = true
+
+[snappymail-admin-pw]
+recipe = slapos.cookbook:generate.password
+username = admin
 
 [snappymail-conf]
 recipe = slapos.recipe.template:jinja2
@@ -431,6 +435,28 @@ url = ${template-snappymail.jinja2.ini:target}
 output = $${snappymail-files:target}/data/_data_/_default_/configs/application.ini
 context =
   raw mail_domain {{ slapparameter_dict['mail-domains'][0] }}
+  key admin_password snappymail-admin-pw:passwd-sha256-crypt
+
+[snappymail-pw-conf]
+recipe = collective.recipe.template
+output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-change-password.json
+mode = 600
+input = inline:
+  {
+      "plugin": {
+          "pass_min_length": 10,
+          "pass_min_strength": 20,
+          "check_hibp": false,
+          "driver_dovecot_enabled": true
+      }
+  }
+
+[snappymail-pw-driver]
+recipe = slapos.recipe.template:jinja2
+output = $${snappymail-files:target}/data/_data_/_default_/plugins/change-password/drivers/dovecot.php
+url = ${snappymail-pw-driver.jinja2.php:target}
+context =
+  raw dovecot_passwd_file $${dovecot-passwords:target}
 
 [snappymail-domain]
 recipe = slapos.recipe.template:jinja2
@@ -449,6 +475,8 @@ init =
 depends =
   $${snappymail-conf:recipe}
   $${snappymail-domain:recipe}
+  $${snappymail-pw-conf:recipe}
+  $${snappymail-pw-driver:recipe}
 
 
 # Password reset page
@@ -714,6 +742,7 @@ imap-port = $${dovecot-conf:imap-port}
 smtp-port = {{ smtp_port }}
 imap-smtp-ipv6 = {{ ipv6 }}
 webmail-url = $${lamp-frontend-promise:url}
+webmail-admin-password = $${snappymail-admin-pw:passwd}
 password-url = $${:webmail-url}/password.php
 slaves = $${dovecot-passwords:new-account-dict}
 error-dict = $${dovecot-passwords:error-dict}
