@@ -90,13 +90,13 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       "bob@example.com"
     ]:
       cls.requestSlaveInstanceForAccount(address, state=state)
-      cls.requestSlaveInstanceForAccount(address, suffix="-test", state=state)
+    cls.requestSlaveInstanceForAccount("alice@example.com", suffix="-test", state=state)
     return default_instance
   
   @classmethod
-  def requestSlaveInstanceForAccount(cls, address, suffix="", state: str = "started"):
+  def requestSlaveInstanceForAccount(cls, address, suffix="", state: str = "started", additional={}):
     software_url = cls.getSoftwareURL()
-    param_dict = {"address": address}
+    param_dict = {"address": address, **additional}
     return cls.slap.request(
       software_release=software_url,
       partition_reference="SLAVE-%s%s" % (address.replace('@', '-'), suffix),
@@ -142,12 +142,8 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     pw_url = parameter_dict.get("password-url", "<missing>")
     self.assertTrue(pw_url.startswith("http"), "Password URL should start with http")
-    for address in ["alice@example.com", "bob@example.com"]:
-      slave_instance = self.requestSlaveInstanceForAccount(address)
-      connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
-      self.assertEqual(connection_dict.get("address", "<missing>"), address)
-      pw_token = connection_dict.get("token", "<missing>")
-      
+
+    def reset_password(user, token, new_password):
       import urllib.request
       import urllib.parse
       import ssl
@@ -156,10 +152,9 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       ctx.check_hostname = False
       ctx.verify_mode = ssl.CERT_NONE
       
-      new_password = f"testpass_{address.split('@')[0]}"
       data = urllib.parse.urlencode({
-        'user': address,
-        'token': pw_token,
+        'user': user,
+        'token': token,
         'password': new_password
       }).encode('utf-8')
       
@@ -169,17 +164,37 @@ class PostfixTestCase(SlapOSInstanceTestCase):
           response_text = response.read().decode('utf-8')
           self.assertIn("Password updated successfully", response_text)
       except Exception as e:
-        self.fail(f"Password change failed for {address}: {e}")
+        self.fail(f"Password change failed for {user}: {e}")
       
-      import time
+    import time
+
+    for address in ["alice@example.com", "bob@example.com"]:
+      slave_instance = self.requestSlaveInstanceForAccount(address)
+      connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
+      self.assertEqual(connection_dict.get("address", "<missing>"), address)
+      pw_token = connection_dict.get("token", "<missing>")
+      
+      new_password = f"testpass_{address.split('@')[0]}"
+      reset_password(address, pw_token, new_password)
       time.sleep(2)
 
       self.check_imap(address, new_password)
 
-    for address in ["alice@example.com", "bob@example.com"]:
+    for address in ["alice@example.com"]:
       slave_instance = self.requestSlaveInstanceForAccount(address, suffix="-test")
       connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
       self.assertEqual(connection_dict.get("address", "<missing>"), address)
       error = connection_dict.get("error", "<missing>")
       self.assertIn("duplicate", error, f"Expected duplicate error for {address}, got {error}")
-            
+      self.requestSlaveInstanceForAccount(address, suffix="-test", state="destroyed")
+
+    reset_tok = "unique-12345"
+    self.requestSlaveInstanceForAccount("bob@example.com", additional={"reset-token": reset_tok})
+    self.waitForInstance()
+    reset_inst = self.requestSlaveInstanceForAccount("bob@example.com")
+    reset_connection_dict = json.loads(reset_inst.getConnectionParameterDict().get("_", "{}"))
+    self.assertEqual(reset_connection_dict.get("token", "<missing>"), reset_tok)
+    new_password = "newpass_bob"
+    reset_password("bob@example.com", reset_tok, new_password)
+    time.sleep(2)
+    self.check_imap("bob@example.com", new_password)
