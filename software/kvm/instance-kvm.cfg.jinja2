@@ -402,7 +402,7 @@ network-adapter = ${slap-parameter:network-adapter}
 ram-size = ${slap-parameter:ram-size}
 smp-count = ${slap-parameter:cpu-count}
 
-pid-file = ${directory:run}/pid_file
+pid-file = ${directory:run}/kvm.pid
 qmp-socket-path = ${directory:run}/qmp_socket
 vnc-socket-path = ${directory:run}/vnc_socket
 
@@ -509,7 +509,7 @@ depends =
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/kvm
-command-line = {{ python_executable }} {{ template_kvm_run }} ${kvm-parameter-dict:output}
+command-line = {{ python_eggs_executable }} {{ template_kvm_run }} ${kvm-parameter-dict:output}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files =
 {%- for hash_file in hash_file_list %}

@@ -22,15 +22,13 @@ tmpfile=$(mktemp --tmpdir={{ directory['tmp'] }})
 # assure the temporary directory is cleaned up
 trap "rm -rf $tmpdir $tmpfile" EXIT TERM INT
 
-if [ -d $BACKUP_DIR/ide0-hd0 ] ; then
-  disk_type="ide0-hd0"
-elif [ -d $BACKUP_DIR/virtio0 ] ; then
-  disk_type=virtio0
+if [ -d $BACKUP_DIR/virtual1 ] ; then
+  dir=$BACKUP_DIR/virtual1
 else
-  echo "Unsupported disk type"
+  echo "Backup not found"
   exit 1
 fi
 
 rm -f $VM_DIR/virtual.qcow2 $VM_DIR/virtual.qcow2.tmp
-{{ qmprestore }} merge --dir $BACKUP_DIR/$disk_type --target $VM_DIR/virtual.qcow2.tmp
+{{ qmprestore }} merge --dir $dir --target $VM_DIR/virtual.qcow2.tmp
 mv $VM_DIR/virtual.qcow2.tmp $VM_DIR/virtual.qcow2
