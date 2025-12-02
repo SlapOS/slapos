@@ -9,6 +9,7 @@ extends =
 parts =
     directory
     publish-instance-info
+    monitor-base
 
 #   gitlab-<prog>
 # ? mailroom
@@ -36,7 +37,6 @@ parts =
     cron-entry-logrotate
     logrotate-entry-cron
 
-    on-reinstantiate
     gitaly-socket-listening-promise
 
 # std stuff for slapos instance
@@ -93,6 +93,7 @@ user    = {{ pwd.getpwuid(os.getuid())[0] }}
 
 
 [publish-instance-info]
+<= monitor-publish
 recipe  = slapos.cookbook:publish
 backend_url = ${backend-info:url}
 
@@ -126,7 +127,7 @@ log     = ${directory:log}/gitlab
 var     = ${directory:var}/gitlab
 tmp     = ${:var}/tmp
 uploads = ${:var}/uploads
-assets  = ${:var}/assets
+# assets  = ${:var}/assets
 shared  = ${:var}/shared
 artifacts = ${:shared}/artifacts
 lfs-objects = ${:shared}/lfs-objects
@@ -153,7 +154,7 @@ log     = ${gitlab-dir:log}
 var     = ${gitlab-dir:var}
 tmp     = ${gitlab-dir:tmp}
 uploads = ${gitlab-dir:uploads}
-assets  = ${gitlab-dir:assets}
+#assets  = XX{gitlab-dir:assets}
 shared  = ${gitlab-dir:shared}
 artifacts = ${gitlab-dir:artifacts}
 lfs-objects = ${gitlab-dir:lfs-objects}
@@ -440,11 +441,15 @@ tune-command =
     cd ../../public  &&
     rm -rf uploads assets  &&
     ln -sf ${gitlab:uploads} uploads  &&
-    ln -sf ${gitlab:assets} assets
+    ln -sf {{ gitlab_repository_location }}/public/assets assets &&
+# app/assets/javascripts/
+    cd ../app/assets/javascripts &&
+    rm -rf locale  &&
+    ln -sf {{ gitlab_repository_location }}/app/assets/javascripts/locale locale
 
 # Remove this file after gitlab work is installed, so that yarn install can run
-post-install-command =
-    rm -f ${gitlab:var}/current-gitlab-head
+#post-install-command =
+#    rm -f ${gitlab:var}/current-gitlab-head
 
 
 # ----//---- for gitlab-shell
@@ -912,48 +917,6 @@ command-line    = {{ gitaly_location }}/bin/gitaly ${gitaly-config.toml:output}
 environment =
     PATH={{ buildout_bin_directory }}:{{ ruby_location }}/bin:/bin:/usr/bin
 
-
-# 6. on-reinstantiate actions
-
-# NOTE here we only recompile assets. Other on-reinstantiate actions, which
-# require pg and redis running, are performed as part of puma service -
-# right before its startup (see gitlab-puma-startup).
-[gitlab-yarn-install]
-recipe = slapos.recipe.template
-inline =
-  #!/bin/sh -e
-
-  export PATH={{ node_bin_location }}:{{ yarn_location }}/bin:$PATH
-  RAKE=${gitlab-rake:wrapper-path}
-
-  cd ${gitlab-work:location}
-  GITLAB_HEAD_FILE=${gitlab:var}/current-gitlab-head
-  SAVED_HEAD=$([ -s "$GITLAB_HEAD_FILE" ] && cat $GITLAB_HEAD_FILE || true)
-  CURRENT_HEAD=$({{ git }} rev-parse HEAD)
-  if [ "$CURRENT_HEAD" = "$SAVED_HEAD" ];
-  then
-    # if there was no changes in gitlab folder, no need to re-intall
-    exit 0;
-  fi
-
-  $RAKE gitlab:assets:clean
-  $RAKE gettext:compile RAILS_ENV=production
-  yarn install --prefer-offline --production --pure-lockfile
-  $RAKE gitlab:assets:compile NODE_ENV=production NODE_OPTIONS="--max_old_space_size=4096"
-
-  echo $CURRENT_HEAD > $GITLAB_HEAD_FILE
-
-output = ${directory:bin}/yarn-check-install
-
-
-[on-reinstantiate]
-recipe  = plone.recipe.command
-stop-on-error   = true
-rake    = ${gitlab-rake:wrapper-path}
-# run command on every reinstantiation
-update-command = ${:command}
-
-command = ${gitlab-yarn-install:output}
 
 # Promise, gitlab can connect to gitaly:
 # sudo gitlab-rake gitlab:tcp_check[GITALY_SERVER_IP,GITALY_LISTEN_PORT]
