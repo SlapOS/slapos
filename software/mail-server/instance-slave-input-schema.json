@@ -6,6 +6,12 @@
     "address": {
       "title": "E-mail address",
       "type": "string"
+    },
+    "reset-token": {
+      "title": "Password reset token",
+      "type": "string",
+      "description": "To reset the password for this account, set this property to some unique string. This string will become a one-time-use token that can be used to reset the user's password as if it has just been created.",
+      "minLength": 10
     }
   },
   "required": [

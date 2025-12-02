@@ -127,15 +127,19 @@ recipe = slapos.recipe.build
 # not using location to avoid Buildout ever deleting it
 target = $${directory:etc}/dovecot-passwd
 init =
+  PASSWD_COLS = ['name', 'passwd', 'uid', 'gid', 'gecos', 'dir', 'shell', 'extra_fields']
+
+  from itertools import chain, repeat
   import uuid
 
   try:
     with open(options['target'], 'r') as fp:
-      output = list(filter(None, fp.read().splitlines()))
+      passdb = fp.read()
   except:
-    output = []
-
-  existing_users = {row.split(":")[0] for row in output}
+    passdb = ""
+  finally:
+    output = [dict(zip(PASSWD_COLS, chain(row.split(":"), repeat('')))) for row in filter(None, passdb.splitlines())]
+    output = {row['name']: row for row in output}
 
   new_account_dict = {}
   error_dict = {}
@@ -156,11 +160,13 @@ init =
     processed_addresses.add(addr)
     
     # If address doesn't exist in dovecot-passwd file, create new account
-    if addr not in existing_users:
-      token = str(uuid.uuid4())
+    if (token := slave['parameters'].get('reset-token', "")) or ((addr not in output) and (token := str(uuid.uuid4()))):
       new_account_dict[slave['reference']] = {'address': addr, 'token': token}
-      output.append(f"{addr}:{token}::::::fail")
-      existing_users.add(addr)
+      output[addr] = {
+        'name': addr,
+        'passwd': token,
+        'extra_fields': 'fail'
+      }
 
   options['new-account-dict'] = new_account_dict
   options['error-dict'] = error_dict
@@ -168,16 +174,18 @@ init =
   if {{ slapparameter_dict['test-account'] }}:
     for domain in {{ repr(slapparameter_dict['mail-domains']) }}:
       test_mail = f"testmail@{domain}"
-      if test_mail not in existing_users:
-        output.append(f"{test_mail}:password123::")
+      if test_mail not in output:
+        output[test_mail] = {
+          'name': test_mail,
+          'passwd': 'password123'
+        }
 
-  self.output = output
+  self.output = [":".join(row.get(col, '') for col in PASSWD_COLS) for row in output.values()]
 
   options['location'] = ''  # we don't care about the part folder existing
 install =
   with open(options['target'], 'w') as fp:
-    for row in self.output:
-      fp.write(f"{row}\n")
+    fp.write("\n".join(self.output))
 
 [dovecot-wrapper]
 recipe = slapos.recipe.template
