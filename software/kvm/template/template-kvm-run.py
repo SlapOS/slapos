@@ -10,6 +10,8 @@ import re
 import json
 import operator
 import sys
+import signal
+from slapos.qemuqmpclient import QemuQMPWrapper
 
 with open(sys.argv[1]) as fh:
   parameter_dict = json.load(fh)
@@ -320,13 +322,15 @@ kvm_argument_list = [
   # see https://wiki.gentoo.org/wiki/QEMU/Options#USB
   '-usbdevice', 'tablet',
 ]
+DISK_INFO_COUNT = 1
 for disk_info in disk_info_list:
   kvm_argument_list += (
     '-drive',
-    'file=%s,if=%s,discard=on%s' % (
-      disk_info['path'], disk_type,
+    'node-name=%s,file=%s,if=%s,discard=on%s' % (
+      'virtual%s' % (DISK_INFO_COUNT,), disk_info['path'], disk_type,
       ''.join(',%s=%s' % x for x in disk_info.items() if x[0] != 'path'))
   )
+  DISK_INFO_COUNT += 1
 
 rgx = re.compile(r'^[\w*\,][\=\d+\-\,\w]*$')
 for numa in numa_list:
@@ -426,5 +430,26 @@ if boot_image_url_select_json_config:
   # Support boot-image-url-select
   handle_image(boot_image_url_select_json_config, 'boot-image-url-select')
 
+
+def clean_shutdown_handler(signum, frame):
+  print("Gracefully stopping qemu")
+  qemu_wrapper = QemuQMPWrapper(qmp_socket_path)
+  qemu_wrapper._send({"execute": "quit"})
+  print("Gracefully stopped qemu")
+
+
+signal_list = [signal.SIGTERM, signal.SIGHUP, signal.SIGQUIT, signal.SIGINT]
 print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))
-os.execv(qemu_path, kvm_argument_list)
+# ignore signal for the subprocess
+for s in signal_list:
+  signal.signal(s, signal.SIG_IGN)
+# start the subprocess with new session in order to escape group signal
+# propagation # as it defies the whole idea of clean shutdown on SIGTERM to
+# *this* process
+kvm_process = subprocess.Popen(
+  kvm_argument_list, restore_signals=False, start_new_session=True)
+# register signals for clean shutdown
+for s in signal_list:
+  signal.signal(s, clean_shutdown_handler)
+# forever wait
+kvm_process.wait()
