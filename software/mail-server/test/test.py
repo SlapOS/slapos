@@ -120,6 +120,25 @@ class PostfixTestCase(SlapOSInstanceTestCase):
   def test_dovecot(self):
     self.check_imap("testmail@example.com", "password123")
 
+  def test_webmail(self):
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    webmail_url = parameter_dict.get("webmail-url", "<missing>")
+    self.assertTrue(webmail_url.startswith("http"), "Webmail URL should start with http")
+
+    import urllib.request
+    import ssl
+
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+    try:
+      with urllib.request.urlopen(webmail_url, timeout=10, context=ctx) as response:
+        response_text = response.read().decode('utf-8')
+        self.assertIn("SnappyMail", response_text)
+    except Exception as e:
+      self.fail(f"Webmail access failed: {e}")
+
   def test_slaves(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     pw_url = parameter_dict.get("password-url", "<missing>")
