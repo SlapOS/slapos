@@ -315,6 +315,12 @@ class SharedInstanceResultDB(HostedInstanceLocalDB):
       valid_list: List of dicts with 'reference' and 'parameters' keys
       invalid_list: List of dicts with 'reference' and 'parameters' keys
     """
+    # If both lists are empty, skip update to avoid deleting all historical data
+    # An empty update list would cause InstanceListComparator to treat all
+    # stored instances as "removed", leading to unintended deletion
+    if not valid_list and not invalid_list:
+      return
+
     # Combine valid and invalid into update list (optimize list building)
     update_list = [
       {"parameters": item["parameters"], "reference": item["reference"]}
