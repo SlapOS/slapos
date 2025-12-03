@@ -1,7 +1,3 @@
-#!{{ parameter_dict.get('python-path') }}
-# BEWARE: This file is operated by slapos node
-# BEWARE: It will be overwritten automatically
-
 import hashlib
 import os
 import socket
@@ -13,38 +9,40 @@ import glob
 import re
 import json
 import operator
+import sys
+import signal
+from slapos.qemuqmpclient import QemuQMPWrapper
 
-# XXX: give all of this through parameter, don't use this as template, but as module
-qemu_img_path = {{ repr(parameter_dict["qemu-img-path"]) }}
-qemu_path = {{ repr(parameter_dict["qemu-path"]) }}
-disk_size = {{ repr(parameter_dict["disk-size"]) }}
-disk_type = {{ repr(parameter_dict["disk-type"]) }}
+with open(sys.argv[1]) as fh:
+  parameter_dict = json.load(fh)
 
-network_adapter = {{ repr(parameter_dict["network-adapter"]) }}
+qemu_img_path = parameter_dict["qemu-img-path"]
+qemu_path = parameter_dict["qemu-path"]
+disk_size = parameter_dict["disk-size"]
+disk_type = parameter_dict["disk-type"]
 
-qmp_socket_path = '{{ parameter_dict.get("qmp-socket-path") }}'
-vnc_socket_path = '{{ parameter_dict.get("vnc-socket-path") }}'
+network_adapter = parameter_dict["network-adapter"]
 
-nat_rules = '{{ parameter_dict.get("nat-rules") }}'.strip()
-use_tap = '{{ parameter_dict.get("use-tap") }}'.lower()
-use_nat = '{{ parameter_dict.get("use-nat") }}'.lower()
-set_nat_restrict = '{{ parameter_dict.get("nat-restrict") }}'.lower()
-enable_vhost = '{{ parameter_dict.get("enable-vhost") }}'.lower()
-tap_interface = '{{ parameter_dict.get("tap-interface") }}'
-listen_ip = '{{ parameter_dict.get("ipv4") }}'
-mac_address = '{{ parameter_dict.get("mac-address") }}'
-tap_mac_address = '{{ parameter_dict.get("tap-mac-address") }}'
-tap_ipv6_addr = '{{ parameter_dict.get("tap-ipv6-addr") }}'
-numa_list = '{{ parameter_dict.get("numa", "") }}'.split()
-ram_max_size = '{{ parameter_dict.get("ram-max-size") }}'
-init_ram_size = {{ parameter_dict.get("init-ram-size") }}
-init_smp_count = {{ parameter_dict.get("init-smp-count") }}
-pid_file_path = '{{ parameter_dict.get("pid-file-path") }}'
-external_disk_number = {{ parameter_dict.get("external-disk-number") }}
-external_disk_size = {{ parameter_dict.get("external-disk-size") }}
-external_disk_format = {{ repr(parameter_dict["external-disk-format"]) }}
-external_disk = {{ parameter_dict['external-disk'] }}
-etc_directory = '{{ parameter_dict.get("etc-directory") }}'.strip()
+qmp_socket_path = parameter_dict.get("qmp-socket-path")
+vnc_socket_path = parameter_dict.get("vnc-socket-path")
+
+nat_rules = parameter_dict.get("nat-rules").strip()
+use_tap = parameter_dict.get("use-tap").lower()
+use_nat = parameter_dict.get("use-nat").lower()
+set_nat_restrict = parameter_dict.get("nat-restrict")
+enable_vhost = parameter_dict.get("enable-vhost").lower()
+tap_interface = parameter_dict.get("tap-interface")
+listen_ip = parameter_dict.get("ipv4")
+mac_address = parameter_dict.get("mac-address")
+tap_mac_address = parameter_dict.get("tap-mac-address")
+tap_ipv6_addr = parameter_dict.get("tap-ipv6-addr")
+numa_list = parameter_dict.get("numa", "").split()
+pid_file_path = parameter_dict.get("pid-file")
+external_disk_number = parameter_dict.get("external-disk-number")
+external_disk_size = parameter_dict.get("external-disk-size")
+external_disk_format = parameter_dict["external-disk-format"]
+external_disk = eval(parameter_dict['external-disk'])
+etc_directory = parameter_dict.get("etc-directory").strip()
 last_disk_num_f = os.path.join(etc_directory, '.data-disk-amount')
 if os.path.exists(last_disk_num_f):
   with open(last_disk_num_f, 'r') as lf:
@@ -54,56 +52,60 @@ else:
 if len(external_disk) > 0:
   conflict_list = []
   if int(external_disk_number) > 0:
-    conflict_list.append('conflicts with external-disk-number = %s' % (external_disk_number,))
+    conflict_list.append('conflicts with external-disk-number = %s' % (
+      external_disk_number,))
   if last_amount > 0:
-    conflict_list.append('conflicts with already configured disks amount %s in %s' % (last_amount, last_disk_num_f))
+    conflict_list.append(
+      'conflicts with already configured disks amount %s in %s' % (
+        last_amount, last_disk_num_f))
   if len(conflict_list) > 0:
     raise ValueError('external-disk problems: ' + ', '.join(conflict_list))
-instance_root = '{{ parameter_dict['instance-root'] }}'
+instance_root = parameter_dict['instance-root']
 disk_storage_dict = {}
-disk_storage_list = """{{ parameter_dict.get("disk-storage-list") }}""".split('\n')
+disk_storage_list = parameter_dict.get("disk-storage-list").split('\n')
 map_storage_list = []
-httpd_port = {{ parameter_dict.get("httpd-port") }}
-netcat_bin = '{{ parameter_dict.get("netcat-binary") }}'.strip()
-cluster_doc_host = '{{ parameter_dict.get("cluster-doc-host") }}'
-cluster_doc_port = {{ parameter_dict.get("cluster-doc-port") }}
-auto_ballooning = '{{ parameter_dict.get("auto-ballooning") }}' in ('true', 'True', '1')
-vm_name = '{{ parameter_dict.get("name") }}'
+httpd_port = int(parameter_dict["httpd-port"])
+netcat_bin = parameter_dict.get("netcat-binary").strip()
+cluster_doc_host = parameter_dict.get("cluster-doc-host")
+cluster_doc_port = int(parameter_dict.get("cluster-doc-port"))
+auto_ballooning = parameter_dict.get("auto-ballooning") in (
+  'true', 'True', '1')
+vm_name = parameter_dict.get("name")
 
 # If a device (ie.: /dev/sdb) is provided, use it instead
 # the disk_path with disk_format
 disk_info_list = []
-for disk_device_path in '{{ parameter_dict.get("disk-device-path", "") }}'.split():
+for disk_device_path in parameter_dict.get("disk-device-path", "").split():
   if disk_device_path.startswith("/dev/"):
     disk_info_list.append({
       'path': disk_device_path,
       'format': "raw",
-      'aio': "{{ parameter_dict['disk-aio'] or 'native' }}",
-      'cache': "{{ parameter_dict['disk-cache'] or 'none' }}",
+      'aio': parameter_dict['disk-aio'] or 'native',
+      'cache': parameter_dict['disk-cache'] or 'none',
     })
 
-if not disk_info_list:
-  disk_info_list.append({
-{%- for k in 'path', 'format', 'aio', 'cache' %}
-{%-   set v = parameter_dict['disk-' + k] %}
-{%-   if v %}
-    {{ repr(k) }}: {{ repr(v) }},
-{%-   endif %}
-{%- endfor %}
-  })
+if len(disk_info_list) == 0:
+  d = {}
+  for k in ['path', 'format', 'aio', 'cache']:
+    v = parameter_dict['disk-' + k]
+    if v:
+      d[k] = v
+  disk_info_list.append(d)
 
-smp_max_count = {{ parameter_dict.get("smp-max-count") }}
-machine_options = '{{ parameter_dict.get("machine-options", "") }}'.strip()
-cpu_model = '{{ parameter_dict.get("cpu-model") }}'.strip()
+machine_options = parameter_dict.get("machine-options", "").strip()
+cpu_model = parameter_dict.get("cpu-model").strip()
 
-enable_device_hotplug = '{{ parameter_dict.get("enable-device-hotplug") }}'.lower()
+logfile = parameter_dict.get("log-file")
 
-logfile = '{{ parameter_dict.get("log-file") }}'
+boot_image_url_list_json_config = parameter_dict.get(
+  "boot-image-url-list-json-config")
+boot_image_url_select_json_config = parameter_dict.get(
+  "boot-image-url-select-json-config")
+virtual_hard_drive_url_json_config = parameter_dict.get(
+  "virtual-hard-drive-url-json-config")
+virtual_hard_drive_gzipped = parameter_dict.get(
+  "virtual-hard-drive-gzipped").strip().lower()
 
-boot_image_url_list_json_config = '{{ parameter_dict.get("boot-image-url-list-json-config") }}'
-boot_image_url_select_json_config = '{{ parameter_dict.get("boot-image-url-select-json-config") }}'
-virtual_hard_drive_url_json_config = '{{ parameter_dict.get("virtual-hard-drive-url-json-config") }}'
-virtual_hard_drive_gzipped = '{{ parameter_dict.get("virtual-hard-drive-gzipped") }}'.strip().lower()
 
 def md5Checksum(file_path):
     with open(file_path, 'rb') as fh:
@@ -115,10 +117,11 @@ def md5Checksum(file_path):
             m.update(data)
         return m.hexdigest()
 
+
 def getSocketStatus(host, port):
   s = None
   for af, socktype, proto, canonname, sa in socket.getaddrinfo(
-      host, port, socket.AF_UNSPEC, socket.SOCK_STREAM):
+    host, port, socket.AF_UNSPEC, socket.SOCK_STREAM):
     try:
       s = socket.socket(af, socktype, proto)
       s.connect(sa)
@@ -127,6 +130,7 @@ def getSocketStatus(host, port):
       if s:
         s.close()
         s = None
+
 
 def getMapStorageList(disk_storage_dict, external_disk_number):
   map_disk_file = os.path.join(etc_directory, '.data-disk-ids')
@@ -148,7 +152,7 @@ def getMapStorageList(disk_storage_dict, external_disk_number):
           # Mean that this disk path has been removed (disk unmounted)
           last_amount -= 1
   for key in disk_storage_dict:
-    if not key in id_list:
+    if key not in id_list:
       id_list.append(key)
 
   if id_list:
@@ -164,14 +168,17 @@ def getMapStorageList(disk_storage_dict, external_disk_number):
       lf.write('%s' % external_disk_number)
   return id_list, external_disk_number
 
+
 # Use downloaded virtual-hard-drive-url
-if len(disk_info_list) == 1 and not os.path.exists(disk_info_list[0]['path']) and virtual_hard_drive_url_json_config != '':
+if len(disk_info_list) == 1 and not os.path.exists(
+  disk_info_list[0]['path']) and virtual_hard_drive_url_json_config != '':
   print('Using virtual hard drive...')
   with open(virtual_hard_drive_url_json_config) as fh:
     image_config = json.load(fh)
   if image_config['error-amount'] == 0:
     image = image_config['image-list'][0]
-    downloaded_image = os.path.join(image_config['destination-directory'], image['destination'])
+    downloaded_image = os.path.join(
+      image_config['destination-directory'], image['destination'])
     if not os.path.exists(downloaded_image):
       raise ValueError('virtual-hard-drive-url not present yet')
     # previous version was using disk in place, but here it would result with
@@ -195,21 +202,26 @@ if len(disk_info_list) == 1 and not os.path.exists(disk_info_list[0]['path']) an
   else:
     raise ValueError('virtual-hard-drive-url not ready yet')
 
-if len(disk_info_list) == 1 and not disk_info_list[0]['path'].startswith("/dev/"):
+if len(disk_info_list) == 1 and not disk_info_list[0]['path'].startswith(
+  "/dev/"):
   if not os.path.exists(disk_info_list[0]['path']):
     # Create disk if doesn't exist
     # XXX: move to Buildout profile
     print('Creating virtual hard drive...')
-    subprocess.check_call([qemu_img_path, 'create' ,'-f', disk_info_list[0]['format'],
-        disk_info_list[0]['path'], '%sG' % disk_size])
+    subprocess.check_call([
+      qemu_img_path, 'create', '-f', disk_info_list[0]['format'],
+      disk_info_list[0]['path'], '%sG' % disk_size])
     print('Done.')
   else:
     # Migrate from old qmpbackup bitmap if needed
-    image_info_dict = json.loads(subprocess.check_output([qemu_img_path, 'info', '--output', 'json',
-        disk_info_list[0]['path']]))
-    for bitmap in image_info_dict.get('format-specific', {}).get('data', {}).get('bitmaps', []):
+    image_info_dict = json.loads(subprocess.check_output([
+      qemu_img_path, 'info', '--output', 'json', disk_info_list[0]['path']]))
+    for bitmap in image_info_dict.get('format-specific', {}).get(
+      'data', {}).get('bitmaps', []):
       if bitmap.get('name', '').startswith('qmpbackup-%s' % (disk_type,)):
-        subprocess.check_call([qemu_img_path, 'bitmap' ,'--remove', disk_info_list[0]['path'], bitmap['name']])
+        subprocess.check_call([
+          qemu_img_path, 'bitmap', '--remove', disk_info_list[0]['path'],
+          bitmap['name']])
         print('Removed bitmap %s' % (bitmap['name'],))
 
 # Check and create external disk
@@ -219,8 +231,8 @@ for storage in disk_storage_list:
     key, val = storage.split(' ')
     disk_storage_dict[key.strip()] = val.strip()
 
-map_storage_list, external_disk_number = getMapStorageList(disk_storage_dict,
-                                                      int(external_disk_number))
+map_storage_list, external_disk_number = getMapStorageList(
+  disk_storage_dict, int(external_disk_number))
 
 assert len(map_storage_list) == len(disk_storage_dict)
 if disk_storage_dict:
@@ -229,19 +241,22 @@ if disk_storage_dict:
     while (index < len(disk_storage_dict)) and (index < external_disk_number):
       path = disk_storage_dict[map_storage_list[index]]
       if os.path.exists(path):
-        disk_filepath = os.path.join(path,
-                                  'kvm_virtual_disk.%s' % external_disk_format)
+        disk_filepath = os.path.join(
+          path, 'kvm_virtual_disk.%s' % external_disk_format)
         disk_list = glob.glob('%s.*' % os.path.join(path, 'kvm_virtual_disk'))
         if disk_list == []:
           print('Creating one additional virtual hard drive...')
-          process = subprocess.check_call([qemu_img_path, 'create' ,'-f', external_disk_format,
-              disk_filepath, '%sG' % external_disk_size])
+          process = subprocess.check_call([
+            qemu_img_path, 'create', '-f', external_disk_format,
+            disk_filepath, '%sG' % external_disk_size])
         else:
           # Cannot change or recreate if disk is exists
           disk_filepath = disk_list[0]
         additional_disk_list.append(disk_filepath)
       else:
-        print('Data folder %s was not used to create external disk %r' % (index +1))
+        print(
+          'Data folder %s was not used to create external disk %r' % (
+            index + 1))
       index += 1
 
 # Generate network parameters
@@ -270,50 +285,54 @@ if use_nat == 'true':
     )
 
   if httpd_port > 0:
-    rules += ',guestfwd=tcp:10.0.2.100:80-cmd:%s %s %s' % (netcat_bin,
-                                                        listen_ip, httpd_port)
+    rules += ',guestfwd=tcp:10.0.2.100:80-cmd:%s %s %s' % (
+      netcat_bin, listen_ip, httpd_port)
   if cluster_doc_host and cluster_doc_port > 0:
-    rules += ',guestfwd=tcp:10.0.2.101:443-cmd:%s %s %s' % (netcat_bin,
-                                           cluster_doc_host, cluster_doc_port)
+    rules += ',guestfwd=tcp:10.0.2.101:443-cmd:%s %s %s' % (
+      netcat_bin, cluster_doc_host, cluster_doc_port)
   if set_nat_restrict == 'true':
     rules += ',restrict=on'
   if use_tap == 'true' and tap_ipv6_addr != '':
     rules += ',ipv6=off'
-  nat_network_parameter = ['-netdev', rules,
-          '-device', '%s,netdev=lan%s,mac=%s' % (network_adapter, number, mac_address)]
+  nat_network_parameter = [
+    '-netdev', rules, '-device', '%s,netdev=lan%s,mac=%s' % (
+      network_adapter, number, mac_address)]
 if use_tap == 'true':
   number += 1
   vhost = ''
   if enable_vhost == 'true':
     vhost = ',vhost=on'
-  tap_network_parameter = ['-netdev',
-          'tap,id=lan%s,ifname=%s,script=no,downscript=no%s' % (number,
-            tap_interface, vhost),
-          '-device', '%s,netdev=lan%s,mac=%s' % (network_adapter, number, tap_mac_address)]
+  tap_network_parameter = [
+    '-netdev', 'tap,id=lan%s,ifname=%s,script=no,downscript=no%s' % (
+      number, tap_interface, vhost),
+    '-device', '%s,netdev=lan%s,mac=%s' % (
+      network_adapter, number, tap_mac_address)]
 
-smp = '%s,maxcpus=%s' % (init_smp_count, smp_max_count)
-ram = '%sM,slots=128,maxmem=%sM' % (init_ram_size, ram_max_size)
-
-kvm_argument_list = [qemu_path,
-  '-enable-kvm', '-smp', smp, '-name', vm_name, '-m', ram, '-vga', 'std',
+kvm_argument_list = [
+  qemu_path, '-enable-kvm', '-name', vm_name, '-vga', 'std',
+  '-smp', str(parameter_dict['smp-count']),
+  '-m', '%sM' % (parameter_dict['ram-size'],),
   '-vnc', 'unix:%s,websocket=unix:%s' % (vnc_socket_path, vnc_socket_path),
   '-boot', 'order=cd,menu=on',
   '-qmp', 'unix:%s,server,nowait' % qmp_socket_path,
   '-pidfile', pid_file_path, '-msg', 'timestamp=on',
   '-D', logfile,
   '-nodefaults',
-  # switch to tablet mode for the mouse to have it synced with a client, see https://wiki.gentoo.org/wiki/QEMU/Options#USB
+  # switch to tablet mode for the mouse to have it synced with a client
+  # see https://wiki.gentoo.org/wiki/QEMU/Options#USB
   '-usbdevice', 'tablet',
 ]
+DISK_INFO_COUNT = 1
 for disk_info in disk_info_list:
   kvm_argument_list += (
     '-drive',
-    'file=%s,if=%s,discard=on%s' % (
-      disk_info['path'], disk_type,
+    'node-name=%s,file=%s,if=%s,discard=on%s' % (
+      'virtual%s' % (DISK_INFO_COUNT,), disk_info['path'], disk_type,
       ''.join(',%s=%s' % x for x in disk_info.items() if x[0] != 'path'))
   )
+  DISK_INFO_COUNT += 1
 
-rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
+rgx = re.compile(r'^[\w*\,][\=\d+\-\,\w]*$')
 for numa in numa_list:
   if rgx.match(numa):
     numa_parameter.extend(['-numa', numa])
@@ -326,24 +345,27 @@ else:
 
 for disk in additional_disk_list:
   kvm_argument_list.extend([
-            '-drive', 'file=%s,if=%s' % (disk, disk_type)])
+    '-drive', 'file=%s,if=%s' % (disk, disk_type)])
 
 # support external-disk parameter
 # allow empty index if only one disk is provided
 if len(external_disk) > 1:
   for key, value in external_disk.items():
     if 'index' not in value:
-      raise ValueError('index is missing and more than one disk is present in external-disk configuration')
-for disk_info in sorted(external_disk.values(), key=operator.itemgetter('index')):
+      raise ValueError(
+        'index is missing and more than one disk is present in external-disk '
+        'configuration')
+for disk_info in sorted(
+  external_disk.values(), key=operator.itemgetter('index')):
   if disk_info['path'].startswith('rbd:') or disk_info['path'].startswith('/'):
     path = disk_info['path']
   else:
     path = os.path.join(instance_root, disk_info['path'])
 
   drive_argument_list = [
-    "file=%s" %( path,),
-    "if=%s" % (disk_type,),
-    "cache=%s" % (disk_info.get('cache', 'writeback'),)
+    "file=%s" % (path, ),
+    "if=%s" % (disk_type, ),
+    "cache=%s" % (disk_info.get('cache', 'writeback'), )
   ]
   if disk_info.get('format', 'autodetect') != 'autodetect':
     drive_argument_list.append(
@@ -374,16 +396,19 @@ if machine_options and len(machine_option_list) > 0:
     kvm_argument_list.extend(['-machine', machine])
 
 if cpu_model:
-  rgx = re.compile('^[\w*\,-_][\=\d+\-\,\w]*$')
+  rgx = re.compile(r'^[\w*\,-_][\=\d+\-\,\w]*$')
   if rgx.match(cpu_model):
     kvm_argument_list.extend(['-cpu', cpu_model])
+
 
 def handle_image(config, name):
   with open(config) as fh:
     image_config = json.load(fh)
   if image_config['error-amount'] == 0:
-    for image in sorted(image_config['image-list'], key=lambda k: k['image-number']):
-      destination = os.path.join(image_config['destination-directory'], image['destination'])
+    for image in sorted(
+      image_config['image-list'], key=lambda k: k['image-number']):
+      destination = os.path.join(
+        image_config['destination-directory'], image['destination'])
       if os.path.exists(destination):
         kvm_argument_list.extend([
           '-drive',
@@ -393,6 +418,7 @@ def handle_image(config, name):
        raise ValueError('%s not ready yet' % (name,))
   else:
     raise ValueError('%s not ready yet' % (name,))
+
 
 # Note: Do not get tempted to use virtio-scsi-pci, as it does not work with
 #       Debian installation CDs, rendering it uninstallable
@@ -404,5 +430,26 @@ if boot_image_url_select_json_config:
   # Support boot-image-url-select
   handle_image(boot_image_url_select_json_config, 'boot-image-url-select')
 
+
+def clean_shutdown_handler(signum, frame):
+  print("Gracefully stopping qemu")
+  qemu_wrapper = QemuQMPWrapper(qmp_socket_path)
+  qemu_wrapper._send({"execute": "quit"})
+  print("Gracefully stopped qemu")
+
+
+signal_list = [signal.SIGTERM, signal.SIGHUP, signal.SIGQUIT, signal.SIGINT]
 print('Starting KVM: \n %s' % ' '.join(kvm_argument_list))
-os.execv(qemu_path, kvm_argument_list)
+# ignore signal for the subprocess
+for s in signal_list:
+  signal.signal(s, signal.SIG_IGN)
+# start the subprocess with new session in order to escape group signal
+# propagation # as it defies the whole idea of clean shutdown on SIGTERM to
+# *this* process
+kvm_process = subprocess.Popen(
+  kvm_argument_list, restore_signals=False, start_new_session=True)
+# register signals for clean shutdown
+for s in signal_list:
+  signal.signal(s, clean_shutdown_handler)
+# forever wait
+kvm_process.wait()

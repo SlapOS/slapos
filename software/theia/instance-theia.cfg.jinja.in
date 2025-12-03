@@ -470,7 +470,7 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line = $${theia-service:output}  --hostname=$${:hostname} --port=$${:port} $${directory:project}
 hash-existing-files =
-  ${yarn.lock:target}
+  ${package-lock.json:target}
   ${theia-wrapper:output}
 ip =  {{ ipv4_random }}
 hostname = $${:ip}
