@@ -7,7 +7,12 @@ import re
 import urllib.parse
 import subprocess
 import json
-from slapos.recipe.requestinstancelist import Recipe as RequestInstanceListRecipe
+import sys
+from slapos.recipe.requestinstancelist import (
+  Recipe as RequestInstanceListRecipe,
+  parse_command_line_args,
+  load_config_and_create_objects
+)
 from slapos.recipe.localinstancedb import LocalDBAccessor
 
 # Cipher constants from instance-master.cfg.in
@@ -670,3 +675,60 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
     else:
       # DNS verification failed
       return False, [error_message], validation_info
+
+
+def main():
+  """
+  Main entry point for command-line execution.
+  """
+  try:
+    # Parse command-line arguments
+    args = parse_command_line_args()
+    
+    # Load config file and create buildout/options dicts with PID file locking
+    buildout, options, pidfile_lock = load_config_and_create_objects(
+      args.cfg,
+      args.pidfile,
+      section_name='slaposinstancenode'
+    )
+    
+    # Use PID file lock as context manager to prevent multiple instances
+    if pidfile_lock:
+      with pidfile_lock:
+        # Create recipe instance
+        recipe = CDNRequestRecipe(
+          buildout=buildout,
+          name='cdn-request',
+          options=options
+        )
+        
+        # Run the recipe
+        recipe.install()
+    else:
+      # No PID file locking
+      # Create recipe instance
+      recipe = CDNRequestRecipe(
+        buildout=buildout,
+        name='cdn-request',
+        options=options
+      )
+      
+      # Run the recipe
+      recipe.install()
+    
+    return 0
+  except KeyboardInterrupt:
+    sys.stderr.write('\nInterrupted by user\n')
+    return 130
+  except SystemExit as e:
+    # Re-raise SystemExit to preserve exit code
+    raise
+  except Exception as e:
+    sys.stderr.write('Error: %s\n' % str(e))
+    import traceback
+    traceback.print_exc()
+    return 1
+
+
+if __name__ == '__main__':
+  sys.exit(main())
