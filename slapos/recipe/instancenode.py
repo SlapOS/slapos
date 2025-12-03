@@ -436,9 +436,11 @@ class Recipe(object):
         request_conn_params = request_result.get('connection_params', {})
         if request_conn_params:
           self._publishConnectionParameters(instance_reference, request_conn_params)
-        elif validation_info:
-          message = 'Your instance is valid the request has been transmitted to the master'
-          self._publishConnectionParameters(instance_reference, {"message": message})
+        else:
+          validation_info = {
+            "message": "Your instance is valid the request has been transmitted to the master"
+          }
+          self._publishConnectionParameters(instance_reference, validation_info)
       except Exception as e:
         self.logger.error(
           'Failed to %s instance %s: %s',
