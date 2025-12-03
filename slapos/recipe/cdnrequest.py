@@ -180,23 +180,32 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
       self.logger.info('Using custom nameserver(s) for DNS validation: %s', ', '.join(self.dns_nameservers))
     else:
       self.dns_nameservers = None
+    
+    # Create DNS resolver with fresh cache at initialization
+    # This bypasses system DNS cache and remote DNS cache when using custom nameservers
+    self.dns_resolver = dns.resolver.Resolver()
+    self.dns_resolver.lifetime = 5.0
+    self.dns_resolver.cache = dns.resolver.LRUCache()
+    if self.dns_nameservers:
+      self.dns_resolver.nameservers = self.dns_nameservers
+      self.logger.debug('Querying DNS using nameserver(s): %s', 
+                        ', '.join(self.dns_nameservers))
 
   def _check_custom_domain(self, domain, token):
     """
     Check if the custom domain has the required TXT record.
     
-    Uses a resolver with cache disabled or short TTL to ensure fresh DNS lookups
-    for domain validation. This is important because:
+    Uses a resolver with a fresh cache created at class initialization to bypass
+    system DNS cache and remote DNS cache. This is important because:
     - Domain validation needs to detect new TXT records quickly
     - If validation runs every minute, we want to see DNS changes within ~1 minute
     - Default DNS TTL can be 300+ seconds, which would delay validation detection
     
     Cache behavior:
-    - If dns-cache-ttl is 0: Cache is disabled, every call queries DNS directly
-    - If dns-cache-ttl > 0: Uses a per-resolver cache with max size, but each
-      resolver instance gets a fresh cache, so effectively queries DNS on first
-      call per resolver instance. Since we create a new resolver each time,
-      this effectively disables caching.
+    - Resolver is created once at class initialization with a fresh cache.
+    - This bypasses system DNS cache and remote DNS cache when using custom nameservers.
+    - Each class initialization gets a fresh cache, ensuring different runs don't
+      share cached DNS results.
     
     Nameserver behavior:
     - If dns-nameserver is provided: Queries directly to the specified nameserver(s)
@@ -206,36 +215,10 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
     """
     challenge_domain = '%s.%s' % (self.dns_entry_name, domain)
     try:
-      resolver = dns.resolver.Resolver()
-      # Configure resolver timeout
-      resolver.lifetime = 5.0
-      
-      # Configure nameserver if specified
-      # This allows querying directly to a specific nameserver, bypassing
-      # system DNS configuration and local caches
-      if self.dns_nameservers:
-        resolver.nameservers = self.dns_nameservers
-        self.logger.debug('Querying DNS for %s using nameserver(s): %s', 
-                         challenge_domain, ', '.join(self.dns_nameservers))
-      
-      # Configure cache behavior for domain validation
-      if self.dns_cache_ttl <= 0:
-        # Disable cache completely - create empty cache
-        # This ensures every DNS query goes to the network
-        resolver.cache = dns.resolver.LRUCache()
-      else:
-        # Use a fresh cache for this resolver instance
-        # Since we create a new resolver each time, this effectively means
-        # we query DNS on every call, but the cache structure is available
-        # if we want to optimize in the future (e.g., reuse resolver)
-        resolver.cache = dns.resolver.LRUCache()
-      
-      # Query DNS
-      # Note: Creating a new resolver instance each time means we get a fresh
-      # cache, effectively bypassing dnspython's global cache. This ensures
-      # we always get the latest DNS results for validation purposes.
-      # If dns-nameserver is set, queries go directly to that nameserver.
-      answers = resolver.resolve(challenge_domain, 'TXT')
+      # Query DNS using the instance resolver
+      # The resolver has a fresh cache created at initialization, which bypasses
+      # dnspython's global cache and system/remote DNS caches.
+      answers = self.dns_resolver.resolve(challenge_domain, 'TXT')
       
       for rdata in answers:
         # TXT records can contain multiple strings, join them
