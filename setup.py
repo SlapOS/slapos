@@ -173,6 +173,9 @@ setup(name=name,
         'zc.buildout.uninstall': [
           'publish_failsafe = slapos.recipe.publish:RecipeFailsafe.uninstall',
           'publish.serialised_failsafe = slapos.recipe.publish:SerialisedFailsafe.uninstall',
+        ],
+        'console_scripts': [
+          'cdnrequest-script = slapos.recipe.cdnrequest:main',
         ]
       },
       extras_require=extras_require,
