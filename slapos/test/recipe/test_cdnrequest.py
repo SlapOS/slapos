@@ -232,7 +232,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
     with mock.patch('slapos.recipe.request.slapmodule.slap') as mock_slap:
       with mock.patch('dns.resolver.Resolver') as MockResolver:
         # Mock slap library for connection publishing (used by _publishConnectionParameters)
-        with mock.patch('slapos.recipe.requestinstancelist.slap') as mock_slap_publish:
+        with mock.patch('slapos.recipe.instancenode.slap') as mock_slap_publish:
           # Setup slap mock for RequestRecipe
           slap_instance = mock.MagicMock()
           request_instance = mock.MagicMock()
@@ -528,7 +528,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     self.mock_requestinstance_db = mock.MagicMock()
 
     # Patch HostedInstanceLocalDB to return mocks
-    self.db_patch = mock.patch('slapos.recipe.requestinstancelist.HostedInstanceLocalDB')
+    self.db_patch = mock.patch('slapos.recipe.instancenode.HostedInstanceLocalDB')
     self.MockDB = self.db_patch.start()
     self.MockDB.side_effect = [self.mock_instance_db, self.mock_requestinstance_db]
 
@@ -835,7 +835,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
 
     # Mock the parent's _processDestroyedInstance to avoid actual destruction logic
     with mock.patch(
-        'slapos.recipe.requestinstancelist.Recipe._processDestroyedInstance'
+        'slapos.recipe.instancenode.Recipe._processDestroyedInstance'
     ) as mock_parent_process:
       instance_reference = 'test-instance-ref'
 
