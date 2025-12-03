@@ -466,6 +466,17 @@ url = ${snappymail-pw-driver.jinja2.php:target}
 context =
   raw dovecot_passwd_file $${dovecot-passwords:target}
 
+[snappymail-mailbox-conf]
+recipe = collective.recipe.template
+output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-mailbox-detect.json
+mode = 600
+input = inline:
+  {
+      "plugin": {
+          "autocreate_system_folders": true
+      }
+  }
+
 [snappymail-domain]
 recipe = slapos.recipe.template:jinja2
 depends = $${snappymail-files:recipe}
@@ -485,6 +496,7 @@ depends =
   $${snappymail-domain:recipe}
   $${snappymail-pw-conf:recipe}
   $${snappymail-pw-driver:recipe}
+  $${snappymail-mailbox-conf:recipe}
 
 
 # Password reset page
