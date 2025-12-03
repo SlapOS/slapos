@@ -8,8 +8,8 @@ import urllib.parse
 import subprocess
 import json
 import sys
-from slapos.recipe.requestinstancelist import (
-  Recipe as RequestInstanceListRecipe,
+from slapos.recipe.instancenode import (
+  Recipe as InstanceNodeRecipe,
   parse_command_line_args,
   load_config_and_create_objects
 )
@@ -149,7 +149,7 @@ class DomainValidationDB(LocalDBAccessor):
       (instance_reference, domain, token, validated, timestamp)
     )
 
-class CDNRequestRecipe(RequestInstanceListRecipe):
+class CDNRequestRecipe(InstanceNodeRecipe):
   """
   RequestInstanceListRecipe with custom domain verification for CDN.
   """
@@ -180,7 +180,7 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
       self.logger.info('Using custom nameserver(s) for DNS validation: %s', ', '.join(self.dns_nameservers))
     else:
       self.dns_nameservers = None
-    
+
     # Create DNS resolver with fresh cache at initialization
     # This bypasses system DNS cache and remote DNS cache when using custom nameservers
     self.dns_resolver = dns.resolver.Resolver()
@@ -188,25 +188,25 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
     self.dns_resolver.cache = dns.resolver.LRUCache()
     if self.dns_nameservers:
       self.dns_resolver.nameservers = self.dns_nameservers
-      self.logger.debug('Querying DNS using nameserver(s): %s', 
+      self.logger.debug('Querying DNS using nameserver(s): %s',
                         ', '.join(self.dns_nameservers))
 
   def _check_custom_domain(self, domain, token):
     """
     Check if the custom domain has the required TXT record.
-    
+
     Uses a resolver with a fresh cache created at class initialization to bypass
     system DNS cache and remote DNS cache. This is important because:
     - Domain validation needs to detect new TXT records quickly
     - If validation runs every minute, we want to see DNS changes within ~1 minute
     - Default DNS TTL can be 300+ seconds, which would delay validation detection
-    
+
     Cache behavior:
     - Resolver is created once at class initialization with a fresh cache.
     - This bypasses system DNS cache and remote DNS cache when using custom nameservers.
     - Each class initialization gets a fresh cache, ensuring different runs don't
       share cached DNS results.
-    
+
     Nameserver behavior:
     - If dns-nameserver is provided: Queries directly to the specified nameserver(s)
       instead of using system DNS resolver. This bypasses local DNS cache and
@@ -219,7 +219,7 @@ class CDNRequestRecipe(RequestInstanceListRecipe):
       # The resolver has a fresh cache created at initialization, which bypasses
       # dnspython's global cache and system/remote DNS caches.
       answers = self.dns_resolver.resolve(challenge_domain, 'TXT')
-      
+
       for rdata in answers:
         # TXT records can contain multiple strings, join them
         txt_value = ''.join([x.decode('utf-8') for x in rdata.strings])
@@ -667,14 +667,14 @@ def main():
   try:
     # Parse command-line arguments
     args = parse_command_line_args()
-    
+
     # Load config file and create buildout/options dicts with PID file locking
     buildout, options, pidfile_lock = load_config_and_create_objects(
       args.cfg,
       args.pidfile,
       section_name='slaposinstancenode'
     )
-    
+
     # Use PID file lock as context manager to prevent multiple instances
     if pidfile_lock:
       with pidfile_lock:
@@ -684,7 +684,7 @@ def main():
           name='cdn-request',
           options=options
         )
-        
+
         # Run the recipe
         recipe.install()
     else:
@@ -695,10 +695,10 @@ def main():
         name='cdn-request',
         options=options
       )
-      
+
       # Run the recipe
       recipe.install()
-    
+
     return 0
   except KeyboardInterrupt:
     sys.stderr.write('\nInterrupted by user\n')

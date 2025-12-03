@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from collections import defaultdict
 
-from slapos.recipe import requestinstancelist
+from slapos.recipe import instancenode
 from slapos.recipe.localinstancedb import HostedInstanceLocalDB
 from testfixtures import LogCapture
 
@@ -48,7 +48,7 @@ class TestRequestInstanceList(unittest.TestCase):
         self.requested_instance.getConnectionParameter
 
     # Mock slap library for connection publishing (used by _publishConnectionParameters)
-    slap_publish_patch = mock.patch('slapos.recipe.requestinstancelist.slap')
+    slap_publish_patch = mock.patch('slapos.recipe.instancenode.slap')
     self.slap_publish_lib = slap_publish_patch.start()
     self.addCleanup(slap_publish_patch.stop)
 
@@ -136,7 +136,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Connection parameters are not extracted since 'return' is not a recipe option
     # So we don't need to mock getConnectionParameter
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
     recipe.install()
@@ -163,7 +163,7 @@ class TestRequestInstanceList(unittest.TestCase):
       ('instance1', {'key': 'value'}, False)
     ])
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
 
@@ -223,7 +223,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Connection parameters are not extracted since 'return' is not a recipe option
     # So we don't need to mock getConnectionParameter
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
     recipe.install()
@@ -273,7 +273,7 @@ class TestRequestInstanceList(unittest.TestCase):
       True
     )])
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
 
@@ -316,7 +316,7 @@ class TestRequestInstanceList(unittest.TestCase):
       True
     )])
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
     recipe.install()
@@ -396,7 +396,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     self.instance_getConnectionParameter.return_value = 'conn_value'
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
     recipe.install()
@@ -418,7 +418,7 @@ class TestRequestInstanceList(unittest.TestCase):
       ('instance2', {'key': 'value2'}, True)
     ])
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
 
@@ -472,7 +472,7 @@ class TestRequestInstanceList(unittest.TestCase):
       }, True)
     ])
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
     recipe.install()
@@ -491,7 +491,7 @@ class TestRequestInstanceList(unittest.TestCase):
       }, True)
     ])
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
     recipe.install()
@@ -511,7 +511,7 @@ class TestRequestInstanceList(unittest.TestCase):
       }, True)
     ])
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
     recipe.install()
@@ -542,7 +542,7 @@ class TestRequestInstanceList(unittest.TestCase):
     options['sla-region'] = 'eu-west'
     options['sla-zone'] = 'zone1'
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', options
     )
     recipe.install()
@@ -568,7 +568,7 @@ class TestRequestInstanceList(unittest.TestCase):
     del options['software-url']
 
     with self.assertRaises(ValueError) as cm:
-      requestinstancelist.Recipe(self.buildout, 'test', options)
+      instancenode.Recipe(self.buildout, 'test', options)
 
     self.assertIn('software-url is required', str(cm.exception))
 
@@ -583,14 +583,14 @@ class TestRequestInstanceList(unittest.TestCase):
     del options['software-type']
 
     with self.assertRaises(ValueError) as cm:
-      requestinstancelist.Recipe(self.buildout, 'test', options)
+      instancenode.Recipe(self.buildout, 'test', options)
 
     self.assertIn('software-type is required', str(cm.exception))
 
   def test_no_instances(self):
     """Test behavior when there are no instances"""
     # Empty databases
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
 
@@ -613,7 +613,7 @@ class TestRequestInstanceList(unittest.TestCase):
     options = self.options.copy()
     options['shared'] = 'true'
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', options
     )
     recipe.install()
@@ -629,7 +629,7 @@ class TestRequestInstanceList(unittest.TestCase):
       ('instance1', {'key': 'value'}, True)
     ])
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
     recipe.install()
@@ -650,7 +650,7 @@ class TestRequestInstanceList(unittest.TestCase):
     from slapos import slap as slapmodule
     self.request_instance.side_effect = slapmodule.NotFoundError("Not found")
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
 
@@ -703,7 +703,7 @@ class TestRequestInstanceList(unittest.TestCase):
     from slapos import slap as slapmodule
     self.instance_getConnectionParameter.side_effect = slapmodule.NotFoundError("Not ready")
 
-    recipe = requestinstancelist.Recipe(
+    recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
     recipe.install()
@@ -718,7 +718,7 @@ class TestRequestInstanceList(unittest.TestCase):
   def test_publish_connection_parameters_on_validation_failure(self):
     """Test that connection parameters are published when validation fails"""
     # Create a custom recipe class that returns connection parameters on validation failure
-    class TestRecipe(requestinstancelist.Recipe):
+    class TestRecipe(instancenode.Recipe):
       def validateInstance(self, instance_reference, parameters):
         return False, ['Validation failed'], {'message': 'Error message', 'errors': ['Validation failed']}
 
@@ -742,7 +742,7 @@ class TestRequestInstanceList(unittest.TestCase):
   def test_publish_connection_parameters_on_validation_success(self):
     """Test that success message is published when validation succeeds with validation_conn_params"""
     # Create a custom recipe class that returns connection parameters on validation success
-    class TestRecipe(requestinstancelist.Recipe):
+    class TestRecipe(instancenode.Recipe):
       def validateInstance(self, instance_reference, parameters):
         return True, [], {'message': 'Success message'}
 
@@ -767,7 +767,7 @@ class TestRequestInstanceList(unittest.TestCase):
   def test_publish_connection_parameters_empty(self):
     """Test that empty connection parameters are not published"""
     # Create a custom recipe class that returns empty connection parameters
-    class TestRecipe(requestinstancelist.Recipe):
+    class TestRecipe(instancenode.Recipe):
       def validateInstance(self, instance_reference, parameters):
         return False, ['Validation failed'], {}  # Empty conn_params
 
@@ -784,7 +784,7 @@ class TestRequestInstanceList(unittest.TestCase):
   def test_publish_connection_parameters_none(self):
     """Test that None connection parameters are not published"""
     # Create a custom recipe class that returns None connection parameters
-    class TestRecipe(requestinstancelist.Recipe):
+    class TestRecipe(instancenode.Recipe):
       def validateInstance(self, instance_reference, parameters):
         return False, ['Validation failed'], None  # None conn_params
 
@@ -801,7 +801,7 @@ class TestRequestInstanceList(unittest.TestCase):
   def test_publish_connection_parameters_error_handling(self):
     """Test that errors during publishing are logged but don't raise"""
     # Create a custom recipe class that returns connection parameters
-    class TestRecipe(requestinstancelist.Recipe):
+    class TestRecipe(instancenode.Recipe):
       def validateInstance(self, instance_reference, parameters):
         return False, ['Validation failed'], {'message': 'Error message'}
 
@@ -839,7 +839,7 @@ class TestRequestInstanceList(unittest.TestCase):
       ('instance2', {'key': 'value2'}, True)
     ])
 
-    class TestRecipe(requestinstancelist.Recipe):
+    class TestRecipe(instancenode.Recipe):
       def validateInstance(self, instance_reference, parameters):
         return False, ['Validation failed'], {'message': 'Error for %s' % instance_reference}
 
@@ -862,7 +862,7 @@ class TestRequestInstanceList(unittest.TestCase):
       "buildout": {},
     }
 
-    recipe = requestinstancelist.Recipe(buildout_no_connection, 'test', self.options)
+    recipe = instancenode.Recipe(buildout_no_connection, 'test', self.options)
 
     # Should raise KeyError when trying to get computer partition (lazy initialization)
     with self.assertRaises(KeyError) as cm:
@@ -873,7 +873,7 @@ class TestRequestInstanceList(unittest.TestCase):
   def test_publish_connection_parameters_success_message(self):
     """Test that success message is published when validation succeeds with validation_conn_params"""
     # Create a custom recipe class that returns connection parameters on validation success
-    class TestRecipe(requestinstancelist.Recipe):
+    class TestRecipe(instancenode.Recipe):
       def validateInstance(self, instance_reference, parameters):
         # Return validation_conn_params so success message is published
         return True, [], {'some': 'param'}
@@ -906,7 +906,7 @@ class TestRequestInstanceList(unittest.TestCase):
       ('instance1', {'key': 'value'}, False)
     ], connection_params={'instance1': validation_errors})
 
-    recipe = requestinstancelist.Recipe(self.buildout, 'test', self.options)
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
     recipe.install()
 
     # Verify error info was published for new invalid instance
@@ -963,7 +963,7 @@ class TestRequestInstanceList(unittest.TestCase):
       False
     )])
 
-    recipe = requestinstancelist.Recipe(self.buildout, 'test', self.options)
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
     recipe.install()
 
     # Verify new error info was published (different from stored)
@@ -1011,7 +1011,7 @@ class TestRequestInstanceList(unittest.TestCase):
     )])
 
 
-    recipe = requestinstancelist.Recipe(self.buildout, 'test', self.options)
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
     recipe.install()
 
     # Verify instance was removed from requestinstance-db
@@ -1021,7 +1021,7 @@ class TestRequestInstanceList(unittest.TestCase):
   def test_unchanged_invalid_instance_re_validation(self):
     """Test that unchanged invalid instances are re-processed for re-validation
 
-    This test verifies the bug fix at lines 546-547 in requestinstancelist.py.
+    This test verifies the bug fix at lines 546-547 in instancenode.py.
     Invalid instances that haven't changed (not in 'modified' or 'removed')
     should still be processed for re-validation. This ensures that if validation logic
     changes or external conditions change, invalid instances get re-checked.
@@ -1076,7 +1076,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     # Create a custom recipe to track if validateInstance was called
     validation_calls = []
-    class TestRecipe(requestinstancelist.Recipe):
+    class TestRecipe(instancenode.Recipe):
       def validateInstance(self, instance_reference, parameters):
         validation_calls.append((instance_reference, parameters))
         # Return same validation result (still invalid)
@@ -1163,7 +1163,7 @@ class TestRequestInstanceList(unittest.TestCase):
       False
     )])
 
-    recipe = requestinstancelist.Recipe(self.buildout, 'test', self.options)
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
     recipe.install()
 
     # Verify new error info was published (error info changed even though parameters didn't)
@@ -1190,7 +1190,7 @@ class TestRequestInstanceList(unittest.TestCase):
       ('instance1', {'key': 'value'}, False)  # invalid instance
     ], connection_params={'instance1': validation_errors})
 
-    recipe = requestinstancelist.Recipe(self.buildout, 'test', self.options)
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
 
     # Directly test _getUpdateList to verify json_error is read
     update_list = recipe._getUpdateList()
@@ -1226,7 +1226,7 @@ class TestRequestInstanceList(unittest.TestCase):
       ('instance1', {'key': 'value'}, False)
     ], connection_params={'instance1': validation_errors})
 
-    class TestRecipe(requestinstancelist.Recipe):
+    class TestRecipe(instancenode.Recipe):
       def validateInstance(self, instance_reference, parameters):
         return False, ['Different error from validateInstance'], {'message': 'Different error'}
 
@@ -1277,7 +1277,7 @@ class TestRequestInstanceList(unittest.TestCase):
       True
     )])
 
-    class TestRecipe(requestinstancelist.Recipe):
+    class TestRecipe(instancenode.Recipe):
       def validateInstance(self, instance_reference, parameters):
         return False, ['Different error from validateInstance'], {'message': 'Different error'}
 
@@ -1313,7 +1313,7 @@ class TestCommandLineInterface(unittest.TestCase):
       f.write('instance-db-path = /path/to/instance.db\n')
       f.write('server-url = https://test.example.com\n')
 
-    parser = requestinstancelist.parse_config_file(self.config_file)
+    parser = instancenode.parse_config_file(self.config_file)
     self.assertTrue(parser.has_section('slaposinstancenode'))
     self.assertEqual(parser.get('slaposinstancenode', 'instance-db-path'), '/path/to/instance.db')
     self.assertEqual(parser.get('slaposinstancenode', 'server-url'), 'https://test.example.com')
@@ -1321,7 +1321,7 @@ class TestCommandLineInterface(unittest.TestCase):
   def test_parse_config_file_not_exists(self):
     """Test parse_config_file raises SystemExit when file doesn't exist"""
     with self.assertRaises(SystemExit):
-      requestinstancelist.parse_config_file('/nonexistent/file.cfg')
+      instancenode.parse_config_file('/nonexistent/file.cfg')
 
   def test_get_config_section(self):
     """Test get_config_section function"""
@@ -1331,7 +1331,7 @@ class TestCommandLineInterface(unittest.TestCase):
     parser.set('test-section', 'key1', 'value1')
     parser.set('test-section', 'key2', 'value2')
 
-    section = requestinstancelist.get_config_section(parser, 'test-section')
+    section = instancenode.get_config_section(parser, 'test-section')
     self.assertEqual(section['key1'], 'value1')
     self.assertEqual(section['key2'], 'value2')
 
@@ -1340,7 +1340,7 @@ class TestCommandLineInterface(unittest.TestCase):
     from six.moves.configparser import RawConfigParser
     parser = RawConfigParser()
 
-    section = requestinstancelist.get_config_section(parser, 'nonexistent')
+    section = instancenode.get_config_section(parser, 'nonexistent')
     self.assertEqual(section, {})
 
   def test_create_buildout_dict_from_config(self):
@@ -1355,8 +1355,8 @@ class TestCommandLineInterface(unittest.TestCase):
       f.write('key-file = /path/to/key\n')
       f.write('cert-file = /path/to/cert\n')
 
-    parser = requestinstancelist.parse_config_file(self.config_file)
-    buildout = requestinstancelist.create_buildout_dict_from_config(parser, self.temp_dir)
+    parser = instancenode.parse_config_file(self.config_file)
+    buildout = instancenode.create_buildout_dict_from_config(parser, self.temp_dir)
 
     self.assertIn('buildout', buildout)
     self.assertIn('slap-connection', buildout)
@@ -1375,8 +1375,8 @@ class TestCommandLineInterface(unittest.TestCase):
       f.write('computer-id = test-computer\n')
       f.write('partition-id = test-partition\n')
 
-    parser = requestinstancelist.parse_config_file(self.config_file)
-    buildout = requestinstancelist.create_buildout_dict_from_config(parser, self.temp_dir)
+    parser = instancenode.parse_config_file(self.config_file)
+    buildout = instancenode.create_buildout_dict_from_config(parser, self.temp_dir)
 
     self.assertEqual(buildout['slap-connection']['server-url'], 'https://test.example.com')
     self.assertEqual(buildout['slap-connection']['computer-id'], 'test-computer')
@@ -1390,8 +1390,8 @@ class TestCommandLineInterface(unittest.TestCase):
       f.write('instance-db-path = /path/to/instance.db\n')
       f.write('server-url = https://test.example.com\n')
 
-    parser = requestinstancelist.parse_config_file(self.config_file)
-    options = requestinstancelist.create_options_dict_from_config(parser)
+    parser = instancenode.parse_config_file(self.config_file)
+    options = instancenode.create_options_dict_from_config(parser)
 
     self.assertEqual(options['instance-db-path'], '/path/to/instance.db')
     self.assertEqual(options['server-url'], 'https://test.example.com')
@@ -1402,7 +1402,7 @@ class TestCommandLineInterface(unittest.TestCase):
     parser = RawConfigParser()
 
     with self.assertRaises(SystemExit):
-      requestinstancelist.create_options_dict_from_config(parser)
+      instancenode.create_options_dict_from_config(parser)
 
   def test_parse_command_line_args(self):
     """Test parse_command_line_args function"""
@@ -1410,7 +1410,7 @@ class TestCommandLineInterface(unittest.TestCase):
     old_argv = sys.argv
     try:
       sys.argv = ['test', '--cfg', '/path/to/config.cfg', '--pidfile', '/path/to/pidfile.pid']
-      args = requestinstancelist.parse_command_line_args()
+      args = instancenode.parse_command_line_args()
       self.assertEqual(args.cfg, '/path/to/config.cfg')
       self.assertEqual(args.pidfile, '/path/to/pidfile.pid')
     finally:
@@ -1422,7 +1422,7 @@ class TestCommandLineInterface(unittest.TestCase):
     old_argv = sys.argv
     try:
       sys.argv = ['test', '--cfg', '/path/to/config.cfg']
-      args = requestinstancelist.parse_command_line_args()
+      args = instancenode.parse_command_line_args()
       self.assertEqual(args.cfg, '/path/to/config.cfg')
       self.assertIsNone(args.pidfile)
     finally:
@@ -1435,13 +1435,13 @@ class TestCommandLineInterface(unittest.TestCase):
     try:
       sys.argv = ['test']
       with self.assertRaises(SystemExit):
-        requestinstancelist.parse_command_line_args()
+        instancenode.parse_command_line_args()
     finally:
       sys.argv = old_argv
 
   def test_pidfile_lock_acquire_release(self):
     """Test PIDFileLock context manager acquires and releases lock"""
-    lock = requestinstancelist.PIDFileLock(self.pidfile)
+    lock = instancenode.PIDFileLock(self.pidfile)
 
     # Should be able to acquire lock
     with lock:
@@ -1458,7 +1458,7 @@ class TestCommandLineInterface(unittest.TestCase):
 
   def test_pidfile_lock_no_pidfile(self):
     """Test PIDFileLock with None pidfile path"""
-    lock = requestinstancelist.PIDFileLock(None)
+    lock = instancenode.PIDFileLock(None)
 
     # Should work without creating a file
     with lock:
@@ -1473,7 +1473,7 @@ class TestCommandLineInterface(unittest.TestCase):
     with open(self.pidfile, 'w') as f:
       f.write('99999\n')
 
-    lock = requestinstancelist.PIDFileLock(self.pidfile)
+    lock = instancenode.PIDFileLock(self.pidfile)
 
     # Should be able to acquire lock (stale PID file removed)
     with lock:
@@ -1491,7 +1491,7 @@ class TestCommandLineInterface(unittest.TestCase):
       f.write(str(os.getpid()) + '\n')
 
     # Try to acquire lock - should fail because PID exists
-    lock = requestinstancelist.PIDFileLock(self.pidfile)
+    lock = instancenode.PIDFileLock(self.pidfile)
 
     # Mock os.kill to return success (process exists)
     with mock.patch('os.kill') as mock_kill:
@@ -1514,7 +1514,7 @@ class TestCommandLineInterface(unittest.TestCase):
       f.write('software-url = https://software.example.com\n')
       f.write('software-type = cdn\n')
 
-    buildout, options, pidfile_lock = requestinstancelist.load_config_and_create_objects(
+    buildout, options, pidfile_lock = instancenode.load_config_and_create_objects(
       self.config_file, self.pidfile
     )
 
@@ -1531,7 +1531,7 @@ class TestCommandLineInterface(unittest.TestCase):
       f.write('[slaposinstancenode]\n')
       f.write('instance-db-path = /path/to/instance.db\n')
 
-    buildout, options, pidfile_lock = requestinstancelist.load_config_and_create_objects(
+    buildout, options, pidfile_lock = instancenode.load_config_and_create_objects(
       self.config_file, None
     )
 
