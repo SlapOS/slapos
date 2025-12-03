@@ -23,19 +23,14 @@
     },
     "-sla-computer_guid": {
       "title": "SLA Computer GUID",
+      "default": "",
       "description": "SLA Computer GUID used for requesting the CDN slaves",
       "type": "string"
     },
     "-sla-instance_guid": {
       "title": "SLA Instance GUID",
+      "default": "",
       "description": "SLA Instance GUID used for requesting the CDN slaves",
-      "type": "string"
-    }
-  },
-  "patternProperties": {
-    "^\\-sla\\-.+$": {
-      "title": "SLA Properties",
-      "description": "The content after '-sla-' is passed as an sla paramater for CDN slave request",
       "type": "string"
     }
   },
