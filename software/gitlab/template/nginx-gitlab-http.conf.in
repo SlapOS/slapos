@@ -142,6 +142,11 @@ server {
 
   limit_req_status 429;
 
+  # A list of IP/IP Network do deny
+  {% for ip_network in cfg("nginx_deny_ip_network_list").split() %}
+  deny {{ ip_network }};
+  {% endfor %}
+
   {# we do not support relative URL - path is always "/" #}
   {% set path = "/" %}
 
