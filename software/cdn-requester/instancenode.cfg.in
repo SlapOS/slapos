@@ -1,17 +1,14 @@
 [slaposinstancenode]
 instance-db-path = $${slap-configuration:instance-db-path}
 requestinstance-db-path = $${buildout:directory}/requestinstance-db.sqlite
-server-url = $${slap-connection:server-url}
-computer-id = $${slap-connection:computer-id}
-partition-id = $${slap-connection:partition-id}
 software-url = $${slap-configuration:configuration.cdn-software-url}
 software-type = $${slap-configuration:configuration.cdn-software-type}
 domainvalidation-db-path = $${buildout:directory}/domainvalidation-db.sqlite
 shared = true
 openssl-binary = ${openssl:location}/bin/openssl
 dns-nameserver = $${slap-configuration:configuration.dns-nameserver}
-
-[slap-connection]
-# Optional section, can also be in main section
 key-file = $${slap-connection:key-file}
 cert-file = $${slap-connection:cert-file}
+computer-id = $${slap-connection:computer-id}
+partition-id = $${slap-connection:partition-id}
+server-url = $${slap-connection:server-url}
