@@ -1437,6 +1437,68 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     # Verify DNS lookup was called
     mock_resolver_instance.resolve.assert_called_with('_slapos-challenge.example.com', 'TXT')
 
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_resolver_created_once_in_init(self, MockResolver):
+    """Test that DNS resolver is created once in __init__ with fresh cache"""
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    # Verify resolver was created once during __init__
+    self.assertEqual(MockResolver.call_count, 1)
+
+    # Verify resolver instance is stored
+    self.assertIsNotNone(recipe.dns_resolver)
+    self.assertEqual(recipe.dns_resolver, MockResolver.return_value)
+
+    # Verify cache was set to a fresh LRUCache
+    self.assertIsNotNone(recipe.dns_resolver.cache)
+    self.assertIsInstance(recipe.dns_resolver.cache, dns.resolver.LRUCache)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_resolver_reused_in_check_custom_domain(self, MockResolver):
+    """Test that _check_custom_domain reuses the instance resolver"""
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    # Reset call count after __init__
+    MockResolver.reset_mock()
+
+    # Mock DNS response
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+    mock_rdata.strings = [b'wrong-token']
+    mock_answer.__iter__.return_value = iter([mock_rdata])
+    recipe.dns_resolver.resolve.return_value = mock_answer
+
+    # Call _check_custom_domain multiple times
+    result1 = recipe._check_custom_domain('example.com', 'token1')
+    result2 = recipe._check_custom_domain('example.org', 'token2')
+
+    # Verify resolver was NOT created again (reused from __init__)
+    MockResolver.assert_not_called()
+
+    # Verify the same resolver instance was used
+    self.assertEqual(recipe.dns_resolver.resolve.call_count, 2)
+    recipe.dns_resolver.resolve.assert_any_call('_slapos-challenge.example.com', 'TXT')
+    recipe.dns_resolver.resolve.assert_any_call('_slapos-challenge.example.org', 'TXT')
+
+    # Both should return False (wrong token)
+    self.assertFalse(result1)
+    self.assertFalse(result2)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_resolver_fresh_cache_per_instance(self, MockResolver):
+    """Test that each recipe instance gets a fresh cache (not shared between instances)"""
+    recipe1 = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+    recipe2 = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+
+    # Verify two resolvers were created (one per instance)
+    self.assertEqual(MockResolver.call_count, 2)
+
+    # Verify each instance has its own resolver
+    self.assertIsNot(recipe1.dns_resolver, recipe2.dns_resolver)
+
+    # Verify each resolver has its own cache
+    self.assertIsNot(recipe1.dns_resolver.cache, recipe2.dns_resolver.cache)
+
 
 class TestDomainValidationDB(unittest.TestCase):
 
