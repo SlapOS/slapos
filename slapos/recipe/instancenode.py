@@ -33,7 +33,6 @@ import argparse
 import fcntl
 from six.moves.configparser import RawConfigParser
 from slapos.recipe.localinstancedb import HostedInstanceLocalDB, InstanceListComparator
-from slapos.recipe.request import RequestOptional as RequestRecipe
 from slapos import slap
 from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
 import six
@@ -83,9 +82,7 @@ class Recipe(object):
 
   def __init__(self, buildout, name, options):
     self.logger = logging.getLogger(name)
-    self.buildout = buildout
     self.options = options
-
     # Required options
     self.instance_db_path = options['instance-db-path']
     self.requestinstance_db_path = options['requestinstance-db-path']
@@ -116,33 +113,12 @@ class Recipe(object):
 
     self.shared = options.get('shared', 'false').lower() in ['y', 'yes', '1', 'true']
 
-    # Build base request options that are the same for all instances
-    # These are computed once in __init__ to avoid recalculation
-    # state defaults to 'started' and return defaults to empty string
-    self.base_request_options = {
-      'server-url': self.server_url,
-      'computer-id': self.computer_id,
-      'partition-id': self.partition_id,
-      'software-url': self.software_url,
-      'software-type': self.software_type,
-      'shared': 'true' if self.shared else 'false',
-      'return': '',  # No return parameters by default
-      'state': 'started',  # Default state is 'started'
-    }
-
-    # Add optional connection options
-    if self.key_file:
-      self.base_request_options['key-file'] = self.key_file
-    if self.cert_file:
-      self.base_request_options['cert-file'] = self.cert_file
-
     # Extract sla-* options from recipe options (same for all instances)
+    # These will be used as filter_kw in requests
+    self.sla_filter_kw = {}
     for key, value in six.iteritems(options):
       if key.startswith('sla-') and value:
-        self.base_request_options[key] = value
-
-    # Store requests made during install
-    self.request_instances = {}
+        self.sla_filter_kw[key[4:]] = value  # Remove 'sla-' prefix
 
     # Lazy initialization of computer_partition for publishing connection parameters
     self._computer_partition = None
@@ -185,54 +161,71 @@ class Recipe(object):
     stored_list = self.requestinstance_db.getInstanceList("reference, hash")
     return {row["reference"]: row["hash"] for row in stored_list}
 
-  def _createRequestOptions(self, instance_reference, parameters, state=None):
-    """
-    Create options dict for RequestRecipe from instance data.
-
-    Only instance-specific options are set here. Common options are precomputed
-    in __init__ and stored in self.base_request_options.
-
-    Args:
-      instance_reference: Reference name for the instance
-      parameters: Dict of parameters from the database
-      state: Optional state override (e.g., 'destroyed')
-
-    Returns:
-      Dict of request options for RequestRecipe
-    """
-    # Start with base options (copy to avoid modifying the base)
-    request_options = self.base_request_options.copy()
-
-    # Set instance-specific options
-    request_options['name'] = instance_reference
-
-    # Override state if specified (e.g., 'destroyed' for removed instances)
-    if state is not None:
-      request_options['state'] = state
-
-    # Cast parameters to config-* options
-    for key, value in six.iteritems(parameters):
-      request_options['config-' + key] = value
-
-    return request_options
-
   def _requestInstance(self, instance_reference, parameters, state=None):
     """
-    Request an instance using RequestRecipe.
+    Request an instance directly using the slap library.
 
     Args:
       instance_reference: Reference name for the instance
       parameters: Dict of parameters from the database
-      state: Optional state override (e.g., 'destroyed')
+      state: Optional state override (e.g., 'destroyed', defaults to 'started')
 
     Returns:
-      RequestRecipe instance
+      Dict with 'instance' (the requested instance object) and 'connection_params' (dict of connection parameters)
     """
-    request_options = self._createRequestOptions(instance_reference, parameters, state)
-    request_recipe = RequestRecipe(self.buildout, instance_reference, request_options)
-    # Store options in the recipe for later access to connection parameters
-    request_recipe.options = request_options
-    return request_recipe
+    # Get computer_partition (reuses connection cache)
+    computer_partition = self._getComputerPartition()
+    
+    # Determine state (default to 'started' if not specified)
+    requested_state = state if state is not None else 'started'
+    
+    # Use sla-* options from recipe options (stored in __init__)
+    # These are the same for all instances
+    filter_kw = self.sla_filter_kw.copy()
+    
+    # All parameters go to partition_parameter_kw
+    # (sla-* options come from recipe options, not instance parameters)
+    partition_parameter_kw = parameters.copy()
+    
+    # Make the request directly using the slap library
+    try:
+      instance = computer_partition.request(
+        self.software_url,
+        self.software_type,
+        instance_reference,
+        partition_parameter_kw=partition_parameter_kw,
+        filter_kw=filter_kw,
+        shared=self.shared,
+        state=requested_state
+      )
+      
+      # Get connection parameters if available
+      # Note: Connection parameters are only available if the instance publishes them
+      connection_params = {}
+      try:
+        connection_params = instance.getConnectionParameterDict()
+        # Convert to regular dict if needed (unwrap if wrapped)
+        if hasattr(connection_params, 'unwrap'):
+          connection_params = connection_params.unwrap()
+        elif not isinstance(connection_params, dict):
+          connection_params = dict(connection_params) if connection_params else {}
+      except Exception as e:
+        # Connection parameters may not be available yet or instance may not publish them
+        self.logger.debug(
+          'Could not retrieve connection parameters for instance %s: %s',
+          instance_reference, e
+        )
+      
+      return {
+        'instance': instance,
+        'connection_params': connection_params
+      }
+    except Exception as e:
+      self.logger.error(
+        'Failed to request instance %s: %s',
+        instance_reference, e
+      )
+      raise
 
   def validateInstance(self, instance_reference, parameters):
     """
@@ -282,31 +275,17 @@ class Recipe(object):
     if self._computer_partition is not None:
       return self._computer_partition
 
-    # Get connection info from buildout
-    try:
-      slap_connection = self.buildout['slap-connection']
-    except KeyError:
-      raise KeyError(
-        "slap-connection section is required in buildout for publishing connection parameters"
-      )
-
-    computer_id = slap_connection['computer-id']
-    partition_id = slap_connection['partition-id']
-    server_url = slap_connection['server-url']
-    key_file = slap_connection.get('key-file')
-    cert_file = slap_connection.get('cert-file')
-
     # Use connection cache
-    cache_key = "%s_%s" % (computer_id, partition_id)
+    cache_key = "%s_%s" % (self.computer_id, self.partition_id)
     self._computer_partition = CONNECTION_CACHE.get(cache_key, None)
 
     if self._computer_partition is None:
       # Initialize slap connection
       slap_instance = slap.slap()
-      slap_instance.initializeConnection(server_url, key_file, cert_file)
+      slap_instance.initializeConnection(self.server_url, self.key_file, self.cert_file)
       self._computer_partition = slap_instance.registerComputerPartition(
-        computer_id,
-        partition_id
+        self.computer_id,
+        self.partition_id
       )
       CONNECTION_CACHE[cache_key] = self._computer_partition
 
@@ -407,32 +386,6 @@ class Recipe(object):
     """
     self.requestinstance_db.removeInstanceList([instance_reference])
 
-  def _getConnectionParamsFromRequest(self, request_recipe):
-    """
-    Extract connection parameters from a request recipe after successful install.
-
-    Args:
-      request_recipe: RequestRecipe instance that has been installed
-
-    Returns:
-      Dict of connection parameters (empty if none available)
-    """
-    conn_params = {}
-    # RequestRecipe stores connection parameters in options with 'connection-' prefix
-    # Handle case where options attribute might not exist (e.g., RequestOptional)
-    try:
-      options = getattr(request_recipe, 'options', None)
-      if options:
-        for key, value in options.items():
-          if key.startswith('connection-') and key != 'connection-':
-            # Remove 'connection-' prefix
-            param_name = key[len('connection-'):]
-            conn_params[param_name] = value
-    except (AttributeError, TypeError):
-      # If options doesn't exist or isn't iterable, return empty dict
-      pass
-    return conn_params
-
   def _processInstance(self, instance_reference, instance_data, instance_hash, is_new=False):
     """
     Process a single instance: validate, request if valid, and publish results.
@@ -475,13 +428,12 @@ class Recipe(object):
       action = 'new' if is_new else 'update'
       self.logger.debug('%s instance: %s', action.capitalize(), instance_reference)
       try:
-        request_recipe = self._requestInstance(
+        request_result = self._requestInstance(
           instance_reference,
           instance_data['parameters']
         )
-        self.request_instances[instance_reference] = request_recipe
-        request_recipe.install()
-        request_conn_params = self._getConnectionParamsFromRequest(request_recipe)
+        # Get connection parameters from the request result
+        request_conn_params = request_result.get('connection_params', {})
         if request_conn_params:
           self._publishConnectionParameters(instance_reference, request_conn_params)
         elif validation_info:
@@ -504,8 +456,8 @@ class Recipe(object):
     """
     self.logger.debug('Destroying instance: %s', instance_reference)
     try:
-      request_recipe = self._requestInstance(instance_reference, {}, state='destroyed')
-      request_recipe.install()
+      request_result = self._requestInstance(instance_reference, {}, state='destroyed')
+      # The request is already made, no need to call install()
       self._removeInstanceFromDB(instance_reference)
     except Exception as e:
       self.logger.error(
