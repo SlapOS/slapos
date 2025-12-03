@@ -44,7 +44,6 @@ import re
 from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
 import urllib.parse
-import socket
 import sys
 import lzma
 from slapos.slap.standalone import SlapOSNodeInstanceError
@@ -1726,7 +1725,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url': {
         # make URL "incorrect", with whitespace, nevertheless it shall be
         # correctly handled
-        'url': ' ' + cls.backend_url + '/?a=b&c=' + ' ',
+        'url': ' ' + cls.backend_url + '?a=b&c=' + ' ',
         # authenticating to http backend shall be no-op
         'authenticate-to-backend': True,
       },
@@ -2222,8 +2221,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'warning-slave-dict': {
         '_Url': [
-          "slave url ' %(backend)s/?a=b&c= ' has been converted to "
-          "'%(backend)s/?a=b&c='" % {'backend': self.backend_url}],
+          "slave url ' %(backend)s?a=b&c= ' has been converted to "
+          "'%(backend)s?a=b&c='" % {'backend': self.backend_url}],
         '_ciphers': [
           "Cipher 'RSA-3DES-EDE-CBC-SHA' translated to 'DES-CBC3-SHA'",
           "Cipher 'RSA-AES128-CBC-SHA' translated to 'AES128-SHA'"],
@@ -2439,7 +2438,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url',
       {
         'warning-list': [
-          "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
+          "slave url ' %s?a=b&c= ' has been converted to '%s?a=b&c='" % (
             self.backend_url, self.backend_url)],
       }
     )
@@ -2459,7 +2458,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     headers = self.assertResponseHeaders(result)
     self.assertNotIn('Strict-Transport-Security', headers)
     self.assertEqualResultJson(
-      result, 'Path', '?a=b&c=' + '/test-path/deeper' * 250)
+      result, 'Path', '/?a=b&c=' + '/test-path/deeper' * 250)
 
     try:
       j = result.json()
@@ -2842,7 +2841,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url',
       {
         'warning-list': [
-          "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
+          "slave url ' %s?a=b&c= ' has been converted to '%s?a=b&c='" % (
             self.backend_url, self.backend_url)],
       }
     )
@@ -2855,7 +2854,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     path = '/compressed'
     config_result = mimikra.config(
-      self.backend_url.rstrip('/') + '?a=b&c=' + path,
+      self.backend_url.rstrip('/') + '/?a=b&c=' + path,
       data=data_compressed,
       headers={
         'X-Config-Reply-Header-Content-Encoding': 'gzip',
@@ -2887,13 +2886,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Url',
       {
         'warning-list': [
-          "slave url ' %s/?a=b&c= ' has been converted to '%s/?a=b&c='" % (
+          "slave url ' %s?a=b&c= ' has been converted to '%s?a=b&c='" % (
             self.backend_url, self.backend_url)],
       }
     )
     path = '/test_no_content_type_alter'
     config_result = mimikra.config(
-      self.backend_url.rstrip('/') + '?a=b&c=' + path,
+      self.backend_url.rstrip('/') + '/?a=b&c=' + path,
       headers={
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Content-Length': 'calculate',
@@ -7980,30 +7979,3 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNotIn('Installing _deleted-', slapgrid_log)
     self.assertIn('Uninstalling _deleted-', slapgrid_log)
     self.assertNotIn('Updating _deleted-', slapgrid_log)
-
-
-if __name__ == '__main__':
-  class HTTP6Server(backend.ThreadedHTTPServer):
-    address_family = socket.AF_INET6
-  ip, port = sys.argv[1], int(sys.argv[2])
-  if len(sys.argv) > 3:
-    ssl_certificate = sys.argv[3]
-    scheme = 'https'
-  else:
-    ssl_certificate = None
-    scheme = 'http'
-  if ':' in ip:
-    klass = HTTP6Server
-    url_template = '%s://[%s]:%s/'
-  else:
-    klass = backend.ThreadedHTTPServer
-    url_template = '%s://%s:%s/'
-
-  server = klass((ip, port), backend.TestHandler)
-  if ssl_certificate is not None:
-    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-    context.load_cert_chain(ssl_certificate)
-    server.socket = context.wrap_socket(server.socket, server_side=True)
-
-  print((url_template % (scheme, *server.server_address[:2])))
-  server.serve_forever()
