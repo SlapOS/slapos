@@ -658,7 +658,11 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     self.assertTrue(instance["valid_parameter"])
 
   def test_updateFromValidationResults_empty_lists(self):
-    """Test updateFromValidationResults with empty lists removes all instances."""
+    """Test updateFromValidationResults with empty lists preserves existing data.
+
+    This test verifies the fix: when both lists are empty, existing data is preserved
+    to avoid unintended deletion of all historical data.
+    """
     # Add some instances
     valid_list1 = [
       {"reference": "ref1", "parameters": {"name": "test1"}},
@@ -666,12 +670,58 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     ]
     self.db.updateFromValidationResults(valid_list1, [])
 
-    # Update with empty lists - all should be removed
+    # Update with empty lists - data should be preserved (not deleted)
     self.db.updateFromValidationResults([], [])
 
-    # Verify all instances were removed
+    # Verify all instances are still present (not removed)
     all_instances = self.db.getInstanceList()
-    self.assertEqual(len(all_instances), 0)
+    self.assertEqual(len(all_instances), 2,
+                     "Instances should be preserved when both lists are empty")
+
+  def test_updateFromValidationResults_empty_lists_preserves_data(self):
+    """Test that updateFromValidationResults with both empty lists preserves existing data.
+
+    This test verifies the fix for the bug where calling updateFromValidationResults
+    with both empty valid_list and invalid_list would create an empty update_list,
+    causing InstanceListComparator to treat all stored instances as "removed",
+    leading to unintended deletion of all historical data.
+
+    The fix adds an early return when both lists are empty to prevent this.
+    """
+    # Add some instances to the database
+    valid_list1 = [
+      {"reference": "ref1", "parameters": {"name": "test1"}},
+      {"reference": "ref2", "parameters": {"name": "test2"}}
+    ]
+    self.db.updateFromValidationResults(valid_list1, [])
+
+    # Verify instances are in the database
+    all_instances_before = self.db.getInstanceList('reference, json_parameters, json_error, hash, valid_parameter')
+    self.assertEqual(len(all_instances_before), 2)
+    refs_before = {r["reference"] for r in all_instances_before}
+    self.assertEqual(refs_before, {"ref1", "ref2"})
+
+    # Call updateFromValidationResults with both lists empty
+    # This should NOT delete all instances (fix prevents deletion)
+    self.db.updateFromValidationResults([], [])
+
+    # Verify instances are still in the database (not deleted)
+    all_instances_after = self.db.getInstanceList('reference, json_parameters, json_error, hash, valid_parameter')
+    self.assertEqual(len(all_instances_after), 2,
+                     "Instances should be preserved when both lists are empty")
+    refs_after = {r["reference"] for r in all_instances_after}
+    self.assertEqual(refs_after, {"ref1", "ref2"})
+
+    # Verify the data is unchanged
+    ref1_before_list = [r for r in all_instances_before if r["reference"] == "ref1"]
+    ref1_after_list = [r for r in all_instances_after if r["reference"] == "ref1"]
+    self.assertEqual(len(ref1_before_list), 1, "ref1 should exist before")
+    self.assertEqual(len(ref1_after_list), 1, "ref1 should exist after")
+
+    ref1_before = ref1_before_list[0]
+    ref1_after = ref1_after_list[0]
+    self.assertEqual(ref1_before["json_parameters"], ref1_after["json_parameters"])
+    self.assertEqual(ref1_before["hash"], ref1_after["hash"])
 
   def test_updateFromValidationResults_mixed_scenario(self):
     """Test updateFromValidationResults with a complex mixed scenario."""
