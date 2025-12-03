@@ -980,7 +980,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
   def test_removed_invalid_instance_re_validation(self):
     """Test that removed invalid instances are not re-processed for re-validation
-    
+
     Previously invalid instances that haven't changed (not in 'modified' or 'removed')
     should not be re-processed for re-validation.
     """
@@ -1020,12 +1020,12 @@ class TestRequestInstanceList(unittest.TestCase):
 
   def test_unchanged_invalid_instance_re_validation(self):
     """Test that unchanged invalid instances are re-processed for re-validation
-    
+
     This test verifies the bug fix at lines 546-547 in requestinstancelist.py.
     Invalid instances that haven't changed (not in 'modified' or 'removed')
     should still be processed for re-validation. This ensures that if validation logic
     changes or external conditions change, invalid instances get re-checked.
-    
+
     Key conditions:
     - Instance exists in both instance-db and requestinstance-db
     - Same parameters (same hash) - NOT in 'modified'
@@ -1083,7 +1083,7 @@ class TestRequestInstanceList(unittest.TestCase):
         return False, ['Validation error: field "name" is required'], error_info
 
     recipe = TestRecipe(self.buildout, 'test', self.options)
-    
+
     with LogCapture() as log:
       recipe.install()
 
@@ -1091,7 +1091,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # This ensures the bug fix is working - unchanged invalid instances should be re-validated
     # The instance is NOT in 'modified' (same hash) and NOT in 'removed' (exists in instance-db)
     # So it should be in unchanged_invalid_instances_to_process and processed
-    self.assertEqual(len(validation_calls), 1, 
+    self.assertEqual(len(validation_calls), 1,
                     "validateInstance should be called once for unchanged invalid instance. "
                     "The instance is not in 'modified' (same hash) and not in 'removed' (exists in instance-db), "
                     "so it should be added to unchanged_invalid_instances_to_process and processed.")
@@ -1290,3 +1290,251 @@ class TestRequestInstanceList(unittest.TestCase):
     conn_params = call_args[0][0]
     self.assertEqual(conn_params['message'], validation_errors['message'])
     self.assertEqual(conn_params['errors'], validation_errors['errors'])
+
+
+class TestCommandLineInterface(unittest.TestCase):
+  """Tests for command-line interface functions"""
+
+  def setUp(self):
+    self.temp_dir = tempfile.mkdtemp()
+    self.config_file = os.path.join(self.temp_dir, 'test.cfg')
+    self.pidfile = os.path.join(self.temp_dir, 'test.pid')
+
+  def tearDown(self):
+    import shutil
+    if os.path.exists(self.temp_dir):
+      shutil.rmtree(self.temp_dir)
+
+  def test_parse_config_file(self):
+    """Test parse_config_file function"""
+    # Create a test config file
+    with open(self.config_file, 'w') as f:
+      f.write('[slaposinstancenode]\n')
+      f.write('instance-db-path = /path/to/instance.db\n')
+      f.write('server-url = https://test.example.com\n')
+
+    parser = requestinstancelist.parse_config_file(self.config_file)
+    self.assertTrue(parser.has_section('slaposinstancenode'))
+    self.assertEqual(parser.get('slaposinstancenode', 'instance-db-path'), '/path/to/instance.db')
+    self.assertEqual(parser.get('slaposinstancenode', 'server-url'), 'https://test.example.com')
+
+  def test_parse_config_file_not_exists(self):
+    """Test parse_config_file raises SystemExit when file doesn't exist"""
+    with self.assertRaises(SystemExit):
+      requestinstancelist.parse_config_file('/nonexistent/file.cfg')
+
+  def test_get_config_section(self):
+    """Test get_config_section function"""
+    from six.moves.configparser import RawConfigParser
+    parser = RawConfigParser()
+    parser.add_section('test-section')
+    parser.set('test-section', 'key1', 'value1')
+    parser.set('test-section', 'key2', 'value2')
+
+    section = requestinstancelist.get_config_section(parser, 'test-section')
+    self.assertEqual(section['key1'], 'value1')
+    self.assertEqual(section['key2'], 'value2')
+
+  def test_get_config_section_not_exists(self):
+    """Test get_config_section returns empty dict when section doesn't exist"""
+    from six.moves.configparser import RawConfigParser
+    parser = RawConfigParser()
+
+    section = requestinstancelist.get_config_section(parser, 'nonexistent')
+    self.assertEqual(section, {})
+
+  def test_create_buildout_dict_from_config(self):
+    """Test create_buildout_dict_from_config function"""
+    # Create a test config file
+    with open(self.config_file, 'w') as f:
+      f.write('[slaposinstancenode]\n')
+      f.write('server-url = https://test.example.com\n')
+      f.write('computer-id = test-computer\n')
+      f.write('partition-id = test-partition\n')
+      f.write('[slap-connection]\n')
+      f.write('key-file = /path/to/key\n')
+      f.write('cert-file = /path/to/cert\n')
+
+    parser = requestinstancelist.parse_config_file(self.config_file)
+    buildout = requestinstancelist.create_buildout_dict_from_config(parser, self.temp_dir)
+
+    self.assertIn('buildout', buildout)
+    self.assertIn('slap-connection', buildout)
+    self.assertEqual(buildout['slap-connection']['server-url'], 'https://test.example.com')
+    self.assertEqual(buildout['slap-connection']['computer-id'], 'test-computer')
+    self.assertEqual(buildout['slap-connection']['partition-id'], 'test-partition')
+    self.assertEqual(buildout['slap-connection']['key-file'], '/path/to/key')
+    self.assertEqual(buildout['slap-connection']['cert-file'], '/path/to/cert')
+
+  def test_create_buildout_dict_from_config_fallback(self):
+    """Test create_buildout_dict_from_config falls back to main section for slap-connection"""
+    # Create a test config file without [slap-connection] section
+    with open(self.config_file, 'w') as f:
+      f.write('[slaposinstancenode]\n')
+      f.write('server-url = https://test.example.com\n')
+      f.write('computer-id = test-computer\n')
+      f.write('partition-id = test-partition\n')
+
+    parser = requestinstancelist.parse_config_file(self.config_file)
+    buildout = requestinstancelist.create_buildout_dict_from_config(parser, self.temp_dir)
+
+    self.assertEqual(buildout['slap-connection']['server-url'], 'https://test.example.com')
+    self.assertEqual(buildout['slap-connection']['computer-id'], 'test-computer')
+    self.assertEqual(buildout['slap-connection']['partition-id'], 'test-partition')
+
+  def test_create_options_dict_from_config(self):
+    """Test create_options_dict_from_config function"""
+    # Create a test config file
+    with open(self.config_file, 'w') as f:
+      f.write('[slaposinstancenode]\n')
+      f.write('instance-db-path = /path/to/instance.db\n')
+      f.write('server-url = https://test.example.com\n')
+
+    parser = requestinstancelist.parse_config_file(self.config_file)
+    options = requestinstancelist.create_options_dict_from_config(parser)
+
+    self.assertEqual(options['instance-db-path'], '/path/to/instance.db')
+    self.assertEqual(options['server-url'], 'https://test.example.com')
+
+  def test_create_options_dict_from_config_missing_section(self):
+    """Test create_options_dict_from_config raises SystemExit when section is missing"""
+    from six.moves.configparser import RawConfigParser
+    parser = RawConfigParser()
+
+    with self.assertRaises(SystemExit):
+      requestinstancelist.create_options_dict_from_config(parser)
+
+  def test_parse_command_line_args(self):
+    """Test parse_command_line_args function"""
+    import sys
+    old_argv = sys.argv
+    try:
+      sys.argv = ['test', '--cfg', '/path/to/config.cfg', '--pidfile', '/path/to/pidfile.pid']
+      args = requestinstancelist.parse_command_line_args()
+      self.assertEqual(args.cfg, '/path/to/config.cfg')
+      self.assertEqual(args.pidfile, '/path/to/pidfile.pid')
+    finally:
+      sys.argv = old_argv
+
+  def test_parse_command_line_args_no_pidfile(self):
+    """Test parse_command_line_args with no pidfile"""
+    import sys
+    old_argv = sys.argv
+    try:
+      sys.argv = ['test', '--cfg', '/path/to/config.cfg']
+      args = requestinstancelist.parse_command_line_args()
+      self.assertEqual(args.cfg, '/path/to/config.cfg')
+      self.assertIsNone(args.pidfile)
+    finally:
+      sys.argv = old_argv
+
+  def test_parse_command_line_args_missing_cfg(self):
+    """Test parse_command_line_args raises SystemExit when --cfg is missing"""
+    import sys
+    old_argv = sys.argv
+    try:
+      sys.argv = ['test']
+      with self.assertRaises(SystemExit):
+        requestinstancelist.parse_command_line_args()
+    finally:
+      sys.argv = old_argv
+
+  def test_pidfile_lock_acquire_release(self):
+    """Test PIDFileLock context manager acquires and releases lock"""
+    lock = requestinstancelist.PIDFileLock(self.pidfile)
+
+    # Should be able to acquire lock
+    with lock:
+      # Lock should be held
+      self.assertTrue(os.path.exists(self.pidfile))
+      # PID should be written
+      with open(self.pidfile, 'r') as f:
+        pid = f.read().strip()
+        self.assertEqual(pid, str(os.getpid()))
+
+    # Lock should be released after context exit
+    # PID file should be removed on successful exit
+    self.assertFalse(os.path.exists(self.pidfile))
+
+  def test_pidfile_lock_no_pidfile(self):
+    """Test PIDFileLock with None pidfile path"""
+    lock = requestinstancelist.PIDFileLock(None)
+
+    # Should work without creating a file
+    with lock:
+      pass
+
+    # No file should be created
+    self.assertFalse(os.path.exists(self.pidfile))
+
+  def test_pidfile_lock_stale_pidfile(self):
+    """Test PIDFileLock handles stale PID file (process doesn't exist)"""
+    # Create a PID file with a non-existent PID
+    with open(self.pidfile, 'w') as f:
+      f.write('99999\n')
+
+    lock = requestinstancelist.PIDFileLock(self.pidfile)
+
+    # Should be able to acquire lock (stale PID file removed)
+    with lock:
+      # Lock should be held
+      self.assertTrue(os.path.exists(self.pidfile))
+      # PID should be updated
+      with open(self.pidfile, 'r') as f:
+        pid = f.read().strip()
+        self.assertEqual(pid, str(os.getpid()))
+
+  def test_pidfile_lock_existing_process(self):
+    """Test PIDFileLock raises SystemExit when another process is running"""
+    # Create a PID file with current PID (simulating another instance)
+    with open(self.pidfile, 'w') as f:
+      f.write(str(os.getpid()) + '\n')
+
+    # Try to acquire lock - should fail because PID exists
+    lock = requestinstancelist.PIDFileLock(self.pidfile)
+
+    # Mock os.kill to return success (process exists)
+    with mock.patch('os.kill') as mock_kill:
+      mock_kill.return_value = None  # Process exists
+      with self.assertRaises(SystemExit) as cm:
+        with lock:
+          pass
+      self.assertIn('Another instance is already running', str(cm.exception))
+
+  def test_load_config_and_create_objects(self):
+    """Test load_config_and_create_objects function"""
+    # Create a test config file
+    with open(self.config_file, 'w') as f:
+      f.write('[slaposinstancenode]\n')
+      f.write('instance-db-path = /path/to/instance.db\n')
+      f.write('requestinstance-db-path = /path/to/requestinstance.db\n')
+      f.write('server-url = https://test.example.com\n')
+      f.write('computer-id = test-computer\n')
+      f.write('partition-id = test-partition\n')
+      f.write('software-url = https://software.example.com\n')
+      f.write('software-type = cdn\n')
+
+    buildout, options, pidfile_lock = requestinstancelist.load_config_and_create_objects(
+      self.config_file, self.pidfile
+    )
+
+    self.assertIsNotNone(buildout)
+    self.assertIsNotNone(options)
+    self.assertIsNotNone(pidfile_lock)
+    self.assertEqual(options['instance-db-path'], '/path/to/instance.db')
+    self.assertEqual(options['server-url'], 'https://test.example.com')
+
+  def test_load_config_and_create_objects_no_pidfile(self):
+    """Test load_config_and_create_objects without pidfile"""
+    # Create a test config file
+    with open(self.config_file, 'w') as f:
+      f.write('[slaposinstancenode]\n')
+      f.write('instance-db-path = /path/to/instance.db\n')
+
+    buildout, options, pidfile_lock = requestinstancelist.load_config_and_create_objects(
+      self.config_file, None
+    )
+
+    self.assertIsNotNone(buildout)
+    self.assertIsNotNone(options)
+    self.assertIsNone(pidfile_lock)
