@@ -27,6 +27,11 @@
 import logging
 import json
 import time
+import os
+import sys
+import argparse
+import fcntl
+from six.moves.configparser import RawConfigParser
 from slapos.recipe.localinstancedb import HostedInstanceLocalDB, InstanceListComparator
 from slapos.recipe.request import RequestOptional as RequestRecipe
 from slapos import slap
@@ -540,6 +545,7 @@ class Recipe(object):
     # 1. New instances (added)
     # 2. Modified instances
     # 3. Previously invalid instances (even if unchanged, they need re-validation)
+    # 4. Removed instances (they need to be destroyed)
 
     unchanged_invalid_instances_to_process = set()
     invalid_instance_rows = self.requestinstance_db.getInstanceList("reference", invalid_only=True)
@@ -566,3 +572,290 @@ class Recipe(object):
     return []
 
   update = install
+
+
+class PIDFileLock(object):
+  """
+  Context manager for PID file locking to prevent multiple instances.
+  """
+  def __init__(self, pidfile_path):
+    self.pidfile_path = pidfile_path
+    self.pidfile = None
+
+  def __enter__(self):
+    if not self.pidfile_path:
+      return self
+    try:
+      # Create directory if it doesn't exist
+      pidfile_dir = os.path.dirname(self.pidfile_path)
+      if pidfile_dir and not os.path.exists(pidfile_dir):
+        os.makedirs(pidfile_dir)
+      
+      # Open PID file in append mode (create if doesn't exist)
+      self.pidfile = open(self.pidfile_path, 'a+')
+      
+      # Try to acquire exclusive lock (non-blocking)
+      fcntl.flock(self.pidfile.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+      
+      # Write current PID to file
+      self.pidfile.seek(0)
+      self.pidfile.truncate()
+      self.pidfile.write(str(os.getpid()) + '\n')
+      self.pidfile.flush()
+      
+      return self
+    except (IOError, OSError) as e:
+      if self.pidfile:
+        self.pidfile.close()
+        self.pidfile = None
+      # Check if another process is running
+      if os.path.exists(self.pidfile_path):
+        try:
+          with open(self.pidfile_path, 'r') as f:
+            old_pid = f.read().strip()
+            if old_pid:
+              # Check if process is still running
+              try:
+                os.kill(int(old_pid), 0)
+                raise SystemExit(
+                  'Another instance is already running (PID: %s). '
+                  'If this is not the case, remove the PID file: %s'
+                  % (old_pid, self.pidfile_path)
+                )
+              except (OSError, ValueError):
+                # Process doesn't exist, remove stale PID file
+                os.remove(self.pidfile_path)
+                # Retry lock acquisition
+                return self.__enter__()
+        except (IOError, ValueError):
+          pass
+      raise SystemExit('Failed to acquire lock on PID file %s: %s' % (self.pidfile_path, e))
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    if self.pidfile:
+      try:
+        fcntl.flock(self.pidfile.fileno(), fcntl.LOCK_UN)
+      except (IOError, OSError):
+        pass
+      self.pidfile.close()
+      # Remove PID file on successful exit
+      if exc_type is None and self.pidfile_path and os.path.exists(self.pidfile_path):
+        try:
+          os.remove(self.pidfile_path)
+        except (IOError, OSError):
+          pass
+
+
+def parse_config_file(config_path):
+  """
+  Parse a buildout-style config file and return a ConfigParser object.
+  
+  Args:
+    config_path: Path to the config file
+    
+  Returns:
+    RawConfigParser object with parsed config
+  """
+  if not os.path.exists(config_path):
+    raise SystemExit('Config file does not exist: %s' % config_path)
+  
+  parser = RawConfigParser()
+  parser.read(config_path)
+  return parser
+
+
+def get_config_section(parser, section_name):
+  """
+  Get a section from the config parser as a dictionary.
+  
+  Args:
+    parser: RawConfigParser object
+    section_name: Name of the section to retrieve
+    
+  Returns:
+    Dictionary of section options, or empty dict if section doesn't exist
+  """
+  if not parser.has_section(section_name):
+    return {}
+  
+  options = {}
+  for key, value in parser.items(section_name):
+    options[key] = value
+  return options
+
+
+def create_buildout_dict_from_config(config_parser, buildout_directory=None, main_section_name='slaposinstancenode'):
+  """
+  Create a minimal buildout dictionary from config file.
+  
+  Args:
+    config_parser: RawConfigParser object with parsed config
+    buildout_directory: Optional buildout directory path (defaults to current directory)
+    main_section_name: Name of the main section to read from (default: 'slaposinstancenode')
+    
+  Returns:
+    Dictionary representing buildout structure
+  """
+  if buildout_directory is None:
+    buildout_directory = os.getcwd()
+  
+  buildout = {
+    'buildout': {
+      'directory': buildout_directory,
+      'bin-directory': '',
+      'find-links': '',
+      'allow-hosts': '',
+      'allow-unknown-extras': False,
+      'develop-eggs-directory': '',
+      'eggs-directory': '',
+      'newest': False,
+      'offline': False,
+    },
+    'slap-connection': {}
+  }
+  
+  # Read slap-connection section if it exists
+  slap_connection = get_config_section(config_parser, 'slap-connection')
+  if slap_connection:
+    buildout['slap-connection'].update(slap_connection)
+  else:
+    # Fallback: try to get from main section
+    main_section = get_config_section(config_parser, main_section_name)
+    for key in ['server-url', 'computer-id', 'partition-id', 'key-file', 'cert-file']:
+      if key in main_section:
+        buildout['slap-connection'][key] = main_section[key]
+  
+  return buildout
+
+
+def create_options_dict_from_config(config_parser, section_name='slaposinstancenode'):
+  """
+  Create options dictionary from config file section.
+  
+  Args:
+    config_parser: RawConfigParser object with parsed config
+    section_name: Name of the section to read options from (default: 'slaposinstancenode')
+    
+  Returns:
+    Dictionary of options
+  """
+  options = get_config_section(config_parser, section_name)
+  
+  if not options:
+    raise SystemExit('Config file must contain a [%s] section' % section_name)
+  
+  return options
+
+
+def parse_command_line_args():
+  """
+  Parse command-line arguments for config file path and PID file.
+  
+  Returns:
+    argparse.Namespace with cfg and pidfile attributes
+  """
+  parser = argparse.ArgumentParser(
+    description='Request Instance List Recipe - Command line interface',
+    formatter_class=argparse.RawDescriptionHelpFormatter
+  )
+  
+  parser.add_argument(
+    '--cfg',
+    required=True,
+    help='Path to configuration file (slaposinstancenode.cfg)'
+  )
+  
+  parser.add_argument(
+    '--pidfile',
+    help='Path to PID file to prevent multiple instances (optional)'
+  )
+  
+  return parser.parse_args()
+
+
+def load_config_and_create_objects(config_path, pidfile_path=None, section_name='slaposinstancenode'):
+  """
+  Load config file, handle PID file locking, and create buildout/options dicts.
+  
+  Args:
+    config_path: Path to config file
+    pidfile_path: Optional path to PID file
+    section_name: Name of the section to read from config (default: 'slaposinstancenode')
+    
+  Returns:
+    tuple: (buildout_dict, options_dict, pidfile_lock_context)
+    The pidfile_lock_context should be used as a context manager
+  """
+  # Parse config file
+  config_parser = parse_config_file(config_path)
+  
+  # Get options from config
+  options = create_options_dict_from_config(config_parser, section_name)
+  
+  # Get buildout directory from options or use current directory
+  buildout_directory = options.get('buildout-directory', os.getcwd())
+  
+  # Create buildout dict
+  buildout = create_buildout_dict_from_config(config_parser, buildout_directory, section_name)
+  
+  # Create PID file lock context
+  pidfile_lock = PIDFileLock(pidfile_path) if pidfile_path else None
+  
+  return buildout, options, pidfile_lock
+
+
+def main():
+  """
+  Main entry point for command-line execution.
+  """
+  try:
+    # Parse command-line arguments
+    args = parse_command_line_args()
+    
+    # Load config file and create buildout/options dicts with PID file locking
+    buildout, options, pidfile_lock = load_config_and_create_objects(
+      args.cfg,
+      args.pidfile,
+      section_name='slaposinstancenode'
+    )
+    
+    # Use PID file lock as context manager to prevent multiple instances
+    if pidfile_lock:
+      with pidfile_lock:
+        # Create recipe instance
+        recipe = Recipe(
+          buildout=buildout,
+          name='request-instance-list',
+          options=options
+        )
+        
+        # Run the recipe
+        recipe.install()
+    else:
+      # No PID file locking
+      # Create recipe instance
+      recipe = Recipe(
+        buildout=buildout,
+        name='request-instance-list',
+        options=options
+      )
+      
+      # Run the recipe
+      recipe.install()
+    
+    return 0
+  except KeyboardInterrupt:
+    sys.stderr.write('\nInterrupted by user\n')
+    return 130
+  except SystemExit as e:
+    # Re-raise SystemExit to preserve exit code
+    raise
+  except Exception as e:
+    sys.stderr.write('Error: %s\n' % str(e))
+    import traceback
+    traceback.print_exc()
+    return 1
+
+
+if __name__ == '__main__':
+  sys.exit(main())
