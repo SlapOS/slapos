@@ -14,6 +14,22 @@
       "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg",
       "description": "Software URL used for requesting the CDN slaves",
       "type": "string"
+    },
+    "dns-nameserver": {
+      "title": "DNS Nameserver",
+      "default": "",
+      "description": "DNS Nameserver used for requesting the CDN slaves",
+      "type": "string"
+    },
+    "-sla-computer_guid": {
+      "title": "SLA Computer GUID",
+      "description": "SLA Computer GUID used for requesting the CDN slaves",
+      "type": "string"
+    },
+    "-sla-instance_guid": {
+      "title": "SLA Instance GUID",
+      "description": "SLA Instance GUID used for requesting the CDN slaves",
+      "type": "string"
     }
   },
   "patternProperties": {
