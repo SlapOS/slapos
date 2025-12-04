@@ -677,7 +677,7 @@ def main():
     args = parse_command_line_args()
 
     # Load config file and create buildout/options dicts with PID file locking
-    buildout, options, pidfile_lock = load_config_and_create_objects(
+    options, pidfile_lock = load_config_and_create_objects(
       args.cfg,
       args.pidfile,
       section_name='slaposinstancenode'
@@ -688,7 +688,7 @@ def main():
       with pidfile_lock:
         # Create recipe instance
         recipe = CDNRequestRecipe(
-          buildout=buildout,
+          buildout=None,
           name='cdn-request',
           options=options
         )
@@ -699,7 +699,7 @@ def main():
       # No PID file locking
       # Create recipe instance
       recipe = CDNRequestRecipe(
-        buildout=buildout,
+        buildout=None,
         name='cdn-request',
         options=options
       )
