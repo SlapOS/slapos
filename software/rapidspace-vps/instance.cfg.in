@@ -33,9 +33,7 @@ init =
   # so only set what is custom compared to default values
   ${slap-configuration-common:common-all}
   conf['ram-size'] = 245760
-  conf['ram-max-size'] = 246272
   conf['cpu-count'] = 40
-  conf['cpu-max-count'] = 41
   conf['disk-device-path'] = "/dev/sdb"
   options['configuration'] = conf
   # XXX we should make sure this configuration matches KVM json schema...
