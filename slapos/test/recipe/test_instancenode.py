@@ -772,12 +772,12 @@ class TestRequestInstanceList(unittest.TestCase):
     slave_ref = call_args[1]['slave_reference']
 
     self.assertEqual(slave_ref, 'instance1')
-    self.assertEqual(conn_params['message'], 'Your instance is valid the request has been transmitted to the master')
+    self.assertEqual(conn_params['message'], 'Your instance is valid the request has been transmitted to the master, waiting for its connection parameters')
     
-    # Verify instance is valid since getConnectionParameterDict succeeded (returned empty dict)
+    # Verify instance is invalid since getConnectionParameterDict returned empty dict
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    self.assertEqual(stored[0]['valid_parameter'], True)
+    self.assertEqual(stored[0]['valid_parameter'], False)
 
   def test_publish_connection_parameters_empty(self):
     """Test that empty connection parameters are not published"""
@@ -906,12 +906,12 @@ class TestRequestInstanceList(unittest.TestCase):
     slave_ref = call_args[1]['slave_reference']
 
     self.assertEqual(slave_ref, 'instance1')
-    self.assertEqual(conn_params['message'], 'Your instance is valid the request has been transmitted to the master')
+    self.assertEqual(conn_params['message'], 'Your instance is valid the request has been transmitted to the master, waiting for its connection parameters')
     
-    # Verify instance is valid since getConnectionParameterDict succeeded (returned empty dict)
+    # Verify instance is invalid since getConnectionParameterDict returned empty dict
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    self.assertEqual(stored[0]['valid_parameter'], True)
+    self.assertEqual(stored[0]['valid_parameter'], False)
 
   def test_publish_error_info_for_new_invalid_instance(self):
     """Test that error info is published for new invalid instances"""
@@ -1305,8 +1305,9 @@ class TestRequestInstanceList(unittest.TestCase):
     ).hexdigest()
 
     # Same connection parameters in both DBs (unchanged)
+    # When getConnectionParameterDict returns empty dict, this message is generated
     conn_params = {
-      'message': 'Your instance is valid the request has been transmitted to the master'
+      'message': 'Your instance is valid the request has been transmitted to the master, waiting for its connection parameters'
     }
 
     # Add to instance-db
@@ -1346,9 +1347,10 @@ class TestRequestInstanceList(unittest.TestCase):
     # Even though instance was processed, connection params are the same
     self.setConnectionDict.assert_not_called()
 
+    # Verify instance is invalid since getConnectionParameterDict returned empty dict
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    self.assertEqual(stored[0]['valid_parameter'], True)
+    self.assertEqual(stored[0]['valid_parameter'], False)
     
     # Verify log shows instance was processed and skipping publish
     log.check(
