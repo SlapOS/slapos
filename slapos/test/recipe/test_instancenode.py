@@ -642,6 +642,177 @@ class TestRequestInstanceList(unittest.TestCase):
     call_kwargs = self.request_instance.call_args[1]
     self.assertEqual(call_kwargs['state'], 'started')
 
+  def test_request_name_prefix_new_instance(self):
+    """Test that request-name-prefix is applied to new instance requests"""
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    options = self.options.copy()
+    options['request-name-prefix'] = 'prefix-'
+
+    recipe = instancenode.Recipe(
+      self.buildout, 'test', options
+    )
+    recipe.install()
+
+    # Verify request was made with prefixed name
+    self.request_instance.assert_called_once()
+    call_args = self.request_instance.call_args
+    self.assertEqual(call_args[0][2], 'prefix-instance1')  # name parameter with prefix
+
+    # Verify local database still uses original reference (no prefix)
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['reference'], 'instance1')  # Original reference, no prefix
+
+  def test_request_name_prefix_modified_instance(self):
+    """Test that request-name-prefix is applied to modified instance requests"""
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    # Add to instance-db with new parameters
+    new_params = {'key': 'new_value'}
+    new_hash = hashlib.sha256(
+      json.dumps(new_params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(new_params, sort_keys=True),
+      "{}",
+      new_hash,
+      "1234567890",
+      True
+    )])
+
+    # Add to requestinstance-db with old parameters
+    old_params = {'key': 'old_value'}
+    old_hash = hashlib.sha256(
+      json.dumps(old_params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(old_params, sort_keys=True),
+      '{"param1": "old_conn1"}',
+      old_hash,
+      "1234567890",
+      True
+    )])
+
+    options = self.options.copy()
+    options['request-name-prefix'] = 'prefix-'
+
+    recipe = instancenode.Recipe(
+      self.buildout, 'test', options
+    )
+    recipe.install()
+
+    # Verify request was made with prefixed name
+    self.request_instance.assert_called_once()
+    call_args = self.request_instance.call_args
+    self.assertEqual(call_args[0][2], 'prefix-instance1')  # name parameter with prefix
+
+    # Verify local database still uses original reference (no prefix)
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['reference'], 'instance1')  # Original reference, no prefix
+
+  def test_request_name_prefix_destroyed_instance(self):
+    """Test that request-name-prefix is applied to destroyed instance requests"""
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    params = {'key': 'value'}
+    instance_hash = hashlib.sha256(
+      json.dumps(params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      '{"param1": "conn1"}',
+      instance_hash,
+      "1234567890",
+      True
+    )])
+
+    options = self.options.copy()
+    options['request-name-prefix'] = 'prefix-'
+
+    recipe = instancenode.Recipe(
+      self.buildout, 'test', options
+    )
+    recipe.install()
+
+    # Verify destroy was requested with prefixed name
+    self.request_instance.assert_called_once()
+    call_args = self.request_instance.call_args
+    self.assertEqual(call_args[0][2], 'prefix-instance1')  # name parameter with prefix
+    call_kwargs = self.request_instance.call_args[1]
+    self.assertEqual(call_kwargs['state'], 'destroyed')
+
+  def test_request_name_prefix_multiple_instances(self):
+    """Test that request-name-prefix is applied to all instance requests"""
+    self._createInstanceDB([
+      ('instance1', {'key': 'value1'}, True),
+      ('instance2', {'key': 'value2'}, True)
+    ])
+
+    options = self.options.copy()
+    options['request-name-prefix'] = 'prefix-'
+
+    recipe = instancenode.Recipe(
+      self.buildout, 'test', options
+    )
+    recipe.install()
+
+    # Verify both requests were made with prefixed names
+    self.assertEqual(self.request_instance.call_count, 2)
+    call_args_list = self.request_instance.call_args_list
+    requested_names = [call[0][2] for call in call_args_list]
+    self.assertIn('prefix-instance1', requested_names)
+    self.assertIn('prefix-instance2', requested_names)
+
+    # Verify local database still uses original references (no prefix)
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 2)
+    stored_refs = {row['reference'] for row in stored}
+    self.assertEqual(stored_refs, {'instance1', 'instance2'})  # Original references, no prefix
+
+  def test_request_name_prefix_default_empty(self):
+    """Test that request-name-prefix defaults to empty string (no prefix)"""
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    # Don't set request-name-prefix option
+    recipe = instancenode.Recipe(
+      self.buildout, 'test', self.options
+    )
+    recipe.install()
+
+    # Verify request was made without prefix
+    self.request_instance.assert_called_once()
+    call_args = self.request_instance.call_args
+    self.assertEqual(call_args[0][2], 'instance1')  # name parameter without prefix
+
+  def test_request_name_prefix_empty_string(self):
+    """Test that empty request-name-prefix works the same as default"""
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    options = self.options.copy()
+    options['request-name-prefix'] = ''
+
+    recipe = instancenode.Recipe(
+      self.buildout, 'test', options
+    )
+    recipe.install()
+
+    # Verify request was made without prefix
+    self.request_instance.assert_called_once()
+    call_args = self.request_instance.call_args
+    self.assertEqual(call_args[0][2], 'instance1')  # name parameter without prefix
+
   def test_request_failure_handling(self):
     """Test that request failures raise exceptions"""
     # Request failures should raise, so instance won't be tracked
