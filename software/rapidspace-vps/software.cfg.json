@@ -10,6 +10,34 @@
       "response": "../kvm/instance-kvm-output-schema.json",
       "index": 0
     },
+    "vps-nvme0n1": {
+      "title": "Default VPS",
+      "description": "Default VPS with 40 cores, 256GB of RAM and 1 disk of 4TB (on /dev/nvme0n1)",
+      "request": "../kvm/boot-image-input-schema.json",
+      "response": "../kvm/instance-kvm-output-schema.json",
+      "index": 0
+    },
+    "vps-nvme1n1": {
+      "title": "Default VPS",
+      "description": "Default VPS with 40 cores, 256GB of RAM and 1 disk of 4TB (on /dev/nvme1n1)",
+      "request": "../kvm/boot-image-input-schema.json",
+      "response": "../kvm/instance-kvm-output-schema.json",
+      "index": 0
+    },
+    "vps-nvme2n1": {
+      "title": "Default VPS",
+      "description": "Default VPS with 40 cores, 256GB of RAM and 1 disk of 4TB (on /dev/nvme2n1)",
+      "request": "../kvm/boot-image-input-schema.json",
+      "response": "../kvm/instance-kvm-output-schema.json",
+      "index": 0
+    },
+    "vps-nvme3n1": {
+      "title": "Default VPS",
+      "description": "Default VPS with 40 cores, 256GB of RAM and 1 disk of 4TB (on /dev/nvme3n1)",
+      "request": "../kvm/boot-image-input-schema.json",
+      "response": "../kvm/instance-kvm-output-schema.json",
+      "index": 0
+    },
     "vpsbrute-4disks": {
       "title": "Default VPSBrute (4disks)",
       "description": "Default VPSBrute with 128 cores, 1TB of RAM and 4 disks of 4TB",
