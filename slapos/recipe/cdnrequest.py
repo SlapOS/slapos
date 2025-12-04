@@ -8,6 +8,7 @@ import urllib.parse
 import subprocess
 import json
 import sys
+import logging
 from slapos.recipe.instancenode import (
   Recipe as InstanceNodeRecipe,
   parse_command_line_args,
@@ -664,6 +665,13 @@ def main():
   """
   Main entry point for command-line execution.
   """
+  # Configure logging to output to stderr
+  logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+  )
+  
   try:
     # Parse command-line arguments
     args = parse_command_line_args()
