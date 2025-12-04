@@ -163,10 +163,6 @@ class CDNRequestRecipe(InstanceNodeRecipe):
     self.openssl_binary = options.get('openssl-binary')
     if not self.openssl_binary:
       self.logger.warning('openssl-binary option not provided, SSL certificate validation will be skipped')
-    # DNS cache configuration for domain validation
-    # Use a short cache TTL (60 seconds) to detect DNS changes quickly
-    # This ensures validation detects new TXT records within ~1 minute
-    self.dns_cache_ttl = float(options.get('dns-cache-ttl', 60))
     # Nameserver configuration - if provided, query directly to this nameserver
     # instead of using system DNS resolver. This is useful for:
     # - Consistent DNS resolution regardless of system configuration
