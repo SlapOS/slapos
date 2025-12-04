@@ -78,6 +78,10 @@ class Recipe(object):
 
     shared (optional, defaults to false)
       Set to "true" when requesting shared instances.
+
+    request-name-prefix (optional, defaults to empty string)
+      Prefix to prepend to instance reference when making requests to the master.
+      The prefix is only applied to the request name, not to local database references.
   """
 
   def __init__(self, buildout, name, options):
@@ -112,6 +116,9 @@ class Recipe(object):
     self.software_type = options['software-type']
 
     self.shared = options.get('shared', 'false').lower() in ['y', 'yes', '1', 'true']
+
+    # Optional prefix for request names
+    self.request_name_prefix = options.get('request-name-prefix', '')
 
     # Extract sla-* options from recipe options (same for all instances)
     # These will be used as filter_kw in requests
@@ -187,13 +194,18 @@ class Recipe(object):
     # (sla-* options come from recipe options, not instance parameters)
     partition_parameter_kw = parameters.copy()
     
+    # Apply request-name-prefix if specified
+    request_reference = instance_reference
+    if self.request_name_prefix:
+      request_reference = self.request_name_prefix + instance_reference
+    
     # Make the request directly using the slap library
     valid = False
     try:
       instance = computer_partition.request(
         self.software_url,
         self.software_type,
-        instance_reference,
+        request_reference,
         partition_parameter_kw=partition_parameter_kw,
         filter_kw=filter_kw,
         shared=self.shared,
