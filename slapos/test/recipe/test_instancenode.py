@@ -160,6 +160,8 @@ class TestRequestInstanceList(unittest.TestCase):
     # Connection parameters are stored in json_error for valid instances
     stored_error = json.loads(stored[0]['json_error'])
     self.assertEqual(stored_error, {"foo": "bar"})
+    # Instance should be valid since connection parameters were available
+    self.assertEqual(stored[0]['valid_parameter'], True)
 
   def test_new_invalid_instance(self):
     """Test that invalid instances are tracked but not requested"""
@@ -243,6 +245,8 @@ class TestRequestInstanceList(unittest.TestCase):
     # Connection parameters are stored in json_error for valid instances
     stored_error = json.loads(stored[0]['json_error'])
     self.assertEqual(stored_error, {"foo": "bar"})
+    # Instance should be valid since connection parameters were available
+    self.assertEqual(stored[0]['valid_parameter'], True)
 
   def test_modified_invalid_instance(self):
     """Test that modified invalid instances are tracked but not requested"""
@@ -709,12 +713,15 @@ class TestRequestInstanceList(unittest.TestCase):
     )
     recipe.install()
 
-    # Verify instance was updated (connection parameters are stored for valid instances)
+    # Verify instance was updated
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    # Connection parameters are stored in json_error for valid instances
+    # When getConnectionParameterDict raises an exception, valid should be False
+    # and a message dict is published
     stored_error = json.loads(stored[0]['json_error'])
     self.assertEqual(stored_error, {'message': 'Your instance is valid the request has been transmitted to the master'})
+    # Instance should be invalid since connection parameters were not available (exception raised)
+    self.assertEqual(stored[0]['valid_parameter'], False)
 
   def test_publish_connection_parameters_on_validation_failure(self):
     """Test that connection parameters are published when validation fails"""
@@ -766,6 +773,11 @@ class TestRequestInstanceList(unittest.TestCase):
 
     self.assertEqual(slave_ref, 'instance1')
     self.assertEqual(conn_params['message'], 'Your instance is valid the request has been transmitted to the master')
+    
+    # Verify instance is valid since getConnectionParameterDict succeeded (returned empty dict)
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['valid_parameter'], True)
 
   def test_publish_connection_parameters_empty(self):
     """Test that empty connection parameters are not published"""
@@ -895,6 +907,11 @@ class TestRequestInstanceList(unittest.TestCase):
 
     self.assertEqual(slave_ref, 'instance1')
     self.assertEqual(conn_params['message'], 'Your instance is valid the request has been transmitted to the master')
+    
+    # Verify instance is valid since getConnectionParameterDict succeeded (returned empty dict)
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['valid_parameter'], True)
 
   def test_publish_error_info_for_new_invalid_instance(self):
     """Test that error info is published for new invalid instances"""
@@ -1329,6 +1346,10 @@ class TestRequestInstanceList(unittest.TestCase):
     # Even though instance was processed, connection params are the same
     self.setConnectionDict.assert_not_called()
 
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['valid_parameter'], True)
+    
     # Verify log shows instance was processed and skipping publish
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
@@ -1400,6 +1421,11 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(slave_ref, 'instance1')
     self.assertEqual(published_params, new_conn_params)
     self.assertIn('url', published_params)
+    
+    # Verify instance is valid since connection parameters were available
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['valid_parameter'], True)
 
     # Verify log shows publishing
     log.check(
@@ -1434,6 +1460,11 @@ class TestRequestInstanceList(unittest.TestCase):
 
     self.assertEqual(slave_ref, 'instance1')
     self.assertEqual(published_params, conn_params)
+    
+    # Verify instance is valid since connection parameters were available
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['valid_parameter'], True)
 
     # Verify log shows publishing
     log.check(
@@ -1579,6 +1610,11 @@ class TestRequestInstanceList(unittest.TestCase):
     call_args = self.setConnectionDict.call_args
     published_params = call_args[0][0]
     self.assertEqual(published_params, conn_params)
+    
+    # Verify instance is valid since connection parameters were available
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['valid_parameter'], True)
 
   def test_publish_connection_parameters_invalid_json_error_republishes(self):
     """Test that invalid json_error in database causes republish (can't compare)"""
@@ -1632,6 +1668,11 @@ class TestRequestInstanceList(unittest.TestCase):
     call_args = self.setConnectionDict.call_args
     published_params = call_args[0][0]
     self.assertEqual(published_params, conn_params)
+    
+    # Verify instance is valid since connection parameters were available
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['valid_parameter'], True)
 
     # Verify log shows publishing
     log.check(
@@ -1692,6 +1733,11 @@ class TestRequestInstanceList(unittest.TestCase):
     call_args = self.setConnectionDict.call_args
     published_params = call_args[0][0]
     self.assertEqual(published_params, conn_params)
+    
+    # Verify instance is valid since connection parameters were available
+    stored = self._getRequestInstanceDB()
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['valid_parameter'], True)
 
     # Verify log shows publishing
     log.check(
