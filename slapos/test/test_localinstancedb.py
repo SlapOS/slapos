@@ -279,14 +279,14 @@ class TestInstanceListComparator(unittest.TestCase):
 
     # Sample stored dict with pre-computed hashes
     self.stored_dict = {
-      "_test1": self._compute_hash({"parameters": {"name": "test1", "value": 10}, "reference": "_test1"}),
-      "_test2": self._compute_hash({"parameters": {"name": "test2", "value": 999}, "reference": "_test2"}),  # Modified
-      "_test4": self._compute_hash({"parameters": {"name": "test4", "value": 40}, "reference": "_test4"})  # Removed
+      "_test1": self._compute_hash({"name": "test1", "value": 10}),
+      "_test2": self._compute_hash({"name": "test2", "value": 999}),  # Modified
+      "_test4": self._compute_hash({"name": "test4", "value": 40})  # Removed
     }
 
-  def _compute_hash(self, instance):
-    """Helper method to compute hash of an instance"""
-    obj_str = json.dumps(instance, sort_keys=True)
+  def _compute_hash(self, parameters):
+    """Helper method to compute hash of parameters only"""
+    obj_str = json.dumps(parameters, sort_keys=True)
     return hashlib.sha256(obj_str.encode('utf-8')).hexdigest()
 
   def test_getNewInstancesList(self):
@@ -348,7 +348,7 @@ class TestInstanceListComparator(unittest.TestCase):
       {"parameters": {"name": "test1", "value": 10}, "reference": "_test1"}
     ]
     stored_dict = {
-      "_test1": self._compute_hash({"parameters": {"name": "test1", "value": 10}, "reference": "_test1"})
+      "_test1": self._compute_hash({"name": "test1", "value": 10})
     }
 
     comparator = InstanceListComparator(update_list, stored_dict)
@@ -423,34 +423,29 @@ class TestInstanceListComparatorPerformance(unittest.TestCase):
     stored_dict = {}
 
     # Add unchanged instances
+    # Hash is computed only from parameters, not from reference
     for i in range(unchanged):
-      obj_str = json.dumps(update_list[i], sort_keys=True, ensure_ascii=False)
+      obj_str = json.dumps(update_list[i]["parameters"], sort_keys=True, ensure_ascii=False)
       stored_dict["_ref_{0}".format(i)] = hashlib.sha256(obj_str.encode('utf-8')).hexdigest()
 
     # Add modified instances
     for i in range(unchanged, unchanged+modified):
-      modified_instance = {
-        "parameters": {
-          "name": "instance_{0}".format(i),
-          "value": i + 99999,  # Different value
-          "data": "data_string_{0}".format(i % 100)
-        },
-        "reference": "_ref_{0}".format(i)
+      modified_parameters = {
+        "name": "instance_{0}".format(i),
+        "value": i + 99999,  # Different value
+        "data": "data_string_{0}".format(i % 100)
       }
-      obj_str = json.dumps(modified_instance, sort_keys=True, ensure_ascii=False)
+      obj_str = json.dumps(modified_parameters, sort_keys=True, ensure_ascii=False)
       stored_dict["_ref_{0}".format(i)] = hashlib.sha256(obj_str.encode('utf-8')).hexdigest()
 
     # Destroy instances
     for i in range(quantity, quantity + new):
-      removed_instance = {
-        "parameters": {
-          "name": "instance_{0}".format(i),
-          "value": i,
-          "data": "data_string_{0}".format(i % 100)
-        },
-        "reference": "_ref_{0}".format(i)
+      removed_parameters = {
+        "name": "instance_{0}".format(i),
+        "value": i,
+        "data": "data_string_{0}".format(i % 100)
       }
-      obj_str = json.dumps(removed_instance, sort_keys=True, ensure_ascii=False)
+      obj_str = json.dumps(removed_parameters, sort_keys=True, ensure_ascii=False)
       stored_dict["_ref_{0}".format(i)] = hashlib.sha256(obj_str.encode('utf-8')).hexdigest()
 
     stored_creation_time = time.time() - start_stored
@@ -542,10 +537,9 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     # Insert instances
     params1 = {"name": "test1"}
     params2 = {"name": "test2"}
-    instance_obj1 = {"parameters": params1, "reference": "ref1"}
-    instance_obj2 = {"parameters": params2, "reference": "ref2"}
-    hash1 = hashlib.sha256(json.dumps(instance_obj1, sort_keys=True).encode('utf-8')).hexdigest()
-    hash2 = hashlib.sha256(json.dumps(instance_obj2, sort_keys=True).encode('utf-8')).hexdigest()
+    # Hash is computed only from parameters, not from reference
+    hash1 = hashlib.sha256(json.dumps(params1, sort_keys=True).encode('utf-8')).hexdigest()
+    hash2 = hashlib.sha256(json.dumps(params2, sort_keys=True).encode('utf-8')).hexdigest()
 
     instance_rows = [
       ("ref1", json.dumps(params1), "{}", hash1, str(int(time.time())), True),
