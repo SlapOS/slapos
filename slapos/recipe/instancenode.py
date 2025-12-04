@@ -188,6 +188,7 @@ class Recipe(object):
     partition_parameter_kw = parameters.copy()
     
     # Make the request directly using the slap library
+    valid = False
     try:
       instance = computer_partition.request(
         self.software_url,
@@ -201,20 +202,23 @@ class Recipe(object):
       
       # Get connection parameters if available
       # Note: Connection parameters are only available if the instance publishes them
-      connection_params = {}
       try:
         connection_params = instance.getConnectionParameterDict()
-        connection_params = connection_params if connection_params else {}
+        valid = True
       except Exception as e:
         # Connection parameters may not be available yet or instance may not publish them
         self.logger.debug(
           'Could not retrieve connection parameters for instance %s: %s',
           instance_reference, e
         )
+        connection_params = {
+          "message": "Your instance is valid the request has been transmitted to the master"
+        }
       
       return {
         'instance': instance,
-        'connection_params': connection_params
+        'connection_params': connection_params,
+        'valid': valid
       }
     except Exception as e:
       self.logger.error(
@@ -441,15 +445,10 @@ class Recipe(object):
         )
         # Get connection parameters from the request result
         request_conn_params = request_result.get('connection_params', {})
-        if request_conn_params:
-          self._publishConnectionParameters(instance_reference, request_conn_params)
-          # Store the connection parameters that were published so we can compare later
-          validation_info = request_conn_params
-        else:
-          validation_info = {
-            "message": "Your instance is valid the request has been transmitted to the master"
-          }
-          self._publishConnectionParameters(instance_reference, validation_info)
+        instance_data['valid'] = request_result.get('valid', False)
+        # Update validation_info with connection parameters for database storage
+        validation_info = request_conn_params
+        self._publishConnectionParameters(instance_reference, request_conn_params)
       except Exception as e:
         self.logger.error(
           'Failed to %s instance %s: %s',
