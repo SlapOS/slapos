@@ -204,7 +204,13 @@ class Recipe(object):
       # Note: Connection parameters are only available if the instance publishes them
       try:
         connection_params = instance.getConnectionParameterDict()
-        valid = True
+        if connection_params:
+          valid = True
+        else:
+          valid = False
+          connection_params = {
+            "message": "Your instance is valid the request has been transmitted to the master, waiting for its connection parameters"
+          }
       except Exception as e:
         # Connection parameters may not be available yet or instance may not publish them
         self.logger.debug(
