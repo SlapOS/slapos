@@ -204,11 +204,7 @@ class Recipe(object):
       connection_params = {}
       try:
         connection_params = instance.getConnectionParameterDict()
-        # Convert to regular dict if needed (unwrap if wrapped)
-        if hasattr(connection_params, 'unwrap'):
-          connection_params = connection_params.unwrap()
-        elif not isinstance(connection_params, dict):
-          connection_params = dict(connection_params) if connection_params else {}
+        connection_params = connection_params if connection_params else {}
       except Exception as e:
         # Connection parameters may not be available yet or instance may not publish them
         self.logger.debug(
@@ -295,6 +291,7 @@ class Recipe(object):
     """
     Publish connection parameters for an instance using the slap library.
     Parameters are published to the SlapOS master for the specified slave instance.
+    Only publishes if the parameters are different from what was previously published.
 
     Args:
       instance_reference: Reference name for the instance (used as slave_reference)
@@ -302,9 +299,37 @@ class Recipe(object):
     """
     if not conn_params:
       return
+    
+    # Check if we've already published the same connection parameters
+    # by comparing with what's stored in the database
+    try:
+      stored_instance = self.requestinstance_db.getInstance(instance_reference)
+      try:
+        stored_conn_params = json.loads(stored_instance['json_error'])
+        # Compare dictionaries (order-independent comparison)
+        if stored_conn_params == conn_params:
+          self.logger.debug(
+            'Connection parameters for instance %s unchanged, skipping publish',
+            instance_reference
+          )
+          return
+      except (ValueError, TypeError):
+        # If json_error can't be parsed, treat as different and publish
+        pass
+    except Exception as e:
+      # If we can't retrieve stored instance, log and continue with publish
+      self.logger.debug(
+        'Could not retrieve stored instance %s for comparison: %s',
+        instance_reference, e
+      )
+    
     try:
       computer_partition = self._getComputerPartition()
       computer_partition.setConnectionDict(conn_params, slave_reference=instance_reference)
+      self.logger.debug(
+        'Published connection parameters for instance %s',
+        instance_reference
+      )
     except Exception as e:
       self.logger.warning(
         'Failed to publish connection parameters for instance %s: %s',
@@ -325,10 +350,9 @@ class Recipe(object):
     params_json = json.dumps(instance_data['parameters'], sort_keys=True)
     valid_parameter = instance_data.get('valid', True)
     timestamp = str(int(time.time()))
-    if valid_parameter:
-      error_json = "{}"
-    else:
-      error_json = json.dumps(validation_info, sort_keys=True) if validation_info else "{}"
+    # Store validation_info (connection parameters or error info) in json_error
+    # This allows us to compare and avoid republishing unchanged connection parameters
+    error_json = json.dumps(validation_info, sort_keys=True) if validation_info else "{}"
 
     new_instance_list = [(
       instance_reference,
@@ -355,10 +379,9 @@ class Recipe(object):
     params_json = json.dumps(instance_data['parameters'], sort_keys=True)
     valid_parameter = instance_data.get('valid', True)
     timestamp = str(int(time.time()))
-    if valid_parameter:
-      error_json = "{}"
-    else:
-      error_json = json.dumps(validation_info, sort_keys=True) if validation_info else "{}"
+    # Store validation_info (connection parameters or error info) in json_error
+    # This allows us to compare and avoid republishing unchanged connection parameters
+    error_json = json.dumps(validation_info, sort_keys=True) if validation_info else "{}"
 
     update_query = (
       "UPDATE instance SET json_parameters = ?, "
@@ -436,6 +459,8 @@ class Recipe(object):
         request_conn_params = request_result.get('connection_params', {})
         if request_conn_params:
           self._publishConnectionParameters(instance_reference, request_conn_params)
+          # Store the connection parameters that were published so we can compare later
+          validation_info = request_conn_params
         else:
           validation_info = {
             "message": "Your instance is valid the request has been transmitted to the master"
@@ -638,48 +663,7 @@ def get_config_section(parser, section_name):
   return options
 
 
-def create_buildout_dict_from_config(config_parser, buildout_directory=None, main_section_name='slaposinstancenode'):
-  """
-  Create a minimal buildout dictionary from config file.
-  
-  Args:
-    config_parser: RawConfigParser object with parsed config
-    buildout_directory: Optional buildout directory path (defaults to current directory)
-    main_section_name: Name of the main section to read from (default: 'slaposinstancenode')
-    
-  Returns:
-    Dictionary representing buildout structure
-  """
-  if buildout_directory is None:
-    buildout_directory = os.getcwd()
-  
-  buildout = {
-    'buildout': {
-      'directory': buildout_directory,
-      'bin-directory': '',
-      'find-links': '',
-      'allow-hosts': '',
-      'allow-unknown-extras': False,
-      'develop-eggs-directory': '',
-      'eggs-directory': '',
-      'newest': False,
-      'offline': False,
-    },
-    'slap-connection': {}
-  }
-  
-  # Read slap-connection section if it exists
-  slap_connection = get_config_section(config_parser, 'slap-connection')
-  if slap_connection:
-    buildout['slap-connection'].update(slap_connection)
-  else:
-    # Fallback: try to get from main section
-    main_section = get_config_section(config_parser, main_section_name)
-    for key in ['server-url', 'computer-id', 'partition-id', 'key-file', 'cert-file']:
-      if key in main_section:
-        buildout['slap-connection'][key] = main_section[key]
-  
-  return buildout
+
 
 
 def create_options_dict_from_config(config_parser, section_name='slaposinstancenode'):
@@ -729,7 +713,7 @@ def parse_command_line_args():
 
 def load_config_and_create_objects(config_path, pidfile_path=None, section_name='slaposinstancenode'):
   """
-  Load config file, handle PID file locking, and create buildout/options dicts.
+  Load config file, handle PID file locking, and create options dict.
   
   Args:
     config_path: Path to config file
@@ -737,7 +721,7 @@ def load_config_and_create_objects(config_path, pidfile_path=None, section_name=
     section_name: Name of the section to read from config (default: 'slaposinstancenode')
     
   Returns:
-    tuple: (buildout_dict, options_dict, pidfile_lock_context)
+    tuple: (options_dict, pidfile_lock_context)
     The pidfile_lock_context should be used as a context manager
   """
   # Parse config file
@@ -746,16 +730,10 @@ def load_config_and_create_objects(config_path, pidfile_path=None, section_name=
   # Get options from config
   options = create_options_dict_from_config(config_parser, section_name)
   
-  # Get buildout directory from options or use current directory
-  buildout_directory = options.get('buildout-directory', os.getcwd())
-  
-  # Create buildout dict
-  buildout = create_buildout_dict_from_config(config_parser, buildout_directory, section_name)
-  
   # Create PID file lock context
   pidfile_lock = PIDFileLock(pidfile_path) if pidfile_path else None
   
-  return buildout, options, pidfile_lock
+  return options, pidfile_lock
 
 
 def main():
@@ -766,8 +744,8 @@ def main():
     # Parse command-line arguments
     args = parse_command_line_args()
     
-    # Load config file and create buildout/options dicts with PID file locking
-    buildout, options, pidfile_lock = load_config_and_create_objects(
+    # Load config file and create options dict with PID file locking
+    options, pidfile_lock = load_config_and_create_objects(
       args.cfg,
       args.pidfile,
       section_name='slaposinstancenode'
@@ -778,7 +756,7 @@ def main():
       with pidfile_lock:
         # Create recipe instance
         recipe = Recipe(
-          buildout=buildout,
+          buildout=None,
           name='request-instance-list',
           options=options
         )
@@ -789,7 +767,7 @@ def main():
       # No PID file locking
       # Create recipe instance
       recipe = Recipe(
-        buildout=buildout,
+        buildout=None,
         name='request-instance-list',
         options=options
       )
