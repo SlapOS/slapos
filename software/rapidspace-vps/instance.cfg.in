@@ -11,6 +11,10 @@ develop-eggs-directory = ${buildout:develop-eggs-directory}
 [switch_softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-template-vps:output
+vps-nvme0n1 = dynamic-template-vps-disk-nvme0n1:output
+vps-nvme1n1 = dynamic-template-vps-disk-nvme1n1:output
+vps-nvme2n1 = dynamic-template-vps-disk-nvme2n1:output
+vps-nvme3n1 = dynamic-template-vps-disk-nvme3n1:output
 vpsbrute-4disks = dynamic-template-vpsbrute-4disks:output
 vpsbrute-6disks = dynamic-template-vpsbrute-6disks:output
 vpsbrute-10disks = dynamic-template-vpsbrute-10disks:output
@@ -24,7 +28,6 @@ set-default = main
 validate-parameters = main
 
 [slap-configuration-vps]
-# this section will force all constant values for VPS
 recipe  = slapos.recipe.build
 depends = $${slap-configuration:configuration}
 init =
@@ -32,14 +35,65 @@ init =
   # we know for sure that there is only the boot-image parameters in conf
   # so only set what is custom compared to default values
   ${slap-configuration-common:common-all}
-  conf['ram-size'] = 245760
-  conf['cpu-count'] = 40
+  ${slap-configuration-common:common-vps}
   conf['disk-device-path'] = "/dev/sdb"
   options['configuration'] = conf
   # XXX we should make sure this configuration matches KVM json schema...
 
+[slap-configuration-vps-disk-nvme0n1]
+recipe  = slapos.recipe.build
+depends = $${slap-configuration:configuration}
+init =
+  conf = self.buildout['slap-configuration']['configuration']
+  # we know for sure that there is only the boot-image parameters in conf
+  # so only set what is custom compared to default values
+  ${slap-configuration-common:common-all}
+  ${slap-configuration-common:common-vps}
+  conf['disk-device-path'] = "/dev/nvme0n1"
+  options['configuration'] = conf
+  # XXX we should make sure this configuration matches KVM json schema...
+
+[slap-configuration-vps-disk-nvme1n1]
+recipe  = slapos.recipe.build
+depends = $${slap-configuration:configuration}
+init =
+  conf = self.buildout['slap-configuration']['configuration']
+  # we know for sure that there is only the boot-image parameters in conf
+  # so only set what is custom compared to default values
+  ${slap-configuration-common:common-all}
+  ${slap-configuration-common:common-vps}
+  conf['disk-device-path'] = "/dev/nvme1n1"
+  options['configuration'] = conf
+  # XXX we should make sure this configuration matches KVM json schema...
+
+[slap-configuration-vps-disk-nvme2n1]
+recipe  = slapos.recipe.build
+depends = $${slap-configuration:configuration}
+init =
+  conf = self.buildout['slap-configuration']['configuration']
+  # we know for sure that there is only the boot-image parameters in conf
+  # so only set what is custom compared to default values
+  ${slap-configuration-common:common-all}
+  ${slap-configuration-common:common-vps}
+  conf['disk-device-path'] = "/dev/nvme2n1"
+  options['configuration'] = conf
+  # XXX we should make sure this configuration matches KVM json schema...
+
+[slap-configuration-vps-disk-nvme3n1]
+recipe  = slapos.recipe.build
+depends = $${slap-configuration:configuration}
+init =
+  conf = self.buildout['slap-configuration']['configuration']
+  # we know for sure that there is only the boot-image parameters in conf
+  # so only set what is custom compared to default values
+  ${slap-configuration-common:common-all}
+  ${slap-configuration-common:common-vps}
+  conf['disk-device-path'] = "/dev/nvme3n1"
+  options['configuration'] = conf
+  # XXX we should make sure this configuration matches KVM json schema...
+
+
 [slap-configuration-vpsbrute-4disks]
-# this section will force all constant values for VPSbrute 4 disks
 recipe  = slapos.recipe.build
 depends = $${slap-configuration:configuration}
 init =
@@ -51,7 +105,6 @@ init =
   # XXX we should make sure this configuration matches KVM json schema...
 
 [slap-configuration-vpsbrute-6disks]
-# this section will force all constant values for VPSbrute 4 disks
 recipe  = slapos.recipe.build
 depends = $${slap-configuration:configuration}
 init =
@@ -63,7 +116,6 @@ init =
   # XXX we should make sure this configuration matches KVM json schema...
 
 [slap-configuration-vpsbrute-10disks]
-# this section will force all constant values for VPSbrute 4 disks
 recipe  = slapos.recipe.build
 depends = $${slap-configuration:configuration}
 init =
@@ -127,6 +179,30 @@ context =
 filename = template-vps.cfg
 extra-context =
   key slapparameter_dict slap-configuration-vps:configuration
+
+[dynamic-template-vps-disk-nvme0n1]
+<= jinja2-template-base
+filename = template-vps-nvme0n1.cfg
+extra-context =
+  key slapparameter_dict slap-configuration-vps-disk-nvme0n1:configuration
+
+[dynamic-template-vps-disk-nvme1n1]
+<= jinja2-template-base
+filename = template-vps-nvme1n1.cfg
+extra-context =
+  key slapparameter_dict slap-configuration-vps-disk-nvme1n1:configuration
+
+[dynamic-template-vps-disk-nvme2n1]
+<= jinja2-template-base
+filename = template-vps-nvme2n1.cfg
+extra-context =
+  key slapparameter_dict slap-configuration-vps-disk-nvme2n1:configuration
+
+[dynamic-template-vps-disk-nvme3n1]
+<= jinja2-template-base
+filename = template-vps-nvme3n1.cfg
+extra-context =
+  key slapparameter_dict slap-configuration-vps-disk-nvme3n1:configuration
 
 [dynamic-template-vpsbrute-4disks]
 <= jinja2-template-base
