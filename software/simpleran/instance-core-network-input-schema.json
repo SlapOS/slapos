@@ -184,6 +184,9 @@
       "title": "Force reprocess",
       "description": "Expert only: change this parameter value to force reprocess of partition",
       "type": "string"
+    },
+    "monitor-interface-url": {
+      "$ref": "instance-ors-gnb-input-schema.json#/properties/monitor-interface-url"
     }
   },
   "$defs": {
