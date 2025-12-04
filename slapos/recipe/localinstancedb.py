@@ -253,8 +253,10 @@ class InstanceListComparator(object):
 
   def updateHashDict(self):
     for instance in self.update_list:
-      # Use sort_keys=True for deterministic key order
-      obj_str = json.dumps(instance, sort_keys=True)
+      # The hash should only be computed from parameters
+      # to avoid marking an instance as modified if only its validation status
+      # or connection parameters (stored in json_error) change.
+      obj_str = json.dumps(instance["parameters"], sort_keys=True)
       obj_hash = hashlib.sha256(obj_str.encode('utf-8')).hexdigest()
       self.update_dict[instance["reference"]] = obj_hash
 
