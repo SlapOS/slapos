@@ -1,4 +1,6 @@
 import json
+import hashlib
+import fcntl
 import mock
 import os
 import tempfile
@@ -18,53 +20,57 @@ class TestRequestInstanceList(unittest.TestCase):
     self.requestinstance_db_fd, self.requestinstance_db_path = tempfile.mkstemp()
 
     # Setup buildout
-    self.buildout = {
-      "buildout": {},
-      "slap-connection": {
-        "computer-id": "test-computer",
-        "partition-id": "test-partition",
-        "server-url": "http://test.example.com",
-        "requested": "started"
-      }
-    }
+    # buildout is no longer used, set to None
+    self.buildout = None
 
-    # Mock slap module (RequestRecipe uses it from request module)
-    slap_patch = mock.patch(
-      "slapos.recipe.request.slapmodule.slap", autospec=True)
-    slap = slap_patch.start()
+    # Mock slap library (used by both _requestInstance and _publishConnectionParameters)
+    # The code uses 'from slapos import slap', so we need to mock it where it's used
+    slap_patch = mock.patch('slapos.recipe.instancenode.slap')
+    self.slap_lib = slap_patch.start()
     self.addCleanup(slap_patch.stop)
 
-    slap_instance = mock.MagicMock()
-    self.request_instance = mock.MagicMock()
-    register_instance = mock.MagicMock()
+    # Mock getConnectionParameterDict to return dict by default
+    # Use a function that returns a dict to ensure it's always a real dict, not a MagicMock
+    def default_get_connection_parameter_dict():
+      return {"foo": "bar"}
+    
+    # Create a mock that uses side_effect to call the function
+    # This ensures it always returns a real dict, not a MagicMock
+    get_conn_param_dict_mock = mock.MagicMock(side_effect=default_get_connection_parameter_dict)
+    
+    # Create requested_instance with getConnectionParameterDict already set
+    # This prevents the mock chain from creating a new MagicMock
     self.requested_instance = mock.MagicMock()
-    self.request_instance.return_value = self.requested_instance
-    register_instance.request = self.request_instance
-    slap_instance.registerComputerPartition.return_value = register_instance
-    slap.return_value = slap_instance
-
+    self.requested_instance.getConnectionParameterDict = get_conn_param_dict_mock
+    
     # Mock getConnectionParameter
     self.instance_getConnectionParameter = \
         self.requested_instance.getConnectionParameter
-
-    # Mock slap library for connection publishing (used by _publishConnectionParameters)
-    slap_publish_patch = mock.patch('slapos.recipe.instancenode.slap')
-    self.slap_publish_lib = slap_publish_patch.start()
-    self.addCleanup(slap_publish_patch.stop)
-
-    # Setup mock computer partition for publishing
+    
+    # Setup mock computer partition (used by both requesting and publishing)
+    # Since _getComputerPartition() uses connection cache, both paths use the same instance
     self.computer_partition = mock.MagicMock()
+    
+    # Setup request() method for requesting instances
+    self.request_instance = mock.MagicMock()
+    self.request_instance.return_value = self.requested_instance
+    self.computer_partition.request = self.request_instance
+    
+    # Setup setConnectionDict() method for publishing
     self.setConnectionDict = mock.MagicMock()
     self.computer_partition.setConnectionDict = self.setConnectionDict
 
-    # Setup mock slap instance for publishing
-    self.slap_instance_publish = mock.MagicMock()
-    self.slap_instance_publish.registerComputerPartition.return_value = self.computer_partition
+    # Setup mock slap instance (used by _getComputerPartition)
+    self.slap_instance = mock.MagicMock()
+    self.slap_instance.registerComputerPartition.return_value = self.computer_partition
 
     # Setup mock slap class
     self.slap_class = mock.MagicMock()
-    self.slap_class.return_value = self.slap_instance_publish
-    self.slap_publish_lib.slap = self.slap_class
+    self.slap_class.return_value = self.slap_instance
+    self.slap_lib.slap = self.slap_class
+    
+    # Store reference so tests can modify side_effect
+    self.getConnectionParameterDict_mock = get_conn_param_dict_mock
 
     # Clear connection cache before each test
     from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
@@ -100,9 +106,8 @@ class TestRequestInstanceList(unittest.TestCase):
     for ref, params, valid in instances:
       params_json = json.dumps(params, sort_keys=True)
       # Create a simple hash for testing
-      import hashlib
       instance_hash = hashlib.sha256(
-        json.dumps({'reference': ref, 'parameters': params}, sort_keys=True).encode('utf-8')
+        json.dumps(params, sort_keys=True).encode('utf-8')
       ).hexdigest()
       # Use error info if provided, otherwise empty dict
       if connection_params and ref in connection_params:
@@ -152,9 +157,9 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(stored[0]['reference'], 'instance1')
     stored_params = json.loads(stored[0]['json_parameters'])
     self.assertEqual(stored_params['key'], 'value')
-    # Connection parameters are not extracted since 'return' is not a recipe option
+    # Connection parameters are stored in json_error for valid instances
     stored_error = json.loads(stored[0]['json_error'])
-    self.assertEqual(stored_error, {})
+    self.assertEqual(stored_error, {"foo": "bar"})
 
   def test_new_invalid_instance(self):
     """Test that invalid instances are tracked but not requested"""
@@ -192,10 +197,9 @@ class TestRequestInstanceList(unittest.TestCase):
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
 
     # Add to instance-db with new parameters
-    import hashlib
     new_params = {'key': 'new_value'}
     new_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': new_params}, sort_keys=True).encode('utf-8')
+      json.dumps(new_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     instance_db.insertInstanceList([(
       'instance1',
@@ -209,7 +213,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Add to requestinstance-db with old parameters
     old_params = {'key': 'old_value'}
     old_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': old_params}, sort_keys=True).encode('utf-8')
+      json.dumps(old_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     requestinstance_db.insertInstanceList([(
       'instance1',
@@ -236,9 +240,9 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(len(stored), 1)
     stored_params = json.loads(stored[0]['json_parameters'])
     self.assertEqual(stored_params['key'], 'new_value')
-    # Error info should be empty for valid instances
+    # Connection parameters are stored in json_error for valid instances
     stored_error = json.loads(stored[0]['json_error'])
-    self.assertEqual(stored_error, {})
+    self.assertEqual(stored_error, {"foo": "bar"})
 
   def test_modified_invalid_instance(self):
     """Test that modified invalid instances are tracked but not requested"""
@@ -246,10 +250,9 @@ class TestRequestInstanceList(unittest.TestCase):
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
 
-    import hashlib
     new_params = {'key': 'new_value'}
     new_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': new_params}, sort_keys=True).encode('utf-8')
+      json.dumps(new_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     instance_db.insertInstanceList([(
       'instance1',
@@ -262,7 +265,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     old_params = {'key': 'old_value'}
     old_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': old_params}, sort_keys=True).encode('utf-8')
+      json.dumps(old_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     requestinstance_db.insertInstanceList([(
       'instance1',
@@ -302,10 +305,9 @@ class TestRequestInstanceList(unittest.TestCase):
     # Setup: instance exists in requestinstance-db but not in instance-db
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
 
-    import hashlib
     params = {'key': 'value'}
     instance_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': params}, sort_keys=True).encode('utf-8')
+      json.dumps(params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     requestinstance_db.insertInstanceList([(
       'instance1',
@@ -336,12 +338,10 @@ class TestRequestInstanceList(unittest.TestCase):
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
 
-    import hashlib
-
     # New valid instance
     new_params = {'key': 'new'}
     new_hash = hashlib.sha256(
-      json.dumps({'reference': 'new1', 'parameters': new_params}, sort_keys=True).encode('utf-8')
+      json.dumps(new_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     instance_db.insertInstanceList([(
       'new1',
@@ -355,7 +355,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Modified instance
     mod_params = {'key': 'modified'}
     mod_hash = hashlib.sha256(
-      json.dumps({'reference': 'mod1', 'parameters': mod_params}, sort_keys=True).encode('utf-8')
+      json.dumps(mod_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     instance_db.insertInstanceList([(
       'mod1',
@@ -369,7 +369,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Old version in requestinstance-db
     old_params = {'key': 'old'}
     old_hash = hashlib.sha256(
-      json.dumps({'reference': 'mod1', 'parameters': old_params}, sort_keys=True).encode('utf-8')
+      json.dumps(old_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     requestinstance_db.insertInstanceList([(
       'mod1',
@@ -383,7 +383,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Instance to destroy
     destroy_params = {'key': 'destroy'}
     destroy_hash = hashlib.sha256(
-      json.dumps({'reference': 'destroy1', 'parameters': destroy_params}, sort_keys=True).encode('utf-8')
+      json.dumps(destroy_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     requestinstance_db.insertInstanceList([(
       'destroy1',
@@ -434,10 +434,9 @@ class TestRequestInstanceList(unittest.TestCase):
     # Now add a third instance and run again
     # Only the new instance should be processed
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
-    import hashlib
     new_params = {'key': 'value3'}
     new_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance3', 'parameters': new_params}, sort_keys=True).encode('utf-8')
+      json.dumps(new_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     instance_db.insertInstanceList([(
       'instance3',
@@ -640,31 +639,27 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(call_kwargs['state'], 'started')
 
   def test_request_failure_handling(self):
-    """Test that RequestOptional handles failures gracefully"""
-    # RequestOptional doesn't raise on failures, so instance should still be tracked
+    """Test that request failures raise exceptions"""
+    # Request failures should raise, so instance won't be tracked
     self._createInstanceDB([
       ('instance1', {'key': 'value'}, True)
     ])
 
-    # Make request fail (but RequestOptional won't raise)
+    # Make request fail
     from slapos import slap as slapmodule
     self.request_instance.side_effect = slapmodule.NotFoundError("Not found")
 
     recipe = instancenode.Recipe(
-      self.buildout, 'test', self.options
+      None, 'test', self.options
     )
 
-    # Should not raise (RequestOptional handles it)
-    with LogCapture() as log:
+    # Should raise when request fails
+    with self.assertRaises(slapmodule.NotFoundError):
       recipe.install()
 
-    # Instance should still be tracked in DB (but without connection params)
+    # Instance should not be tracked in DB (exception was raised)
     stored = self._getRequestInstanceDB()
-    self.assertEqual(len(stored), 1)
-    self.assertEqual(stored[0]['reference'], 'instance1')
-    # Connection parameters are not extracted since 'return' is not a recipe option
-    stored_error = json.loads(stored[0]['json_error'])
-    self.assertEqual(stored_error, {})
+    self.assertEqual(len(stored), 0)
 
   def test_connection_parameters_preserved_on_update_failure(self):
     """Test that existing connection parameters are preserved when update fails"""
@@ -672,10 +667,9 @@ class TestRequestInstanceList(unittest.TestCase):
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
 
-    import hashlib
     new_params = {'key': 'new_value'}
     new_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': new_params}, sort_keys=True).encode('utf-8')
+      json.dumps(new_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     instance_db.insertInstanceList([(
       'instance1',
@@ -688,7 +682,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     old_params = {'key': 'old_value'}
     old_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': old_params}, sort_keys=True).encode('utf-8')
+      json.dumps(old_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     requestinstance_db.insertInstanceList([(
       'instance1',
@@ -701,19 +695,26 @@ class TestRequestInstanceList(unittest.TestCase):
 
     # Make getConnectionParameter fail (simulating instance not ready)
     from slapos import slap as slapmodule
-    self.instance_getConnectionParameter.side_effect = slapmodule.NotFoundError("Not ready")
+    # Set side_effect to a callable that raises the exception
+    # This ensures the exception is raised when the mock is called
+    def raise_not_found_error():
+      raise slapmodule.NotFoundError("Not ready")
+    self.getConnectionParameterDict_mock.side_effect = raise_not_found_error
+    # CRITICAL: Also set it directly on requested_instance to ensure it's used
+    # The mock chain might create a new MagicMock if we don't set it explicitly
+    self.requested_instance.getConnectionParameterDict = self.getConnectionParameterDict_mock
 
     recipe = instancenode.Recipe(
       self.buildout, 'test', self.options
     )
     recipe.install()
 
-    # Verify instance was updated (error info should be empty for valid instances)
+    # Verify instance was updated (connection parameters are stored for valid instances)
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    # Error info should be empty for valid instances
+    # Connection parameters are stored in json_error for valid instances
     stored_error = json.loads(stored[0]['json_error'])
-    self.assertEqual(stored_error, {})
+    self.assertEqual(stored_error, {'message': 'Your instance is valid the request has been transmitted to the master'})
 
   def test_publish_connection_parameters_on_validation_failure(self):
     """Test that connection parameters are published when validation fails"""
@@ -750,12 +751,14 @@ class TestRequestInstanceList(unittest.TestCase):
       ('instance1', {'key': 'value'}, True)
     ])
 
+    # Mock request to return empty connection parameters so success message is published
+    self.getConnectionParameterDict_mock.side_effect = lambda: {}
+
     recipe = TestRecipe(self.buildout, 'test', self.options)
     recipe.install()
 
     # Verify setConnectionDict was called with success message
-    # When validation succeeds and validation_conn_params exist, a success message is published
-    # (not the validation_conn_params themselves)
+    # When validation succeeds and request_conn_params are empty, a success message is published
     self.setConnectionDict.assert_called_once()
     call_args = self.setConnectionDict.call_args
     conn_params = call_args[0][0]
@@ -847,7 +850,7 @@ class TestRequestInstanceList(unittest.TestCase):
     recipe.install()
 
     # Verify registerComputerPartition was only called once (cached)
-    self.assertEqual(self.slap_instance_publish.registerComputerPartition.call_count, 1)
+    self.assertEqual(self.slap_instance.registerComputerPartition.call_count, 1)
 
     # Verify both calls used setConnectionDict with the same computer_partition
     self.assertEqual(self.setConnectionDict.call_count, 2)
@@ -856,19 +859,14 @@ class TestRequestInstanceList(unittest.TestCase):
     self.setConnectionDict.assert_any_call({'message': 'Error for instance2'}, slave_reference='instance2')
 
   def test_publish_connection_parameters_missing_slap_connection(self):
-    """Test that missing slap-connection section raises KeyError"""
-    # Buildout without slap-connection section
-    buildout_no_connection = {
-      "buildout": {},
-    }
+    """Test that missing connection parameters raise error"""
+    # Options without required connection parameters
+    options_no_connection = self.options.copy()
+    del options_no_connection['server-url']
 
-    recipe = instancenode.Recipe(buildout_no_connection, 'test', self.options)
-
-    # Should raise KeyError when trying to get computer partition (lazy initialization)
-    with self.assertRaises(KeyError) as cm:
-      recipe._getComputerPartition()
-
-    self.assertIn('slap-connection section is required', str(cm.exception))
+    # Should raise KeyError during initialization when accessing options['server-url']
+    with self.assertRaises(KeyError):
+      instancenode.Recipe(None, 'test', options_no_connection)
 
   def test_publish_connection_parameters_success_message(self):
     """Test that success message is published when validation succeeds with validation_conn_params"""
@@ -882,12 +880,14 @@ class TestRequestInstanceList(unittest.TestCase):
       ('instance1', {'key': 'value'}, True)
     ])
 
+    # Mock request to return empty connection parameters so success message is published
+    self.getConnectionParameterDict_mock.side_effect = lambda: {}
+
     recipe = TestRecipe(self.buildout, 'test', self.options)
     recipe.install()
 
     # Verify setConnectionDict was called with success message
-    # When validation succeeds and validation_conn_params exist (even if request_conn_params don't),
-    # a success message is published
+    # When validation succeeds and request_conn_params are empty, a success message is published
     self.setConnectionDict.assert_called_once()
     call_args = self.setConnectionDict.call_args
     conn_params = call_args[0][0]
@@ -924,11 +924,10 @@ class TestRequestInstanceList(unittest.TestCase):
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
 
-    import hashlib
     # New parameters (different from old)
     new_params = {'key': 'new_value'}
     new_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': new_params}, sort_keys=True).encode('utf-8')
+      json.dumps(new_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
 
     # New error info (different from old)
@@ -948,7 +947,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Old parameters and error info in requestinstancedb
     old_params = {'key': 'old_value'}
     old_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': old_params}, sort_keys=True).encode('utf-8')
+      json.dumps(old_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     old_errors = {
       'message': 'Old error: field "name" is required',
@@ -987,11 +986,10 @@ class TestRequestInstanceList(unittest.TestCase):
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
 
-    import hashlib
     # Same parameters in both DBs (unchanged)
     params = {'key': 'value'}
     instance_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': params, 'valid': False}, sort_keys=True).encode('utf-8')
+      json.dumps(params, sort_keys=True).encode('utf-8')
     ).hexdigest()
 
     # Same error info in both DBs (unchanged)
@@ -1021,7 +1019,6 @@ class TestRequestInstanceList(unittest.TestCase):
   def test_unchanged_invalid_instance_re_validation(self):
     """Test that unchanged invalid instances are re-processed for re-validation
 
-    This test verifies the bug fix at lines 546-547 in instancenode.py.
     Invalid instances that haven't changed (not in 'modified' or 'removed')
     should still be processed for re-validation. This ensures that if validation logic
     changes or external conditions change, invalid instances get re-checked.
@@ -1043,16 +1040,10 @@ class TestRequestInstanceList(unittest.TestCase):
       'errors': ['field "name" is required']
     }
 
-    import hashlib
     # Same parameters in both DBs (unchanged - same hash)
     params = {'key': 'value'}
     instance_hash = hashlib.sha256(
-      json.dumps({
-        'reference': 'instance1',
-        'parameters': params,
-        'error_info': error_info,
-        'valid': True
-        }, sort_keys=True).encode('utf-8')
+      json.dumps(params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     # Add to instance-db (invalid, unchanged - same hash as requestinstance-db)
     instance_db.insertInstanceList([(
@@ -1098,15 +1089,9 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(validation_calls[0][0], 'instance1')
     self.assertEqual(validation_calls[0][1], params)
 
-    # Verify error info was published (re-validation happened)
-    self.setConnectionDict.assert_called_once()
-    call_args = self.setConnectionDict.call_args
-    conn_params = call_args[0][0]
-    slave_ref = call_args[1]['slave_reference']
-
-    self.assertEqual(slave_ref, 'instance1')
-    self.assertEqual(conn_params['message'], error_info['message'])
-    self.assertEqual(conn_params['errors'], error_info['errors'])
+    # Verify error info was not published (re-validation happened)
+    # But same error as before, so no republishing
+    self.setConnectionDict.assert_not_called()
 
     # Verify instance was NOT requested (still invalid)
     self.request_instance.assert_not_called()
@@ -1120,6 +1105,7 @@ class TestRequestInstanceList(unittest.TestCase):
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 0 modified'),
       ('test', 'WARNING', 'Instance instance1 failed validation: Validation error: field "name" is required'),
+      ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
       ('test', 'DEBUG', 'Tracking invalid modified instance (not requesting): instance1'),
     )
 
@@ -1128,11 +1114,10 @@ class TestRequestInstanceList(unittest.TestCase):
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
 
-    import hashlib
     # Same parameters (not modified)
     params = {'key': 'value'}
     instance_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': params}, sort_keys=True).encode('utf-8')
+      json.dumps(params, sort_keys=True).encode('utf-8')
     ).hexdigest()
 
     # New error info (different from old, even though parameters didn't change)
@@ -1245,10 +1230,9 @@ class TestRequestInstanceList(unittest.TestCase):
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
 
-    import hashlib
     new_params = {'key': 'new_value'}
     new_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': new_params}, sort_keys=True).encode('utf-8')
+      json.dumps(new_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
 
     validation_errors = {
@@ -1266,7 +1250,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     old_params = {'key': 'old_value'}
     old_hash = hashlib.sha256(
-      json.dumps({'reference': 'instance1', 'parameters': old_params}, sort_keys=True).encode('utf-8')
+      json.dumps(old_params, sort_keys=True).encode('utf-8')
     ).hexdigest()
     requestinstance_db.insertInstanceList([(
       'instance1',
@@ -1290,6 +1274,431 @@ class TestRequestInstanceList(unittest.TestCase):
     conn_params = call_args[0][0]
     self.assertEqual(conn_params['message'], validation_errors['message'])
     self.assertEqual(conn_params['errors'], validation_errors['errors'])
+
+  def test_publish_connection_parameters_unchanged_skips_publish(self):
+    """Test that unchanged connection parameters are not republished"""
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    # Use slightly different parameters so instance is in "modified" and gets processed
+    # but connection parameters are the same
+    params = {'key': 'value'}
+    instance_hash = hashlib.sha256(
+      json.dumps(params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+
+    # Same connection parameters in both DBs (unchanged)
+    conn_params = {
+      'message': 'Your instance is valid the request has been transmitted to the master'
+    }
+
+    # Add to instance-db
+    instance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(conn_params, sort_keys=True),
+      instance_hash,
+      "1234567890",
+      True
+    )])
+
+    # Add to requestinstance-db with same connection parameters but different hash
+    # (to make it appear in "modified")
+    old_params = {'key': 'old_value'}
+    old_hash = hashlib.sha256(
+      json.dumps(old_params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(old_params, sort_keys=True),
+      json.dumps(conn_params, sort_keys=True),
+      old_hash,  # Different hash (parameters changed, so in "modified")
+      "1234567890",
+      True
+    )])
+
+    # Mock request to return same connection parameters (empty dict -> success message)
+    self.getConnectionParameterDict_mock.side_effect = lambda: {}
+
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
+
+    with LogCapture() as log:
+      recipe.install()
+
+    # Verify setConnectionDict was NOT called (connection parameters unchanged)
+    # Even though instance was processed, connection params are the same
+    self.setConnectionDict.assert_not_called()
+
+    # Verify log shows instance was processed and skipping publish
+    log.check(
+      ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
+      ('test', 'DEBUG', 'Update instance: instance1'),
+      ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
+    )
+
+  def test_publish_connection_parameters_changed_republishes(self):
+    """Test that changed connection parameters are republished"""
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    # Use slightly different parameters so instance is in "modified" and gets processed
+    params = {'key': 'value'}
+    instance_hash = hashlib.sha256(
+      json.dumps(params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+
+    # New connection parameters (different from stored)
+    new_conn_params = {
+      'message': 'Your instance is valid the request has been transmitted to the master',
+      'url': 'https://new.example.com'
+    }
+
+    # Old connection parameters (different from new)
+    old_conn_params = {
+      'message': 'Your instance is valid the request has been transmitted to the master'
+    }
+
+    # Add to instance-db with new connection parameters
+    instance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(new_conn_params, sort_keys=True),
+      instance_hash,
+      "1234567890",
+      True
+    )])
+
+    # Add to requestinstance-db with old connection parameters but different hash
+    # (to make it appear in "modified")
+    old_params = {'key': 'old_value'}
+    old_hash = hashlib.sha256(
+      json.dumps(old_params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(old_params, sort_keys=True),
+      json.dumps(old_conn_params, sort_keys=True),
+      old_hash,  # Different hash (parameters changed, so in "modified")
+      "1234567890",
+      True
+    )])
+
+    # Mock request to return new connection parameters
+    self.getConnectionParameterDict_mock.side_effect = lambda: new_conn_params
+
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
+
+    with LogCapture() as log:
+      recipe.install()
+
+    # Verify setConnectionDict was called (connection parameters changed)
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    published_params = call_args[0][0]
+    slave_ref = call_args[1]['slave_reference']
+
+    self.assertEqual(slave_ref, 'instance1')
+    self.assertEqual(published_params, new_conn_params)
+    self.assertIn('url', published_params)
+
+    # Verify log shows publishing
+    log.check(
+      ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
+      ('test', 'DEBUG', 'Update instance: instance1'),
+      ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
+    )
+
+  def test_publish_connection_parameters_new_instance_always_publishes(self):
+    """Test that new instances always publish (no previous data to compare)"""
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    # Mock request to return connection parameters
+    conn_params = {
+      'url': 'https://example.com',
+      'port': '8080'
+    }
+    self.getConnectionParameterDict_mock.side_effect = lambda: conn_params
+
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
+
+    with LogCapture() as log:
+      recipe.install()
+
+    # Verify setConnectionDict was called (new instance, no previous data)
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    published_params = call_args[0][0]
+    slave_ref = call_args[1]['slave_reference']
+
+    self.assertEqual(slave_ref, 'instance1')
+    self.assertEqual(published_params, conn_params)
+
+    # Verify log shows publishing
+    log.check(
+      ('test', 'DEBUG', 'Comparison results: 1 added, 0 removed, 0 modified'),
+      ('test', 'DEBUG', 'New instance: instance1'),
+      ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
+    )
+
+  def test_publish_connection_parameters_invalid_unchanged_skips_publish(self):
+    """Test that unchanged validation errors for invalid instances are not republished"""
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    # Same parameters (not modified)
+    params = {'key': 'value'}
+    instance_hash = hashlib.sha256(
+      json.dumps(params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+
+    # Same validation errors in both DBs (unchanged)
+    validation_errors = {
+      'message': 'Validation error: field "name" is required',
+      'errors': ['field "name" is required']
+    }
+
+    # Add to instance-db
+    instance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(validation_errors, sort_keys=True),
+      instance_hash,
+      "1234567890",
+      False
+    )])
+
+    # Add to requestinstance-db with same validation errors
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(validation_errors, sort_keys=True),
+      instance_hash,  # Same hash (parameters didn't change)
+      "1234567890",
+      False
+    )])
+
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
+
+    with LogCapture() as log:
+      recipe.install()
+
+    # Verify setConnectionDict was NOT called (validation errors unchanged)
+    self.setConnectionDict.assert_not_called()
+
+    # Verify log shows skipping publish (instance is processed as unchanged invalid)
+    log.check(
+      ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 0 modified'),
+      ('test', 'WARNING', 'Instance instance1 failed validation: field "name" is required'),
+      ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
+      ('test', 'DEBUG', 'Tracking invalid modified instance (not requesting): instance1'),
+    )
+
+  def test_publish_connection_parameters_invalid_changed_republishes(self):
+    """Test that changed validation errors for invalid instances are republished"""
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    # Same parameters (not modified)
+    params = {'key': 'value'}
+    instance_hash = hashlib.sha256(
+      json.dumps(params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+
+    # New validation errors (different from stored)
+    new_errors = {
+      'message': 'New validation error: field "value" is required',
+      'errors': ['field "value" is required']
+    }
+
+    # Old validation errors (different from new)
+    old_errors = {
+      'message': 'Old validation error: field "name" is required',
+      'errors': ['field "name" is required']
+    }
+
+    # Add to instance-db with new validation errors
+    instance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(new_errors, sort_keys=True),
+      instance_hash,
+      "1234567890",
+      False
+    )])
+
+    # Add to requestinstance-db with old validation errors
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(old_errors, sort_keys=True),
+      instance_hash,  # Same hash (parameters didn't change)
+      "1234567890",
+      False
+    )])
+
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
+
+    with LogCapture() as log:
+      recipe.install()
+
+    # Verify setConnectionDict was called (validation errors changed)
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    published_params = call_args[0][0]
+    slave_ref = call_args[1]['slave_reference']
+
+    self.assertEqual(slave_ref, 'instance1')
+    self.assertEqual(published_params['message'], new_errors['message'])
+    self.assertEqual(published_params['errors'], new_errors['errors'])
+
+    # Verify log shows publishing
+    log.check(
+      ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 0 modified'),
+      ('test', 'WARNING', 'Instance instance1 failed validation: field "value" is required'),
+      ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
+      ('test', 'DEBUG', 'Tracking invalid modified instance (not requesting): instance1'),
+    )
+
+  def test_publish_connection_parameters_no_stored_instance_publishes(self):
+    """Test that publishing works when no stored instance exists (new instance)"""
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    # Mock request to return connection parameters
+    conn_params = {'url': 'https://example.com'}
+    self.getConnectionParameterDict_mock.side_effect = lambda: conn_params
+
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # Verify setConnectionDict was called (no stored instance to compare)
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    published_params = call_args[0][0]
+    self.assertEqual(published_params, conn_params)
+
+  def test_publish_connection_parameters_invalid_json_error_republishes(self):
+    """Test that invalid json_error in database causes republish (can't compare)"""
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    params = {'key': 'value'}
+    instance_hash = hashlib.sha256(
+      json.dumps(params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+
+    conn_params = {
+      'message': 'Your instance is valid the request has been transmitted to the master'
+    }
+
+    # Add to instance-db
+    instance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(conn_params, sort_keys=True),
+      instance_hash,
+      "1234567890",
+      True
+    )])
+
+    # Add to requestinstance-db with invalid JSON in json_error and different hash
+    # (to make it appear in "modified")
+    old_params = {'key': 'old_value'}
+    old_hash = hashlib.sha256(
+      json.dumps(old_params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(old_params, sort_keys=True),
+      'invalid json{',  # Invalid JSON
+      old_hash,  # Different hash (parameters changed, so in "modified")
+      "1234567890",
+      True
+    )])
+
+    # Mock request to return connection parameters
+    self.getConnectionParameterDict_mock.side_effect = lambda: conn_params
+
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
+
+    with LogCapture() as log:
+      recipe.install()
+
+    # Verify setConnectionDict was called (invalid JSON, can't compare, so publish)
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    published_params = call_args[0][0]
+    self.assertEqual(published_params, conn_params)
+
+    # Verify log shows publishing
+    log.check(
+      ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
+      ('test', 'DEBUG', 'Update instance: instance1'),
+      ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
+    )
+
+  def test_publish_connection_parameters_empty_json_error_publishes(self):
+    """Test that empty json_error in database causes publish (nothing to compare)"""
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    params = {'key': 'value'}
+    instance_hash = hashlib.sha256(
+      json.dumps(params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+
+    conn_params = {
+      'message': 'Your instance is valid the request has been transmitted to the master'
+    }
+
+    # Add to instance-db
+    instance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(params, sort_keys=True),
+      json.dumps(conn_params, sort_keys=True),
+      instance_hash,
+      "1234567890",
+      True
+    )])
+
+    # Add to requestinstance-db with empty json_error and different hash
+    # (to make it appear in "modified")
+    old_params = {'key': 'old_value'}
+    old_hash = hashlib.sha256(
+      json.dumps(old_params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    requestinstance_db.insertInstanceList([(
+      'instance1',
+      json.dumps(old_params, sort_keys=True),
+      "{}",  # Empty JSON
+      old_hash,  # Different hash (parameters changed, so in "modified")
+      "1234567890",
+      True
+    )])
+
+    # Mock request to return connection parameters
+    self.getConnectionParameterDict_mock.side_effect = lambda: conn_params
+
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
+
+    with LogCapture() as log:
+      recipe.install()
+
+    # Verify setConnectionDict was called (empty JSON, nothing to compare, so publish)
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    published_params = call_args[0][0]
+    self.assertEqual(published_params, conn_params)
+
+    # Verify log shows publishing
+    log.check(
+      ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
+      ('test', 'DEBUG', 'Update instance: instance1'),
+      ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
+    )
 
 
 class TestCommandLineInterface(unittest.TestCase):
@@ -1342,45 +1751,6 @@ class TestCommandLineInterface(unittest.TestCase):
 
     section = instancenode.get_config_section(parser, 'nonexistent')
     self.assertEqual(section, {})
-
-  def test_create_buildout_dict_from_config(self):
-    """Test create_buildout_dict_from_config function"""
-    # Create a test config file
-    with open(self.config_file, 'w') as f:
-      f.write('[slaposinstancenode]\n')
-      f.write('server-url = https://test.example.com\n')
-      f.write('computer-id = test-computer\n')
-      f.write('partition-id = test-partition\n')
-      f.write('[slap-connection]\n')
-      f.write('key-file = /path/to/key\n')
-      f.write('cert-file = /path/to/cert\n')
-
-    parser = instancenode.parse_config_file(self.config_file)
-    buildout = instancenode.create_buildout_dict_from_config(parser, self.temp_dir)
-
-    self.assertIn('buildout', buildout)
-    self.assertIn('slap-connection', buildout)
-    self.assertEqual(buildout['slap-connection']['server-url'], 'https://test.example.com')
-    self.assertEqual(buildout['slap-connection']['computer-id'], 'test-computer')
-    self.assertEqual(buildout['slap-connection']['partition-id'], 'test-partition')
-    self.assertEqual(buildout['slap-connection']['key-file'], '/path/to/key')
-    self.assertEqual(buildout['slap-connection']['cert-file'], '/path/to/cert')
-
-  def test_create_buildout_dict_from_config_fallback(self):
-    """Test create_buildout_dict_from_config falls back to main section for slap-connection"""
-    # Create a test config file without [slap-connection] section
-    with open(self.config_file, 'w') as f:
-      f.write('[slaposinstancenode]\n')
-      f.write('server-url = https://test.example.com\n')
-      f.write('computer-id = test-computer\n')
-      f.write('partition-id = test-partition\n')
-
-    parser = instancenode.parse_config_file(self.config_file)
-    buildout = instancenode.create_buildout_dict_from_config(parser, self.temp_dir)
-
-    self.assertEqual(buildout['slap-connection']['server-url'], 'https://test.example.com')
-    self.assertEqual(buildout['slap-connection']['computer-id'], 'test-computer')
-    self.assertEqual(buildout['slap-connection']['partition-id'], 'test-partition')
 
   def test_create_options_dict_from_config(self):
     """Test create_options_dict_from_config function"""
@@ -1487,10 +1857,14 @@ class TestCommandLineInterface(unittest.TestCase):
   def test_pidfile_lock_existing_process(self):
     """Test PIDFileLock raises SystemExit when another process is running"""
     # Create a PID file with current PID (simulating another instance)
-    with open(self.pidfile, 'w') as f:
-      f.write(str(os.getpid()) + '\n')
+    # and lock it to prevent acquisition
+    pidfile_fd = open(self.pidfile, 'w')
+    pidfile_fd.write(str(os.getpid()) + '\n')
+    pidfile_fd.flush()
+    # Lock the file so lock acquisition fails
+    fcntl.flock(pidfile_fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
 
-    # Try to acquire lock - should fail because PID exists
+    # Try to acquire lock - should fail because file is locked
     lock = instancenode.PIDFileLock(self.pidfile)
 
     # Mock os.kill to return success (process exists)
@@ -1500,6 +1874,9 @@ class TestCommandLineInterface(unittest.TestCase):
         with lock:
           pass
       self.assertIn('Another instance is already running', str(cm.exception))
+    
+    # Clean up
+    pidfile_fd.close()
 
   def test_load_config_and_create_objects(self):
     """Test load_config_and_create_objects function"""
@@ -1514,11 +1891,10 @@ class TestCommandLineInterface(unittest.TestCase):
       f.write('software-url = https://software.example.com\n')
       f.write('software-type = cdn\n')
 
-    buildout, options, pidfile_lock = instancenode.load_config_and_create_objects(
+    options, pidfile_lock = instancenode.load_config_and_create_objects(
       self.config_file, self.pidfile
     )
 
-    self.assertIsNotNone(buildout)
     self.assertIsNotNone(options)
     self.assertIsNotNone(pidfile_lock)
     self.assertEqual(options['instance-db-path'], '/path/to/instance.db')
@@ -1531,10 +1907,9 @@ class TestCommandLineInterface(unittest.TestCase):
       f.write('[slaposinstancenode]\n')
       f.write('instance-db-path = /path/to/instance.db\n')
 
-    buildout, options, pidfile_lock = instancenode.load_config_and_create_objects(
+    options, pidfile_lock = instancenode.load_config_and_create_objects(
       self.config_file, None
     )
 
-    self.assertIsNotNone(buildout)
     self.assertIsNotNone(options)
     self.assertIsNone(pidfile_lock)
