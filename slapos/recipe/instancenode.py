@@ -240,22 +240,6 @@ class Recipe(object):
     # Base implementation: no validation, always valid
     return True, [], {}
 
-  def _getConnectionParameters(self, instance_reference):
-    """
-    Get connection parameters from a successfully requested instance.
-
-    Since 'return' is not a recipe option, we don't extract connection parameters.
-    This method returns an empty dict as connection parameters are not tracked.
-
-    Args:
-      instance_reference: Reference name for the instance
-
-    Returns:
-      JSON string of connection parameters (always "{}" since return is not configured)
-    """
-    # Connection parameters are not extracted since 'return' is not a recipe option
-    return "{}"
-
   def _getComputerPartition(self):
     """
     Get or create the computer_partition object for publishing connection parameters.
