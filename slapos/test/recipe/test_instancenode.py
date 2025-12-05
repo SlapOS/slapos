@@ -898,7 +898,7 @@ class TestRequestInstanceList(unittest.TestCase):
     """Test that connection parameters are published when validation fails"""
     # Create a custom recipe class that returns connection parameters on validation failure
     class TestRecipe(instancenode.Recipe):
-      def validateInstance(self, instance_reference, parameters):
+      def preDeployInstanceValidation(self, instance_reference, parameters):
         return False, ['Validation failed'], {'message': 'Error message', 'errors': ['Validation failed']}
 
     self._createInstanceDB([
@@ -922,7 +922,7 @@ class TestRequestInstanceList(unittest.TestCase):
     """Test that success message is published when validation succeeds with validation_conn_params"""
     # Create a custom recipe class that returns connection parameters on validation success
     class TestRecipe(instancenode.Recipe):
-      def validateInstance(self, instance_reference, parameters):
+      def preDeployInstanceValidation(self, instance_reference, parameters):
         return True, [], {'message': 'Success message'}
 
     self._createInstanceDB([
@@ -954,7 +954,7 @@ class TestRequestInstanceList(unittest.TestCase):
     """Test that empty connection parameters are not published"""
     # Create a custom recipe class that returns empty connection parameters
     class TestRecipe(instancenode.Recipe):
-      def validateInstance(self, instance_reference, parameters):
+      def preDeployInstanceValidation(self, instance_reference, parameters):
         return False, ['Validation failed'], {}  # Empty conn_params
 
     self._createInstanceDB([
@@ -971,7 +971,7 @@ class TestRequestInstanceList(unittest.TestCase):
     """Test that None connection parameters are not published"""
     # Create a custom recipe class that returns None connection parameters
     class TestRecipe(instancenode.Recipe):
-      def validateInstance(self, instance_reference, parameters):
+      def preDeployInstanceValidation(self, instance_reference, parameters):
         return False, ['Validation failed'], None  # None conn_params
 
     self._createInstanceDB([
@@ -988,7 +988,7 @@ class TestRequestInstanceList(unittest.TestCase):
     """Test that errors during publishing are logged but don't raise"""
     # Create a custom recipe class that returns connection parameters
     class TestRecipe(instancenode.Recipe):
-      def validateInstance(self, instance_reference, parameters):
+      def preDeployInstanceValidation(self, instance_reference, parameters):
         return False, ['Validation failed'], {'message': 'Error message'}
 
     self._createInstanceDB([
@@ -1025,7 +1025,7 @@ class TestRequestInstanceList(unittest.TestCase):
     ])
 
     class TestRecipe(instancenode.Recipe):
-      def validateInstance(self, instance_reference, parameters):
+      def preDeployInstanceValidation(self, instance_reference, parameters):
         return False, ['Validation failed'], {'message': 'Error for %s' % instance_reference}
 
     recipe = TestRecipe(self.buildout, 'test', self.options)
@@ -1054,7 +1054,7 @@ class TestRequestInstanceList(unittest.TestCase):
     """Test that success message is published when validation succeeds with validation_conn_params"""
     # Create a custom recipe class that returns connection parameters on validation success
     class TestRecipe(instancenode.Recipe):
-      def validateInstance(self, instance_reference, parameters):
+      def preDeployInstanceValidation(self, instance_reference, parameters):
         # Return validation_conn_params so success message is published
         return True, [], {'some': 'param'}
 
@@ -1215,7 +1215,7 @@ class TestRequestInstanceList(unittest.TestCase):
     - Same parameters (same hash) - NOT in 'modified'
     - Instance exists in instance-db - NOT in 'removed'
     - Instance is invalid in requestinstance-db
-    - Should be processed (validateInstance called)
+    - Should be processed (preDeployInstanceValidation called)
     """
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
@@ -1252,10 +1252,10 @@ class TestRequestInstanceList(unittest.TestCase):
       False  # invalid
     )])
 
-    # Create a custom recipe to track if validateInstance was called
+    # Create a custom recipe to track if preDeployInstanceValidation was called
     validation_calls = []
     class TestRecipe(instancenode.Recipe):
-      def validateInstance(self, instance_reference, parameters):
+      def preDeployInstanceValidation(self, instance_reference, parameters):
         validation_calls.append((instance_reference, parameters))
         # Return same validation result (still invalid)
         return False, ['Validation error: field "name" is required'], error_info
@@ -1265,12 +1265,12 @@ class TestRequestInstanceList(unittest.TestCase):
     with LogCapture() as log:
       recipe.install()
 
-    # CRITICAL: Verify that validateInstance was called for the unchanged invalid instance
+    # CRITICAL: Verify that preDeployInstanceValidation was called for the unchanged invalid instance
     # This ensures the bug fix is working - unchanged invalid instances should be re-validated
     # The instance is NOT in 'modified' (same hash) and NOT in 'removed' (exists in instance-db)
     # So it should be in unchanged_invalid_instances_to_process and processed
     self.assertEqual(len(validation_calls), 1,
-                    "validateInstance should be called once for unchanged invalid instance. "
+                    "preDeployInstanceValidation should be called once for unchanged invalid instance. "
                     "The instance is not in 'modified' (same hash) and not in 'removed' (exists in instance-db), "
                     "so it should be added to unchanged_invalid_instances_to_process and processed.")
     self.assertEqual(validation_calls[0][0], 'instance1')
@@ -1398,8 +1398,8 @@ class TestRequestInstanceList(unittest.TestCase):
     ], connection_params={'instance1': validation_errors})
 
     class TestRecipe(instancenode.Recipe):
-      def validateInstance(self, instance_reference, parameters):
-        return False, ['Different error from validateInstance'], {'message': 'Different error'}
+      def preDeployInstanceValidation(self, instance_reference, parameters):
+        return False, ['Different error from preDeployInstanceValidation'], {'message': 'Different error'}
 
     recipe = TestRecipe(self.buildout, 'test', self.options)
     with LogCapture() as log:
@@ -1448,13 +1448,13 @@ class TestRequestInstanceList(unittest.TestCase):
     )])
 
     class TestRecipe(instancenode.Recipe):
-      def validateInstance(self, instance_reference, parameters):
-        return False, ['Different error from validateInstance'], {'message': 'Different error'}
+      def preDeployInstanceValidation(self, instance_reference, parameters):
+        return False, ['Different error from preDeployInstanceValidation'], {'message': 'Different error'}
 
     recipe = TestRecipe(self.buildout, 'test', self.options)
     recipe.install()
 
-    # Verify error info from database was published (not from validateInstance)
+    # Verify error info from database was published (not from preDeployInstanceValidation)
     self.setConnectionDict.assert_called_once()
     call_args = self.setConnectionDict.call_args
     conn_params = call_args[0][0]
