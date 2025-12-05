@@ -443,7 +443,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
 
           # 2. invalid-no-change: Validation failed - should publish DNS challenge info
           # Note: invalid-no-change has custom_domain but is marked invalid in DB
-          # It will go through validateInstance, and DNS will fail (wrong token)
+          # It will go through preDeployInstanceValidation, and DNS will fail (wrong token)
           # So it should publish DNS challenge info, not just error message
           invalid_published = get_published_params('invalid-no-change')
           self.assertIsNotNone(invalid_published, "invalid-no-change should have published connection parameters")
@@ -465,7 +465,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
           self.assertEqual(invalid_published['message'], expected_message)
 
           # 3. valid-no-change: Already validated, no changes - should not publish
-          # (no connection params returned from validateInstance, and no request_conn_params)
+          # (no connection params returned from preDeployInstanceValidation, and no request_conn_params)
           valid_no_change_published = get_published_params('valid-no-change')
           self.assertIsNone(valid_no_change_published, "valid-no-change should not have published connection parameters")
 
@@ -554,7 +554,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
 
     # Should be valid if no custom_domain (nothing to verify)
-    is_valid, error_list, connection_parameters = recipe.validateInstance('ref1', {})
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation('ref1', {})
     self.assertTrue(is_valid)
     self.assertEqual(error_list, [])
     self.assertEqual(connection_parameters, {})
@@ -586,7 +586,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
 
     mock_resolver_instance.resolve.side_effect = get_dns_response
 
-    is_valid, error_list, connection_parameters = recipe.validateInstance(
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
       'ref1',
       {'custom_domain': 'example.com'}
     )
@@ -620,7 +620,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     mock_answer.__iter__.return_value = iter([mock_rdata])
     mock_resolver_instance.resolve.return_value = mock_answer
 
-    is_valid, error_list, connection_parameters = recipe.validateInstance(
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
       'ref1',
       {'custom_domain': 'example.com'}
     )
@@ -651,7 +651,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     # Setup mock DNS to raise NXDOMAIN
     mock_resolver_instance.resolve.side_effect = dns.resolver.NXDOMAIN
 
-    is_valid, error_list, connection_parameters = recipe.validateInstance(
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
       'ref1',
       {'custom_domain': 'example.com'}
     )
@@ -678,7 +678,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     # Setup mock DNS to raise Timeout
     mock_resolver_instance.resolve.side_effect = dns.resolver.LifetimeTimeout
 
-    is_valid, error_list, connection_parameters = recipe.validateInstance(
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
       'ref1',
       {'custom_domain': 'example.com'}
     )
@@ -704,7 +704,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     # We don't mock resolve here, so if it calls resolve it will fail (or we can mock it to assert not called)
     with mock.patch('dns.resolver.Resolver') as MockResolver:
       mock_resolver_instance = MockResolver.return_value
-      is_valid, error_list, connection_parameters = recipe.validateInstance(
+      is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
         'ref1',
         {'custom_domain': 'example.com'}
       )
@@ -739,7 +739,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     # Use return_value instead of side_effect to ensure consistent behavior
     mock_resolver_instance.resolve.return_value = mock_answer
 
-    is_valid, error_list, connection_parameters = recipe.validateInstance(
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
       'ref1',
       {'custom_domain': 'example.com'}
     )
@@ -777,7 +777,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
 
     mock_resolver_instance.resolve.side_effect = get_dns_response
 
-    is_valid, error_list, connection_parameters = recipe.validateInstance('ref1', {'custom_domain': 'example.com'})
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'example.com'})
     # Verify validation passed
     self.assertTrue(is_valid)
     # Verify DNS lookup used custom dns-entry-name
@@ -790,7 +790,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     # Pre-populate database with validated entry for another instance
     recipe.domain_validation_db.setDomainValidation('other-instance', 'example.com', 'existing-token', True)
 
-    is_valid, error_list, connection_parameters = recipe.validateInstance(
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
       'ref1',
       {'custom_domain': 'example.com'}
     )
@@ -830,7 +830,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
       mock_resolver_instance.resolve.side_effect = get_dns_response
 
       # Validate with new domain
-      recipe.validateInstance('ref1', {'custom_domain': 'new-domain.com'})
+      recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'new-domain.com'})
 
       # Verify old domain entry was removed and new one was created
       db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
@@ -875,7 +875,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     parameters = {
       'server-alias': 'example.com'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertFalse(is_valid)
     self.assertIn('server-alias requires custom_domain to be set', error_list)
 
@@ -888,7 +888,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
       'server-alias': 'invalid..domain.com valid.domain.com',
       'custom_domain': 'domain.com'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertFalse(is_valid)
     self.assertIn("server-alias 'invalid..domain.com' not valid", error_list)
 
@@ -920,7 +920,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
       'custom_domain': 'example.com',
       'server-alias': 'www.example.com api.example.com'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertTrue(is_valid)
     self.assertEqual(error_list, [])
 
@@ -933,7 +933,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
       'custom_domain': 'example.com',
       'server-alias': 'otherdomain.com'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertFalse(is_valid)
     self.assertIn("server-alias 'otherdomain.com' must be part of the same root domain as custom_domain (example.com)", error_list)
 
@@ -964,7 +964,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
       'custom_domain': 'example.com',
       'server-alias': '*.example.com'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertTrue(is_valid)
     self.assertEqual(error_list, [])
 
@@ -977,7 +977,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
       'custom_domain': 'example.com',
       'server-alias': '*.otherdomain.com'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertFalse(is_valid)
     self.assertIn("server-alias '*.otherdomain.com' must be part of the same root domain as custom_domain (example.com)", error_list)
 
@@ -1008,7 +1008,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
       'custom_domain': 'example.com',
       'server-alias': 'example.com'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertTrue(is_valid)
     self.assertEqual(error_list, [])
 
@@ -1039,7 +1039,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
       'custom_domain': 'www.example.com',
       'server-alias': 'api.example.com'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertTrue(is_valid)
     self.assertEqual(error_list, [])
 
@@ -1102,13 +1102,13 @@ class TestCDNRequestRecipe(unittest.TestCase):
     }
 
     # Validate the updated instance (should pass DNS since domain is already validated)
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', updated_params)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', updated_params)
     self.assertTrue(is_valid)
     self.assertEqual(error_list, [])
 
     # Step 3: Verify new hosts are added to used_hosts
-    # Note: The hosts are added in validateInstance when DNS validation passes
-    # Since the domain is already validated, validateInstance will return early
+    # Note: The hosts are added in preDeployInstanceValidation when DNS validation passes
+    # Since the domain is already validated, preDeployInstanceValidation will return early
     # and add the hosts. Let's check the used_hosts table
     hosts_after = recipe.domain_validation_db.fetchAll(
       "SELECT host FROM used_hosts WHERE instance_reference=?",
@@ -1127,7 +1127,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     parameters = {
       'url-netloc-list': 'invalid-netloc example.com:80'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertFalse(is_valid)
     self.assertIn("slave url-netloc-list 'invalid-netloc' invalid", error_list)
 
@@ -1139,7 +1139,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     parameters = {
       'url-netloc-list': 'example.com:80 backend.example.com:443'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertTrue(is_valid)
     self.assertEqual(error_list, [])
 
@@ -1151,7 +1151,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     parameters = {
       'ciphers': 'ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertTrue(is_valid)
     self.assertEqual(error_list, [])
 
@@ -1163,7 +1163,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
     parameters = {
       'ciphers': 'INVALID-CIPHER-SUITE'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertFalse(is_valid)
     self.assertIn("Cipher 'INVALID-CIPHER-SUITE' is not supported.", error_list)
 
@@ -1176,7 +1176,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
       'ciphers': 'ECDHE-RSA-AES256-CBC-SHA'
     }
     with LogCapture() as log:
-      is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+      is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertTrue(is_valid)
     self.assertEqual(error_list, [])
     # Check that warning was logged
@@ -1206,7 +1206,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
       mock_process.communicate.return_value = (b'', b'')
       mock_popen.return_value = mock_process
 
-      is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+      is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
       # Should pass validation (openssl returns success)
       self.assertTrue(is_valid)
       self.assertEqual(error_list, [])
@@ -1231,7 +1231,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
       mock_process.communicate.return_value = (b'error', b'')
       mock_popen.return_value = mock_process
 
-      is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+      is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
       self.assertFalse(is_valid)
       self.assertIn('ssl_proxy_ca_crt is invalid', error_list)
 
@@ -1262,7 +1262,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
       mock_popen.side_effect = [mock_key_process, mock_cert_process]
 
-      is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+      is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
       self.assertTrue(is_valid)
       self.assertEqual(error_list, [])
 
@@ -1291,7 +1291,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
       mock_popen.side_effect = [mock_key_process, mock_cert_process]
 
-      is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+      is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
       self.assertFalse(is_valid)
       self.assertIn('slave ssl_key and ssl_crt does not match', error_list)
 
@@ -1303,7 +1303,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     parameters = {
       'ssl_ca_crt': '-----BEGIN CERTIFICATE-----\ntest ca\n-----END CERTIFICATE-----'
     }
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     self.assertFalse(is_valid)
     self.assertIn('ssl_ca_crt is present, so ssl_crt and ssl_key are required', error_list)
 
@@ -1318,7 +1318,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
       'ssl_key': '-----BEGIN PRIVATE KEY-----\ntest key\n-----END PRIVATE KEY-----'
     }
     # Should pass basic validation (SSL matching would require openssl)
-    is_valid, error_list, conn_params = recipe.validateInstance('ref1', parameters)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
     # Will fail SSL matching if openssl is not available, but that's expected
     # The important part is it doesn't fail on the ssl_ca_crt requirement check
     if 'openssl-binary' not in self.options:
@@ -1346,7 +1346,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
     mock_resolver_instance.resolve.side_effect = get_dns_response
 
-    recipe.validateInstance('ref1', {'custom_domain': 'example.com'})
+    recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'example.com'})
 
     # Verify resolver was created
     MockResolver.assert_called()
@@ -1376,7 +1376,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
     mock_resolver_instance.resolve.side_effect = get_dns_response
 
-    recipe.validateInstance('ref1', {'custom_domain': 'example.com'})
+    recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'example.com'})
 
     # Verify nameservers were set correctly (whitespace should be stripped)
     self.assertEqual(mock_resolver_instance.nameservers, ['8.8.8.8', '8.8.4.4', '2001:4860:4860::8888'])
@@ -1405,7 +1405,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
     mock_resolver_instance.resolve.side_effect = get_dns_response
 
-    recipe.validateInstance('ref1', {'custom_domain': 'example.com'})
+    recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'example.com'})
 
     # Verify resolver was created
     MockResolver.assert_called()
@@ -1440,7 +1440,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
     mock_resolver_instance.resolve.side_effect = get_dns_response
 
-    recipe.validateInstance('ref1', {'custom_domain': 'example.com'})
+    recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'example.com'})
 
     # Verify nameservers were set
     self.assertEqual(mock_resolver_instance.nameservers, ['1.1.1.1'])

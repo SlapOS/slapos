@@ -536,7 +536,7 @@ class CDNRequestRecipe(InstanceNodeRecipe):
       else:
         unclashed_aliases.append(alias)
 
-  def validateInstance(self, instance_reference, parameters):
+  def preDeployInstanceValidation(self, instance_reference, parameters):
     """
     Validate instance parameters and custom domain ownership.
 

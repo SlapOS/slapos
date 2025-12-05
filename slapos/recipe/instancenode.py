@@ -239,7 +239,7 @@ class Recipe(object):
       )
       raise
 
-  def validateInstance(self, instance_reference, parameters):
+  def preDeployInstanceValidation(self, instance_reference, parameters):
     """
     Validate instance parameters. Can be overridden by subclasses for custom validation.
 
@@ -446,7 +446,7 @@ class Recipe(object):
 
     # Check Pre Deployments Constraints
     if continue_processing:
-      is_valid, error_list, validation_info = self.validateInstance(
+      is_valid, error_list, validation_info = self.preDeployInstanceValidation(
         instance_reference,
         instance_data['parameters']
       )
