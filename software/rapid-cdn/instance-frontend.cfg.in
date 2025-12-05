@@ -815,12 +815,8 @@ graceful-command = ${backend-haproxy-validate:output} && kill -USR2 $(cat ${:pid
 http-port = ${configuration:backend-haproxy-http-port}
 https-port = ${configuration:backend-haproxy-https-port}
 # Caucase related configuration
-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
-ca-certificate = ${backend-client-login-config:ca-certificate}
-certificate = ${backend-client-login-config:certificate}
-cas-ca-certificate = ${backend-client-login-config:cas-ca-certificate}
-csr = ${backend-client-caucase-updater-csr:csr}
-crl = ${backend-client-login-config:crl}
+backend-client-login-certificate = ${backend-client-login-config:certificate}
+backend-client-caucase-csr = ${backend-client-caucase-updater-csr:csr}
 # the statistic page
 statistic-certificate = ${self-signed-ip-access:certificate}
 statistic-port = ${configuration:backend-haproxy-statistic-port}
@@ -896,7 +892,7 @@ delaycompress =
 url = {{ software_parameter_dict['template_configuration_state_script'] }}
 output = ${directory:bin}/${:_buildout_section_name_}
 
-path_list = ${backend-haproxy-configuration:file} ${backend-client-login-config:certificate}
+path_list = ${backend-haproxy-configuration:file} ${backend-haproxy-configuration:backend-client-login-certificate}
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
