@@ -4,10 +4,10 @@
 {%- set frontend_slave_dict = {} %}
 {%- set part_list = [] %}
 {%- set cache_port = frontend_haproxy_configuration.get('cache-port') %}
-{%- set cache_access = "http://%s:%s/HTTP" % (instance_parameter_dict['ipv4-random'], cache_port) %}
-{%- set ssl_cache_access = "http://%s:%s/HTTPS" % (instance_parameter_dict['ipv4-random'], cache_port) %}
-{%- set backend_haproxy_http_url = 'http://%s:%s' % (instance_parameter_dict['ipv4-random'], backend_haproxy_configuration['http-port']) %}
-{%- set backend_haproxy_https_url = 'http://%s:%s' % (instance_parameter_dict['ipv4-random'], backend_haproxy_configuration['https-port']) %}
+{%- set cache_access = "https://%s:%s/HTTP" % (instance_parameter_dict['ipv4-random'], cache_port) %}
+{%- set ssl_cache_access = "https://%s:%s/HTTPS" % (instance_parameter_dict['ipv4-random'], cache_port) %}
+{%- set backend_haproxy_http_url = 'https://%s:%s' % (instance_parameter_dict['ipv4-random'], backend_haproxy_configuration['http-port']) %}
+{%- set backend_haproxy_https_url = 'https://%s:%s' % (instance_parameter_dict['ipv4-random'], backend_haproxy_configuration['https-port']) %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
 {%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': instance_parameter_dict['ipv4-random'], 'http_port': configuration['plain_http_port'], 'https_port': configuration['port']} %}
 {%- set slave_log_dict = {} %}
