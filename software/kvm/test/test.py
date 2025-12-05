@@ -355,7 +355,6 @@ class TestInstance(KVMTestCase, KvmMixin):
       connection_parameter_dict,
       {
         'ipv6': self.computer_partition_ipv6_address,
-        'maximum-extra-disk-amount': '0',
         'monitor-base-url':
         f'https://[{self.computer_partition_ipv6_address}]:8026',
         'nat-rule-port-tcp-22':
@@ -2947,7 +2946,6 @@ vm""",
       connection_parameter_dict,
       {
         'ipv6': self.computer_partition_ipv6_address,
-        'maximum-extra-disk-amount': '0',
         'monitor-base-url':
         f'https://[{self.computer_partition_ipv6_address}]:8026',
         'nat-rule-port-tcp-22':

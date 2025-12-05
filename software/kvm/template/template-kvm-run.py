@@ -38,9 +38,6 @@ tap_mac_address = parameter_dict.get("tap-mac-address")
 tap_ipv6_addr = parameter_dict.get("tap-ipv6-addr")
 numa_list = parameter_dict.get("numa", "").split()
 pid_file_path = parameter_dict.get("pid-file")
-external_disk_number = parameter_dict.get("external-disk-number")
-external_disk_size = parameter_dict.get("external-disk-size")
-external_disk_format = parameter_dict["external-disk-format"]
 external_disk = eval(parameter_dict['external-disk'])
 etc_directory = parameter_dict.get("etc-directory").strip()
 last_disk_num_f = os.path.join(etc_directory, '.data-disk-amount')
@@ -49,21 +46,7 @@ if os.path.exists(last_disk_num_f):
     last_amount = int(lf.readline())
 else:
   last_amount = 0
-if len(external_disk) > 0:
-  conflict_list = []
-  if int(external_disk_number) > 0:
-    conflict_list.append('conflicts with external-disk-number = %s' % (
-      external_disk_number,))
-  if last_amount > 0:
-    conflict_list.append(
-      'conflicts with already configured disks amount %s in %s' % (
-        last_amount, last_disk_num_f))
-  if len(conflict_list) > 0:
-    raise ValueError('external-disk problems: ' + ', '.join(conflict_list))
 instance_root = parameter_dict['instance-root']
-disk_storage_dict = {}
-disk_storage_list = parameter_dict.get("disk-storage-list").split('\n')
-map_storage_list = []
 httpd_port = int(parameter_dict["httpd-port"])
 netcat_bin = parameter_dict.get("netcat-binary").strip()
 cluster_doc_host = parameter_dict.get("cluster-doc-host")
@@ -132,43 +115,6 @@ def getSocketStatus(host, port):
         s = None
 
 
-def getMapStorageList(disk_storage_dict, external_disk_number):
-  map_disk_file = os.path.join(etc_directory, '.data-disk-ids')
-  last_disk_num_f = os.path.join(etc_directory, '.data-disk-amount')
-  id_list = []
-  last_amount = 0
-  map_f_exist = os.path.exists(map_disk_file)
-  if os.path.exists(last_disk_num_f):
-    with open(last_disk_num_f, 'r') as lf:
-      last_amount = int(lf.readline())
-  if map_f_exist:
-    with open(map_disk_file, 'r') as mf:
-      # ID are writen in one line: data1 data3 data2 ...
-      content = mf.readline()
-      for id in content.split(' '):
-        if id in disk_storage_dict:
-          id_list.append(id)
-        else:
-          # Mean that this disk path has been removed (disk unmounted)
-          last_amount -= 1
-  for key in disk_storage_dict:
-    if key not in id_list:
-      id_list.append(key)
-
-  if id_list:
-    if not map_f_exist:
-      # shuffle the list to not write disk in data1, data2, ... everytime
-      shuffle(id_list)
-    if external_disk_number < last_amount:
-      # Drop created disk is not allowed
-      external_disk_number = last_amount
-    with open(map_disk_file, 'w') as mf:
-      mf.write(' '.join(id_list))
-    with open(last_disk_num_f, 'w') as lf:
-      lf.write('%s' % external_disk_number)
-  return id_list, external_disk_number
-
-
 # Use downloaded virtual-hard-drive-url
 if len(disk_info_list) == 1 and not os.path.exists(
   disk_info_list[0]['path']) and virtual_hard_drive_url_json_config != '':
@@ -223,41 +169,6 @@ if len(disk_info_list) == 1 and not disk_info_list[0]['path'].startswith(
           qemu_img_path, 'bitmap', '--remove', disk_info_list[0]['path'],
           bitmap['name']])
         print('Removed bitmap %s' % (bitmap['name'],))
-
-# Check and create external disk
-additional_disk_list = []
-for storage in disk_storage_list:
-  if storage:
-    key, val = storage.split(' ')
-    disk_storage_dict[key.strip()] = val.strip()
-
-map_storage_list, external_disk_number = getMapStorageList(
-  disk_storage_dict, int(external_disk_number))
-
-assert len(map_storage_list) == len(disk_storage_dict)
-if disk_storage_dict:
-  if external_disk_number > 0:
-    index = 0
-    while (index < len(disk_storage_dict)) and (index < external_disk_number):
-      path = disk_storage_dict[map_storage_list[index]]
-      if os.path.exists(path):
-        disk_filepath = os.path.join(
-          path, 'kvm_virtual_disk.%s' % external_disk_format)
-        disk_list = glob.glob('%s.*' % os.path.join(path, 'kvm_virtual_disk'))
-        if disk_list == []:
-          print('Creating one additional virtual hard drive...')
-          process = subprocess.check_call([
-            qemu_img_path, 'create', '-f', external_disk_format,
-            disk_filepath, '%sG' % external_disk_size])
-        else:
-          # Cannot change or recreate if disk is exists
-          disk_filepath = disk_list[0]
-        additional_disk_list.append(disk_filepath)
-      else:
-        print(
-          'Data folder %s was not used to create external disk %r' % (
-            index + 1))
-      index += 1
 
 # Generate network parameters
 # XXX: use_tap should be a boolean
