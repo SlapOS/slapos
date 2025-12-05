@@ -540,6 +540,8 @@ class TestCDNRequestRecipe(unittest.TestCase):
       else:
         return self.mock_requestinstance_db
     self.MockDB.side_effect = get_mock_db
+    # Ensure patch is cleaned up to avoid interfering with other tests
+    self.addCleanup(self.db_patch.stop)
 
     # Use real DomainValidationDB for integration testing
     # (no mocking needed - will use self.domainvalidation_db_path)
