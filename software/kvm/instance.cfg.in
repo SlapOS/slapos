@@ -44,7 +44,6 @@ context =
   key ipv4 slap-configuration:ipv4
   key ipv6 slap-configuration:ipv6
   key global_ipv4_prefix network-information:global-ipv4-network
-  key storage_dict slap-configuration:storage-dict
   key slapparameter_dict slap-configuration:configuration
   key computer_id slap-connection:computer-id
   raw openssl_executable_location ${openssl:location}/bin/openssl
