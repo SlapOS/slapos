@@ -949,7 +949,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         # ATS adds to existing header, so ","
         self.assertEqual(
           expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
-          'http/1.0 rapid-cdn-cache-%(via_id)s '
+          'https/1.0 rapid-cdn-cache-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
           via_header
@@ -2418,7 +2418,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         [
           'http/1.1 clientvia',
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s, '
-          'http/1.1 rapid-cdn-cache-%(via_id)s' % dict(
+          'https/1.1 rapid-cdn-cache-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
@@ -2499,7 +2499,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       '_Url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _Url-http\/_Url-backend-http '
+      r'http-backend~ _Url-http\/_Url-backend-http '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
@@ -7717,7 +7717,7 @@ backend _health-check-default-http
       '_health-check-failover-url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'https-backend _health-check-failover-url-https-failover'
+      r'https-backend~ _health-check-failover-url-https-failover'
       r'\/_health-check-failover-url-backend-https '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'503 \d+ - - ---- '
@@ -7732,7 +7732,7 @@ backend _health-check-default-http
       '_health-check-failover-url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _health-check-failover-url-http-failover'
+      r'http-backend~ _health-check-failover-url-http-failover'
       r'\/_health-check-failover-url-backend-http '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'503 \d+ - - ---- '
