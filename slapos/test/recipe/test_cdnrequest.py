@@ -530,7 +530,16 @@ class TestCDNRequestRecipe(unittest.TestCase):
     # Patch HostedInstanceLocalDB to return mocks
     self.db_patch = mock.patch('slapos.recipe.instancenode.HostedInstanceLocalDB')
     self.MockDB = self.db_patch.start()
-    self.MockDB.side_effect = [self.mock_instance_db, self.mock_requestinstance_db]
+    # Use a function to return mocks alternately for each call
+    # This allows multiple recipe instances to be created
+    self.db_call_count = 0
+    def get_mock_db(*args, **kwargs):
+      self.db_call_count += 1
+      if self.db_call_count % 2 == 1:
+        return self.mock_instance_db
+      else:
+        return self.mock_requestinstance_db
+    self.MockDB.side_effect = get_mock_db
 
     # Use real DomainValidationDB for integration testing
     # (no mocking needed - will use self.domainvalidation_db_path)
@@ -712,7 +721,8 @@ class TestCDNRequestRecipe(unittest.TestCase):
       self.assertTrue(bool(db_entry['validated']))
       self.assertEqual(db_entry['token'], stored_token)
 
-  def test_validate_custom_domain_token_reuse(self):
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_custom_domain_token_reuse(self, MockResolver):
     """Test that token is reused if entry exists but not yet validated"""
     recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
 
@@ -721,55 +731,57 @@ class TestCDNRequestRecipe(unittest.TestCase):
     recipe.domain_validation_db.setDomainValidation('ref1', 'example.com', stored_token, False)
 
     # Setup mock DNS response with the stored token
-    with mock.patch('dns.resolver.Resolver') as MockResolver:
-      mock_resolver_instance = MockResolver.return_value
-      mock_answer = mock.MagicMock()
-      mock_rdata = mock.MagicMock()
-      mock_rdata.strings = [stored_token.encode('utf-8')]
-      mock_answer.__iter__.return_value = iter([mock_rdata])
-      mock_resolver_instance.resolve.return_value = mock_answer
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+    mock_rdata.strings = [stored_token.encode('utf-8')]
+    mock_answer.__iter__.return_value = iter([mock_rdata])
+    # Use return_value instead of side_effect to ensure consistent behavior
+    mock_resolver_instance.resolve.return_value = mock_answer
 
-      is_valid, error_list, connection_parameters = recipe.validateInstance(
-        'ref1',
-        {'custom_domain': 'example.com'}
-      )
+    is_valid, error_list, connection_parameters = recipe.validateInstance(
+      'ref1',
+      {'custom_domain': 'example.com'}
+    )
 
-      self.assertTrue(is_valid)
-      self.assertEqual(error_list, [])
-      self.assertEqual(connection_parameters, {})
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+    self.assertEqual(connection_parameters, {})
 
-      # Verify DNS lookup was called
-      mock_resolver_instance.resolve.assert_called_with('_slapos-challenge.example.com', 'TXT')
-      # Verify database entry was updated to validated=True
-      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
-      self.assertIsNotNone(db_entry)
-      self.assertTrue(bool(db_entry['validated']))
-      self.assertEqual(db_entry['token'], stored_token)
+    # Verify DNS lookup was called
+    mock_resolver_instance.resolve.assert_called_with('_slapos-challenge.example.com', 'TXT')
+    # Verify database entry was updated to validated=True
+    db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+    self.assertIsNotNone(db_entry)
+    self.assertTrue(bool(db_entry['validated']))
+    self.assertEqual(db_entry['token'], stored_token)
 
-  def test_validate_custom_domain_dns_entry_name_configurable(self):
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_custom_domain_dns_entry_name_configurable(self, MockResolver):
     """Test that dns-entry-name option is respected"""
     self.options['dns-entry-name'] = 'custom-challenge'
     recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
 
-    with mock.patch('dns.resolver.Resolver') as MockResolver:
-      mock_resolver_instance = MockResolver.return_value
-      mock_answer = mock.MagicMock()
-      mock_rdata = mock.MagicMock()
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
 
-      def get_dns_response(*args, **kwargs):
-        db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
-        if db_entry:
-          mock_rdata.strings = [db_entry['token'].encode('utf-8')]
-        else:
-          mock_rdata.strings = [b'placeholder']
-        mock_answer.__iter__.return_value = iter([mock_rdata])
-        return mock_answer
+    def get_dns_response(*args, **kwargs):
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
 
-      mock_resolver_instance.resolve.side_effect = get_dns_response
+    mock_resolver_instance.resolve.side_effect = get_dns_response
 
-      recipe.validateInstance('ref1', {'custom_domain': 'example.com'})
-      # Verify DNS lookup used custom dns-entry-name
-      mock_resolver_instance.resolve.assert_called_with('custom-challenge.example.com', 'TXT')
+    is_valid, error_list, connection_parameters = recipe.validateInstance('ref1', {'custom_domain': 'example.com'})
+    # Verify validation passed
+    self.assertTrue(is_valid)
+    # Verify DNS lookup used custom dns-entry-name
+    mock_resolver_instance.resolve.assert_called_with('custom-challenge.example.com', 'TXT')
 
   def test_validate_domain_already_validated_for_other_instance(self):
     """Test that validation fails if domain is already validated for another instance"""
@@ -1487,6 +1499,15 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
   @mock.patch('dns.resolver.Resolver')
   def test_dns_resolver_fresh_cache_per_instance(self, MockResolver):
     """Test that each recipe instance gets a fresh cache (not shared between instances)"""
+    # Make MockResolver return a new mock instance for each call
+    resolver_instances = []
+    def create_resolver(*args, **kwargs):
+      resolver = mock.MagicMock()
+      resolver.cache = mock.MagicMock()
+      resolver_instances.append(resolver)
+      return resolver
+    MockResolver.side_effect = create_resolver
+
     recipe1 = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
     recipe2 = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
 
