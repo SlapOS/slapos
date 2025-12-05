@@ -75,8 +75,29 @@ parts =
   logrotate-entry-slave-introspection
   backend-haproxy-statistic-frontend-promise
 
+  micro-caucased
+  micro-caucased-promise
+
 [software-py]
 recipe = software
+
+{%- set micro_caucased_host = instance_parameter_dict['ipv4-random'] %}
+{%- set micro_caucased_netloc = micro_caucased_host ~ ':' ~ instance_parameter_dict['configuration.caucase_backend_client_port'] %}
+{%- set micro_caucased_url = 'http://' ~ micro_caucased_netloc %}
+[micro-caucased]
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+{{  caucase.caucased(
+      prefix='micro-caucased',
+      buildout_bin_directory=software_parameter_dict['bin_directory'],
+      caucased_path='${directory:service}/micro-caucased',
+      backup_dir='${directory:micro-caucased-backup}',
+      data_dir='${directory:micro-caucased}',
+      netloc=micro_caucased_netloc,
+      tmp='${directory:tmp}',
+      service_auto_approve_count=3,
+      user_auto_approve_count=0,
+      key_len=2048
+)}}
 
 [frontend-node-id]
 # Store id file in top of hierarchy, so it does not depend on directory creation
@@ -185,6 +206,9 @@ slave-introspection-var = ${:var}/slave-introspection
 # trafficserver-introspection
 trafficserver-introspection-var = ${:var}/trafficserver-introspection
 trafficserver-introspection-srv = ${:srv}/trafficserver-introspection
+
+micro-caucased = ${:srv}/micro-caucased
+micro-caucased-backup = ${:backup}/micro-caucased
 
 [switch-frontend-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
