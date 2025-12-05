@@ -12,7 +12,6 @@ T-2/var/log/httpd/_01wildcard_access_log
 T-2/var/log/httpd/_01wildcard_backend_log
 T-2/var/log/httpd/_01wildcard_frontend_log
 T-2/var/log/httpd/_02wildcard_access_log
-T-2/var/log/httpd/_02wildcard_backend_log
 T-2/var/log/httpd/_02wildcard_frontend_log
 T-2/var/log/httpd/_03zspecific_access_log
 T-2/var/log/httpd/_03zspecific_backend_log
