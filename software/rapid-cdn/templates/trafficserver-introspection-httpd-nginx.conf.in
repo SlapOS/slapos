@@ -32,6 +32,10 @@ http {
 {%- for location in parameter_dict['inspect-list'].splitlines() %}
     location {{ location }} {
       proxy_pass {{ parameter_dict['trafficserver-url-root'] }}{{ location }};
+      proxy_ssl_verify on;
+      proxy_ssl_trusted_certificate {{ parameter_dict['ca-certificate'] }};
+      proxy_ssl_name {{ parameter_dict['trafficserver-certificate-common-name'] }};
+      proxy_ssl_crl {{ parameter_dict['crl-list'] }};
     }
 {%- endfor %}
   }

@@ -950,7 +950,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         # ATS adds to existing header, so ","
         self.assertEqual(
           expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
-          'http/1.0 rapid-cdn-cache-%(via_id)s '
+          'https/1.0 rapid-cdn-cache-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
           via_header
@@ -2420,7 +2420,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         [
           'http/1.1 clientvia',
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s, '
-          'http/1.1 rapid-cdn-cache-%(via_id)s' % dict(
+          'https/1.1 rapid-cdn-cache-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
@@ -2501,11 +2501,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       '_Url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _Url-http\/_Url-backend-http '
+      r'https~ _Url-url/_Url-backend '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
-      r'"GET (/test-path/deeper){250} HTTP/1.1"'
+      r'"GET (/test-path/deeper){250} HTTP/1.1" '
+      r'\d+/\d+\/\d+\/\d+\/\d+ '
+      r'-/.+/.+'
     )
 
     result_http = fakeHTTPResult(
@@ -2530,18 +2532,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
     with open(backend_configuration_file) as fh:
       content = fh.read()
-    self.assertIn("""backend _Url-http
+    self.assertIn("""backend _Url-url
   timeout server 12s
   timeout connect 5s
   retries 3""", content)
-    self.assertIn("""  timeout queue 60s
-  timeout server 12s
-  timeout client 12s
-  timeout connect 5s
-  retries 3""", content)
-    # check that no needless entries are generated
-    self.assertIn("backend _Url-http\n", content)
-    self.assertNotIn("backend _Url-https\n", content)
+    self.assertIn("backend _Url-https-url\nbackend", content)
 
     # check out access via IPv6
     out_ipv6, err_ipv6 = self._curl(
@@ -5305,7 +5300,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
     with open(backend_configuration_file) as fh:
       content = fh.read()
-      self.assertTrue("""backend _url_https-url-http
+      self.assertTrue("""backend _url_https-url-url
+  timeout server 15s
+  timeout connect 10s
+  retries 5""" in content)
+      self.assertTrue("""backend _url_https-url-https-url
   timeout server 15s
   timeout connect 10s
   retries 5""" in content)
@@ -7715,7 +7714,7 @@ backend _health-check-default-http
       '_health-check-failover-url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'https-backend _health-check-failover-url-https-failover'
+      r'https-backend~ _health-check-failover-url-https-failover'
       r'\/_health-check-failover-url-backend-https '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'503 \d+ - - ---- '
@@ -7730,7 +7729,7 @@ backend _health-check-default-http
       '_health-check-failover-url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _health-check-failover-url-http-failover'
+      r'http-backend~ _health-check-failover-url-http-failover'
       r'\/_health-check-failover-url-backend-http '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'503 \d+ - - ---- '
