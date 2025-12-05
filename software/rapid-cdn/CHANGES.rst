@@ -32,6 +32,46 @@ instance can be upgraded first and frontend nodes one at a time, with fast
 rollback. The operator-facing cluster input schema stays strict.
 (`!2154 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2154>`__)
 
+Internal frontend↔backend traffic switched to HTTPS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+**Breaking:** the frontend now reaches the backend haproxy over
+HTTPS only, authenticated via a new per-frontend micro-caucased and
+micro-ssl certificates. The backend haproxy no longer exposes a
+plain-HTTP port. As a consequence:
+
+* Cluster parameter ``backend-haproxy-http-port`` is removed.
+* Cluster parameter ``backend-haproxy-https-port`` is renamed to
+  ``backend-haproxy-port`` (same default ``21443``). Operators that
+  overrode either port must migrate to the new name; the
+  ``-http-port`` override has no equivalent and must be dropped.
+* A new frontend input parameter ``caucase-port`` (default ``8890``)
+  is exposed for the per-frontend micro-caucased server that signs
+  the internal certificates.
+
+Slave-level ``https-url`` / ``https-url-netloc-list`` and their
+``health-check-failover-https-url`` counterparts are dropped as well
+— see the ``[user]`` entry.
+
+Separate ``https-url`` slave parameter removed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+**Breaking:** a slave can no longer declare a distinct HTTPS backend
+URL. The following slave parameters are removed:
+
+* ``https-url``
+* ``https-url-netloc-list``
+* ``health-check-failover-https-url``
+* ``health-check-failover-https-url-netloc-list``
+
+Slaves that used them must consolidate to a single ``url`` (and, if
+applicable, ``health-check-failover-url``) — the CDN then reaches the
+same backend URL for both HTTP and HTTPS client traffic. Any client
+that relied on protocol-based backend selection at the CDN edge must
+now do that selection at the backend itself.
+
 Error Page Manager allocation SLA
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
