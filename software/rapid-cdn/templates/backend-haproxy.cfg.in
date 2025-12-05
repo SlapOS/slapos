@@ -59,6 +59,7 @@ frontend http-backend
 
 frontend https-backend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
+#  bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt {{ configuration['backend-haproxy-internal-certificate'] }}
   http-request add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
   http-after-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
   # setup Date
