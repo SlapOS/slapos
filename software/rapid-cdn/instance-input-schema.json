@@ -212,14 +212,8 @@
       "type": "integer",
       "default": 8080
     },
-    "backend-haproxy-http-port": {
-      "title": "Backend Haproxy HTTP Port",
-      "description": "Port number for the backend haproxy HTTP server.",
-      "type": "integer",
-      "default": 21080
-    },
-    "backend-haproxy-https-port": {
-      "title": "Backend Haproxy HTTPS Port",
+    "backend-haproxy-port": {
+      "title": "Backend Haproxy Port",
       "description": "Port number for the backend haproxy HTTPS server.",
       "type": "integer",
       "default": 21443
