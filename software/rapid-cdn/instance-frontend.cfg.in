@@ -78,6 +78,9 @@ parts =
   micro-caucased
   micro-caucased-promise
 
+  backend-haproxy-certificate-micro-caucase-updater
+  backend-haproxy-certificate-micro-caucase-updater-promise
+
 [software-py]
 recipe = software
 
@@ -97,6 +100,38 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
       service_auto_approve_count=3,
       user_auto_approve_count=0,
       key_len=2048
+)}}
+
+[backend-haproxy-csr]
+recipe = plone.recipe.command
+organization = {{ slapparameter_dict['cluster-identification'] }}
+organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
+command =
+  if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
+    {{ software_parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}/CN=backend-haproxy" \
+      -out ${:template-csr}
+  fi
+  test -f ${:key} && test -f ${:template-csr}
+update-command = ${:command}
+template-csr = ${directory:backend-haproxy-micro-ssl}/template-csr.pem
+key = ${directory:backend-haproxy-micro-ssl}/bundle.pem
+certificate = ${:key}
+{#- Can be stopped on error, as does not rely on self provided service #}
+stop-on-error = True
+
+{{ caucase.updater(
+     prefix='backend-haproxy-certificate-micro-caucase-updater',
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
+     updater_path='${directory:service}/backend-haproxy-certificate-micro-caucase-updater',
+     url=micro_caucased_url,
+     data_dir='${directory:backend-haproxy-micro-ssl-caucase-updater}',
+     crt_path='${backend-haproxy-csr:certificate}',
+     ca_path='${directory:backend-haproxy-micro-ssl-caucase-updater}/ca.pem',
+     crl_path='${directory:backend-haproxy-micro-ssl-caucase-updater}/crl.pem',
+     key_path='${backend-haproxy-csr:key}',
+     template_csr='${backend-haproxy-csr:template-csr}'
 )}}
 
 [frontend-node-id]
@@ -209,6 +244,10 @@ trafficserver-introspection-srv = ${:srv}/trafficserver-introspection
 
 micro-caucased = ${:srv}/micro-caucased
 micro-caucased-backup = ${:backup}/micro-caucased
+
+micro-ssl = ${:srv}/micro-ssl
+backend-haproxy-micro-ssl = ${:micro-ssl}/backend-haproxy
+backend-haproxy-micro-ssl-caucase-updater = ${:backend-haproxy-micro-ssl}/caucase-updater
 
 [switch-frontend-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
@@ -855,6 +894,7 @@ statistic-identification = {{ instance_parameter_dict['configuration.frontend-na
 statistic-frontend-secure_access = ${backend-haproxy-statistic-frontend:connection-secure_access}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
+backend-haproxy-internal-certificate = ${backend-haproxy-csr:certificate}
 
 [frontend-haproxy]
 recipe = slapos.cookbook:wrapper
