@@ -178,7 +178,10 @@ class Recipe(object):
       state: Optional state override (e.g., 'destroyed', defaults to 'started')
 
     Returns:
-      Dict with 'instance' (the requested instance object) and 'connection_params' (dict of connection parameters)
+      tuple: (valid, error_list, connection_params)
+        - valid: Boolean indicating if connection parameters were successfully retrieved
+        - error_list: List of error messages (empty list)
+        - connection_params: Dict of connection parameters or message dict
     """
     # Get computer_partition (reuses connection cache)
     computer_partition = self._getComputerPartition()
@@ -216,28 +219,19 @@ class Recipe(object):
       # Note: Connection parameters are only available if the instance publishes them
       try:
         connection_params = instance.getConnectionParameterDict()
-        if connection_params:
-          valid = True
-        else:
-          valid = False
-          connection_params = {
-            "message": "Your instance is valid the request has been transmitted to the master, waiting for its connection parameters"
-          }
+        valid = True
       except Exception as e:
         # Connection parameters may not be available yet or instance may not publish them
         self.logger.debug(
           'Could not retrieve connection parameters for instance %s: %s',
           instance_reference, e
         )
+
         connection_params = {
           "message": "Your instance is valid the request has been transmitted to the master"
         }
       
-      return {
-        'instance': instance,
-        'connection_params': connection_params,
-        'valid': valid
-      }
+      return valid, [], connection_params
     except Exception as e:
       self.logger.error(
         'Failed to request instance %s: %s',
@@ -342,36 +336,7 @@ class Recipe(object):
         instance_reference, e
       )
 
-  def _addInstanceToDB(self, instance_reference, instance_data, instance_hash, validation_info):
-    """
-    Add a new instance to requestinstance-db-path.
-    Called after each successful request or when tracking invalid instances.
-
-    Args:
-      instance_reference: Reference name for the instance
-      instance_data: Dict with 'parameters' and 'valid' keys
-      instance_hash: Hash of the instance data
-      validation_info: Dict of validation information (errors for invalid instances)
-    """
-    params_json = json.dumps(instance_data['parameters'], sort_keys=True)
-    valid_parameter = instance_data.get('valid', True)
-    timestamp = str(int(time.time()))
-    # Store validation_info (connection parameters or error info) in json_error
-    # This allows us to compare and avoid republishing unchanged connection parameters
-    error_json = json.dumps(validation_info, sort_keys=True) if validation_info else "{}"
-
-    new_instance_list = [(
-      instance_reference,
-      params_json,
-      error_json,
-      instance_hash,
-      timestamp,
-      valid_parameter
-    )]
-
-    self.requestinstance_db.insertInstanceList(new_instance_list)
-
-  def _updateInstanceInDB(self, instance_reference, instance_data, instance_hash, validation_info):
+  def updateInstanceInDB(self, instance_reference, instance_data, instance_hash, publish_information, instance_needs_reprocessing, is_new=False):
     """
     Update an existing instance in requestinstance-db-path.
     Called after each successful request or when tracking invalid instances.
@@ -380,30 +345,40 @@ class Recipe(object):
       instance_reference: Reference name for the instance
       instance_data: Dict with 'parameters' and 'valid' keys
       instance_hash: Hash of the instance data
-      validation_info: Dict of validation information (errors for invalid instances)
+      publish_information: Information Published to the master for the instance
+      instance_needs_reprocessing: Boolean indicating if the instance needs reprocessing
     """
     params_json = json.dumps(instance_data['parameters'], sort_keys=True)
-    valid_parameter = instance_data.get('valid', True)
     timestamp = str(int(time.time()))
     # Store validation_info (connection parameters or error info) in json_error
     # This allows us to compare and avoid republishing unchanged connection parameters
-    error_json = json.dumps(validation_info, sort_keys=True) if validation_info else "{}"
-
-    update_query = (
-      "UPDATE instance SET json_parameters = ?, "
-      "json_error = ?, hash = ?, timestamp = ?, "
-      "valid_parameter = ? WHERE reference = ?"
-    )
-    update_instance_list = [(
-      params_json,
-      error_json,
-      instance_hash,
-      timestamp,
-      valid_parameter,
-      instance_reference
-    )]
-
-    self.requestinstance_db.updateInstanceList(update_query, update_instance_list)
+    error_json = json.dumps(publish_information, sort_keys=True) if publish_information else "{}"
+    is_valid = not instance_needs_reprocessing # if the instance needs reprocessing, it is not valid
+    if not is_new:
+      update_instance_list = [(
+        params_json,
+        error_json,
+        instance_hash,
+        timestamp,
+        is_valid,
+        instance_reference
+      )]
+      update_query = (
+        "UPDATE instance SET json_parameters = ?, "
+        "json_error = ?, hash = ?, timestamp = ?, "
+        "valid_parameter = ? WHERE reference = ?"
+      )
+      self.requestinstance_db.updateInstanceList(update_query, update_instance_list)
+    else:
+      new_instance_list = [(
+        instance_reference,
+        params_json,
+        error_json,
+        instance_hash,
+        timestamp,
+        is_valid
+      )]
+      self.requestinstance_db.insertInstanceList(new_instance_list)
 
   def _removeInstanceFromDB(self, instance_reference):
     """
@@ -414,6 +389,34 @@ class Recipe(object):
       instance_reference: Reference name for the instance
     """
     self.requestinstance_db.removeInstanceList([instance_reference])
+
+  def deployInstance(self, instance_reference, instance_data):
+    """
+    Deploy an instance.
+    """
+    try:
+      valid, error_list, connection_parameters = self._requestInstance(
+        instance_reference,
+        instance_data
+      )
+      # Get connection parameters from the request result
+      return valid, error_list, connection_parameters
+    except Exception as e:
+      self.logger.error(
+        'Failed to request instance %s: %s',
+        instance_reference, e
+      )
+      return False, ['Failed to deploy instance'], {}
+
+  def postDeployInstanceValidation(self, instance_reference, instance_data, publish_information):
+    """
+    Validate the instance after it has been deployed.
+    """
+    if not publish_information:
+      return False, [], {
+          "message": "Your instance is valid the request has been transmitted to the master, waiting for its connection parameters"
+        }
+    return True, [], publish_information
 
   def _processInstance(self, instance_reference, instance_data, instance_hash, is_new=False):
     """
@@ -428,55 +431,52 @@ class Recipe(object):
     Returns:
       True if instance was successfully processed, False if validation failed
     """
-    initial_valid = instance_data.get('valid', True)
-    db_error_info = instance_data.get('error_info', {})
-    if not initial_valid:
-      is_valid = False
-      if db_error_info and 'errors' in db_error_info:
-        error_list = db_error_info['errors']
-      else:
-        error_list = ['Instance validation failed']
-      validation_info = db_error_info if db_error_info else {}
-    else:
+    instance_needs_reprocessing = True
+    continue_processing = True
+    publish_information = {}
+    # Check if the paramters were validated against the JSON Schema
+    parameters_passed_initial_validation = instance_data.get('valid', True)
+    if not parameters_passed_initial_validation:
+      publish_information = instance_data.get('error_info', {})
+      if not publish_information:
+        publish_information = {
+          "message": "Instance validation failed"
+        }
+      continue_processing = False
+
+    # Check Pre Deployments Constraints
+    if continue_processing:
       is_valid, error_list, validation_info = self.validateInstance(
         instance_reference,
         instance_data['parameters']
       )
-      if not validation_info and db_error_info:
-        validation_info = db_error_info
-    instance_data['valid'] = is_valid
-    if not is_valid:
-      self.logger.warning(
-        'Instance %s failed validation: %s',
-        instance_reference, '; '.join(error_list)
+      continue_processing = is_valid
+      publish_information = validation_info
+    
+    # Deploy the instance
+    if continue_processing:
+      is_valid, error_list, connection_parameters = self.deployInstance(instance_reference, instance_data['parameters'])
+      continue_processing = is_valid
+      publish_information = connection_parameters
+
+    # Check Post Deployments Constraints
+    if continue_processing:
+      is_valid, error_list, post_deploy_information = self.postDeployInstanceValidation(instance_reference, instance_data['parameters'], publish_information)
+      instance_needs_reprocessing = not is_valid
+      publish_information = post_deploy_information
+
+    if instance_needs_reprocessing:
+      self.logger.debug(
+        'Instance %s failed validation and needs reprocessing: %s',
+        instance_reference, publish_information
       )
-      self._publishConnectionParameters(instance_reference, validation_info)
-      action = 'new' if is_new else 'modified'
-      self.logger.debug('Tracking invalid %s instance (not requesting): %s', action, instance_reference)
-    else:
-      action = 'new' if is_new else 'update'
-      self.logger.debug('%s instance: %s', action.capitalize(), instance_reference)
-      try:
-        request_result = self._requestInstance(
-          instance_reference,
-          instance_data['parameters']
-        )
-        # Get connection parameters from the request result
-        request_conn_params = request_result.get('connection_params', {})
-        instance_data['valid'] = request_result.get('valid', False)
-        # Update validation_info with connection parameters for database storage
-        validation_info = request_conn_params
-        self._publishConnectionParameters(instance_reference, request_conn_params)
-      except Exception as e:
-        self.logger.error(
-          'Failed to %s instance %s: %s',
-          action, instance_reference, e
-        )
-        raise
-    if is_new:
-      self._addInstanceToDB(instance_reference, instance_data, instance_hash, validation_info)
-    else:
-      self._updateInstanceInDB(instance_reference, instance_data, instance_hash, validation_info)
+    
+    # Publish informaition regarding the instance:
+    self._publishConnectionParameters(instance_reference, publish_information)
+  
+    # Add or update the instance in the database
+    self.updateInstanceInDB(instance_reference, instance_data, instance_hash, publish_information, instance_needs_reprocessing, is_new)
+
 
   def _processDestroyedInstance(self, instance_reference):
     """
