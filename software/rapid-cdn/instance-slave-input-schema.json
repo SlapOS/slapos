@@ -91,12 +91,6 @@
       "title": "Enable HTTP3 Protocol",
       "type": "string"
     },
-    "https-url": {
-      "description": "URL of the backend to be used for HTTPS access if it is different from url parameter. In that case the CDN will use a different backend url depending on the protocol used by the client.",
-      "pattern": "^(http|https|ftp)://",
-      "title": "Backend URL for HTTPS access",
-      "type": "string"
-    },
     "websocket-path-list": {
       "description": "Space separated list of path to the websocket application. If not set the whole slave will be websocket, if set then / will be HTTP, and /<websocket-path> will be WSS. In order to have ' ' in the space use '%20'",
       "pattern": "^$|^(/[^ ]* ?)+$",
@@ -266,12 +260,6 @@
       "title": "Failover backend URL",
       "type": "string"
     },
-    "health-check-failover-https-url": {
-      "description": "HTTPS URL of the failover backend if it is different from health-check-failover-url parameter. Note: It requires https-url to be configured, as otherwise the differentiation does not make sense..",
-      "pattern": "^https://.+",
-      "title": "Failover HTTPS Backend URL",
-      "type": "string"
-    },
     "health-check-authenticate-to-failover-backend": {
       "description": "If set to true the frontend certificate will be used as authentication certificate to the failover backend. Note: failover backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
       "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
@@ -316,19 +304,9 @@
       "title": "[EXPERT] List of netlocs for \"Backend URL\"",
       "description": "Space separated list of netlocs (ip and port) of backend to connect to. They will share the scheme and path of the original URL and additional backend parameters (like \"SSL Backend Authority's Certificate\"). Each of them will be used, and at least one is enough for the connectivity to work, and the best results are with \"Health Check\" feature enabled. Port is mandatory, so hostnames shall be provided as hostname:port (eg. example.com:80), IPv4 - as ipv4:port (eg. 127.0.0.1:80), IPv6 - as ipv6:port (eg. ::1:80). Simply this parameters only overrides netloc (network location) of the original URL."
     },
-    "https-url-netloc-list": {
-      "type": "string",
-      "title": "[EXPERT] List of netlocs for \"HTTPS Backend URL\"",
-      "description": "See \"[EXPERT] List of netlocs for \"Backend URL\"\" description."
-    },
     "health-check-failover-url-netloc-list": {
       "type": "string",
       "title": "[EXPERT] List of netlocs for \"Failover backend URL\"",
-      "description": "See \"[EXPERT] List of netlocs for \"Backend URL\"\" description."
-    },
-    "health-check-failover-https-url-netloc-list": {
-      "type": "string",
-      "title": "[EXPERT] List of netlocs for \"Failover HTTPS Backend URL\"",
       "description": "See \"[EXPERT] List of netlocs for \"Backend URL\"\" description."
     }
   },
