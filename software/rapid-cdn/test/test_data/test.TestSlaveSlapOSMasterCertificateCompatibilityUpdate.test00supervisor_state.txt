@@ -24,6 +24,7 @@ T-2:certificate_authority-{hash-generic}-on-watch RUNNING
 T-2:crond-{hash-generic}-on-watch RUNNING
 T-2:error-page-manager-{hash-error-page-manager}-on-watch RUNNING
 T-2:logrotate-setup-validate EXITED
+T-2:micro-caucased-{hash-generic}-on-watch RUNNING
 T-2:monitor-httpd-graceful EXITED
 T-2:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-3:backend-client-login-certificate-caucase-updater-on-watch RUNNING
