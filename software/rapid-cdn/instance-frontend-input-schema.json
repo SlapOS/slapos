@@ -193,6 +193,11 @@
       "description": "Port number for the trafficserver introspection server.",
       "type": "integer",
       "default": 23433
+    },
+    "caucase-port": {
+      "title": "Frontend Node Caucase Port",
+      "type": "integer",
+      "default": 8890
     }
   },
   "additionalProperties": false
