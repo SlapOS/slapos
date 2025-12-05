@@ -23,7 +23,7 @@ defaults
   timeout tunnel 1h
   default-server init-addr last,libc,none
 
-{%- set SCHEME_PREFIX_MAPPING = { 'http': 'backend-http-info', 'https': 'backend-https-info'} %}
+{%- set SCHEME_PREFIX_MAPPING = { 'http': 'backend-info', 'https': 'backend-info'} %}
 
 {%- macro frontend_entry(slave_reference, hostname, scheme) %}
 {%-   if hostname.startswith('*') %}
@@ -74,7 +74,7 @@ frontend https-frontend
 {%- for slave_reference in sorted(frontend_slave_dict) %}
 {%-   set slave_instance = frontend_slave_dict[slave_reference] %}
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
-{%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-http-info')) %}
+{%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-info')) %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   # setup Date
   http-after-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
@@ -96,7 +96,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-           endif %}
   redirect prefix {{ info_dict['scheme'] }}://{{ info_dict['hostname'] }}{{ port_suffix }} code 302
 {%-         else %}
-  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }} ssl verify required verifyhost {{ slave_instance['backend-name'] }} ca-file {{ configuration['micro-ssl-ca-path'] }} crl-file {{ configuration['micro-ssl-crl-path'] }}
 {%-           if slave_instance['disable-via-header'] %}
   http-after-response del-header Via
 {%-           else %}
