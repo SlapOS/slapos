@@ -21,7 +21,6 @@ T-2/var/log/httpd/_auth-to-backend_access_log
 T-2/var/log/httpd/_auth-to-backend_backend_log
 T-2/var/log/httpd/_auth-to-backend_frontend_log
 T-2/var/log/httpd/_bad-backend_access_log
-T-2/var/log/httpd/_bad-backend_backend_log
 T-2/var/log/httpd/_bad-backend_frontend_log
 T-2/var/log/httpd/_ciphers-translation-all_access_log
 T-2/var/log/httpd/_ciphers-translation-all_frontend_log
@@ -123,7 +122,6 @@ T-2/var/log/httpd/_server-alias_custom_domain-duplicated_backend_log
 T-2/var/log/httpd/_server-alias_custom_domain-duplicated_frontend_log
 T-2/var/log/httpd/_server-alias_frontend_log
 T-2/var/log/httpd/_ssl-proxy-verify-unverified_access_log
-T-2/var/log/httpd/_ssl-proxy-verify-unverified_backend_log
 T-2/var/log/httpd/_ssl-proxy-verify-unverified_frontend_log
 T-2/var/log/httpd/_ssl-proxy-verify_ssl_proxy_ca_crt-unverified_access_log
 T-2/var/log/httpd/_ssl-proxy-verify_ssl_proxy_ca_crt-unverified_backend_log
