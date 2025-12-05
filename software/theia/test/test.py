@@ -109,7 +109,7 @@ class TheiaTestCase(SlapOSInstanceTestCase):
     test_id = self.id()
     class DebugLogFile:
       def write(self, msg):
-        logger.info("test: %s output: %s", self.id(), msg)
+        logger.info("test: %s output: %s", test_id, msg)
       def flush(self):
         pass
     return DebugLogFile()
