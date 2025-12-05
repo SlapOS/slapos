@@ -16,7 +16,7 @@ $Umask 0022
 $WorkDirectory {{ configuration['spool-directory'] }}
 
 # Setup logging per slave, by extracting the slave name from the log stream
-{%- set regex = ".*-backend (.*)-http.{0,1}(|-failover)/" %}
+{%- set regex = ".*https~ .*/(.*)-backend" %}
 template(name="extract_slave_name" type="string" string="%msg:R,ERE,1,FIELD:{{ regex }}--end%")
 set $!slave_name = exec_template("extract_slave_name");
 template(name="slave_output" type="string" string="{{ configuration['log-directory'] }}/%$!slave_name%_backend_log")
