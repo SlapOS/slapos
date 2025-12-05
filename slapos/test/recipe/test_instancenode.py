@@ -188,8 +188,8 @@ class TestRequestInstanceList(unittest.TestCase):
 
     log.check(
       ('test', 'DEBUG', 'Comparison results: 1 added, 0 removed, 0 modified'),
-      ('test', 'WARNING', 'Instance instance1 failed validation: Instance validation failed'),
-      ('test', 'DEBUG', 'Tracking invalid new instance (not requesting): instance1'),
+      ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Instance validation failed'}"),
+      ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
     )
 
   def test_modified_valid_instance(self):
@@ -294,14 +294,14 @@ class TestRequestInstanceList(unittest.TestCase):
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
     self.assertEqual(stored[0]['valid_parameter'], False)
-    # Error info should be empty for invalid instances when no errors are provided
+    # Error info should contain the default message for invalid instances when no errors are provided
     stored_error = json.loads(stored[0]['json_error'])
-    self.assertEqual(stored_error, {})
+    self.assertEqual(stored_error, {'message': 'Instance validation failed'})
 
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
-      ('test', 'WARNING', 'Instance instance1 failed validation: Instance validation failed'),
-      ('test', 'DEBUG', 'Tracking invalid modified instance (not requesting): instance1'),
+      ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Instance validation failed'}"),
+      ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
     )
 
   def test_destroyed_instance(self):
@@ -814,8 +814,8 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(call_args[0][2], 'instance1')  # name parameter without prefix
 
   def test_request_failure_handling(self):
-    """Test that request failures raise exceptions"""
-    # Request failures should raise, so instance won't be tracked
+    """Test that request failures are handled gracefully"""
+    # Request failures are caught by deployInstance, so instance will be tracked as invalid
     self._createInstanceDB([
       ('instance1', {'key': 'value'}, True)
     ])
@@ -828,13 +828,13 @@ class TestRequestInstanceList(unittest.TestCase):
       None, 'test', self.options
     )
 
-    # Should raise when request fails
-    with self.assertRaises(slapmodule.NotFoundError):
-      recipe.install()
+    # Should not raise - deployInstance catches exceptions
+    recipe.install()
 
-    # Instance should not be tracked in DB (exception was raised)
+    # Instance should be tracked in DB as invalid (deployInstance returned False)
     stored = self._getRequestInstanceDB()
-    self.assertEqual(len(stored), 0)
+    self.assertEqual(len(stored), 1)
+    self.assertEqual(stored[0]['valid_parameter'], False)
 
   def test_connection_parameters_preserved_on_update_failure(self):
     """Test that existing connection parameters are preserved when update fails"""
@@ -1007,9 +1007,8 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify error was logged (check it's in the log, not the only entry)
     log.check(
       ('test', 'DEBUG', 'Comparison results: 1 added, 0 removed, 0 modified'),
-      ('test', 'WARNING', 'Instance instance1 failed validation: Validation failed'),
+      ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Error message'}"),
       ('test', 'WARNING', 'Failed to publish connection parameters for instance instance1: Publish failed'),
-      ('test', 'DEBUG', 'Tracking invalid new instance (not requesting): instance1'),
     )
 
     # Verify instance was still processed (not raised)
@@ -1292,9 +1291,8 @@ class TestRequestInstanceList(unittest.TestCase):
 
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 0 modified'),
-      ('test', 'WARNING', 'Instance instance1 failed validation: Validation error: field "name" is required'),
+      ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Validation error: field \"name\" is required', 'errors': ['field \"name\" is required']}"),
       ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
-      ('test', 'DEBUG', 'Tracking invalid modified instance (not requesting): instance1'),
     )
 
   def test_publish_error_info_for_unchanged_invalid_instance(self):
@@ -1526,7 +1524,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows instance was processed and skipping publish
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
-      ('test', 'DEBUG', 'Update instance: instance1'),
+      ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Your instance is valid the request has been transmitted to the master, waiting for its connection parameters'}"),
       ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
     )
 
@@ -1603,7 +1601,6 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows publishing
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
-      ('test', 'DEBUG', 'Update instance: instance1'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
     )
 
@@ -1642,7 +1639,6 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows publishing
     log.check(
       ('test', 'DEBUG', 'Comparison results: 1 added, 0 removed, 0 modified'),
-      ('test', 'DEBUG', 'New instance: instance1'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
     )
 
@@ -1694,9 +1690,8 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows skipping publish (instance is processed as unchanged invalid)
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 0 modified'),
-      ('test', 'WARNING', 'Instance instance1 failed validation: field "name" is required'),
+      ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'errors': ['field \"name\" is required'], 'message': 'Validation error: field \"name\" is required'}"),
       ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
-      ('test', 'DEBUG', 'Tracking invalid modified instance (not requesting): instance1'),
     )
 
   def test_publish_connection_parameters_invalid_changed_republishes(self):
@@ -1760,9 +1755,8 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows publishing
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 0 modified'),
-      ('test', 'WARNING', 'Instance instance1 failed validation: field "value" is required'),
+      ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'errors': ['field \"value\" is required'], 'message': 'New validation error: field \"value\" is required'}"),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
-      ('test', 'DEBUG', 'Tracking invalid modified instance (not requesting): instance1'),
     )
 
   def test_publish_connection_parameters_no_stored_instance_publishes(self):
@@ -1850,7 +1844,6 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows publishing
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
-      ('test', 'DEBUG', 'Update instance: instance1'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
     )
 
@@ -1915,7 +1908,6 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows publishing
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
-      ('test', 'DEBUG', 'Update instance: instance1'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
     )
 
