@@ -87,6 +87,22 @@ class Recipe(object):
   def __init__(self, buildout, name, options):
     self.logger = logging.getLogger(name)
     self.options = options
+
+    # Configure logging if logfile or debug options are explicitly provided
+    # This allows logging to be configured through recipe options
+    # Note: Only configure if explicitly requested and not already configured
+    # In main(), logging is configured before Recipe is created, so this won't run there
+    logfile = options.get('logfile')
+    debug_str = options.get('debug', '')
+    debug = debug_str.lower() in ['y', 'yes', '1', 'true'] if debug_str else False
+    # Only configure if explicitly requested (logfile is set, or debug is explicitly set to true)
+    # This prevents auto-configuration in tests
+    if (logfile or (debug_str and debug)):
+      # Only configure if not already configured (basicConfig can only be called once effectively)
+      root_logger = logging.getLogger()
+      if not root_logger.handlers:
+        configure_logging(logfile=logfile, debug=debug)
+
     # Required options
     self.instance_db_path = options['instance-db-path']
     self.requestinstance_db_path = options['requestinstance-db-path']
@@ -185,23 +201,23 @@ class Recipe(object):
     """
     # Get computer_partition (reuses connection cache)
     computer_partition = self._getComputerPartition()
-    
+
     # Determine state (default to 'started' if not specified)
     requested_state = state if state is not None else 'started'
-    
+
     # Use sla-* options from recipe options (stored in __init__)
     # These are the same for all instances
     filter_kw = self.sla_filter_kw.copy()
-    
+
     # All parameters go to partition_parameter_kw
     # (sla-* options come from recipe options, not instance parameters)
     partition_parameter_kw = parameters.copy()
-    
+
     # Apply request-name-prefix if specified
     request_reference = instance_reference
     if self.request_name_prefix:
       request_reference = self.request_name_prefix + instance_reference
-    
+
     # Make the request directly using the slap library
     valid = False
     try:
@@ -214,7 +230,7 @@ class Recipe(object):
         shared=self.shared,
         state=requested_state
       )
-      
+
       # Get connection parameters if available
       # Note: Connection parameters are only available if the instance publishes them
       try:
@@ -230,7 +246,7 @@ class Recipe(object):
         connection_params = {
           "message": "Your instance is valid the request has been transmitted to the master"
         }
-      
+
       return valid, [], connection_params
     except Exception as e:
       self.logger.error(
@@ -299,7 +315,7 @@ class Recipe(object):
     """
     if not conn_params:
       return
-    
+
     # Check if we've already published the same connection parameters
     # by comparing with what's stored in the database
     try:
@@ -322,7 +338,7 @@ class Recipe(object):
         'Could not retrieve stored instance %s for comparison: %s',
         instance_reference, e
       )
-    
+
     try:
       computer_partition = self._getComputerPartition()
       computer_partition.setConnectionDict(conn_params, slave_reference=instance_reference)
@@ -452,7 +468,7 @@ class Recipe(object):
       )
       continue_processing = is_valid
       publish_information = validation_info
-    
+
     # Deploy the instance
     if continue_processing:
       is_valid, error_list, connection_parameters = self.deployInstance(instance_reference, instance_data['parameters'])
@@ -470,10 +486,10 @@ class Recipe(object):
         'Instance %s failed validation and needs reprocessing: %s',
         instance_reference, publish_information
       )
-    
+
     # Publish informaition regarding the instance:
     self._publishConnectionParameters(instance_reference, publish_information)
-  
+
     # Add or update the instance in the database
     self.updateInstanceInDB(instance_reference, instance_data, instance_hash, publish_information, instance_needs_reprocessing, is_new)
 
@@ -570,19 +586,19 @@ class PIDFileLock(object):
       pidfile_dir = os.path.dirname(self.pidfile_path)
       if pidfile_dir and not os.path.exists(pidfile_dir):
         os.makedirs(pidfile_dir)
-      
+
       # Open PID file in append mode (create if doesn't exist)
       self.pidfile = open(self.pidfile_path, 'a+')
-      
+
       # Try to acquire exclusive lock (non-blocking)
       fcntl.flock(self.pidfile.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-      
+
       # Write current PID to file
       self.pidfile.seek(0)
       self.pidfile.truncate()
       self.pidfile.write(str(os.getpid()) + '\n')
       self.pidfile.flush()
-      
+
       return self
     except (IOError, OSError) as e:
       if self.pidfile:
@@ -629,16 +645,16 @@ class PIDFileLock(object):
 def parse_config_file(config_path):
   """
   Parse a buildout-style config file and return a ConfigParser object.
-  
+
   Args:
     config_path: Path to the config file
-    
+
   Returns:
     RawConfigParser object with parsed config
   """
   if not os.path.exists(config_path):
     raise SystemExit('Config file does not exist: %s' % config_path)
-  
+
   parser = RawConfigParser()
   parser.read(config_path)
   return parser
@@ -647,17 +663,17 @@ def parse_config_file(config_path):
 def get_config_section(parser, section_name):
   """
   Get a section from the config parser as a dictionary.
-  
+
   Args:
     parser: RawConfigParser object
     section_name: Name of the section to retrieve
-    
+
   Returns:
     Dictionary of section options, or empty dict if section doesn't exist
   """
   if not parser.has_section(section_name):
     return {}
-  
+
   options = {}
   for key, value in parser.items(section_name):
     options[key] = value
@@ -670,70 +686,119 @@ def get_config_section(parser, section_name):
 def create_options_dict_from_config(config_parser, section_name='slaposinstancenode'):
   """
   Create options dictionary from config file section.
-  
+
   Args:
     config_parser: RawConfigParser object with parsed config
     section_name: Name of the section to read options from (default: 'slaposinstancenode')
-    
+
   Returns:
     Dictionary of options
   """
   options = get_config_section(config_parser, section_name)
-  
+
   if not options:
     raise SystemExit('Config file must contain a [%s] section' % section_name)
-  
+
   return options
+
+
+def configure_logging(logfile=None, debug=False):
+  """
+  Configure logging to file or stderr.
+
+  Args:
+    logfile: Optional path to log file. If None, logs go to stderr.
+    debug: If True, set log level to DEBUG. Otherwise, set to INFO.
+  """
+  # Remove existing handlers to avoid duplicates
+  root_logger = logging.getLogger()
+  for handler in root_logger.handlers[:]:
+    root_logger.removeHandler(handler)
+
+  # Set log level
+  log_level = logging.DEBUG if debug else logging.INFO
+  root_logger.setLevel(log_level)
+
+  # Create handler
+  if logfile:
+    # Create directory if it doesn't exist
+    logfile_dir = os.path.dirname(logfile)
+    if logfile_dir and not os.path.exists(logfile_dir):
+      os.makedirs(logfile_dir, exist_ok=True)
+    handler = logging.FileHandler(logfile)
+  else:
+    handler = logging.StreamHandler(sys.stderr)
+
+  # Set formatter
+  formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  )
+  handler.setFormatter(formatter)
+  handler.setLevel(log_level)
+
+  # Add handler to root logger
+  root_logger.addHandler(handler)
 
 
 def parse_command_line_args():
   """
-  Parse command-line arguments for config file path and PID file.
-  
+  Parse command-line arguments for config file path, PID file, logfile, and debug.
+
   Returns:
-    argparse.Namespace with cfg and pidfile attributes
+    argparse.Namespace with cfg, pidfile, logfile, and debug attributes
   """
   parser = argparse.ArgumentParser(
     description='Request Instance List Recipe - Command line interface',
     formatter_class=argparse.RawDescriptionHelpFormatter
   )
-  
+
   parser.add_argument(
     '--cfg',
     required=True,
     help='Path to configuration file (slaposinstancenode.cfg)'
   )
-  
+
   parser.add_argument(
     '--pidfile',
     help='Path to PID file to prevent multiple instances (optional)'
   )
-  
+
+  parser.add_argument(
+    '--logfile',
+    help='Path to log file (optional). If not specified, logs go to stderr.'
+  )
+
+  parser.add_argument(
+    '--debug',
+    action='store_true',
+    help='Enable debug logging'
+  )
+
   return parser.parse_args()
 
 
 def load_config_and_create_objects(config_path, pidfile_path=None, section_name='slaposinstancenode'):
   """
   Load config file, handle PID file locking, and create options dict.
-  
+
   Args:
     config_path: Path to config file
     pidfile_path: Optional path to PID file
     section_name: Name of the section to read from config (default: 'slaposinstancenode')
-    
+
   Returns:
     tuple: (options_dict, pidfile_lock_context)
     The pidfile_lock_context should be used as a context manager
   """
   # Parse config file
   config_parser = parse_config_file(config_path)
-  
+
   # Get options from config
   options = create_options_dict_from_config(config_parser, section_name)
-  
+
   # Create PID file lock context
   pidfile_lock = PIDFileLock(pidfile_path) if pidfile_path else None
-  
+
   return options, pidfile_lock
 
 
@@ -744,14 +809,20 @@ def main():
   try:
     # Parse command-line arguments
     args = parse_command_line_args()
-    
+
     # Load config file and create options dict with PID file locking
     options, pidfile_lock = load_config_and_create_objects(
       args.cfg,
       args.pidfile,
       section_name='slaposinstancenode'
     )
-    
+
+    # Configure logging
+    # Command line arguments take precedence over config file options
+    logfile = args.logfile or options.get('logfile')
+    debug = args.debug or options.get('debug', 'false').lower() in ['y', 'yes', '1', 'true']
+    configure_logging(logfile=logfile, debug=debug)
+
     # Use PID file lock as context manager to prevent multiple instances
     if pidfile_lock:
       with pidfile_lock:
@@ -761,7 +832,7 @@ def main():
           name='request-instance-list',
           options=options
         )
-        
+
         # Run the recipe
         recipe.install()
     else:
@@ -772,10 +843,10 @@ def main():
         name='request-instance-list',
         options=options
       )
-      
+
       # Run the recipe
       recipe.install()
-    
+
     return 0
   except KeyboardInterrupt:
     sys.stderr.write('\nInterrupted by user\n')

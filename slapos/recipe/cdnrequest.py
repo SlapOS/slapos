@@ -12,7 +12,8 @@ import logging
 from slapos.recipe.instancenode import (
   Recipe as InstanceNodeRecipe,
   parse_command_line_args,
-  load_config_and_create_objects
+  load_config_and_create_objects,
+  configure_logging
 )
 from slapos.recipe.localinstancedb import LocalDBAccessor
 
@@ -661,13 +662,6 @@ def main():
   """
   Main entry point for command-line execution.
   """
-  # Configure logging to output to stderr
-  logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stdout
-  )
-  
   try:
     # Parse command-line arguments
     args = parse_command_line_args()
@@ -678,6 +672,12 @@ def main():
       args.pidfile,
       section_name='slaposinstancenode'
     )
+
+    # Configure logging
+    # Command line arguments take precedence over config file options
+    logfile = args.logfile or options.get('logfile')
+    debug = args.debug or options.get('debug', 'false').lower() in ['y', 'yes', '1', 'true']
+    configure_logging(logfile=logfile, debug=debug)
 
     # Use PID file lock as context manager to prevent multiple instances
     if pidfile_lock:
