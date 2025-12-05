@@ -424,14 +424,6 @@ qemu-path =  {{ qemu_executable_location }}
 qemu-img-path = {{ qemu_img_executable_location }}
 
 etc-directory = ${directory:etc}
-disk-storage-list =
-{% for key, path in storage_dict.items() -%}
-{{ '  ' ~ key ~ ' ' ~ path }}
-{% endfor -%}
-external-disk-number = ${slap-parameter:external-disk-number}
-external-disk-size = ${slap-parameter:external-disk-size}
-external-disk-format = ${slap-parameter:external-disk-format}
-# new external-disk parameter
 external-disk = ${slap-parameter:external-disk}
 instance-root = ${buildout:directory}
 
@@ -542,9 +534,6 @@ config-command = ${kvm-disk-image-corruption-bin:output}
 {% if wipe_disk -%}
 {% do part_list.append('wipe-disk-wrapper') -%}
 {% set wipe_file_list = '${kvm-parameter-dict:disk-path}' -%}
-{% if storage_dict -%}
-{% set wipe_file_list = '${kvm-parameter-dict:disk-path}' ~ ' ' ~ '/* '.join(storage_dict.values()) ~ '/*' -%}
-{% endif -%}
 [wipe-disk-wrapper]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:prerm}/slapos_wipe_qemu_disk
@@ -818,8 +807,6 @@ url-additional = ${request-slave-frontend-additional:connection-secure_access}/v
 novnc_info = The NoVNC server is currently disabled, you need to enable it if you want to access your VM through the GUI.
 {% endif %}
 
-{% set disk_number = len(storage_dict) -%}
-maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'ens3' -%}
 {% if use_nat -%}
 {%   set iface = 'ens4' -%}
@@ -1075,9 +1062,6 @@ virtual-hard-drive-url =
 virtual-hard-drive-md5sum =
 virtual-hard-drive-gzipped = False
 
-external-disk-number = 0
-external-disk-size = 20
-external-disk-format = qcow2
 external-disk = {}
 
 # Help to get some configuration files into the vm from http
