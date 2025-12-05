@@ -250,7 +250,7 @@
       "type": "string"
     },
     "^-frontend-config-[0-9]+-.+$": {
-      "description": "Frontend config parameter (indexed). Key suffix after the number is a free string (e.g. ram-cache-size, expert-backend-allow-downgrade-ssl). Some parameters accept value with suffix 'K', 'M', 'G'.",
+      "description": "Frontend config parameter (indexed). Key suffix after the number is a free string (e.g. ram-cache-size, expert-backend-allow-downgrade-ssl, caucase-port). Some parameters accept value with suffix 'K', 'M', 'G'.",
       "title": "Frontend Config N Parameter"
     },
     "^-kedifa-software-release-url$": {
