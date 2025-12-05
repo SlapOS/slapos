@@ -71,8 +71,50 @@ parts =
   logrotate-entry-slave-introspection
   backend-haproxy-statistic-frontend-promise
 
+  micro-caucased
+  micro-caucased-promise
+
 [software-py]
 recipe = software
+
+{%- set micro_caucased_host = instance_parameter_dict['ipv4-random'] %}
+{%- set micro_caucased_netloc = micro_caucased_host ~ ':' ~ instance_parameter_dict['configuration.caucase_backend_client_port'] %}
+{%- set micro_caucased_url = 'http://' ~ micro_caucased_netloc %}
+[micro-caucased-configuration]
+recipe = slapos.recipe.build
+# Note: The profile developer is responsible for setting the service list
+#       The best option is to add here part name related to given caucase-updater
+#       This will lead to re-generating the caucased directory
+service-list =
+init =
+  import hashlib
+  import os
+  service_list = [q.strip() for q in options['service-list'].split() if len(q.strip())]
+  options['service-auto-approve-count'] = str(len(service_list))
+  options['user-auto-approve-count'] = str(0)
+  # Hash list of services, but sorted, so that it generates new directory on each change
+  service_hash = hashlib.md5(str(sorted(service_list)).encode('utf-8')).hexdigest()
+  options['directory'] = os.path.join(options['location'], service_hash)
+  options['backup'] = os.path.join(options['location'], service_hash + '_backup')
+install =
+  import os
+  if not os.path.isdir(options['location']):
+    os.mkdir(options['location'])
+
+[micro-caucased]
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+{{  caucase.caucased(
+      prefix='micro-caucased',
+      buildout_bin_directory=software_parameter_dict['bin_directory'],
+      caucased_path='${directory:service}/micro-caucased',
+      backup_dir='${micro-caucased-configuration:backup}',
+      data_dir='${micro-caucased-configuration:directory}',
+      netloc=micro_caucased_netloc,
+      tmp='${directory:tmp}',
+      service_auto_approve_count='${micro-caucased-configuration:service-auto-approve-count}',
+      user_auto_approve_count='${micro-caucased-configuration:user-auto-approve-count}',
+      key_len=2048
+)}}
 
 [frontend-node-id]
 # Store id file in top of hierarchy, so it does not depend on directory creation
@@ -181,6 +223,22 @@ slave-introspection-var = ${:var}/slave-introspection
 # trafficserver-introspection
 trafficserver-introspection-var = ${:var}/trafficserver-introspection
 trafficserver-introspection-srv = ${:srv}/trafficserver-introspection
+
+micro-ssl = ${:srv}/micro-ssl
+
+ip-access-micro-ssl = ${:micro-ssl}/ip-access
+ip-access-micro-ssl-caucase-updater = ${:ip-access-micro-ssl}/caucase-updater
+
+fallback-micro-ssl = ${:micro-ssl}/fallback
+fallback-micro-ssl-caucase-updater = ${:fallback-micro-ssl}/caucase-updater
+
+backend-haproxy-micro-ssl = ${:micro-ssl}/backend-haproxy
+backend-haproxy-micro-ssl-caucase-updater = ${:backend-haproxy-micro-ssl}/caucase-updater
+
+trafficserver-micro-ssl = ${:micro-ssl}/trafficserver
+trafficserver-micro-ssl-caucase-updater = ${:trafficserver-micro-ssl}/caucase-updater
+
+micro-ssl-caucase-updater = ${:micro-ssl}/caucase-updater
 
 [switch-frontend-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
