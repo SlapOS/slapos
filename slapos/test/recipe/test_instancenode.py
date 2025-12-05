@@ -3,6 +3,7 @@ import hashlib
 import fcntl
 import mock
 import os
+import sys
 import tempfile
 import unittest
 from collections import defaultdict
@@ -33,29 +34,29 @@ class TestRequestInstanceList(unittest.TestCase):
     # Use a function that returns a dict to ensure it's always a real dict, not a MagicMock
     def default_get_connection_parameter_dict():
       return {"foo": "bar"}
-    
+
     # Create a mock that uses side_effect to call the function
     # This ensures it always returns a real dict, not a MagicMock
     get_conn_param_dict_mock = mock.MagicMock(side_effect=default_get_connection_parameter_dict)
-    
+
     # Create requested_instance with getConnectionParameterDict already set
     # This prevents the mock chain from creating a new MagicMock
     self.requested_instance = mock.MagicMock()
     self.requested_instance.getConnectionParameterDict = get_conn_param_dict_mock
-    
+
     # Mock getConnectionParameter
     self.instance_getConnectionParameter = \
         self.requested_instance.getConnectionParameter
-    
+
     # Setup mock computer partition (used by both requesting and publishing)
     # Since _getComputerPartition() uses connection cache, both paths use the same instance
     self.computer_partition = mock.MagicMock()
-    
+
     # Setup request() method for requesting instances
     self.request_instance = mock.MagicMock()
     self.request_instance.return_value = self.requested_instance
     self.computer_partition.request = self.request_instance
-    
+
     # Setup setConnectionDict() method for publishing
     self.setConnectionDict = mock.MagicMock()
     self.computer_partition.setConnectionDict = self.setConnectionDict
@@ -68,7 +69,7 @@ class TestRequestInstanceList(unittest.TestCase):
     self.slap_class = mock.MagicMock()
     self.slap_class.return_value = self.slap_instance
     self.slap_lib.slap = self.slap_class
-    
+
     # Store reference so tests can modify side_effect
     self.getConnectionParameterDict_mock = get_conn_param_dict_mock
 
@@ -76,7 +77,19 @@ class TestRequestInstanceList(unittest.TestCase):
     from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
     CONNECTION_CACHE.clear()
 
+    # Reset logging handlers to ensure LogCapture works properly
+    # This is needed because configure_logging tests may have set up handlers
+    import logging
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers[:]:
+      root_logger.removeHandler(handler)
+    root_logger.setLevel(logging.DEBUG)
+    # Also ensure the 'test' logger (used by Recipe) can emit DEBUG messages
+    test_logger = logging.getLogger('test')
+    test_logger.setLevel(logging.DEBUG)
+
     # Default options
+    # Note: We don't set logfile or debug in test options to allow LogCapture to work
     self.options = {
       'instance-db-path': self.instance_db_path,
       'requestinstance-db-path': self.requestinstance_db_path,
@@ -944,7 +957,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     self.assertEqual(slave_ref, 'instance1')
     self.assertEqual(conn_params['message'], 'Your instance is valid the request has been transmitted to the master, waiting for its connection parameters')
-    
+
     # Verify instance is invalid since getConnectionParameterDict returned empty dict
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
@@ -1077,7 +1090,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     self.assertEqual(slave_ref, 'instance1')
     self.assertEqual(conn_params['message'], 'Your instance is valid the request has been transmitted to the master, waiting for its connection parameters')
-    
+
     # Verify instance is invalid since getConnectionParameterDict returned empty dict
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
@@ -1520,7 +1533,7 @@ class TestRequestInstanceList(unittest.TestCase):
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
     self.assertEqual(stored[0]['valid_parameter'], False)
-    
+
     # Verify log shows instance was processed and skipping publish
     log.check(
       ('test', 'DEBUG', 'Comparison results: 0 added, 0 removed, 1 modified'),
@@ -1592,7 +1605,7 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(slave_ref, 'instance1')
     self.assertEqual(published_params, new_conn_params)
     self.assertIn('url', published_params)
-    
+
     # Verify instance is valid since connection parameters were available
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
@@ -1630,7 +1643,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     self.assertEqual(slave_ref, 'instance1')
     self.assertEqual(published_params, conn_params)
-    
+
     # Verify instance is valid since connection parameters were available
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
@@ -1777,7 +1790,7 @@ class TestRequestInstanceList(unittest.TestCase):
     call_args = self.setConnectionDict.call_args
     published_params = call_args[0][0]
     self.assertEqual(published_params, conn_params)
-    
+
     # Verify instance is valid since connection parameters were available
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
@@ -1835,7 +1848,7 @@ class TestRequestInstanceList(unittest.TestCase):
     call_args = self.setConnectionDict.call_args
     published_params = call_args[0][0]
     self.assertEqual(published_params, conn_params)
-    
+
     # Verify instance is valid since connection parameters were available
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
@@ -1899,7 +1912,7 @@ class TestRequestInstanceList(unittest.TestCase):
     call_args = self.setConnectionDict.call_args
     published_params = call_args[0][0]
     self.assertEqual(published_params, conn_params)
-    
+
     # Verify instance is valid since connection parameters were available
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
@@ -1919,9 +1932,21 @@ class TestCommandLineInterface(unittest.TestCase):
     self.temp_dir = tempfile.mkdtemp()
     self.config_file = os.path.join(self.temp_dir, 'test.cfg')
     self.pidfile = os.path.join(self.temp_dir, 'test.pid')
+    # Reset logging to ensure clean state for each test
+    import logging
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers[:]:
+      root_logger.removeHandler(handler)
+    root_logger.setLevel(logging.WARNING)
 
   def tearDown(self):
     import shutil
+    import logging
+    # Reset logging handlers to avoid interfering with other tests
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers[:]:
+      root_logger.removeHandler(handler)
+    root_logger.setLevel(logging.WARNING)
     if os.path.exists(self.temp_dir):
       shutil.rmtree(self.temp_dir)
 
@@ -1994,6 +2019,8 @@ class TestCommandLineInterface(unittest.TestCase):
       args = instancenode.parse_command_line_args()
       self.assertEqual(args.cfg, '/path/to/config.cfg')
       self.assertEqual(args.pidfile, '/path/to/pidfile.pid')
+      self.assertIsNone(args.logfile)
+      self.assertFalse(args.debug)
     finally:
       sys.argv = old_argv
 
@@ -2006,6 +2033,48 @@ class TestCommandLineInterface(unittest.TestCase):
       args = instancenode.parse_command_line_args()
       self.assertEqual(args.cfg, '/path/to/config.cfg')
       self.assertIsNone(args.pidfile)
+      self.assertIsNone(args.logfile)
+      self.assertFalse(args.debug)
+    finally:
+      sys.argv = old_argv
+
+  def test_parse_command_line_args_with_logfile(self):
+    """Test parse_command_line_args with --logfile"""
+    import sys
+    old_argv = sys.argv
+    try:
+      sys.argv = ['test', '--cfg', '/path/to/config.cfg', '--logfile', '/path/to/logfile.log']
+      args = instancenode.parse_command_line_args()
+      self.assertEqual(args.cfg, '/path/to/config.cfg')
+      self.assertEqual(args.logfile, '/path/to/logfile.log')
+      self.assertFalse(args.debug)
+    finally:
+      sys.argv = old_argv
+
+  def test_parse_command_line_args_with_debug(self):
+    """Test parse_command_line_args with --debug"""
+    import sys
+    old_argv = sys.argv
+    try:
+      sys.argv = ['test', '--cfg', '/path/to/config.cfg', '--debug']
+      args = instancenode.parse_command_line_args()
+      self.assertEqual(args.cfg, '/path/to/config.cfg')
+      self.assertTrue(args.debug)
+      self.assertIsNone(args.logfile)
+    finally:
+      sys.argv = old_argv
+
+  def test_parse_command_line_args_with_all_options(self):
+    """Test parse_command_line_args with all options"""
+    import sys
+    old_argv = sys.argv
+    try:
+      sys.argv = ['test', '--cfg', '/path/to/config.cfg', '--pidfile', '/path/to/pidfile.pid', '--logfile', '/path/to/logfile.log', '--debug']
+      args = instancenode.parse_command_line_args()
+      self.assertEqual(args.cfg, '/path/to/config.cfg')
+      self.assertEqual(args.pidfile, '/path/to/pidfile.pid')
+      self.assertEqual(args.logfile, '/path/to/logfile.log')
+      self.assertTrue(args.debug)
     finally:
       sys.argv = old_argv
 
@@ -2085,7 +2154,7 @@ class TestCommandLineInterface(unittest.TestCase):
         with lock:
           pass
       self.assertIn('Another instance is already running', str(cm.exception))
-    
+
     # Clean up
     pidfile_fd.close()
 
@@ -2111,6 +2180,23 @@ class TestCommandLineInterface(unittest.TestCase):
     self.assertEqual(options['instance-db-path'], '/path/to/instance.db')
     self.assertEqual(options['server-url'], 'https://test.example.com')
 
+  def test_load_config_and_create_objects_with_logfile_and_debug(self):
+    """Test load_config_and_create_objects with logfile and debug options"""
+    # Create a test config file with logfile and debug
+    with open(self.config_file, 'w') as f:
+      f.write('[slaposinstancenode]\n')
+      f.write('instance-db-path = /path/to/instance.db\n')
+      f.write('logfile = /path/to/logfile.log\n')
+      f.write('debug = true\n')
+
+    options, pidfile_lock = instancenode.load_config_and_create_objects(
+      self.config_file, None
+    )
+
+    self.assertIsNotNone(options)
+    self.assertEqual(options['logfile'], '/path/to/logfile.log')
+    self.assertEqual(options['debug'], 'true')
+
   def test_load_config_and_create_objects_no_pidfile(self):
     """Test load_config_and_create_objects without pidfile"""
     # Create a test config file
@@ -2124,3 +2210,106 @@ class TestCommandLineInterface(unittest.TestCase):
 
     self.assertIsNotNone(options)
     self.assertIsNone(pidfile_lock)
+
+  def test_configure_logging_to_file(self):
+    """Test configure_logging with logfile"""
+    import logging
+    logfile_path = os.path.join(self.temp_dir, 'test.log')
+
+    # Reset logging configuration
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers[:]:
+      root_logger.removeHandler(handler)
+    root_logger.setLevel(logging.WARNING)
+
+    instancenode.configure_logging(logfile=logfile_path, debug=False)
+
+    # Verify log file was created
+    self.assertTrue(os.path.exists(logfile_path))
+
+    # Verify logging level is INFO
+    self.assertEqual(logging.getLogger().level, logging.INFO)
+
+    # Test that logs are written to file
+    test_logger = logging.getLogger('test')
+    test_logger.setLevel(logging.INFO)
+    test_logger.info('Test message')
+
+    # Force flush
+    for handler in logging.getLogger().handlers:
+      handler.flush()
+
+    # Verify message is in file
+    with open(logfile_path, 'r') as f:
+      content = f.read()
+      self.assertIn('Test message', content)
+
+  def test_configure_logging_to_file_debug(self):
+    """Test configure_logging with logfile and debug=True"""
+    import logging
+    logfile_path = os.path.join(self.temp_dir, 'test_debug.log')
+
+    # Reset logging configuration
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers[:]:
+      root_logger.removeHandler(handler)
+    root_logger.setLevel(logging.WARNING)
+
+    instancenode.configure_logging(logfile=logfile_path, debug=True)
+
+    # Verify log file was created
+    self.assertTrue(os.path.exists(logfile_path))
+
+    # Verify logging level is DEBUG
+    self.assertEqual(logging.getLogger().level, logging.DEBUG)
+
+  def test_configure_logging_to_stderr(self):
+    """Test configure_logging without logfile (goes to stderr)"""
+    import logging
+    import sys
+    from io import StringIO
+
+    # Reset logging configuration
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers[:]:
+      root_logger.removeHandler(handler)
+    root_logger.setLevel(logging.WARNING)
+
+    # Capture stderr
+    stderr_capture = StringIO()
+    old_stderr = sys.stderr
+    sys.stderr = stderr_capture
+
+    try:
+      instancenode.configure_logging(logfile=None, debug=False)
+
+      # Verify logging level is INFO
+      self.assertEqual(logging.getLogger().level, logging.INFO)
+
+      # Verify handler is StreamHandler pointing to stderr
+      handlers = logging.getLogger().handlers
+      stream_handlers = [h for h in handlers if isinstance(h, logging.StreamHandler)]
+      self.assertTrue(len(stream_handlers) > 0)
+    finally:
+      sys.stderr = old_stderr
+
+  def test_configure_logging_creates_directory(self):
+    """Test configure_logging creates logfile directory if it doesn't exist"""
+    import logging
+    logfile_path = os.path.join(self.temp_dir, 'subdir', 'test.log')
+
+    # Reset logging configuration
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers[:]:
+      root_logger.removeHandler(handler)
+    root_logger.setLevel(logging.WARNING)
+
+    # Directory shouldn't exist yet
+    logfile_dir = os.path.dirname(logfile_path)
+    self.assertFalse(os.path.exists(logfile_dir))
+
+    instancenode.configure_logging(logfile=logfile_path, debug=False)
+
+    # Directory should be created
+    self.assertTrue(os.path.exists(logfile_dir))
+    self.assertTrue(os.path.exists(logfile_path))
