@@ -17,21 +17,38 @@ defaults
   {#- Allow to start with not resolved yet servers #}
   default-server init-addr last,libc,none
 
-{%- set SCHEME_PREFIX_MAPPING = { 'http': 'http_backend', 'https': 'https_backend'} %}
-{%- macro frontend_entry(slave_reference, hostname, slave_instance, scheme) %}
-{%-   if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['hostname'] and slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['port'] %}
-{%-     if hostname.startswith('*') %}
-{%-       set matcher = '' ~ hostname[2:] ~ '$' %}
+{%- macro frontend_entry(slave_reference, hostname, slave_instance) %}
+{%-   if hostname.startswith('*') %}
+{%-     set matcher = '' ~ hostname[2:] ~ '$' %}
+{%-   else %}
+{%-     set matcher = '^' ~ hostname ~ '$' %}
+{%-   endif %}
+{%-     set matcher_acl = '{ req.hdr(host),host_only -m reg ' ~ matcher ~ ' }' %}
+{%-   if 'health-check-failover-url' in slave_instance or 'health-check-failover-https-url' in slave_instance %}
+{%-     if 'health-check-failover-url' in slave_instance and 'health-check-failover-https-url' not in slave_instance %}
+  acl is_failover_{{ slave_reference }} nbsrv({{ slave_reference }}-url) eq 0
+  use_backend {{ slave_reference }}-url if {{ matcher_acl }} ! is_failover_{{ slave_reference }}
+  use_backend {{ slave_reference }}-failover-url if {{ matcher_acl }} is_failover_{{ slave_reference }}
+{%-     elif 'health-check-failover-url' not in slave_instance and 'health-check-failover-https-url' in slave_instance %}
+  acl is_failover_{{ slave_reference }} nbsrv({{ slave_reference }}-https-url) eq 0
+  use_backend {{ slave_reference }}-https-url if {{ matcher_acl }} ! is_failover_{{ slave_reference }} is_x_forwarded_proto_https
+  use_backend {{ slave_reference }}-failover-https-url if {{ matcher_acl }} is_failover_{{ slave_reference }} is_x_forwarded_proto_https
 {%-     else %}
-{%-       set matcher = '^' ~ hostname ~ '$' %}
+  acl is_failover_{{ slave_reference }}-url nbsrv({{ slave_reference }}-url) eq 0
+  acl is_failover_{{ slave_reference }}-https-url nbsrv({{ slave_reference }}-https-url) eq 0
+  use_backend {{ slave_reference }}-url if {{ matcher_acl }} ! is_failover_{{ slave_reference }}-url is_x_forwarded_proto_http
+  use_backend {{ slave_reference }}-failover-url if {{ matcher_acl }} is_failover_{{ slave_reference }}-url is_x_forwarded_proto_http
+  use_backend {{ slave_reference }}-https-url if {{ matcher_acl }} ! is_failover_{{ slave_reference }}-https-url is_x_forwarded_proto_https
+  use_backend {{ slave_reference }}-failover-https-url if {{ matcher_acl}} is_failover_{{ slave_reference }}-https-url is_x_forwarded_proto_https
 {%-     endif %}
-{%-     set acl = '{ req.hdr(host),host_only -m reg ' ~ matcher ~ ' }' %}
-{%-     if slave_instance[SCHEME_PREFIX_MAPPING[scheme]]['health-check-failover-hostname'] %}
-  acl is_failover_{{ slave_reference }}_{{ scheme }} nbsrv({{ slave_reference }}-{{ scheme }}) eq 0
-  use_backend {{ slave_reference }}-{{ scheme }} if {{ acl }} ! is_failover_{{ slave_reference }}_{{ scheme }}
-  use_backend {{ slave_reference }}-{{ scheme }}-failover if {{ acl }} is_failover_{{ slave_reference }}_{{ scheme }}
+{%-   elif 'url' in slave_instance or 'https-url' in slave_instance %}
+{%-     if 'url' in slave_instance and 'https-url' not in slave_instance %}
+  use_backend {{ slave_reference }}-url if {{ matcher_acl }}
+{%-     elif 'url' not in slave_instance and 'https-url' in slave_instance %}
+  use_backend {{ slave_reference }}-https-url if {{ matcher_acl }}
 {%-     else %}
-  use_backend {{ slave_reference }}-{{ scheme }} if {{ acl }}
+  use_backend {{ slave_reference }}-url if {{ matcher_acl }} is_x_forwarded_proto_http
+  use_backend {{ slave_reference }}-https-url if {{ matcher_acl }} is_x_forwarded_proto_https
 {%-     endif %}
 {%-   endif %}
 {%- endmacro %}
@@ -44,142 +61,166 @@ frontend statistic
   stats show-desc {{ configuration['statistic-identification'] }}
   stats auth {{ configuration['statistic-username'] }}:{{ configuration['statistic-password'] }}
   stats realm {{ configuration['statistic-identification'] }}
-  stats scope http-backend
-  stats scope https-backend
+  stats scope https
 
-frontend http-backend
-  bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
+frontend https
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['port'] }} ssl crt {{ configuration['backend-haproxy-internal-certificate'] }}
   http-request add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
   http-after-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
   # setup Date
   http-after-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
+  acl is_x_forwarded_proto_http req.hdr(x-forwarded-proto) -m str http
+  acl is_x_forwarded_proto_https req.hdr(x-forwarded-proto) -m str https
 {%- for entry in backend_slave_order | sort(attribute="index,hostname", reverse=True) %}
-{{- frontend_entry(entry['slave_reference'], entry['hostname'], backend_slave_dict[entry['slave_reference']], 'http') -}}
+{{- frontend_entry(entry['slave_reference'], entry['hostname'], backend_slave_dict[entry['slave_reference']]) -}}
 {%- endfor %}
 
-frontend https-backend
-  bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }}
-  http-request add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
-  http-after-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
-  # setup Date
-  http-after-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
-{%- for entry in backend_slave_order | sort(attribute="index,hostname", reverse=True) %}
-{{- frontend_entry(entry['slave_reference'], entry['hostname'], backend_slave_dict[entry['slave_reference']], 'https') -}}
-{%- endfor %}
+{%- macro backend_entry(slave_reference, slave_instance, kind) %}
+backend {{ slave_instance['slave_reference'] }}-{{ kind }}
+{%-   set parsed = urllib_module.parse.urlparse(slave_instance.get(kind)) %}
+{%-   if parsed.hostname %}
+{%-     set ssl_list = [] %}
+{%-     if parsed.scheme == 'https' %}
+{%-       if slave_instance['authenticate-to-backend'] %}
+{%-         do ssl_list.append('crt %s' % (configuration['backend-client-login-certificate'],)) %}
+{%-       endif %}
+{%-       do ssl_list.append('ssl verify') %}
+{%-       if slave_instance['ssl_proxy_verify'] %}
+{%-         if slave_instance['path_to_ssl_proxy_ca_crt']  %}
+{%-           do ssl_list.append('required ca-file %s' % (slave_instance['path_to_ssl_proxy_ca_crt'],)) %}
+{%-           set HOSTNAME_CORRECT = True %}
+{%-         else %}
+{#-           Backend SSL shall be verified, but not CA provided, disallow connection #}
+{%-           set HOSTNAME_CORRECT = False %}
+{%-         endif %}
+{%-       else %}
+{%-         do ssl_list.append('none') %}
+{%-         set HOSTNAME_CORRECT = True %}
+{%-       endif %}
+{%-     else %}
+{%-       set HOSTNAME_CORRECT = True %}
+{%-     endif %}
 
+{%-     if HOSTNAME_CORRECT %}
+{%-       set hostname = parsed.hostname %}
+{%-     else %}
+{%-       set hostname = None %}
+{%-     endif %}
+{%-     set path_list = [parsed.path.rstrip('/')] %}
+{%-     set query = parsed.query %}
+{%-     if query %}
+{%-       do path_list.append(query) %}
+{%-     endif %}
+{%-     set path = '?'.join(path_list) %}
+{%-     set netloc_list = slave_instance.get(kind + '-netloc-list', '').split() %}
+{%-     if hostname or len(netloc_list) > 0 %}
+  timeout server {{ slave_instance['request-timeout'] }}s
+  timeout connect {{ slave_instance['backend-connect-timeout'] }}s
+  retries {{ slave_instance['backend-connect-retries'] }}
+{%-       set active_check_list = [] %}
+{%-       set active_check_option_list = [] %}
+{%-       if slave_instance['health-check'] %}
+{%-         do active_check_list.append('check') %}
+{%-         do active_check_list.append('inter %ss' % (slave_instance['health-check-interval'])) %}
+{%-         do active_check_list.append('rise %s' % (slave_instance['health-check-rise'])) %}
+{%-         do active_check_list.append('fall %s' % (slave_instance['health-check-fall'])) %}
+{%-         if slave_instance['health-check-http-method'] != 'CONNECT' %}
+{%-           do active_check_option_list.append('option httpchk %s %s' % (slave_instance['health-check-http-method'], slave_instance['health-check-http-path'] | urlencode | replace('%', '%%'))) %}
+{%-         endif %}
+{%-         do active_check_option_list.append('timeout check %ss' % (slave_instance['health-check-timeout'])) %}
+{%-       endif %}
+{%-       if len(netloc_list) > 0 %}
+{%-         set counter = {'count': 1} %}
+{%-         for netloc in netloc_list %}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
+{%-           do counter.__setitem__('count', counter['count'] + 1) %}
+{%-         endfor %}
+{%-       else %}
+{%-         if parsed.port is not none %}
+{%-           set port = parsed.port %}
+{%-         elif parsed.scheme == 'http' %}
+{%-           set port = '80' %}
+{%-         else %}
+{%-           set port = '443' %}
+{%-         endif %}
+{%-         set origin = '%s:%s' % (hostname, port) %}
+  server {{ slave_instance['slave_reference'] }}-backend {{ origin }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
+{%-       endif %}
+{%-       for active_check_option in active_check_option_list %}
+  {{ active_check_option }}
+{%-       endfor %}
+{%-       if path %}
+  http-request set-path {{ path.strip() }}%[path,regsub('^/$','')]
+{%-       endif %}
+{%-     endif %}
+{%-   endif %}
+{%-   set parsed_health_check = urllib_module.parse.urlparse(slave_instance.get('health-check-failover-' + kind, '')) %}
+{%-   if parsed_health_check.hostname %}
+{%-     set ssl_list = [] %}
+{%-     if parsed_health_check.scheme == 'https' %}
+{%-       if slave_instance['health-check-authenticate-to-failover-backend'] %}
+{%-         do ssl_list.append('crt %s' % (configuration['backend-client-login-certificate'],)) %}
+{%-       endif %}
+{%-       do ssl_list.append('ssl verify') %}
+{%-       if slave_instance['health-check-failover-ssl-proxy-verify'] %}
+{%-         if slave_instance['path_to_health-check-failover-ssl-proxy-ca-crt']  %}
+{%-           do ssl_list.append('required ca-file %s' % (slave_instance['path_to_health-check-failover-ssl-proxy-ca-crt'],)) %}
+{%-           set HEALTH_CHECK_HOSTNAME_CORRECT = True %}
+{%-         else %}
+{#-         Backend SSL shall be verified, but not CA provided, disallow connection #}
+{%-           set HEALTH_CHECK_HOSTNAME_CORRECT = False %}
+{%-         endif %}
+{%-       else %}
+{%-         set HEALTH_CHECK_HOSTNAME_CORRECT = True %}
+{%-         do ssl_list.append('none') %}
+{%-       endif %}
+{%-     else %}
+{%-       set HEALTH_CHECK_HOSTNAME_CORRECT = True %}
+{%-     endif %}
+
+backend {{ slave_instance['slave_reference'] }}-failover-{{ kind }}
+{%-     if HEALTH_CHECK_HOSTNAME_CORRECT %}
+{%-       set hostname = parsed_health_check.hostname %}
+{%-     else %}
+{%-       set hostname = None %}
+{%-     endif %}
+{%-     set path_list = [parsed_health_check.path.rstrip('/')] %}
+{%-     set query = parsed_health_check.query %}
+{%-     if query %}
+{%-       do path_list.append(query) %}
+{%-     endif %}
+{%-     set path = '?'.join(path_list) %}
+{%-     if hostname %}
+{%-       set health_check_netloc_list = slave_instance.get('health-check-failover-' + kind + '-netloc-list', '').split() %}
+{%-       if len(health_check_netloc_list) > 0 %}
+{%-         set counter = {'count': 1} %}
+{%-         for netloc in health_check_netloc_list %}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }}
+{%-           do counter.__setitem__('count', counter['count'] + 1) %}
+{%-         endfor %}
+{%-       else %}
+{%-         if parsed_health_check.port is not none %}
+{%-           set port = parsed_health_check.port %}
+{%-         elif parsed_health_check.scheme == 'http' %}
+{%-           set port = '80' %}
+{%-         else %}
+{%-           set port = '443' %}
+{%-         endif %}
+{%-         set origin = '%s:%s' % (hostname, port) %}
+  server {{ slave_instance['slave_reference'] }}-backend {{ origin }} {{ ' '.join(ssl_list) }}
+{%-       endif %}
+  timeout connect {{ slave_instance['backend-connect-timeout'] }}s
+  timeout server {{ slave_instance['request-timeout'] }}s
+  retries {{ slave_instance['backend-connect-retries'] }}
+{%-       if path %}
+  http-request set-path {{ path.strip() }}%[path,regsub('^/$','')]
+{%-       endif %}
+{%-     endif %}
+{%-   endif %}
+{%- endmacro %}
 {%- for slave_reference in sorted(backend_slave_dict) %}
 {%-   set slave_instance = backend_slave_dict[slave_reference] %}
-{%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
-{%-     set info_dict = slave_instance[prefix] %}
-{%-     if info_dict['hostname'] and info_dict['port'] %}
-{%-       set ssl_list = [] %}
-{%-       if info_dict['scheme'] == 'https' %}
-{%-         if slave_instance['authenticate-to-backend'] %}
-{%-           do ssl_list.append('crt %s' % (configuration['backend-client-login-certificate'],)) %}
-{%-         endif %}
-{%-         do ssl_list.append('ssl verify') %}
-{%-         if slave_instance['ssl_proxy_verify'] %}
-{%-           if slave_instance['path_to_ssl_proxy_ca_crt']  %}
-{%-             do ssl_list.append('required ca-file %s' % (slave_instance['path_to_ssl_proxy_ca_crt'],)) %}
-{%-           else %}
-{#-           Backend SSL shall be verified, but not CA provided, disallow connection #}
-{#-           Simply dropping hostname from the dict will result with ignoring it... #}
-{%-           do info_dict.__setitem__('hostname', '') %}
-{%-           endif %}
-{%-         else %}
-{%-           do ssl_list.append('none') %}
-{%-         endif %}
-{%-       endif %}
-
-backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
-{%-       set hostname = info_dict['hostname'] %}
-{%-       set port = info_dict['port'] %}
-{%-       set path_list = [info_dict['path'].rstrip('/')] %}
-{%-       set query = info_dict['query'] %}
-{%-       if query %}
-{%-         do path_list.append(query) %}
-{%-       endif %}
-{%-       set path = '?'.join(path_list) %}
-{%-       if hostname and port or len(info_dict['netloc-list']) > 0 %}
-  timeout server {{ slave_instance['request-timeout'] }}s
-  timeout connect {{ slave_instance['backend-connect-timeout'] }}s
-  retries {{ slave_instance['backend-connect-retries'] }}
-{%-         set active_check_list = [] %}
-{%-         set active_check_option_list = [] %}
-{%-         if slave_instance['health-check'] %}
-{%-           do active_check_list.append('check') %}
-{%-           do active_check_list.append('inter %ss' % (slave_instance['health-check-interval'])) %}
-{%-           do active_check_list.append('rise %s' % (slave_instance['health-check-rise'])) %}
-{%-           do active_check_list.append('fall %s' % (slave_instance['health-check-fall'])) %}
-{%-           if slave_instance['health-check-http-method'] != 'CONNECT' %}
-{%-             do active_check_option_list.append('option httpchk %s %s' % (slave_instance['health-check-http-method'], slave_instance['health-check-http-path'] | urlencode | replace('%', '%%'))) %}
-{%-           endif %}
-{%-           do active_check_option_list.append('timeout check %ss' % (slave_instance['health-check-timeout'])) %}
-{%-         endif %}
-{%-         if len(info_dict['netloc-list']) > 0 %}
-{%-           set counter = {'count': 1} %}
-{%-           for netloc in info_dict['netloc-list'] %}
-  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }}-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
-{%-             do counter.__setitem__('count', counter['count'] + 1) %}
-{%-           endfor %}
-{%-         else %}
-  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
-{%-         endif %}
-{%-         for active_check_option in active_check_option_list %}
-  {{ active_check_option }}
-{%-         endfor %}
-{%-         if path %}
-  http-request set-path {{ path }}%[path,regsub('^/$','')]
-{%-         endif %}
-{%-       endif %}
-{%-     endif %}
-{%-     if info_dict['health-check-failover-hostname'] and info_dict['health-check-failover-port'] %}
-{%-       set ssl_list = [] %}
-{%-       if info_dict['health-check-failover-scheme'] == 'https' %}
-{%-         if slave_instance['health-check-authenticate-to-failover-backend'] %}
-{%-           do ssl_list.append('crt %s' % (configuration['backend-client-login-certificate'],)) %}
-{%-         endif %}
-{%-         do ssl_list.append('ssl verify') %}
-{%-         if slave_instance['health-check-failover-ssl-proxy-verify'] %}
-{%-           if slave_instance['path_to_health-check-failover-ssl-proxy-ca-crt']  %}
-{%-             do ssl_list.append('required ca-file %s' % (slave_instance['path_to_health-check-failover-ssl-proxy-ca-crt'],)) %}
-{%-           else %}
-{#-           Backend SSL shall be verified, but not CA provided, disallow connection #}
-{#-           Simply dropping hostname from the dict will result with ignoring it... #}
-{%-           do info_dict.__setitem__('health-check-failover-hostname', '') %}
-{%-           endif %}
-{%-         else %}
-{%-           do ssl_list.append('none') %}
-{%-         endif %}
-{%-       endif %}
-
-backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover
-{%-       set hostname = info_dict['health-check-failover-hostname'] %}
-{%-       set port = info_dict['health-check-failover-port'] %}
-{%-       set path_list = [info_dict['health-check-failover-path'].rstrip('/')] %}
-{%-       set query = info_dict['health-check-failover-query'] %}
-{%-       if query %}
-{%-         do path_list.append(query) %}
-{%-       endif %}
-{%-       set path = '?'.join(path_list) %}
-{%-       if hostname and port %}
-{%-         if len(info_dict['health-check-netloc-list']) > 0 %}
-{%-           set counter = {'count': 1} %}
-{%-           for netloc in info_dict['health-check-netloc-list'] %}
-  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }}-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }}
-{%-             do counter.__setitem__('count', counter['count'] + 1) %}
-{%-           endfor %}
-{%-         else %}
-  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ hostname }}:{{ port }} {{ ' '.join(ssl_list) }}
-{%-         endif %}
-  timeout connect {{ slave_instance['backend-connect-timeout'] }}s
-  timeout server {{ slave_instance['request-timeout'] }}s
-  retries {{ slave_instance['backend-connect-retries'] }}
-{%-         if path %}
-  http-request set-path {{ path }}%[path,regsub('^/$','')]
-{%-         endif %}
-{%-       endif %}
-{%-     endif %}
-{%-   endfor %}
-{% endfor %}
+{{-   backend_entry(slave_reference, slave_instance, 'url') }}
+{{-   backend_entry(slave_reference, slave_instance, 'https-url') }}
+{%- endfor %} {#- for slave_reference in sorted(backend_slave_dict) #}
 {# END OF FILE #}
