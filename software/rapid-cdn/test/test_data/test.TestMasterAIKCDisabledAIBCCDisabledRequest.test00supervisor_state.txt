@@ -17,6 +17,7 @@ T-1:logrotate-setup-validate EXITED
 T-1:monitor-httpd-graceful EXITED
 T-1:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-2:backend-client-login-certificate-caucase-updater-on-watch RUNNING
+T-2:backend-haproxy-certificate-micro-caucase-updater-on-watch RUNNING
 T-2:backend-haproxy-rsyslogd-{hash-generic}-on-watch RUNNING
 T-2:backend-haproxy-safe-graceful EXITED
 T-2:backend-haproxy-{hash-backend-haproxy-T-2}-on-watch RUNNING
@@ -33,10 +34,12 @@ T-2:kedifa-login-certificate-caucase-updater-on-watch RUNNING
 T-2:kedifa-updater-{hash-generic}-on-watch RUNNING
 T-2:logrotate-setup-validate EXITED
 T-2:micro-caucased-{hash-generic}-on-watch RUNNING
+T-2:micro-ssl-caucase-updater-on-watch RUNNING
 T-2:monitor-httpd-graceful EXITED
 T-2:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-2:slave-instrospection-nginx-{hash-generic}-on-watch RUNNING
 T-2:slave-introspection-safe-graceful EXITED
+T-2:trafficserver-certificate-micro-caucase-updater-on-watch RUNNING
 T-2:trafficserver-introspection-nginx-{hash-generic}-on-watch RUNNING
 T-2:trafficserver-reload EXITED
 T-2:trafficserver-{hash-trafficserver-T-2}-on-watch RUNNING
