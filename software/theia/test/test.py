@@ -106,6 +106,7 @@ class TheiaTestCase(SlapOSInstanceTestCase):
         raise Exception("Service %s not found" % service)
 
   def pexpect_debug_logfile(self, logger:logging.Logger):
+    test_id = self.id()
     class DebugLogFile:
       def write(self, msg):
         logger.info("test: %s output: %s", self.id(), msg)
