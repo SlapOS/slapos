@@ -48,6 +48,7 @@ T-2/etc/plugin/frontend_haproxy_ipv4_http.py
 T-2/etc/plugin/frontend_haproxy_ipv4_https.py
 T-2/etc/plugin/frontend_haproxy_ipv6_http.py
 T-2/etc/plugin/frontend_haproxy_ipv6_https.py
+T-2/etc/plugin/micro-caucased.py
 T-2/etc/plugin/monitor-bootstrap-status.py
 T-2/etc/plugin/monitor-http-frontend.py
 T-2/etc/plugin/monitor-httpd-listening-on-tcp.py
