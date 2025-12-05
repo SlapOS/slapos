@@ -30,6 +30,7 @@ T-2:frontend-haproxy-{hash-generic}-on-watch RUNNING
 T-2:kedifa-login-certificate-caucase-updater-on-watch RUNNING
 T-2:kedifa-updater-{hash-generic}-on-watch RUNNING
 T-2:logrotate-setup-validate EXITED
+T-2:micro-caucased-{hash-generic}-on-watch RUNNING
 T-2:monitor-httpd-graceful EXITED
 T-2:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-2:slave-instrospection-nginx-{hash-generic}-on-watch RUNNING
