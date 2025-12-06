@@ -1,0 +1,22 @@
+{
+  "name": "CDN Requester",
+  "description": "CDN Requester",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "requester": {
+      "title": "CDN Requester",
+      "software-type": "requester",
+      "request": "instance-requester-input-schema.json",
+      "response": "instance-requester-output-schema.json",
+      "index": 0
+    },
+    "cdn-request": {
+      "title": "CDN Request",
+      "software-type": "requester",
+      "request": "instance-slave-input-schema.json",
+      "response": "instance-slave-output-schema.json",
+      "shared": true,
+      "index": 1
+    }
+  }
+}
