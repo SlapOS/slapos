@@ -47,7 +47,7 @@ output = ${directory:etc}/instancenode.cfg
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = cdn-request
-frequency = */2 * * * *
+frequency = * * * * *
 command = {{ software_parameter_dict['cdnrequest-bin'] }} --cfg ${cdn-request:output} --pidfile ${buildout:directory}/cdn-request.pid --logfile ${cdn-requester-configuration:cdn-requester-log}
 
 [logrotate-entry-cdn-requester]
