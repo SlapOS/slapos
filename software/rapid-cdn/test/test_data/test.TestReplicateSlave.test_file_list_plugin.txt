@@ -44,11 +44,13 @@ T-2/etc/plugin/caucase-updater.py
 T-2/etc/plugin/check-free-disk-space.py
 T-2/etc/plugin/check-monitor-frontend-password.py
 T-2/etc/plugin/expose-csr-ip-port-listening.py
+T-2/etc/plugin/fallback-micro-caucase-updater.py
 T-2/etc/plugin/frontend-frontend-haproxy-configuration-promise.py
 T-2/etc/plugin/frontend_haproxy_ipv4_http.py
 T-2/etc/plugin/frontend_haproxy_ipv4_https.py
 T-2/etc/plugin/frontend_haproxy_ipv6_http.py
 T-2/etc/plugin/frontend_haproxy_ipv6_https.py
+T-2/etc/plugin/ip-access-micro-caucase-updater.py
 T-2/etc/plugin/micro-caucased.py
 T-2/etc/plugin/monitor-bootstrap-status.py
 T-2/etc/plugin/monitor-http-frontend.py
@@ -71,11 +73,13 @@ T-3/etc/plugin/caucase-updater.py
 T-3/etc/plugin/check-free-disk-space.py
 T-3/etc/plugin/check-monitor-frontend-password.py
 T-3/etc/plugin/expose-csr-ip-port-listening.py
+T-3/etc/plugin/fallback-micro-caucase-updater.py
 T-3/etc/plugin/frontend-frontend-haproxy-configuration-promise.py
 T-3/etc/plugin/frontend_haproxy_ipv4_http.py
 T-3/etc/plugin/frontend_haproxy_ipv4_https.py
 T-3/etc/plugin/frontend_haproxy_ipv6_http.py
 T-3/etc/plugin/frontend_haproxy_ipv6_https.py
+T-3/etc/plugin/ip-access-micro-caucase-updater.py
 T-3/etc/plugin/micro-caucased.py
 T-3/etc/plugin/monitor-bootstrap-status.py
 T-3/etc/plugin/monitor-http-frontend.py
