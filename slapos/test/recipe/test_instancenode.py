@@ -3,6 +3,7 @@ import hashlib
 import fcntl
 import mock
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -144,6 +145,27 @@ class TestRequestInstanceList(unittest.TestCase):
     db = HostedInstanceLocalDB(self.requestinstance_db_path)
     return db.getInstanceList("reference, json_parameters, json_error, valid_parameter")
 
+  def _assertFinalReportInLog(self, log, expected_count):
+    """Helper to verify final report message in log matches expected pattern"""
+    final_report_pattern = r'Instance node processing completed: \d+ instances processed in [\d.]+ seconds'
+    # Get actual log records from LogCapture
+    actual_logs = log.actual()
+    final_report_found = False
+    for record in actual_logs:
+      if len(record) >= 3 and record[1] == 'INFO':
+        message = record[2]
+        if re.search(final_report_pattern, message):
+          final_report_found = True
+          # Verify the count matches
+          match = re.search(r'(\d+) instances processed', message)
+          if match:
+            actual_count = int(match.group(1))
+            self.assertEqual(actual_count, expected_count,
+                            "Final report instance count doesn't match expected. Expected: %d, Got: %d" % (expected_count, actual_count))
+          break
+    self.assertTrue(final_report_found,
+                   "Final report message not found in log. Pattern: %s" % final_report_pattern)
+
   def test_new_valid_instance(self):
     """Test requesting a new valid instance"""
     # Setup: one instance in instance-db, none in requestinstance-db
@@ -199,14 +221,16 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(stored[0]['reference'], 'instance1')
     self.assertEqual(stored[0]['valid_parameter'], False)
 
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 1 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Instance validation failed'}"),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (1 instance: 1 added)
+    self._assertFinalReportInLog(log, 1)
 
   def test_modified_valid_instance(self):
     """Test updating a modified valid instance"""
@@ -314,14 +338,16 @@ class TestRequestInstanceList(unittest.TestCase):
     stored_error = json.loads(stored[0]['json_error'])
     self.assertEqual(stored_error, {'message': 'Instance validation failed'})
 
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Instance validation failed'}"),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (1 instance: 1 modified)
+    self._assertFinalReportInLog(log, 1)
 
   def test_destroyed_instance(self):
     """Test destroying a removed instance"""
@@ -622,12 +648,14 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(result, [])
     self.request_instance.assert_not_called()
 
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (0 instances)
+    self._assertFinalReportInLog(log, 0)
 
   def test_shared_instances(self):
     """Test requesting shared instances"""
@@ -1027,14 +1055,16 @@ class TestRequestInstanceList(unittest.TestCase):
       recipe.install()
 
     # Verify error was logged (check it's in the log, not the only entry)
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 1 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Error message'}"),
       ('test', 'WARNING', 'Failed to publish connection parameters for instance instance1: Publish failed'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (1 instance: 1 added)
+    self._assertFinalReportInLog(log, 1)
 
     # Verify instance was still processed (not raised)
     stored = self._getRequestInstanceDB()
@@ -1314,14 +1344,16 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(stored[0]['reference'], 'instance1')
     self.assertEqual(stored[0]['valid_parameter'], False)
 
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 0 modified, 1 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Validation error: field \"name\" is required', 'errors': ['field \"name\" is required']}"),
       ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (1 instance: 1 unchanged invalid)
+    self._assertFinalReportInLog(log, 1)
 
   def test_publish_error_info_for_unchanged_invalid_instance(self):
     """Test that error info is published for unchanged invalid instances when error info changes"""
@@ -1550,14 +1582,16 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(stored[0]['valid_parameter'], False)
 
     # Verify log shows instance was processed and skipping publish
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Your instance is valid the request has been transmitted to the master, waiting for its connection parameters'}"),
       ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (1 instance: 1 modified)
+    self._assertFinalReportInLog(log, 1)
 
   def test_publish_connection_parameters_changed_republishes(self):
     """Test that changed connection parameters are republished"""
@@ -1630,13 +1664,15 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(stored[0]['valid_parameter'], True)
 
     # Verify log shows publishing
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (1 instance: 1 modified)
+    self._assertFinalReportInLog(log, 1)
 
   def test_publish_connection_parameters_new_instance_always_publishes(self):
     """Test that new instances always publish (no previous data to compare)"""
@@ -1671,13 +1707,15 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(stored[0]['valid_parameter'], True)
 
     # Verify log shows publishing
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 1 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (1 instance: 1 added)
+    self._assertFinalReportInLog(log, 1)
 
   def test_publish_connection_parameters_invalid_unchanged_skips_publish(self):
     """Test that unchanged validation errors for invalid instances are not republished"""
@@ -1725,14 +1763,16 @@ class TestRequestInstanceList(unittest.TestCase):
     self.setConnectionDict.assert_not_called()
 
     # Verify log shows skipping publish (instance is processed as unchanged invalid)
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 0 modified, 1 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'errors': ['field \"name\" is required'], 'message': 'Validation error: field \"name\" is required'}"),
       ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (1 instance: 1 unchanged invalid)
+    self._assertFinalReportInLog(log, 1)
 
   def test_publish_connection_parameters_invalid_changed_republishes(self):
     """Test that changed validation errors for invalid instances are republished"""
@@ -1793,14 +1833,16 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(published_params['errors'], new_errors['errors'])
 
     # Verify log shows publishing
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 0 modified, 1 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'errors': ['field \"value\" is required'], 'message': 'New validation error: field \"value\" is required'}"),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (1 instance: 1 unchanged invalid)
+    self._assertFinalReportInLog(log, 1)
 
   def test_publish_connection_parameters_no_stored_instance_publishes(self):
     """Test that publishing works when no stored instance exists (new instance)"""
@@ -1885,13 +1927,15 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(stored[0]['valid_parameter'], True)
 
     # Verify log shows publishing
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (1 instance: 1 modified)
+    self._assertFinalReportInLog(log, 1)
 
   def test_publish_connection_parameters_empty_json_error_publishes(self):
     """Test that empty json_error in database causes publish (nothing to compare)"""
@@ -1952,13 +1996,100 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(stored[0]['valid_parameter'], True)
 
     # Verify log shows publishing
-    log.check(
+    log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
-      ('test', 'INFO', 'Instance node processing completed'),
       ('test', 'INFO', '================================================================================'),
+      order_matters=True,
     )
+    # Verify final report (1 instance: 1 modified)
+    self._assertFinalReportInLog(log, 1)
+
+  def test_periodic_logging_during_processing(self):
+    """Test that periodic logging occurs every minute during long processing
+    
+    This test demonstrates how to test the periodic logging behavior by mocking
+    time.time() to simulate the passage of time. In real scenarios, periodic
+    logs appear every 60 seconds during processing.
+    
+    To test periodic logging:
+    1. Mock time.time() to control time progression
+    2. Process instances and increment processed_count
+    3. Advance time by 60+ seconds between processing
+    4. Verify that logIfTimePassed() logs progress messages
+    5. Verify the format and content of progress logs
+    """
+    # Create multiple instances to process
+    self._createInstanceDB([
+      ('instance1', {'key': 'value1'}, True),
+      ('instance2', {'key': 'value2'}, True),
+      ('instance3', {'key': 'value3'}, True),
+    ])
+
+    recipe = instancenode.Recipe(
+      self.buildout, 'test', self.options
+    )
+
+    # Mock time.time() to simulate time progression
+    current_time = [1000.0]  # Start time
+    
+    def mock_time():
+      return current_time[0]
+    
+    with mock.patch('time.time', side_effect=mock_time):
+      with LogCapture() as log:
+        # Initialize periodic logging for 3 instances
+        recipe.initialisePeriodicLogging(3)
+        
+        # Process first instance
+        instance_data = {'parameters': {'key': 'value1'}, 'valid': True, 'error_info': {}}
+        recipe._processInstance('instance1', instance_data, 'hash1', is_new=True)
+        recipe._progress_processed_count = 1
+        recipe.logIfTimePassed()  # Should not log (less than 60s)
+        
+        # Advance time by 61 seconds
+        current_time[0] += 61
+        recipe.logIfTimePassed()  # Should log now
+        
+        # Process second instance
+        instance_data = {'parameters': {'key': 'value2'}, 'valid': True, 'error_info': {}}
+        recipe._processInstance('instance2', instance_data, 'hash2', is_new=True)
+        recipe._progress_processed_count = 2
+        recipe.logIfTimePassed()  # Should not log (less than 60s since last log)
+        
+        # Advance time by another 61 seconds
+        current_time[0] += 61
+        recipe.logIfTimePassed()  # Should log again
+        
+        # Process third instance and finalize
+        instance_data = {'parameters': {'key': 'value3'}, 'valid': True, 'error_info': {}}
+        recipe._processInstance('instance3', instance_data, 'hash3', is_new=True)
+        recipe._progress_processed_count = 3
+        recipe.logFinalReport()
+    
+    # Verify periodic logs appeared
+    actual_logs = log.actual()
+    progress_logs = [record for record in actual_logs 
+                     if len(record) >= 3 and record[1] == 'INFO' 
+                     and 'Progress:' in record[2]]
+    
+    # Should have 2 progress logs (after 60s and after another 60s)
+    self.assertEqual(len(progress_logs), 2, 
+                     "Expected 2 periodic progress logs, got %d. Logs: %s" % (len(progress_logs), progress_logs))
+    
+    # Verify progress log format
+    for progress_log in progress_logs:
+      message = progress_log[2]
+      self.assertRegex(message, r'Progress: \d+/\d+ instances processed \(\d+\.\d+%\)',
+                      "Progress log format incorrect: %s" % message)
+    
+    # Verify final report
+    final_report_logs = [record for record in actual_logs 
+                        if len(record) >= 3 and record[1] == 'INFO' 
+                        and 'Instance node processing completed:' in record[2]]
+    self.assertEqual(len(final_report_logs), 1,
+                     "Expected 1 final report log, got %d" % len(final_report_logs))
 
 
 class TestCommandLineInterface(unittest.TestCase):
