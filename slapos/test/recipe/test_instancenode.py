@@ -2040,8 +2040,13 @@ class TestRequestInstanceList(unittest.TestCase):
     with mock.patch('time.time', side_effect=mock_time):
       with LogCapture() as log:
         # Initialize periodic logging for 3 instances
-        recipe.initialisePeriodicLogging(3)
-        
+        comparison = {
+          'added': ['instance1'],
+          'removed': ['instance2'],
+          'modified': ['instance3'],
+          'unchanged_invalid': []
+        }
+        recipe.initialiseReportingLogging(comparison, 0)
         # Process first instance
         instance_data = {'parameters': {'key': 'value1'}, 'valid': True, 'error_info': {}}
         recipe._processInstance('instance1', instance_data, 'hash1', is_new=True)
