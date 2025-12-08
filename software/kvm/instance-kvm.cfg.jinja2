@@ -365,7 +365,7 @@ config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
 
 [kvm-parameter-dict]
 recipe = slapos.recipe.build
-output = ${directory:etc}/kvm_raw.json
+location = ${directory:etc}/kvm_raw.json
 install =
   import os
   import json
@@ -486,7 +486,7 @@ ipv6-port = {{ external_port }}
 {% endif -%}
 
 {%- set depend_section_list = [] %}
-{%- set hash_file_list = ['${kvm-parameter-dict:output}'] %}
+{%- set hash_file_list = ['${kvm-parameter-dict:location}'] %}
 {%- macro generate_depend_section(section, key) %}
 {%-  do depend_section_list.append('${' + section + ':command}' ) %}
 {%-  do hash_file_list.append('${' + key + '}') %}
@@ -509,7 +509,7 @@ depends =
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/kvm
-command-line = {{ python_eggs_executable }} {{ template_kvm_run }} ${kvm-parameter-dict:output}
+command-line = {{ python_eggs_executable }} {{ template_kvm_run }} ${kvm-parameter-dict:location}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files =
 {%- for hash_file in hash_file_list %}
