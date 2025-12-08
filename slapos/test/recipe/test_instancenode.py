@@ -223,7 +223,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 1 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 1 total instances, 1 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Instance validation failed'}"),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
       ('test', 'INFO', '================================================================================'),
@@ -340,7 +340,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 1 total instances, 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Instance validation failed'}"),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
       ('test', 'INFO', '================================================================================'),
@@ -650,7 +650,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 0 total instances, 0 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
       ('test', 'INFO', '================================================================================'),
       order_matters=True,
     )
@@ -1057,7 +1057,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify error was logged (check it's in the log, not the only entry)
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 1 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 1 total instances, 1 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Error message'}"),
       ('test', 'WARNING', 'Failed to publish connection parameters for instance instance1: Publish failed'),
       ('test', 'INFO', '================================================================================'),
@@ -1346,7 +1346,7 @@ class TestRequestInstanceList(unittest.TestCase):
 
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 0 modified, 1 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 1 total instances, 0 added, 0 removed, 0 modified, 1 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Validation error: field \"name\" is required', 'errors': ['field \"name\" is required']}"),
       ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
       ('test', 'INFO', '================================================================================'),
@@ -1584,7 +1584,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows instance was processed and skipping publish
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 1 total instances, 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Your instance is valid the request has been transmitted to the master, waiting for its connection parameters'}"),
       ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
       ('test', 'INFO', '================================================================================'),
@@ -1666,7 +1666,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows publishing
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 1 total instances, 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
       ('test', 'INFO', '================================================================================'),
       order_matters=True,
@@ -1709,7 +1709,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows publishing
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 1 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 1 total instances, 1 added, 0 removed, 0 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
       ('test', 'INFO', '================================================================================'),
       order_matters=True,
@@ -1765,7 +1765,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows skipping publish (instance is processed as unchanged invalid)
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 0 modified, 1 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 1 total instances, 0 added, 0 removed, 0 modified, 1 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'errors': ['field \"name\" is required'], 'message': 'Validation error: field \"name\" is required'}"),
       ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
       ('test', 'INFO', '================================================================================'),
@@ -1835,7 +1835,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows publishing
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 0 modified, 1 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 1 total instances, 0 added, 0 removed, 0 modified, 1 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'errors': ['field \"value\" is required'], 'message': 'New validation error: field \"value\" is required'}"),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
       ('test', 'INFO', '================================================================================'),
@@ -1929,7 +1929,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows publishing
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 1 total instances, 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
       ('test', 'INFO', '================================================================================'),
       order_matters=True,
@@ -1998,7 +1998,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify log shows publishing
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
-      ('test', 'INFO', 'Comparison results: 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
+      ('test', 'INFO', 'Comparison results: 1 total instances, 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', 'Published connection parameters for instance instance1'),
       ('test', 'INFO', '================================================================================'),
       order_matters=True,
@@ -2046,7 +2046,7 @@ class TestRequestInstanceList(unittest.TestCase):
           'modified': ['instance3'],
           'unchanged_invalid': []
         }
-        recipe.initialiseReportingLogging(comparison, 0)
+        recipe.initialiseReportingLogging(3, comparison, 0)
         # Process first instance
         instance_data = {'parameters': {'key': 'value1'}, 'valid': True, 'error_info': {}}
         recipe._processInstance('instance1', instance_data, 'hash1', is_new=True)
