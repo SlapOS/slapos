@@ -35,6 +35,8 @@ T-2:logrotate-setup-validate EXITED
 T-2:micro-caucased-{hash-generic}-on-watch RUNNING
 T-2:monitor-httpd-{hash-generic}-on-watch RUNNING
 T-2:monitor-httpd-graceful EXITED
+T-2:self-signed-fallback-micro-caucase-updater-on-watch RUNNING
+T-2:self-signed-ip-access-micro-caucase-updater-on-watch RUNNING
 T-2:slave-instrospection-nginx-{hash-generic}-on-watch RUNNING
 T-2:slave-introspection-safe-graceful EXITED
 T-2:trafficserver-{hash-trafficserver-T-2}-on-watch RUNNING
