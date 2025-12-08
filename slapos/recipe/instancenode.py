@@ -514,6 +514,7 @@ class Recipe(object):
     """
     Compare databases, make requests, and update requestinstance-db-path.
     """
+    self.logger.info('Starting instance node processing')
     # Get the full list of instance from instance-db-path
     # this list is the list of instance we got from master
     update_list = self._getUpdateList()
@@ -526,7 +527,7 @@ class Recipe(object):
     comparator = InstanceListComparator(update_list, stored_dict)
     comparison = comparator.compare()
 
-    self.logger.debug(
+    self.logger.info(
       'Comparison results: %d added, %d removed, %d modified',
       len(comparison['added']),
       len(comparison['removed']),
@@ -565,6 +566,8 @@ class Recipe(object):
     for instance_reference in comparison['removed']:
       self._processDestroyedInstance(instance_reference)
 
+    self.logger.info('Instance node processing completed')
+    self.logger.info('================================================================================')
     return []
 
   update = install
