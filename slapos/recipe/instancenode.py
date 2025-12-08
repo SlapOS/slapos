@@ -152,13 +152,28 @@ class Recipe(object):
     self._progress_processed_count = 0
     self._progress_total_to_process = 0
 
-  def initialisePeriodicLogging(self, total_to_process):
+  def initialiseReportingLogging(self, comparison, reprocess_number):
     """
     Initialize periodic logging tracking variables.
 
     Args:
       total_to_process: Total number of instances to process
     """
+    self.logger.info(
+      'Comparison results: %d added, %d removed, %d modified, %d unchanged invalid instances to process',
+      len(comparison['added']),
+      len(comparison['removed']),
+      len(comparison['modified']),
+      reprocess_number
+    )
+
+    # Calculate total instances to process
+    total_to_process = (
+      len(comparison['added']) +
+      len(comparison['modified']) +
+      reprocess_number +
+      len(comparison['removed'])
+    )
     self._progress_start_time = time.time()
     self._progress_last_log_time = self._progress_start_time
     self._progress_processed_count = 0
@@ -587,24 +602,10 @@ class Recipe(object):
       if row["reference"] not in comparison['modified'] and row["reference"] not in comparison['removed']:
         unchanged_invalid_instances_to_process.add(row["reference"])
 
-    self.logger.info(
-      'Comparison results: %d added, %d removed, %d modified, %d unchanged invalid instances to process',
-      len(comparison['added']),
-      len(comparison['removed']),
-      len(comparison['modified']),
-      len(unchanged_invalid_instances_to_process)
-    )
 
-    # Calculate total instances to process
-    total_to_process = (
-      len(comparison['added']) +
-      len(comparison['modified']) +
-      len(unchanged_invalid_instances_to_process) +
-      len(comparison['removed'])
-    )
 
     # Initialize periodic logging
-    self.initialisePeriodicLogging(total_to_process)
+    self.initialiseReportingLogging(comparison, len(unchanged_invalid_instances_to_process))
 
     # Process new instances
     for instance_reference in comparison['added']:
