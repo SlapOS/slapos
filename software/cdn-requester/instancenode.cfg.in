@@ -1,11 +1,11 @@
 [slaposinstancenode]
-instance-db-path = $${slap-configuration:instance-db-path}
-requestinstance-db-path = $${buildout:directory}/requestinstance-db.sqlite
+instance-db-path = $${cdn-requester-configuration:instance-db-path}
+requestinstance-db-path = $${cdn-requester-configuration:requestinstance-db-path}
 software-url = $${slap-configuration:configuration.cdn-software-url}
 software-type = $${slap-configuration:configuration.cdn-software-type}
 -sla-computer_guid = $${slap-configuration:configuration.-sla-computer_guid}
 -sla-instance_guid = $${slap-configuration:configuration.-sla-instance_guid}
-domainvalidation-db-path = $${buildout:directory}/domainvalidation-db.sqlite
+domainvalidation-db-path = $${cdn-requester-configuration:domainvalidation-db-path}
 shared = true
 openssl-binary = ${openssl:location}/bin/openssl
 dns-nameserver = $${slap-configuration:configuration.dns-nameserver}
@@ -14,3 +14,4 @@ cert-file = $${slap-connection:cert-file}
 computer-id = $${slap-connection:computer-id}
 partition-id = $${slap-connection:partition-id}
 server-url = $${slap-connection:server-url}
+logfile = $${cdn-requester-configuration:cdn-requester-log}
