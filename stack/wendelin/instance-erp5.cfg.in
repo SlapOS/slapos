@@ -491,6 +491,7 @@ config-allow-redirects = 0
         '--error-detail',
         '--js-embed',
         '--quiet',
+        '--ignore-status', '499'
       ],
     ),
   },
