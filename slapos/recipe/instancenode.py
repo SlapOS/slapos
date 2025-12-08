@@ -527,13 +527,6 @@ class Recipe(object):
     comparator = InstanceListComparator(update_list, stored_dict)
     comparison = comparator.compare()
 
-    self.logger.info(
-      'Comparison results: %d added, %d removed, %d modified',
-      len(comparison['added']),
-      len(comparison['removed']),
-      len(comparison['modified'])
-    )
-
     # Create mapping of reference to instance data
     instance_map = {item['reference']: item for item in update_list}
     computed_hashes = comparator.update_dict
@@ -549,6 +542,14 @@ class Recipe(object):
     for row in invalid_instance_rows:
       if row["reference"] not in comparison['modified'] and row["reference"] not in comparison['removed']:
         unchanged_invalid_instances_to_process.add(row["reference"])
+
+    self.logger.info(
+      'Comparison results: %d added, %d removed, %d modified, %d unchanged invalid instances to process',
+      len(comparison['added']),
+      len(comparison['removed']),
+      len(comparison['modified']),
+      len(unchanged_invalid_instances_to_process)
+    )
 
     # Process new instances
     for instance_reference in comparison['added']:
