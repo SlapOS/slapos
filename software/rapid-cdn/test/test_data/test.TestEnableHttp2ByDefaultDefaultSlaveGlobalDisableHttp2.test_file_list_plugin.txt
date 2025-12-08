@@ -50,6 +50,8 @@ T-2/etc/plugin/monitor-http-frontend.py
 T-2/etc/plugin/monitor-httpd-listening-on-tcp.py
 T-2/etc/plugin/promise-key-download-url-ready.py
 T-2/etc/plugin/promise-logrotate-setup.py
+T-2/etc/plugin/self-signed-fallback-micro-caucase-updater.py
+T-2/etc/plugin/self-signed-ip-acccess-micro-caucase-updater.py
 T-2/etc/plugin/slave-introspection-configuration.py
 T-2/etc/plugin/slave_introspection_https.py
 T-2/etc/plugin/trafficserver-cache-availability.py
