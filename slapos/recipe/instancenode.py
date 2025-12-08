@@ -146,6 +146,50 @@ class Recipe(object):
     # Lazy initialization of computer_partition for publishing connection parameters
     self._computer_partition = None
 
+    # Progress tracking for periodic logging
+    self._progress_start_time = None
+    self._progress_last_log_time = None
+    self._progress_processed_count = 0
+    self._progress_total_to_process = 0
+
+  def initialisePeriodicLogging(self, total_to_process):
+    """
+    Initialize periodic logging tracking variables.
+
+    Args:
+      total_to_process: Total number of instances to process
+    """
+    self._progress_start_time = time.time()
+    self._progress_last_log_time = self._progress_start_time
+    self._progress_processed_count = 0
+    self._progress_total_to_process = total_to_process
+
+  def logIfTimePassed(self):
+    """
+    Check if a minute has passed since last log and log progress if so.
+    """
+    current_time = time.time()
+    if current_time - self._progress_last_log_time >= 60:
+      percentage = (
+        (self._progress_processed_count / self._progress_total_to_process * 100)
+        if self._progress_total_to_process > 0 else 0
+      )
+      self.logger.info(
+        'Progress: %d/%d instances processed (%.1f%%)',
+        self._progress_processed_count, self._progress_total_to_process, percentage
+      )
+      self._progress_last_log_time = current_time
+
+  def logFinalReport(self):
+    """
+    Log final summary of instance processing.
+    """
+    elapsed_time = time.time() - self._progress_start_time
+    self.logger.info(
+      'Instance node processing completed: %d instances processed in %.1f seconds',
+      self._progress_processed_count, elapsed_time
+    )
+
   def _getUpdateList(self):
     """
     Get update list from instance-db-path.
@@ -551,23 +595,41 @@ class Recipe(object):
       len(unchanged_invalid_instances_to_process)
     )
 
+    # Calculate total instances to process
+    total_to_process = (
+      len(comparison['added']) +
+      len(comparison['modified']) +
+      len(unchanged_invalid_instances_to_process) +
+      len(comparison['removed'])
+    )
+
+    # Initialize periodic logging
+    self.initialisePeriodicLogging(total_to_process)
+
     # Process new instances
     for instance_reference in comparison['added']:
       instance_data = instance_map[instance_reference]
       instance_hash = computed_hashes[instance_reference]
       self._processInstance(instance_reference, instance_data, instance_hash, is_new=True)
+      self._progress_processed_count += 1
+      self.logIfTimePassed()
 
     # Process modified instances and unchanged invalid instances
     for instance_reference in set(comparison['modified']) | unchanged_invalid_instances_to_process:
       instance_data = instance_map[instance_reference]
       instance_hash = computed_hashes[instance_reference]
       self._processInstance(instance_reference, instance_data, instance_hash, is_new=False)
+      self._progress_processed_count += 1
+      self.logIfTimePassed()
 
     # Destroy removed instances
     for instance_reference in comparison['removed']:
       self._processDestroyedInstance(instance_reference)
+      self._progress_processed_count += 1
+      self.logIfTimePassed()
 
-    self.logger.info('Instance node processing completed')
+    # Log final summary
+    self.logFinalReport()
     self.logger.info('================================================================================')
     return []
 
