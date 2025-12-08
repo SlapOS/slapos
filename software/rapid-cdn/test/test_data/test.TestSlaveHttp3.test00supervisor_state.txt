@@ -26,9 +26,11 @@ T-2:bootstrap-monitor EXITED
 T-2:certificate_authority-{hash-generic}-on-watch RUNNING
 T-2:crond-{hash-generic}-on-watch RUNNING
 T-2:expose-csr-{hash-generic}-on-watch RUNNING
+T-2:fallback-micro-caucase-updater-on-watch RUNNING
 T-2:frontend-haproxy-rsyslogd-{hash-generic}-on-watch RUNNING
 T-2:frontend-haproxy-safe-graceful EXITED
 T-2:frontend-haproxy-{hash-generic}-on-watch RUNNING
+T-2:ip-access-micro-caucase-updater-on-watch RUNNING
 T-2:kedifa-login-certificate-caucase-updater-on-watch RUNNING
 T-2:kedifa-updater-{hash-generic}-on-watch RUNNING
 T-2:logrotate-setup-validate EXITED
