@@ -78,6 +78,11 @@ parts =
   micro-caucased
   micro-caucased-promise
 
+  self-signed-ip-acccess-micro-caucase-updater
+  self-signed-ip-acccess-micro-caucase-updater-promise
+
+  self-signed-fallback-micro-caucase-updater
+  self-signed-fallback-micro-caucase-updater-promise
 [software-py]
 recipe = software
 
@@ -210,6 +215,14 @@ trafficserver-introspection-srv = ${:srv}/trafficserver-introspection
 micro-caucased = ${:srv}/micro-caucased
 micro-caucased-backup = ${:backup}/micro-caucased
 
+micro-ssl = ${:srv}/micro-ssl
+
+self-signed-ip-access-micro-ssl = ${:micro-ssl}/self-signed-ip-access
+self-signed-ip-access-micro-ssl-caucase-updater = ${:self-signed-ip-access-micro-ssl}/caucase-updater
+
+self-signed-fallback-micro-ssl = ${:micro-ssl}/self-signed-fallback
+self-signed-fallback-micro-ssl-caucase-updater = ${:self-signed-fallback-micro-ssl}/caucase-updater
+
 [switch-frontend-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-custom-personal-profile-slave-list:output
@@ -226,45 +239,73 @@ slave-introspection-secure_access = ${slave-introspection-frontend:connection-se
 # Self Signed certificate for HTTPS IP accesses to the frontend
 recipe = plone.recipe.command
 update-command = ${:command}
+organization = {{ slapparameter_dict['cluster-identification'] }}
+organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 ipv6 = ${slap-configuration:ipv6-random}
 ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${frontend-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.crt
-{#- Can be stopped on error, as does not rely on self provided service #}
+template-csr = ${directory:self-signed-ip-access-micro-ssl}/template-csr.pem
+key = ${:certificate}
 stop-on-error = True
 command =
-  [ -f ${:certificate} ] && exit 0
-  rm -f ${:certificate}
   /bin/bash -c ' \
-  {{ software_parameter_dict['openssl'] }} req \
-     -new -newkey rsa -sha256 \
-     -nodes -x509 -days 36500 \
-     -keyout ${:certificate} \
-     -subj "/CN=Self Signed IP Access" \
-     -reqexts SAN \
-     -extensions SAN \
-     -config <(cat {{ software_parameter_dict['openssl_cnf'] }} \
-         <(printf "\n[SAN]\nsubjectAltName=IP:${:ipv6},IP:${:ipv4}")) \
-     -out ${:certificate}'
+  if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
+    {{ software_parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}" \
+      -reqexts SAN \
+      -extensions SAN \
+      -config <(cat {{ software_parameter_dict['openssl_cnf'] }} \
+          <(printf "\n[SAN]\nsubjectAltName=IP:${:ipv6},IP:${:ipv4}")) \
+      -out ${:template-csr}
+  fi
+  test -f ${:key} && test -f ${:template-csr}'
+
+{{ caucase.updater(
+     prefix='self-signed-ip-acccess-micro-caucase-updater',
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
+     updater_path='${directory:service}/self-signed-ip-access-micro-caucase-updater',
+     url=micro_caucased_url,
+     data_dir='${directory:self-signed-ip-access-micro-ssl-caucase-updater}',
+     crt_path='${self-signed-ip-access:certificate}',
+     ca_path='${directory:self-signed-ip-access-micro-ssl-caucase-updater}/ca.pem',
+     crl_path='${directory:self-signed-ip-access-micro-ssl-caucase-updater}/crl.pem',
+     key_path='${self-signed-ip-access:key}',
+     template_csr='${self-signed-ip-access:template-csr}'
+)}}
 
 [self-signed-fallback-access]
 # Self Signed certificate for HTTPS access to the frontend with fallback certificate
 recipe = plone.recipe.command
 update-command = ${:command}
-ipv6 = ${slap-configuration:ipv6-random}
-ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${frontend-directory:master-autocert-dir}/fallback-access.crt
+key = ${:certificate}
+template-csr = ${directory:self-signed-fallback-micro-ssl}/template-csr.pem
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 command =
-  [ -f ${:certificate} ] && exit 0
-  rm -f ${:certificate}
   /bin/bash -c ' \
-  {{ software_parameter_dict['openssl'] }} req \
-     -new -newkey rsa -sha256 \
-     -nodes -x509 -days 36500 \
-     -keyout ${:certificate} \
-     -subj "/CN=Fallback certificate/OU={{ instance_parameter_dict['configuration.frontend-name'] }}" \
-     -out ${:certificate}'
+  if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
+    {{ software_parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa -nodes -keyout ${:key} \
+       -keyout ${:certificate} \
+       -subj "/CN=Fallback certificate/OU={{ instance_parameter_dict['configuration.frontend-name'] }}" \
+       -out ${:template-csr}
+  fi
+  test -f ${:key} && test -f ${:template-csr}'
+
+{{ caucase.updater(
+     prefix='self-signed-fallback-micro-caucase-updater',
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
+     updater_path='${directory:service}/self-signed-fallback-micro-caucase-updater',
+     url=micro_caucased_url,
+     data_dir='${directory:self-signed-fallback-micro-ssl-caucase-updater}',
+     crt_path='${self-signed-fallback-access:certificate}',
+     ca_path='${directory:self-signed-fallback-micro-ssl-caucase-updater}/ca.pem',
+     crl_path='${directory:self-signed-fallback-micro-ssl-caucase-updater}/crl.pem',
+     key_path='${self-signed-fallback-access:key}',
+     template_csr='${self-signed-fallback-access:template-csr}'
+)}}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -502,7 +543,6 @@ pid-file = ${directory:run}/httpd.pid
 frontend-graceful-command = ${frontend-haproxy-validate:output} && kill -USR2 $(cat ${:pid-file})
 not-found-file = {{ software_parameter_dict['template_not_found_html'] }}
 master-certificate = ${frontend-directory:master-autocert-dir}/master.pem
-self-signed-fallback-certificate = ${self-signed-fallback-access:certificate}
 http-port = ${configuration:plain_http_port}
 https-port = ${configuration:port}
 # Communication with ATS
