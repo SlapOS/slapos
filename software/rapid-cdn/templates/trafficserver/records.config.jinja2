@@ -57,7 +57,12 @@ CONFIG proxy.config.exec_thread.affinity INT 1
 # Specify server addresses and ports to bind for HTTP and HTTPS. Docs:
 #    https://docs.trafficserver.apache.org/records.config#proxy.config.http.server_ports
 ##############################################################################
-CONFIG proxy.config.http.server_ports STRING {{ ats_configuration['local-ip'] + ':' + ats_configuration['input-port'] }}
+CONFIG proxy.config.http.server_ports STRING {{ ats_configuration['local-ip'] + ':' + ats_configuration['input-port'] }}:ssl
+CONFIG proxy.config.ssl.server.cert.path STRING {{ ats_configuration['certificate-path'] }}
+CONFIG proxy.config.ssl.server.private_key.path STRING {{ ats_configuration['certificate-path'] }}
+CONFIG proxy.config.ssl.client.verify.server.policy STRING ENFORCED
+CONFIG proxy.config.ssl.client.CA.cert.path STRING {{ ats_configuration['micro-ssl-ca-dir'] }}
+CONFIG proxy.config.ssl.client.CA.cert.filename STRING {{ ats_configuration['micro-ssl-ca-file'] }}
 
 ##############################################################################
 # Parent proxy configuration, in addition to these settings also see parent.config. Docs:
