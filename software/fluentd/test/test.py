@@ -530,3 +530,54 @@ class IPv4BindAddressDefaultTestCase(FluentdTestCase):
 
   def test_configuration_file(self):
     self._test_configuration('starting fluentd')
+
+
+class BufferFileChunkSizeTestCase(FluentdTestCase):
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    parameter_dict = {
+      'bind': cls.computer_partition_ipv6_address,
+      'port': cls._fluentd_port,
+      'wendelin-ingestion-url': f'http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}',
+      'username': 'foo',
+      'password': 'bar',
+      'buffer-file-chunk-limit-size': '8m'
+    }
+    return {'_': json.dumps(parameter_dict)}
+
+  @classmethod
+  def get_configuration(cls):
+    buffer_file_dir = os.path.join(cls.computer_partition_root_path, 'var', 'fluentd-buffer')
+    ca_cert_dir = os.path.join(cls.computer_partition_root_path, 'srv', 'ssl', 'certs')
+    return f'''\
+<source>
+  @type forward
+  bind {cls.computer_partition_ipv6_address}
+  port {cls._fluentd_port}
+</source>
+<match **>
+  @type wendelin
+  streamtool_uri http://[{cls.computer_partition_ipv6_address}]:{cls._wendelin_port}
+  user foo
+  password bar
+  <buffer tag,time>
+    timekey 1m
+    flush_mode interval
+    flush_interval 1m
+    flush_thread_count 4
+    @type file
+    path {buffer_file_dir}/
+    chunk_limit_size 8m
+  </buffer>
+</match>'''
+
+  @classmethod
+  def setUpClass(cls):
+    cls._fluentd_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+    cls._wendelin_port = findFreeTCPPort(cls.computer_partition_ipv6_address)
+
+    super(FluentdTestCase, cls).setUpClass()
+
+  def test_configuration_file(self):
+    self._test_configuration('starting fluentd')
