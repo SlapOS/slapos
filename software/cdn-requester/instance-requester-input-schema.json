@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Input Parameters",
+  "properties": {
+    "cdn-software-type": {
+      "title": "CDN Software Type",
+      "default": "default",
+      "description": "Software Type used for requesting the CDN slaves",
+      "type": "string"
+    },
+    "cdn-software-url": {
+      "title": "CDN Software URL",
+      "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg",
+      "description": "Software URL used for requesting the CDN slaves",
+      "type": "string"
+    }
+  },
+  "patternProperties": {
+    "^\\-sla\\-.+$": {
+      "title": "SLA Properties",
+      "description": "The content after '-sla-' is passed as an sla paramater for CDN slave request",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
