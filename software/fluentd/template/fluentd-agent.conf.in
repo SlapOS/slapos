@@ -31,5 +31,8 @@
     flush_thread_count 4
     @type file
     path {{ buffer_file_dir }}/
+    {%- if buffer_file_chunk_limit_size %}
+      chunk_limit_size {{ buffer_file_chunk_limit_size }}
+    {%- endif %}
   </buffer>
 </match>

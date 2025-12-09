@@ -57,6 +57,11 @@
       "description": "Delay after which the data buffer is flushed to the output",
       "type": "string",
       "default": "1m"
+    },
+    "buffer-file-chunk-limit-size": {
+      "title": "Buffer file chunk limit size",
+      "description": "Maximum size of each individual buffer chunk.",
+      "type": "string"
     }
   }
 }
