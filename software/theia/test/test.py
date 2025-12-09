@@ -105,6 +105,15 @@ class TheiaTestCase(SlapOSInstanceTestCase):
       else:
         raise Exception("Service %s not found" % service)
 
+  def pexpect_debug_logfile(self, logger:logging.Logger):
+    test_id = self.id()
+    class DebugLogFile:
+      def write(self, msg):
+        logger.info("test: %s output: %s", test_id, msg)
+      def flush(self):
+        pass
+    return DebugLogFile()
+
 
 class TestTheia(TheiaTestCase):
   @classmethod
@@ -201,13 +210,7 @@ class TestTheia(TheiaTestCase):
     process.setwinsize(5000, 5000)
 
     # log process output for debugging
-    logger = logging.getLogger('theia-shell')
-    class DebugLogFile:
-      def write(self, msg):
-        logger.info("output from theia-shell: %s", msg)
-      def flush(self):
-        pass
-    process.logfile = DebugLogFile()
+    process.logfile = self.pexpect_debug_logfile(logging.getLogger('theia-shell'))
 
     process.expect_exact('Standalone SlapOS for computer `slaprunner` activated')
 
@@ -496,6 +499,7 @@ class TestTheiaEnv(TheiaTestCase):
     # Start a theia shell that inherits the environment of the theia process
     # This simulates the environment of a shell launched from the browser application
     theia_shell_process = pexpect.spawnu('{}/bin/theia-shell'.format(self.getPath()), env=theia_env)
+    theia_shell_process.logfile = self.pexpect_debug_logfile(logging.getLogger('theia-shell'))
     self.addCleanup(theia_shell_process.wait)
     self.addCleanup(theia_shell_process.terminate)
 
