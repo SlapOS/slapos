@@ -300,12 +300,13 @@ class TestDataMixin(object):
   maxDiff = None
 
   def getTrimmedProcessInfo(self):
-    return '\n'.join(sorted([
+    return '\n'.join([
       '%(group)s:%(name)s %(statename)s' % q for q
       in self.callSupervisorMethod('getAllProcessInfo')
-      if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
+      if q['name'] != 'watchdog' and q['group'] != 'watchdog'])
 
-  def assertTestData(self, runtime_data, data_replacement_dict=None, msg=None):
+  def assertTestData(self, runtime_data, data_replacement_dict=None, msg=None,
+                     resort=True):
     if data_replacement_dict is None:
       data_replacement_dict = {}
     filename = '%s.txt' % (self.id(),)
@@ -326,6 +327,12 @@ class TestDataMixin(object):
       else:
         runtime_data = runtime_data.replace(value, replacement)
 
+    if resort:
+      # stabilize the comparison and output
+      def resort(s):
+        return '\n'.join(sorted(s.splitlines())).strip()
+      test_data = resort(test_data)
+      runtime_data = resort(runtime_data)
     longMessage = self.longMessage
     self.longMessage = True
     try:
@@ -335,11 +342,11 @@ class TestDataMixin(object):
         msg=msg
       )
     except AssertionError:
+      raise
+    finally:
       if os.environ.get('SAVE_TEST_DATA', '0') == '1':
         with open(test_data_file, 'w') as fh:
           fh.write(runtime_data.strip() + '\n')
-      raise
-    finally:
       self.longMessage = longMessage
 
   def _test_file_list(self, slave_dir_list, IGNORE_PATH_LIST=None):
@@ -353,7 +360,7 @@ class TestDataMixin(object):
             entry[0][len(self.instance_path) + 1:], filename)
           if not any([path.endswith(q) for q in IGNORE_PATH_LIST]):
             runtime_data.append(path)
-    runtime_data = '\n'.join(sorted(runtime_data))
+    runtime_data = '\n'.join(runtime_data)
     self.assertTestData(runtime_data)
 
   def test00file_list_log(self):
@@ -505,7 +512,8 @@ class TestDataMixin(object):
     )
     # again some mangling -- allow subclasses to update on need
     self._updateDataReplacementDict(data_replacement_dict)
-    self.assertTestData(json_data, data_replacement_dict=data_replacement_dict)
+    self.assertTestData(json_data, data_replacement_dict=data_replacement_dict,
+                        resort=False)
 
 
 def fakeSetupHeaders(headers):
@@ -2254,7 +2262,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # to have working monitor with local proxy
     with open(os.path.join(
       partition_path, 'etc', 'httpd-cors.cfg')) as fh:
-      self.assertTestData(fh.read().strip())
+      self.assertTestData(fh.read().strip(), resort=False)
 
   def test_node_information_json(self):
     node_information_file_path = glob.glob(os.path.join(
