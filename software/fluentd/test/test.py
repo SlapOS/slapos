@@ -549,7 +549,6 @@ class BufferFileChunkSizeTestCase(FluentdTestCase):
   @classmethod
   def get_configuration(cls):
     buffer_file_dir = os.path.join(cls.computer_partition_root_path, 'var', 'fluentd-buffer')
-    ca_cert_dir = os.path.join(cls.computer_partition_root_path, 'srv', 'ssl', 'certs')
     return f'''\
 <source>
   @type forward
