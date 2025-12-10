@@ -111,3 +111,4 @@ configuration.rotate-num = 4000
 configuration.slave-introspection-https-port = 22443
 configuration.expert-backend-allow-downgrade-ssl = false
 configuration.trafficserver-introspection-port = 23433
+configuration.caucase-authenticator-url =
