@@ -177,10 +177,16 @@
         ]
       }
     },
+    "websocket_url_ipv6": {
+      "$ref": "instance-enb-input-schema.json#/properties/websocket_url_ipv6"
+    },
     "lock": {
       "title": "Force reprocess",
       "description": "Expert only: change this parameter value to force reprocess of partition",
       "type": "string"
+    },
+    "monitor-interface-url": {
+      "$ref": "instance-ors-gnb-input-schema.json#/properties/monitor-interface-url"
     }
   },
   "$defs": {
