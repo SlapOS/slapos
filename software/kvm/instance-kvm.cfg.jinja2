@@ -365,16 +365,14 @@ config-filename = ${virtual-hard-drive-url-download-wrapper:error-state-file}
 
 [kvm-parameter-dict]
 recipe = slapos.recipe.build
-output = ${directory:etc}/kvm_raw.json
+location = ${directory:etc}/kvm_raw.json
 install =
-  import os
   import json
-  os.mkdir(location)
   d = {}
   for key, value in options.items():
-    if key not in ['recipe', 'output', 'install']:
+    if key not in ['recipe', 'location', 'install']:
       d[key] = value
-  with open(options['output'], 'w') as fh:
+  with open(options['location'], 'w') as fh:
     json.dump(d, fh, indent=2)
 
 ipv4 = ${slap-network-information:local-ipv4}
@@ -424,14 +422,6 @@ qemu-path =  {{ qemu_executable_location }}
 qemu-img-path = {{ qemu_img_executable_location }}
 
 etc-directory = ${directory:etc}
-disk-storage-list =
-{% for key, path in storage_dict.items() -%}
-{{ '  ' ~ key ~ ' ' ~ path }}
-{% endfor -%}
-external-disk-number = ${slap-parameter:external-disk-number}
-external-disk-size = ${slap-parameter:external-disk-size}
-external-disk-format = ${slap-parameter:external-disk-format}
-# new external-disk parameter
 external-disk = ${slap-parameter:external-disk}
 instance-root = ${buildout:directory}
 
@@ -486,7 +476,7 @@ ipv6-port = {{ external_port }}
 {% endif -%}
 
 {%- set depend_section_list = [] %}
-{%- set hash_file_list = ['${kvm-parameter-dict:output}'] %}
+{%- set hash_file_list = ['${kvm-parameter-dict:location}'] %}
 {%- macro generate_depend_section(section, key) %}
 {%-  do depend_section_list.append('${' + section + ':command}' ) %}
 {%-  do hash_file_list.append('${' + key + '}') %}
@@ -509,7 +499,7 @@ depends =
 {%- endfor %}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/kvm
-command-line = {{ python_eggs_executable }} {{ template_kvm_run }} ${kvm-parameter-dict:output}
+command-line = {{ python_eggs_executable }} {{ template_kvm_run }} ${kvm-parameter-dict:location}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files =
 {%- for hash_file in hash_file_list %}
@@ -542,9 +532,6 @@ config-command = ${kvm-disk-image-corruption-bin:output}
 {% if wipe_disk -%}
 {% do part_list.append('wipe-disk-wrapper') -%}
 {% set wipe_file_list = '${kvm-parameter-dict:disk-path}' -%}
-{% if storage_dict -%}
-{% set wipe_file_list = '${kvm-parameter-dict:disk-path}' ~ ' ' ~ '/* '.join(storage_dict.values()) ~ '/*' -%}
-{% endif -%}
 [wipe-disk-wrapper]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:prerm}/slapos_wipe_qemu_disk
@@ -818,8 +805,6 @@ url-additional = ${request-slave-frontend-additional:connection-secure_access}/v
 novnc_info = The NoVNC server is currently disabled, you need to enable it if you want to access your VM through the GUI.
 {% endif %}
 
-{% set disk_number = len(storage_dict) -%}
-maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'ens3' -%}
 {% if use_nat -%}
 {%   set iface = 'ens4' -%}
@@ -1075,9 +1060,6 @@ virtual-hard-drive-url =
 virtual-hard-drive-md5sum =
 virtual-hard-drive-gzipped = False
 
-external-disk-number = 0
-external-disk-size = 20
-external-disk-format = qcow2
 external-disk = {}
 
 # Help to get some configuration files into the vm from http
