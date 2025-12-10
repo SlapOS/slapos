@@ -90,7 +90,7 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
   def writeJson(self, filename, content):
     filepath = os.path.join(self.software_root, filename)
     with open(filepath, 'w') as f:
-      json.dump(content, f)
+      json.dump(content, f, indent=2)
     return filepath
 
   def writeSoftwareJson(self, main, shared):
@@ -198,6 +198,89 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
                 "required": ["motor"],
               }
             ]
+          },
+        ]
+      }
+    )
+
+  def writeComplexUnevaluatedPropertiesSchema(self):
+    # Check that unevaluatedProperties does not result in collecting defaults
+    # of sub-schemas that are not actually on a valid validation path.
+    return self.writeSchema(
+      'complex-unevaluated-properties',
+      {
+        # The presence of this unevaluatedProperties (whatever its value)
+        # triggers a separate validation against each sub-schema of oneOf
+        # or anyOf or allOf in any sub-schema of this current schema.
+        "unevaluatedProperties": False,
+        "type": "object",
+        "default": {},
+        "oneOf": [
+          {
+            "properties": {
+              "kind": { "const": 1 },
+              "a": {},
+            },
+          },
+          {
+            "allOf": [
+              {
+                "properties": {
+                  "kind": { "const": 2 },
+                },
+              },
+              {
+                # This sub-schema will be validated directly against its
+                # sub-instance due to the unevaluatedProperties above.
+                "properties": {
+                  "a": {
+                    # This default should not be collected when kind == 1.
+                    "default": "This default should not be collected!",
+                  },
+                },
+              }
+            ]
+          },
+        ]
+      }
+    )
+
+  def writeComplexAllOfSchema(self):
+    return self.writeSchema(
+      'complex-allof',
+      {
+        "type": "object",
+        "default": {},
+        "oneOf": [
+          {
+            "allOf": [
+              # When kind == 2, this first branch of the allOf fails.
+              # This means the allOf as a whole does not validate.
+              {
+                "properties": {
+                  "kind": { "const": 1 },
+                },
+              },
+              # But this branch succeeds. Check that it is not collected.
+              # It shouldn't be because the whole allOf does not validate.
+              {
+                "$ref": self.writeSchema(
+                  'complex-allof-ref',
+                  {
+                    "properties": {
+                      "a": {
+                        "default": "This default should not be collected!",
+                      },
+                    },
+                  },
+                )
+              }
+            ]
+          },
+          {
+            "properties": {
+              "kind": { "const": 2 },
+            },
           },
         ]
       }
@@ -409,6 +492,32 @@ class JsonSchemaTest(JsonSchemaTestCase):
     with self.patchSlap(car_parameters):
       received = self.receiveParameters({'unstringify': 'main'})
       self.assertEqual(received, car_parameters)
+
+  def test_complex_unevaluated_properties_jsonschema(self):
+    self.writeSoftwareJson(
+      [('default', self.writeComplexUnevaluatedPropertiesSchema())],
+      []
+    )
+    # Check that unevaluatedProperties does not collect defaults
+    # of sub-schemas that are not actually on a valid validation
+    # path.
+    parameters = {"kind": 1}
+    with self.patchSlap(parameters):
+      received = self.receiveParameters({'set-default': 'main'})
+      self.assertEqual(received, parameters)
+
+  def test_complex_all_of_jsonschema(self):
+    # Check that allOf branches are properly discarded, even those
+    # that validate the instance and that occur after the branches
+    # that do not.
+    self.writeSoftwareJson(
+      [('default', self.writeComplexAllOfSchema())],
+      []
+    )
+    parameters = {"kind": 2}
+    with self.patchSlap(parameters):
+      received = self.receiveParameters({'set-default': 'main'})
+      self.assertEqual(received, parameters)
 
 
 class JsonSchemaTestUnserialised(JsonSchemaTest):
