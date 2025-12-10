@@ -54,9 +54,9 @@ from slapos.slap.standalone import SlapOSNodeCommandError
 from slapos.testing.utils import findFreeTCPPort
 
 # To be in sync with component/vm-img/debian.cfg
-DEFAULT_IMAGE_ISONAME = 'debian-12.12.0-amd64-netinst.iso'
-DEFAULT_IMAGE_TITLE = 'Debian Bookworm 12 netinst x86_64'
-DEFAULT_IMAGE_MD5SUM = 'fed10490abd508da793071df57e9cb70'
+DEFAULT_IMAGE_ISONAME = 'debian-13.1.0-amd64-netinst.iso'
+DEFAULT_IMAGE_TITLE = 'Debian Trixie 13 netinst x86_64'
+DEFAULT_IMAGE_MD5SUM = 'a9d5c5778f6e228af1e462d717a6d544'
 ##
 
 has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
