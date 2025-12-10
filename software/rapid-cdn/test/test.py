@@ -29,6 +29,7 @@ import backend
 import glob
 import os
 from recurls import Recurls, CurlException
+from recurls import dict2HTTPMessage as d2h
 import http.client
 import json
 import io
@@ -509,8 +510,11 @@ class TestDataMixin(object):
 
 def fakeSetupHeaders(headers):
   if headers is None:
-    headers = {}
-  default_header_dict = {
+    headers = http.client.HTTPMessage()
+  elif isinstance(headers, dict):
+    headers = d2h(headers)
+  assert isinstance(headers, http.client.HTTPMessage)
+  for header_name, header_value in {
     # workaround request problem of setting Accept-Encoding
     # https://github.com/requests/requests/issues/2234
     'Accept-Encoding': 'dummy',
@@ -520,9 +524,9 @@ def fakeSetupHeaders(headers):
     'X-Forwarded-Port': '17',
     # Expose some Via to show how nicely it arrives to the backend
     'Via': 'http/1.1 clientvia'
-  }
-  for header_name, header_value in default_header_dict.items():
-    headers.setdefault(header_name, header_value)
+  }.items():
+    if header_name not in headers:
+      headers.add_header(header_name, header_value)
   return headers
 
 
@@ -557,7 +561,8 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
                    headers=None, source_ip=SOURCE_IP, verb='GET',
                    timeout=None):
   headers = fakeSetupHeaders(headers)
-  headers.setdefault('Host', '%s:%s' % (domain, port))
+  if 'Host' not in headers:
+    headers['Host'] = '%s:%s' % (domain, port)
   url = 'http://%s:%s/%s' % (TEST_IP, port, path)
   return mimikra.request(
     verb,
@@ -1330,7 +1335,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       config_result = mimikra.config(
         backend_url,
         verify=None,
-        headers={
+        headers=d2h({
           'X-Config-Global': '1',
           'X-Config-Body': 'calculate',
           'X-Config-Reply-Header-Server': 'TestBackend',
@@ -1338,7 +1343,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
           'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
           'X-Config-Reply-Header-Set-Cookie':
           'secured=value;secure, nonsecured=value',
-        }
+        })
       )
       assert config_result.status_code == http.client.CREATED
     for backend_url in [
@@ -1347,7 +1352,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     ]:
       config_result = mimikra.config(
         backend_url,
-        headers={
+        headers=d2h({
           'X-Config-Global': '1',
           'X-Config-Body': 'calculate',
           'X-Config-Reply-Header-Server': 'TestBackend',
@@ -1356,7 +1361,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
           'X-Config-Reply-Header-Set-Cookie':
           'secured=value;secure, nonsecured=value',
           'X-Config-Reply-Header-X-Backend-Identification': 'netloc',
-        }
+        })
       )
       assert config_result.status_code == http.client.CREATED
 
@@ -2585,26 +2590,26 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     big_timeout_text = "Big timeout"
     mimikra.config(
       self.backend_url.rstrip('/') + '?a=b&c=' + '/small-timeout',
-      headers={
+      headers=d2h({
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Body-Timeout': str(small_timeout),
         'X-Config-Reply-Header-Content-Length': 'calculate',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
         'X-Config-Reply-Header-Set-Cookie':
         'secured=value;secure, nonsecured=value',
-      },
+      }),
       data=small_timeout_text,
     )
     mimikra.config(
       self.backend_url.rstrip('/') + '?a=b&c=' + '/big-timeout',
-      headers={
+      headers=d2h({
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Body-Timeout': str(big_timeout),
         'X-Config-Reply-Header-Content-Length': 'calculate',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
         'X-Config-Reply-Header-Set-Cookie':
         'secured=value;secure, nonsecured=value',
-      },
+      }),
       data=big_timeout_text,
     )
     small_timeout_result = fakeHTTPSResult(
@@ -2726,13 +2731,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         self.backend_https_auth_url,
         certificate=frontend_backend_client_cert,
         verify=False,
-        headers={
+        headers=d2h({
           'X-Config-Global': '1',
           'X-Config-Body': 'calculate',
           'X-Config-Reply-Header-Server': 'TestBackend',
           'X-Config-Reply-Header-Content-Length': 'calculate',
           'X-Config-Reply-Header-X-Backend-Identification': 'Auth Backend',
-        }
+        })
       )
       self.assertEqual(config_result.status_code, http.client.CREATED)
       # assert that you can't fetch nothing without key
@@ -2857,10 +2862,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     config_result = mimikra.config(
       self.backend_url.rstrip('/') + '?a=b&c=' + path,
       data=data_compressed,
-      headers={
+      headers=d2h({
         'X-Config-Reply-Header-Content-Encoding': 'gzip',
         'X-Config-Reply-Header-Content-Length': 'calculate',
-      }
+      })
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
     result_compressed = fakeHTTPSResult(
@@ -2894,13 +2899,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     path = '/test_no_content_type_alter'
     config_result = mimikra.config(
       self.backend_url.rstrip('/') + '?a=b&c=' + path,
-      headers={
+      headers=d2h({
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Content-Length': 'calculate',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
         'X-Config-Reply-Header-Set-Cookie':
         'secured=value;secure, nonsecured=value',
-      },
+      }),
       data="""<?xml version="1.0" encoding="UTF-8"?>
 <note>
   <to>Tove</to>
@@ -4078,14 +4083,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     config_result = mimikra.config(
       self.backend_url + 'test_enable_cache_custom_domain',
-      headers={
+      headers=d2h({
         'X-Config-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Content-Length': 'calculate',
-      }
+      })
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
@@ -4116,7 +4121,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     path = '/enable_cache_server_alias'
     config_result = mimikra.config(
       self.backend_url.rstrip('/') + path,
-      headers={
+      headers=d2h({
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Content-Length': 'calculate',
@@ -4125,7 +4130,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'secured=value;secure, nonsecured=value',
         'X-Config-Reply-Header-Cache-Control':
         'max-age=1, stale-while-revalidate=3600, stale-if-error=3600'
-      }
+      })
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(parameter_dict['domain'], path)
@@ -4165,14 +4170,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     config_result = mimikra.config(
       self.backend_url + 'test_enable_cache_https_only_false',
-      headers={
+      headers=d2h({
         'X-Config-Reply-Header-Cache-Control':
         'max-age=1, stale-while-revalidate=3600, stale-if-error=3600',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Content-Length': 'calculate',
-      }
+      })
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
@@ -4194,14 +4199,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     config_result = mimikra.config(
       self.backend_url + 'test_enable_cache_https_only_false' + '/HTTP',
-      headers={
+      headers=d2h({
         'X-Config-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Content-Length': 'calculate',
-      }
+      })
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPResult(
@@ -4229,14 +4234,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     source_ip = '127.0.0.1'
     config_result = mimikra.config(
       self.backend_url + 'cached',
-      headers={
+      headers=d2h({
         'X-Config-Reply-Header-Cache-Control': 'max-age=1, stale-while-'
         'revalidate=3600, stale-if-error=3600',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Content-Length': 'calculate',
-      }
+      })
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
@@ -4474,13 +4479,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     def configureResult(status_code, body):
       backend_url = self.getSlaveParameterDictDict()['enable_cache']['url']
       result = mimikra.config(
-        backend_url + path, data=body, headers={
+        backend_url + path, data=body, headers=d2h({
           'X-Config-Reply-Header-Cache-Control':
           'max-age=%s, public' % (max_age,),
           'X-Config-Status-Code': status_code,
           'X-Config-Reply-Header-Content-Length': 'calculate',
           'Content-Length': str(len(body)),
-        })
+        }))
       self.assertEqual(result.status_code, http.client.CREATED)
 
     def checkResult(status_code, body):
@@ -4587,7 +4592,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     big_timeout = self.request_timeout + 5
     config_result = mimikra.config(
       self.backend_url + 'test_enable_cache_ats_timeout',
-      headers={
+      headers=d2h({
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Cache-Control':
         'max-age=1, stale-while-revalidate=3600, stale-if-error=3600',
@@ -4595,7 +4600,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
         'X-Config-Response-Timeout': str(big_timeout),
         'X-Config-Reply-Header-Content-Length': 'calculate',
-      }
+      })
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
     # check that timeout seen by ATS does not result in many queries done
@@ -4676,12 +4681,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     config_result = mimikra.config(
       self.backend_url + 'enable_cache-disable-no-cache-request',
-      headers={
+      headers=d2h({
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Content-Length': 'calculate',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
-      }
+      })
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
@@ -4720,14 +4725,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     config_result = mimikra.config(
       self.backend_url + 'enable_cache-disable-via-header',
-      headers={
+      headers=d2h({
         'X-Config-Reply-Header-Cache-Control':
         'max-age=1, stale-while-revalidate=3600, stale-if-error=3600',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Content-Length': 'calculate',
-      }
+      })
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
     result = fakeHTTPSResult(
@@ -5275,7 +5280,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     with_date_path = '/with_date'
     specific_date = 'Fri, 07 Dec 2001 00:00:00 GMT'
     result_configure = mimikra.config(
-      backend_url.rstrip('/') + with_date_path, headers={
+      backend_url.rstrip('/') + with_date_path, headers=d2h({
         'X-Config-Reply-Header-Date': specific_date,
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Server': 'TestBackend',
@@ -5283,7 +5288,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
         'X-Config-Reply-Header-Set-Cookie':
         'secured=value;secure, nonsecured=value',
-      })
+      }))
     self.assertEqual(result_configure.status_code, http.client.CREATED)
 
     result_normal = fakeHTTPSResult(parameter_dict['domain'], normal_path)
@@ -5533,10 +5538,10 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     cls.re6st_test_url = '%sre6st.html' % (cls.backend_url,)
     config_result = mimikra.config(
       cls.re6st_test_url,
-      headers={
+      headers=d2h({
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Content-Length': 'calculate',
-      }
+      })
     )
     assert config_result.status_code == http.client.CREATED
 
@@ -7624,9 +7629,9 @@ backend _health-check-default-http
       ]:
         result = mimikra.config(
           self.backend_url + url + path,
-          headers={
+          headers=d2h({
             'X-Config-Status-Code': '503',
-          },
+          }),
           data=body_failover.encode())
         self.assertEqual(result.status_code, http.client.CREATED)
 
@@ -7635,13 +7640,13 @@ backend _health-check-default-http
         'health-check-failover-url']['https-url']
       result = mimikra.config(
         '/'.join([backend_url, cached_path]),
-        headers={
+        headers=d2h({
           'X-Config-Reply-Header-Cache-Control': 'max-age=%s, public' % (
             max_age,),
           'X-Config-Status-Code': status_code,
           # no Content-Length header to ensure
           # https://github.com/apache/trafficserver/issues/7880
-        },
+        }),
         data=body.encode())
       self.assertEqual(result.status_code, http.client.CREATED)
 
@@ -7667,14 +7672,14 @@ backend _health-check-default-http
     result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
-      headers={'X-Config-Status-Code': '502'})
+      headers=d2h({'X-Config-Status-Code': '502'}))
     self.assertEqual(result.status_code, http.client.CREATED)
 
     def restoreBackend():
       result = mimikra.config(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
-        headers={})
+        headers=d2h({}))
       self.assertEqual(result.status_code, http.client.CREATED)
     self.addCleanup(restoreBackend)
 
@@ -7737,7 +7742,7 @@ backend _health-check-default-http
     result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
-      headers={'X-Config-Status-Code': '502'})
+      headers=d2h({'X-Config-Status-Code': '502'}))
     self.assertEqual(result.status_code, http.client.CREATED)
     self.assertEqual(result.status_code, http.client.CREATED)
 
@@ -7745,7 +7750,7 @@ backend _health-check-default-http
       result = mimikra.config(
         self.backend_url + slave_parameter_dict[
           'health-check-http-path'].strip('/'),
-        headers={})
+        headers=d2h({}))
       self.assertEqual(result.status_code, http.client.CREATED)
     self.addCleanup(restoreBackend)
 
@@ -7772,13 +7777,13 @@ backend _health-check-default-http
       self.backend_https_auth_url,
       certificate=frontend_backend_client_cert,
       verify=False,
-      headers={
+      headers=d2h({
         'X-Config-Global': '1',
         'X-Config-Body': 'calculate',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Content-Length': 'calculate',
         'X-Config-Reply-Header-X-Backend-Identification': 'Auth Backend',
-      }
+      })
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
     # assert that you can't fetch nothing without key
@@ -7798,7 +7803,7 @@ backend _health-check-default-http
     result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
-      headers={'X-Config-Status-Code': '502'})
+      headers=d2h({'X-Config-Status-Code': '502'}))
     self.assertEqual(result.status_code, http.client.CREATED)
 
     time.sleep(3)  # > health-check-timeout + health-check-interval
@@ -7831,7 +7836,7 @@ backend _health-check-default-http
     result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
-      headers={'X-Config-Status-Code': '502'})
+      headers=d2h({'X-Config-Status-Code': '502'}))
     self.assertEqual(result.status_code, http.client.CREATED)
 
     time.sleep(3)  # > health-check-timeout + health-check-interval
@@ -7860,7 +7865,7 @@ backend _health-check-default-http
     result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
-      headers={'X-Config-Status-Code': '502'})
+      headers=d2h({'X-Config-Status-Code': '502'}))
     self.assertEqual(result.status_code, http.client.CREATED)
 
     time.sleep(3)  # > health-check-timeout + health-check-interval
@@ -7890,7 +7895,7 @@ backend _health-check-default-http
     result = mimikra.config(
       self.backend_url + slave_parameter_dict[
         'health-check-http-path'].strip('/'),
-      headers={'X-Config-Status-Code': '502'})
+      headers=d2h({'X-Config-Status-Code': '502'}))
     self.assertEqual(result.status_code, http.client.CREATED)
 
     time.sleep(3)  # > health-check-timeout + health-check-interval
