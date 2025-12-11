@@ -10,8 +10,9 @@
           "title": "Boot image",
           "description": "Selectable list of provided ISO images.",
           "type": "string",
-          "default": "Debian Bookworm 12 netinst x86_64",
+          "default": "Debian Trixie 13 netinst x86_64",
           "enum": [
+            "Debian Trixie 13 netinst x86_64",
             "Debian Bookworm 12 netinst x86_64",
             "Debian Bullseye 11 netinst x86_64",
             "Centos 8.2004 Minimal x86_64",
