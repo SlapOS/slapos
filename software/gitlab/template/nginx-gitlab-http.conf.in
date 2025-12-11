@@ -229,3 +229,30 @@ server {
   }
 
 }
+
+server {
+
+  listen [{{ backend_info.host }}]:{{ backend_info['prometheus-port'] }}{% if cfg_https %} ssl http2{% endif %};
+
+  server_name prometheus;
+  server_tokens off;
+
+  access_log  {{ nginx.log }}/prometheus_access.log gitlab_access;
+  error_log   {{ nginx.log }}/prometheus_error.log;
+
+  {% if cfg_https %}
+  ssl_certificate {{ nginx.cert_file }};
+  ssl_certificate_key {{ nginx.key_file }};
+  {% endif %}
+
+  location / {
+    proxy_set_header    Host                $http_host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    {% if cfg_https %}
+    proxy_set_header    X-Forwarded-Ssl     on;
+    {% endif %}
+    proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
+    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
+    proxy_pass          http://{{ prometheus.host }}:{{ prometheus.port }};
+  }
+}

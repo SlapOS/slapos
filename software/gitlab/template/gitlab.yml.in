@@ -537,6 +537,50 @@ production: &base
   git:
     bin_path: {{ git }}
 
+  ## Monitoring
+  # Built in monitoring settings
+  monitoring:
+    # IP whitelist to access monitoring endpoints
+    ip_whitelist:
+      - {{ prometheus.host }}
+
+    # Sidekiq exporter is a dedicated Prometheus metrics server optionally running alongside Sidekiq.
+    sidekiq_exporter:
+      enabled: true
+      log_enabled: true
+      address: {{ prometheus.host }}
+      port: {{ prometheus['sidekiq-port'] }}
+    #  tls_enabled: false
+    #  tls_cert_path: /path/to/cert.pem
+    #  tls_key_path: /path/to/key.pem
+
+    sidekiq_health_checks:
+      enabled: true
+      address: {{ sidekiq['health-checks-port'] }}
+      port: {{ sidekiq['health-checks-port'] }}
+
+    # Web exporter is a dedicated Prometheus metrics server optionally running alongside Puma.
+    web_exporter:
+      enabled: true
+      address: {{ prometheus.host }}
+      port: {{ prometheus['puma-port'] }}
+    #  tls_enabled: false
+    #  tls_cert_path: /path/to/cert.pem
+    #  tls_key_path: /path/to/key.pem
+
+  ## Prometheus settings
+  # Do not modify these settings here. They should be modified in /etc/gitlab/gitlab.rb
+  # if you installed GitLab via Omnibus.
+  # If you installed from source, you need to install and configure Prometheus
+  # yourself, and then update the values here.
+  # https://docs.gitlab.com/ee/administration/monitoring/prometheus/
+  prometheus:
+    enabled: true
+    server_address: '{{ prometheus.host }}:{{ prometheus.port }}'
+  snowplow_micro:
+    enabled: true
+    address: '127.0.0.1:9091'
+
   #
   # 5. Extra customization
   # ==========================
