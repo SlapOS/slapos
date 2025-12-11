@@ -7,6 +7,12 @@
 {%-   if slave['ciphers'] %}
 {%-     do sslbindconf.append('ciphers %s' % (slave['ciphers']),) %}
 {%-   endif %}
+{%-   if slave['ca-file'] %}
+{%-     do sslbindconf.append('ca-file %s' % (slave['ca-file']),) %}
+{%-     if slave['crl-file'] %}
+{%-       do sslbindconf.append('crl-file %s' % (slave['crl-file']),) %}
+{%-     endif %}
+{%-   endif %}
 {%-   do sslbindconf.append(slave['alpn']) %}
 {%-   do entry_list.append('[' + ' '.join(sslbindconf) + ']') %}
 {#-   <snifilter> #}
