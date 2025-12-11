@@ -13,7 +13,7 @@ parts =
 
 #   gitlab-<prog>
 # ? mailroom
-{% set gitlab_progv = 'rails rake puma sidekiq puma-startup' .split() %}
+{% set gitlab_progv = 'rails rake puma puma-startup' .split() %}
 {% for prog in gitlab_progv %}
     gitlab-{{ prog }}
 {% endfor %}
@@ -38,6 +38,8 @@ parts =
     logrotate-entry-cron
 
     gitaly-socket-listening-promise
+    service-prometheus
+    promise-prometheus
 
 # std stuff for slapos instance
 eggs-directory = {{ eggs_directory }}
@@ -85,6 +87,7 @@ url     = ${instance-parameter:configuration.external_url}
 [backend-info]
 host    = ${instance-parameter:ipv6-random}
 port    = 7777
+prometheus-port = 7790
 # whether to use http or https - determined by external url
 url     = ${external-url:scheme}://[${:host}]:${:port}
 
@@ -154,7 +157,6 @@ log     = ${gitlab-dir:log}
 var     = ${gitlab-dir:var}
 tmp     = ${gitlab-dir:tmp}
 uploads = ${gitlab-dir:uploads}
-#assets  = XX{gitlab-dir:assets}
 shared  = ${gitlab-dir:shared}
 artifacts = ${gitlab-dir:artifacts}
 lfs-objects = ${gitlab-dir:lfs-objects}
@@ -200,6 +202,17 @@ internal_socket = ${gitaly-dir:internal}
 basedir = ${gitaly-dir:gitaly}
 num_workers = 2
 
+[prometheus-dir]
+recipe = slapos.cookbook:mkdirectory
+data = ${directory:var}/prometheus
+multiproc = ${:data}/multiproc
+
+[prometheus]
+host = ${instance-parameter:ipv4-random}
+port = 9090
+puma-port = 8083
+sidekiq-port = 8082
+
 [gitaly-socket-listening-promise]
 <= monitor-promise-base
 promise = check_socket_listening
@@ -237,6 +250,12 @@ url = {{ database_yml_in }}
 context-extra =
     section pgsql                   service-postgresql
 
+[prometheus.yml]
+<= gitlab-etc-template
+url = {{ prometheus_yml_in }}
+context-extra =
+    section prometheus                   prometheus
+
 [gitconfig]
 <= etc-template
 url = {{ gitconfig_in }}
@@ -266,6 +285,8 @@ context-extra =
     section gitlab_shell_work       gitlab-shell-work
     section gitlab_workhorse        gitlab-workhorse
     section gitaly                  gitaly
+    section sidekiq                 sidekiq
+    section prometheus              prometheus
 
 [nginx.conf]
 <= nginx-etc-template
@@ -283,6 +304,7 @@ context-extra =
     section nginx                   nginx
     section gitlab_work             gitlab-work
     section gitlab_workhorse        gitlab-workhorse
+    section prometheus              prometheus
 
 [gitaly-config.toml]
 <= etc-template
@@ -333,6 +355,7 @@ environment  =
     HOME = ${directory:home}
     RAILS_ENV = production
     SIDEKIQ_MEMORY_KILLER_MAX_RSS = ${instance-parameter:configuration.sidekiq_memory_killer_max_rss}
+    prometheus_multiproc_dir=${prometheus-dir:multiproc}
 
 command-line =
     {{ bundler_4gitlab }} exec sh -c
@@ -343,6 +366,10 @@ command-line =
 <= gitlab-bin
 prog    = {{ prog }}
 {% endfor %}
+
+[gitlab-sidekiq]
+<= gitlab-bin
+prog    = bin/sidekiq-cluster
 
 
 [gitlab-puma-startup]
@@ -716,6 +743,9 @@ log     = ${directory:log}/sidekiq
 
 [sidekiq]
 log     = ${sidekiq-dir:log}
+health-checks-port = 8092
+health-checks-host = ${instance-parameter:ipv4-random}
+
 
 # NOTE see queue list here:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/Procfile
@@ -738,18 +768,22 @@ command-line    =
     -e production
     -r ${gitlab-work:location}
     -t ${instance-parameter:configuration.sidekiq_shutdown_timeout}
-    -c ${instance-parameter:configuration.sidekiq_concurrency}
-    -L ${sidekiq:log}/sidekiq.log
+    --max-concurrency ${instance-parameter:configuration.sidekiq_concurrency}
+    *
 
-    -C ${gitlab-work:location}/config/sidekiq_queues.yml
-
-depend  =
+depends  =
     ${promise-sidekiq:recipe}
+    ${promise-sidekiq-liveness:recipe}
     ${logrotate-entry-sidekiq:recipe}
 
 [promise-sidekiq]
 <= promise-rakebase
 command-line    = ${:rake} gitlab:sidekiq:check
+
+[promise-sidekiq-liveness]
+<= promise-byurl
+config-url     = http://${sidekiq:health-checks-host}:${sidekiq:health-checks-port}/liveness
+promise        = check_url_available
 
 [logrotate-entry-sidekiq]
 <= logrotate-entry-base
@@ -920,3 +954,23 @@ environment =
 
 # Promise, gitlab can connect to gitaly:
 # sudo gitlab-rake gitlab:tcp_check[GITALY_SERVER_IP,GITALY_LISTEN_PORT]
+
+
+###############################
+#   Prometheus and Metrics    #
+###############################
+[service-prometheus]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:service}/prometheus
+command-line    = {{ prometheus_location }}/prometheus
+        --config.file=${prometheus.yml:output}
+        --web.listen-address="${prometheus:host}:${prometheus:port}"
+        --storage.tsdb.path=${prometheus-dir:data}
+        --storage.tsdb.retention.time=7d
+        --storage.tsdb.retention.size=4GB
+        --log.level=info
+
+[promise-prometheus]
+<= promise-byurl
+config-url     = http://${prometheus:host}:${prometheus:port}
+promise = check_url_available
