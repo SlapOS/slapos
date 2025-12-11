@@ -47,6 +47,9 @@ defaults
   http-request add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
   # setup X-Forwarded-For
   http-request set-header X-Forwarded-For "%ci"
+  # remove Remote-User header this header should only be set
+  # via ssl authentication
+  http-request del-header Remote-User
 {%- endmacro %}
 frontend http-frontend
   bind {{ configuration['local-ipv4'] }}:{{ configuration['http-port'] }}
