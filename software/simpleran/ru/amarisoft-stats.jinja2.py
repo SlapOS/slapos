@@ -21,19 +21,20 @@ class enbWebSocket:
         self.logger.addHandler(handler)
 
         self.ws_url = "{{ ws_url }}"
-        self.ws_password = "{{ ws_password }}"
         self.ws = create_connection(self.ws_url)
 
         # Password authentication
-        data = json.loads(self.ws.recv())
-        res = hmac.new(
-          "{}:{}:{}".format(data['type'], self.ws_password, data['name']).encode(),
-          msg=data['challenge'].encode(),
-          digestmod=hashlib.sha256
-        ).hexdigest()
-        msg = {"message": "authenticate", "res": res}
-        self.ws.send(json.dumps(msg))
-        self.ws.recv()
+        if {{ enable_password }}:
+          self.ws_password = "{{ ws_password }}"
+          data = json.loads(self.ws.recv())
+          res = hmac.new(
+            "{}:{}:{}".format(data['type'], self.ws_password, data['name']).encode(),
+            msg=data['challenge'].encode(),
+            digestmod=hashlib.sha256
+          ).hexdigest()
+          msg = {"message": "authenticate", "res": res}
+          self.ws.send(json.dumps(msg))
+          self.ws.recv()
 
     def close(self):
         self.ws.close()
