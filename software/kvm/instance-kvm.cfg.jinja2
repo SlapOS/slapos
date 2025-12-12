@@ -22,7 +22,7 @@
 {% if 'boot-image-url-select' not in slapparameter_dict and ('boot-image-url-list' in slapparameter_dict or 'nbd-host' in slapparameter_dict or 'nbd2-host' in slapparameter_dict or virtual_hard_drive_url_enabled)%}
 {%   set boot_image_url_select_default = '' %}
 {% else %}
-{%   set boot_image_url_select_default = 'Debian Bookworm 12 netinst x86_64' %}
+{%   set boot_image_url_select_default = 'Debian Trixie 13 netinst x86_64' %}
 {% endif %}
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url') -%}
 {% set extends_list = [] -%}
