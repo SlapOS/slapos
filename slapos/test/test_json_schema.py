@@ -40,15 +40,7 @@ def createInstanceParameterSchemaValidatorTest(path):
   # Test that json is a valid json schema, supports several
   # validator, depending on the `$schema` defined in the json.
   validator_dict = {
-    "http://json-schema.org/draft-03/schema#": jsonschema.Draft3Validator,
-    "http://json-schema.org/draft-04/schema": jsonschema.Draft4Validator,
-    "http://json-schema.org/draft-04/schema#": jsonschema.Draft4Validator,
-    "http://json-schema.org/draft-06/schema#": jsonschema.Draft6Validator,
-    "http://json-schema.org/draft-07/schema#": jsonschema.Draft7Validator,
-    "https://json-schema.org/draft/2019-09/schema": jsonschema.Draft201909Validator,
-    "https://json-schema.org/draft/2019-09/schema#": jsonschema.Draft201909Validator,
     "https://json-schema.org/draft/2020-12/schema": jsonschema.Draft202012Validator,
-    "https://json-schema.org/draft/2020-12/schema#": jsonschema.Draft202012Validator,
   }
   def run(self, *args, **kwargs):
     with open(path, "r") as json_file:
