@@ -3,7 +3,7 @@
   "description": "Parameters to instantiate Wendelin",
   "type": "object",
   "additionalProperties": false,
-  "definitions": {
+  "$defs": {
     "routing-rule-list": {
       "description": "Maps the path received in requests to given zope path. Rules are applied in the order they are given, after 'internal-path' from 'frontend' parameter. This also supports legacy frontends, using Rapid CDN with \"zope\" type.",
       "type": "array",
@@ -309,7 +309,7 @@
             "port-base": {
               "allOf": [
                 {
-                  "$ref": "#/definitions/tcpv4port"
+                  "$ref": "#/$defs/tcpv4port"
                 },
                 {
                   "description": "Start allocating ports at this value. Useful if one needs to make several partitions share the same port range (ie, several partitions bound to a single address)",
@@ -409,7 +409,7 @@
         "tcpv4-port": {
           "allOf": [
             {
-              "$ref": "#/definitions/tcpv4port"
+              "$ref": "#/$defs/tcpv4port"
             },
             {
               "description": "Start allocating ports at this value, going upward"
@@ -753,7 +753,7 @@
       "description": "HTTP(S) load balancer proxy parameters",
       "properties": {
         "path-routing-list": {
-          "$ref": "#/definitions/routing-rule-list",
+          "$ref": "#/$defs/routing-rule-list",
           "title": "Global path routing rules"
         },
         "family-path-routing-dict": {
@@ -762,7 +762,7 @@
           "description": "Applied, only for the eponymous family, before global path routing rules.",
           "patternProperties": {
             ".+": {
-              "$ref": "#/definitions/routing-rule-list"
+              "$ref": "#/$defs/routing-rule-list"
             }
           }
         },
