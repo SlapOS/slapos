@@ -1,9 +1,9 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Parameters to instantiate Wendelin",
   "type": "object",
   "additionalProperties": false,
-  "definitions": {
+  "$defs": {
     "routing-rule-list": {
       "description": "Maps the path received in requests to given zope path. Rules are applied in the order they are given, after 'internal-path' from 'frontend' parameter. This also supports legacy frontends, using Rapid CDN with \"zope\" type.",
       "type": "array",
@@ -17,7 +17,7 @@
         "type": "array",
         "minItems": 2,
         "maxItems": 2,
-        "items": [
+        "prefixItems": [
           {
             "title": "External path",
             "description": "Path as received from the outside world, based on VirtualHostRoot element.",
@@ -299,9 +299,9 @@
                   "pattern": "^[0-9]+(KB|MB|GB)$",
                   "description": "The value of form variables of type file with larger size are stored on disk rather than in memory.",
                   "default": "4KB"
-                },
-                "additionalProperties": false
+                }
               },
+              "additionalProperties": false,
               "default": {
                 "form-memory-limit": "10MB"
               }
@@ -309,7 +309,7 @@
             "port-base": {
               "allOf": [
                 {
-                  "$ref": "#/definitions/tcpv4port"
+                  "$ref": "#/$defs/tcpv4port"
                 },
                 {
                   "description": "Start allocating ports at this value. Useful if one needs to make several partitions share the same port range (ie, several partitions bound to a single address)",
@@ -409,7 +409,7 @@
         "tcpv4-port": {
           "allOf": [
             {
-              "$ref": "#/definitions/tcpv4port"
+              "$ref": "#/$defs/tcpv4port"
             },
             {
               "description": "Start allocating ports at this value, going upward"
@@ -500,7 +500,7 @@
           ".!$": {
             "description": "Override with the value of the first item whose zope id matches against the pattern.",
             "items": {
-              "items": [
+              "prefixItems": [
                 {
                   "description": "Override pattern (Python regular expression).",
                   "type": "string"
@@ -753,7 +753,7 @@
       "description": "HTTP(S) load balancer proxy parameters",
       "properties": {
         "path-routing-list": {
-          "$ref": "#/definitions/routing-rule-list",
+          "$ref": "#/$defs/routing-rule-list",
           "title": "Global path routing rules"
         },
         "family-path-routing-dict": {
@@ -762,7 +762,7 @@
           "description": "Applied, only for the eponymous family, before global path routing rules.",
           "patternProperties": {
             ".+": {
-              "$ref": "#/definitions/routing-rule-list"
+              "$ref": "#/$defs/routing-rule-list"
             }
           }
         },
