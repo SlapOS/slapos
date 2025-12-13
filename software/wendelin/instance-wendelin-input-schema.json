@@ -299,9 +299,9 @@
                   "pattern": "^[0-9]+(KB|MB|GB)$",
                   "description": "The value of form variables of type file with larger size are stored on disk rather than in memory.",
                   "default": "4KB"
-                },
-                "additionalProperties": false
+                }
               },
+              "additionalProperties": false,
               "default": {
                 "form-memory-limit": "10MB"
               }
