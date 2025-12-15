@@ -363,32 +363,33 @@ class Recipe(object):
 
     return self._computer_partition
 
-  def _publishConnectionParameters(self, instance_reference, conn_params):
+  def _shouldPublishInformation(self, instance_reference, publish_information):
     """
-    Publish connection parameters for an instance using the slap library.
-    Parameters are published to the SlapOS master for the specified slave instance.
-    Only publishes if the parameters are different from what was previously published.
+    Check if publish_information should be published by comparing with stored json_error.
 
     Args:
-      instance_reference: Reference name for the instance (used as slave_reference)
-      conn_params: Dict of connection parameters or validation instructions
-    """
-    if not conn_params:
-      return
+      instance_reference: Reference name for the instance
+      publish_information: Dict of information to publish (connection parameters or error info)
 
-    # Check if we've already published the same connection parameters
+    Returns:
+      True if information should be published (different from stored), False otherwise
+    """
+    if not publish_information:
+      return False
+
+    # Check if we've already published the same information
     # by comparing with what's stored in the database
     try:
       stored_instance = self.requestinstance_db.getInstance(instance_reference)
       try:
-        stored_conn_params = json.loads(stored_instance['json_error'])
+        stored_info = json.loads(stored_instance['json_error'])
         # Compare dictionaries (order-independent comparison)
-        if stored_conn_params == conn_params:
+        if stored_info == publish_information:
           self.logger.debug(
-            'Connection parameters for instance %s unchanged, skipping publish',
+            'Information for instance %s unchanged, skipping publish',
             instance_reference
           )
-          return
+          return False
       except (ValueError, TypeError):
         # If json_error can't be parsed, treat as different and publish
         pass
@@ -398,6 +399,70 @@ class Recipe(object):
         'Could not retrieve stored instance %s for comparison: %s',
         instance_reference, e
       )
+
+    return True
+
+  def publishInstanceInformation(self, instance_reference, publish_information):
+    """
+    Publish instance information (connection parameters) for a successfully deployed instance.
+    Called when an instance has been successfully deployed and validated.
+    Can be overridden by subclasses to customize information publishing behavior.
+
+    Args:
+      instance_reference: Reference name for the instance
+      publish_information: Dict of connection parameters or instance information
+    """
+    # Check if we need to publish (information has changed)
+    if not self._shouldPublishInformation(instance_reference, publish_information):
+      return
+
+    # Publish connection parameters
+    self._publishConnectionParameters(instance_reference, publish_information)
+
+  def publishInstanceErrorInformation(self, instance_reference, publish_information):
+    """
+    Publish error/validation information for an instance.
+    Called when an instance fails validation or deployment.
+    Can be overridden by subclasses to customize error publishing behavior.
+
+    Args:
+      instance_reference: Reference name for the instance
+      publish_information: Dict of error information or validation instructions
+    """
+    # Check if we need to publish (information has changed)
+    if not self._shouldPublishInformation(instance_reference, publish_information):
+      return
+
+    # Publish connection parameters (error information)
+    self._publishConnectionParameters(instance_reference, publish_information)
+
+    # Also call computer_partition.error() to notify the master about the error
+    try:
+      computer_partition = self._getComputerPartition()
+      computer_partition.error(publish_information, slave_reference=instance_reference)
+      self.logger.debug(
+        'Published error information for instance %s',
+        instance_reference
+      )
+    except Exception as e:
+      self.logger.warning(
+        'Failed to publish error information for instance %s: %s',
+        instance_reference, e
+      )
+
+  def _publishConnectionParameters(self, instance_reference, conn_params):
+    """
+    Internal method to publish connection parameters for an instance using the slap library.
+    Parameters are published to the SlapOS master for the specified slave instance.
+    This method does not check if information has changed - that check should be done
+    by the caller (publishInstanceInformation or publishInstanceErrorInformation).
+
+    Args:
+      instance_reference: Reference name for the instance (used as slave_reference)
+      conn_params: Dict of connection parameters or validation instructions
+    """
+    if not conn_params:
+      return
 
     try:
       computer_partition = self._getComputerPartition()
@@ -546,9 +611,11 @@ class Recipe(object):
         'Instance %s failed validation and needs reprocessing: %s',
         instance_reference, publish_information
       )
-
-    # Publish informaition regarding the instance:
-    self._publishConnectionParameters(instance_reference, publish_information)
+      # Publish error information when instance needs reprocessing
+      self.publishInstanceErrorInformation(instance_reference, publish_information)
+    else:
+      # Publish connection parameters only when post-deploy checks are successful
+      self.publishInstanceInformation(instance_reference, publish_information)
 
     # Add or update the instance in the database
     self.updateInstanceInDB(instance_reference, instance_data, instance_hash, publish_information, instance_needs_reprocessing, is_new)
@@ -606,7 +673,7 @@ class Recipe(object):
     # Initialize reporting logging
     self.initialiseReportingLogging(
       len(update_list),
-      comparison, 
+      comparison,
       len(unchanged_invalid_instances_to_process)
     )
 
