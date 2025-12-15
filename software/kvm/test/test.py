@@ -2093,7 +2093,7 @@ class TestNatRules(KvmMixin, KVMTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
-      'nat-rules': '100 200',
+      'nat-rules': [100, 200],
     })}
 
   def test(self):
@@ -2116,7 +2116,7 @@ class TestNatRules(KvmMixin, KVMTestCase):
 class TestNatRulesKvmCluster(KVMTestCase):
   __partition_reference__ = 'nrkc'
 
-  nat_rules = ["100", "200", "300"]
+  nat_rules = [100, 200, 300]
 
   @classmethod
   def getInstanceSoftwareType(cls):
