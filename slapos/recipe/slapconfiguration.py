@@ -47,7 +47,7 @@ from slapos.util import (
 )
 from slapos import format as slapformat
 from zc.buildout import UserError
-from slapos.recipe.localinstancedb import SharedInstanceResultDB
+from slapos.recipe.localinstancedb import SharedInstanceResultDB, HostedInstanceLocalDB
 
 
 logger = logging.getLogger("slapos")
@@ -747,6 +747,93 @@ class JsonSchemaWithDB(JsonSchema):
       # Create/update database
       db = SharedInstanceResultDB(db_path)
       db.updateFromValidationResults(valid, invalid)
+
+    return result
+
+
+class JsonSchemaWithDBFromInstanceNode(JsonSchemaWithDB):
+  """
+  Variant of JsonSchemaWithDB that loads the shared ``slave-instance-list``
+  from the local instance database managed by ``slapos.recipe.instancenode``.
+
+  It reads valid instances from the database at ``requestinstance-db-path``
+  (using ``HostedInstanceLocalDB``), loads their parameters, and builds
+  ``options['slave-instance-list']`` as a list of dicts where:
+
+    - each dict contains all parameters loaded from ``json_parameters``
+    - an extra key ``slave_reference`` is added with the instance reference
+
+  This list is then passed to the standard shared-instance validation logic
+  implemented by ``JsonSchemaWithDB``.
+  """
+
+  def _load_valid_instances_from_db(self, db_path):
+    """
+    Load parameters of valid instances from the given database path.
+
+    Returns a list of dicts combining the instance parameters with an extra
+    ``slave_reference`` key equal to the instance reference.
+    """
+    instance_db = HostedInstanceLocalDB(db_path)
+    rows = instance_db.getInstanceList(
+      select_tuple_string="reference, json_parameters",
+      valid_only=True,
+    )
+    slave_instance_list = []
+    for row in rows:
+      reference = row["reference"]
+      raw_params = row["json_parameters"] or "{}"
+      try:
+        params = json.loads(raw_params)
+      except (ValueError, TypeError):
+        # If parameters cannot be parsed, skip this instance rather than failing
+        continue
+      if not isinstance(params, dict):
+        # Shared validation expects mapping-like parameters
+        continue
+      # Copy parameters and add slave_reference
+      item = dict(params)
+      item["slave_reference"] = reference
+      slave_instance_list.append(item)
+    return slave_instance_list
+
+  def _expandParameterDict(self, options, parameter_dict):
+    """
+    Populate ``options['slave-instance-list']`` from instancenode's database
+    after delegating to ``JsonSchemaWithDB`` (which pops it during validation).
+
+    Note: We populate it before calling super so validation can use it, then
+    repopulate it after since JsonSchema pops it during validation.
+    """
+    # Database containing valid instances managed by instancenode.Recipe
+    # Note: this MUST be different from the database used by JsonSchemaWithDB
+    # (instance-db-path) to avoid mixing concerns.
+    db_path = options.get('valided-instance-db-path')
+    if not db_path:
+      raise UserError(
+        "valided-instance-db-path option is required when using "
+        "JsonSchemaWithDBFromInstanceNode."
+      )
+
+    instance_db_path = options.get('instance-db-path')
+    if instance_db_path and instance_db_path == db_path:
+      raise UserError(
+        "valided-instance-db-path must be different from instance-db-path."
+      )
+
+    # Delegate to standard JsonSchemaWithDB behavior
+    # This will pop 'slave-instance-list' during validation if validate.shared is True
+    result = super(JsonSchemaWithDBFromInstanceNode, self)._expandParameterDict(
+      options,
+      parameter_dict,
+    )
+
+
+    # Repopulate slave-instance-list after validation (it was popped by JsonSchema)
+    # Use the original list which still has slave_reference (not the modified copy)
+    # Load valid instances from database
+    slave_instance_list = self._load_valid_instances_from_db(db_path)
+    options['slave-instance-list'] = slave_instance_list
 
     return result
 
