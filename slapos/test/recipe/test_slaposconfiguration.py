@@ -12,7 +12,7 @@ import time
 import hashlib
 from collections import defaultdict
 from slapos.recipe import slapconfiguration
-from slapos.recipe.localinstancedb import SharedInstanceResultDB
+from slapos.recipe.localinstancedb import SharedInstanceResultDB, HostedInstanceLocalDB
 from slapos import format as slapformat
 
 
@@ -1018,3 +1018,227 @@ class JsonSchemaWithDBSharedTest(JsonSchemaWithDBTestCase):
       updated_instance = db.getInstance(valid[0]['reference'])
       self.assertEqual(json.loads(updated_instance['json_parameters'])['kind'], 2)
       self.assertAlmostEqual(float(updated_instance['timestamp']), float(initial_instance['timestamp']), delta=1)
+
+
+class JsonSchemaWithDBFromInstanceNodeTestCase(JsonSchemaWithDBTestCase):
+  """Test case for JsonSchemaWithDBFromInstanceNode that loads instances from instancenode database."""
+
+  def setUp(self):
+    super(JsonSchemaWithDBFromInstanceNodeTestCase, self).setUp()
+    # Create a separate database for instancenode (valided-instance-db-path)
+    self.valided_instance_db_path = os.path.join(self.instance_root, 'valided-instance-db.sqlite')
+    self.instance_db = HostedInstanceLocalDB(self.valided_instance_db_path)
+
+  def _populate_valided_db(self, instances):
+    """
+    Populate the valided-instance-db-path database with instances.
+
+    Args:
+      instances: List of dicts with 'reference', 'parameters', and 'valid' keys
+    """
+    timestamp = str(int(time.time()))
+    instance_list = []
+    for inst in instances:
+      reference = inst['reference']
+      parameters = inst['parameters']
+      valid = inst.get('valid', True)
+      params_json = json.dumps(parameters, sort_keys=True)
+      instance_hash = hashlib.sha256(params_json.encode('utf-8')).hexdigest()
+      error_json = "{}" if valid else json.dumps({"message": "Invalid instance"}, sort_keys=True)
+      instance_list.append((reference, params_json, error_json, instance_hash, timestamp, valid))
+    self.instance_db.insertInstanceList(instance_list)
+
+  def runJsonSchemaRecipe(self, options=()):
+    options = defaultdict(str, options)
+    options['jsonschema'] = self.software_json_file
+    # Set valided-instance-db-path (required for JsonSchemaWithDBFromInstanceNode)
+    if 'valided-instance-db-path' not in options:
+      options['valided-instance-db-path'] = self.valided_instance_db_path
+    # Set instance-db-path (different from valided-instance-db-path)
+    if 'instance-db-path' not in options:
+      options['instance-db-path'] = os.path.join(self.instance_root, 'shared-instance-db.sqlite')
+    slapconfiguration.JsonSchemaWithDBFromInstanceNode(self.buildout, "slapconfiguration", options)
+    self.last_options = options
+    return options
+
+  def test_jsonschema_from_instancenode_valid_instances(self):
+    """Test that valid instances are loaded from instancenode database and validated."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+
+    # Populate valided-instance-db-path with valid instances
+    self._populate_valided_db([
+      {'reference': 'INSTANCE1', 'parameters': {'kind': 1}, 'valid': True},
+      {'reference': 'INSTANCE2', 'parameters': {'kind': 2}, 'valid': True},
+    ])
+
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'shared'})
+
+      # Check that slave-instance-list is populated after validation
+      self.assertIn('slave-instance-list', options)
+      slave_list = options['slave-instance-list']
+      self.assertEqual(len(slave_list), 2)
+
+      # Check that each instance has slave_reference and parameters
+      refs = {item['slave_reference'] for item in slave_list}
+      self.assertEqual(refs, {'INSTANCE1', 'INSTANCE2'})
+
+      # Check parameters
+      params_by_ref = {item['slave_reference']: {k: v for k, v in item.items() if k != 'slave_reference'}
+                       for item in slave_list}
+      self.assertEqual(params_by_ref['INSTANCE1'], {'kind': 1})
+      self.assertEqual(params_by_ref['INSTANCE2'], {'kind': 2})
+
+      # JsonSchemaWithDBFromInstanceNode does not re-validate or store
+      # instances into instance-db-path; this is handled by instancenode.
+
+  def test_jsonschema_from_instancenode_only_valid_instances_loaded(self):
+    """Test that only valid instances are loaded from instancenode database."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+
+    # Populate valided-instance-db-path with both valid and invalid instances
+    self._populate_valided_db([
+      {'reference': 'VALID1', 'parameters': {'kind': 1}, 'valid': True},
+      {'reference': 'INVALID1', 'parameters': {'kind': 0}, 'valid': False},
+      {'reference': 'VALID2', 'parameters': {'kind': 2}, 'valid': True},
+    ])
+
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'shared'})
+
+      # Only valid instances should be in slave-instance-list
+      slave_list = options['slave-instance-list']
+      self.assertEqual(len(slave_list), 2)
+      refs = {item['slave_reference'] for item in slave_list}
+      self.assertEqual(refs, {'VALID1', 'VALID2'})
+      self.assertNotIn('INVALID1', refs)
+
+  def test_jsonschema_from_instancenode_loads_even_if_schema_invalid(self):
+    """Test that instances are loaded from instancenode database even if they
+    would be invalid according to the JSON schema."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+
+    # Populate with instances that would fail JSON schema validation
+    self._populate_valided_db([
+      {'reference': 'INVALID1', 'parameters': {'kind': 0}, 'valid': True},  # Invalid kind
+      {'reference': 'INVALID2', 'parameters': {'kind': 1, 'thing': {}}, 'valid': True},  # Invalid thing
+    ])
+
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'shared'})
+
+      # Instances should still be loaded in slave-instance-list because they
+      # are marked valid in the instancenode database
+      slave_list = options['slave-instance-list']
+      self.assertEqual(len(slave_list), 2)
+      refs = {item['slave_reference'] for item in slave_list}
+      self.assertEqual(refs, {'INVALID1', 'INVALID2'})
+
+  def test_jsonschema_from_instancenode_mixed_valid_invalid(self):
+    """Test mixed valid and invalid instances from instancenode database."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+
+    # Populate with mix of instances (all marked valid in instancenode DB)
+    self._populate_valided_db([
+      {'reference': 'VALID1', 'parameters': {'kind': 1}, 'valid': True},
+      {'reference': 'INVALID1', 'parameters': {'kind': 0}, 'valid': True},  # Valid in DB but invalid schema
+      {'reference': 'VALID2', 'parameters': {'kind': 2}, 'valid': True},
+    ])
+
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'shared'})
+
+      # All instances marked valid in instancenode DB should be loaded
+      slave_list = options['slave-instance-list']
+      self.assertEqual(len(slave_list), 3)
+      refs = {item['slave_reference'] for item in slave_list}
+      self.assertEqual(refs, {'VALID1', 'INVALID1', 'VALID2'})
+
+
+  def test_jsonschema_from_instancenode_missing_valided_db_path(self):
+    """Test that error is raised when valided-instance-db-path is missing."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+
+    with self.patchSlap(parameters):
+      options = defaultdict(str, {
+        'jsonschema': self.software_json_file,
+        'validate-parameters': 'shared',
+        'instance-db-path': os.path.join(self.instance_root, 'shared-instance-db.sqlite')
+      })
+      self.assertRaises(
+        slapconfiguration.UserError,
+        slapconfiguration.JsonSchemaWithDBFromInstanceNode,
+        self.buildout,
+        "slapconfiguration",
+        options
+      )
+
+  def test_jsonschema_from_instancenode_same_db_paths(self):
+    """Test that error is raised when valided-instance-db-path equals instance-db-path."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+
+    db_path = os.path.join(self.instance_root, 'same-db.sqlite')
+    with self.patchSlap(parameters):
+      options = defaultdict(str, {
+        'jsonschema': self.software_json_file,
+        'validate-parameters': 'shared',
+        'valided-instance-db-path': db_path,
+        'instance-db-path': db_path  # Same path - should raise error
+      })
+      self.assertRaises(
+        slapconfiguration.UserError,
+        slapconfiguration.JsonSchemaWithDBFromInstanceNode,
+        self.buildout,
+        "slapconfiguration",
+        options
+      )
+
+  def test_jsonschema_from_instancenode_empty_database(self):
+    """Test behavior when instancenode database is empty."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+
+    # Don't populate the database - it will be empty
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'shared'})
+
+      # slave-instance-list should be empty
+      self.assertIn('slave-instance-list', options)
+      self.assertEqual(options['slave-instance-list'], [])
+
+      # No instances should be stored in instance-db-path
+      db = SharedInstanceResultDB(options['instance-db-path'])
+      valid = db.getInstanceList(valid_only=True)
+      invalid = db.getInstanceList(invalid_only=True)
+      self.assertEqual(len(valid), 0)
+      self.assertEqual(len(invalid), 0)
+
+  def test_jsonschema_from_instancenode_invalid_json_parameters(self):
+    """Test that instances with invalid JSON parameters are skipped."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+
+    # Manually insert an instance with invalid JSON
+    timestamp = str(int(time.time()))
+    instance_hash = hashlib.sha256(b"invalid").hexdigest()
+    self.instance_db.insertInstanceList([
+      ('VALID1', json.dumps({'kind': 1}), '{}', instance_hash, timestamp, True),
+      ('INVALID_JSON', 'not valid json', '{}', instance_hash, timestamp, True),
+      ('VALID2', json.dumps({'kind': 2}), '{}', instance_hash, timestamp, True),
+    ])
+
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'shared'})
+
+      # Only instances with valid JSON should be loaded
+      slave_list = options['slave-instance-list']
+      self.assertEqual(len(slave_list), 2)
+      refs = {item['slave_reference'] for item in slave_list}
+      self.assertEqual(refs, {'VALID1', 'VALID2'})
+      self.assertNotIn('INVALID_JSON', refs)

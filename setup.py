@@ -153,6 +153,8 @@ setup(name=name,
           'slapconfiguration.serialised = slapos.recipe.slapconfiguration:Serialised',
           'slapconfiguration.jsonschema = slapos.recipe.slapconfiguration:JsonSchema',
           'slapconfiguration.jsonschema.localdb = slapos.recipe.slapconfiguration:JsonSchemaWithDB',
+          'slapconfiguration.jsonschema.localdb.instancenode = '
+          'slapos.recipe.slapconfiguration:JsonSchemaWithDBFromInstanceNode',
           'slapconfiguration.jsondump = slapos.recipe.slapconfiguration:JsonDump',
           'squid = slapos.recipe.squid:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
