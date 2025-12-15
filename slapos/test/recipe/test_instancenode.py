@@ -58,9 +58,11 @@ class TestRequestInstanceList(unittest.TestCase):
     self.request_instance.return_value = self.requested_instance
     self.computer_partition.request = self.request_instance
 
-    # Setup setConnectionDict() method for publishing
+    # Setup setConnectionDict() and error() methods for publishing
     self.setConnectionDict = mock.MagicMock()
+    self.error = mock.MagicMock()
     self.computer_partition.setConnectionDict = self.setConnectionDict
+    self.computer_partition.error = self.error
 
     # Setup mock slap instance (used by _getComputerPartition)
     self.slap_instance = mock.MagicMock()
@@ -1161,6 +1163,14 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(conn_params['message'], validation_errors['message'])
     self.assertEqual(conn_params['errors'], validation_errors['errors'])
 
+    # error() should be called once with the same information
+    self.error.assert_called_once()
+    error_call = self.error.call_args
+    error_info = error_call[0][0]
+    error_slave_ref = error_call[1]['slave_reference']
+    self.assertEqual(error_slave_ref, 'instance1')
+    self.assertEqual(error_info, conn_params)
+
   def test_publish_error_info_for_modified_invalid_instance(self):
     """Test that error info is published for modified invalid instances with changed error info"""
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
@@ -1218,6 +1228,14 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(conn_params['message'], new_errors['message'])
     self.assertEqual(conn_params['errors'], new_errors['errors'])
     self.assertNotEqual(conn_params['message'], old_errors['message'])
+
+    # error() should be called once with the same information
+    self.error.assert_called_once()
+    error_call = self.error.call_args
+    error_info = error_call[0][0]
+    error_slave_ref = error_call[1]['slave_reference']
+    self.assertEqual(error_slave_ref, 'instance1')
+    self.assertEqual(error_info, conn_params)
 
   def test_removed_invalid_instance_re_validation(self):
     """Test that removed invalid instances are not re-processed for re-validation
@@ -1334,6 +1352,8 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify error info was not published (re-validation happened)
     # But same error as before, so no republishing
     self.setConnectionDict.assert_not_called()
+    # error() should also not be called in this case
+    self.error.assert_not_called()
 
     # Verify instance was NOT requested (still invalid)
     self.request_instance.assert_not_called()
@@ -1348,7 +1368,7 @@ class TestRequestInstanceList(unittest.TestCase):
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 1 total instances, 0 added, 0 removed, 0 modified, 1 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Validation error: field \"name\" is required', 'errors': ['field \"name\" is required']}"),
-      ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
+      ('test', 'DEBUG', 'Information for instance instance1 unchanged, skipping publish'),
       ('test', 'INFO', '================================================================================'),
       order_matters=True,
     )
@@ -1408,6 +1428,14 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(conn_params['message'], new_errors['message'])
     self.assertEqual(conn_params['errors'], new_errors['errors'])
     self.assertNotEqual(conn_params['message'], old_errors['message'])
+
+    # error() should be called once with the same information
+    self.error.assert_called_once()
+    error_call = self.error.call_args
+    error_info = error_call[0][0]
+    error_slave_ref = error_call[1]['slave_reference']
+    self.assertEqual(error_slave_ref, 'instance1')
+    self.assertEqual(error_info, conn_params)
 
   def test_json_error_read_from_database_for_invalid_instances(self):
     """Test that json_error is actually read from database for invalid instances"""
@@ -1586,7 +1614,7 @@ class TestRequestInstanceList(unittest.TestCase):
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 1 total instances, 0 added, 0 removed, 1 modified, 0 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'message': 'Your instance is valid the request has been transmitted to the master, waiting for its connection parameters'}"),
-      ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
+      ('test', 'DEBUG', 'Information for instance instance1 unchanged, skipping publish'),
       ('test', 'INFO', '================================================================================'),
       order_matters=True,
     )
@@ -1767,7 +1795,7 @@ class TestRequestInstanceList(unittest.TestCase):
       ('test', 'INFO', 'Starting instance node processing'),
       ('test', 'INFO', 'Comparison results: 1 total instances, 0 added, 0 removed, 0 modified, 1 unchanged invalid instances to process'),
       ('test', 'DEBUG', "Instance instance1 failed validation and needs reprocessing: {'errors': ['field \"name\" is required'], 'message': 'Validation error: field \"name\" is required'}"),
-      ('test', 'DEBUG', 'Connection parameters for instance instance1 unchanged, skipping publish'),
+      ('test', 'DEBUG', 'Information for instance instance1 unchanged, skipping publish'),
       ('test', 'INFO', '================================================================================'),
       order_matters=True,
     )
@@ -2008,11 +2036,11 @@ class TestRequestInstanceList(unittest.TestCase):
 
   def test_periodic_logging_during_processing(self):
     """Test that periodic logging occurs every minute during long processing
-    
+
     This test demonstrates how to test the periodic logging behavior by mocking
     time.time() to simulate the passage of time. In real scenarios, periodic
     logs appear every 60 seconds during processing.
-    
+
     To test periodic logging:
     1. Mock time.time() to control time progression
     2. Process instances and increment processed_count
@@ -2033,10 +2061,10 @@ class TestRequestInstanceList(unittest.TestCase):
 
     # Mock time.time() to simulate time progression
     current_time = [1000.0]  # Start time
-    
+
     def mock_time():
       return current_time[0]
-    
+
     with mock.patch('time.time', side_effect=mock_time):
       with LogCapture() as log:
         # Initialize periodic logging for 3 instances
@@ -2052,46 +2080,46 @@ class TestRequestInstanceList(unittest.TestCase):
         recipe._processInstance('instance1', instance_data, 'hash1', is_new=True)
         recipe._progress_processed_count = 1
         recipe.logIfTimePassed()  # Should not log (less than 60s)
-        
+
         # Advance time by 61 seconds
         current_time[0] += 61
         recipe.logIfTimePassed()  # Should log now
-        
+
         # Process second instance
         instance_data = {'parameters': {'key': 'value2'}, 'valid': True, 'error_info': {}}
         recipe._processInstance('instance2', instance_data, 'hash2', is_new=True)
         recipe._progress_processed_count = 2
         recipe.logIfTimePassed()  # Should not log (less than 60s since last log)
-        
+
         # Advance time by another 61 seconds
         current_time[0] += 61
         recipe.logIfTimePassed()  # Should log again
-        
+
         # Process third instance and finalize
         instance_data = {'parameters': {'key': 'value3'}, 'valid': True, 'error_info': {}}
         recipe._processInstance('instance3', instance_data, 'hash3', is_new=True)
         recipe._progress_processed_count = 3
         recipe.logFinalReport()
-    
+
     # Verify periodic logs appeared
     actual_logs = log.actual()
-    progress_logs = [record for record in actual_logs 
-                     if len(record) >= 3 and record[1] == 'INFO' 
+    progress_logs = [record for record in actual_logs
+                     if len(record) >= 3 and record[1] == 'INFO'
                      and 'Progress:' in record[2]]
-    
+
     # Should have 2 progress logs (after 60s and after another 60s)
-    self.assertEqual(len(progress_logs), 2, 
+    self.assertEqual(len(progress_logs), 2,
                      "Expected 2 periodic progress logs, got %d. Logs: %s" % (len(progress_logs), progress_logs))
-    
+
     # Verify progress log format
     for progress_log in progress_logs:
       message = progress_log[2]
       self.assertRegex(message, r'Progress: \d+/\d+ instances processed \(\d+\.\d+%\)',
                       "Progress log format incorrect: %s" % message)
-    
+
     # Verify final report
-    final_report_logs = [record for record in actual_logs 
-                        if len(record) >= 3 and record[1] == 'INFO' 
+    final_report_logs = [record for record in actual_logs
+                        if len(record) >= 3 and record[1] == 'INFO'
                         and 'Instance node processing completed:' in record[2]]
     self.assertEqual(len(final_report_logs), 1,
                      "Expected 1 final report log, got %d" % len(final_report_logs))
