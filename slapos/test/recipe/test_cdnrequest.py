@@ -251,7 +251,9 @@ class TestCDNRequestFullScenario(unittest.TestCase):
           slap_publish_instance = mock.MagicMock()
           computer_partition = mock.MagicMock()
           setConnectionDict = mock.MagicMock()
+          error_method = mock.MagicMock()
           computer_partition.setConnectionDict = setConnectionDict
+          computer_partition.error = error_method
           slap_publish_instance.registerComputerPartition.return_value = computer_partition
           # slap.slap() is a function call, so we need to set return_value on the function
           mock_slap_publish.slap.return_value = slap_publish_instance
@@ -401,13 +403,10 @@ class TestCDNRequestFullScenario(unittest.TestCase):
         self.assertEqual(db_entry['domain'], 'dnsfail.example.com')
         self.assertFalse(bool(db_entry['validated']))
 
-        # Verify request_instance was called for modified instances only
-        # valid-changed (modified) + dns-pass (DNS validation passed)
-        # + dns-fail (requested but DNS validation fails) + destroyed instance (to-remove) = 4 calls
-        # Note: new-instance is not requested because DNS validation fails in preDeployInstanceValidation
-        # Note: valid-no-change is not requested because it's unchanged
-        # Note: dns-fail is requested (deployInstance is called) but marked invalid after DNS validation fails
-        self.assertEqual(request_instance.call_count, 4)
+        # Verify request_instance was not called at all by CDNRequestRecipe.
+        # With the new behaviour, CDNRequestRecipe skips instance requests
+        # entirely, including destroys, so no calls to the master are made.
+        self.assertEqual(request_instance.call_count, 0)
 
         # Verify published connection parameters for each instance
         # Connection parameters are published via setConnectionDict with slave_reference
@@ -423,10 +422,22 @@ class TestCDNRequestFullScenario(unittest.TestCase):
                 return conn_params
           return None
 
+        # Helper to extract error calls for an instance from error() calls
+        def get_error_calls(instance_ref):
+          error_calls = []
+          for call in error_method.call_args_list:
+            # call[0] is tuple of positional args, call[1] is dict of keyword args
+            error_info = call[0][0] if len(call[0]) > 0 else {}
+            slave_ref = call[1].get('slave_reference')
+            if slave_ref == instance_ref:
+              error_calls.append(error_info)
+          return error_calls
+
         # 1. new-instance: DNS validation failed - should publish DNS challenge info
         # Note: new-instance may not have published connection parameters if it fails validation
         # before being added to the database, or if publish_information is empty
         new_published = get_published_params('new-instance')
+        new_error_calls = get_error_calls('new-instance')
         # For new instances that fail validation, connection parameters may not be published
         # The important thing is that it's in the database marked as invalid
         if new_published is not None:
@@ -444,28 +455,43 @@ class TestCDNRequestFullScenario(unittest.TestCase):
             % (new_published['txt_record'], new_published['txt_value'])
           )
           self.assertEqual(new_published['message'], expected_message)
+          # Verify error() was called when error information was published
+          self.assertEqual(len(new_error_calls), 1, "error() should be called once for new-instance when error info is published")
+          self.assertEqual(new_error_calls[0], new_published, "error() should be called with the same information as setConnectionDict")
+        else:
+          # If nothing was published, error() should not be called either
+          self.assertEqual(len(new_error_calls), 0, "error() should not be called if nothing was published")
 
         # 2. invalid-no-change: Validation failed but no change in parameters
         # Since the instance is unchanged and connection parameters haven't changed,
         # _publishConnectionParameters will skip publishing (unchanged parameters check)
         invalid_published = get_published_params('invalid-no-change')
+        invalid_error_calls = get_error_calls('invalid-no-change')
         # Should not publish if parameters haven't changed
         self.assertIsNone(invalid_published, "invalid-no-change should not publish connection parameters if unchanged")
+        # error() should also not be called if nothing was published
+        self.assertEqual(len(invalid_error_calls), 0, "error() should not be called for invalid-no-change if parameters haven't changed")
 
         # 3. valid-no-change: Already validated, no changes - should not publish
         # (no connection params returned from preDeployInstanceValidation, and no request_conn_params)
         valid_no_change_published = get_published_params('valid-no-change')
+        valid_no_change_error_calls = get_error_calls('valid-no-change')
         self.assertIsNone(valid_no_change_published, "valid-no-change should not have published connection parameters")
+        # error() should not be called for successful instances
+        self.assertEqual(len(valid_no_change_error_calls), 0, "error() should not be called for valid-no-change (success case)")
 
         # 4. valid-changed: Modified and validated
         # Connection parameters may not be published if they haven't changed
         # (even though instance parameters changed, connection parameters might be the same)
         valid_changed_published = get_published_params('valid-changed')
+        valid_changed_error_calls = get_error_calls('valid-changed')
         if valid_changed_published is not None:
           # If published, verify the content
           self.assertIn('message', valid_changed_published)
           self.assertEqual(valid_changed_published['message'], 'Your instance is valid the request has been transmitted to the master')
         # If not published, that's also valid - connection parameters haven't changed
+        # error() should not be called for successful instances
+        self.assertEqual(len(valid_changed_error_calls), 0, "error() should not be called for valid-changed (success case)")
 
         # 5. to-remove: Destroyed - should not publish (instance is removed, no publishing in _processDestroyedInstance)
         to_remove_published = get_published_params('to-remove')
@@ -474,15 +500,19 @@ class TestCDNRequestFullScenario(unittest.TestCase):
         # 6. dns-pass: DNS validation passed
         # Connection parameters may not be published if they haven't changed
         dns_pass_published = get_published_params('dns-pass')
+        dns_pass_error_calls = get_error_calls('dns-pass')
         if dns_pass_published is not None:
           # If published, verify the content
           self.assertIn('message', dns_pass_published)
           self.assertEqual(dns_pass_published['message'], 'Your instance is valid the request has been transmitted to the master')
         # If not published, that's also valid - connection parameters haven't changed
+        # error() should not be called for successful instances
+        self.assertEqual(len(dns_pass_error_calls), 0, "error() should not be called for dns-pass (success case)")
 
         # 7. dns-fail: DNS validation failed
         # Connection parameters may not be published if they haven't changed
         dns_fail_published = get_published_params('dns-fail')
+        dns_fail_error_calls = get_error_calls('dns-fail')
         if dns_fail_published is not None:
           # If published, verify the content
           self.assertIn('txt_record', dns_fail_published)
@@ -499,7 +529,12 @@ class TestCDNRequestFullScenario(unittest.TestCase):
             % (dns_fail_published['txt_record'], dns_fail_published['txt_value'])
           )
           self.assertEqual(dns_fail_published['message'], expected_message)
-        # If not published, that's also valid - connection parameters haven't changed
+          # Verify error() was called when error information was published
+          self.assertEqual(len(dns_fail_error_calls), 1, "error() should be called once for dns-fail when error info is published")
+          self.assertEqual(dns_fail_error_calls[0], dns_fail_published, "error() should be called with the same information as setConnectionDict")
+        else:
+          # If nothing was published, error() should not be called either
+          self.assertEqual(len(dns_fail_error_calls), 0, "error() should not be called if nothing was published")
 
 
 class TestCDNRequestRecipe(unittest.TestCase):
@@ -839,33 +874,49 @@ class TestCDNRequestRecipe(unittest.TestCase):
       self.assertNotEqual(db_entry['domain'], 'old-domain.com')
 
   def test_process_destroyed_instance(self):
-    """Test that _processDestroyedInstance removes domain validation entries"""
+    """Test that _processDestroyedInstance removes domain validation entries and instance from DB"""
     recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
 
     # Pre-populate database with an entry
     recipe.domain_validation_db.setDomainValidation('test-instance-ref', 'example.com', 'test-token', True)
 
-    # Mock the parent's _processDestroyedInstance to avoid actual destruction logic
-    with mock.patch(
-        'slapos.recipe.instancenode.Recipe._processDestroyedInstance'
-    ) as mock_parent_process:
-      instance_reference = 'test-instance-ref'
+    # Pre-populate requestinstance_db with the instance
+    recipe.requestinstance_db.insertInstanceList([(
+      'test-instance-ref',
+      '{}',
+      '{}',
+      'hash',
+      '1234567890',
+      True
+    )])
 
-      with LogCapture() as log:
-        # Call the method
-        recipe._processDestroyedInstance(instance_reference)
+    # Mock _removeInstanceFromDB to verify it's called
+    with mock.patch.object(recipe, '_removeInstanceFromDB') as mock_remove:
+      # Mock the parent's _processDestroyedInstance to verify it's NOT called
+      with mock.patch(
+          'slapos.recipe.instancenode.Recipe._processDestroyedInstance'
+      ) as mock_parent_process:
+        instance_reference = 'test-instance-ref'
 
-      # Verify entry was removed from database
-      db_entry = recipe.domain_validation_db.getDomainValidationForInstance(instance_reference)
-      self.assertIsNone(db_entry)
+        with LogCapture() as log:
+          # Call the method
+          recipe._processDestroyedInstance(instance_reference)
 
-      # Verify parent's _processDestroyedInstance was called
-      mock_parent_process.assert_called_once_with(instance_reference)
+        # Verify entry was removed from domain validation database
+        db_entry = recipe.domain_validation_db.getDomainValidationForInstance(instance_reference)
+        self.assertIsNone(db_entry)
 
-      # Verify debug log was called
-      log.check(
-        ('test', 'DEBUG', 'Destroying instance: %s' % instance_reference),
-      )
+        # Verify _removeInstanceFromDB was called
+        mock_remove.assert_called_once_with(instance_reference)
+
+        # Verify parent's _processDestroyedInstance was NOT called
+        # (CDNRequestRecipe no longer calls the master for destroys)
+        mock_parent_process.assert_not_called()
+
+        # Verify debug log was called
+        log.check(
+          ('test', 'DEBUG', 'Destroying instance: %s' % instance_reference),
+        )
 
   def test_validate_server_alias_requires_custom_domain(self):
     """Test validation fails when server-alias is provided without custom_domain"""
