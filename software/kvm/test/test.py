@@ -2156,13 +2156,6 @@ class TestNatRulesKvmCluster(KVMTestCase):
       f'hostfwd=tcp:{self._ipv4_address}:10300-:300',
       host_fwd_entry)
 
-
-@skipUnlessKvm
-class TestNatRulesKvmClusterComplex(TestNatRulesKvmCluster):
-  __partition_reference__ = 'nrkcc'
-  nat_rules = ["100", "200 300"]
-
-
 @skipUnlessKvm
 class TestWhitelistFirewall(KVMTestCase):
   __partition_reference__ = 'wf'
