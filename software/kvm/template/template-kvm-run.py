@@ -26,7 +26,7 @@ network_adapter = parameter_dict["network-adapter"]
 qmp_socket_path = parameter_dict.get("qmp-socket-path")
 vnc_socket_path = parameter_dict.get("vnc-socket-path")
 
-nat_rules = parameter_dict.get("nat-rules").strip()
+nat_rules = parameter_dict.get("nat-rules")
 use_tap = parameter_dict.get("use-tap").lower()
 use_nat = parameter_dict.get("use-nat").lower()
 set_nat_restrict = parameter_dict.get("nat-restrict")
@@ -179,15 +179,8 @@ number = -1
 if use_nat == 'true':
   number += 1
   rules = 'user,id=lan%s' % number
-  for rule in nat_rules.split():
+  for port in nat_rules:
     proto = 'tcp'
-    rule = rule.split(':')
-    if len(rule) == 1:
-      port = int(rule[0])
-    elif len(rule) == 2:
-      proto = rule[0]
-      port = int(rule[1])
-
     rules += ',hostfwd={proto}:{hostaddr}:{hostport}-:{guestport}'.format(
       proto=proto,
       hostaddr=listen_ip,
