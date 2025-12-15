@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Parameters to instantiate a NEO cluster. See https://lab.nexedi.com/nexedi/neoppod/blob/master/neo.conf for more information.",
   "type": "object",
   "definitions": {
@@ -233,7 +233,7 @@
         "node!": {
           "description": "Node parameters are overridden by the value of the first item whose partition reference matches against the pattern.",
           "items": {
-            "items": [
+            "prefixItems": [
               {
                 "description": "Override pattern (Python regular expression).",
                 "type": "string"
