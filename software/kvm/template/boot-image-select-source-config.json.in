@@ -1,5 +1,6 @@
 {%- set IMAGE_URL_MAPPING = {
- "Debian Bookworm 12 netinst x86_64" : "file://${debian-amd64-bookworm-netinst.iso:target}#${debian-amd64-bookworm-netinst.iso:md5sum}",
+ "Debian Trixie 13 netinst x86_64" : "file://${debian-amd64-trixie-netinst.iso:target}#${debian-amd64-trixie-netinst.iso:md5sum}",
+ "Debian Bookworm 12 netinst x86_64" : "https://shacache.nxdcdn.com/c93055182057dd19a334260671c7e10880541b7721ad9c8df87be47e0a11d5bbf85018350ff224ff6a5f6a68320b07e95d539cef9dc020c93966bfaa86d4b2ce#fed10490abd508da793071df57e9cb70",
  "Debian Bullseye 11 netinst x86_64" : "https://shacache.nxdcdn.com/02257c3ec27e45d9f022c181a69b59da67e5c72871cdb4f9a69db323a1fad58093f2e69702d29aa98f5f65e920e0b970d816475a5a936e1f3bf33832257b7e92#b710c178eb434d79ce40ce703d30a5f0",
  "Centos 8.2004 Minimal x86_64" : "https://shacache.nxdcdn.com/ce5ddfdbdaccdf929b7fe321212356347d82a02f6b7733427282b416f113d91e587682b003e9d376ac189c3b731595c50c236962aadf2720c16d9f36913577c0#23bf2a2d60271e553e63525e794415f1",
  "Ubuntu Noble 24.04 Live Server x86_64" : "https://shacache.nxdcdn.com/3d518612aabbdb77fd6b49cb55b824fed11e40540e4af52f5f26174257715c93740f83079ea618b4d933081f0b1bc69d32b7885b7c75bc90da5ad3fe1814cfd4#c53b2d7c3269c3b91a2d941ceaa8ab9b",
