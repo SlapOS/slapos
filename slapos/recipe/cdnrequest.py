@@ -309,8 +309,15 @@ class CDNRequestRecipe(InstanceNodeRecipe):
     # Remove domain validation and hosts (removeDomainValidationForInstance handles both)
     self.domain_validation_db.removeDomainValidationForInstance(instance_reference)
 
-    # Call parent to do the actual destruction
-    super(CDNRequestRecipe, self)._processDestroyedInstance(instance_reference)
+    # For CDNRequestRecipe, do not call the master to destroy the instance.
+    # Simply remove the instance from the local request database.
+    try:
+      self._removeInstanceFromDB(instance_reference)
+    except Exception as e:
+      self.logger.error(
+        'Failed to remove destroyed CDN instance %s from database: %s',
+        instance_reference, e
+      )
 
   def _validate_netloc(self, netloc):
     """
@@ -656,6 +663,33 @@ class CDNRequestRecipe(InstanceNodeRecipe):
     else:
       # DNS verification failed
       return False, [error_message], validation_info
+
+  def deployInstance(self, instance_reference, instance_data):
+    """
+    Override deployInstance to skip actual request to master.
+    CDN instances are not requested through the normal flow.
+    """
+    self.logger.debug(
+      'Skipping instance request for CDN instance %s (no request to master)',
+      instance_reference
+    )
+    # Return success without making any request
+    return True, [], {}
+
+  def postDeployInstanceValidation(self, instance_reference, instance_data, publish_information):
+    """
+    Override postDeployInstanceValidation to always return True.
+    For CDN instances, post-deploy validation always succeeds.
+    """
+    return True, [], publish_information
+
+  def publishInstanceInformation(self, instance_reference, publish_information):
+    """
+    Override to prevent publishing connection parameters on success.
+    CDN instances should not publish connection parameters when successful.
+    """
+    # No-op: don't publish connection parameters for successful CDN instances
+    pass
 
 
 def main():
