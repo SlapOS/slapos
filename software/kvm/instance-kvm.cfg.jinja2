@@ -14,7 +14,7 @@
 {% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', False) -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
 {% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', True) -%}
-{% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
+{% set nat_rule_list = slapparameter_dict.get('nat-rules', [22, 80, 443]) -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
 {% set whitelist_domains = slapparameter_dict.get('whitelist-domains', '') -%}
 {% set virtual_hard_drive_url_enabled = 'virtual-hard-drive-url' in slapparameter_dict %}
@@ -27,10 +27,6 @@
 {% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url') -%}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
-
-{% if not nat_rule_list or not nat_rule_list.strip() -%}
-{%   set nat_rule_list = '' %}
-{% endif -%}
 
 {% do extends_list.append(template_monitor) -%}
 {% do extends_list.append(logrotate_cfg) -%}
@@ -409,7 +405,7 @@ tap-mac-address = ${create-tap-mac:mac-address}
 
 use-tap = ${slap-parameter:use-tap}
 use-nat = ${slap-parameter:use-nat}
-nat-rules = {{ nat_rule_list }}
+nat-rules = {{ dumps(nat_rule_list) }}
 nat-restrict= {{ dumps(nat_restrict) }}
 enable-vhost = ${slap-parameter:enable-vhost}
 
@@ -459,13 +455,9 @@ command-line = {{ sixtunnel_executable_location }} -6 -4 -d -l ${:ipv6} ${:ipv6-
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 {% if use_nat and nat_rule_list -%}
-{%   for port in nat_rule_list.split(' ') -%}
-{%     if ':' in port -%}
-{%       set proto, port = port.split(':') -%}
-{%     else -%}
-{%       set proto, port = 'tcp', port -%}
-{%     endif -%}
-{%     set external_port = 10000 + port|int() -%}
+{%   set proto = 'tcp' -%}
+{%   for port in nat_rule_list -%}
+{%     set external_port = 10000 + port -%}
 {%     set section_name = '6tunnel-' ~ proto ~ '-' ~ external_port -%}
 [{{ section_name }}]
 <= tunnel-6to4-base
@@ -810,13 +802,9 @@ novnc_info = The NoVNC server is currently disabled, you need to enable it if yo
 {%   set iface = 'ens4' -%}
 {%   if nat_rule_list -%}
 # Publish NAT port mapping status
-{%     for port in nat_rule_list.split(' ') -%}
-{%       if ':' in port -%}
-{%         set proto, port = port.split(':') -%}
-{%       else -%}
-{%         set proto, port = 'tcp', port -%}
-{%       endif -%}
-{%       set external_port = 10000 + port|int() -%}
+{%     set proto = 'tcp' -%}
+{%     for port in nat_rule_list -%}
+{%       set external_port = 10000 + port -%}
 nat-rule-port-{{proto}}-{{port}} = ${slap-network-information:global-ipv6} : ${6tunnel-{{proto}}-{{external_port}}:ipv6-port}
 {%       if slapparameter_dict.get('publish-nat-url', False) -%}
 nat-rule-url-{{proto}}-{{port}} = [${slap-network-information:global-ipv6}]:${6tunnel-{{proto}}-{{external_port}}:ipv6-port}
@@ -1050,7 +1038,6 @@ auto-ballooning = True
 machine-options =
 cpu-model = host
 
-nat-rules = 22 80 443
 use-nat = True
 use-tap = True
 nat-restrict-mode = False

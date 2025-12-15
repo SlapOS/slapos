@@ -95,8 +95,8 @@ config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True
 {{ setconfig('disk-cache', kvm_parameter_dict.get('disk-cache', '')) }}
 {{ setconfig('disk-device-path', kvm_parameter_dict.get('disk-device-path', '')) }}
 
-{% set nat_rules_list = kvm_parameter_dict.get('nat-rules', []) -%}
-{{ setconfig('nat-rules', nat_rules_list | join(' ')) }}
+{% set nat_rules_list = kvm_parameter_dict.get('nat-rules', [22, 80, 443]) -%}
+{{ setconfig('nat-rules', nat_rules_list) }}
 config-publish-nat-url = {{ dumps(True) }}
 config-use-nat = {{ dumps(use_nat) }}
 config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', True)) }}
@@ -153,12 +153,8 @@ return =
   backend-url
 {% endif %}
 {% if use_nat -%}
+{%   set proto = 'tcp' -%}
 {%   for port in nat_rules_list -%}
-{%     if ':' in port -%}
-{%       set proto, port = port.split(':') -%}
-{%     else -%}
-{%       set proto, port = 'tcp', port -%}
-{%     endif -%}
 {{ '  ' }}nat-rule-url-{{proto}}-{{ port }}
 {%   endfor -%}
 {% endif -%}
@@ -195,7 +191,7 @@ return =
 {%   if frontend_parameter_dict.get('kvm-partition-name', '') != '' -%}
 {%     set kvm_name = frontend_parameter_dict['kvm-partition-name'] -%}
 {%     set service_port = str(frontend_parameter_dict['service-port']) -%}
-{%     if kvm_name in kvm_instance_dict.keys()  and not kvm_instance_dict[kvm_name][0] -%}
+{%     if kvm_name in kvm_instance_dict.keys() and not kvm_instance_dict[kvm_name][0] -%}
 {%       set error = "You should set parameter use-nat to 'true' for '" ~ kvm_name ~ "', or provide url to use for frontend." -%}
 {%     elif kvm_name in kvm_instance_dict.keys() and service_port in kvm_instance_dict[kvm_name][1] -%}
 {%       set url = '${request-' ~ kvm_name ~ ':connection-nat-rule-url-' ~ service_port ~ '}' -%}
