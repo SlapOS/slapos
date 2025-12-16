@@ -450,7 +450,7 @@ rejected-slave-amount = {{ rejected_slave_dict | length }}
 backend-client-caucase-url = {{ caucase_url }}
 {# sort_keys are important in order to avoid shuffling parameters on each run #}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict, sort_keys=True)) }}
-rejected-slave-promise-url = ${rejected-slave-promise:config-url}
+rejected-slave-url = ${rejected-slave-publish:url}
 publish-failsafe-error-promise-url = ${publish-failsafe-error-promise:config-url}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
@@ -995,14 +995,6 @@ name = master-introspection-server-ip-port-listening.py
 config-host = ${master-introspection-server-configuration:ip}
 config-port = ${master-introspection-server-configuration:port}
 
-[rejected-slave-promise]
-<= monitor-promise-base
-promise = check_file_state
-name = rejected-slave.py
-config-filename = ${rejected-slave-json:output}
-config-state = empty
-config-url = ${rejected-slave-publish:url}
-
 [master-key-upload-url-ready]
 recipe = slapos.recipe.build
 directory = ${directory:var}
@@ -1086,7 +1078,6 @@ parts =
   publish-failsafe-error-promise
   publish-information
   request-kedifa
-  rejected-slave-promise
   master-introspection-server-ip-port
   caucased-backend-client
   caucased-backend-client-promise
