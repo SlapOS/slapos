@@ -365,14 +365,16 @@ class DefaultValidator(object):
     # their containing schemas, so a sub-schema that locally validates a
     # sub-instance may be collected even though the containing schema
     # does not validate.
-    original_unevaluated = v.VALIDATORS['unevaluatedProperties']
-    def unevaluated(validator, *args):
-      index = len(self.applied_schemas)
-      for e in original_unevaluated(validator, *args):
+    original_unevaluated = v.VALIDATORS.get('unevaluatedProperties')
+    # BBB Python2: jsonschema 3.0.2 does not implement unevaluatedProperties
+    if original_unevaluated is not None:
+      def unevaluated(validator, *args):
+        index = len(self.applied_schemas)
+        for e in original_unevaluated(validator, *args):
+          del self.applied_schemas[index:]
+          yield e
         del self.applied_schemas[index:]
-        yield e
-      del self.applied_schemas[index:]
-    return unevaluated
+      return unevaluated
 
   def create(self, schema, collect_defaults=True):
     v = self.original_validator_for(schema)
@@ -380,9 +382,10 @@ class DefaultValidator(object):
       # Optimisation: use original validator class
       return v
     type_checker = self.type_checker(v) if self.unstringify else None
+    unevaluatedProperties = self.unevaluatedProperties(v)
     validators = {
-      'unevaluatedProperties': self.unevaluatedProperties(v),
-    } if collect_defaults else ()
+      'unevaluatedProperties': unevaluatedProperties,
+    } if collect_defaults and unevaluatedProperties else ()
     kls = jsonschema.validators.extend(v, validators, None, type_checker)
     kls.iter_errors = self.iter_errors(kls)
     return kls
