@@ -824,7 +824,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   def assertRejectedSlavePromiseEmptyWithPop(self, parameter_dict):
     rejected_slave_promise_url = parameter_dict.pop(
-      'rejected-slave-promise-url')
+      'rejected-promise-url')
 
     try:
       result = mimikra.get(rejected_slave_promise_url, verify=False)
@@ -6681,7 +6681,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def assertRejectedSlavePromiseWithPop(self, parameter_dict):
     rejected_slave_promise_url = parameter_dict.pop(
-      'rejected-slave-promise-url')
+      'rejected-promise-url')
 
     try:
       result = mimikra.get(rejected_slave_promise_url, verify=False)
