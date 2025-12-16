@@ -827,9 +827,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     except Exception as e:
       self.fail(e)
 
-  def assertRejectedSlavePromiseEmptyWithPop(self, parameter_dict):
+  def assertRejectedSlaveEmptyWithPop(self, parameter_dict):
     rejected_slave_promise_url = parameter_dict.pop(
-      'rejected-slave-promise-url')
+      'rejected-slave-url')
 
     try:
       result = mimikra.get(rejected_slave_promise_url, verify=False)
@@ -1508,7 +1508,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
-    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertRejectedSlaveEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
     self.assertEqual(
@@ -1542,7 +1542,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
-    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertRejectedSlaveEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1655,7 +1655,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
-    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertRejectedSlaveEmptyWithPop(parameter_dict)
     self.assertKeyWithPop('kedifa-csr-certificate', parameter_dict)
     self.assertKeyWithPop('kedifa-csr-url', parameter_dict)
     self.assertKeyWithPop('frontend-node-1-kedifa-csr-url', parameter_dict)
@@ -2201,7 +2201,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
-    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertRejectedSlaveEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -5843,7 +5843,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
-    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertRejectedSlaveEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -6351,7 +6351,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
-    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertRejectedSlaveEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -6444,7 +6444,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
-    self.assertRejectedSlavePromiseEmptyWithPop(parameter_dict)
+    self.assertRejectedSlaveEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -6530,27 +6530,13 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'caucase_port': CAUCASE_PORT,
     }
 
-  @classmethod
-  def setUpClass(cls):
-    super(TestSlaveRejectReportUnsafeDamaged, cls).setUpClass()
-    cls.fillSlaveParameterDictDict()
-    cls.requestSlaves()
-    try:
-      cls.slap.waitForInstance(max_retry=10)
-    except Exception:
-      # ignores exceptions, as problems are tested
-      pass
-    cls.updateSlaveConnectionParameterDictDict()
-
-  slave_parameter_dict_dict = {}
+  ignore_status_code_slave_list = [
+    'duplicate.example.com'
+  ]
 
   @classmethod
   def getSlaveParameterDictDict(cls):
-    return cls.slave_parameter_dict_dict
-
-  @classmethod
-  def fillSlaveParameterDictDict(cls):
-    cls.slave_parameter_dict_dict = {
+    return {
       'URL': {
         'url': "https://[fd46::c2ae]:!py!u'123123'",
       },
@@ -6672,9 +6658,9 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       }
     }
 
-  def assertRejectedSlavePromiseWithPop(self, parameter_dict):
+  def assertRejectedSlaveWithPop(self, parameter_dict):
     rejected_slave_promise_url = parameter_dict.pop(
-      'rejected-slave-promise-url')
+      'rejected-slave-url')
 
     try:
       result = mimikra.get(rejected_slave_promise_url, verify=False)
@@ -6706,7 +6692,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
-    self.assertRejectedSlavePromiseWithPop(parameter_dict)
+    self.assertRejectedSlaveWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
