@@ -64,8 +64,11 @@ class Recipe(GenericSlapRecipe):
     return self.setConnectionDict(publish_dict, slave_reference)
 
   def update(self):
-    # there is no need to publish on update
-    return []
+    if len(self._extend_set) > 0:
+      return super().install()
+    else:
+      # there is no need to publish on update
+      return []
 
 
 class Serialised(Recipe):
