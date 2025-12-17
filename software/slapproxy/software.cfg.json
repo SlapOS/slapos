@@ -1,0 +1,14 @@
+{
+  "name": "SlapOS Proxy",
+  "description": "SlapOS Proxy",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Slapproxy",
+      "software-type": "default",
+      "request": "instance-slapproxy-input-schema.json",
+      "response": "instance-slapproxy-output-schema.json",
+      "index": 0
+    }
+  }
+}
