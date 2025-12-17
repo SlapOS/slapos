@@ -47,6 +47,7 @@
 {#- Note: As a result, this feature is very hard to be tested with slapproxy, as it does not pollute the slave information, this kind of whitelist is implemented #}
 {%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA = [
       'authenticate-to-backend',
+      'caucase-authenticator-url',
       'backend-connect-retries',
       'backend-connect-timeout',
       'ciphers',

@@ -221,6 +221,11 @@
       "title": "Authenticate to backend",
       "type": "string"
     },
+    "caucase-authenticator-url": {
+      "title": "Caucase URL for SSL authentication",
+      "description": "Caucase URL that will be used to authenticate client via ssl authentication using caucase ca file, extracting subject CN and setting as Remote-User",
+      "type": "string"
+    },
     "health-check": {
       "title": "Health Check",
       "description": "Enables active checks of the backend. For HTTP level checks the HTTP code shall be 2xx or 3xx, otherwise backend will be considered down.",
