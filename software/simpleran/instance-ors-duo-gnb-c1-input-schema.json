@@ -13,6 +13,12 @@
           "title": "ORS Cell",
           "type": "object",
           "properties": {
+            "enable_cell": {
+              "title": "Enable Cell",
+              "description": "Set to false to disable cell",
+              "type": "boolean",
+              "default": true
+            },
             "tx_power_dbm": {
               "title": "Tx Power in dBm",
               "description": "Set transmission power of each antenna in dBm (Range: 0 to 30 dBm. Warning: setting TX Power above 28 dBm might impact radio signal quality)",
@@ -55,6 +61,12 @@
           "title": "ORS Cell",
           "type": "object",
           "properties": {
+            "enable_cell": {
+              "title": "Enable Cell",
+              "description": "Set to false to disable cell",
+              "type": "boolean",
+              "default": true
+            },
             "tx_power_dbm": {
               "title": "Tx Power in dBm",
               "description": "Set transmission power of each antenna in dBm (Range: 0 to 30 dBm. Warning: setting TX Power above 28 dBm might impact radio signal quality)",
@@ -82,6 +94,18 @@
               "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
             }
           }
+        }
+      ],
+      "type": "object",
+      "default": {}
+    },
+    "nodeb": {
+      "title": "gNB Parameters",
+      "description": "Parameters not related to a single cell but to the gNB",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "ors-enb-gnb-duo.json"
         }
       ],
       "type": "object",
