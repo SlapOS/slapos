@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 1.0.457 (2025-12-17)
+-------------
+
+* Add Offline management feature
+
 Version 1.0.442 (2025-10-13)
 -------------
 
