@@ -127,6 +127,7 @@ recipe = slapos.recipe.build
 # not using location to avoid Buildout ever deleting it
 target = $${directory:etc}/dovecot-passwd
 init =
+  # gecos and shell are unused by Dovecot so we can reuse them
   PASSWD_COLS = ['name', 'passwd', 'uid', 'gid', 'gecos', 'dir', 'shell', 'extra_fields']
 
   from itertools import chain, repeat
@@ -138,35 +139,60 @@ init =
   except:
     passdb = ""
   finally:
-    output = [dict(zip(PASSWD_COLS, chain(row.split(":"), repeat('')))) for row in filter(None, passdb.splitlines())]
-    output = {row['name']: row for row in output}
+    previous = [dict(zip(PASSWD_COLS, chain(row.split(":"), repeat('')))) for row in filter(None, passdb.splitlines())]
+    previous = {row['name']: row for row in previous}
 
   new_account_dict = {}
   error_dict = {}
-  processed_addresses = set()
+  output = {}
 
-  for slave in {{ json_module.dumps(slave_instance_list) }}:
+  slave_list = {{ json_module.dumps(slave_instance_list) }}
+
+  def make_entry(slave, previous={}):
+    reset_token = slave['parameters'].get('reset-token')
+    # if matching entry was already in passdb and is unchanged (no password reset, nothing to do), just forward it
+    if previous and (reset_token is None or previous['gecos'] == reset_token):
+      return previous
+    addr = slave['parameters']['address']
+    new_passwd = reset_token or str(uuid.uuid4())
+    new_account_dict[slave['reference']] = {'address': addr, 'token': new_passwd}
+    return {
+      'name': addr,
+      'passwd': new_passwd,
+      'gecos': reset_token or '',
+      'shell': slave['reference'],
+      'extra_fields': 'fail',
+    }
+
+  # 1st pass: keep only slaves matching both address and reference ( = previously accepted slaves)
+  for slave in slave_list:
     addr = slave['parameters']['address']
     
-    # Check if this address was already processed in this request batch
-    if addr in processed_addresses:
-      error_dict[slave['reference']] = {
-        'address': addr, 
-        'error': 'duplicate_address_in_request'
-      }
-      continue
-    
-    # Mark this address as processed
-    processed_addresses.add(addr)
-    
-    # If address doesn't exist in dovecot-passwd file, create new account
-    if (token := slave['parameters'].get('reset-token', "")) or ((addr not in output) and (token := str(uuid.uuid4()))):
-      new_account_dict[slave['reference']] = {'address': addr, 'token': token}
-      output[addr] = {
-        'name': addr,
-        'passwd': token,
-        'extra_fields': 'fail'
-      }
+    if prev_entry := previous.get(addr):
+      if prev_entry['shell'] == slave['reference']:
+        output[addr] = make_entry(slave, previous=prev_entry)
+      else:
+        # address is already used by another slave, 2nd pass will handle it
+        pass
+    else:
+      # no previous entry, will be handled in 2nd pass
+      pass
+
+  # 2nd pass: new entries + entries with different reference
+  for slave in slave_list:
+    addr = slave['parameters']['address']
+
+    # If address was already processed in 1st pass
+    if existing := output.get(addr):
+      if existing['shell'] != slave['reference']:
+        error_dict[slave['reference']] = {
+          'address': addr, 
+          'error': 'address_already_used'
+        }
+      # (if it matches, there's nothing to do)
+    else:
+      # address wasn't in database, it's new
+      output[addr] = make_entry(slave)
 
   options['new-account-dict'] = new_account_dict
   options['error-dict'] = error_dict
