@@ -556,7 +556,7 @@ production: &base
 
     sidekiq_health_checks:
       enabled: true
-      address: {{ sidekiq['health-checks-port'] }}
+      address: {{ sidekiq['health-checks-host'] }}
       port: {{ sidekiq['health-checks-port'] }}
 
     # Web exporter is a dedicated Prometheus metrics server optionally running alongside Puma.

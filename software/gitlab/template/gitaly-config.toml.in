@@ -17,7 +17,7 @@ runtime_dir = "{{ gitaly.basedir }}"
 # tls_listen_addr = "localhost:8888
 
 # # Optional: export metrics via Prometheus
-# prometheus_listen_addr = "localhost:9236"
+prometheus_listen_addr = "{{ prometheus['host'] }}:{{ prometheus['gitaly-port'] }}"
 
 # # Optional: configure where the Gitaly creates the sockets for internal connections. If unset, Gitaly will create a randomly
 # # named temp directory each time it boots.

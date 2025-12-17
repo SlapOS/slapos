@@ -46,3 +46,15 @@ scrape_configs:
       - targets: ["{{ prometheus['host'] }}:{{ prometheus['sidekiq-port'] }}"]
         labels:
           app: "Gitlab Sidekiq"
+
+  - job_name: "gitaly"
+    static_configs:
+      - targets: ["{{ prometheus['host'] }}:{{ prometheus['gitaly-port'] }}"]
+        labels:
+          app: "Gitaly"
+
+  - job_name: "gitlab-workhorse"
+    static_configs:
+      - targets: ["{{ prometheus['host'] }}:{{ prometheus['workhorse-port'] }}"]
+        labels:
+          app: "Gitlab Workhorse"
