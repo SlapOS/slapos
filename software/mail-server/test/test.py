@@ -168,6 +168,32 @@ class PostfixTestCase(SlapOSInstanceTestCase):
         self.fail(f"Password change failed for {user}: {e}")
       
     import time
+    address = "a1@mail.lan"
+    
+    # request a1@mail.lan for slave S1, then check it's there
+    # then destroy it, and request a1@mail.lan for slave S2 and check that it works    
+    slave_instance_1 = self.requestSlaveInstanceForAccount(address, suffix="-S1")
+    self.waitForInstance()
+    slave_instance_1 = self.requestSlaveInstanceForAccount(address, suffix="-S1")
+    connection_dict_1 = json.loads(slave_instance_1.getConnectionParameterDict().get("_", "{}"))
+    self.assertEqual(connection_dict_1.get("address", "<missing>"), address)
+    # to make sure it exists and gets changed, we'll update the password
+    pw_token_1 = connection_dict_1.get("token", "<missing>")
+    new_password_1 = "firstpass"
+    reset_password(address, pw_token_1, new_password_1)
+    time.sleep(2)
+    self.check_imap(address, new_password_1)
+    self.requestSlaveInstanceForAccount(address, suffix="-S1", state="destroyed")
+    slave_instance_2 = self.requestSlaveInstanceForAccount(address, suffix="-S2")
+    self.waitForInstance()
+    slave_instance_2 = self.requestSlaveInstanceForAccount(address, suffix="-S2")
+    connection_dict_2 = json.loads(slave_instance_2.getConnectionParameterDict().get("_", "{}"))
+    self.assertEqual(connection_dict_2.get("address", "<missing>"), address)
+    pw_token_2 = connection_dict_2.get("token", "<missing>")
+    new_password_2 = "secondpass"
+    reset_password(address, pw_token_2, new_password_2)
+    time.sleep(2)
+    self.check_imap(address, new_password_2)
 
     for address in ["alice@example.com", "bob@example.com"]:
       slave_instance = self.requestSlaveInstanceForAccount(address)
@@ -186,7 +212,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
       self.assertEqual(connection_dict.get("address", "<missing>"), address)
       error = connection_dict.get("error", "<missing>")
-      self.assertIn("duplicate", error, f"Expected duplicate error for {address}, got {error}")
+      self.assertIn("address_already_used", error, f"Expected duplicate error for {address}, got {error}")
       self.requestSlaveInstanceForAccount(address, suffix="-test", state="destroyed")
 
     reset_tok = "unique-12345"
