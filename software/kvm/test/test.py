@@ -54,9 +54,9 @@ from slapos.slap.standalone import SlapOSNodeCommandError
 from slapos.testing.utils import findFreeTCPPort
 
 # To be in sync with component/vm-img/debian.cfg
-DEFAULT_IMAGE_ISONAME = 'debian-12.12.0-amd64-netinst.iso'
-DEFAULT_IMAGE_TITLE = 'Debian Bookworm 12 netinst x86_64'
-DEFAULT_IMAGE_MD5SUM = 'fed10490abd508da793071df57e9cb70'
+DEFAULT_IMAGE_ISONAME = 'debian-13.1.0-amd64-netinst.iso'
+DEFAULT_IMAGE_TITLE = 'Debian Trixie 13 netinst x86_64'
+DEFAULT_IMAGE_MD5SUM = 'a9d5c5778f6e228af1e462d717a6d544'
 ##
 
 has_kvm = os.access('/dev/kvm', os.R_OK | os.W_OK)
@@ -2093,7 +2093,7 @@ class TestNatRules(KvmMixin, KVMTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {'_': json.dumps({
-      'nat-rules': '100 200',
+      'nat-rules': [100, 200],
     })}
 
   def test(self):
@@ -2116,7 +2116,7 @@ class TestNatRules(KvmMixin, KVMTestCase):
 class TestNatRulesKvmCluster(KVMTestCase):
   __partition_reference__ = 'nrkc'
 
-  nat_rules = ["100", "200", "300"]
+  nat_rules = [100, 200, 300]
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -2155,13 +2155,6 @@ class TestNatRulesKvmCluster(KVMTestCase):
     self.assertIn(
       f'hostfwd=tcp:{self._ipv4_address}:10300-:300',
       host_fwd_entry)
-
-
-@skipUnlessKvm
-class TestNatRulesKvmClusterComplex(TestNatRulesKvmCluster):
-  __partition_reference__ = 'nrkcc'
-  nat_rules = ["100", "200 300"]
-
 
 @skipUnlessKvm
 class TestWhitelistFirewall(KVMTestCase):
