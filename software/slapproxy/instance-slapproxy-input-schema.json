@@ -24,8 +24,14 @@
           "type": "string"
         }
       },
-      "required": ["url", "revision"]
+      "required": [
+        "url",
+        "revision"
+      ]
     }
   },
-  "required": ["accepted-client-ipv6", "json-schema-repository"]
+  "required": [
+    "accepted-client-ipv6",
+    "json-schema-repository"
+  ]
 }
