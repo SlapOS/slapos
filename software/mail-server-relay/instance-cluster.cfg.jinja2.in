@@ -16,7 +16,7 @@ recipe = slapos.cookbook:request.serialised
 software-url = $${slap-connection:software-release-url}
 software-type = relay
 config-monitor-password = $${monitor-instance-parameter:password}
-{% for key, value in slapparameter_dict['default-relay-config'].items() -%}
+{% for key, value in slapparameter_dict['default-proxy-config'].items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-mail-domains = $${filter-shared-instances:accepted-domain-list}
@@ -24,15 +24,10 @@ return =
   smtp-ipv6
   smtp-port
 
-{% if "relay-domain" in slapparameter_dict %}
-{% set relay_host = slapparameter_dict['relay-domain'] %}
-{% else %}
-{% set relay_host = "$${request-relay-" + next(iter(slapparameter_dict['topology'].keys())) + ":connection-smtp-ipv6}" %}
-{% endif %}
-
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
+dns-entries = $${filter-shared-instances:dns-entries}
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
 [request-relay-{{ relay_name }}]
@@ -55,6 +50,12 @@ depends =
 {% for relay_name in slapparameter_dict['topology'].keys() %}
   $${request-relay-{{ relay_name }}:recipe}
 {% endfor -%}
+{% if "relay-domain" in slapparameter_dict %}
+relay-host = {{ slapparameter_dict['relay-domain'] }}
+{% else %}
+# TODO: use multiple relays when supported
+relay-host = $${request-relay-{{ next(iter(slapparameter_dict['topology'].keys())) }}:connection-smtp-ipv6}
+{% endif %}
 
 
 # Shared instances (domains)
@@ -117,6 +118,11 @@ init =
 
   options['published-domain-dict'] = pub_domain_dict
   options['accepted-domain-list'] = list(output.values())
+  options['dns-entries'] = "\n".join(
+    f"  {entry['name']} MX 10 {self.buildout['request-all-relays']['relay-host']}"
+    for entry in output.values()
+    if entry['can-send']
+  )
 
   self.output = output
 
@@ -144,11 +150,11 @@ init =
     else:
       section += f"""
   dns-entries =
-    {info['addr']} MX 10 {{ relay_host }}
+    {info['addr']} MX 10 {self.buildout['request-all-relays']['relay-host']}
       """
       if info['can-send']:
         section += f"""
-  outbound-host = {{ relay_host }}
+  outbound-host = {self.buildout['request-all-relays']['relay-host']}
   outbound-smtp-port = 10025
         """
       else:

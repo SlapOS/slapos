@@ -119,8 +119,8 @@ context =
   raw postfix_location ${postfix:location}
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
-  raw relay_host {{ slapparameter_dict['relay-host'] }}
-  raw relay_port {{ slapparameter_dict['relay-port'] }}
+  raw proxy_host {{ slapparameter_dict['proxy-host'] }}
+  raw proxy_port {{ slapparameter_dict['proxy-port'] }}
   key mail_domains :mail-domains
   key mail_hosts :mail-hosts
   key postfix_cert_file postfix-generate-certificate:cert-file
@@ -156,10 +156,10 @@ recipe = slapos.recipe.template:jinja2
 url = ${postfix_sasl_passwd.in:target}
 output = $${postfix-directory:etc}/sasl_passwd
 context =
-  raw relay_host {{ slapparameter_dict['relay-host'] }}
-  raw relay_port {{ slapparameter_dict['relay-port'] }}
-  raw relay_user {{ slapparameter_dict['relay-user'] }}
-  raw relay_pass {{ slapparameter_dict['relay-password'] }}
+  raw proxy_host {{ slapparameter_dict['proxy-host'] }}
+  raw proxy_port {{ slapparameter_dict['proxy-port'] }}
+  raw proxy_user {{ slapparameter_dict['proxy-user'] }}
+  raw proxy_pass {{ slapparameter_dict['proxy-password'] }}
 
 [postfix-transport]
 recipe = slapos.recipe.template:jinja2

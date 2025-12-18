@@ -46,11 +46,11 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     return {
       "_": json.dumps(
         {
-          "default-relay-config": {
-            "relay-host": "example.com",
-            "relay-port": 2525,
-            "relay-user": "user",
-            "relay-password": "pass",
+          "default-proxy-config": {
+            "proxy-host": "example.com",
+            "proxy-port": 2525,
+            "proxy-user": "user",
+            "proxy-password": "pass",
           },
           "outbound-domain-whitelist": [
             "mail1.domain.lan",
