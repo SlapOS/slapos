@@ -7,6 +7,7 @@ Fixes this issue:
     statsmodels 0.0.0
     with a different version.
 
+Updated later for 0.14.6
 
 diff -ruN statsmodels-0.14.4.orig/setup.py statsmodels-0.14.4/setup.py
 --- statsmodels-0.14.4.orig/setup.py	2025-01-24 09:27:54.995143777 +0100
@@ -15,7 +16,7 @@ diff -ruN statsmodels-0.14.4.orig/setup.py statsmodels-0.14.4/setup.py
  
  setup(
      name=DISTNAME,
-+    version='0.14.4',
++    version='0.14.6',
      maintainer=MAINTAINER,
      ext_modules=extensions,
      maintainer_email=MAINTAINER_EMAIL,
