@@ -34,37 +34,20 @@
 ###################################
 
 upstream gitlab-workhorse {
-  server unix:{{ gitlab_workhorse.socket }};
+  server unix:{{ gitlab_workhorse.socket }}  fail_timeout=0;
+}
+
+map $http_upgrade $connection_upgrade_gitlab_ssl {
+    default upgrade;
+    ''      close;
 }
 
 limit_req_zone $trusted_remote_addr zone=downloadarchive:10m rate={{ cfg('nginx_download_archive_rate_limit') }}r/m;
 
-{# not needed for us - the frontend can do the redirection and also
-   gitlab/nginx speaks HSTS on https port so when we access https port via http
-   protocol, it gets redirected to https
-<% if @https && @redirect_http_to_https %>
-## Redirects all HTTP traffic to the HTTPS host
-server {
-<% @listen_addresses.each do |listen_address| %>
-  listen <%= listen_address %>:<%= @redirect_http_to_https_port %>;
-<% end %>
-  server_name <%= @fqdn %>;
-  server_tokens off; ## Don't show the nginx version number, a security best practice
-  return 301 https://<%= @fqdn %>:<%= @port %>$request_uri;
-  access_log  <%= @log_directory %>/gitlab_access.log gitlab_access;
-  error_log   <%= @log_directory %>/gitlab_error.log;
-}
-<% end %>
-#}
 
 server {
   listen [{{ backend_info.host }}]:{{ backend_info.port }}{% if cfg_https %} ssl http2{% endif %};
 
-  {# we don't use: kerbeeros
-  <% if @kerberos_enabled && @kerberos_use_dedicated_port %>
-  listen <%= listen_address %>:<%= @kerberos_port %><% if @kerberos_https %> ssl<% end %>;
-  <% end %>
-  #}
 
   server_name {{ fqdn }};
   server_tokens off; ## Don't show the nginx version number, a security best practice
@@ -93,13 +76,7 @@ server {
   ssl_prefer_server_ciphers {{ cfg('nginx_ssl_prefer_server_ciphers') }};
   ssl_session_cache  {{ cfg('nginx_ssl_session_cache') }};
   ssl_session_timeout  {{ cfg('nginx_ssl_session_timeout') }};
-
-  {# we do not use: ssl_dhparam
-  <% if @ssl_dhparam %>
-  ssl_dhparam <%= @ssl_dhparam %>;
-  <% end %>
-  #}
-  {% endif %}
+ {% endif %}
 
   ## Real IP Module Config
   ## http://nginx.org/en/docs/http/ngx_http_realip_module.html
@@ -165,6 +142,11 @@ server {
 
   limit_req_status 429;
 
+  # A list of IP/IP Network do deny
+  {% for ip_network in cfg("nginx_deny_ip_network_list").split() %}
+  deny {{ ip_network }};
+  {% endfor %}
+
   {# we do not support relative URL - path is always "/" #}
   {% set path = "/" %}
 
@@ -182,6 +164,8 @@ server {
     {% endif %}
     proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
     proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
+    proxy_set_header    Upgrade             $http_upgrade;
+    proxy_set_header    Connection          $connection_upgrade_gitlab_ssl;
 
     proxy_pass http://gitlab-workhorse;
   }
@@ -196,6 +180,8 @@ server {
     {% endif %}
     proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
     proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
+    proxy_set_header    Upgrade             $http_upgrade;
+    proxy_set_header    Connection          $connection_upgrade_gitlab_ssl;
 
     proxy_pass http://gitlab-workhorse;
   }
@@ -221,6 +207,8 @@ server {
     {% endif %}
     proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
     proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
+    proxy_set_header    Upgrade             $http_upgrade;
+    proxy_set_header    Connection          $connection_upgrade_gitlab_ssl;
 
     proxy_pass  http://gitlab-workhorse;
   }
@@ -234,12 +222,37 @@ server {
   error_page 422 /422.html;
   error_page 500 /500.html;
   error_page 502 /502.html;
-  location ~ ^/(404|422|500|502)\.html$ {
+  error_page 503 /503.html;
+  location ~ ^/(404|422|500|502|503)\.html$ {
     root {{ gitlab_work.location }}/public;
     internal;
   }
 
-  {# we don't support custom nginx configs
-  <%= @custom_gitlab_server_config %>
-  #}
+}
+
+server {
+
+  listen [{{ backend_info.host }}]:{{ backend_info['prometheus-port'] }}{% if cfg_https %} ssl http2{% endif %};
+
+  server_name prometheus;
+  server_tokens off;
+
+  access_log  {{ nginx.log }}/prometheus_access.log gitlab_access;
+  error_log   {{ nginx.log }}/prometheus_error.log;
+
+  {% if cfg_https %}
+  ssl_certificate {{ nginx.cert_file }};
+  ssl_certificate_key {{ nginx.key_file }};
+  {% endif %}
+
+  location / {
+    proxy_set_header    Host                $http_host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    {% if cfg_https %}
+    proxy_set_header    X-Forwarded-Ssl     on;
+    {% endif %}
+    proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
+    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
+    proxy_pass          http://{{ prometheus.host }}:{{ prometheus.port }};
+  }
 }
