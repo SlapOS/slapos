@@ -202,7 +202,7 @@ post = {{ bin_directory }}/slapos-kill -s RTMIN+1 -- {{ bin_directory }}/neostor
 
 {% set reflink = slapparameter_dict.get('reflink') -%}
 {% if reflink -%}
-{%   set zurl = 'neo://%s@%s' % (slapparameter_dict['cluster'], slapparameter_dict['masters'].replace(' ', ',')) -%}
+{%   set zurl = 'neo://%s@%s' % (urllib_parse.quote(slapparameter_dict['cluster']), slapparameter_dict['masters'].replace(' ', ',')) -%}
 {%   if slapparameter_dict['ssl'] -%}
 {%     set zurl = zurl + '?ca=${ca.crt:output}&cert=${neo.crt:output}&key=${neo.key:output}' -%}
 {%   endif -%}
