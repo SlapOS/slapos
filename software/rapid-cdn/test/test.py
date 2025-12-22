@@ -1394,7 +1394,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def waitForSlave(cls):
     def method():
-      for parameter_dict in cls.getSlaveConnectionParameterDictList():
+      for parameter_dict in cls.getSlaveConnectionParameterDictDict().values():
         if 'domain' in parameter_dict:
           try:
             _ = fakeHTTPSResult(parameter_dict['domain'], '/')
@@ -1409,18 +1409,6 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
             assert e.command_returncode == 3
             assert 'Bad hostname' in e.command_error
     cls.waitForMethod('waitForSlave', method)
-
-  @classmethod
-  def getSlaveConnectionParameterDictList(cls):
-    parameter_dict_list = []
-
-    for slave_reference, partition_parameter_kw in list(
-      cls.getSlaveParameterDictDict().items()):
-      parameter_dict_list.append(cls.requestSlaveInstance(
-        partition_reference=slave_reference,
-        partition_parameter_kw=partition_parameter_kw,
-      ).getConnectionParameterDict())
-    return parameter_dict_list
 
   @classmethod
   def getSlaveConnectionParameterDictDict(cls):
