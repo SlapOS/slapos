@@ -9,10 +9,10 @@
     ]
   },
   "devDependencies": {
-    "husky": "^7.0.0",
-    "lint-staged": "^12.1.2"
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
   },
   "scripts": {
-    "prepare": "husky install && git config merge.tool update-hash-mergetool && git config mergetool.update-hash-mergetool.cmd './update-hash-mergetool \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"' && git config mergetool.update-hash-mergetool.trustExitCode true"
+    "prepare": "husky && git config merge.tool update-hash-mergetool && git config mergetool.update-hash-mergetool.cmd './update-hash-mergetool \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"' && git config mergetool.update-hash-mergetool.trustExitCode true"
   }
 }
