@@ -2,14 +2,35 @@
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Values returned by account creation",
+  "required": ["address"],
   "properties": {
     "address": {
       "title": "E-mail address",
       "type": "string"
-    },
-    "token": {
-      "title": "Password change token",
-      "type": "string"
     }
-  }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "error": {
+          "title": "Error message",
+          "type": "string"
+        }
+      },
+      "required": ["error"]
+    },
+    {
+      "properties": {
+        "token": {
+          "title": "Password change token",
+          "type": "string"
+        },
+        "setup-url": {
+          "title": "Setup URL",
+          "type": "string"
+        }
+      },
+      "required": ["token", "setup-url"]
+    }
+  ]
 }
