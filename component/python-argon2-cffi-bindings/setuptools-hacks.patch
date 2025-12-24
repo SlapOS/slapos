@@ -1,0 +1,48 @@
+Workaround pyproject.toml license schema change for slapos' old setuptools
+
+File "/SR/eggs/setuptools-67.8.0-py3.11.egg/setuptools/config/pyprojecttoml.py", line 55, in validate
+    raise ValueError(f"{error}\n{summary}") from None
+ValueError: invalid pyproject.toml config: `project.license`.
+configuration error: `project.license` must be valid exactly by one definition (0 matches found):
+    
+        - keys:
+            'file': {type: string}
+        required: ['file']
+        - keys:
+            'text': {type: string}
+        required: ['text']
+    
+    [end of output]
+
+and
+
+    Installing argon2-cffi-bindings 25.1.0
+    Caused installation of a distribution:
+    argon2-cffi-bindings 0.0.0+slapospatched001
+    with a different version.
+
+
+diff '--color=auto' -ru argon2_cffi_bindings-25.1.0.orig/pyproject.toml argon2_cffi_bindings-25.1.0/pyproject.toml
+--- argon2_cffi_bindings-25.1.0.orig/pyproject.toml	2025-12-18 22:24:43.239100169 +0900
++++ argon2_cffi_bindings-25.1.0/pyproject.toml	2025-12-18 22:28:13.913539767 +0900
+@@ -15,8 +15,7 @@
+ readme = { content-type = "text/markdown", file = "README.md" }
+ authors = [{ name = "Hynek Schlawack", email = "hs@ox.cx" }]
+ requires-python = ">=3.9"
+-license = "MIT"
+-license-files = ["LICENSE"]
++license = { file = "LICENSE" }
+ keywords = ["password", "hash", "hashing", "security", "bindings", "cffi"]
+ classifiers = [
+     "Development Status :: 5 - Production/Stable",
+diff '--color=auto' -ru argon2_cffi_bindings-25.1.0.orig/setup.py argon2_cffi_bindings-25.1.0/setup.py
+--- argon2_cffi_bindings-25.1.0.orig/setup.py	2025-12-18 22:37:49.273261214 +0900
++++ argon2_cffi_bindings-25.1.0/setup.py	2025-12-18 22:38:18.321045406 +0900
+@@ -35,6 +35,7 @@
+     setup(
+         # Ensure limited API is set on CPython
+         cmdclass=cmdclass,
++        version='25.1.0',
+         # CFFI
+         zip_safe=False,
+         ext_package="_argon2_cffi_bindings",
