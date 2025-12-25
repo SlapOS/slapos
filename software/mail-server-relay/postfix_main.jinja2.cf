@@ -45,7 +45,7 @@ mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8 {{ (mail_hosts) | join(' ')
 virtual_transport = relay
 relay_recipient_maps =
 relay_domains = {{ (mail_domains) | map(attribute='name') | join(',') }}
-relayhost = [{{ relay_host }}]:{{ relay_port }}
+relayhost = [{{ proxy_host }}]:{{ proxy_port }}
 
 maillog_file = {{ postfix_log_path }}
 maillog_file_compressor = {{ xz_utils_location }}/bin/xz
