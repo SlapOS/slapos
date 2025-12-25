@@ -1,0 +1,91 @@
+From 2fcb917cd38a576fabc4281d33e9c5c6653abbd7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Thu, 25 Dec 2025 14:17:48 +0900
+Subject: [PATCH] SlapOS: adjust the "open" policy to be more strict
+
+Apply some limit, but still be permissive enough for ERP5:
+ERP5 read SVG and uses stdin / stdout.
+
+See https://imagemagick.org/script/security-policy.php
+---
+ config/policy-open.xml | 27 ++++++++++++++-------------
+ 1 file changed, 14 insertions(+), 13 deletions(-)
+
+diff --git a/config/policy-open.xml b/config/policy-open.xml
+index 17cb250aa..5ab0d0eff 100644
+--- a/config/policy-open.xml
++++ b/config/policy-open.xml
+@@ -84,41 +84,41 @@
+ <policymap>
+   <policy domain="Undefined" rights="none"/>
+   <!-- Set maximum parallel threads. -->
+-  <!-- <policy domain="resource" name="thread" value="2"/> -->
++  <policy domain="resource" name="thread" value="2"/>
+   <!-- Set maximum time to live in seconds or mnemonics, e.g. "2 minutes". When
+        this limit is exceeded, an exception is thrown and processing stops. -->
+-  <!-- <policy domain="resource" name="time" value="120"/> -->
++  <policy domain="resource" name="time" value="120"/>
+   <!-- Set maximum number of open pixel cache files. When this limit is
+        exceeded, any subsequent pixels cached to disk are closed and reopened
+        on demand. -->
+-  <!-- <policy domain="resource" name="file" value="768"/> -->
++  <policy domain="resource" name="file" value="768"/>
+   <!-- Set maximum amount of memory in bytes to allocate for the pixel cache
+        from the heap. When this limit is exceeded, the image pixels are cached
+        to memory-mapped disk. -->
+-  <!-- <policy domain="resource" name="memory" value="256MiB"/> -->
++  <policy domain="resource" name="memory" value="256MiB"/>
+   <!-- Set maximum amount of memory map in bytes to allocate for the pixel
+        cache. When this limit is exceeded, the image pixels are cached to
+        disk. -->
+-  <!-- <policy domain="resource" name="map" value="512MiB"/> -->
++  <policy domain="resource" name="map" value="512MiB"/>
+   <!-- Set the maximum width * height of an image that can reside in the pixel
+        cache memory. Images that exceed the area limit are cached to disk. -->
+-  <!-- <policy domain="resource" name="area" value="16KP"/> -->
++  <policy domain="resource" name="area" value="16KP"/>
+   <!-- Set maximum amount of disk space in bytes permitted for use by the pixel
+        cache. When this limit is exceeded, the pixel cache is not be created
+        and an exception is thrown. -->
+-  <!-- <policy domain="resource" name="disk" value="1GiB"/> -->
++  <policy domain="resource" name="disk" value="1GiB"/>
+   <!-- Set the maximum length of an image sequence.  When this limit is
+        exceeded, an exception is thrown. -->
+-  <!-- <policy domain="resource" name="list-length" value="32"/> -->
++  <policy domain="resource" name="list-length" value="32"/>
+   <!-- Set the maximum width of an image.  When this limit is exceeded, an
+        exception is thrown. -->
+-  <!-- <policy domain="resource" name="width" value="8KP"/> -->
++  <policy domain="resource" name="width" value="8KP"/>
+   <!-- Set the maximum height of an image.  When this limit is exceeded, an
+        exception is thrown. -->
+-  <!-- <policy domain="resource" name="height" value="8KP"/> -->
++  <policy domain="resource" name="height" value="8KP"/>
+   <!-- Periodically yield the CPU for at least the time specified in
+        milliseconds. -->
+-  <!-- <policy domain="resource" name="throttle" value="2"/> -->
++  <policy domain="resource" name="throttle" value="2"/>
+   <!-- Do not create temporary files in the default shared directories, instead
+        specify a private area to store only ImageMagick temporary files. -->
+   <!-- <policy domain="resource" name="temporary-path" value="/magick/tmp/"/> -->
+@@ -136,9 +136,9 @@
+   <!-- Don't read/write from/to stdin/stdout. -->
+   <!-- <policy domain="path" rights="none" pattern="-"/> -->
+   <!-- don't read sensitive paths. -->
+-  <!-- <policy domain="path" rights="none" pattern="/etc/*"/> -->
++  <policy domain="path" rights="none" pattern="/etc/*"/>
+   <!-- Indirect reads are not permitted. -->
+-  <!-- <policy domain="path" rights="none" pattern="@*"/> -->
++  <policy domain="path" rights="none" pattern="@*"/>
+   <!-- These image types are security risks on read, but write is fine -->
+   <!-- <policy domain="module" rights="write" pattern="{MSL,MVG,PS,SVG,URL,XPS}"/> -->
+   <!-- This policy sets the number of times to replace content of certain
+@@ -150,4 +150,5 @@
+   <!-- Set the maximum amount of memory in bytes that are permitted for
+        allocation requests. -->
+   <!-- <policy domain="system" name="max-memory-request" value="256MiB"/> -->
++  <policy domain="coder" rights="none" pattern="{EPHEMERAL,HTTPS,MSL,MVG,PLT,SHOW,TEXT,URL,WIN}" />
+ </policymap>
+-- 
+2.48.0
+
