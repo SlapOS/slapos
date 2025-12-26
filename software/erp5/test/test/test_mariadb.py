@@ -1023,7 +1023,10 @@ class TestMariaDBReplicationChain(MariaDBReplicationTestCase):
         caucased=False,
       )
       replicas.append(replica)
-      self.checkReplicaState(replica)
+      for i in range(7):
+        if self.checkReplicaState(replica) == 0:
+          break
+        time.sleep((i + 1) ** 2)
       cnx = self.getDatabaseConnection(replica)
       with contextlib.closing(cnx):
         with cnx.cursor() as cursor:
