@@ -360,6 +360,7 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services-on-watch}/haproxy
 command-line =
   "{{ parameter_dict['haproxy'] }}/sbin/haproxy"
+  -W
   -S ${haproxy-cfg-parameter-dict:admin-socket},level,operator
   -f "${haproxy-cfg:output}"
 hash-files = ${haproxy-cfg:output}
