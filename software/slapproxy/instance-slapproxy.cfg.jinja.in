@@ -137,6 +137,7 @@ wrapper-path = $${directory:service}/$${:_buildout_section_name_}
 socket-path =  $${directory:run}/haproxy.sock
 command-line =
   ${haproxy:location}/sbin/haproxy
+    -W
     -S $${:socket-path},level,operator
     -f $${haproxy.cfg:output}
 hash-files = $${haproxy.cfg:output}
