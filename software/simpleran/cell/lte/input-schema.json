@@ -97,6 +97,49 @@
         ]
       },
       "default": ["EEA2 (128 bit AES)","EEA1 (Snow 3G)"]
+    },
+    "tti_bundling": {
+      "title": "TTI Bundling",
+      "description": "TTI Bundling",
+      "type": "object",
+      "properties": {
+        "snr_threshold": {
+          "title": "SNR Threshold",
+          "description": "Range: -6 to 40 dB. UL SNR value in dB (measured on PUSCH and SRS) below which TTI bundling will be configured.",
+          "type": "number"
+        },
+        "phr_threshold": {
+          "title": "PHR Threshold",
+          "description": "Range: 0 to 40 dB. UL PHR value (in dB for 1 RB allocation) below which TTI bundling will be configured. This condition is OR’ed with the snr_threshold trigger.",
+          "default": 0,
+          "type": "number"
+        },
+        "hysteresis": {
+          "title": "Hysteresis",
+          "description": "Range 1 to 20 dB. Hysteresis value to add to snr_threshold and phr_threshold when checking conditions to deconfigure TTI bundling. TTI bundling is deconfigured when SNR is above snr_threshold + hysteresis AND PHR is above phr_threshold + hysteresis.",
+          "default": 6,
+          "type": "number"
+        },
+        "mcs_max": {
+          "title": "MCS MAX",
+          "description": "Range 0 to 10. Maximum MCS of PUSCH allocation with TTI bundling.",
+          "default": 10,
+          "type": "number"
+        },
+        "l_crb_max": {
+          "title": "Max PUSCH RB",
+          "description": "Optional integer. Range 1 to UL BW. Maximum number of RBs of PUSCH allocation with TTI bundling. If the UE does not support noResourceRestrictionForTTIBundling-r12, PUSCH allocation is limited to 3 RBs anyway.",
+          "default": 6,
+          "type": "number"
+        },
+        "e_harq_pattern": {
+          "title": "Enable e-HARQ-Pattern-r12",
+          "description": "FDD only. If set and if the UE supports e-HARQ-Pattern-FDD-r12, eNB configures the e-HARQ-Pattern-r12 parameter along with TTI bundling.",
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "default": {}
     }
   }
 }
