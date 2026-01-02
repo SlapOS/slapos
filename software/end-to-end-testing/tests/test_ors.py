@@ -63,7 +63,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                 "cell1": {
                     "cell_type": "eNB",
                     "enable_cell": True,
-                    "tx_power_dbm": 30
+                    "tx_power_dbm": 30,
                     "bandwidth": "10 MHz",
                     "dl_earfcn": 38350,
                 },
