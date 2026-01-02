@@ -18,9 +18,9 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             cls.logger.info("Setting up class")
             
             if DEV:
-                cls.enb_instance_name = 'ors70-dev-enb'
-                cls.core_network_instance_name = 'ors70-dev-core-network'
-                cls.core_network_sim_instance_name = 'ors70-dev-sim'
+                cls.enb_instance_name = 'simbox005-enb-gnb'
+                cls.core_network_instance_name = 'simbox005-core-network'
+                cls.core_network_sim_instance_name = 'simbox005-sim'
             else:
                 cls.enb_instance_name = 'e2e-ors70-enb-2'
                 cls.core_network_instance_name = 'e2e-ors70-mme-1737037360'
@@ -38,11 +38,39 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             plmn = mcc + mnc
             mnc = (3 - len(mnc)) * '0' + mnc
 
+            rf_info = {
+                "sdr_map": {
+                  "0": {
+                    "serial": "001",
+                    "version": "4.5",
+                    "band": "B39",
+                    "tdd": "TDD",
+                    "model": "SDR100"
+                  },
+                  "1": {
+                    "serial": "001",
+                    "version": "4.5",
+                    "band": "B39",
+                    "tdd": "TDD",
+                    "model": "SDR100"
+                  }
+                },
+                "flavour": "BBU"
+              }
+
             cls.parameters = {}
             cls.parameters['enb'] = {
                 "cell1": {
+                    "cell_type": "eNB",
+                    "enable_cell": True,
+                    "tx_power_dbm": 30
                     "bandwidth": "10 MHz",
                     "dl_earfcn": 38350,
+                },
+                "cell2": {
+                    "cell_type": "eNB",
+                    "enable_cell": False,
+                    "tx_power_dbm": 30
                 },
                 "nodeb": {
                     "plmn_list": [
@@ -55,6 +83,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                     "xlog_enabled": False,
                     "xlog_forwarding_enabled": False,
                 },
+                "rf-info": json.dumps(rf_info)
             }
             cls.parameters['core-network#sim'] = {
                 "sim_algo": "milenage",
@@ -79,7 +108,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                       'ru_type': 'sdr',
                       'ru_link_type': 'sdr',
                       'sdr_dev_list': [
-                          0
+                          2
                       ],
                       'n_antenna_dl': 1,
                       'n_antenna_ul': 1,
