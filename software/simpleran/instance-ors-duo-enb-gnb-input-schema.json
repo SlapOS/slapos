@@ -46,6 +46,9 @@
     },
     "monitor-interface-url": {
       "$ref": "instance-ors-gnb-input-schema.json#/properties/monitor-interface-url"
+    },
+    "rf-info": {
+      "$ref": "instance-ors-gnb-input-schema.json#/properties/rf-info"
     }
   },
   "$defs": {
