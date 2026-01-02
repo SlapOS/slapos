@@ -5,6 +5,37 @@
   "ORSMAX": {
     "tx_power_offset": 54
   },
+  "SDR100": {
+    "range": "400MHz - 6GHz",
+    "lte_frequency": 1905,
+    "nr_frequency": 1905,
+    "nr_bandwidth": 10,
+    "lte_bandwidth": 10,
+    "lte_band": 39,
+    "nr_band": 39,
+    "ssb_pos_bitmap": "10000000",
+    "rf_mode": "tdd",
+    "tx_power": [
+      {
+        "coeff": [
+	  0,
+	  1,
+	  -80
+        ],
+	"min": 0,
+	"max": 90
+      },
+      {
+        "coeff": [
+	  0,
+	  1,
+	  -80
+        ],
+	"min": 0,
+	"max": 90
+      }
+    ]
+  },
   "B28": {
     "range": "758MHz - 803MHz",
     "lte_frequency": 792,

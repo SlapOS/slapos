@@ -56,6 +56,12 @@
       "description": "URL to the monitor app used in monitor-setup-url",
       "type": "string",
       "default": "https://monitor.app.officejs.com/#page=ojsm_landing"
+    },
+    "rf-info": {
+      "title": "Expert: RF Info",
+      "description": "Expert only: override RF Info from parameters",
+      "type": "string",
+      "textarea": true
     }
   }
 }
