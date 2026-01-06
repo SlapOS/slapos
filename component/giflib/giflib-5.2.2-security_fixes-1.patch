@@ -1,0 +1,27 @@
+Submitted By:            Douglas R. Reno <renodr at linuxfromscratch dot org>
+Date:                    2025-05-19
+Initial Package Version: 5.2.2
+Upstream Status:         Abandoned
+Origin:                  OpenMandriva (see BLFS Ticket #21574)
+Description:             Fixes several CVEs in giflib that are known to lead to
+                         a heap buffer overflow. The CVEs in question are
+                         CVE-2025-31344, CVE-2024-45993, CVE-2023-48161, and
+                         CVE-2022-28506. The CVEs are all rated High, and are
+                         known to cause crashes with a lower chance of impacts
+                         including arbitrary code execution.
+
+diff -Naurp giflib-5.2.2.orig/gif2rgb.c giflib-5.2.2/gif2rgb.c
+--- giflib-5.2.2.orig/gif2rgb.c	2024-02-18 21:01:28.000000000 -0600
++++ giflib-5.2.2/gif2rgb.c	2025-05-19 15:23:36.911153908 -0500
+@@ -329,6 +329,11 @@ static void DumpScreen2RGB(char *FileNam
+ 			GifRow = ScreenBuffer[i];
+ 			GifQprintf("\b\b\b\b%-4d", ScreenHeight - i);
+ 			for (j = 0; j < ScreenWidth; j++) {
++            /* Check if color is within color palete */
++            if (GifRow[j] >= ColorMap->ColorCount) {
++               GIF_EXIT(GifErrorString(
++                   D_GIF_ERR_IMAGE_DEFECT));
++            }
+ 				ColorMapEntry = &ColorMap->Colors[GifRow[j]];
+ 				Buffers[0][j] = ColorMapEntry->Red;
+ 				Buffers[1][j] = ColorMapEntry->Green;
