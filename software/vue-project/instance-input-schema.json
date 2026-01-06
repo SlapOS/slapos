@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Parameters to instantiate a Vue frontend project",
+  "additionalProperties": false,
+  "required": [],
+  "properties": {
+    "repo-url": {
+      "title": "Repository URL",
+      "description": "Vue project repository URL",
+      "type": "string",
+      "default": "https://lab.nexedi.com/Daetalus/lioedge-web.git"
+    },
+    "revision": {
+      "title": "Revision",
+      "description": "Vue project repository revision",
+      "type": "string",
+      "default": "ab23cbd45858abbd00e9fdce38397bc93a68558e"
+    }
+  }
+}
