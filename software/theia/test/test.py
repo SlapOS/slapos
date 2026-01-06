@@ -149,7 +149,11 @@ class TestTheia(TheiaTestCase):
 
   def test_http_get(self):
     url = self.connection_parameters['url']
+    url_public = self.connection_parameters['url-public']
+    url_slapproxy = self.connection_parameters['url-slapproxy']
     self.get(url, requests.codes.unauthorized)
+    self.get(url_slapproxy, requests.codes.unauthorized)
+    self.get(url_public)
 
     # with login/password, this is allowed
     parsed_url = urlparse(self.connection_parameters['url'])
@@ -167,11 +171,16 @@ class TestTheia(TheiaTestCase):
               'w') as f:
       f.write("hello")
     def get(path_info):
-      resp = self.get(urljoin(url, path_info))
+      resp = self.get(urljoin(url_public, path_info))
       self.assertIn('Content-Security-Policy', resp.headers)
       return resp.text
-    self.assertIn('test_file', get('/public/'))
-    self.assertEqual('hello', get('/public/test_file'))
+    self.assertIn('test_file', get(''))
+    self.assertEqual('hello', get('test_file'))
+
+    # we can reach slapproxy GUI
+    self.assertEqual(url + '/slapproxy/', url_slapproxy)
+    resp = self.get(authenticated_url + '/slapproxy/')
+    self.assertIn('Services',resp.text)
 
     # favicon is not empty
     self.get(urljoin(url, '/favicon.ico'), requests.codes.unauthorized)
