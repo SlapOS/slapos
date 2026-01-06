@@ -19,6 +19,7 @@
       "type": "string"
     },
     "domain": {
+      "default": "example.org",
       "description": "Domain used to generate automatic hostnames for slaves. For example 'example.com' will result with slave hostname 'slaveref.example.com'.",
       "format": "idn-hostname",
       "title": "Domain",
