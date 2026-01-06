@@ -41,6 +41,8 @@ return += url username password backend-url ipv6
 [publish]
 recipe = slapos.cookbook:publish
 url = ${request-theia:connection-url}
+url-slapproxy = ${request-theia:connection-url-slapproxy}
+url-public = ${request-theia:connection-url-public}
 username = ${request-theia:connection-username}
 password = ${request-theia:connection-password}
 backend-url = ${request-theia:connection-backend-url}
