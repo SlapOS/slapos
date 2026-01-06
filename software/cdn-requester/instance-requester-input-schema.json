@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Input Parameters",
+  "allOf": [
+    {
+      "$ref": "/srv/slapgrid/slappart76/srv/project/cdn-requester/software/rapid-cdn/instance-input-schema.json"
+    },
+    {
+      "properties": {
+        "dns-nameserver": {
+          "title": "DNS Nameserver",
+          "default": "",
+          "description": "DNS Nameserver used for checking DNS for custom domains",
+          "type": "string"
+        }
+      }
+    }
+  ],
+  "additionalProperties": true
+}

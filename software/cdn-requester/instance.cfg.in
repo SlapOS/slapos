@@ -1,0 +1,27 @@
+[buildout]
+extends = 
+  {{ software_parameter_dict['rapid-cdn-root-template']}}
+
+[switch-softwaretype]
+requester = dynamic-profile-instancenode:output
+
+[dynamic-profile-instancenode]
+< = jinja2-template-base
+url = {{ software_parameter_dict['instancenode.cfg.in'] }}
+filename = instance-instancenode.cfg
+extra-context =
+    raw software_type requester
+    key instancedb_path slap-configuration:instance-db-path
+    key validated_instance_db_path slap-configuration:valided-instance-db-path
+    key master_instance_profile dynamic-profile-master:output
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.instancenode.deferred
+jsonschema = {{ software_parameter_dict['software.cfg.json'] }}
+depends = 
+  {{ software_parameter_dict['instance-requester-input-schema.json'] }}
+  {{ software_parameter_dict['instance-slave-input-schema.json'] }}
+set-default = main
+validate-parameters = all
+instance-db-path = ${buildout:directory}/slapconfiguration-shared-instance.sqlite
+valided-instance-db-path = ${buildout:directory}/validated-shared-instance.sqlite
