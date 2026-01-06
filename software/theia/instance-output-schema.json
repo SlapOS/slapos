@@ -3,7 +3,15 @@
   "description": "Values returned by Theia instanciation",
   "properties": {
     "url": {
-      "description": "Theia Frontend URL",
+      "description": "Theia Frontend URL (private)",
+      "type": "string"
+    },
+    "url-public": {
+      "description": "Theia Public URL (to serve static files, public)",
+      "type": "string"
+    },
+    "url-slapproxy": {
+      "description": "Theia Slapproxy URL (to see the panel GUI, private)",
       "type": "string"
     },
     "username": {
