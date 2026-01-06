@@ -1021,12 +1021,12 @@ class TestMariaDBReplicationChain(MariaDBReplicationTestCase):
         upstream,
         name='replica%d' % i,
         caucased=False,
-        # enable seconds-behind-master promise so that the slapos node instance
-        # step wait for synchronization to be in sync
-        replication={'seconds-behind-master-threshold':  2},
       )
       replicas.append(replica)
-      self.checkReplicaState(replica)
+      for i in range(7):
+        if self.checkReplicaState(replica) == 0:
+          break
+        time.sleep((i + 1) ** 2)
       cnx = self.getDatabaseConnection(replica)
       with contextlib.closing(cnx):
         with cnx.cursor() as cursor:
