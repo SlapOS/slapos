@@ -315,8 +315,8 @@ location = $${directory:frontend-static}/$${:folder-name}
 folder-name = fonts
 command =
   mkdir -p $${:location}
-  ln -sf ${source-code-pro-fonts:location} $${:location}/source-code-pro
-  ln -sf ${jetbrains-mono-fonts:location} $${:location}/jetbrains-mono
+  ln -nsf ${source-code-pro-fonts:location} $${:location}/source-code-pro
+  ln -nsf ${jetbrains-mono-fonts:location} $${:location}/jetbrains-mono
 stop-on-error = true
 
 [frontend-instance-logo]
