@@ -1,11 +1,13 @@
 [buildout]
 parts =
+  vue-project-src
+  vue-project-build
   nginx-certificate
   nginx-conf
   nginx-service
   nginx-frontend-promise
   request-frontend
-  lioedge-frontend-promise
+  vue-frontend-promise
   publish-connection-parameter
 
 eggs-directory = {{ eggs_directory }}
@@ -31,7 +33,44 @@ ssl = ${:etc}/ssl
 
 [slap-configuration]
 <= slap-connection
-recipe = slapos.cookbook:slapconfiguration
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = {{ software_json_target }}
+set-default = main
+validate-parameters = main
+unstringify = main
+
+[vue-project-src]
+recipe = slapos.recipe.build:gitclone
+repository = ${slap-configuration:configuration.repo-url}
+revision = ${slap-configuration:configuration.revision}
+use-cache = true
+# you need to create your own ~/.netrc with your access token
+
+[vue-project-build]
+recipe = slapos.recipe.build
+dist = ${buildout:parts-directory}/vue-project-build/dist
+install =
+  import os, shutil, subprocess
+
+  src = r"""${vue-project-src:location}"""
+  env = os.environ.copy()
+  env["PATH"] = r"""{{ nodejs_location }}/bin""" + ":" + env.get("PATH", "")
+
+  # Install dependencies from lockfile, then build
+  subprocess.check_call(["npm", "ci", "--no-audit", "--fund=false"], cwd=src, env=env)
+  subprocess.check_call(["npm", "run", "build"], cwd=src, env=env)
+
+  # Export dist to a stable buildout location
+  dist_src = os.path.join(src, "dist")
+  dist_dst = os.path.join(location, "dist")
+
+  if os.path.exists(location):
+    shutil.rmtree(location)
+  os.makedirs(location)
+  shutil.copytree(dist_src, dist_dst)
+
+  with open(os.path.join(location, "REVISION"), "w", encoding="utf-8") as f:
+    f.write(r"""${vue-project-src:revision}""")
 
 [nginx-parameters]
 ipv6 = ${slap-configuration:ipv6-random}
@@ -47,7 +86,7 @@ backend-url = http://${:ipv4}:${:port}
 ssl-certificate = ${directory:etc}/ssl/nginx.crt
 ssl-key = ${directory:etc}/ssl/nginx.key
 
-web-root = {{ lioedge_web_dist }}
+web-root = ${vue-project-build:dist}
 
 [nginx-certificate]
 recipe = plone.recipe.command
@@ -90,13 +129,13 @@ config-port = ${nginx-parameters:port}
 
 [request-frontend]
 <= monitor-frontend
-name = lioedge-web Frontend
+name = vue-site Frontend
 config-url = https://[${nginx-parameters:ipv6}]:${nginx-parameters:port}
 
-[lioedge-frontend-promise]
+[vue-frontend-promise]
 <= monitor-promise-base
 promise = check_url_available
-name = lioedge-http-frontend.py
+name = vue-http-frontend.py
 config-url = ${request-frontend:connection-secure_access}
 
 [publish-connection-parameter]
