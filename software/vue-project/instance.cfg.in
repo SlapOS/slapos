@@ -1,5 +1,6 @@
 [buildout]
 parts =
+  netrc-copy
   vue-project-src
   vue-project-build
   nginx-certificate
@@ -38,6 +39,31 @@ jsonschema = {{ software_json_target }}
 set-default = main
 validate-parameters = main
 unstringify = main
+
+[netrc-copy]
+recipe = slapos.recipe.build
+location = ${buildout:parts-directory}/${:_buildout_section_name_}
+
+install =
+  import os, shutil, stat
+
+  os.makedirs(location, exist_ok=True)
+
+  src = r"""{{ software_home_location }}/.netrc"""
+  dst = r"""${directory:home}/.netrc"""
+
+  if not os.path.isfile(src):
+    raise FileNotFoundError("Source .netrc not found: %r" % (src,))
+
+  os.makedirs(os.path.dirname(dst), exist_ok=True)
+
+  # copy file (preserve content, overwrite if exists)
+  shutil.copyfile(src, dst)
+
+  # force strict permissions: 0600
+  os.chmod(dst, stat.S_IRUSR | stat.S_IWUSR)
+
+update = ${:install}
 
 [vue-project-src]
 recipe = slapos.recipe.build:gitclone
