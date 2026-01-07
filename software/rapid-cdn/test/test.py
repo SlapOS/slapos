@@ -2549,14 +2549,34 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # check all verbs
     for verb in [
       'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']:
-      result_verb = fakeHTTPSResult(
-        parameter_dict['domain'], '/' + verb, verb=verb)
+      try:
+        result_verb = fakeHTTPSResult(
+          parameter_dict['domain'], '/' + verb, verb=verb)
+      except CurlException as e:
+        if verb == 'CONNECT' and self.max_http_version in ['2', '3']:
+          exception = e
+        else:
+          raise
+      else:
+        exception = None
       if verb == 'CONNECT':
         if self.max_http_version == '1':
           self.assertEqual(
             http.client.BAD_REQUEST, result_verb.status_code, verb)
           self.assertIn(
             'Your browser sent an invalid request', result_verb.text, verb)
+        elif self.max_http_version == '3':
+          self.assertIsNotNone(exception)
+          self.assertEqual(exception.command_returncode, 95)
+          # XXX: Ignore command_error comparision, see https://github.com/curl/curl/issues/20195
+        elif self.max_http_version == '2':
+          self.assertIsNotNone(exception)
+          self.assertEqual(exception.command_returncode, 92)
+          self.assertEqual(
+            exception.command_error,
+            f'curl: (92) QUIC: connection to {TEST_IP} port '
+            f'{HTTPS_PORT} refused\n'
+          )
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
@@ -4297,15 +4317,35 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         headers = {'Content-Length': '0'}  # To satisfy TrafficServer
       else:
         headers = None
-      result_verb = fakeHTTPSResult(
-        parameter_dict['domain'], '/' + verb, verb=verb, headers=headers
-      )
+      try:
+        result_verb = fakeHTTPSResult(
+          parameter_dict['domain'], '/' + verb, verb=verb, headers=headers
+        )
+      except CurlException as e:
+        if verb == 'CONNECT' and self.max_http_version in ['2', '3']:
+          exception = e
+        else:
+          raise
+      else:
+        exception = None
       if verb == 'CONNECT':
         if self.max_http_version == '1':
           self.assertEqual(
             http.client.BAD_REQUEST, result_verb.status_code, verb)
           self.assertIn(
             'Your browser sent an invalid request', result_verb.text, verb)
+        elif self.max_http_version == '3':
+          self.assertIsNotNone(exception)
+          self.assertEqual(exception.command_returncode, 95)
+          # XXX: Ignore command_error comparision, see https://github.com/curl/curl/issues/20195
+        elif self.max_http_version == '2':
+          self.assertIsNotNone(exception)
+          self.assertEqual(exception.command_returncode, 92)
+          self.assertEqual(
+            exception.command_error,
+            f'curl: (92) QUIC: connection to {TEST_IP} port '
+            f'{HTTPS_PORT} refused\n'
+          )
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
