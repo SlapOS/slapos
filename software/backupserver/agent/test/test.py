@@ -45,8 +45,6 @@ class TestBackupServerAgent(InstanceTestCase):
     rdiff_backup_path = os.path.join(
       self.slap.software_directory,
       hashlib.md5(self.getSoftwareURL().encode()).hexdigest(),
-      'parts',
-      'rdiff-backup',
       'bin',
       'rdiff-backup',
     )
@@ -55,4 +53,4 @@ class TestBackupServerAgent(InstanceTestCase):
       capture_output=True,
     )
     self.assertEqual(result.returncode, 0, result.stdout)
-    self.assertEqual(result.stdout, b'rdiff-backup 1.0.5\n')
+    self.assertEqual(result.stdout, b'rdiff-backup 2.2.6\n')
