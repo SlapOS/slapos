@@ -43,7 +43,7 @@ unstringify = main
 [netrc-copy]
 recipe = slapos.recipe.build
 location = ${buildout:parts-directory}/${:_buildout_section_name_}
-
+install =
   import os, shutil, stat
 
   # slapos.recipe.build expects location to exist
