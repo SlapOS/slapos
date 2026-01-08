@@ -12,26 +12,69 @@
       },
       "default": []
     },
-    "relay-host": {
-      "title": "Relay Host",
-      "description": "The host name of the relay server used for outbound mail",
-      "type": "string"
-    },
-    "relay-port": {
-      "title": "Relay Port",
-      "description": "The port of the relay server used for outbound mail",
-      "type": "integer"
+    "outbound-relay": {
+      "title": "Outbound Relay",
+      "description": "The relay server configuration for outbound mail",
+      "type": "object",
+      "properties": {
+        "host": {
+          "title": "Host",
+          "description": "The host name of the relay server. If empty, the requested relay will be used.",
+          "type": "string",
+          "default": ""
+        },
+        "port": {
+          "title": "Port",
+          "description": "The port of the relay server",
+          "type": "integer",
+          "default": 25
+        }
+      },
+      "default": {}
     },
     "relay-sr-url": {
       "title": "Relay SR URL",
-      "description": "A custom URL to use for the relay SR",
-      "type": "string"
+      "description": "A custom URL to use for the relay SR instead of the latest stable version",
+      "type": "string",
+      "default": "urn:slapos:mail-relay"
+    },
+    "no-relay": {
+      "title": "Do not request a relay at all",
+      "description": "If set to true, no relay will be requested at all. The mail server will only receive and send mail directly.",
+      "type": "boolean",
+      "default": false
     },
     "test-account": {
       "title": "Builtin Test Account",
-      "description": "If set, a builtin test account will be created for each domain with address testmail@<domain> and password testmail",
+      "description": "If set, a builtin test account will be created for each domain with address testmail@<domain> and password password123",
       "type": "boolean",
       "default": false
+    },
+    "request-dns": {
+      "title": "Request DNS",
+      "description": "DNS request configuration",
+      "type": "object",
+      "properties": {
+        "enable": {
+          "title": "Enable",
+          "description": "Request local DNS to a core network running on the same node",
+          "type": "boolean",
+          "default": false
+        },
+        "sr-url": {
+          "title": "SR URL",
+          "description": "The software URL to use for requesting DNS entries",
+          "type": "string",
+          "default": "automated_local_dns"
+        },
+        "sr-type": {
+          "title": "SR Type",
+          "description": "The software type to use for requesting DNS entries",
+          "type": "string",
+          "default": "core-network"
+        }
+      },
+      "default": {}
     }
   },
   "required": [

@@ -46,11 +46,11 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     return {
       "_": json.dumps(
         {
-          "default-relay-config": {
-            "relay-host": "example.com",
-            "relay-port": 2525,
-            "relay-user": "user",
-            "relay-password": "pass",
+          "default-proxy-config": {
+            "proxy-host": "example.com",
+            "proxy-port": 2525,
+            "proxy-user": "user",
+            "proxy-password": "pass",
           },
           "outbound-domain-whitelist": [
             "mail1.domain.lan",
@@ -64,7 +64,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
               "relay-bar": {
                   "state": "started",
                   "config": {
-                    "relay-host": "bar.example.com"
+                    "proxy-host": "bar.example.com"
                   }
               }
           }
@@ -122,10 +122,10 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
       self.assertEqual(connection_dict.get("outbound-host", "<missing>"), "foobaz.lan")
       self.assertEqual(connection_dict.get("outbound-smtp-port", "<missing>"), "10025")
-      self.assertEqual(connection_dict.get("dns-entries", "<missing>"), "") # todo
+      self.assertEqual(connection_dict.get("dns-entries", "<missing>"), f"{domain} MX 10 foobaz.lan")
       
       slave_dup_instance = self.requestSlaveInstanceForDomain(domain, suffix="-test")
       connection_dict = json.loads(slave_dup_instance.getConnectionParameterDict().get("_", "{}"))
       error = connection_dict.get("error", "<missing>")
-      self.assertIn("duplicate", error, f"Expected duplicate error for {domain}, got {error}")
+      self.assertIn("address_already_used", error, f"Expected duplicate error for {domain}, got {error}")
 
