@@ -73,6 +73,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         LC_ALL=C
         export LC_ALL
         RDIFF_BACKUP=%(rdiffbackup_binary)s
+        echo "Starting the restoration..."
         $RDIFF_BACKUP \\
                 --api-version 201 \\
                 --remote-schema %(remote_schema)s \\
@@ -80,6 +81,14 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                 restore --at now \\
                 %(local_dir)s \\
                 %(remote_dir)s
+
+        if [ $? = 0 -o $? = 2 ]
+        then
+          echo "... done"
+        else
+          echo "... failed"
+          return 1
+        fi
         """)
 
     template_dict = {
@@ -160,9 +169,9 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
         [ "$CORRUPTED_ARGS" ] && rm -f "$CORRUPTED_FILE" "$CANTFIND_FILE"
 
-        if [ ! $RDIFF_BACKUP_STATUS -eq 0 ]; then
-            # Check the backup, go to the last consistent backup, so that next
-            # run will be okay.
+        if [ $RDIFF_BACKUP_STATUS != 0 -a $RDIFF_BACKUP_STATUS != 2 ]; then
+            # Backup failed, check the backup, go to the last consistent backup,
+            # so that next run will be okay.
             echo "Checking backup directory..."
             $RDIFF_BACKUP --api-version 201 regress $BACKUP_DIR
             if [ ! $? -eq 0 ]; then
@@ -182,6 +191,13 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             # Everything's okay, cleaning up...
             echo "Cleaning backup directory..."
             $RDIFF_BACKUP --api-version 201 --force remove increments --older-than %(remove_backup_older_than)s $BACKUP_DIR
+            if [ $? = 0 -o $? = 2 ]
+            then
+              echo "... done"
+            else
+              echo "... failed"
+              return 1
+            fi
         fi
 
 
