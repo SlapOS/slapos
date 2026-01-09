@@ -18,6 +18,16 @@
         2
       ],
       "default": 2
+    },
+    "plmn_list": {
+      "$ref": "instance-enb-input-schema.json#/properties/plmn_list_5g",
+      "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: PLMN 00101 and TAC 1)",
+      "default": [
+        {
+          "plmn": "00101",
+          "tac": "0x01"
+        }
+      ]
     }
   }
 }
