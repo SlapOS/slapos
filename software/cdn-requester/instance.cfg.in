@@ -3,11 +3,11 @@ extends =
   {{ software_parameter_dict['rapid-cdn-root-template']}}
 
 [switch-softwaretype]
-requester = dynamic-profile-instancenode:output
+requester = dynamic-profile-instance-instancenode:output
 
-[dynamic-profile-instancenode]
+[dynamic-profile-instance-instancenode]
 < = jinja2-template-base
-url = {{ software_parameter_dict['instancenode.cfg.in'] }}
+url = {{ software_parameter_dict['instance-instancenode.cfg.in'] }}
 filename = instance-instancenode.cfg
 extra-context =
     raw software_type requester
@@ -21,6 +21,8 @@ jsonschema = {{ software_parameter_dict['software.cfg.json'] }}
 depends = 
   {{ software_parameter_dict['instance-requester-input-schema.json'] }}
   {{ software_parameter_dict['instance-slave-input-schema.json'] }}
+  {{ software_parameter_dict['instance-kedifa-input-schema.json'] }}
+  {{ software_parameter_dict['instance-input-schema.json'] }}
 set-default = main
 validate-parameters = all
 instance-db-path = ${buildout:directory}/slapconfiguration-shared-instance.sqlite
