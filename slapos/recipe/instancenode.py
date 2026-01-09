@@ -68,11 +68,11 @@ class Recipe(object):
       Current partition's identifiers.
       Must match key's credentials if given.
 
-    software-url (required)
+    software-url
       URL of a software definition to request instances of.
       Must be provided as a recipe option.
 
-    software-type (required)
+    software-type
       Software type of requested instances.
       Must be provided as a recipe option.
 
@@ -117,19 +117,8 @@ class Recipe(object):
     self.partition_id = options['partition-id']
     self.key_file = options.get('key-file')
     self.cert_file = options.get('cert-file')
-
-    # software-url and software-type are mandatory and cannot be overridden
-    if 'software-url' not in options:
-      raise ValueError(
-        'software-url is required. It must be provided as a recipe option.'
-      )
-    self.software_url = options['software-url']
-
-    if 'software-type' not in options:
-      raise ValueError(
-        'software-type is required. It must be provided as a recipe option.'
-      )
-    self.software_type = options['software-type']
+    self.software_url = options.get('software-url')
+    self.software_type = options.get('software-type')
 
     self.shared = options.get('shared', 'false').lower() in ['y', 'yes', '1', 'true']
 
@@ -280,6 +269,12 @@ class Recipe(object):
 
     # Make the request directly using the slap library
     valid = False
+        # software-url and software-type are mandatory and cannot be overridden
+    if not self.software_url or not self.software_type:
+      raise ValueError(
+        'software-url and software-type are required. It must be provided as a recipe option.'
+      )
+
     try:
       instance = computer_partition.request(
         self.software_url,
