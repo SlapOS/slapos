@@ -90,6 +90,7 @@ port    = 7777
 prometheus-port = 7790
 # whether to use http or https - determined by external url
 url     = ${external-url:scheme}://[${:host}]:${:port}
+prometheus-url = http://${prometheus:host}:${prometheus:port}
 
 # current slapuserX
 user    = {{ pwd.getpwuid(os.getuid())[0] }}
@@ -99,6 +100,7 @@ user    = {{ pwd.getpwuid(os.getuid())[0] }}
 <= monitor-publish
 recipe  = slapos.cookbook:publish
 backend_url = ${backend-info:url}
+prometheus-url = ${backend-info:prometheus-url}
 
 
 
@@ -965,6 +967,6 @@ command-line    = {{ prometheus_location }}/prometheus
 
 [promise-prometheus]
 <= promise-byurl
-config-url     = http://${prometheus:host}:${prometheus:port}
+config-url     = ${backend-info:prometheus-url}
 promise = check_url_available
 

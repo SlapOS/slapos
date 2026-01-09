@@ -62,7 +62,7 @@ $RAKE db:migrate >$migrate_log 2>&1  || die "db:migrate failed"
 # migration crash with 'check constraint "check_70f294ef54" is violated by some row'
 # https://gitlab.com/gitlab-org/gitlab/-/merge_requests/112765#note_1395472875
 OATID=$(psql -AXqtc 'SELECT id FROM oauth_access_tokens WHERE expires_in IS NULL LIMIT 1;')
-test -n $ID && psql -c 'UPDATE oauth_access_tokens SET expires_in = '86400' WHERE id = $OATID;'
+test -n $OATID && psql -c 'UPDATE oauth_access_tokens SET expires_in = '86400' WHERE id = $OATID;'
 
 # if it was a no-op "migration" - we don't need info about that - only keep
 # logs of actual migration run.
