@@ -609,33 +609,33 @@ class TestRequestInstanceList(unittest.TestCase):
 
   def test_missing_software_url_error(self):
     """Test error when software-url is missing"""
-    self._createInstanceDB([
-      ('instance1', {'key': 'value'}, True)
-    ])
-
     # Remove software-url from options
     options = self.options.copy()
     del options['software-url']
 
-    with self.assertRaises(ValueError) as cm:
-      instancenode.Recipe(self.buildout, 'test', options)
+    # Recipe can be created without error
+    recipe = instancenode.Recipe(self.buildout, 'test', options)
 
-    self.assertIn('software-url is required', str(cm.exception))
+    # Error should be raised when _requestInstance is called
+    with self.assertRaises(ValueError) as cm:
+      recipe._requestInstance('instance1', {'key': 'value'})
+
+    self.assertIn('software-url and software-type are required', str(cm.exception))
 
   def test_missing_software_type_error(self):
     """Test error when software-type is missing"""
-    self._createInstanceDB([
-      ('instance1', {'key': 'value'}, True)
-    ])
-
     # Remove software-type from options
     options = self.options.copy()
     del options['software-type']
 
-    with self.assertRaises(ValueError) as cm:
-      instancenode.Recipe(self.buildout, 'test', options)
+    # Recipe can be created without error
+    recipe = instancenode.Recipe(self.buildout, 'test', options)
 
-    self.assertIn('software-type is required', str(cm.exception))
+    # Error should be raised when _requestInstance is called
+    with self.assertRaises(ValueError) as cm:
+      recipe._requestInstance('instance1', {'key': 'value'})
+
+    self.assertIn('software-url and software-type are required', str(cm.exception))
 
   def test_no_instances(self):
     """Test behavior when there are no instances"""
