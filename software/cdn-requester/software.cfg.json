@@ -21,15 +21,15 @@
     "single-custom-personal": {
       "description": "",
       "index": 2,
-      "request": "instance-input-schema.json",
-      "response": "instance-output-schema.json",
+      "request": "instance-requester-input-schema.json",
+      "response": "instance-requester-output-schema.json",
       "title": "Custom Personal"
     },
     "custom-personal": {
       "description": "",
       "index": 2,
-      "request": "instance-input-schema.json",
-      "response": "instance-output-schema.json",
+      "request": "instance-requester-input-schema.json",
+      "response": "instance-requester-output-schema.json",
       "title": "Custom Personal"
     },
     "custom-personal-slave": {
@@ -44,8 +44,8 @@
     "default": {
       "description": "Default",
       "index": 3,
-      "request": "instance-input-schema.json",
-      "response": "instance-output-schema.json",
+      "request": "instance-requester-input-schema.json",
+      "response": "instance-requester-output-schema.json",
       "software-type": "default",
       "title": "Default"
     },
