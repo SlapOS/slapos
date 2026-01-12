@@ -286,7 +286,7 @@
                   "type": "string",
                   "pattern": "^[0-9]+(KB|MB|GB)$",
                   "description": "The maximum size for each part in a multipart post request, for the complete body in an urlencoded post request and for the complete request body when accessed as bytes (rather than a file).",
-                  "default": "1MB"
+                  "default": "10MB"
                 },
                 "form-disk-limit": {
                   "type": "string",
