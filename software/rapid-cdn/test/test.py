@@ -2568,7 +2568,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         elif self.max_http_version == '3':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 95)
-          # XXX: Ignore command_error comparision, see https://github.com/curl/curl/issues/20195
+          # XXX: Ignore command_error comparision
+          #      see https://github.com/curl/curl/issues/20195
         elif self.max_http_version == '2':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 92)
@@ -4337,7 +4338,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         elif self.max_http_version == '3':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 95)
-          # XXX: Ignore command_error comparision, see https://github.com/curl/curl/issues/20195
+          # XXX: Ignore command_error comparision
+          #      see https://github.com/curl/curl/issues/20195
         elif self.max_http_version == '2':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 92)
