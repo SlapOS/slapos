@@ -80,11 +80,11 @@ class E2E(SlapOSInstanceTestCase):
     return {
       "_": json.dumps(
         {
-          "default-relay-config": {
-            "relay-host": rhost,
-            "relay-port": rport,
-            "relay-user": ruser,
-            "relay-password": rpass,
+          "default-proxy-config": {
+            "proxy-host": rhost,
+            "proxy-port": rport,
+            "proxy-user": ruser,
+            "proxy-password": rpass,
           },
           "outbound-domain-whitelist": [
             "mail1.domain.lan",
@@ -135,8 +135,7 @@ class E2E(SlapOSInstanceTestCase):
       "mail-domains": [
         "example.com"
       ],
-      "relay-host": "::1",
-      "relay-port": 1234,
+      "no-relay": True,
       "test-account": True,
     }
     return cls.slap.request(

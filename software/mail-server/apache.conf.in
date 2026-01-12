@@ -3,7 +3,8 @@
 # Basic server configuration
 
 PidFile "{{ parameter_dict['pid-file'] }}"
-Listen {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
+Listen {{ parameter_dict['ip'] }}:{{ parameter_dict['http-port'] }}
+Listen {{ parameter_dict['ip'] }}:{{ parameter_dict['https-port'] }}
 
 PHPINIDir {{ parameter_dict['php-ini-dir'] }}
 ServerAdmin someone@email
@@ -24,8 +25,6 @@ LogFormat "%{User-agent}i" agent
 CustomLog "{{ parameter_dict['access-log'] }}" common
 
 # SSL Configuration
-SSLCertificateFile {{ parameter_dict.get('cert-file') }}
-SSLCertificateKeyFile {{ parameter_dict.get('key-file') }}
 SSLRandomSeed startup builtin
 SSLRandomSeed connect builtin
 SSLRandomSeed startup /dev/urandom 256
@@ -33,7 +32,6 @@ SSLRandomSeed connect builtin
 SSLProtocol all -SSLv2 -SSLv3
 SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
 SSLHonorCipherOrder on
-SSLEngine   On
 
 <FilesMatch ".+\.ph(ar|p|tml)$">
     SetHandler application/x-httpd-php
