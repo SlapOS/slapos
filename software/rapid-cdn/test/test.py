@@ -5496,19 +5496,9 @@ class TestReplicateSlave(
       parameter_dict
     )
 
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      result.certificate)
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    result_http = fakeHTTPResult(
-      parameter_dict['domain'], 'test-path')
-    self.assertEqual(http.client.FOUND, result_http.status_code)
-
+    # Note: No access assertions are done, as this test is using two frontend
+    #       nodes and it's quite impossible to set up working CDN in test
+    #       environment due to having only one IPv4.
     # prove replication by asserting that slave ended up in both nodes
     frontend_haproxy_cfg_list = glob.glob(
       os.path.join(self.instance_path, '*', 'etc', 'frontend-haproxy.cfg'))
