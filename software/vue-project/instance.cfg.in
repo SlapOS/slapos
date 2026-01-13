@@ -1,13 +1,9 @@
 [buildout]
 parts =
   netrc-copy
-  vue-project-src
-  vue-project-build
   nginx-certificate
-  nginx-conf
   nginx-service
   nginx-frontend-promise
-  request-frontend
   vue-frontend-promise
   publish-connection-parameter
 

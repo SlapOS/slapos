@@ -38,7 +38,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '../software.cfg')))
 
 
-class TestLlamacpp(SlapOSInstanceTestCase):
+class TestVueProject(SlapOSInstanceTestCase):
   __partition_reference__ = 'G'
 
   @classmethod
