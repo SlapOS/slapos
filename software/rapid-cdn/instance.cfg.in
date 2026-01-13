@@ -71,7 +71,17 @@ extra-context =
 [slap-configuration]
 # Fetches parameters defined in SlapOS Master for this instance.
 # Always the same.
-recipe = slapos.cookbook:slapconfiguration.serialised
+recipe = slapos.cookbook:slapconfiguration.instancenode.deferred
+jsonschema = {{ software_parameter_dict['software.cfg.json'] }}
+depends = 
+  {{ software_parameter_dict['instance-requester-input-schema.json'] }}
+  {{ software_parameter_dict['instance-slave-input-schema.json'] }}
+  {{ software_parameter_dict['instance-kedifa-input-schema.json'] }}
+  {{ software_parameter_dict['instance-input-schema.json'] }}
+set-default = main
+validate-parameters = all
+instance-db-path = ${buildout:directory}/slapconfiguration-shared-instance.sqlite
+valided-instance-db-path = ${buildout:directory}/validated-shared-instance.sqlite
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
@@ -103,10 +113,12 @@ configuration.request-timeout = 600
 configuration.frontend-name =
 configuration.backend-connect-timeout = 5
 configuration.backend-connect-retries = 3
+configuration.automatic-internal-kedifa-caucase-csr = true
+configuration.automatic-internal-backend-client-caucase-csr = true
 configuration.backend-haproxy-http-port = 21080
 configuration.backend-haproxy-https-port = 21443
 configuration.backend-haproxy-statistic-port = 21444
-configuration.authenticate-to-backend = False
+configuration.authenticate-to-backend = false
 configuration.rotate-num = 4000
 configuration.slave-introspection-https-port = 22443
 configuration.expert-backend-allow-downgrade-ssl = false
