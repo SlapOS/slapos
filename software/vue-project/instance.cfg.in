@@ -89,6 +89,7 @@ install =
   os.makedirs(location)
   shutil.copytree(dist_src, dist_dst)
 
+  # Write down the revision numbder to a file, allow user to check it quickly
   with open(os.path.join(location, "REVISION"), "w", encoding="utf-8") as f:
     f.write(r"""${vue-project-src:revision}""")
 
