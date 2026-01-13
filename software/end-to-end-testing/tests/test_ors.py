@@ -21,13 +21,16 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                 cls.enb_gnb_instance_name = "simbox005-enb-gnb"
                 cls.core_network_instance_name = "simbox005-core-network"
                 cls.core_network_sim_instance_name = "simbox005-sim"
+                cls.ue_instance_name = "e2e-sb005-ue"
+                cls.ue_cell_instance_name = "e2e-sb005-ue-cell"
+                cls.ue_ue_instance_name = "e2e-sb005-ue-ue"
             else:
                 cls.enb_gnb_instance_name = "e2e-ors70-enb-2"
                 cls.core_network_instance_name = "e2e-ors70-mme-1737037360"
                 cls.core_network_sim_instance_name = "e2e-ors70-sim-card-1737037360"
-            cls.ue_instance_name = "e2e-sb005-ue-tagged"
-            cls.ue_cell_instance_name = "e2e-sb005-ue-cell-tagged"
-            cls.ue_ue_instance_name = "e2e-sb005-ue-ue-tagged"
+                cls.ue_instance_name = "e2e-sb005-ue-tagged"
+                cls.ue_cell_instance_name = "e2e-sb005-ue-cell-tagged"
+                cls.ue_ue_instance_name = "e2e-sb005-ue-ue-tagged"
 
             # Retry configurations
             cls.max_retries = 1
@@ -340,11 +343,15 @@ class ORSTest(WebsocketTestClass):
         self.parameters["enb-gnb"]["rf-info"] = json.dumps(rf_info)
         self.parameters["ue#cell"].update(
             {
+              "cell_type": "lte",
               "rf_mode": rf_mode.lower(),
               "dl_earfcn": dl_earfcn,
               "ul_earfcn": ul_earfcn,
               "bandwidth": bandwidth,
             })
+        self.parameters["ue#cell"].pop("dl_nr_arfcn", None)
+        self.parameters["ue#cell"].pop("ul_nr_arfcn", None)
+        self.parameters["ue#cell"].pop("ssb_nr_arfcn", None)
 
         self.check_ue_ip()
 
@@ -370,11 +377,16 @@ class ORSTest(WebsocketTestClass):
         self.parameters["enb-gnb"]["rf-info"] = json.dumps(rf_info)
         self.parameters["ue#cell"].update(
             {
+              "cell_type": "nr",
               "rf_mode": rf_mode.lower(),
               "dl_nr_arfcn": dl_nr_arfcn,
               "ul_nr_arfcn": ul_nr_arfcn,
               "bandwidth": bandwidth,
             })
+        self.parameters["ue#cell"].pop("dl_earfcn", None)
+        self.parameters["ue#cell"].pop("ul_earfcn", None)
+
+        self.parameters["ue#ue"]["ue_type"] = "nr"
 
         # Get SSB NR ARFCN
         self.logger.info("Gettting SSB NR ARFCN")
@@ -385,12 +397,13 @@ class ORSTest(WebsocketTestClass):
         while True:
             time.sleep(10)
             connection_params = self.getInstanceInfos(self.enb_gnb_instance_name).connection_dict
-            dl_freq = int(connection_params['RADIO.dl-frequency'].removesuffix(" MHz"))
+            dl_freq = float(connection_params['RADIO.dl-frequency'].removesuffix(" MHz"))
+            self.logger.info(connection_params)
             bandwidth = int(connection_params['RADIO.bandwidth'].removesuffix(" MHz"))
-            if dl_freq != params['dl_frequency']}:
+            if dl_freq != params['dl_frequency']:
                 self.logger.info(f"{dl_freq} != {params['dl_frequency']}")
                 continue
-            if bandwidth != params['nr_bandwidth']}:
+            if bandwidth != params['nr_bandwidth']:
                 self.logger.info(f"{bandwidth} != {params['nr_bandwidth']}")
                 continue
             break
