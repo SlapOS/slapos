@@ -76,7 +76,14 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                     "tx_power_dbm": 30
                 },
                 "nodeb": {
+                    "n_antenna_dl": 1,
+                    "n_antenna_ul": 1,
                     "plmn_list": [
+                        {
+                            "plmn": plmn,
+                        },
+                    ],
+                    "plmn_list_5g": [
                         {
                             "plmn": plmn,
                         },
