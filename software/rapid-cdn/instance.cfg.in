@@ -74,7 +74,7 @@ extra-context =
 recipe = slapos.cookbook:slapconfiguration.instancenode.deferred
 jsonschema = {{ software_parameter_dict['software.cfg.json'] }}
 depends = 
-  {{ software_parameter_dict['instance-requester-input-schema.json'] }}
+  {{ software_parameter_dict['instance-input-schema.json'] }}
   {{ software_parameter_dict['instance-slave-input-schema.json'] }}
   {{ software_parameter_dict['instance-kedifa-input-schema.json'] }}
   {{ software_parameter_dict['instance-input-schema.json'] }}
