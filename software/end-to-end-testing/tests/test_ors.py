@@ -381,6 +381,7 @@ class ORSTest(WebsocketTestClass):
               "rf_mode": rf_mode.lower(),
               "dl_nr_arfcn": dl_nr_arfcn,
               "ul_nr_arfcn": ul_nr_arfcn,
+              "nr_band": int(band[1:]),
               "bandwidth": bandwidth,
             })
         self.parameters["ue#cell"].pop("dl_earfcn", None)
@@ -407,7 +408,7 @@ class ORSTest(WebsocketTestClass):
                 self.logger.info(f"{bandwidth} != {params['nr_bandwidth']}")
                 continue
             break
-        self.parameters["ue#cell"]['ssb_nr_arfcn'] = connection_params['RADIO.ssb-nr-arfcn']
+        self.parameters["ue#cell"]['ssb_nr_arfcn'] = int(connection_params['RADIO.ssb-nr-arfcn'])
 
         self.check_ue_ip()
 
@@ -424,7 +425,7 @@ class ORSTest(WebsocketTestClass):
     #def test_lte_B43_10(self):
     #    self.check_lte_conf(3700, 44590, 44590, 'B43', 'TDD', 10)
     def test_nr_N38_10(self):
-        self.check_nr_conf(2600, 520000, 520000, 'B38', 'TDD', 10)
+        self.check_nr_conf(2600, 520000, 520000, 'B38', 'TDD', 20)
 
     # TODO: uncomment these tests
     #def test_max_rx_sample_db(self):
