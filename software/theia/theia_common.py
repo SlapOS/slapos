@@ -40,7 +40,7 @@ def copyfile(src, dst):
   shutil.copy2(src, dst)
 
 
-def copytree(rsyncbin, src, dst, delete=(), ignorefile=None, extrargs=(), verbosity='-v'):
+def copytree(rsyncbin, src, dst, ignore=(), delete=(), extrargs=(), verbosity='-v'):
   # Ensure there is a trailing slash in the source directory
   # to avoid creating an additional directory level at the destination
   src = os.path.join(src, '')
@@ -59,9 +59,11 @@ def copytree(rsyncbin, src, dst, delete=(), ignorefile=None, extrargs=(), verbos
 
   command.extend(EXCLUDE_FLAGS)
   # Put ignore patterns before delete patterns, so that ignoring takes precedence
-  if ignorefile:
-    command.append('--filter=.-/ {}'.format(ignorefile))
-  command.extend(('--filter=-/ {}'.format(x) for x in sorted(delete)))
+  # Ignore patterns must always be relative to the root of the transfer, so that
+  # they match the same on the sending and the receiving side. Delete patterns
+  # may be absolute paths, as they need only match on the sending side.
+  command.extend(('--filter=- {}'.format(x) for x in sorted(ignore)))
+  command.extend(('--filter=-s/ {}'.format(x) for x in sorted(delete)))
   command.extend(extrargs)
   command.append(verbosity)
   command.append(src)
@@ -104,6 +106,29 @@ def parse_installed(partition):
           if p:
             paths.append(p)
   return paths
+
+
+def parse_ignored(partition):
+  partition = os.path.normpath(os.path.abspath(partition))
+  ignore_rel= os.path.join('srv', 'exporter.exclude')
+  ignorefile = os.path.join(partition, ignore_rel)
+  try:
+    with open(ignorefile) as f:
+      rules = f.read().splitlines()
+  except OSError as e:
+    if e.errno != errno.ENOENT:
+      raise
+    return None, ()
+  parsed = []
+  for rule in rules:
+    rule = rule.strip()
+    if rule:
+      relpath = os.path.relpath(rule, start=partition)
+      if not relpath.startswith(os.pardir):
+        parsed.append(relpath)
+      else:
+        parsed.append(rule)
+  return ignore_rel, parsed
 
 
 def sha256sum(file_path, chunk_size=1024 * 1024):
