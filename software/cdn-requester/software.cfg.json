@@ -1,0 +1,70 @@
+{
+  "name": "CDN Requester",
+  "description": "CDN Requester",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "requester": {
+      "title": "CDN Requester",
+      "software-type": "requester",
+      "request": "instance-requester-input-schema.json",
+      "response": "instance-requester-output-schema.json",
+      "index": 0
+    },
+    "cdn-request": {
+      "title": "CDN Request",
+      "software-type": "requester",
+      "request": "instance-slave-input-schema.json",
+      "response": "instance-slave-output-schema.json",
+      "shared": true,
+      "index": 1
+    },
+    "single-custom-personal": {
+      "description": "",
+      "index": 2,
+      "request": "instance-requester-input-schema.json",
+      "response": "instance-requester-output-schema.json",
+      "title": "Custom Personal"
+    },
+    "custom-personal": {
+      "description": "",
+      "index": 2,
+      "request": "instance-requester-input-schema.json",
+      "response": "instance-requester-output-schema.json",
+      "title": "Custom Personal"
+    },
+    "custom-personal-slave": {
+      "description": "Custom Personal",
+      "index": 1,
+      "request": "instance-slave-input-schema.json",
+      "response": "instance-slave-output-schema.json",
+      "shared": true,
+      "software-type": "custom-personal",
+      "title": "Custom Personal (Slave)"
+    },
+    "default": {
+      "description": "Default",
+      "index": 3,
+      "request": "instance-requester-input-schema.json",
+      "response": "instance-requester-output-schema.json",
+      "software-type": "default",
+      "title": "Default"
+    },
+    "default-slave": {
+      "description": "Default",
+      "index": 4,
+      "request": "instance-slave-input-schema.json",
+      "response": "instance-slave-output-schema.json",
+      "shared": true,
+      "software-type": "default",
+      "title": "Default (slave)"
+    },
+    "kedifa": {
+      "description": "Kedifa",
+      "index": 5,
+      "request": "instance-kedifa-input-schema.json",
+      "response": "instance-kedifa-output-schema.json",
+      "software-type": "kedifa",
+      "title": "Kedifa"
+    }
+  }
+}
