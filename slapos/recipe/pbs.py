@@ -73,13 +73,22 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         LC_ALL=C
         export LC_ALL
         RDIFF_BACKUP=%(rdiffbackup_binary)s
+        echo "Starting the restoration..."
         $RDIFF_BACKUP \\
+                --api-version 201 \\
                 --remote-schema %(remote_schema)s \\
-                --restore-as-of now \\
-                --ignore-numerical-ids \\
                 --force \\
+                restore --at now \\
                 %(local_dir)s \\
                 %(remote_dir)s
+
+        if [ $? = 0 -o $? = 2 ]
+        then
+          echo "... done"
+        else
+          echo "... failed"
+          return 1
+        fi
         """)
 
     template_dict = {
@@ -132,10 +141,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
         CORRUPTED_ARGS=""
         if [ "$1" = "--fix-corrupted" ]; then
-            VERIFY=$($RDIFF_BACKUP --verify $BACKUP_DIR 2>&1 >/dev/null)
+            VERIFY=$($RDIFF_BACKUP --api-version 201 verify $BACKUP_DIR 2>&1 >/dev/null)
             echo "$VERIFY" | egrep "$CORRUPTED_MSG" | sed "s/$CORRUPTED_MSG//g" > $CORRUPTED_FILE
 
-            # Sometimes --verify reports this spurious warning:
+            # Sometimes verify reports this spurious warning:
             echo "$VERIFY" | egrep "$CANTFIND_MSG" | sed "s/$CANTFIND_MSG\(.*\),/--always-snapshot\ '\\1'/g" > $CANTFIND_FILE
 
             # There can be too many files, better not to provide them through separate command line parameters
@@ -149,8 +158,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         fi
 
         $RDIFF_BACKUP \\
+                --api-version 201 \\
                 $CORRUPTED_ARGS \\
                 --remote-schema %(remote_schema)s \\
+                backup \\
                 %(remote_dir)s \\
                 $BACKUP_DIR
 
@@ -158,11 +169,11 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
         [ "$CORRUPTED_ARGS" ] && rm -f "$CORRUPTED_FILE" "$CANTFIND_FILE"
 
-        if [ ! $RDIFF_BACKUP_STATUS -eq 0 ]; then
-            # Check the backup, go to the last consistent backup, so that next
-            # run will be okay.
+        if [ $RDIFF_BACKUP_STATUS != 0 -a $RDIFF_BACKUP_STATUS != 2 ]; then
+            # Backup failed, check the backup, go to the last consistent backup,
+            # so that next run will be okay.
             echo "Checking backup directory..."
-            $RDIFF_BACKUP --check-destination-dir $BACKUP_DIR
+            $RDIFF_BACKUP --api-version 201 regress $BACKUP_DIR
             if [ ! $? -eq 0 ]; then
                 # Here, two possiblities:
                 if [ is_first_backup ]; then
@@ -178,8 +189,18 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             fi
         else
             # Everything's okay, cleaning up...
-            $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force $BACKUP_DIR
+            echo "Cleaning backup directory..."
+            $RDIFF_BACKUP --api-version 201 --force remove increments --older-than %(remove_backup_older_than)s $BACKUP_DIR
+            if [ $? = 0 -o $? = 2 ]
+            then
+              echo "... done"
+            else
+              echo "... failed"
+              return 1
+            fi
         fi
+
+
 
         """)
 
@@ -308,8 +329,9 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
       wrapper = self.createWrapper(self.options['wrapper'],
                                    (self.options['rdiffbackup-binary'],
-                                       '--restrict', self.options['path'],
-                                       '--server'
+                                       '--api-version', '201',
+                                       'server',
+                                       '--restrict-path', self.options['path']
                                        ))
       path_list.append(wrapper)
 
