@@ -738,9 +738,11 @@ copytruncate = true
 [sidekiq-dir]
 recipe  = slapos.cookbook:mkdirectory
 log     = ${directory:log}/sidekiq
+pid     = ${directory:run}
 
 [sidekiq]
 log     = ${sidekiq-dir:log}
+pid     = ${directory:run}/sidekiq.pid
 health-checks-port = 8092
 health-checks-host = ${instance-parameter:ipv4-random}
 
@@ -749,6 +751,18 @@ health-checks-host = ${instance-parameter:ipv4-random}
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/Procfile
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/sv-sidekiq-run.erb
 # (last updated for omnibus-gitlab 8.8.9+ce.0-g25376053)
+{% set sidekiq_queue_list = ["'*'"]*int(instance_parameter_dict['configuration.sidekiq_workers']) -%}
+[sidekiq-cluster]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:bin}/sidekiq-cluster
+command-line    =
+    ${gitlab-sidekiq:wrapper-path}
+    -r ${gitlab-work:location}
+    -t ${instance-parameter:configuration.sidekiq_shutdown_timeout}
+    -P ${sidekiq:pid}
+    --max-concurrency ${instance-parameter:configuration.sidekiq_concurrency}
+{{ '    ' ~ sidekiq_queue_list | join(' ') }}
+
 [service-sidekiq]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/sidekiq
@@ -759,12 +773,7 @@ command-line    =
 # bang/watchdog currently work with slapproxy, so we do the monitoring ourselves.
     {{ watcher }} 0,SIGKILL
 
-    ${gitlab-sidekiq:wrapper-path}
-    -e production
-    -r ${gitlab-work:location}
-    -t ${instance-parameter:configuration.sidekiq_shutdown_timeout}
-    --max-concurrency ${instance-parameter:configuration.sidekiq_concurrency}
-    *
+    ${sidekiq-cluster:wrapper-path}
 
 depends  =
     ${promise-sidekiq:recipe}
