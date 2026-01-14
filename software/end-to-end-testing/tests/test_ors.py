@@ -86,6 +86,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                     "plmn_list_5g": [
                         {
                             "plmn": plmn,
+                            "tac": "1",
                         },
                     ],
                 },
@@ -362,7 +363,7 @@ class ORSTest(WebsocketTestClass):
 
         self.check_ue_ip()
 
-    def check_nr_conf(self, dl_freq, dl_nr_arfcn, ul_nr_arfcn, band, rf_mode, bandwidth):
+    def check_nr_conf(self, band, rf_mode, bandwidth):
 
         rf_info = json.loads(self.parameters["enb-gnb"]["rf-info"])
         rf_info["sdr_map"]["0"].update({
@@ -375,8 +376,6 @@ class ORSTest(WebsocketTestClass):
               "cell_type": "gNB",
               "tx_power_dbm": 30,
               "nr_bandwidth": bandwidth,
-              "dl_frequency": dl_freq,
-              "nr_band": int(band[1:]),
             }
         self.parameters["enb-gnb"]["cell2"].update({
               "enable_cell": False,
@@ -386,14 +385,10 @@ class ORSTest(WebsocketTestClass):
             {
               "cell_type": "nr",
               "rf_mode": rf_mode.lower(),
-              "dl_nr_arfcn": dl_nr_arfcn,
-              "ul_nr_arfcn": ul_nr_arfcn,
-              "nr_band": int(band[1:]),
               "bandwidth": bandwidth,
             })
         self.parameters["ue#cell"].pop("dl_earfcn", None)
         self.parameters["ue#cell"].pop("ul_earfcn", None)
-
         self.parameters["ue#ue"]["ue_type"] = "nr"
 
         # Get SSB NR ARFCN
@@ -402,20 +397,25 @@ class ORSTest(WebsocketTestClass):
 
         self.logger.info("Waiting until parameters update")
         params = self.parameters["enb-gnb"]["cell1"]
-        while True:
+        for i in range(15):
             time.sleep(10)
             connection_params = self.getInstanceInfos(self.enb_gnb_instance_name).connection_dict
-            dl_freq = float(connection_params['RADIO.dl-frequency'].removesuffix(" MHz"))
-            self.logger.info(connection_params)
+            self.logger.info(connection_params) # DEBUG
+            model = connection_params['HARDWARE.ors-version'].split('+')[0]
             bandwidth = int(connection_params['RADIO.bandwidth'].removesuffix(" MHz"))
-            if dl_freq != params['dl_frequency']:
-                self.logger.info(f"{dl_freq} != {params['dl_frequency']}")
+            if model != f"BBU TDD {band}":
+                self.logger.info(f"{model} != BBU TDD {band}")
                 continue
             if bandwidth != params['nr_bandwidth']:
                 self.logger.info(f"{bandwidth} != {params['nr_bandwidth']}")
                 continue
             break
-        self.parameters["ue#cell"]['ssb_nr_arfcn'] = int(connection_params['RADIO.ssb-nr-arfcn'])
+        self.parameters["ue#cell"].update({
+          "ssb_nr_arfcn": int(connection_params['RADIO.ssb-nr-arfcn']),
+          "dl_nr_arfcn": int(connection_params['RADIO.dl-arfcn']),
+          "ul_nr_arfcn": int(connection_params['RADIO.ul-arfcn']),
+          "nr_band": int(connection_params['RADIO.band'][1:]),
+        })
 
         self.check_ue_ip()
 
@@ -431,8 +431,22 @@ class ORSTest(WebsocketTestClass):
     #    self.check_lte_conf(3500, 42590, 42590, 'B42', 'TDD', 10)
     #def test_lte_B43_10(self):
     #    self.check_lte_conf(3700, 44590, 44590, 'B43', 'TDD', 10)
-    def test_nr_N38_10(self):
-        self.check_nr_conf(2600, 520000, 520000, 'B38', 'TDD', 20)
+    #def test_nr_N28_20(self):
+    #    self.check_nr_conf(2600, 520000, 520000, 'B28', 'TDD', 20)
+    def test_nr_N38_20(self):
+        self.check_nr_conf('B38', 'TDD', 20)
+    #def test_nr_N39_20(self):
+    #    self.check_nr_conf(2600, 520000, 520000, 'B39', 'TDD', 20)
+    #def test_nr_N40_20(self):
+    #    self.check_nr_conf(2600, 520000, 520000, 'B40', 'TDD', 20)
+    #def test_nr_N77_20(self):
+    #    self.check_nr_conf(2600, 520000, 520000, 'N77', 'TDD', 20)
+    #def test_nr_N78_20(self):
+    #    self.check_nr_conf(2600, 520000, 520000, 'B42', 'TDD', 20)
+    #def test_nr_N78_20(self):
+    #    self.check_nr_conf(2600, 520000, 520000, 'B43', 'TDD', 20)
+    #def test_nr_N79_20(self):
+    #    self.check_nr_conf(2600, 520000, 520000, 'N79', 'TDD', 20)
 
     # TODO: uncomment these tests
     #def test_max_rx_sample_db(self):
