@@ -1,0 +1,14 @@
+{
+  "http://backend.example.com:11080/-{'http10': True}": "connection-close: False effective_http_version 1",
+  "http://backend.example.com:11080/-{'http11': True}": "connection-close: False effective_http_version 1",
+  "http://backend.example.com:11080/-{'http2': True}": "connection-close: False effective_http_version 1",
+  "http://backend.example.com:11080/-{'http2_prior_knowledge': True}": "connection-close: False effective_http_version 1",
+  "http://backend.example.com:11080/-{'http3': True}": "connection-close: False effective_http_version 1",
+  "http://backend.example.com:11080/-{'http3_only': True}": "CurlException.command_returncode: 3",
+  "https://backend.example.com:11443/-{'http10': True}": "connection-close: False effective_http_version 1",
+  "https://backend.example.com:11443/-{'http11': True}": "connection-close: False effective_http_version 1",
+  "https://backend.example.com:11443/-{'http2': True}": "connection-close: False effective_http_version 2",
+  "https://backend.example.com:11443/-{'http2_prior_knowledge': True}": "connection-close: False effective_http_version 2",
+  "https://backend.example.com:11443/-{'http3': True}": "connection-close: False effective_http_version 2",
+  "https://backend.example.com:11443/-{'http3_only': True}": "CurlException.command_returncode: 7"
+}
