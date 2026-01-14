@@ -1,6 +1,6 @@
 [slaposinstancenode]
 instance-db-path = ${cdn-requester-configuration:instance-db-path}
-requestinstance-db-path = ${cdn-requester-configuration:requestinstance-db-path}
+requestinstance-db-path = ${cdn-requester-configuration:valided-instance-db-path}
 domainvalidation-db-path = ${cdn-requester-configuration:domainvalidation-db-path}
 shared = true
 openssl-binary = ${cdn-requester-configuration:domainvalidation-db-path}
