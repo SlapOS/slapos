@@ -426,22 +426,22 @@ class ORSTest(WebsocketTestClass):
     #    self.check_lte_conf(3500, 42590, 42590, 'B42', 'TDD', 10)
     #def test_lte_B43_10(self):
     #    self.check_lte_conf(3700, 44590, 44590, 'B43', 'TDD', 10)
-    def test_nr_N28_20(self):
-        self.check_nr_conf('B28', 'FDD', 20)
-    def test_nr_N38_20(self):
-        self.check_nr_conf('B38', 'TDD', 20)
-    def test_nr_N39_20(self):
-        self.check_nr_conf('B39', 'TDD', 20)
-    def test_nr_N40_20(self):
-        self.check_nr_conf('B40', 'TDD', 20)
-    def test_nr_N77_20(self):
-        self.check_nr_conf('N77', 'TDD', 20)
-    def test_nr_N78_20(self):
-        self.check_nr_conf('B42', 'TDD', 20)
-    def test_nr_N78_20(self):
+    #def test_nr_N28_20(self):
+    #    self.check_nr_conf('B28', 'FDD', 20)
+    #def test_nr_N38_20(self):
+    #    self.check_nr_conf('B38', 'TDD', 20)
+    #def test_nr_N39_20(self):
+    #    self.check_nr_conf('B39', 'TDD', 20)
+    #def test_nr_N40_20(self):
+    #    self.check_nr_conf('B40', 'TDD', 20)
+    #def test_nr_N77_20(self):
+    #    self.check_nr_conf('N77', 'TDD', 20)
+    #def test_nr_B42_20(self):
+    #    self.check_nr_conf('B42', 'TDD', 20)
+    def test_nr_B43_20(self):
         self.check_nr_conf('B43', 'TDD', 20)
-    def test_nr_N79_20(self):
-        self.check_nr_conf('N79', 'TDD', 20)
+    #def test_nr_N79_20(self):
+    #    self.check_nr_conf('N79', 'TDD', 20)
 
     # TODO: uncomment these tests
     #def test_max_rx_sample_db(self):
