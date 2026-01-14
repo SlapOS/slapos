@@ -1,0 +1,14 @@
+{
+  "http://empty.example.com:11080/-{'http10': True}": "1.0",
+  "http://empty.example.com:11080/-{'http11': True}": "1.1",
+  "http://empty.example.com:11080/-{'http2': True}": "1.1",
+  "http://empty.example.com:11080/-{'http2_prior_knowledge': True}": "1.1",
+  "http://empty.example.com:11080/-{'http3': True}": "1.1",
+  "http://empty.example.com:11080/-{'http3_only': True}": "CurlException.command_returncode: 3",
+  "https://empty.example.com:11443/-{'http10': True}": "1.0",
+  "https://empty.example.com:11443/-{'http11': True}": "1.1",
+  "https://empty.example.com:11443/-{'http2': True}": "2",
+  "https://empty.example.com:11443/-{'http2_prior_knowledge': True}": "2",
+  "https://empty.example.com:11443/-{'http3': True}": "2",
+  "https://empty.example.com:11443/-{'http3_only': True}": "CurlException.command_returncode: 7"
+}
