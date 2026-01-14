@@ -67,8 +67,6 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                     "cell_type": "eNB",
                     "enable_cell": True,
                     "tx_power_dbm": 30,
-                    "bandwidth": "10 MHz",
-                    "dl_earfcn": 38350,
                 },
                 "cell2": {
                     "cell_type": "eNB",
@@ -112,9 +110,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             cls.parameters["ue"] = {
             }
             cls.parameters["ue#cell"] = {
-                  "cell_type": "lte",
                   "cell_kind": "ue",
-                  "rf_mode": "tdd",
                   "ru": {
                       "ru_type": "sdr",
                       "ru_link_type": "sdr",
@@ -127,12 +123,8 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                       "rx_gain": 45,
                       "txrx_active": "ACTIVE"
                   },
-                  "dl_earfcn": 38350,
-                  "ul_earfcn": 38350,
-                  "bandwidth": 10
             }
             cls.parameters["ue#ue"] = {
-                  "ue_type": "lte",
                   "imsi": f"{plmn}0000000001",
                   "k": "00112233445566778899AABBCCDDEEFF",
                   "sim_algo": "milenage",
@@ -142,9 +134,9 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                   "impu": f"{plmn}0000000001",
                   "impi": f"{plmn}0000000001@ims.mnc{mnc}.mcc{mcc}.3gppnetwork.org"
             }
-            for ref in cls.parameters:
-              # TODO: re-enable lock
-              cls.update_service(ref, "started", parameters=cls.parameters[ref], lock=False)
+            #for ref in cls.parameters:
+            #  # TODO: re-enable lock
+            #  cls.update_service(ref, "started", parameters=cls.parameters[ref], lock=False)
 
         except Exception as e:
             cls.logger.error("Error during setup: " + str(e))
@@ -307,8 +299,8 @@ class ORSTest(WebsocketTestClass):
         for ref in self.parameters:
           self.update_service(ref, "started", parameters=self.parameters[ref], lock=False)
 
-        self.logger.info("Waiting 2 minutes")
-        time.sleep(2 * 60)
+        self.logger.info("Waiting 1 minute")
+        time.sleep(60)
 
         self.logger.info("Waiting until instances are green")
         self.waitUntilGreen(self.enb_gnb_instance_name, timeout=60 * 3)
@@ -401,10 +393,13 @@ class ORSTest(WebsocketTestClass):
             time.sleep(10)
             connection_params = self.getInstanceInfos(self.enb_gnb_instance_name).connection_dict
             self.logger.info(connection_params) # DEBUG
-            model = connection_params['HARDWARE.ors-version'].split('+')[0]
-            bandwidth = int(connection_params['RADIO.bandwidth'].removesuffix(" MHz"))
-            if model != f"BBU TDD {band}":
-                self.logger.info(f"{model} != BBU TDD {band}")
+            model = connection_params['HARDWARE.ors-version'].split(' ')[2]
+            try:
+              bandwidth = int(connection_params['RADIO.bandwidth'].removesuffix(" MHz"))
+            except ValueError:
+              continue
+            if not model.startswith(band):
+                self.logger.info(f"{model} != {band}")
                 continue
             if bandwidth != params['nr_bandwidth']:
                 self.logger.info(f"{bandwidth} != {params['nr_bandwidth']}")
@@ -431,22 +426,22 @@ class ORSTest(WebsocketTestClass):
     #    self.check_lte_conf(3500, 42590, 42590, 'B42', 'TDD', 10)
     #def test_lte_B43_10(self):
     #    self.check_lte_conf(3700, 44590, 44590, 'B43', 'TDD', 10)
-    #def test_nr_N28_20(self):
-    #    self.check_nr_conf(2600, 520000, 520000, 'B28', 'TDD', 20)
+    def test_nr_N28_20(self):
+        self.check_nr_conf('B28', 'FDD', 20)
     def test_nr_N38_20(self):
         self.check_nr_conf('B38', 'TDD', 20)
-    #def test_nr_N39_20(self):
-    #    self.check_nr_conf(2600, 520000, 520000, 'B39', 'TDD', 20)
-    #def test_nr_N40_20(self):
-    #    self.check_nr_conf(2600, 520000, 520000, 'B40', 'TDD', 20)
-    #def test_nr_N77_20(self):
-    #    self.check_nr_conf(2600, 520000, 520000, 'N77', 'TDD', 20)
-    #def test_nr_N78_20(self):
-    #    self.check_nr_conf(2600, 520000, 520000, 'B42', 'TDD', 20)
-    #def test_nr_N78_20(self):
-    #    self.check_nr_conf(2600, 520000, 520000, 'B43', 'TDD', 20)
-    #def test_nr_N79_20(self):
-    #    self.check_nr_conf(2600, 520000, 520000, 'N79', 'TDD', 20)
+    def test_nr_N39_20(self):
+        self.check_nr_conf('B39', 'TDD', 20)
+    def test_nr_N40_20(self):
+        self.check_nr_conf('B40', 'TDD', 20)
+    def test_nr_N77_20(self):
+        self.check_nr_conf('N77', 'TDD', 20)
+    def test_nr_N78_20(self):
+        self.check_nr_conf('B42', 'TDD', 20)
+    def test_nr_N78_20(self):
+        self.check_nr_conf('B43', 'TDD', 20)
+    def test_nr_N79_20(self):
+        self.check_nr_conf('N79', 'TDD', 20)
 
     # TODO: uncomment these tests
     #def test_max_rx_sample_db(self):
