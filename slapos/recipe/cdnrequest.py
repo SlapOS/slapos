@@ -2,6 +2,7 @@ import dns.resolver
 import hmac
 import hashlib
 import time
+import os
 import secrets
 import re
 import urllib.parse
@@ -164,6 +165,15 @@ class CDNRequestRecipe(InstanceNodeRecipe):
     self.openssl_binary = options.get('openssl-binary')
     if not self.openssl_binary:
       self.logger.warning('openssl-binary option not provided, SSL certificate validation will be skipped')
+
+    # Instance Time Stamp to check if call bang is needed
+    self.timestamp_path = options.get('timestamp-path')
+    if self.timestamp_path and os.path.exists(self.timestamp_path):
+      self.timestamp = os.path.getmtime(self.timestamp_path)
+    else:
+      # Initialize to current time if path not provided or file doesn't exist
+      self.timestamp = time.time()
+
     # Nameserver configuration - if provided, query directly to this nameserver
     # instead of using system DNS resolver. This is useful for:
     # - Consistent DNS resolution regardless of system configuration
@@ -691,6 +701,20 @@ class CDNRequestRecipe(InstanceNodeRecipe):
     # No-op: don't publish connection parameters for successful CDN instances
     pass
 
+  def instanceNodePostProcessing(self):
+    """
+    Post processing for the instance node.
+    """
+    # Check if there is a valid instance in the database with a timestamp superior to self.timestamp
+    # Valid instances are those with valid_parameter=TRUE
+    timestamp_int = int(self.timestamp)
+    valid_instance = self.requestinstance_db.db.fetchOne(
+      "SELECT * FROM instance WHERE valid_parameter=? AND CAST(timestamp AS INTEGER) > ?",
+      (True, timestamp_int)
+    )
+    if valid_instance:
+      computer_partition = self._getComputerPartition()
+      computer_partition.bang(message='CDN instances have been deployed and instance need reprocessing')
 
 def main():
   """

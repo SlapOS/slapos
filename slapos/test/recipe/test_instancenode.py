@@ -2124,6 +2124,37 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(len(final_report_logs), 1,
                      "Expected 1 final report log, got %d" % len(final_report_logs))
 
+  def test_instanceNodePostProcessing_base_class_noop(self):
+    """Test that instanceNodePostProcessing in base Recipe class is a no-op"""
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
+    
+    # Should not raise any exception
+    recipe.instanceNodePostProcessing()
+    
+    # Should be a no-op (nothing happens)
+
+  def test_instanceNodePostProcessing_called_during_install_base(self):
+    """Test that instanceNodePostProcessing is called during install() in base Recipe"""
+    # Setup empty databases
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
+    
+    # Mock instanceNodePostProcessing to track if it's called
+    post_processing_called = []
+    original_method = recipe.instanceNodePostProcessing
+    def tracked_post_processing():
+      post_processing_called.append(True)
+      return original_method()
+    recipe.instanceNodePostProcessing = tracked_post_processing
+
+    with LogCapture() as log:
+      recipe.install()
+
+    # Verify instanceNodePostProcessing was called
+    self.assertEqual(len(post_processing_called), 1)
+
 
 class TestCommandLineInterface(unittest.TestCase):
   """Tests for command-line interface functions"""
