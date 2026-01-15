@@ -765,11 +765,20 @@ class JsonSchemaWithDBFromInstanceNode(JsonSchemaWithDB):
 
   This list is then passed to the standard shared-instance validation logic
   implemented by ``JsonSchemaWithDB``.
+
+  If the parameter ``allow-invalid-instance`` is present and has a true value
+  (True, 'true', 'yes', '1', or 1) in both ``options`` and ``parameter_dict``,
+  all instances (both valid and invalid) will be loaded from the database.
+  Otherwise, only valid instances are loaded (default behavior).
   """
 
-  def _load_valid_instances_from_db(self, db_path):
+  def _load_valid_instances_from_db(self, db_path, valid_only=True):
     """
-    Load parameters of valid instances from the given database path.
+    Load parameters of instances from the given database path.
+
+    Args:
+      db_path: Path to the database file
+      valid_only: If True, only load valid instances. If False, load all instances.
 
     Returns a list of dicts combining the instance parameters with an extra
     ``slave_reference`` key equal to the instance reference.
@@ -777,7 +786,7 @@ class JsonSchemaWithDBFromInstanceNode(JsonSchemaWithDB):
     instance_db = HostedInstanceLocalDB(db_path)
     rows = instance_db.getInstanceList(
       select_tuple_string="reference, json_parameters",
-      valid_only=True,
+      valid_only=valid_only,
     )
     slave_instance_list = []
     for row in rows:
@@ -828,11 +837,24 @@ class JsonSchemaWithDBFromInstanceNode(JsonSchemaWithDB):
       parameter_dict,
     )
 
-
     # Repopulate slave-instance-list after validation (it was popped by JsonSchema)
     # Use the original list which still has slave_reference (not the modified copy)
-    # Load valid instances from database
-    slave_instance_list = self._load_valid_instances_from_db(db_path)
+    # Load instances from database
+    # Check if allow-invalid-instance parameter is present and true in both options and parameter_dict
+    def is_true_value(value):
+      """Check if value is a true value (true, yes, 1, etc.)"""
+      if isinstance(value, bool):
+        return value is True
+      if isinstance(value, six.string_types):
+        return value.lower() in ('true', 'yes', '1')
+      return value == 1
+    
+    allow_invalid_options = is_true_value(options.get('allow-invalid-instance'))
+    allow_invalid_params = False
+    if isinstance(parameter_dict, dict):
+      allow_invalid_params = is_true_value(result.get('allow-invalid-instance'))
+    allow_invalid = allow_invalid_options and allow_invalid_params
+    slave_instance_list = self._load_valid_instances_from_db(db_path, valid_only=not allow_invalid)
     options['slave-instance-list'] = slave_instance_list
 
     return result
