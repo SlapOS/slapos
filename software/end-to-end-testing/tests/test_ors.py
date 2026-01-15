@@ -8,6 +8,7 @@ from websocket import create_connection
 
 # 1767374328
 DEV = True
+LOCK = True
 
 class WebsocketTestClass(e2e.EndToEndTestCase):
     @classmethod
@@ -134,8 +135,9 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                   "impu": f"{plmn}0000000001",
                   "impi": f"{plmn}0000000001@ims.mnc{mnc}.mcc{mcc}.3gppnetwork.org"
             }
-            for ref in cls.parameters:
-              cls.update_service(ref, "started", parameters=cls.parameters[ref], lock=True)
+            if LOCK:
+              for ref in cls.parameters:
+                cls.update_service(ref, "started", parameters=cls.parameters[ref], lock=True)
 
         except Exception as e:
             cls.logger.error("Error during setup: " + str(e))
@@ -177,20 +179,20 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
         if parameters:
           parameters = {"_": json.dumps(parameters)}
         else:
-          parameters = {"_": json.dumps(instance_infos.parameter_dict["_"])}
+          parameters = {"_": json.dumps(instance_infos.parameter_dict.get("_", {}))}
 
         # Lock mechanism, only for non shared instances
         while lock and not shared:
           cls.logger.info(f"Waiting for lock to be released for {instance_name}...")
           lock = time.time()
           if sr_type == "enb-gnb":
-            previous_lock = float(instance_infos.parameter_dict["_"].get("management", {}).get("lock", 0))
+            previous_lock = float(instance_infos.parameter_dict.get("_", {}).get("management", {}).get("lock", 0))
           else:
-            previous_lock = float(instance_infos.parameter_dict["_"].get("lock", 0))
+            previous_lock = float(instance_infos.parameter_dict.get("_", {}).get("lock", 0))
           # If previous lock is more than 6 hours old, then we assume the previous
           # test exited without properly releasing the lock
           if (lock - previous_lock) > (3600 * 6):
-            parameters = json.loads(parameters["_"])
+            parameters = json.loads(parameters.get("_", {}))
             if sr_type == "enb-gnb":
               parameters.setdefault("management", {})["lock"] = str(lock)
             else:
@@ -203,7 +205,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
           instance_infos = cls.getInstanceInfos(instance_name)
         # Unlock
         if lock == False:
-          parameters = json.loads(parameters["_"])
+          parameters = json.loads(parameters.get("_", {}))
           if sr_type == "enb-gnb":
             parameters.setdefault("management", {}).pop("lock", None)
           else:
@@ -243,9 +245,10 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
     @classmethod
     def tearDownClass(cls):
         cls.close_websocket_connection()
-        cls.update_service("enb-gnb", "stopped", lock=False)
-        cls.update_service("core-network", "stopped", lock=False)
-        cls.update_service("ue", "stopped", lock=False)
+        if LOCK:
+          cls.update_service("enb-gnb", "stopped", lock=False)
+          cls.update_service("core-network", "stopped", lock=False)
+          cls.update_service("ue", "stopped", lock=False)
         # Don"t call super().tearDownClass as we don"t want to destroy requested instances
 
     def send(self, msg):
