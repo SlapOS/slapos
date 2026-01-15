@@ -1242,3 +1242,196 @@ class JsonSchemaWithDBFromInstanceNodeTestCase(JsonSchemaWithDBTestCase):
       refs = {item['slave_reference'] for item in slave_list}
       self.assertEqual(refs, {'VALID1', 'VALID2'})
       self.assertNotIn('INVALID_JSON', refs)
+
+  def test_jsonschema_from_instancenode_allow_invalid_instance_true_both(self):
+    """Test that all instances are loaded when allow-invalid-instance is true in both options and parameter_dict."""
+    self.writeJsonSchema()
+    parameters = {"number": 1, "allow-invalid-instance": "true"}
+
+    # Populate valided-instance-db-path with both valid and invalid instances
+    self._populate_valided_db([
+      {'reference': 'VALID1', 'parameters': {'kind': 1}, 'valid': True},
+      {'reference': 'INVALID1', 'parameters': {'kind': 0}, 'valid': False},
+      {'reference': 'VALID2', 'parameters': {'kind': 2}, 'valid': True},
+      {'reference': 'INVALID2', 'parameters': {'kind': 3}, 'valid': False},
+    ])
+
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({
+        'validate-parameters': 'shared',
+        'allow-invalid-instance': 'true'
+      })
+
+      # All instances (valid and invalid) should be in slave-instance-list
+      slave_list = options['slave-instance-list']
+      self.assertEqual(len(slave_list), 4)
+      refs = {item['slave_reference'] for item in slave_list}
+      self.assertEqual(refs, {'VALID1', 'INVALID1', 'VALID2', 'INVALID2'})
+
+  def test_jsonschema_from_instancenode_allow_invalid_instance_false_options(self):
+    """Test that only valid instances are loaded when allow-invalid-instance is false in options."""
+    self.writeJsonSchema()
+    parameters = {"number": 1, "allow-invalid-instance": "true"}
+
+    # Populate valided-instance-db-path with both valid and invalid instances
+    self._populate_valided_db([
+      {'reference': 'VALID1', 'parameters': {'kind': 1}, 'valid': True},
+      {'reference': 'INVALID1', 'parameters': {'kind': 0}, 'valid': False},
+      {'reference': 'VALID2', 'parameters': {'kind': 2}, 'valid': True},
+    ])
+
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({
+        'validate-parameters': 'shared',
+        'allow-invalid-instance': 'false'  # False in options
+      })
+
+      # Only valid instances should be loaded (options is false)
+      slave_list = options['slave-instance-list']
+      self.assertEqual(len(slave_list), 2)
+      refs = {item['slave_reference'] for item in slave_list}
+      self.assertEqual(refs, {'VALID1', 'VALID2'})
+      self.assertNotIn('INVALID1', refs)
+
+  def test_jsonschema_from_instancenode_allow_invalid_instance_false_parameter_dict(self):
+    """Test that only valid instances are loaded when allow-invalid-instance is false in parameter_dict."""
+    self.writeJsonSchema()
+    parameters = {"number": 1, "allow-invalid-instance": "false"}  # False in parameter_dict
+
+    # Populate valided-instance-db-path with both valid and invalid instances
+    self._populate_valided_db([
+      {'reference': 'VALID1', 'parameters': {'kind': 1}, 'valid': True},
+      {'reference': 'INVALID1', 'parameters': {'kind': 0}, 'valid': False},
+      {'reference': 'VALID2', 'parameters': {'kind': 2}, 'valid': True},
+    ])
+
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({
+        'validate-parameters': 'shared',
+        'allow-invalid-instance': 'true'  # True in options
+      })
+
+      # Only valid instances should be loaded (parameter_dict is false)
+      slave_list = options['slave-instance-list']
+      self.assertEqual(len(slave_list), 2)
+      refs = {item['slave_reference'] for item in slave_list}
+      self.assertEqual(refs, {'VALID1', 'VALID2'})
+      self.assertNotIn('INVALID1', refs)
+
+  def test_jsonschema_from_instancenode_allow_invalid_instance_missing_options(self):
+    """Test that only valid instances are loaded when allow-invalid-instance is missing in options."""
+    self.writeJsonSchema()
+    parameters = {"number": 1, "allow-invalid-instance": "true"}
+
+    # Populate valided-instance-db-path with both valid and invalid instances
+    self._populate_valided_db([
+      {'reference': 'VALID1', 'parameters': {'kind': 1}, 'valid': True},
+      {'reference': 'INVALID1', 'parameters': {'kind': 0}, 'valid': False},
+      {'reference': 'VALID2', 'parameters': {'kind': 2}, 'valid': True},
+    ])
+
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({
+        'validate-parameters': 'shared',
+        # allow-invalid-instance not in options
+      })
+
+      # Only valid instances should be loaded (missing in options)
+      slave_list = options['slave-instance-list']
+      self.assertEqual(len(slave_list), 2)
+      refs = {item['slave_reference'] for item in slave_list}
+      self.assertEqual(refs, {'VALID1', 'VALID2'})
+      self.assertNotIn('INVALID1', refs)
+
+  def test_jsonschema_from_instancenode_allow_invalid_instance_missing_parameter_dict(self):
+    """Test that only valid instances are loaded when allow-invalid-instance is missing in parameter_dict."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}  # allow-invalid-instance not in parameter_dict
+
+    # Populate valided-instance-db-path with both valid and invalid instances
+    self._populate_valided_db([
+      {'reference': 'VALID1', 'parameters': {'kind': 1}, 'valid': True},
+      {'reference': 'INVALID1', 'parameters': {'kind': 0}, 'valid': False},
+      {'reference': 'VALID2', 'parameters': {'kind': 2}, 'valid': True},
+    ])
+
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({
+        'validate-parameters': 'shared',
+        'allow-invalid-instance': 'true'  # True in options
+      })
+
+      # Only valid instances should be loaded (missing in parameter_dict)
+      slave_list = options['slave-instance-list']
+      self.assertEqual(len(slave_list), 2)
+      refs = {item['slave_reference'] for item in slave_list}
+      self.assertEqual(refs, {'VALID1', 'VALID2'})
+      self.assertNotIn('INVALID1', refs)
+
+  def test_jsonschema_from_instancenode_allow_invalid_instance_various_true_values(self):
+    """Test that various true values ('true', 'yes', '1', True, 1) work in both options and parameter_dict."""
+    self.writeJsonSchema()
+
+    # Test different true values - test a few key combinations
+    test_cases = [
+      ('true', 'true'),
+      ('yes', 'yes'),
+      ('1', '1'),
+      (True, True),
+      (1, 1),
+      ('true', 'yes'),
+      ('1', True),
+    ]
+    
+    for options_value, params_value in test_cases:
+      # Clear database by removing file and recreating
+      if os.path.exists(self.valided_instance_db_path):
+        os.remove(self.valided_instance_db_path)
+      self.instance_db = HostedInstanceLocalDB(self.valided_instance_db_path)
+      
+      parameters = {"number": 1, "allow-invalid-instance": params_value}
+
+      # Populate valided-instance-db-path with both valid and invalid instances
+      self._populate_valided_db([
+        {'reference': 'VALID1', 'parameters': {'kind': 1}, 'valid': True},
+        {'reference': 'INVALID1', 'parameters': {'kind': 0}, 'valid': False},
+      ])
+
+      with self.patchSlap(parameters, shared=[]):
+        recipe_options = {
+          'validate-parameters': 'shared',
+          'allow-invalid-instance': options_value
+        }
+        options = self.runJsonSchemaRecipe(recipe_options)
+
+        # All instances should be loaded when both are true values
+        slave_list = options['slave-instance-list']
+        self.assertEqual(len(slave_list), 2, 
+          "Failed for options_value=%r, params_value=%r" % (options_value, params_value))
+        refs = {item['slave_reference'] for item in slave_list}
+        self.assertEqual(refs, {'VALID1', 'INVALID1'},
+          "Failed for options_value=%r, params_value=%r" % (options_value, params_value))
+
+  def test_jsonschema_from_instancenode_allow_invalid_instance_false_values(self):
+    """Test that false values don't enable loading invalid instances."""
+    self.writeJsonSchema()
+    parameters = {"number": 1, "allow-invalid-instance": "false"}
+
+    # Populate valided-instance-db-path with both valid and invalid instances
+    self._populate_valided_db([
+      {'reference': 'VALID1', 'parameters': {'kind': 1}, 'valid': True},
+      {'reference': 'INVALID1', 'parameters': {'kind': 0}, 'valid': False},
+    ])
+
+    with self.patchSlap(parameters, shared=[]):
+      options = self.runJsonSchemaRecipe({
+        'validate-parameters': 'shared',
+        'allow-invalid-instance': 'false'
+      })
+
+      # Only valid instances should be loaded (both are false)
+      slave_list = options['slave-instance-list']
+      self.assertEqual(len(slave_list), 1)
+      refs = {item['slave_reference'] for item in slave_list}
+      self.assertEqual(refs, {'VALID1'})
+      self.assertNotIn('INVALID1', refs)
