@@ -10,3 +10,4 @@ cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
 server-url = ${slap-connection:server-url}
+timestamp-path = ${buildout:directory}/.timestamp
