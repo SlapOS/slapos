@@ -134,9 +134,8 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                   "impu": f"{plmn}0000000001",
                   "impi": f"{plmn}0000000001@ims.mnc{mnc}.mcc{mcc}.3gppnetwork.org"
             }
-            #for ref in cls.parameters:
-            #  # TODO: re-enable lock
-            #  cls.update_service(ref, "started", parameters=cls.parameters[ref], lock=False)
+            for ref in cls.parameters:
+              cls.update_service(ref, "started", parameters=cls.parameters[ref], lock=True)
 
         except Exception as e:
             cls.logger.error("Error during setup: " + str(e))
@@ -244,10 +243,9 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
     @classmethod
     def tearDownClass(cls):
         cls.close_websocket_connection()
-        # TODO: re-enable stop
-        #cls.update_service("enb-gnb", "stopped", lock=False)
-        #cls.update_service("core-network", "stopped", lock=False)
-        #cls.update_service("ue", "stopped", lock=False)
+        cls.update_service("enb-gnb", "stopped", lock=False)
+        cls.update_service("core-network", "stopped", lock=False)
+        cls.update_service("ue", "stopped", lock=False)
         # Don"t call super().tearDownClass as we don"t want to destroy requested instances
 
     def send(self, msg):
@@ -312,7 +310,7 @@ class ORSTest(WebsocketTestClass):
 
         try:
             self.power_on(ue_id)
-            time.sleep(5)
+            time.sleep(10)
             result = self.ue_get()
             self.assertIn("pdn_list", result, "UE didn't connect")
             self.assertIn("ipv4", result["pdn_list"][0], "UE didn't get IPv4")
@@ -321,7 +319,7 @@ class ORSTest(WebsocketTestClass):
             self.power_off(ue_id)
             self.close_websocket_connection()
 
-    def check_lte_conf(self, dl_freq, dl_earfcn, ul_earfcn, band, rf_mode, bandwidth):
+    def check_ue_connect(self, nr, band, rf_mode, bandwidth, freq=None):
 
         rf_info = json.loads(self.parameters["enb-gnb"]["rf-info"])
         rf_info["sdr_map"]["0"].update({
@@ -331,65 +329,41 @@ class ORSTest(WebsocketTestClass):
 
         self.parameters["enb-gnb"]["cell1"] = {
               "enable_cell": True,
-              "cell_type": "eNB",
-              "tx_power_dbm": 30,
-              "bandwidth": f"{bandwidth} MHz",
-              "dl_frequency": dl_freq,
-              "lte_band": int(band[1:]),
-            }
-        self.parameters["enb-gnb"]["cell2"].update({
-              "enable_cell": False,
-            })
-        self.parameters["enb-gnb"]["rf-info"] = json.dumps(rf_info)
-        self.parameters["ue#cell"].update(
-            {
-              "cell_type": "lte",
-              "rf_mode": rf_mode.lower(),
-              "dl_earfcn": dl_earfcn,
-              "ul_earfcn": ul_earfcn,
-              "bandwidth": bandwidth,
-            })
-        self.parameters["ue#cell"].pop("dl_nr_arfcn", None)
-        self.parameters["ue#cell"].pop("ul_nr_arfcn", None)
-        self.parameters["ue#cell"].pop("ssb_nr_arfcn", None)
-
-        self.check_ue_ip()
-
-    def check_nr_conf(self, band, rf_mode, bandwidth):
-
-        rf_info = json.loads(self.parameters["enb-gnb"]["rf-info"])
-        rf_info["sdr_map"]["0"].update({
-              "band": band,
-              "tdd": rf_mode.upper()
-            })
-
-        self.parameters["enb-gnb"]["cell1"] = {
-              "enable_cell": True,
-              "cell_type": "gNB",
+              "cell_type": "gNB" if nr else "eNB",
               "tx_power_dbm": 30,
               "nr_bandwidth": bandwidth,
             }
+        if freq:
+            self.parameters["enb-gnb"]["cell1"]["dl_frequency"] = freq
+
         self.parameters["enb-gnb"]["cell2"].update({
               "enable_cell": False,
             })
         self.parameters["enb-gnb"]["rf-info"] = json.dumps(rf_info)
         self.parameters["ue#cell"].update(
             {
-              "cell_type": "nr",
+              "cell_type": "nr" if nr else "lte",
               "rf_mode": rf_mode.lower(),
               "bandwidth": bandwidth,
             })
-        self.parameters["ue#cell"].pop("dl_earfcn", None)
-        self.parameters["ue#cell"].pop("ul_earfcn", None)
-        self.parameters["ue#ue"]["ue_type"] = "nr"
+        if nr:
+            self.parameters["enb-gnb"]["cell1"]["nr_bandwidth"] = bandwidth
+            self.parameters["ue#cell"].pop("dl_earfcn", None)
+            self.parameters["ue#cell"].pop("ul_earfcn", None)
+            self.parameters["ue#ue"]["ue_type"] = "nr"
+        else:
+            self.parameters["enb-gnb"]["cell1"]["bandwidth"] = f"{bandwidth} MHz"
+            self.parameters["ue#cell"].pop("dl_nr_arfcn", None)
+            self.parameters["ue#cell"].pop("ul_nr_arfcn", None)
+            self.parameters["ue#ue"]["ue_type"] = "lte"
 
-        # Get SSB NR ARFCN
-        self.logger.info("Gettting SSB NR ARFCN")
+        self.logger.info("Gettting eNB / gNB connection parameters")
         self.update_service("enb-gnb", "started", parameters=self.parameters["enb-gnb"], lock=False)
 
         self.logger.info("Waiting until parameters update")
+        time.sleep(60)
         params = self.parameters["enb-gnb"]["cell1"]
-        for i in range(15):
+        for i in range(12):
             time.sleep(10)
             connection_params = self.getInstanceInfos(self.enb_gnb_instance_name).connection_dict
             self.logger.info(connection_params) # DEBUG
@@ -401,47 +375,56 @@ class ORSTest(WebsocketTestClass):
             if not model.startswith(band):
                 self.logger.info(f"{model} != {band}")
                 continue
-            if bandwidth != params['nr_bandwidth']:
+            if nr and bandwidth != params['nr_bandwidth']:
                 self.logger.info(f"{bandwidth} != {params['nr_bandwidth']}")
                 continue
+            if not nr and bandwidth != int(params['bandwidth'].removesuffix(" MHz")):
+                self.logger.info(f"{bandwidth} != " + params['bandwidth'].removesuffix(" MHz"))
+                continue
             break
-        self.parameters["ue#cell"].update({
-          "ssb_nr_arfcn": int(connection_params['RADIO.ssb-nr-arfcn']),
-          "dl_nr_arfcn": int(connection_params['RADIO.dl-arfcn']),
-          "ul_nr_arfcn": int(connection_params['RADIO.ul-arfcn']),
-          "nr_band": int(connection_params['RADIO.band'][1:]),
-        })
+        if nr:
+            self.parameters["ue#cell"].update({
+              "ssb_nr_arfcn": int(connection_params['RADIO.ssb-nr-arfcn']),
+              "dl_nr_arfcn": int(connection_params['RADIO.dl-arfcn']),
+              "ul_nr_arfcn": int(connection_params['RADIO.ul-arfcn']),
+              "nr_band": int(connection_params['RADIO.band'][1:]),
+            })
+        else:
+            self.parameters["ue#cell"].update({
+              "dl_earfcn": int(connection_params['RADIO.dl-arfcn']),
+              "ul_earfcn": int(connection_params['RADIO.ul-arfcn']),
+            })
 
         self.check_ue_ip()
 
-    #def test_lte_B28_10(self):
-    #    self.check_lte_conf(792, 9550, 27550, 'B28', 'FDD', 10)
-    #def test_lte_B38_10(self):
-    #    self.check_lte_conf(2600, 38050, 38050, 'B38', 'TDD', 10)
-    #def test_lte_B39_10(self):
-    #    self.check_lte_conf(1900, 38450, 38450, 'B39', 'TDD', 10)
-    #def test_lte_B40_10(self):
-    #    self.check_lte_conf(2350, 39150, 39150, 'B40', 'TDD', 10)
-    #def test_lte_B42_10(self):
-    #    self.check_lte_conf(3500, 42590, 42590, 'B42', 'TDD', 10)
-    #def test_lte_B43_10(self):
-    #    self.check_lte_conf(3700, 44590, 44590, 'B43', 'TDD', 10)
-    #def test_nr_N28_20(self):
-    #    self.check_nr_conf('B28', 'FDD', 20)
-    #def test_nr_N38_20(self):
-    #    self.check_nr_conf('B38', 'TDD', 20)
-    #def test_nr_N39_20(self):
-    #    self.check_nr_conf('B39', 'TDD', 20)
-    #def test_nr_N40_20(self):
-    #    self.check_nr_conf('B40', 'TDD', 20)
-    #def test_nr_N77_20(self):
-    #    self.check_nr_conf('N77', 'TDD', 20)
-    #def test_nr_B42_20(self):
-    #    self.check_nr_conf('B42', 'TDD', 20)
+    def test_lte_B28_10(self):
+        self.check_ue_connect(False, 'B28', 'FDD', 10)
+    def test_lte_B38_10(self):
+        self.check_ue_connect(False, 'B38', 'TDD', 10)
+    def test_lte_B39_10(self):
+        self.check_ue_connect(False, 'B39', 'TDD', 10)
+    def test_lte_B40_10(self):
+        self.check_ue_connect(False, 'B40', 'TDD', 10)
+    def test_lte_B42_10(self):
+        self.check_ue_connect(False, 'B42', 'TDD', 10)
+    def test_lte_B43_10(self):
+        self.check_ue_connect(False, 'B43', 'TDD', 10)
+    def test_nr_B28_20(self):
+        self.check_ue_connect(True, 'B28', 'FDD', 20)
+    def test_nr_B38_20(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 20)
+    def test_nr_B39_20(self):
+        self.check_ue_connect(True, 'B39', 'TDD', 20)
+    def test_nr_B40_20(self):
+        self.check_ue_connect(True, 'B40', 'TDD', 20)
+    def test_nr_N77_20(self):
+        self.check_ue_connect(True, 'N77', 'TDD', 20)
+    def test_nr_B42_20(self):
+        self.check_ue_connect(True, 'B42', 'TDD', 20)
     def test_nr_B43_20(self):
-        self.check_nr_conf('B43', 'TDD', 20)
-    #def test_nr_N79_20(self):
-    #    self.check_nr_conf('N79', 'TDD', 20)
+        self.check_ue_connect(True, 'B43', 'TDD', 20, freq=3690.00)
+    def test_nr_N79_20(self):
+        self.check_ue_connect(True, 'N79', 'TDD', 20)
 
     # TODO: uncomment these tests
     #def test_max_rx_sample_db(self):
