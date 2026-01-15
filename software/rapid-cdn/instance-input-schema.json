@@ -235,6 +235,16 @@
       "description": "Number of log files to keep before rotation.",
       "type": "integer",
       "default": 4000
+    },
+    "allow-invalid-instance": {
+      "title": "Allow Invalid Instance",
+      "description": "Allow invalid instance to be added to the cluster.",
+      "type": "string",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "default": "true"
     }
   },
   "patternProperties": {
