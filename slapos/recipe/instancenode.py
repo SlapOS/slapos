@@ -632,6 +632,12 @@ class Recipe(object):
       )
       raise
 
+  def instanceNodePostProcessing(self):
+    """
+    Post processing for the instance node.
+    """
+    pass
+
   def install(self):
     """
     Compare databases, make requests, and update requestinstance-db-path.
@@ -694,6 +700,8 @@ class Recipe(object):
       self._progress_processed_count += 1
       self.logIfTimePassed()
 
+    # Do global post processing if needed
+    self.instanceNodePostProcessing()
     # Log final summary
     self.logFinalReport()
     self.logger.info('================================================================================')
