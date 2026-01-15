@@ -80,6 +80,7 @@ depends =
   {{ software_parameter_dict['instance-kedifa-input-schema.json'] }}
 set-default = main
 validate-parameters = all
+allow-invalid-instance = true
 instance-db-path = ${buildout:directory}/slapconfiguration-shared-instance.sqlite
 valided-instance-db-path = ${buildout:directory}/validated-shared-instance.sqlite
 computer = ${slap-connection:computer-id}
