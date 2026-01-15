@@ -541,6 +541,7 @@ class TestCDNRequestRecipe(unittest.TestCase):
 
   def setUp(self):
     self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
+    self.timestamp_file_fd, self.timestamp_file_path = tempfile.mkstemp()
 
     self.buildout = {
       "buildout": {},
@@ -583,6 +584,9 @@ class TestCDNRequestRecipe(unittest.TestCase):
     os.close(self.domainvalidation_db_fd)
     if os.path.exists(self.domainvalidation_db_path):
       os.unlink(self.domainvalidation_db_path)
+    os.close(self.timestamp_file_fd)
+    if os.path.exists(self.timestamp_file_path):
+      os.unlink(self.timestamp_file_path)
 
   def test_validate_no_custom_domain(self):
     """Test validation when custom_domain is not provided"""
@@ -1570,6 +1574,218 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
     # Verify each resolver has its own cache
     self.assertIsNot(recipe1.dns_resolver.cache, recipe2.dns_resolver.cache)
+
+  def test_timestamp_path_not_provided(self):
+    """Test that timestamp defaults to current time when timestamp-path is not provided"""
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+    # timestamp should be set to current time (approximately)
+    self.assertIsNotNone(recipe.timestamp)
+    self.assertIsInstance(recipe.timestamp, float)
+    # Should be close to current time (within 1 second)
+    self.assertAlmostEqual(recipe.timestamp, time.time(), delta=1.0)
+
+  def test_timestamp_path_file_exists(self):
+    """Test that timestamp is read from file when timestamp-path is provided and file exists"""
+    # Create a timestamp file with a specific modification time
+    test_timestamp = 1234567890.0
+    os.utime(self.timestamp_file_path, (test_timestamp, test_timestamp))
+    
+    self.options['timestamp-path'] = self.timestamp_file_path
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+    
+    # timestamp should be read from file modification time
+    self.assertEqual(recipe.timestamp, test_timestamp)
+
+  def test_timestamp_path_file_not_exists(self):
+    """Test that timestamp defaults to current time when file doesn't exist"""
+    non_existent_path = '/nonexistent/path/timestamp'
+    self.options['timestamp-path'] = non_existent_path
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+    
+    # timestamp should be set to current time (approximately)
+    self.assertIsNotNone(recipe.timestamp)
+    self.assertIsInstance(recipe.timestamp, float)
+    # Should be close to current time (within 1 second)
+    self.assertAlmostEqual(recipe.timestamp, time.time(), delta=1.0)
+
+  def test_instanceNodePostProcessing_no_valid_instance(self):
+    """Test that instanceNodePostProcessing doesn't call bang when no valid instance found"""
+    # Setup requestinstance_db mock to return no valid instances
+    mock_db = mock.MagicMock()
+    mock_db.db.fetchOne.return_value = None
+    self.mock_requestinstance_db.db = mock_db.db
+
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+    recipe.requestinstance_db = self.mock_requestinstance_db
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      recipe.instanceNodePostProcessing()
+
+    # bang should not be called
+    mock_computer_partition.bang.assert_not_called()
+
+  def test_instanceNodePostProcessing_valid_instance_found(self):
+    """Test that instanceNodePostProcessing calls bang when valid instance with newer timestamp is found"""
+    # Setup requestinstance_db mock to return a valid instance
+    # The mock should check the query parameters and only return the instance if timestamp > query_param
+    instance_timestamp = int(time.time()) + 100  # Newer timestamp
+    valid_instance = {
+      'reference': 'test-instance',
+      'timestamp': str(instance_timestamp),
+      'valid_parameter': True
+    }
+    mock_db = mock.MagicMock()
+    
+    def fetchOne_side_effect(query, params):
+      # Check if the query matches and if timestamp comparison would be true
+      if len(params) >= 2 and params[0] is True:  # valid_parameter=True
+        query_timestamp = params[1]  # The timestamp from recipe.timestamp
+        # Only return instance if instance_timestamp > query_timestamp (newer)
+        if instance_timestamp > query_timestamp:
+          return valid_instance
+      return None
+    
+    mock_db.db.fetchOne.side_effect = fetchOne_side_effect
+    self.mock_requestinstance_db.db = mock_db.db
+
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+    recipe.requestinstance_db = self.mock_requestinstance_db
+    # Set timestamp to an older value
+    recipe.timestamp = time.time() - 200
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      recipe.instanceNodePostProcessing()
+
+    # bang should be called with the correct message
+    mock_computer_partition.bang.assert_called_once_with(
+      message='CDN instances have been deployed and instance need reprocessing'
+    )
+
+  def test_instanceNodePostProcessing_valid_instance_older_timestamp(self):
+    """Test that instanceNodePostProcessing doesn't call bang when valid instance has older timestamp"""
+    # Setup requestinstance_db mock to return a valid instance with older timestamp
+    # The mock should check the query parameters and only return the instance if timestamp > query_param
+    instance_timestamp = int(time.time() - 200)  # Older timestamp
+    valid_instance = {
+      'reference': 'test-instance',
+      'timestamp': str(instance_timestamp),
+      'valid_parameter': True
+    }
+    mock_db = mock.MagicMock()
+    
+    def fetchOne_side_effect(query, params):
+      # Check if the query matches and if timestamp comparison would be true
+      if len(params) >= 2 and params[0] is True:  # valid_parameter=True
+        query_timestamp = params[1]  # The timestamp from recipe.timestamp
+        # Only return instance if instance_timestamp > query_timestamp (newer)
+        if instance_timestamp > query_timestamp:
+          return valid_instance
+      return None
+    
+    mock_db.db.fetchOne.side_effect = fetchOne_side_effect
+    self.mock_requestinstance_db.db = mock_db.db
+
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+    recipe.requestinstance_db = self.mock_requestinstance_db
+    # Set timestamp to a newer value
+    recipe.timestamp = time.time()
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      recipe.instanceNodePostProcessing()
+
+    # bang should not be called (timestamp is older, so query returns None)
+    mock_computer_partition.bang.assert_not_called()
+
+  def test_instanceNodePostProcessing_invalid_instance(self):
+    """Test that instanceNodePostProcessing doesn't call bang when instance is invalid"""
+    # Setup requestinstance_db mock to return an invalid instance
+    invalid_instance = {
+      'reference': 'test-instance',
+      'timestamp': str(int(time.time()) + 100),  # Newer timestamp
+      'valid_parameter': False  # Invalid
+    }
+    mock_db = mock.MagicMock()
+    # fetchOne should return None because valid_parameter=False
+    mock_db.db.fetchOne.return_value = None
+    self.mock_requestinstance_db.db = mock_db.db
+
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+    recipe.requestinstance_db = self.mock_requestinstance_db
+    recipe.timestamp = time.time() - 200
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      recipe.instanceNodePostProcessing()
+
+    # bang should not be called (instance is invalid)
+    mock_computer_partition.bang.assert_not_called()
+
+  def test_instanceNodePostProcessing_timestamp_comparison(self):
+    """Test that timestamp comparison works correctly with integer conversion"""
+    # Setup requestinstance_db mock to return a valid instance
+    test_timestamp = int(time.time()) + 100
+    valid_instance = {
+      'reference': 'test-instance',
+      'timestamp': str(test_timestamp),  # String timestamp
+      'valid_parameter': True
+    }
+    mock_db = mock.MagicMock()
+    mock_db.db.fetchOne.return_value = valid_instance
+    self.mock_requestinstance_db.db = mock_db.db
+
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+    recipe.requestinstance_db = self.mock_requestinstance_db
+    # Set timestamp to an older value (as float)
+    recipe.timestamp = float(test_timestamp - 200)
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      recipe.instanceNodePostProcessing()
+
+    # Verify the SQL query was called with correct parameters
+    mock_db.db.fetchOne.assert_called_once()
+    call_args = mock_db.db.fetchOne.call_args
+    sql_query = call_args[0][0]
+    query_params = call_args[0][1]
+    
+    # Verify query checks for valid_parameter=True and timestamp comparison
+    self.assertIn('valid_parameter=?', sql_query)
+    self.assertIn('CAST(timestamp AS INTEGER) > ?', sql_query)
+    self.assertEqual(query_params[0], True)
+    self.assertEqual(query_params[1], int(recipe.timestamp))
+
+    # bang should be called
+    mock_computer_partition.bang.assert_called_once()
+
+  def test_instanceNodePostProcessing_called_during_install(self):
+    """Test that instanceNodePostProcessing is called during install()"""
+    # Setup instance-db and requestinstance-db to have no instances
+    self.mock_instance_db.getInstanceList.return_value = []
+    self.mock_requestinstance_db.getInstanceList.return_value = []
+    self.mock_requestinstance_db.db.fetchOne.return_value = None
+
+    recipe = cdnrequest.CDNRequestRecipe(self.buildout, 'test', self.options)
+    recipe.instance_db = self.mock_instance_db
+    recipe.requestinstance_db = self.mock_requestinstance_db
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      with mock.patch.object(recipe, '_getUpdateList', return_value=[]):
+        with mock.patch.object(recipe, '_getStoredDict', return_value={}):
+          recipe.install()
+
+    # instanceNodePostProcessing should have been called (even if no instances)
+    # Verify by checking that fetchOne was called (from instanceNodePostProcessing)
+    self.mock_requestinstance_db.db.fetchOne.assert_called()
 
 
 class TestDomainValidationDB(unittest.TestCase):
