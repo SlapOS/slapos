@@ -211,12 +211,6 @@
       "format": "uri",
       "default": "https://monitor.app.officejs.com"
     },
-    "monitor-cors-domains": {
-      "title": "Monitor CORS domains",
-      "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
-      "type": "string",
-      "default": "monitor.app.officejs.com"
-    },
     "kvm-partition-dict": {
       "title": "kvm instances definition",
       "description": "kvm instances definition",
