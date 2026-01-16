@@ -50,6 +50,7 @@ def time_limit(seconds):
         signal.alarm(0)
 
 class PostfixTestCase(SlapOSInstanceTestCase):
+  __partition_reference__ = 'p'
   def check_imap(self, address, password):
     """Test IMAP login with given address and password"""
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
