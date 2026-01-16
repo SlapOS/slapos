@@ -20,6 +20,7 @@ parts =
   promise-expose-csr-ip-port
   promise-logrotate-setup
   promise-kedifa-auth-ready
+  promise-kedifa-auth-ready-anomaly
 
 [monitor-instance-parameter]
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
@@ -359,5 +360,12 @@ promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-filename = ${kedifa-auth-ready:output}
 config-state = empty
+config-report-anomaly = false
+
+[promise-kedifa-auth-ready-anomaly]
+<= promise-kedifa-auth-ready
+config-report-anomaly = true
+config-result-count = 5
+config-failure-amount = 5
 
 {%- endif -%} {# if instance_parameter_dict['slap-software-type'] == software_type #}
