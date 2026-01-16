@@ -38,6 +38,12 @@
       ],
       "default": "Automatic"
     },
+    "gtp_payload_mtu": {
+      "title": "GTP Payload MTU",
+      "description": "Range 68 to 16384. MTU in bytes for the GTP-U payload. Do not forget to update the network interface MTU accordingly for optimal performance. For example with a GTP MTU of 1500 bytes, interface should have a MTU of at least 1564 bytes.",
+      "type": "number",
+      "default": 1500
+    },
     "mbmsgw_addr": {
       "title": "SGW Address",
       "description": "Set the IP address (and optional port) of the MBMS Gateway for the M2 connection. The default port is 36443.",
