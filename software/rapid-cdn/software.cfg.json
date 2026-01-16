@@ -1,16 +1,8 @@
 {
   "description": "Rapid.CDN",
   "name": "Rapid.CDN",
-  "serialisation": "json-in-xml",
+  "serialisation": "xml",
   "software-type": {
-    "single-custom-personal": {
-      "description": "",
-      "index": 2,
-      "request": "instance-input-schema.json",
-      "response": "instance-output-schema.json",
-      "title": "Custom Personal",
-      "software-type": "custom-personal"
-    },
     "custom-personal": {
       "description": "",
       "index": 2,
@@ -18,6 +10,14 @@
       "response": "instance-output-schema.json",
       "title": "Custom Personal",
       "software-type": "custom-personal"
+    },
+    "single-custom-personal": {
+      "description": "",
+      "index": 2,
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
+      "title": "Custom Personal",
+      "software-type": "single-custom-personal"
     },
     "custom-personal-slave": {
       "description": "Custom Personal",
