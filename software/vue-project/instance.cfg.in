@@ -19,12 +19,10 @@ etc = ${:home}/etc
 var = ${:home}/var
 srv = ${:home}/srv
 bin = ${:home}/bin
-tmp = ${:home}/tmp
 log = ${:var}/log
 run = ${:var}/run
 services = ${:etc}/service
 httpd-log = ${:var}/log/apache
-www = ${:srv}/www
 ssl = ${:etc}/ssl
 
 [slap-configuration]
