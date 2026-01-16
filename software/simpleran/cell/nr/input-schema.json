@@ -102,18 +102,18 @@
     },
     "integ_algo_pref": {
       "title": "Preferred Integrity algorithms",
-      "decription": "Set the preferred algorithms for RRC integrity (and optionally User Plane integrity) check in decreasing order of preference. If none match the UE capabilities, then NIA0 (no integrity check) is selected. (Default: NEA2, NEA1)",
+      "decription": "Set the preferred algorithms for RRC integrity (and optionally User Plane integrity) check in decreasing order of preference. If none match the UE capabilities, then NIA0 (no integrity check) is selected. (Default: NIA2, NIA1)",
       "type": "array",
       "items": {
         "type": "string",
         "title": "Algorithm preference",
         "enum": [
-          "NEA1 (Snow 3G)",
-          "NEA2 (128 bit AES)",
-          "NEA3 (ZUC)"
+          "NIA1 (Snow 3G)",
+          "NIA2 (128 bit AES)",
+          "NIA3 (ZUC)"
         ]
       },
-      "default": ["NEA2 (128 bit AES)","NEA1 (Snow 3G)"]
+      "default": ["NIA2 (128 bit AES)","NIA1 (Snow 3G)"]
     }
   },
   "$defs": {

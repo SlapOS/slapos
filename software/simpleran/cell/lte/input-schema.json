@@ -85,18 +85,18 @@
     },
     "integ_algo_pref": {
       "title": "Preferred Integrity algorithms",
-      "decription": " Set the preferred algorithms for RRC integrity check in decreasing order of preference. If none match the UE capabilities, then EIA0 (no integrity check) is selected. (Default: EEA2, EEA1)",
+      "decription": " Set the preferred algorithms for RRC integrity check in decreasing order of preference. If none match the UE capabilities, then EIA0 (no integrity check) is selected. (Default: EIA2, EIA1)",
       "type": "array",
       "items": {
         "title": "Algorithm preference",
         "type": "string",
         "enum": [
-          "EEA1 (Snow 3G)",
-          "EEA2 (128 bit AES)",
-          "EEA3 (ZUC)"
+          "EIA1 (Snow 3G)",
+          "EIA2 (128 bit AES)",
+          "EIA3 (ZUC)"
         ]
       },
-      "default": ["EEA2 (128 bit AES)","EEA1 (Snow 3G)"]
+      "default": ["EIA2 (128 bit AES)","EIA1 (Snow 3G)"]
     },
     "tti_bundling": {
       "title": "TTI Bundling",
