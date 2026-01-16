@@ -599,6 +599,7 @@ parts +=
     frontend-haproxy-configuration
     backend-haproxy-configuration
     promise-key-download-url-ready
+    promise-key-download-url-ready-anomaly
 {%- for part in part_list %}
 {{ '    %s' % part }}
 {%- endfor %}
@@ -688,3 +689,10 @@ promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-filename = ${key-download-url-ready:output}
 config-state = empty
+config-report-anomaly = false
+
+[promise-key-download-url-ready-anomaly]
+<= promise-key-download-url-ready
+config-report-anomaly = true
+config-result-count = 5
+config-failure-amount = 5
