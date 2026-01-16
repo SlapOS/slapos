@@ -9,6 +9,9 @@
     "gtp_addr": {
       "$ref": "instance-enb-input-schema.json#/properties/gtp_addr"
     },
+    "gtp_payload_mtu": {
+      "$ref": "instance-enb-input-schema.json#/properties/gtp_payload_mtu"
+    },
     "mbmsgw_addr": {
       "$ref": "instance-enb-input-schema.json#/properties/mbmsgw_addr"
     },
