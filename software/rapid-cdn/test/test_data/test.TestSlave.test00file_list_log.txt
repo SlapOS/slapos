@@ -5,6 +5,7 @@ T-1/var/log/expose-csr.log
 T-1/var/log/kedifa.log
 T-1/var/log/monitor-httpd-access.log
 T-1/var/log/monitor-httpd-error.log
+T-1/var/log/slapgrid-T-1-error.log
 T-2/var/log/backend-haproxy.log
 T-2/var/log/expose-csr.log
 T-2/var/log/frontend-haproxy.log
