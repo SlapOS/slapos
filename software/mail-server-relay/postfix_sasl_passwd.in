@@ -1,1 +1,1 @@
-[{{relay_host}}]:{{relay_port}} {{relay_user}}:{{relay_pass}}
+[{{proxy_host}}]:{{proxy_port}} {{proxy_user}}:{{proxy_pass}}
