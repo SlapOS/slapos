@@ -68,12 +68,14 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                 "cell1": {
                     "cell_type": "eNB",
                     "enable_cell": True,
-                    "tx_power_dbm": 30,
+                    "tx_power_dbm": 20,
+                    "rx_gain": 30,
                 },
                 "cell2": {
                     "cell_type": "eNB",
                     "enable_cell": False,
-                    "tx_power_dbm": 30
+                    "tx_power_dbm": 20,
+                    "rx_gain": 30,
                 },
                 "nodeb": {
                     "n_antenna_dl": 1,
@@ -317,7 +319,7 @@ class ORSTest(WebsocketTestClass):
                 result = self.ue_get()
                 ue_id = result["ue_id"]
                 self.power_on(ue_id)
-                time.sleep(5)
+                time.sleep(10)
                 result = self.ue_get()
                 self.assertIn("pdn_list", result, "UE didn't connect")
                 self.assertIn("ipv4", result["pdn_list"][0], "UE didn't get IPv4")
@@ -376,9 +378,9 @@ class ORSTest(WebsocketTestClass):
         self.logger.info("Waiting until parameters update")
         params = self.parameters["enb-gnb"]["cell1"]
         for i in range(30):
-            time.sleep(5)
+            time.sleep(10)
             connection_params = self.getInstanceInfos(self.enb_gnb_instance_name).connection_dict
-            self.logger.info(connection_params) # DEBUG
+            self.logger.info(connection_params) # TODO: remove
             model = connection_params['HARDWARE.ors-version'].split(' ')[2]
             try:
               bandwidth = int(connection_params['RADIO.bandwidth'].removesuffix(" MHz"))
@@ -394,6 +396,9 @@ class ORSTest(WebsocketTestClass):
                 self.logger.info(f"{bandwidth} != " + params['bandwidth'].removesuffix(" MHz"))
                 continue
             break
+        else:
+            self.assertTrue(False, "Service was not ready in time")
+            
         if nr:
             self.parameters["ue#cell"].update({
               "ssb_nr_arfcn": int(connection_params['RADIO.ssb-nr-arfcn']),
@@ -413,30 +418,30 @@ class ORSTest(WebsocketTestClass):
         self.check_ue_connect(False, 'B28', 'FDD', 10)
     def test_lte_B38_10(self):
         self.check_ue_connect(False, 'B38', 'TDD', 10)
-    #def test_lte_B39_10(self):
-    #    self.check_ue_connect(False, 'B39', 'TDD', 10)
-    #def test_lte_B40_10(self):
-    #    self.check_ue_connect(False, 'B40', 'TDD', 10)
-    #def test_lte_B42_10(self):
-    #    self.check_ue_connect(False, 'B42', 'TDD', 10)
-    #def test_lte_B43_10(self):
-    #    self.check_ue_connect(False, 'B43', 'TDD', 10)
-    #def test_nr_B28_20(self):
-    #    self.check_ue_connect(True, 'B28', 'FDD', 20)
-    #def test_nr_B38_20(self):
-    #    self.check_ue_connect(True, 'B38', 'TDD', 20)
-    #def test_nr_B39_20(self):
-    #    self.check_ue_connect(True, 'B39', 'TDD', 20)
-    #def test_nr_B40_20(self):
-    #    self.check_ue_connect(True, 'B40', 'TDD', 20)
-    #def test_nr_N77_20(self):
-    #    self.check_ue_connect(True, 'N77', 'TDD', 20)
-    #def test_nr_B42_20(self):
-    #    self.check_ue_connect(True, 'B42', 'TDD', 20)
-    #def test_nr_B43_20(self):
-    #    self.check_ue_connect(True, 'B43', 'TDD', 20, freq=3690.00)
-    #def test_nr_N79_20(self):
-    #    self.check_ue_connect(True, 'N79', 'TDD', 20)
+    def test_lte_B39_10(self):
+        self.check_ue_connect(False, 'B39', 'TDD', 10)
+    def test_lte_B40_10(self):
+        self.check_ue_connect(False, 'B40', 'TDD', 10)
+    def test_lte_B42_10(self):
+        self.check_ue_connect(False, 'B42', 'TDD', 10)
+    def test_lte_B43_10(self):
+        self.check_ue_connect(False, 'B43', 'TDD', 10)
+    def test_nr_B28_20(self):
+        self.check_ue_connect(True, 'B28', 'FDD', 20)
+    def test_nr_B38_20(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 20)
+    def test_nr_B39_20(self):
+        self.check_ue_connect(True, 'B39', 'TDD', 20)
+    def test_nr_B40_20(self):
+        self.check_ue_connect(True, 'B40', 'TDD', 20)
+    def test_nr_N77_20(self):
+        self.check_ue_connect(True, 'N77', 'TDD', 20)
+    def test_nr_B42_20(self):
+        self.check_ue_connect(True, 'B42', 'TDD', 20)
+    def test_nr_B43_20(self):
+        self.check_ue_connect(True, 'B43', 'TDD', 20, freq=3690.00)
+    def test_nr_N79_20(self):
+        self.check_ue_connect(True, 'N79', 'TDD', 20)
 
     # TODO: uncomment these tests
     #def test_max_rx_sample_db(self):
