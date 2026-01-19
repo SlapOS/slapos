@@ -8,7 +8,16 @@
       "index": 2,
       "request": "instance-input-schema.json",
       "response": "instance-output-schema.json",
-      "title": "Custom Personal"
+      "title": "Custom Personal",
+      "software-type": "custom-personal"
+    },
+    "single-custom-personal": {
+      "description": "",
+      "index": 2,
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
+      "title": "Custom Personal",
+      "software-type": "single-custom-personal"
     },
     "custom-personal-slave": {
       "description": "Custom Personal",
@@ -35,6 +44,14 @@
       "shared": true,
       "software-type": "default",
       "title": "Default (slave)"
+    },
+    "kedifa": {
+      "description": "Kedifa",
+      "index": 5,
+      "request": "instance-kedifa-input-schema.json",
+      "response": "instance-kedifa-output-schema.json",
+      "software-type": "kedifa",
+      "title": "Kedifa"
     }
   }
 }
