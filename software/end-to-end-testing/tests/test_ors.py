@@ -10,6 +10,7 @@ from websocket import _exceptions
 # 1767374328
 DEV = True
 LOCK = False
+MAX_RETRY = 3
 
 class WebsocketTestClass(e2e.EndToEndTestCase):
     @classmethod
@@ -312,7 +313,9 @@ class ORSTest(WebsocketTestClass):
 
         retry = True
 
-        while retry:
+        for i in range(MAX_RETRY):
+            if not retry:
+              break
             retry = False
             try:
                 self.setup_websocket_connection()
@@ -324,7 +327,7 @@ class ORSTest(WebsocketTestClass):
                 self.assertIn("pdn_list", result, "UE didn't connect")
                 self.assertIn("ipv4", result["pdn_list"][0], "UE didn't get IPv4")
                 self.logger.info("UE connected with ip: " + result["pdn_list"][0]["ipv4"])
-            except (_exceptions.WebSocketConnectionClosedException, _exceptions.WebSocketBadStatusException):
+            except (_exceptions.WebSocketConnectionClosedException, _exceptions.WebSocketBadStatusException, json.decoder.JSONDecodeError):
                 retry = True
             finally:
                 try:
