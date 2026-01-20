@@ -119,7 +119,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                       "ru_type": "sdr",
                       "ru_link_type": "sdr",
                       "sdr_dev_list": [
-                          2
+                          1
                       ],
                       "n_antenna_dl": 1,
                       "n_antenna_ul": 1,
