@@ -1,7 +1,7 @@
 {
   "description": "Rapid.CDN",
   "name": "Rapid.CDN",
-  "serialisation": "xml",
+  "serialisation": "json-in-xml",
   "software-type": {
     "custom-personal": {
       "description": "",
