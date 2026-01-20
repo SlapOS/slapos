@@ -10,15 +10,18 @@
       "description": "SSL Certificate used by the server. By appending to it CA certificate it is possible to use this field to replace not implemented apache-ca-certificate. Deprecated, please use master-key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Certificate, with optional CA certificate",
-      "type": "string"
+      "type": "string",
+      "default": ""
     },
     "apache-key": {
       "description": "SSL Key used by the server. Deprecated, please use master-key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Key",
-      "type": "string"
+      "type": "string",
+      "default": ""
     },
     "domain": {
+      "default": "example.org",
       "description": "Domain used to generate automatic hostnames for slaves. For example 'example.com' will result with slave hostname 'slaveref.example.com'.",
       "format": "idn-hostname",
       "title": "Domain",
@@ -53,7 +56,8 @@
     "re6st-verification-url": {
       "description": "Url to verify if the internet and/or re6stnet is working.",
       "title": "Test Verification URL",
-      "type": "string"
+      "type": "string",
+      "default": ""
     },
     "backend-connect-timeout": {
       "default": 5,
@@ -119,6 +123,157 @@
       "title": "Default size of disk cache on each node (bytes)",
       "description": "The value can be provided with suffix 'K', 'M', 'G'",
       "type": "string"
+    },
+    "frontend-name": {
+      "default": "",
+      "description": "Name of the frontend.",
+      "title": "Frontend Name",
+      "type": "string"
+    },
+    "monitor-interface-url": {
+      "title": "Monitor Web Interface URL",
+      "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
+      "type": "string",
+      "format": "uri",
+      "default": "https://monitor.app.officejs.com"
+    },
+    "monitor-cors-domains": {
+      "title": "Monitor CORS domains",
+      "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
+      "type": "string",
+      "default": "monitor.app.officejs.com"
+    },
+    "monitor-username": {
+      "title": "Monitor username",
+      "description": "Username used for basic auth in monitoring web server",
+      "type": "string",
+      "default": "admin"
+    },
+    "monitor-password": {
+      "title": "Monitor password",
+      "description": "Password used for basic auth in monitoring web server",
+      "type": "string",
+      "default": "RANDOM value"
+    },
+    "cluster-identification": {
+      "title": "Cluster Identification",
+      "description": "Identification of the cluster.",
+      "type": "string",
+      "default": ""
+    },
+    "backend-client-caucase-url": {
+      "title": "Backend Client Caucase URL",
+      "description": "URL of the backend client caucase.",
+      "type": "string",
+      "format": "uri"
+    },
+    "extra_slave_instance_list": {
+      "title": "Extra Slave Instance List",
+      "description": "JSON string containing a list of additional slave instances to be added to the default slave list.",
+      "type": "string",
+      "default": "[]"
+    },
+    "kedifa-caucase-url": {
+      "title": "KeDiFa Caucase URL",
+      "description": "URL of the caucase service for KeDiFa certificate management.",
+      "type": "string",
+      "format": "uri"
+    },
+    "master-key-download-url": {
+      "title": "Master Key Download URL",
+      "description": "URL for downloading the master key from the KeDiFa server.",
+      "type": "string",
+      "format": "uri"
+    },
+    "monitor-httpd-port": {
+      "title": "Monitor HTTPD Port",
+      "description": "Port number for the monitor HTTP server.",
+      "type": "integer"
+    },
+    "slave-kedifa-information": {
+      "title": "Slave KeDiFa Information",
+      "description": "JSON string containing KeDiFa configuration information for each slave instance.",
+      "type": "string"
+    },
+    "slave-introspection-https-port": {
+      "title": "Slave Introspection HTTPS Port",
+      "description": "Port number for the slave introspection HTTPS server.",
+      "type": "integer",
+      "default": 22443
+    },
+    "backend-haproxy-statistic-port": {
+      "title": "Backend Haproxy Statistic Port",
+      "description": "Port number for the backend haproxy statistics server.",
+      "type": "integer",
+      "default": 21444
+    },
+    "trafficserver-introspection-port": {
+      "title": "Trafficserver Introspection Port",
+      "description": "Port number for the trafficserver introspection server.",
+      "type": "integer",
+      "default": 23433
+    },
+    "expert-backend-allow-downgrade-ssl": {
+      "title": "Expert Backend Allow Downgrade SSL",
+      "description": "Allow SSL downgrade for backend connections (expert setting).",
+      "type": "string",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "default": "false"
+    },
+    "caucase_backend_client_port": {
+      "title": "Caucase Backend Client Port",
+      "description": "Port number for the backend client caucase server.",
+      "type": "integer",
+      "default": 8990
+    },
+    "port": {
+      "title": "HTTPS Port",
+      "description": "Port number for HTTPS connections.",
+      "type": "integer",
+      "default": 4443
+    },
+    "plain_http_port": {
+      "title": "Plain HTTP Port",
+      "description": "Port number for plain HTTP connections.",
+      "type": "integer",
+      "default": 8080
+    },
+    "backend-haproxy-http-port": {
+      "title": "Backend Haproxy HTTP Port",
+      "description": "Port number for the backend haproxy HTTP server.",
+      "type": "integer",
+      "default": 21080
+    },
+    "backend-haproxy-https-port": {
+      "title": "Backend Haproxy HTTPS Port",
+      "description": "Port number for the backend haproxy HTTPS server.",
+      "type": "integer",
+      "default": 21443
+    },
+    "dns-nameserver": {
+      "title": "DNS Nameserver",
+      "default": "",
+      "description": "DNS Nameserver used for checking DNS for custom domains",
+      "type": "string"
+    },
+    "rotate-num": {
+      "title": "Rotate Number",
+      "description": "Number of log files to keep before rotation.",
+      "type": "integer",
+      "default": 4000
+    },
+    "allow-invalid-instance": {
+      "title": "Allow Invalid Instance",
+      "description": "Allow invalid instance to be added to the cluster.",
+      "type": "string",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "default": "true"
     }
   },
   "title": "Input Parameters",
