@@ -1501,7 +1501,6 @@ class TestNEO(ZopeSkinsMixin, CrontabMixin, ERP5InstanceTestCase):
         cls.setUp = lambda self: None
         cls.tearDownClass = classmethod(lambda cls: None)
 
-    @unittest.expectedFailure
     def test_neo_py3(self):
       self.assertIsNone(self.setup_failed_exception)
 
