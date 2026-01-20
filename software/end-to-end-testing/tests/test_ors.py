@@ -68,14 +68,14 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                 "cell1": {
                     "cell_type": "eNB",
                     "enable_cell": True,
-                    "tx_power_dbm": 20,
-                    "rx_gain": 30,
+                    "tx_power_dbm": 0,
+                    "rx_gain": 35,
                 },
                 "cell2": {
                     "cell_type": "eNB",
                     "enable_cell": False,
-                    "tx_power_dbm": 20,
-                    "rx_gain": 30,
+                    "tx_power_dbm": 0,
+                    "rx_gain": 35,
                 },
                 "nodeb": {
                     "n_antenna_dl": 1,
@@ -123,8 +123,8 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                       ],
                       "n_antenna_dl": 1,
                       "n_antenna_ul": 1,
-                      "tx_gain": 90,
-                      "rx_gain": 45,
+                      "tx_gain": 70,
+                      "rx_gain": 35,
                       "txrx_active": "ACTIVE"
                   },
             }
@@ -346,7 +346,6 @@ class ORSTest(WebsocketTestClass):
         self.parameters["enb-gnb"]["cell1"] = {
               "enable_cell": True,
               "cell_type": "gNB" if nr else "eNB",
-              "tx_power_dbm": 30,
             }
         if freq:
             self.parameters["enb-gnb"]["cell1"]["dl_frequency"] = freq
@@ -398,6 +397,8 @@ class ORSTest(WebsocketTestClass):
             break
         else:
             self.assertTrue(False, "Service was not ready in time")
+
+        int(connection_params['POWER.tx-gain'])
             
         if nr:
             self.parameters["ue#cell"].update({
@@ -411,6 +412,9 @@ class ORSTest(WebsocketTestClass):
               "dl_earfcn": int(connection_params['RADIO.dl-arfcn']),
               "ul_earfcn": int(connection_params['RADIO.ul-arfcn']),
             })
+        self.parameters["enb-gnb"]["cell1"]["tx_gain"] = 77
+        self.parameters["enb-gnb"]["cell1"]["tx_gain"] = 77
+        self.parameters["enb-gnb"]["cell1"].pop("tx_power_dbm", None)
 
         self.check_ue_ip()
 
