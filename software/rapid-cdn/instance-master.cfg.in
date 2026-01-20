@@ -454,6 +454,7 @@ backend-client-caucase-url = {{ caucase_url }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict, sort_keys=True)) }}
 rejected-slave-url = ${rejected-slave-publish:url}
 publish-failsafe-error-promise-url = ${publish-failsafe-error-promise:config-url}
+publish-slave-sqlite-validation-database = ${master-introspection-frontend-url:frontend-url}/${master-slave-instrospection-server:access-slave-list-path}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
 kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
@@ -909,6 +910,16 @@ init =
   url.set(path = '')
   options['frontend-url'] = url.tostr()
 
+
+[master-slave-instrospection-server]
+ip = {{ instance_parameter_dict['ipv4-random'] }}
+port = 14968
+access-slave-list-path = slave-database
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:service}/sqlite-web-slave-introspection
+command-line = {{ software_parameter_dict['sqlite-web-bin'] }} -T -H ${:ip} -p ${:port} -u ${:access-slave-list-path} -r ${cdn-requester-configuration:valided-instance-db-path} 
+
+
 [rejected-slave-publish]
 url = ${master-introspection-frontend-url:frontend-url}/${master-introspection-template:rejected-slave-path}/${rejected-slave-json:filename}
 
@@ -985,6 +996,15 @@ inline =
         sendfile on;
         sendfile_max_chunk 1m;
       }
+      location /${master-slave-instrospection-server:access-slave-list-path} {
+          proxy_pass http://${master-slave-instrospection-server:ip}:${master-slave-instrospection-server:port};
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header X-Forwarded-Prefix /${master-slave-instrospection-server:access-slave-list-path};
+          proxy_redirect off;
+      }
     }
   }
 
@@ -996,6 +1016,13 @@ promise = check_socket_listening
 name = master-introspection-server-ip-port-listening.py
 config-host = ${master-introspection-server-configuration:ip}
 config-port = ${master-introspection-server-configuration:port}
+
+[master-introspection-slave-server-ip-port]
+<= monitor-promise-base
+promise = check_socket_listening
+name = master-introspection-slave-server-ip-port-listening.py
+config-host = ${master-slave-instrospection-server:ip}
+config-port = ${master-slave-instrospection-server:port}
 
 [master-key-upload-url-ready]
 recipe = slapos.recipe.build
@@ -1243,6 +1270,7 @@ parts =
   publish-information
   request-kedifa
   master-introspection-server-ip-port
+  master-introspection-slave-server-ip-port
   caucased-backend-client
   caucased-backend-client-promise
   master-key-upload-url-ready-promise
