@@ -398,7 +398,7 @@ class ORSTest(WebsocketTestClass):
         else:
             self.assertTrue(False, "Service was not ready in time")
 
-        int(connection_params['POWER.tx-gain'])
+        float(connection_params['POWER.tx-gain'].removesuffix(" dB"))
             
         if nr:
             self.parameters["ue#cell"].update({
