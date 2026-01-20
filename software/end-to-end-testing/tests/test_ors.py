@@ -317,6 +317,7 @@ class ORSTest(WebsocketTestClass):
             if not retry:
               break
             retry = False
+            ue_id = None
             try:
                 self.setup_websocket_connection()
                 result = self.ue_get()
@@ -331,7 +332,8 @@ class ORSTest(WebsocketTestClass):
                 retry = True
             finally:
                 try:
-                    self.power_off(ue_id)
+                    if ue_id:
+                      self.power_off(ue_id)
                     self.close_websocket_connection()
                 except _exceptions.WebSocketConnectionClosedException:
                     pass
@@ -415,8 +417,27 @@ class ORSTest(WebsocketTestClass):
               "dl_earfcn": int(connection_params['RADIO.dl-arfcn']),
               "ul_earfcn": int(connection_params['RADIO.ul-arfcn']),
             })
-        self.parameters["enb-gnb"]["cell1"]["tx_gain"] = 77
-        self.parameters["enb-gnb"]["cell1"]["tx_gain"] = 77
+        tx_gain = 80
+        tx_power_list = [
+            (500 ,  12.0),
+            (1000,  12.0),
+            (1500,  9.0),
+            (2000,  8.0),
+            (2500,  4.0),
+            (3000,  5.0),
+            (3500,  3.0),
+            (4000,  -3.0),
+            (4500,  -9.0),
+            (5000,  -10.0),
+            (5500,  -12.0),
+            (6000,  -20.0),
+        ]
+        for freq,db in tx_power_list:
+            if float(connection_params['RADIO.dl-frequency'].removesuffix(" MHz")) < freq:
+                tx_gain -= db
+                break
+        self.parameters["enb-gnb"]["cell1"]["tx_gain"] = tx_gain
+
         self.parameters["enb-gnb"]["cell1"].pop("tx_power_dbm", None)
 
         self.check_ue_ip()
