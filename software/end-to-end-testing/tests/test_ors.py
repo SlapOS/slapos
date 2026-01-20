@@ -313,9 +313,9 @@ class ORSTest(WebsocketTestClass):
         retry = True
 
         while retry:
-            self.setup_websocket_connection()
             retry = False
             try:
+                self.setup_websocket_connection()
                 result = self.ue_get()
                 ue_id = result["ue_id"]
                 self.power_on(ue_id)
@@ -324,7 +324,7 @@ class ORSTest(WebsocketTestClass):
                 self.assertIn("pdn_list", result, "UE didn't connect")
                 self.assertIn("ipv4", result["pdn_list"][0], "UE didn't get IPv4")
                 self.logger.info("UE connected with ip: " + result["pdn_list"][0]["ipv4"])
-            except _exceptions.WebSocketConnectionClosedException:
+            except (_exceptions.WebSocketConnectionClosedException, _exceptions.WebSocketBadStatusException):
                 retry = True
             finally:
                 try:
