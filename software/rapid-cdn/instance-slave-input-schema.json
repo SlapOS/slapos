@@ -36,20 +36,14 @@
     "enable_cache": {
       "default": "false",
       "description": "If set to true, http caching server (Apache Traffic Server) will be used between frontend and backend",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Enable Cache",
       "type": "string"
     },
     "https-only": {
       "default": "true",
       "description": "If set to true, http requests will be redirected to https",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "HTTPS Only",
       "type": "string"
     },
@@ -73,10 +67,7 @@
     "disable-via-header": {
       "default": "false",
       "description": "If set to true, Via response headers will not be sent to client",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "enable_cache: Disable 'Via' headers from cache",
       "type": "string"
     },
@@ -89,20 +80,14 @@
     "enable-http2": {
       "default": "true",
       "description": "Use HTTP2 Protocol for the site",
-      "enum": [
-        "true",
-        "false"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Enable HTTP2 Protocol",
       "type": "string"
     },
     "enable-http3": {
       "default": "true",
       "description": "Use HTTP3 Protocol for the site. It requires enable-http2 to be set. The end results depends on the cluster configuration.",
-      "enum": [
-        "true",
-        "false"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Enable HTTP3 Protocol",
       "type": "string"
     },
@@ -132,10 +117,7 @@
     "prefer-gzip-encoding-to-backend": {
       "default": "false",
       "description": "If set to true, frontend will rewrite Accept-Encoding request header to simply 'gzip' for all variants of Accept-Encoding containing 'gzip', in order to maximize cache hits for resources cached with Vary: Accept-Encoding when enable_cache is used",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Prefer gzip Encoding for Backend",
       "type": "string"
     },
@@ -148,10 +130,7 @@
     "ssl-proxy-verify": {
       "default": "false",
       "description": "If set to true, Backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Verify Backend Certificates",
       "type": "string"
     },
@@ -227,20 +206,14 @@
     },
     "authenticate-to-backend": {
       "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Authenticate to backend",
       "type": "string"
     },
     "health-check": {
       "title": "Health Check",
       "description": "Enables active checks of the backend. For HTTP level checks the HTTP code shall be 2xx or 3xx, otherwise backend will be considered down.",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "default": "false",
       "type": "string"
     },
@@ -307,20 +280,14 @@
     },
     "health-check-authenticate-to-failover-backend": {
       "description": "If set to true the frontend certificate will be used as authentication certificate to the failover backend. Note: failover backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Authenticate to failover backend",
       "type": "string"
     },
     "health-check-failover-ssl-proxy-verify": {
       "default": "false",
       "description": "If set to true, failover backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Verify failover backend certificates",
       "type": "string"
     },
@@ -340,20 +307,14 @@
     "strict-transport-security-sub-domains": {
       "title": "Strict Transport Security Sub Domains",
       "description": "Configures Strict Transport Security for sub domains.",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "type": "string",
       "default": "false"
     },
     "strict-transport-security-preload": {
       "title": "Strict Transport Security Preload",
       "description": "Configures Strict Transport Security preload mechanism.",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "type": "string",
       "default": "false"
     },
