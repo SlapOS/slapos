@@ -827,6 +827,14 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     except Exception as e:
       self.fail(e)
 
+  def assertPublishSlaveSQLValidationDatabaseWithPop(self, parameter_dict):
+    instance_validation_database_url = parameter_dict.pop(
+      'publish-slave-sqlite-validation-database')
+    self.assertRegex(
+      instance_validation_database_url,
+      r'^https://[^:/]+:[^@]+@[^/]+/[^/]+',
+    )
+
   def assertRejectedSlaveEmptyWithPop(self, parameter_dict):
     rejected_slave_promise_url = parameter_dict.pop(
       'rejected-slave-url')
@@ -1510,6 +1518,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
+    self.assertPublishSlaveSQLValidationDatabaseWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
@@ -1546,6 +1555,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
+    self.assertPublishSlaveSQLValidationDatabaseWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
@@ -1661,6 +1671,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
+    self.assertPublishSlaveSQLValidationDatabaseWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
     self.assertKeyWithPop('kedifa-csr-certificate', parameter_dict)
     self.assertKeyWithPop('kedifa-csr-url', parameter_dict)
@@ -2209,6 +2220,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
+    self.assertPublishSlaveSQLValidationDatabaseWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
@@ -5907,6 +5919,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
+    self.assertPublishSlaveSQLValidationDatabaseWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -6417,6 +6430,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
+    self.assertPublishSlaveSQLValidationDatabaseWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -6512,6 +6526,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
+    self.assertPublishSlaveSQLValidationDatabaseWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -6762,6 +6777,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
+    self.assertPublishSlaveSQLValidationDatabaseWithPop(parameter_dict)
     self.assertRejectedSlaveWithPop(parameter_dict)
 
     expected_parameter_dict = {
