@@ -1,3 +1,4 @@
+T-0/etc/cron.d/cdn-request
 T-0/etc/cron.d/logrotate
 T-0/etc/cron.d/monitor-configurator
 T-0/etc/cron.d/monitor-globalstate
