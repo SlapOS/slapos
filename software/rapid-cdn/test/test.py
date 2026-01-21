@@ -2416,7 +2416,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     self.assertEqual(
       header_dict['x-forwarded-port'],
-      port
+      str(port)
     )
     self.assertEqual(
       header_dict['x-forwarded-proto'],
