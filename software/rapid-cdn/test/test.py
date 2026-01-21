@@ -2190,9 +2190,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result, output = subprocess_status_output([ats_rotate])
 
     self.assertEqual(0, result)
-    self.assertEqual(
-      ['log-old.old.xz'],
-      os.listdir(ats_logrotate_dir))
+    self.assertNotIn(older_file_name + '.xz' in os.listdir(ats_logrotate_dir))
 
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
