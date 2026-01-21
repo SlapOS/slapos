@@ -5,8 +5,11 @@ T-0/etc/plugin/check-backend-haproxy-statistic-url-frontend-node-1.py
 T-0/etc/plugin/check-free-disk-space.py
 T-0/etc/plugin/check-monitor-frontend-password.py
 T-0/etc/plugin/master-introspection-server-ip-port-listening.py
+T-0/etc/plugin/master-key-download-url-ready-promise-anomaly.py
 T-0/etc/plugin/master-key-download-url-ready-promise.py
+T-0/etc/plugin/master-key-generate-auth-url-ready-promise-anomaly.py
 T-0/etc/plugin/master-key-generate-auth-url-ready-promise.py
+T-0/etc/plugin/master-key-upload-url-ready-promise-anomaly.py
 T-0/etc/plugin/master-key-upload-url-ready-promise.py
 T-0/etc/plugin/monitor-bootstrap-status.py
 T-0/etc/plugin/monitor-http-frontend.py
@@ -22,6 +25,7 @@ T-1/etc/plugin/kedifa-http-reply.py
 T-1/etc/plugin/monitor-bootstrap-status.py
 T-1/etc/plugin/monitor-http-frontend.py
 T-1/etc/plugin/monitor-httpd-listening-on-tcp.py
+T-1/etc/plugin/promise-kedifa-auth-ready-anomaly.py
 T-1/etc/plugin/promise-kedifa-auth-ready.py
 T-1/etc/plugin/promise-logrotate-setup.py
 T-2/etc/plugin/__init__.py
@@ -43,6 +47,7 @@ T-2/etc/plugin/frontend_haproxy_ipv6_https.py
 T-2/etc/plugin/monitor-bootstrap-status.py
 T-2/etc/plugin/monitor-http-frontend.py
 T-2/etc/plugin/monitor-httpd-listening-on-tcp.py
+T-2/etc/plugin/promise-key-download-url-ready-anomaly.py
 T-2/etc/plugin/promise-key-download-url-ready.py
 T-2/etc/plugin/promise-logrotate-setup.py
 T-2/etc/plugin/slave-introspection-configuration.py
