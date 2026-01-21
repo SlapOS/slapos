@@ -1016,8 +1016,7 @@ promise = check_file_state
 name = ${:_buildout_section_name_}.py
 config-filename = ${master-key-upload-url-ready:output}
 config-state = empty
-config-result-count = 5
-config-failure-amount = 5
+config-report-anomaly = false
 
 [master-key-generate-auth-url-ready]
 <= master-key-upload-url-ready
