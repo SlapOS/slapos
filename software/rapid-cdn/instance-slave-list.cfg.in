@@ -672,18 +672,15 @@ output = {{ url_ready_file }}
 master-key-download-url = {{ master_key_download_url }}
 slave-kedifa-information = {{ dumps(slave_kedifa_information) }}
 init =
-  not_ready_count = 0
+  not_ready_list = []
   if not options['master-key-download-url'] or 'NotReadyYet' in options['master-key-download-url']:
-    not_ready_count += 1
+    not_ready_list.append('master: ' + options['master-key-download-url'])
   for slave_kedifa_reference, slave_kedifa_information in options['slave-kedifa-information'].items():
     key_download_url = slave_kedifa_information.get('key-download-url')
     if not key_download_url or 'NotReadyYet' in key_download_url:
-      not_ready_count += 1
+      not_ready_list.append('%s: %s' % (slave_kedifa_reference, key_download_url))
   with open(options['output'], 'w') as fh:
-    if not_ready_count > 0:
-      fh.write('%s' % (not_ready_count,))
-    else:
-      fh.write('')
+    fh.write('\n'.join(not_ready_list))
 
 [promise-key-download-url-ready]
 <= monitor-promise-base
