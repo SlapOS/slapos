@@ -285,27 +285,11 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
         self.recv()
 
 class ORSTest(WebsocketTestClass):
-    #def test_ue_has_ip(self):
-    #    result = self.ue_get()
-    #    ue_id = result["ue_id"]
-
-    #    try:
-    #        self.power_on(ue_id)
-    #        time.sleep(5)
-    #        result = self.ue_get()
-    #        self.assertIn("pdn_list", result, "UE didn't connect")
-    #        self.assertIn("ipv4", result["pdn_list"][0], "UE didn't get IPv4")
-    #        self.logger.info("UE connected with ip: " + result["pdn_list"][0]["ipv4"])
-    #    finally:
-    #        self.power_off(ue_id)
 
     def check_ue_ip(self):
 
         for ref in self.parameters:
           self.update_service(ref, "started", parameters=self.parameters[ref], lock=False)
-
-        #self.logger.info("Waiting 1 minute")
-        #time.sleep(60)
 
         self.logger.info("Waiting until instances are green")
         self.waitUntilGreen(self.enb_gnb_instance_name, timeout=60 * 3)
@@ -384,7 +368,6 @@ class ORSTest(WebsocketTestClass):
         for i in range(30):
             time.sleep(10)
             connection_params = self.getInstanceInfos(self.enb_gnb_instance_name).connection_dict
-            self.logger.info(connection_params) # TODO: remove
             model = connection_params['HARDWARE.ors-version'].split(' ')[2]
             try:
               bandwidth = int(connection_params['RADIO.bandwidth'].removesuffix(" MHz"))
@@ -445,32 +428,32 @@ class ORSTest(WebsocketTestClass):
 
         self.check_ue_ip()
 
-    #def test_lte_B28_10(self):
-    #    self.check_ue_connect(False, 'B28', 'FDD', 10)
-    #def test_lte_B38_10(self):
-    #    self.check_ue_connect(False, 'B38', 'TDD', 10)
-    #def test_lte_B39_10(self):
-    #    self.check_ue_connect(False, 'B39', 'TDD', 10)
-    #def test_lte_B40_10(self):
-    #    self.check_ue_connect(False, 'B40', 'TDD', 10)
-    #def test_lte_B42_10(self):
-    #    self.check_ue_connect(False, 'B42', 'TDD', 10)
-    #def test_lte_B43_10(self):
-    #    self.check_ue_connect(False, 'B43', 'TDD', 10)
-    #def test_nr_B28_20(self):
-    #    self.check_ue_connect(True, 'B28', 'FDD', 20)
-    #def test_nr_B38_20(self):
-    #    self.check_ue_connect(True, 'B38', 'TDD', 20)
-    #def test_nr_B39_20(self):
-    #    self.check_ue_connect(True, 'B39', 'TDD', 20)
-    #def test_nr_B40_20(self):
-    #    self.check_ue_connect(True, 'B40', 'TDD', 20)
-    #def test_nr_N77_20(self):
-    #    self.check_ue_connect(True, 'N77', 'TDD', 20)
-    #def test_nr_B42_20(self):
-    #    self.check_ue_connect(True, 'B42', 'TDD', 20)
-    #def test_nr_B43_20(self):
-    #    self.check_ue_connect(True, 'B43', 'TDD', 20, freq=3690.00)
+    def test_lte_B28_10(self):
+        self.check_ue_connect(False, 'B28', 'FDD', 10)
+    def test_lte_B38_10(self):
+        self.check_ue_connect(False, 'B38', 'TDD', 10)
+    def test_lte_B39_10(self):
+        self.check_ue_connect(False, 'B39', 'TDD', 10)
+    def test_lte_B40_10(self):
+        self.check_ue_connect(False, 'B40', 'TDD', 10)
+    def test_lte_B42_10(self):
+        self.check_ue_connect(False, 'B42', 'TDD', 10)
+    def test_lte_B43_10(self):
+        self.check_ue_connect(False, 'B43', 'TDD', 10)
+    def test_nr_B28_20(self):
+        self.check_ue_connect(True, 'B28', 'FDD', 20)
+    def test_nr_B38_20(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 20)
+    def test_nr_B39_20(self):
+        self.check_ue_connect(True, 'B39', 'TDD', 20)
+    def test_nr_B40_20(self):
+        self.check_ue_connect(True, 'B40', 'TDD', 20)
+    def test_nr_N77_20(self):
+        self.check_ue_connect(True, 'N77', 'TDD', 20)
+    def test_nr_B42_20(self):
+        self.check_ue_connect(True, 'B42', 'TDD', 20)
+    def test_nr_B43_20(self):
+        self.check_ue_connect(True, 'B43', 'TDD', 20)
     def test_nr_N79_20(self):
         self.check_ue_connect(True, 'N79', 'TDD', 20)
 
