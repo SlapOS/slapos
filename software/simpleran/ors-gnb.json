@@ -28,27 +28,6 @@
     },
     "nr_eutra_handover": {
       "$ref": "instance-enb-input-schema.json#/properties/nr_eutra_handover"
-    },
-    "xn_peers": {
-      "title": "XN Peers",
-      "description": "XN Peers",
-      "type": "array",
-      "items": {
-        "title": "XN Peer",
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "title": "(Optional) Neighbour Cell Name",
-            "description": "Neighbour Cell name (for management purposes only)",
-            "type": "string"
-          },
-          "xn_addr": {
-            "$ref": "peer/nr/input-schema.json#/properties/xn_addr"
-          }
-        }
-      },
-      "default": []
     }
   }
 }
