@@ -9,10 +9,11 @@ extends =
 parts =
     directory
     publish-instance-info
+    monitor-base
 
 #   gitlab-<prog>
 # ? mailroom
-{% set gitlab_progv = 'rails rake puma sidekiq puma-startup' .split() %}
+{% set gitlab_progv = 'rails rake puma puma-startup' .split() %}
 {% for prog in gitlab_progv %}
     gitlab-{{ prog }}
 {% endfor %}
@@ -36,8 +37,9 @@ parts =
     cron-entry-logrotate
     logrotate-entry-cron
 
-    on-reinstantiate
     gitaly-socket-listening-promise
+    service-prometheus
+    promise-prometheus
 
 # std stuff for slapos instance
 eggs-directory = {{ eggs_directory }}
@@ -85,16 +87,20 @@ url     = ${instance-parameter:configuration.external_url}
 [backend-info]
 host    = ${instance-parameter:ipv6-random}
 port    = 7777
+prometheus-port = 7790
 # whether to use http or https - determined by external url
 url     = ${external-url:scheme}://[${:host}]:${:port}
+prometheus-url = http://${prometheus:host}:${prometheus:port}
 
 # current slapuserX
 user    = {{ pwd.getpwuid(os.getuid())[0] }}
 
 
 [publish-instance-info]
+<= monitor-publish
 recipe  = slapos.cookbook:publish
 backend_url = ${backend-info:url}
+prometheus-url = ${backend-info:prometheus-url}
 
 
 
@@ -126,7 +132,6 @@ log     = ${directory:log}/gitlab
 var     = ${directory:var}/gitlab
 tmp     = ${:var}/tmp
 uploads = ${:var}/uploads
-assets  = ${:var}/assets
 shared  = ${:var}/shared
 artifacts = ${:shared}/artifacts
 lfs-objects = ${:shared}/lfs-objects
@@ -153,7 +158,6 @@ log     = ${gitlab-dir:log}
 var     = ${gitlab-dir:var}
 tmp     = ${gitlab-dir:tmp}
 uploads = ${gitlab-dir:uploads}
-assets  = ${gitlab-dir:assets}
 shared  = ${gitlab-dir:shared}
 artifacts = ${gitlab-dir:artifacts}
 lfs-objects = ${gitlab-dir:lfs-objects}
@@ -199,6 +203,18 @@ internal_socket = ${gitaly-dir:internal}
 basedir = ${gitaly-dir:gitaly}
 num_workers = 2
 
+[prometheus-dir]
+recipe = slapos.cookbook:mkdirectory
+data = ${directory:var}/prometheus
+multiproc = ${:data}/multiproc
+
+[prometheus]
+host = ${instance-parameter:ipv4-random}
+port = 9090
+puma-port = 8083
+sidekiq-port = 8082
+gitaly-port = 9236
+workhorse-port = 9229
 [gitaly-socket-listening-promise]
 <= monitor-promise-base
 promise = check_socket_listening
@@ -236,6 +252,12 @@ url = {{ database_yml_in }}
 context-extra =
     section pgsql                   service-postgresql
 
+[prometheus.yml]
+<= gitlab-etc-template
+url = {{ prometheus_yml_in }}
+context-extra =
+    section prometheus                   prometheus
+
 [gitconfig]
 <= etc-template
 url = {{ gitconfig_in }}
@@ -265,6 +287,8 @@ context-extra =
     section gitlab_shell_work       gitlab-shell-work
     section gitlab_workhorse        gitlab-workhorse
     section gitaly                  gitaly
+    section sidekiq                 sidekiq
+    section prometheus              prometheus
 
 [nginx.conf]
 <= nginx-etc-template
@@ -282,6 +306,7 @@ context-extra =
     section nginx                   nginx
     section gitlab_work             gitlab-work
     section gitlab_workhorse        gitlab-workhorse
+    section prometheus              prometheus
 
 [gitaly-config.toml]
 <= etc-template
@@ -294,6 +319,7 @@ context-extra =
     section gitlab_shell            gitlab-shell
     section gitlab_workhorse        gitlab-workhorse
     section gitaly                  gitaly
+    section prometheus              prometheus
 
 [resque.yml]
 <= gitlab-etc-template
@@ -328,9 +354,11 @@ environment  =
     PATH = {{ node_bin_location }}:{{ gopath_bin }}:{{ yarn_location }}/bin:/usr/local/bin:/usr/bin:/bin
     LD_LIBRARY_PATH={{ curl_location }}/lib
     BUNDLE_GEMFILE = {{ gitlab_repository_location }}/Gemfile
+    BUNDLE_PATH={{ gitlab_repository_location }}/vendor/bundle
     HOME = ${directory:home}
     RAILS_ENV = production
     SIDEKIQ_MEMORY_KILLER_MAX_RSS = ${instance-parameter:configuration.sidekiq_memory_killer_max_rss}
+    prometheus_multiproc_dir=${prometheus-dir:multiproc}
 
 command-line =
     {{ bundler_4gitlab }} exec sh -c
@@ -341,6 +369,10 @@ command-line =
 <= gitlab-bin
 prog    = {{ prog }}
 {% endfor %}
+
+[gitlab-sidekiq]
+<= gitlab-bin
+prog    = bin/sidekiq-cluster
 
 
 [gitlab-puma-startup]
@@ -393,16 +425,13 @@ command =
     {{ git }} init ${:location}  &&
     cd ${:location}  &&
     {{ git }} remote add software ${:software}  &&
-    ${:update-command} &&
-    ${:post-install-command}
+    ${:update-command}
 
 update-command =
     cd ${:location}  &&
     {{ git }} fetch software  &&
     {{ git }} reset --hard `cd ${:software} && {{ git }} rev-parse HEAD`  &&
     ${:tune-command}
-
-post-install-command = true
 
 
 # NOTE there is no need to link/create .gitlab_shell_secret - we set path to it
@@ -439,11 +468,11 @@ tune-command =
     cd ../../public  &&
     rm -rf uploads assets  &&
     ln -sf ${gitlab:uploads} uploads  &&
-    ln -sf ${gitlab:assets} assets
-
-# Remove this file after gitlab work is installed, so that yarn install can run
-post-install-command =
-    rm -f ${gitlab:var}/current-gitlab-head
+    ln -sf {{ gitlab_repository_location }}/public/assets assets &&
+# app/assets/javascripts/
+    cd ../app/assets/javascripts &&
+    rm -rf locale  &&
+    ln -sf {{ gitlab_repository_location }}/app/assets/javascripts/locale locale
 
 
 # ----//---- for gitlab-shell
@@ -585,6 +614,7 @@ command-line    = {{ gitlab_workhorse }}
     -documentRoot ${gitlab-work:location}/public
     -secretPath ${gitlab-workhorse:secret}
     -logFile ${gitlab-workhorse:log}
+    -prometheusListenAddr "${prometheus:host}:${prometheus:workhorse-port}"
 # repoPath is for patched gitlab-workhorse
 #    -repoPath ${gitlab-repo-dir:repositories}
 # NOTE for profiling
@@ -697,7 +727,7 @@ copytruncate = true
 
 [logrotate-entry-gitlab-workhorse]
 <= logrotate-entry-base
-log     = ${directory:log}/*.log
+log     = ${gitlab-workhorse:log}
 name    = gitlab-workhorse
 copytruncate = true
 
@@ -707,14 +737,31 @@ copytruncate = true
 [sidekiq-dir]
 recipe  = slapos.cookbook:mkdirectory
 log     = ${directory:log}/sidekiq
+pid     = ${directory:run}
 
 [sidekiq]
 log     = ${sidekiq-dir:log}
+pid     = ${directory:run}/sidekiq.pid
+health-checks-port = 8092
+health-checks-host = ${instance-parameter:ipv4-random}
+
 
 # NOTE see queue list here:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/Procfile
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/sv-sidekiq-run.erb
 # (last updated for omnibus-gitlab 8.8.9+ce.0-g25376053)
+{% set sidekiq_queue_list = ["'*'"]*int(instance_parameter_dict['configuration.sidekiq_workers']) -%}
+[sidekiq-cluster]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:bin}/sidekiq-cluster
+command-line    =
+    ${gitlab-sidekiq:wrapper-path}
+    -r ${gitlab-work:location}
+    -t ${instance-parameter:configuration.sidekiq_shutdown_timeout}
+    -P ${sidekiq:pid}
+    --max-concurrency ${instance-parameter:configuration.sidekiq_concurrency}
+{{ '    ' ~ sidekiq_queue_list | join(' ') }}
+
 [service-sidekiq]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/sidekiq
@@ -725,25 +772,21 @@ command-line    =
 # bang/watchdog currently work with slapproxy, so we do the monitoring ourselves.
     {{ watcher }} 0,SIGKILL
 
-    ${gitlab-sidekiq:wrapper-path}
-# XXX -q runner ?  (present in gitlab-ce/Procfile  but not in omnibus)
-# XXX -q pages -q elasticsearch ?  (present in omnibus but not in gitlab-ce -- those features are gitlab-ee only)
-# XXX -P ?  (pidfile)
-    -e production
-    -r ${gitlab-work:location}
-    -t ${instance-parameter:configuration.sidekiq_shutdown_timeout}
-    -c ${instance-parameter:configuration.sidekiq_concurrency}
-    -L ${sidekiq:log}/sidekiq.log
+    ${sidekiq-cluster:wrapper-path}
 
-    -C ${gitlab-work:location}/config/sidekiq_queues.yml
-
-depend  =
+depends  =
     ${promise-sidekiq:recipe}
+    ${promise-sidekiq-liveness:recipe}
     ${logrotate-entry-sidekiq:recipe}
 
 [promise-sidekiq]
 <= promise-rakebase
 command-line    = ${:rake} gitlab:sidekiq:check
+
+[promise-sidekiq-liveness]
+<= promise-byurl
+config-url     = http://${sidekiq:health-checks-host}:${sidekiq:health-checks-port}/liveness
+promise        = check_url_available
 
 [logrotate-entry-sidekiq]
 <= logrotate-entry-base
@@ -912,47 +955,26 @@ environment =
     PATH={{ buildout_bin_directory }}:{{ ruby_location }}/bin:/bin:/usr/bin
 
 
-# 6. on-reinstantiate actions
-
-# NOTE here we only recompile assets. Other on-reinstantiate actions, which
-# require pg and redis running, are performed as part of puma service -
-# right before its startup (see gitlab-puma-startup).
-[gitlab-yarn-install]
-recipe = slapos.recipe.template
-inline =
-  #!/bin/sh -e
-
-  export PATH={{ node_bin_location }}:{{ yarn_location }}/bin:$PATH
-  RAKE=${gitlab-rake:wrapper-path}
-
-  cd ${gitlab-work:location}
-  GITLAB_HEAD_FILE=${gitlab:var}/current-gitlab-head
-  SAVED_HEAD=$([ -s "$GITLAB_HEAD_FILE" ] && cat $GITLAB_HEAD_FILE || true)
-  CURRENT_HEAD=$({{ git }} rev-parse HEAD)
-  if [ "$CURRENT_HEAD" = "$SAVED_HEAD" ];
-  then
-    # if there was no changes in gitlab folder, no need to re-intall
-    exit 0;
-  fi
-
-  $RAKE gitlab:assets:clean
-  $RAKE gettext:compile RAILS_ENV=production
-  yarn install --prefer-offline --production --pure-lockfile
-  $RAKE gitlab:assets:compile NODE_ENV=production NODE_OPTIONS="--max_old_space_size=4096"
-
-  echo $CURRENT_HEAD > $GITLAB_HEAD_FILE
-
-output = ${directory:bin}/yarn-check-install
-
-
-[on-reinstantiate]
-recipe  = plone.recipe.command
-stop-on-error   = true
-rake    = ${gitlab-rake:wrapper-path}
-# run command on every reinstantiation
-update-command = ${:command}
-
-command = ${gitlab-yarn-install:output}
-
 # Promise, gitlab can connect to gitaly:
 # sudo gitlab-rake gitlab:tcp_check[GITALY_SERVER_IP,GITALY_LISTEN_PORT]
+
+
+###############################
+#   Prometheus and Metrics    #
+###############################
+[service-prometheus]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:service}/prometheus
+command-line    = {{ prometheus_location }}/prometheus
+        --config.file=${prometheus.yml:output}
+        --web.listen-address="${prometheus:host}:${prometheus:port}"
+        --storage.tsdb.path=${prometheus-dir:data}
+        --storage.tsdb.retention.time=7d
+        --storage.tsdb.retention.size=4GB
+        --log.level=info
+
+[promise-prometheus]
+<= promise-byurl
+config-url     = ${backend-info:prometheus-url}
+promise = check_url_available
+
