@@ -3,9 +3,6 @@
   "description": "Values returned by mail server cluster",
   "type": "object",
   "properties": {
-    "dns-entries": {
-      "description": "DNS entries for domains",
-      "type": "string"
-    }
+
   }
 }
