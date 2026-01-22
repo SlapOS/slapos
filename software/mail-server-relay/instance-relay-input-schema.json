@@ -3,25 +3,25 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
   "properties": {
-    "relay-host": {
-      "title": "Relay Host",
-      "description": "The host to relay the emails to",
+    "proxy-host": {
+      "title": "Proxy Host",
+      "description": "The host to proxy the emails to",
       "type": "string"
     },
-    "relay-port": {
-      "title": "Relay Port",
-      "description": "The port used by the relay",
+    "proxy-port": {
+      "title": "Proxy Port",
+      "description": "The port used by the proxy",
       "type": "integer",
       "default": 25
     },
-    "relay-user": {
-      "title": "Relay User",
-      "description": "The user to authenticate with the relay host",
+    "proxy-user": {
+      "title": "Proxy User",
+      "description": "The user to authenticate with the proxy host",
       "type": "string"
     },
-    "relay-password": {
-      "title": "Relay Password",
-      "description": "The password to authenticate with the relay host",
+    "proxy-password": {
+      "title": "Proxy Password",
+      "description": "The password to authenticate with the proxy host",
       "type": "string"
     },
     "mail-domains": {
@@ -56,9 +56,9 @@
     }
   },
   "required": [
-    "relay-host",
-    "relay-user",
-    "relay-password",
+    "proxy-host",
+    "proxy-user",
+    "proxy-password",
     "mail-domains"
   ]
 }
