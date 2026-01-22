@@ -72,7 +72,7 @@
       "type": "string"
     },
     "disabled-cookie-list": {
-      "default": "",
+      "defalt": "",
       "description": "List of Cookies separated by space that will not be sent to cache and backend servers. This is especially useful to discard analytics tracking cookies when using Vary: Cookie cache headers",
       "title": "Disabled Cookies",
       "type": "string"
@@ -98,7 +98,6 @@
       "type": "string"
     },
     "websocket-path-list": {
-      "default": "",
       "description": "Space separated list of path to the websocket application. If not set the whole slave will be websocket, if set then / will be HTTP, and /<websocket-path> will be WSS. In order to have ' ' in the space use '%20'",
       "pattern": "^$|^(/[^ ]* ?)+$",
       "title": "type:websocket Websocket Application Path List",
@@ -122,7 +121,6 @@
       "type": "string"
     },
     "server-alias": {
-      "default": "",
       "description": "Server Alias List separated by space",
       "title": "Server Alias",
       "type": "string"
@@ -135,28 +133,24 @@
       "type": "string"
     },
     "ssl_crt": {
-      "default": "",
       "description": "Content of the SSL Certificate file. Deprecated, please use key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Certificate",
       "type": "string"
     },
     "ssl_key": {
-      "default": "",
       "description": "Content of the SSL Key file. Deprecated, please use key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Key",
       "type": "string"
     },
     "ssl_ca_crt": {
-      "default": "",
       "description": "Content of the CA certificate file. Deprecated, please use key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Certificate Authority's Certificate",
       "type": "string"
     },
     "ssl_proxy_ca_crt": {
-      "default": "",
       "description": "Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
       "textarea": true,
       "title": "SSL Backend Authority's Certificate",
@@ -292,7 +286,6 @@
       "type": "string"
     },
     "health-check-failover-ssl-proxy-ca-crt": {
-      "default": "",
       "description": "Content of the SSL Certificate Authority file of the failover backend (to be used with health-check-failover-ssl-proxy-verify)",
       "textarea": true,
       "title": "SSL failover backend Authority's Certificate",
