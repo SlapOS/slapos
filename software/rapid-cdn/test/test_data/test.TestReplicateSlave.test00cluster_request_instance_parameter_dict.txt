@@ -19,7 +19,7 @@
       "slap_software_type": "default",
       "slave_instance_list": [
         {
-          "enable_cache": true,
+          "enable_cache": "true",
           "slap_software_type": "default",
           "slave_reference": "_replicate",
           "slave_title": "_replicate",
@@ -40,7 +40,7 @@
       "monitor-username": "admin",
       "slave-list": [
         {
-          "enable_cache": true,
+          "enable_cache": "true",
           "slave_reference": "_replicate",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         }
@@ -62,7 +62,7 @@
       "cluster-identification": "testing partition 0",
       "domain": "example.com",
       "enable-http3": "false",
-      "extra_slave_instance_list": "[{\"enable_cache\": true, \"slave_reference\": \"_replicate\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
+      "extra_slave_instance_list": "[{\"enable_cache\": \"true\", \"slave_reference\": \"_replicate\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
       "frontend-name": "caddy-frontend-1",
       "http3-port": 443,
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:15090",
@@ -91,7 +91,7 @@
       "cluster-identification": "testing partition 0",
       "domain": "example.com",
       "enable-http3": "false",
-      "extra_slave_instance_list": "[{\"enable_cache\": true, \"slave_reference\": \"_replicate\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
+      "extra_slave_instance_list": "[{\"enable_cache\": \"true\", \"slave_reference\": \"_replicate\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
       "frontend-name": "caddy-frontend-2",
       "http3-port": 443,
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:15090",
