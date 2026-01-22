@@ -96,7 +96,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-           endif %}
   redirect prefix {{ info_dict['scheme'] }}://{{ info_dict['hostname'] }}{{ port_suffix }} code 302
 {%-         else %}
-  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }} ssl verify required ca-file {{ configuration['micro-ssl-ca-path'] }} crl-file {{ configuration['micro-ssl-crl-path'] }}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }} ssl verify required verifyhost {{ info_dict['hostname'] }} ca-file {{ configuration['micro-ssl-ca-path'] }} crl-file {{ configuration['micro-ssl-crl-path'] }}
 {%-           if slave_instance['disable-via-header'] %}
   http-after-response del-header Via
 {%-           else %}
