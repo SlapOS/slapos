@@ -65,7 +65,6 @@ parts =
   logrotate-entry-backend-haproxy
   backend-haproxy
   backend-haproxy-graceful
-  promise-backend-haproxy-http
   promise-backend-haproxy-https
   promise-backend-haproxy-configuration
 
@@ -828,8 +827,7 @@ filename = ip_allow.yaml
 <= trafficserver-jinja2-template-base
 {%- raw %}
 inline =
-  map /HTTPS/ https://{{ ipv4 }}:{{ https_port }}
-  map /HTTP/ https://{{ ipv4 }}:{{ http_port }}
+  map /CACHE/ https://{{ ipv4 }}:{{ port }}
   map /inspect-cache/ http://{cache}
   map /inspect-cache-internal/ http://{cache-internal}
   map /inspect-hostdb/ http://{hostdb}
@@ -838,8 +836,7 @@ inline =
 {%- endraw %}
 extra-context =
   raw ipv4 {{ instance_parameter_dict['ipv4-random'] }}
-  key https_port backend-haproxy-configuration:https-port
-  key http_port backend-haproxy-configuration:http-port
+  key port backend-haproxy-configuration:port
 
 filename = remap.config
 
@@ -1019,27 +1016,19 @@ name = frontend_haproxy_ipv6_http.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
 
-[promise-backend-haproxy-http]
-<= monitor-promise-base
-promise = check_socket_listening
-name = backend_haproxy_http.py
-config-host = {{ instance_parameter_dict['ipv4-random'] }}
-config-port = ${backend-haproxy-configuration:http-port}
-
 [promise-backend-haproxy-https]
 <= monitor-promise-base
 promise = check_socket_listening
 name = backend_haproxy_https.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
-config-port = ${backend-haproxy-configuration:https-port}
+config-port = ${backend-haproxy-configuration:port}
 
 [backend-haproxy-configuration]
 file = ${directory:etc}/backend-haproxy.cfg
 pid-file = ${directory:run}/backend-haproxy.pid
 log-socket = ${backend-haproxy-rsyslogd-config:log-socket}
 graceful-command = ${backend-haproxy-validate:output} && kill -USR2 $(cat ${:pid-file})
-http-port = ${configuration:backend-haproxy-http-port}
-https-port = ${configuration:backend-haproxy-https-port}
+port = ${configuration:backend-haproxy-port}
 # Caucase related configuration
 backend-client-login-certificate = ${backend-client-login-config:certificate}
 backend-client-caucase-csr = ${backend-client-caucase-updater-csr:csr}
