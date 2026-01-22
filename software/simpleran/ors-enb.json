@@ -30,27 +30,6 @@
     },
     "eutra_nr_handover": {
       "$ref": "instance-enb-input-schema.json#/properties/eutra_nr_handover"
-    },
-    "x2_peers": {
-      "title": "X2 Peers",
-      "description": "X2 Peers",
-      "type": "array",
-      "items": {
-        "title": "X2 Peer",
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "title": "(Optional) Neighbour Cell Name",
-            "description": "Neighbour Cell name (for management purposes only)",
-            "type": "string"
-          },
-          "x2_addr": {
-            "$ref": "peer/lte/input-schema.json#/properties/x2_addr"
-          }
-        }
-      },
-      "default": []
     }
   }
 }
