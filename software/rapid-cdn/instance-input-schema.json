@@ -10,15 +10,13 @@
       "description": "SSL Certificate used by the server. By appending to it CA certificate it is possible to use this field to replace not implemented apache-ca-certificate. Deprecated, please use master-key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Certificate, with optional CA certificate",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "apache-key": {
       "description": "SSL Key used by the server. Deprecated, please use master-key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Key",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "domain": {
       "default": "example.org",
@@ -50,8 +48,7 @@
     "re6st-verification-url": {
       "description": "Url to verify if the internet and/or re6stnet is working.",
       "title": "Test Verification URL",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "backend-connect-timeout": {
       "default": 5,
@@ -110,7 +107,6 @@
       "type": "string"
     },
     "frontend-name": {
-      "default": "",
       "description": "Name of the frontend.",
       "title": "Frontend Name",
       "type": "string"
@@ -143,8 +139,7 @@
     "cluster-identification": {
       "title": "Cluster Identification",
       "description": "Identification of the cluster.",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "backend-client-caucase-url": {
       "title": "Backend Client Caucase URL",

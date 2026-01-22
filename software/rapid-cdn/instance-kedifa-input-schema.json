@@ -36,8 +36,7 @@
     "cluster-identification": {
       "title": "Cluster Identification",
       "description": "Identification of the cluster.",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "slave-list": {
       "title": "Slave list",
