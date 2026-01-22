@@ -38,6 +38,48 @@
       },
       "default": []
     },
+    "x2_peers": {
+      "title": "X2 Peers",
+      "description": "X2 Peers",
+      "type": "array",
+      "items": {
+        "title": "X2 Peer",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "(Optional) Neighbour Cell Name",
+            "description": "Neighbour Cell name (for management purposes only)",
+            "type": "string"
+          },
+          "x2_addr": {
+            "$ref": "peer/lte/input-schema.json#/properties/x2_addr"
+          }
+        }
+      },
+      "default": []
+    },
+    "xn_peers": {
+      "title": "XN Peers",
+      "description": "XN Peers",
+      "type": "array",
+      "items": {
+        "title": "XN Peer",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "(Optional) Neighbour Cell Name",
+            "description": "Neighbour Cell name (for management purposes only)",
+            "type": "string"
+          },
+          "xn_addr": {
+            "$ref": "peer/nr/input-schema.json#/properties/xn_addr"
+          }
+        }
+      },
+      "default": []
+    },
     "handover_a1_rsrp": {
       "title": "Handover A1 event RSRP threshold",
       "description": "Integer, range from -140 to -43. RSRP threshold value in dBm.",
