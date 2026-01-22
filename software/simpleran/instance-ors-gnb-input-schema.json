@@ -53,7 +53,7 @@
     },
     "monitor-interface-url": {
       "title": "Monitor Interface URL",
-      "description": "URL to the monitor app used in monitor-setup-url",
+      "description": "URL to the monitor app used in monitor setup URL",
       "type": "string",
       "default": "https://monitor.app.officejs.com/#page=ojsm_landing"
     },
