@@ -1,28 +1,30 @@
 [
   {
-    "caucase_port": 15090,
-    "domain": "example.com",
-    "full_address_list": [],
-    "instance_title": "testing partition 0",
-    "kedifa_port": 15080,
-    "plain_http_port": 11080,
-    "port": 11443,
-    "re6st-verification-url": "http://@@_ipv4_address@@:@@_server_http_port@@/re6st.html",
-    "root_instance_title": "testing partition 0",
-    "slap_computer_id": "local",
-    "slap_computer_partition_id": "T-0",
-    "slap_software_release_url": "@@00getSoftwareURL@@",
-    "slap_software_type": "default",
-    "slave_instance_list": [
-      {
-        "enable_cache": true,
-        "slap_software_type": "default",
-        "slave_reference": "_default",
-        "slave_title": "_default",
-        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-      }
-    ],
-    "timestamp": "@@TIMESTAMP@@"
+    "_": {
+      "caucase_port": 15090,
+      "domain": "example.com",
+      "full_address_list": [],
+      "instance_title": "testing partition 0",
+      "kedifa_port": 15080,
+      "plain_http_port": 11080,
+      "port": 11443,
+      "re6st-verification-url": "http://@@_ipv4_address@@:@@_server_http_port@@/re6st.html",
+      "root_instance_title": "testing partition 0",
+      "slap_computer_id": "local",
+      "slap_computer_partition_id": "T-0",
+      "slap_software_release_url": "@@00getSoftwareURL@@",
+      "slap_software_type": "default",
+      "slave_instance_list": [
+        {
+          "enable_cache": true,
+          "slap_software_type": "default",
+          "slave_reference": "_default",
+          "slave_title": "_default",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        }
+      ],
+      "timestamp": "@@TIMESTAMP@@"
+    }
   },
   {
     "_": {
