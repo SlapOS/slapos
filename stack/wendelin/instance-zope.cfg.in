@@ -533,6 +533,7 @@ command-line =
   --volatile_memcached_server_port={{ port_dict['erp5-memcached-volatile'] }}
   --persistent_memcached_server_hostname=erp5-memcached-persistent
   --persistent_memcached_server_port={{ port_dict['erp5-memcached-persistent'] }}
+  --erp5_catalog_storage={{ slapparameter_dict['erp5-catalog-storage'] }}
 
 [test-runner-configuration]
 recipe = slapos.recipe.template:jinja2
