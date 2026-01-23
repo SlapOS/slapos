@@ -1,27 +1,26 @@
 [
   {
-    "_": {
-      "full_address_list": [],
-      "instance_title": "testing partition 0",
-      "root_instance_title": "testing partition 0",
-      "slap_computer_id": "local",
-      "slap_computer_partition_id": "T-0",
-      "slap_software_release_url": "@@00getSoftwareURL@@",
-      "slap_software_type": "default",
-      "slave_instance_list": [
-        {
-          "slap_software_type": "default",
-          "slave_reference": "_deleted",
-          "slave_title": "_deleted"
-        },
-        {
-          "slap_software_type": "default",
-          "slave_reference": "_first",
-          "slave_title": "_first"
-        }
-      ],
-      "timestamp": "@@TIMESTAMP@@"
-    }
+    "_": {},
+    "full_address_list": [],
+    "instance_title": "testing partition 0",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-0",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "default",
+    "slave_instance_list": [
+      {
+        "slap_software_type": "default",
+        "slave_reference": "_deleted",
+        "slave_title": "_deleted"
+      },
+      {
+        "slap_software_type": "default",
+        "slave_reference": "_first",
+        "slave_title": "_first"
+      }
+    ],
+    "timestamp": "@@TIMESTAMP@@"
   },
   {
     "_": {

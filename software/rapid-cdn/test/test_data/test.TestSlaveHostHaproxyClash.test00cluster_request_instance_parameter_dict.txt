@@ -3,51 +3,51 @@
     "_": {
       "caucase_port": 15090,
       "domain": "example.com",
-      "full_address_list": [],
-      "instance_title": "testing partition 0",
       "kedifa_port": 15080,
       "plain_http_port": 11080,
       "port": 11443,
-      "request-timeout": 12,
-      "root_instance_title": "testing partition 0",
-      "slap_computer_id": "local",
-      "slap_computer_partition_id": "T-0",
-      "slap_software_release_url": "@@00getSoftwareURL@@",
-      "slap_software_type": "default",
-      "slave_instance_list": [
-        {
-          "custom_domain": "*.example.com",
-          "server-alias": "example.com",
-          "slap_software_type": "default",
-          "slave_reference": "_01wildcard",
-          "slave_title": "_01wildcard",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/01wildcard"
-        },
-        {
-          "custom_domain": "*.alias1.example.com",
-          "server-alias": "alias1.example.com",
-          "slap_software_type": "default",
-          "slave_reference": "_02wildcard",
-          "slave_title": "_02wildcard",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/02wildcard"
-        },
-        {
-          "custom_domain": "zspecific.example.com",
-          "slap_software_type": "default",
-          "slave_reference": "_03zspecific",
-          "slave_title": "_03zspecific",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/03zspecific"
-        },
-        {
-          "custom_domain": "zspecific.alias1.example.com",
-          "slap_software_type": "default",
-          "slave_reference": "_04zspecific",
-          "slave_title": "_04zspecific",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/04zspecific"
-        }
-      ],
-      "timestamp": "@@TIMESTAMP@@"
-    }
+      "request-timeout": 12
+    },
+    "full_address_list": [],
+    "instance_title": "testing partition 0",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-0",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "default",
+    "slave_instance_list": [
+      {
+        "custom_domain": "*.example.com",
+        "server-alias": "example.com",
+        "slap_software_type": "default",
+        "slave_reference": "_01wildcard",
+        "slave_title": "_01wildcard",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/01wildcard"
+      },
+      {
+        "custom_domain": "*.alias1.example.com",
+        "server-alias": "alias1.example.com",
+        "slap_software_type": "default",
+        "slave_reference": "_02wildcard",
+        "slave_title": "_02wildcard",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/02wildcard"
+      },
+      {
+        "custom_domain": "zspecific.example.com",
+        "slap_software_type": "default",
+        "slave_reference": "_03zspecific",
+        "slave_title": "_03zspecific",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/03zspecific"
+      },
+      {
+        "custom_domain": "zspecific.alias1.example.com",
+        "slap_software_type": "default",
+        "slave_reference": "_04zspecific",
+        "slave_title": "_04zspecific",
+        "url": "http://@@_ipv4_address@@:@@_server_http_port@@/04zspecific"
+      }
+    ],
+    "timestamp": "@@TIMESTAMP@@"
   },
   {
     "_": {
