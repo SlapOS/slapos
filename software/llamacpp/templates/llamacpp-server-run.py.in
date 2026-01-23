@@ -82,7 +82,7 @@ def main() -> None:
         "--top_p", str(TOP_P),
         "--top_k", str(TOP_K),
         "--min_p", str(MIN_P),
-        "--reasoning-budget",str(REASONING_BUDGET),
+        "--reasoning-budget", str(REASONING_BUDGET),
         "--mlock",
         "--no-warmup",
         "-fa", "on",

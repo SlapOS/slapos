@@ -89,7 +89,7 @@
       "type": "number",
       "default": 0.1
     },
-    "reasoning-budget": {
+    "reasoning_budget": {
       "title": "Reasoning budget",
       "description": "Limits model “thinking” tokens; 0 disables, -1 unlimited.",
       "type": "integer",
