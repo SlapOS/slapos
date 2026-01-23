@@ -275,6 +275,7 @@ bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
 id-store-interval = {{ dumps(slapparameter_dict['id-store-interval']) }}
 home = ${buildout:directory}
 cloudooo-url = {{ ",".join(slapparameter_dict['cloudooo-url-list']) }}
+erp5-catalog-storage = {{ slapparameter_dict['erp5-catalog-storage'] }}
 
 {% endif -%}
 developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
