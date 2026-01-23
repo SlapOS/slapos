@@ -80,6 +80,7 @@ def setupStandalone():
     partition_forward_configuration=partition_forward_configuration,
     slapos_bin={{ repr(config['slapos-bin']) }},
     local_software_release_root={{ repr(config['local-software-release-root']) }},
+    public_directory_path={{ repr(config['public-directory-path']) }},
   )
   standalone.start()
   try:
