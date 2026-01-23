@@ -10,13 +10,15 @@
       "description": "SSL Certificate used by the server. By appending to it CA certificate it is possible to use this field to replace not implemented apache-ca-certificate. Deprecated, please use master-key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Certificate, with optional CA certificate",
-      "type": "string"
+      "type": "string",
+      "default": ""
     },
     "apache-key": {
       "description": "SSL Key used by the server. Deprecated, please use master-key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Key",
-      "type": "string"
+      "type": "string",
+      "default": ""
     },
     "domain": {
       "default": "example.org",
