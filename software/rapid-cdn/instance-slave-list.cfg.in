@@ -8,7 +8,7 @@
 {%- set ssl_cache_access = "https://%s:%s/HTTPS" % (instance_parameter_dict['ipv4-random'], cache_port) %}
 {%- set backend_haproxy_url = 'https://%s:%s' % (instance_parameter_dict['ipv4-random'], backend_haproxy_configuration['port']) %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
-{%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': instance_parameter_dict['ipv4-random'], 'http_port': configuration['plain_http_port'], 'https_port': configuration['port']} %}
+{%- set generic_instance_parameter_dict = { 'cache_access': cache_access, 'local_ipv4': instance_parameter_dict['ipv4-random'], 'http_port': configuration['plain_http_port'], 'https_port': configuration['port'], 'backend-haproxy-name': configuration['backend-haproxy-name'], 'trafficserver-name': configuration['trafficserver-name'] } %}
 {%- set slave_log_dict = {} %}
 {%- set slave_instance_information_list = [] %}
 {%- set slave_instance_list = instance_parameter_dict['slave-instance-list'] %}

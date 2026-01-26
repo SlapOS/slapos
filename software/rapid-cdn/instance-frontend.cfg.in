@@ -143,7 +143,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 recipe = plone.recipe.command
 organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
-common-name = {{ instance_parameter_dict['ipv4-random'] }}
+common-name = backend-haproxy
 command =
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
     {{ software_parameter_dict['openssl'] }} req -new -sha256 \
@@ -177,7 +177,7 @@ stop-on-error = True
 recipe = plone.recipe.command
 organization = {{ slapparameter_dict['cluster-identification'] }}
 organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
-common-name = {{ instance_parameter_dict['ipv4-random'] }}
+common-name = trafficserver
 command =
   if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
     {{ software_parameter_dict['openssl'] }} req -new -sha256 \
@@ -682,6 +682,8 @@ http3-enable = {{ FRONTEND_HTTP3 }}
 http3-port = {{ HTTP3_PORT }}
 micro-ssl-ca-path = ${micro-ssl:ca-path}
 micro-ssl-crl-path = ${micro-ssl:crl-path}
+backend-haproxy-name = ${backend-haproxy-csr:common-name}
+trafficserver-name = ${trafficserver-csr:common-name}
 
 [micro-ssl]
 directory = ${directory:micro-ssl-caucase-updater}
