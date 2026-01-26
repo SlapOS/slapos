@@ -90,7 +90,7 @@ port    = 7777
 prometheus-port = 7790
 # whether to use http or https - determined by external url
 url     = ${external-url:scheme}://[${:host}]:${:port}
-prometheus-url = http://${prometheus:host}:${prometheus:port}
+prometheus-url = https://[${:host}]:${:prometheus-port}
 
 # current slapuserX
 user    = {{ pwd.getpwuid(os.getuid())[0] }}
