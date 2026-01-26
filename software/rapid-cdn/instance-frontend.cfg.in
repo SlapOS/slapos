@@ -505,12 +505,11 @@ init =
 recipe = slapos.recipe.template:jinja2
 inline =
 {% raw %}
-  {{ certificate or fallback_certificate }}
-  {{ key or '' }}
+  {{ configuration.get("apache-certificate") or fallback_certificate }}
+  {{ configuration.get("apache-key") or '' }}
 {% endraw %}
 context =
-  key certificate configuration:apache-certificate
-  key key configuration:apache-key
+  section configuration configuration
   key fallback_certificate get-self-signed-fallback-access:certificate
 output = ${directory:bbb-ssl-dir}/frontend.crt
 # BBB: SlapOS Master non-zero knowledge END
