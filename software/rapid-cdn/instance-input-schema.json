@@ -130,8 +130,7 @@
     "monitor-password": {
       "title": "Monitor password",
       "description": "Password used for basic auth in monitoring web server",
-      "type": "string",
-      "default": "RANDOM value"
+      "type": "string"
     },
     "cluster-identification": {
       "title": "Cluster Identification",
