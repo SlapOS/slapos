@@ -41,7 +41,7 @@
     "_": {
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
       "cluster-identification": "testing partition 0",
-      "enable-http3": "false",
+      "enable-http3": false,
       "extra_slave_instance_list": "[]",
       "frontend-name": "caddy-frontend-1",
       "http3-port": 443,

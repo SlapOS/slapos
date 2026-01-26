@@ -28,18 +28,16 @@
       "type": "string"
     },
     "enable-http2-by-default": {
-      "default": "true",
+      "default": true,
       "description": "Use HTTP2 as default Protocol",
-      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Enable HTTP2 by Default",
-      "type": "string"
+      "type": "boolean"
     },
     "enable-http3": {
-      "default": "false",
+      "default": false,
       "title": "Enable HTTP3",
       "description": "Globally enable HTTP3 protocol. Can be precisely set on each node by -frontend-i-config-enable-http3",
-      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
-      "type": "string"
+      "type": "boolean"
     },
     "http3-port": {
       "default": 443,
@@ -65,18 +63,16 @@
       "type": "integer"
     },
     "automatic-internal-kedifa-caucase-csr": {
-      "default": "true",
+      "default": true,
       "description": "Automatically signs CSRs sent to KeDiFa's caucase, based on CSR comparison.",
-      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Automatic Internal KeDiFa's Caucase CSR",
-      "type": "string"
+      "type": "boolean"
     },
     "automatic-internal-backend-client-caucase-csr": {
-      "default": "true",
+      "default": true,
       "description": "Automatically signs CSRs sent to Backend Client's caucase, based on CSR comparison.",
-      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Automatic Internal Backend Client's Caucase CSR",
-      "type": "string"
+      "type": "boolean"
     },
     "ciphers": {
       "title": "Ordered space separated list of ciphers",
@@ -90,11 +86,10 @@
       "type": "integer"
     },
     "authenticate-to-backend": {
-      "default": "false",
+      "default": false,
       "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
-      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Authenticate to backend",
-      "type": "string"
+      "type": "boolean"
     },
     "ram-cache-size": {
       "default": "1G",
@@ -198,9 +193,8 @@
     "expert-backend-allow-downgrade-ssl": {
       "title": "Expert Backend Allow Downgrade SSL",
       "description": "Allow SSL downgrade for backend connections (expert setting).",
-      "type": "string",
-      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
-      "default": "false"
+      "type": "boolean",
+      "default": false
     },
     "caucase_backend_client_port": {
       "title": "Caucase Backend Client Port",
@@ -247,9 +241,8 @@
     "allow-invalid-instance": {
       "title": "Allow Invalid Instance",
       "description": "Allow invalid instance to be added to the cluster.",
-      "type": "string",
-      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
-      "default": "true"
+      "type": "boolean",
+      "default": true
     }
   },
   "title": "Input Parameters",

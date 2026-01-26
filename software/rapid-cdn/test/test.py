@@ -1581,8 +1581,8 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
         'plain_http_port': HTTP_PORT,
         'kedifa_port': KEDIFA_PORT,
         'caucase_port': CAUCASE_PORT,
-        'automatic-internal-kedifa-caucase-csr': 'false',
-        'automatic-internal-backend-client-caucase-csr': 'false',
+        'automatic-internal-kedifa-caucase-csr': False,
+        'automatic-internal-backend-client-caucase-csr': False,
       })
     }
 
@@ -1740,7 +1740,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         # correctly handled
         'url': ' ' + cls.backend_url + '/?a=b&c=' + ' ',
         # authenticating to http backend shall be no-op
-        'authenticate-to-backend': 'true',
+        'authenticate-to-backend': True,
       },
       'url-trailing-slash-absent': {
         'url': cls.backend_url + 'index.html',
@@ -1763,7 +1763,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         # started later
         'url': 'https://%s:%s/' % (
           cls._ipv4_address, cls._server_https_auth_port),
-        'authenticate-to-backend': 'true',
+        'authenticate-to-backend': True,
       },
       'auth-to-backend-not-configured': {
         # in here use reserved port for the backend, which is going to be
@@ -1773,7 +1773,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'auth-to-backend-backend-ignore': {
         'url': cls.backend_https_url,
-        'authenticate-to-backend': 'true',
+        'authenticate-to-backend': True,
       },
       'url_https-url': {
         'url': cls.backend_url + 'http',
@@ -2003,11 +2003,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'enable-http3-true': {
         'url': cls.backend_url,
-        'enable-http3': 'true',
+        'enable-http3': True,
       },
       'enable-http3-false': {
         'url': cls.backend_url,
-        'enable-http3': 'false',
+        'enable-http3': False,
       },
       'enable-http3-default': {
         'url': cls.backend_url,
@@ -2018,8 +2018,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'enable-http3-true-enable-http2-false': {
         'url': cls.backend_url,
-        'enable-http2': 'false',
-        'enable-http3': 'true',
+        'enable-http2': False,
+        'enable-http3': True,
       },
       'prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
@@ -5375,7 +5375,7 @@ class TestSlaveHttp3(TestSlave):
         'kedifa_port': KEDIFA_PORT,
         'caucase_port': CAUCASE_PORT,
         'request-timeout': 12,
-        'enable-http3': 'true',
+        'enable-http3': True,
         'http3-port': HTTPS_PORT,
       })
     }
@@ -5399,7 +5399,7 @@ class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
         'kedifa_port': KEDIFA_PORT,
         'caucase_port': CAUCASE_PORT,
         'request-timeout': 12,
-        'enable-http2-by-default': 'false',
+        'enable-http2-by-default': False,
       })
     }
   max_client_version = '1.1'
@@ -7265,19 +7265,19 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       '-frontend-3-state': 'stopped',
       '-frontend-3-software-release-url': self.frontend_3_sr,
       '-kedifa-software-release-url': self.kedifa_sr,
-      'automatic-internal-kedifa-caucase-csr': 'false',
-      'automatic-internal-backend-client-caucase-csr': 'false',
+      'automatic-internal-kedifa-caucase-csr': False,
+      'automatic-internal-backend-client-caucase-csr': False,
       # all nodes partition parameters
       'apache-certificate': self.certificate_pem,
       'apache-key': self.key_pem,
       'domain': 'example.com',
-      'enable-http2-by-default': 'true',
+      'enable-http2-by-default': True,
       're6st-verification-url': 're6st-verification-url',
       'backend-connect-timeout': 2,
       'backend-connect-retries': 1,
       'ciphers': 'ciphers',
       'request-timeout': 100,
-      'authenticate-to-backend': 'true',
+      'authenticate-to-backend': True,
       # specific parameters
       '-frontend-config-1-ram-cache-size': '512K',
       '-frontend-config-2-ram-cache-size': '256K',
@@ -7354,15 +7354,15 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'X-software_release_url': base_software_url,
         'apache-certificate': self.certificate_pem.decode(),
         'apache-key': self.key_pem.decode(),
-        'authenticate-to-backend': 'True',
+        'authenticate-to-backend': True,
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': 1,
         'backend-connect-timeout': 2,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
-        'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http2-by-default': True,
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-1',
         'http3-port': 443,
@@ -7381,15 +7381,15 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'X-software_release_url': self.frontend_2_sr,
         'apache-certificate': self.certificate_pem.decode(),
         'apache-key': self.key_pem.decode(),
-        'authenticate-to-backend': 'True',
+        'authenticate-to-backend': True,
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': 1,
         'backend-connect-timeout': 2,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
-        'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http2-by-default': True,
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-2',
         'http3-port': 443,
@@ -7408,15 +7408,15 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'X-software_release_url': self.frontend_3_sr,
         'apache-certificate': self.certificate_pem.decode(),
         'apache-key': self.key_pem.decode(),
-        'authenticate-to-backend': 'True',
+        'authenticate-to-backend': True,
         'backend-client-caucase-url': backend_client_caucase_url,
         'backend-connect-retries': 1,
         'backend-connect-timeout': 2,
         'ciphers': 'ciphers',
         'cluster-identification': 'testing partition 0',
         'domain': 'example.com',
-        'enable-http2-by-default': 'True',
-        'enable-http3': 'false',
+        'enable-http2-by-default': True,
+        'enable-http3': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-3',
         'http3-port': 443,
@@ -7454,15 +7454,15 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'X-software_release_url': base_software_url,
         'apache-certificate': self.certificate_pem.decode(),
         'apache-key': self.key_pem.decode(),
-        'authenticate-to-backend': 'True',
-        'automatic-internal-backend-client-caucase-csr': 'False',
-        'automatic-internal-kedifa-caucase-csr': 'False',
+        'authenticate-to-backend': True,
+        'automatic-internal-backend-client-caucase-csr': False,
+        'automatic-internal-kedifa-caucase-csr': False,
         'backend-connect-retries': 1,
         'backend-connect-timeout': 2,
         'caucase_port': 15090,
         'ciphers': 'ciphers',
         'domain': 'example.com',
-        'enable-http2-by-default': 'True',
+        'enable-http2-by-default': True,
         'full_address_list': [],
         'instance_title': 'testing partition 0',
         'kedifa_port': 15080,

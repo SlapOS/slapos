@@ -98,7 +98,7 @@
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
       "cluster-identification": "testing partition 0",
       "domain": "example.com",
-      "enable-http3": "false",
+      "enable-http3": false,
       "extra_slave_instance_list": "[{\"custom_domain\": \"*.example.com\", \"server-alias\": \"example.com\", \"slave_reference\": \"_01wildcard\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/01wildcard\"}, {\"custom_domain\": \"*.alias1.example.com\", \"server-alias\": \"alias1.example.com\", \"slave_reference\": \"_02wildcard\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/02wildcard\"}, {\"custom_domain\": \"zspecific.example.com\", \"slave_reference\": \"_03zspecific\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/03zspecific\"}, {\"custom_domain\": \"zspecific.alias1.example.com\", \"slave_reference\": \"_04zspecific\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/04zspecific\"}]",
       "frontend-name": "caddy-frontend-1",
       "http3-port": 443,
