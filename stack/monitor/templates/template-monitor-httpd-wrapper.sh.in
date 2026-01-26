@@ -1,9 +1,11 @@
 #!{{ dash_binary }}
 # BEWARE: This file is operated by slapos node
 # BEWARE: It will be overwritten automatically
+set -e
 
 pid_file="{{ pid_file }}"
 monitor_httpd_conf_file={{ monitor_httpd_conf }}
+to_delete_tmp_files="{{ to_delete_tmp_files }}"
 
 if [ -f "$pid_file" ]; then
     pid=$(cat "$pid_file")
@@ -30,6 +32,11 @@ if [ -f "$pid_file" ]; then
         echo "No process is running with PID $pid, removing the pid file"
         rm -f {{ pid_file }};
     fi
+fi
+
+if [ -z "$to_delete_tmp_files" ]; then
+  echo "Cleaning tmp files $to_delete_tmp_files before running the server"
+  rm "$to_delete_tmp_files"
 fi
 
 exec {{ monitor_httpd_wrapper_path }} "$@"
