@@ -92,9 +92,9 @@
       "type": "string"
     },
     "https-url": {
-      "description": "HTTPS URL of the backend if it is different from url parameter",
-      "pattern": "^https://.+",
-      "title": "HTTPS Backend URL",
+      "description": "URL of the backend to be used for HTTPS access if it is different from url parameter. In that case the CDN will use a different backend url depending on the protocol used by the client.",
+      "pattern": "^(http|https|ftp)://",
+      "title": "Backend URL for HTTPS access",
       "type": "string"
     },
     "websocket-path-list": {
