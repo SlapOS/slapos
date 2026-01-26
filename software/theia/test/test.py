@@ -29,6 +29,7 @@ from __future__ import unicode_literals
 import configparser
 import json
 import logging
+import socket
 import os
 import re
 import subprocess
@@ -737,3 +738,19 @@ class TestTheiaResilientMonitoring(ResilientTheiaMixin, TheiaTestCase):
     self.assertEqual(len(monitor_interface_url_list), 4)
     for url in monitor_interface_url_list:
       self.assertIn(TestTheiaResilientMonitoring.MONITOR_INTERFACE_URL, url)
+
+
+class TestTheiaResilientTakeOver(ResilientTheiaMixin, TheiaTestCase):
+
+  def test_cleaning_cgi_socket(self):
+    socket_path = self.getPartitionPath(
+      'import', 'var', 'run', 'resilient-web-takeover-httpd-cgid.sock.FAKE'
+    )
+
+    # Create a fake previous socket file
+    server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    server.bind(socket_path)
+
+    self.assertTrue(os.path.exists(socket_path))
+    self.restartService('resilient-web-takeover-httpd')
+    self.assertFalse(os.path.exists(socket_path))
