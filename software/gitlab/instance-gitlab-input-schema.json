@@ -1,0 +1,221 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "external_url": {
+      "title": "Gitlab external URL",
+      "description": "Gitlab external URL",
+      "type": "string",
+      "format": "uri",
+      "default": "https://lab.example.com"
+    },
+    "db_pool": {
+      "title": "Database pool size",
+      "description": "DB connection pool size",
+      "minimum": 2,
+      "default": 10,
+      "type": "integer"
+    },
+    "time_zone": {
+      "title": "Time zone",
+      "description": "Time zone",
+      "type": "string",
+      "default": "UTC"
+    },
+    "email_enabled": {
+      "title": "Enable email configuration",
+      "description": "Enable email configuration",
+      "type": "boolean",
+      "default": true
+    },
+    "email_from": {
+      "title": "Mail from",
+      "description": "Mail from address",
+      "type": "string",
+      "default": "lab@example.com"
+    },
+    "email_display_name": {
+      "title": "Mail sender name",
+      "description": "Mail sender name to display",
+      "type": "string",
+      "default": "Gitlab"
+    },
+    "email_reply_to": {
+      "title": "Mail reply to",
+      "description": "Mail reply to address",
+      "type": "string",
+      "default": "noreply@example.com"
+    },
+    "smtp_enable": {
+      "title": "Enable smtp configuration",
+      "description": "Enable smtp configuration",
+      "type": "boolean",
+      "default": true
+    },
+    "smtp_address": {
+      "title": "SMTP address",
+      "description": "SMTP address",
+      "type": "string"
+    },
+    "smtp_port": {
+      "title": "SMTP port",
+      "description": "Mail SMTP Port. Default: 465",
+      "type": "integer",
+      "default": 465
+    },
+    "smtp_user_name": {
+      "title": "SMTP username",
+      "description": "SMTP username",
+      "type": "string"
+    },
+    "smtp_password": {
+      "title": "SMTP password",
+      "description": "SMTP password",
+      "type": "string"
+    },
+    "smtp_domain": {
+      "title": "SMTP domain",
+      "description": "SMTP domain",
+      "type": "string",
+      "default": "lab.example.com"
+    },
+    "smtp_authentication": {
+      "title": "SMTP authentication",
+      "description": "SMTP authentication",
+      "type": "string",
+      "default": "login"
+    },
+    "smtp_enable_starttls_auto": {
+      "title": "SMTP starttls enabled",
+      "description": "SMTP starttls enabled",
+      "type": "boolean",
+      "default": "true"
+    },
+    "smtp_openssl_verify_mode": {
+      "title": "SMTP openssl verify mode",
+      "description": "SMTP openssl verify mode",
+      "type": "string",
+      "default": "peer",
+      "enum": ["none", "peer", "client_once", "fail_if_no_peer_cert"]
+    },
+    "sidekiq_shutdown_timeout": {
+      "title": "Sidekiq shutdown timeout",
+      "description": "Sidekiq shutdown timeout",
+      "type": "integer",
+      "default": 4
+    },
+    "sidekiq_concurrency": {
+      "title": "Sidekiq concurency",
+      "description": "Sidekiq concurency",
+      "type": "integer",
+      "default": 25
+    },
+    "sidekiq_workers": {
+      "title": "Sidekiq workers",
+      "description": "Sidekiq workers",
+      "type": "integer",
+      "default": 2
+    },
+    "sidekiq_memory_killer_max_rss": {
+      "title": "Sidekiq memory killer maw RSS",
+      "description": "SIDEKIQ_MEMORY_KILLER_MAX_RSS (KB): defines the Sidekiq process soft limit for allowed RSS. If the Sidekiq process RSS exceeds the value for grace time, the graceful restart is triggered.",
+      "type": "integer",
+      "default": 2000000
+    },
+    "puma_worker_timeout": {
+      "title": "Puma worker timeout",
+      "description": "Puma worker timeout",
+      "type": "integer",
+      "default": 60
+    },
+    "puma_worker_processes": {
+      "title": "Puma worker processes",
+      "description": "Puma worker processes",
+      "type": "integer",
+      "default": 2
+    },
+    "puma_max_threads": {
+      "title": "Puma max threads",
+      "description": "Puma max threads amount per process",
+      "type": "integer",
+      "default": 16
+    },
+    "nginx_worker_processes": {
+      "title": "Nginx worker processes",
+      "description": "Nginx worker processes amount",
+      "type": "integer",
+      "default": 4
+    },
+    "nginx_worker_connections": {
+      "title": "Nginx worker connections",
+      "description": "Nginx worker connections amount",
+      "type": "integer",
+      "default": 1024
+    },
+    "nginx_real_ip_trusted_addresses": {
+      "title": "Trusted proxies addresses",
+      "description": "The trusted proxy configuration prevents users from being listed as signed in from those IP addresses",
+      "type": "integer",
+      "default": 4
+    },
+    "nginx_real_ip_header": {
+      "title": "Trusted proxy real ip header",
+      "description": "Trusted proxy real ip header",
+      "type": "string",
+      "default": "X-Forwarded-For"
+    },
+    "nginx_real_ip_recursive": {
+      "title": "Real ip recursive",
+      "description": "Real ip recursive: Enable or disable nginx real_ip_recursive option.",
+      "type": "string",
+      "default": "off",
+      "enum": ["off", "on"]
+    },
+    "frontend-caucase-url-list": {
+      "title": "Frontend caucase url list",
+      "description": "Space separated URLs of caucase service providing CA to validate frontends client certificate and trust the frontend if they provide a valid certificate.",
+      "type": "string"
+    },
+    "nginx_download_archive_rate_limit": {
+      "title": "Nginx download archive rate limit",
+      "description": "Rate limit of git projects archive download, in requests per minutes.",
+      "type": "integer",
+      "default": 1
+    },
+    "nginx_deny_ip_network_list": {
+      "title": "List of ip network to deny",
+      "description": "A space separated list of ip or network to deny to ngnix. If a IP is added here the client will recieve 403 response",
+      "type": "string"
+    },
+    "postgresql_max_connections": {
+      "title": "Postgresql max connextions",
+      "description": "Postgresql max connextions",
+      "type": "integer",
+      "default": 200
+    },
+    "prometheus_scrape_interval": {
+      "title": "Prometheus scrame interval",
+      "description": "How frequently to scrape targets. Interval in minutes.",
+      "type": "integer",
+      "default": 15
+    },
+    "prometheus_scrape_timeout": {
+      "title": "Prometheus scrame timeout",
+      "description": "How long (in seconds) until a scrape request times out. It cannot be greater than the scrape interval.",
+      "type": "integer",
+      "default": 10
+    },
+    "icp_license": {
+      "title": "ICP licence",
+      "description": "ICP licences (space separated) string to show in gitlab website.",
+      "type": "string"
+    },
+    "root-password": {
+      "title": "Default root password",
+      "description": "A default password for root user. Should be a strong password else it's rejected. This parameter is only used initialisation of gitlab.",
+      "type": "string"
+    }
+  },
+  "unevaluatedProperties": false
+}

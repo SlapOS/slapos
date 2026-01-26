@@ -1,0 +1,21 @@
+{
+  "name": "Gitlab",
+  "description": "Gitlab software release",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Default gitlab instance configuration",
+      "request": "instance-gitlab-input-schema.json",
+      "response": "instance-gitlab-output-schema.json",
+      "index": 0
+    },
+    "gitlab-export": {
+      "title": "Gitlab with backup",
+      "description": "Gitlab export instance configuration, same as default",
+      "request": "instance-gitlab-input-schema.json",
+      "response": "instance-gitlab-output-schema.json",
+      "index": 1
+    }
+  }
+}

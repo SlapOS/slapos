@@ -15,13 +15,14 @@ offline = true
 recipe = slapos.cookbook:switch-softwaretype
 gitlab = instance-gitlab.cfg:output
 gitlab-export = instance-gitlab-export.cfg:output
-default = $${:gitlab}
+default = $${:gitlab-export}
 # TODO -import, -pull-backup
 
 
 [slap-configuration]
 # std stuff to fetch slapos instance parameters
-recipe  = slapos.cookbook:slapconfiguration
+recipe  = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = ${software.cfg.json:target}
 computer= $${slap-connection:computer-id}
 partition=$${slap-connection:partition-id}
 url     = $${slap-connection:server-url}
