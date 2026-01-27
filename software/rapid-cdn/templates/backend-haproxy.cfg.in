@@ -58,6 +58,7 @@ frontend https
 
 {%- for slave_reference in sorted(backend_slave_dict) %}
 {%-   set slave_instance = backend_slave_dict[slave_reference] %}
+# slave_instance {{ slave_instance  | pprint }}
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
 {%-     set info_dict = slave_instance[prefix] %}
 {%-     if info_dict['hostname'] and info_dict['port'] %}
