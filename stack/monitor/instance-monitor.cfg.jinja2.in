@@ -75,6 +75,7 @@ context =
     key pid_file :pid-file
     key monitor_httpd_wrapper_path :monitor-httpd-wrapper-path
     key monitor_httpd_conf :monitor-httpd-conf
+    raw to_delete_tmp_files ''
     raw dash_binary {{ dash_executable_location }}
 
 [ca-monitor-httpd-service]
