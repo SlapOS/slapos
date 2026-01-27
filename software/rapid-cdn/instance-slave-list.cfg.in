@@ -4,7 +4,7 @@
 {%- set frontend_slave_dict = {} %}
 {%- set part_list = [] %}
 {%- set cache_port = frontend_haproxy_configuration.get('cache-port') %}
-{%- set cache_access = "https://%s:%s/HTTP" % (instance_parameter_dict['ipv4-random'], cache_port) %}
+{%- set cache_access = "https://%s:%s/CACHE" % (instance_parameter_dict['ipv4-random'], cache_port) %}
 {%- set ssl_cache_access = "https://%s:%s/HTTPS" % (instance_parameter_dict['ipv4-random'], cache_port) %}
 {%- set backend_haproxy_url = 'https://%s:%s' % (instance_parameter_dict['ipv4-random'], backend_haproxy_configuration['port']) %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] %}
@@ -64,24 +64,7 @@ context =
 {#-     * create real lists from string lists #}
 {#-     * setup defaults to simplify other profiles #}
 {#-     * stabilise values for backend #}
-{%-   for key, prefix in [('url', 'http_backend'), ('https-url', 'https_backend')] %}
-{%-     set parsed = urllib_module.parse.urlparse(slave_instance.get(key, '').strip()) %}
-{%-     set info_dict = {'scheme': parsed.scheme, 'hostname': parsed.hostname, 'port': parsed.port or DEFAULT_PORT[parsed.scheme], 'path': parsed.path, 'fragment': parsed.fragment, 'query': parsed.query, 'netloc-list': slave_instance.get(key + '-netloc-list', '').split()} %}
-{%-     do slave_instance.__setitem__(prefix, info_dict) %}
-{%-   endfor %}
 {%-   do slave_instance.__setitem__('ssl_proxy_verify', ('' ~ slave_instance.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
-{%-   for key, prefix in [('health-check-failover-url', 'http_backend'), ('health-check-failover-https-url', 'https_backend')] %}
-{%-     set parsed = urllib_module.parse.urlparse(slave_instance.get(key, '').strip()) %}
-{%-     set info_dict = slave_instance[prefix] %}
-{%-     do info_dict.__setitem__('health-check-failover-scheme', parsed.scheme) %}
-{%-     do info_dict.__setitem__('health-check-failover-hostname', parsed.hostname) %}
-{%-     do info_dict.__setitem__('health-check-failover-port', parsed.port or DEFAULT_PORT[parsed.scheme]) %}
-{%-     do info_dict.__setitem__('health-check-failover-path', parsed.path) %}
-{%-     do info_dict.__setitem__('health-check-failover-query', parsed.query) %}
-{%-     do info_dict.__setitem__('health-check-failover-fragment', parsed.fragment) %}
-{%-     do info_dict.__setitem__('health-check-netloc-list', slave_instance.get('health-check-failover-url-netloc-list', '').split()) %}
-{%-     do slave_instance.__setitem__(prefix, info_dict) %}
-{%-   endfor %}
 {%-   do slave_instance.__setitem__('health-check-failover-ssl-proxy-verify', ('' ~ slave_instance.get('health-check-failover-ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
 {%-   for key in ['https-only', 'websocket-transparent'] %}
 {%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'true')).lower() in TRUE_VALUES) %}
@@ -136,15 +119,6 @@ context =
 {%-     do slave_instance.__setitem__('backend-name', frontend_haproxy_configuration['backend-haproxy-certificate-common-name']) %}
 {%-     do slave_instance.__setitem__('backend-url', backend_haproxy_url) %}
 {%-   endif %}
-{%-   set parsed = urllib_module.parse.urlparse(slave_instance['backend-url']) %}
-{%-   do slave_instance.__setitem__('backend-info', {
-       'scheme': parsed.scheme,
-       'hostname': parsed.hostname,
-       'port': parsed.port or DEFAULT_PORT[parsed.scheme],
-       'path': parsed.path,
-       'fragment': parsed.fragment,
-       'query': parsed.query }) %}
-
 {%-   if slave_kedifa %}
 {%-     set key_download_url = slave_kedifa.get('key-download-url') %}
 {%-   else %}
@@ -513,6 +487,7 @@ extra-context =
   key frontend_slave_order frontend-haproxy-slave-list:order
   key crt_list frontend-haproxy-crt-list:rendered
   section configuration frontend-haproxy-config
+  import urllib_module urllib
 
 [frontend-haproxy-config]
 {%- for key, value in frontend_haproxy_configuration.items() %}
@@ -550,6 +525,7 @@ extra-context =
   key backend_slave_dict :backend_slave_dict
   key backend_slave_order :order
   section configuration backend-haproxy-config
+  import urllib_module urllib
 
 [backend-haproxy-config]
 {%- for key, value in backend_haproxy_configuration.items() %}
