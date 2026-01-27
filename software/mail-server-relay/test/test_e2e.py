@@ -36,6 +36,37 @@ from slapos.testing.testcase import (
   installSoftwareUrlList,
 )
 
+
+def wait_for_condition(condition_func, timeout=60, interval=2, error_message="Condition not met within timeout"):
+  """
+  Retry a condition function until it returns True or timeout is reached.
+  
+  Args:
+    condition_func: A callable that returns True when the condition is met
+    timeout: Maximum time to wait in seconds (default: 60)
+    interval: Time between retries in seconds (default: 2)
+    error_message: Message to include in the exception if timeout is reached
+  
+  Raises:
+    AssertionError: If the condition is not met within the timeout period
+  """
+  start_time = time.time()
+  last_error = None
+  
+  while time.time() - start_time < timeout:
+    try:
+      if condition_func():
+        return True
+    except Exception as e:
+      last_error = e
+    time.sleep(interval)
+  
+  elapsed = time.time() - start_time
+  error_msg = f"{error_message} (waited {elapsed:.1f}s)"
+  if last_error:
+    error_msg += f". Last error: {last_error}"
+  raise AssertionError(error_msg)
+
 software_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 software_urls = [
@@ -168,21 +199,37 @@ class E2E(SlapOSInstanceTestCase):
     """Helper method to verify email was received via IMAP"""
     imap_params = json.loads(imap_server_instance.getConnectionParameterDict()['_'])
     
-    time.sleep(10)  # Wait for email delivery
-    with imaplib.IMAP4(imap_params['imap-smtp-ipv6'], imap_params['imap-port'], timeout=10) as imap:
-      imap.login(recipient, "password123")
-      imap.select("INBOX")
-      result, data = imap.search(None, 'ALL')
-      self.assertEqual(result, 'OK', "Failed to search emails")
-      email_ids = data[0].split()
-      self.assertGreater(len(email_ids), 0, "No emails found in inbox")
-      
-      # Check if the last email is the one we sent
-      latest_email_id = email_ids[-1]
-      result, data = imap.fetch(latest_email_id, '(RFC822)')
-      self.assertEqual(result, 'OK', "Failed to fetch email")
-      email_body = data[0][1].decode('utf-8')
-      self.assertIn(expected_content, email_body, "Email content does not match")
+    def check_email():
+      """Check if email with expected content is in the inbox"""
+      try:
+        with imaplib.IMAP4(imap_params['imap-smtp-ipv6'], imap_params['imap-port'], timeout=10) as imap:
+          imap.login(recipient, "password123")
+          imap.select("INBOX")
+          result, data = imap.search(None, 'ALL')
+          if result != 'OK':
+            return False
+          
+          email_ids = data[0].split()
+          if len(email_ids) == 0:
+            return False
+          
+          # Check if the last email contains the expected content
+          latest_email_id = email_ids[-1]
+          result, data = imap.fetch(latest_email_id, '(RFC822)')
+          if result != 'OK':
+            return False
+          
+          email_body = data[0][1].decode('utf-8')
+          return expected_content in email_body
+      except Exception:
+        return False
+    
+    wait_for_condition(
+      check_email,
+      timeout=60,
+      interval=2,
+      error_message=f"Email with content '{expected_content}' not received by {recipient}"
+    )
 
   def test_send_email(self):
     # each mail server has testmail@{{domain}}:password123::
