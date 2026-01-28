@@ -3,27 +3,28 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Cluster Input Parameters",
   "definitions": {
-    "relay-config": {
+    "proxy-config": {
       "type": "object",
       "properties": {
-        "relay-host": {
-          "title": "Relay Host",
-          "description": "The host to relay the emails to",
+        "proxy-host": {
+          "title": "Proxy Host",
+          "description": "The host to proxy the emails to",
           "type": "string"
         },
-        "relay-port": {
-          "title": "Relay Port",
-          "description": "The port used by the relay",
-          "type": "integer"
+        "proxy-port": {
+          "title": "Proxy Port",
+          "description": "The port used by the proxy",
+          "type": "integer",
+          "default": 25
         },
-        "relay-user": {
-          "title": "Relay User",
-          "description": "The user to authenticate with the relay host",
+        "proxy-user": {
+          "title": "Proxy User",
+          "description": "The user to authenticate with the proxy host",
           "type": "string"
         },
-        "relay-password": {
-          "title": "Relay Password",
-          "description": "The password to authenticate with the relay host",
+        "proxy-password": {
+          "title": "Proxy Password",
+          "description": "The password to authenticate with the proxy host",
           "type": "string"
         }
       },
@@ -31,12 +32,12 @@
     }
   },
   "properties": {
-    "default-relay-config": {
-      "$ref": "#/definitions/relay-config"
+    "default-proxy-config": {
+      "$ref": "#/definitions/proxy-config"
     },
     "outbound-domain-whitelist": {
       "title": "Outbound Domain Whitelist",
-      "description": "List of domains allowed for outbound relay",
+      "description": "List of domains allowed for outbound proxy",
       "type": "array",
       "items": {
         "type": "string"
@@ -81,7 +82,7 @@
               "default": "started"
             },
             "config": {
-              "$ref": "#/definitions/relay-config"
+              "$ref": "#/definitions/proxy-config"
             }
           }
         }
@@ -90,7 +91,7 @@
     }
   },
   "required": [
-    "default-relay-config",
+    "default-proxy-config",
     "outbound-domain-whitelist",
     "topology"
   ]
