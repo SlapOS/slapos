@@ -15,6 +15,13 @@ parts =
   postfix-promise
   apache-httpd-promise
   publish-shared
+{% if slapparameter_dict['request-dns']['enable'] %}
+  request-dns-entry
+  request-dns-entry-autoconfig
+  mail-config
+{% endif %}
+  request-relays
+
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -120,57 +127,91 @@ recipe = slapos.recipe.build
 # not using location to avoid Buildout ever deleting it
 target = $${directory:etc}/dovecot-passwd
 init =
+  # gecos and shell are unused by Dovecot so we can reuse them
+  PASSWD_COLS = ['name', 'passwd', 'uid', 'gid', 'gecos', 'dir', 'shell', 'extra_fields']
+
+  from itertools import chain, repeat
   import uuid
 
   try:
     with open(options['target'], 'r') as fp:
-      output = list(filter(None, fp.read().splitlines()))
+      passdb = fp.read()
   except:
-    output = []
-
-  existing_users = {row.split(":")[0] for row in output}
+    passdb = ""
+  finally:
+    previous = [dict(zip(PASSWD_COLS, chain(row.split(":"), repeat('')))) for row in filter(None, passdb.splitlines())]
+    previous = {row['name']: row for row in previous}
 
   new_account_dict = {}
   error_dict = {}
-  processed_addresses = set()
+  output = {}
 
-  for slave in {{ json_module.dumps(slave_instance_list) }}:
+  slave_list = {{ json_module.dumps(slave_instance_list) }}
+
+  def make_entry(slave, previous={}):
+    reset_token = slave['parameters'].get('reset-token')
+    # if matching entry was already in passdb and is unchanged (no password reset, nothing to do), just forward it
+    if previous and (reset_token is None or previous['gecos'] == reset_token):
+      return previous
+    addr = slave['parameters']['address']
+    new_passwd = reset_token or str(uuid.uuid4())
+    new_account_dict[slave['reference']] = {'address': addr, 'token': new_passwd}
+    return {
+      'name': addr,
+      'passwd': new_passwd,
+      'gecos': reset_token or '',
+      'shell': slave['reference'],
+      'extra_fields': 'fail',
+    }
+
+  # 1st pass: keep only slaves matching both address and reference ( = previously accepted slaves)
+  for slave in slave_list:
     addr = slave['parameters']['address']
     
-    # Check if this address was already processed in this request batch
-    if addr in processed_addresses:
-      error_dict[slave['reference']] = {
-        'address': addr, 
-        'error': 'duplicate_address_in_request'
-      }
-      continue
-    
-    # Mark this address as processed
-    processed_addresses.add(addr)
-    
-    # If address doesn't exist in dovecot-passwd file, create new account
-    if addr not in existing_users:
-      token = str(uuid.uuid4())
-      new_account_dict[slave['reference']] = {'address': addr, 'token': token}
-      output.append(f"{addr}:{token}::::::fail")
-      existing_users.add(addr)
+    if prev_entry := previous.get(addr):
+      if prev_entry['shell'] == slave['reference']:
+        output[addr] = make_entry(slave, previous=prev_entry)
+      else:
+        # address is already used by another slave, 2nd pass will handle it
+        pass
+    else:
+      # no previous entry, will be handled in 2nd pass
+      pass
+
+  # 2nd pass: new entries + entries with different reference
+  for slave in slave_list:
+    addr = slave['parameters']['address']
+
+    # If address was already processed in 1st pass
+    if existing := output.get(addr):
+      if existing['shell'] != slave['reference']:
+        error_dict[slave['reference']] = {
+          'address': addr, 
+          'error': 'address_already_used'
+        }
+      # (if it matches, there's nothing to do)
+    else:
+      # address wasn't in database, it's new
+      output[addr] = make_entry(slave)
 
   options['new-account-dict'] = new_account_dict
   options['error-dict'] = error_dict
 
-  if {{ slapparameter_dict.get('test-account', False) }}:
+  if {{ slapparameter_dict['test-account'] }}:
     for domain in {{ repr(slapparameter_dict['mail-domains']) }}:
       test_mail = f"testmail@{domain}"
-      if test_mail not in existing_users:
-        output.append(f"{test_mail}:password123::")
+      if test_mail not in output:
+        output[test_mail] = {
+          'name': test_mail,
+          'passwd': 'password123'
+        }
 
-  self.output = output
+  self.output = [":".join(row.get(col, '') for col in PASSWD_COLS) for row in output.values()]
 
   options['location'] = ''  # we don't care about the part folder existing
 install =
   with open(options['target'], 'w') as fp:
-    for row in self.output:
-      fp.write(f"{row}\n")
+    fp.write("\n".join(self.output))
 
 [dovecot-wrapper]
 recipe = slapos.recipe.template
@@ -272,22 +313,28 @@ context =
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
 
-[relay-info]
-host-override = {{ slapparameter_dict.get('relay-host', '') }}
-port-override = {{ slapparameter_dict.get('relay-port', '') }}
-{% if not (slapparameter_dict.get('relay-host') and slapparameter_dict.get('relay-port')) -%}
+[outbound-relay-info]
 {% for domain in slapparameter_dict['mail-domains'] -%}
-host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
-{% endfor -%}
+# if there's an outbound override, it's used in priority
+{% if slapparameter_dict['outbound-relay']['host'] -%}
+outbound-host-{{ domain }} = {{ slapparameter_dict['outbound-relay']['host'] }}
+outbound-port-{{ domain }} = {{ slapparameter_dict['outbound-relay']['port'] }}
+{% elif not slapparameter_dict['no-relay'] %}
+# else we use the result of request if it exists
+outbound-host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
+outbound-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
+{% else -%}
+outbound-host-{{ domain }} = 
+outbound-port-{{ domain }} = 
 {% endif -%}
+{% endfor -%}
 
 [postfix-relays]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_relays.in:target}
 output = $${postfix-directory:etc}/relay_by_sender
 context =
-  section relay_info relay-info
+  section outbound_relay_info outbound-relay-info
   raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
 
 [postfix-symlinks-libexec]
@@ -407,9 +454,13 @@ copytruncate = true
 [snappymail-files]
 recipe = plone.recipe.command
 target = $${directory:www}
-command = cp -ax ${snappymail:location}/. $${:target}
+command = cp -ax ${snappymail:location}/. $${:target} && mkdir -p $${:target}/data/_data_/_default_/plugins/ && cp -ax ${snappymail-plugins:location}/plugins/* $${:target}/data/_data_/_default_/plugins/
 update-command = $${:command}
 stop-on-error = true
+
+[snappymail-admin-pw]
+recipe = slapos.cookbook:generate.password
+username = admin
 
 [snappymail-conf]
 recipe = slapos.recipe.template:jinja2
@@ -418,6 +469,113 @@ url = ${template-snappymail.jinja2.ini:target}
 output = $${snappymail-files:target}/data/_data_/_default_/configs/application.ini
 context =
   raw mail_domain {{ slapparameter_dict['mail-domains'][0] }}
+  key admin_password snappymail-admin-pw:passwd-sha256-crypt
+
+[snappymail-pw-conf]
+recipe = collective.recipe.template
+output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-change-password.json
+mode = 600
+input = inline:
+  {
+      "plugin": {
+          "pass_min_length": 10,
+          "pass_min_strength": 20,
+          "check_hibp": false,
+          "driver_dovecot_enabled": true
+      }
+  }
+
+[snappymail-pw-driver]
+recipe = slapos.recipe.template:jinja2
+output = $${snappymail-files:target}/data/_data_/_default_/plugins/change-password/drivers/dovecot.php
+url = ${snappymail-pw-driver.jinja2.php:target}
+context =
+  raw dovecot_passwd_file $${dovecot-passwords:target}
+
+[snappymail-mailbox-conf]
+recipe = collective.recipe.template
+output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-mailbox-detect.json
+mode = 600
+input = inline:
+  {
+      "plugin": {
+          "autocreate_system_folders": true
+      }
+  }
+
+[snappymail-links-conf]
+recipe = collective.recipe.template
+output = $${snappymail-files:target}/data/_data_/_default_/plugins/login-register/LoginRegister.js
+input = inline:
+  (rl => {
+    if (rl) {
+      const showInfoDialog = (title, message) => {
+        let dialog = document.getElementById('plugin-info-dialog');
+        if (!dialog) {
+          dialog = Element.fromHTML(
+            '<dialog id="plugin-info-dialog">' +
+            '<header><a class="close" href="#">×</a><h3></h3></header>' +
+            '<div class="modal-body"></div>' +
+            '<footer><button class="btn">OK</button></footer>' +
+            '</dialog>'
+          );
+          dialog.querySelector('.close').addEventListener('click', e => {
+            e.preventDefault();
+            dialog.classList.remove('animate');
+            setTimeout(() => dialog.close(), 200);
+          });
+          dialog.querySelector('footer .btn').addEventListener('click', () => {
+            dialog.classList.remove('animate');
+            setTimeout(() => dialog.close(), 200);
+          });
+          document.getElementById('rl-popups').append(dialog);
+        }
+        dialog.querySelector('header h3').textContent = title;
+        dialog.querySelector('.modal-body').textContent = message;
+        dialog.showModal();
+        requestAnimationFrame(() => {
+          dialog.offsetHeight; // force reflow
+          dialog.classList.add('animate');
+        });
+      };
+
+      addEventListener('rl-view-model', e => {
+        if (e.detail && 'Login' === e.detail.viewModelTemplateID) {
+          const container = e.detail.viewModelDom.querySelector('#plugin-Login-BottomControlGroup'),
+            forgot = 'LOGIN/LABEL_FORGOT_PASSWORD',
+            register = 'LOGIN/LABEL_REGISTRATION';
+          if (container) {
+            let html = '';
+            html = html + '<p class="forgot-link">'
+              + '<a href="#" class="g-ui-link" data-i18n="'+forgot+'">'+rl.i18n(forgot)+'</a>'
+              + '</p>';
+            html = html + '<p class="registration-link">'
+              + '<a href="#" class="g-ui-link" data-i18n="'+register+'">'+rl.i18n(register)+'</a>'
+              + '</p>';
+            container.append(Element.fromHTML('<div class="controls clearfix">' + html + '</div>'));
+
+            container.querySelector('.forgot-link a')?.addEventListener('click', e => {
+              e.preventDefault();
+              // to reset their password the user should update the shared instance's params with a "reset-token" param set to something and that can be used 
+              showInfoDialog(
+                rl.i18n(forgot),
+                'To reset your password, add a "reset-token" parameter to your account\'s shared instance parameters and set it to any value. A password reset URL will be returned to you.'
+              );
+            });
+
+            container.querySelector('.registration-link a')?.addEventListener('click', e => {
+              e.preventDefault();
+              showInfoDialog(
+                rl.i18n(register),
+                'To register a new account, create a new shared instance with your desired email address as the "address" parameter. A registration URL will be returned to you.'
+              );
+            });
+          }
+        }
+      });
+    }
+
+  })(window.rl);
 
 [snappymail-domain]
 recipe = slapos.recipe.template:jinja2
@@ -436,6 +594,10 @@ init =
 depends =
   $${snappymail-conf:recipe}
   $${snappymail-domain:recipe}
+  $${snappymail-pw-conf:recipe}
+  $${snappymail-pw-driver:recipe}
+  $${snappymail-mailbox-conf:recipe}
+  $${snappymail-links-conf:recipe}
 
 
 # Password reset page
@@ -448,13 +610,33 @@ output = $${directory:www}/password.php
 context =
   key dovecot_passwd dovecot-passwords:target
 
+{% if slapparameter_dict['request-dns']['enable'] %}
+# Mail Autoconfig
+# ---------------
+
+[mail-config-directory]
+recipe = slapos.cookbook:mkdirectory
+root = $${directory:www}/autoconfig
+mail = $${:root}/mail
+
+[mail-config]
+recipe = slapos.recipe.template:jinja2
+url = ${mail-config.jinja2.xml:target}
+output = $${mail-config-directory:mail}/config-v1.1.xml
+context =
+  key domain request-dns-entry:connection-domain
+  key imap_port dovecot-conf:imap-port
+  raw smtp_port {{ smtp_port }}
+{% endif %}
+
 
 # Apache/PHP server
 # -----------------
 
 [apache-network-configuration]
-listening-ip = {{ ipv6 }}
-listening-port = 9988
+listening-ip = {{ ipv6 }}
+http-port = 8080
+https-port = 8081
 
 [apache-php-service]
 recipe = slapos.cookbook:wrapper
@@ -494,11 +676,13 @@ wait-for-files =
 
 [apache-php-configuration]
 document-root = $${directory:www}
+autoconfig-root = $${directory:www}/autoconfig
 pid-file = $${directory:run}/apache.pid
 lock-file = $${directory:run}/apache.lock
 ip = $${apache-network-configuration:listening-ip}
-port = $${apache-network-configuration:listening-port}
-url = https://[$${:ip}]:$${:port}/
+http-port = $${apache-network-configuration:http-port}
+https-port = $${apache-network-configuration:https-port}
+url = https://[$${:ip}]:$${:https-port}/
 error-log = $${directory:httpd-log}/error.log
 access-log = $${directory:httpd-log}/access.log
 log-dir = $${directory:httpd-log}
@@ -560,7 +744,7 @@ wrapper = $${directory:bin}/ca-apache-php
 promise = check_socket_listening
 name = apache-httpd-port-listening.py
 config-host = $${apache-php-configuration:ip}
-config-port = $${apache-php-configuration:port}
+config-port = $${apache-php-configuration:https-port}
 depends = $${apache-php-service:recipe}
 
 [request-frontend]
@@ -583,6 +767,7 @@ post = $${directory:script}/apache-httpd-graceful
 recipe = slapos.recipe.build
 new-account-dict = $${dovecot-passwords:new-account-dict}
 error-dict = $${dovecot-passwords:error-dict}
+pw-url = $${publish-connection-information:webmail-url}/password.php
 init =
   for ref, content in options['new-account-dict'].items():
     self.buildout.parse(f"""
@@ -591,6 +776,7 @@ init =
   -slave-reference = {ref}
   address = {content['address']}
   token = {content['token']}
+  setup-url = {options['pw-url']}?user={content['address']}&token={content['token']}
     """)
   
   for ref, content in options['error-dict'].items():
@@ -606,29 +792,64 @@ init =
 # Request relay
 # -------------
 
+
 {% set relay_requests = [] -%}
 {% for mail_domain in slapparameter_dict['mail-domains'] -%}
 {%   do relay_requests.append('request-relay-' ~ mail_domain) %}
 [request-relay-{{ mail_domain }}]
 <= slap-connection
-recipe = slapos.cookbook:request.serialised
-software-url = {{ slapparameter_dict.get('relay-sr-url', 'urn:slapos:mail-relay') }}
+recipe = slapos.cookbook:requestoptional.serialised
+software-url = {{ slapparameter_dict['relay-sr-url'] }}
 software-type = cluster
 shared = true
 name = mail-server-relay-{{ mail_domain }}
 config-name = {{ mail_domain }}
 config-mail-server-host = {{ ipv6 }}
 config-mail-server-port = {{ dumps(smtp_port) }}
+{% if not slapparameter_dict['no-relay'] %}
 return =
   outbound-host
   outbound-smtp-port
+{% else -%}
+state = destroyed
+{% endif %}
 {% endfor %}
 
 [request-relays]
+recipe = slapos.recipe.build
+init =
+  ""
 depends =
 {% for relay_request in relay_requests -%}
-  {{ "  $${" + relay_request + ":recipe" }}
+  {{ "  $${" + relay_request + ":recipe}" }}
 {% endfor -%}
+
+
+# Request local DNS entry
+# -----------------------
+
+[macro.request-dns-entry]
+<= slap-connection
+name = dns-mail-entry
+recipe = slapos.cookbook:request.serialised
+software-url = {{ slapparameter_dict['request-dns']['sr-url'] }}
+software-type = {{ slapparameter_dict['request-dns']['sr-type'] }}
+shared = true
+sla-computer_guid = $${slap-connection:computer-id}
+return = domain ip
+
+[request-dns-entry]
+<= macro.request-dns-entry
+config-name = dns-mail-entry
+config-subdomain = mail
+config-ip = {{ ipv6 }}
+
+[request-dns-entry-autoconfig]
+<= macro.request-dns-entry
+config-name = dns-mail-entry-autoconfig
+config-subdomain = autoconfig.mail
+config-ip = {{ ipv6 }}
+
 
 # Publish connection information
 # ------------------------------
@@ -640,6 +861,10 @@ imap-port = $${dovecot-conf:imap-port}
 smtp-port = {{ smtp_port }}
 imap-smtp-ipv6 = {{ ipv6 }}
 webmail-url = $${lamp-frontend-promise:url}
+webmail-admin-password = $${snappymail-admin-pw:passwd}
 password-url = $${:webmail-url}/password.php
 slaves = $${dovecot-passwords:new-account-dict}
 error-dict = $${dovecot-passwords:error-dict}
+{% if slapparameter_dict['request-dns']['enable'] %}
+domain = $${request-dns-entry:connection-domain}
+{% endif %}
