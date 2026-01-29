@@ -1294,7 +1294,7 @@ class TestInstanceResilient(KVMTestCase, KvmMixin):
       {
         'ipv6': self.kvm0_ipv6,
         'monitor-base-url':
-        f'https://[{self.computer_partition_ipv6_address}]:8160',
+        f'https://[{self.computer_partition_ipv6_address}]:8196',
         'monitor-user': 'admin',
         'takeover-kvm-1-url': f'http://[{self.kvm1_ipv6}]:9263/',
         'takeover-kvm-2-url': f'http://[{self.kvm2_ipv6}]:9263/',

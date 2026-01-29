@@ -175,6 +175,7 @@ context =
     key monitor_httpd_wrapper_path :monitor-httpd-wrapper-path
     key monitor_httpd_conf :monitor-httpd-conf
     raw dash_binary ${bash:location}/bin/bash
+    raw to_delete_tmp_files $${resilient-web-takeover-httpd-configuration-file:cgid-sock-file}.*
 
 [resilient-web-takeover-httpd-promise]
 <= monitor-promise-base

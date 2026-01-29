@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Values returned by galene",
+  "properties": {
+    "backend_url": {
+      "description": "IPv6 url of gitlab",
+      "type": "string"
+    },
+    "monitor-setup-url": {
+      "description": "Monitor base url",
+      "type": "string"
+    },
+    "prometheus-url": {
+      "description": "IPv6 url of prometheus",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

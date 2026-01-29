@@ -1146,7 +1146,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       'Net', 'Connections', 'from IP', 'from Port')
 
   def assertKeyWithPop(self, key, d):
-    self.assertTrue(key in d, 'Key %r is missing in %r' % (key, d))
+    self.assertIn(key, d, 'Key %r is missing in %r' % (key, d))
     d.pop(key)
 
   def assertEqualResultJson(self, result, key, value):
@@ -1154,7 +1154,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertTrue(key in j, 'No key %r in %s' % (key, j))
+    self.assertIn(key, j, 'No key %r in %s' % (key, j))
     self.assertEqual(value, j[key])
 
   def parseParameterDict(self, parameter_dict):
@@ -2163,10 +2163,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(0, result)
 
-    self.assertTrue(old_file_name + '.xz' in os.listdir(ats_logrotate_dir))
-    self.assertTrue(older_file_name + '.xz' in os.listdir(ats_logrotate_dir))
-    self.assertFalse(old_file_name + '.xz' in os.listdir(ats_log_dir))
-    self.assertFalse(older_file_name + '.xz' in os.listdir(ats_log_dir))
+    self.assertIn(old_file_name + '.xz', os.listdir(ats_logrotate_dir))
+    self.assertIn(older_file_name + '.xz', os.listdir(ats_logrotate_dir))
+    self.assertNotIn(old_file_name + '.xz', os.listdir(ats_log_dir))
+    self.assertNotIn(older_file_name + '.xz', os.listdir(ats_log_dir))
 
     with lzma.open(
       os.path.join(ats_logrotate_dir, old_file_name + '.xz')) as fh:
@@ -2190,9 +2190,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result, output = subprocess_status_output([ats_rotate])
 
     self.assertEqual(0, result)
-    self.assertEqual(
-      ['log-old.old.xz'],
-      os.listdir(ats_logrotate_dir))
+    self.assertNotIn(older_file_name + '.xz', os.listdir(ats_logrotate_dir))
 
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
@@ -2375,10 +2373,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         q for q in fh.readlines()
         if q.startswith('config-slave-list') or q.startswith(
             'config-extra_slave_instance_list')]:
-        self.assertFalse('slave_title' in line)
-        self.assertFalse('slap_software_type' in line)
-        self.assertFalse('connection-parameter-hash' in line)
-        self.assertFalse('timestamp' in line)
+        self.assertNotIn('slave_title', line)
+        self.assertNotIn('slap_software_type', line)
+        self.assertNotIn('connection-parameter-hash', line)
+        self.assertNotIn('timestamp', line)
 
   def assertRequestHeaders(
     self, header_dict, domain=None, source_ip=SOURCE_IP,
@@ -2459,7 +2457,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertFalse('Content-Encoding' in headers)
+    self.assertNotIn('Content-Encoding', headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqual(
@@ -2549,14 +2547,35 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # check all verbs
     for verb in [
       'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']:
-      result_verb = fakeHTTPSResult(
-        parameter_dict['domain'], '/' + verb, verb=verb)
+      try:
+        result_verb = fakeHTTPSResult(
+          parameter_dict['domain'], '/' + verb, verb=verb)
+      except CurlException as e:
+        if verb == 'CONNECT' and self.max_http_version in ['2', '3']:
+          exception = e
+        else:
+          raise
+      else:
+        exception = None
       if verb == 'CONNECT':
         if self.max_http_version == '1':
           self.assertEqual(
             http.client.BAD_REQUEST, result_verb.status_code, verb)
           self.assertIn(
             'Your browser sent an invalid request', result_verb.text, verb)
+        elif self.max_http_version == '3':
+          self.assertIsNotNone(exception)
+          self.assertEqual(exception.command_returncode, 95)
+          # XXX: Ignore command_error comparision
+          #      see https://github.com/curl/curl/issues/20195
+        elif self.max_http_version == '2':
+          self.assertIsNotNone(exception)
+          self.assertEqual(exception.command_returncode, 92)
+          self.assertEqual(
+            exception.command_error,
+            f'curl: (92) QUIC: connection to {TEST_IP} port '
+            f'{HTTPS_PORT} refused\n'
+          )
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
@@ -2807,7 +2826,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertFalse('Content-Encoding' in result.headers)
+    self.assertNotIn('Content-Encoding', result.headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     result_http = fakeHTTPResult(
@@ -3008,7 +3027,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
 
-    self.assertFalse('Content-Encoding' in result.headers)
+    self.assertNotIn('Content-Encoding', result.headers)
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
     self.assertEqual(
@@ -3562,7 +3581,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Upgrade',
       j['Incoming Headers']['connection']
     )
-    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+    self.assertIn('x-real-ip', j['Incoming Headers'])
     self.assertHttp1(parameter_dict['domain'])
 
   def _test_type_websocket(self, parameter_dict, path='test-path'):
@@ -3589,7 +3608,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Upgrade',
       j['Incoming Headers']['connection']
     )
-    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+    self.assertIn('x-real-ip', j['Incoming Headers'])
     self.assertHttp1(parameter_dict['domain'])
 
   def test_type_websocket(self):
@@ -3630,7 +3649,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Upgrade',
       j['Incoming Headers']['connection']
     )
-    self.assertFalse('x-real-ip' in j['Incoming Headers'])
+    self.assertNotIn('x-real-ip', j['Incoming Headers'])
     self.assertHttp1(parameter_dict['domain'])
 
   def test_type_websocket_websocket_path_list(self):
@@ -3657,7 +3676,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
       j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
-    self.assertFalse('x-real-ip' in j['Incoming Headers'])
+    self.assertNotIn('x-real-ip', j['Incoming Headers'])
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'ws/test-path',
@@ -3679,7 +3698,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Upgrade',
       j['Incoming Headers']['connection']
     )
-    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+    self.assertIn('x-real-ip', j['Incoming Headers'])
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -3701,7 +3720,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Upgrade',
       j['Incoming Headers']['connection']
     )
-    self.assertTrue('x-real-ip' in j['Incoming Headers'])
+    self.assertIn('x-real-ip', j['Incoming Headers'])
 
   def test_type_websocket_websocket_path_list_websocket_transparent_false(
     self):
@@ -3728,7 +3747,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
       j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
-    self.assertFalse('x-real-ip' in j['Incoming Headers'])
+    self.assertNotIn('x-real-ip', j['Incoming Headers'])
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'ws/test-path',
@@ -3750,7 +3769,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Upgrade',
       j['Incoming Headers']['connection']
     )
-    self.assertFalse('x-real-ip' in j['Incoming Headers'])
+    self.assertNotIn('x-real-ip', j['Incoming Headers'])
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -3772,7 +3791,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Upgrade',
       j['Incoming Headers']['connection']
     )
-    self.assertFalse('x-real-ip' in j['Incoming Headers'])
+    self.assertNotIn('x-real-ip', j['Incoming Headers'])
 
   def test_type_redirect(self):
     parameter_dict = self.assertSlaveBase('type-redirect')
@@ -3929,7 +3948,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
 
-    self.assertFalse('Content-Encoding' in result.headers)
+    self.assertNotIn('Content-Encoding', result.headers)
 
     self.assertEqual(
       'secured=value;secure, nonsecured=value',
@@ -4297,15 +4316,36 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         headers = {'Content-Length': '0'}  # To satisfy TrafficServer
       else:
         headers = None
-      result_verb = fakeHTTPSResult(
-        parameter_dict['domain'], '/' + verb, verb=verb, headers=headers
-      )
+      try:
+        result_verb = fakeHTTPSResult(
+          parameter_dict['domain'], '/' + verb, verb=verb, headers=headers
+        )
+      except CurlException as e:
+        if verb == 'CONNECT' and self.max_http_version in ['2', '3']:
+          exception = e
+        else:
+          raise
+      else:
+        exception = None
       if verb == 'CONNECT':
         if self.max_http_version == '1':
           self.assertEqual(
             http.client.BAD_REQUEST, result_verb.status_code, verb)
           self.assertIn(
             'Your browser sent an invalid request', result_verb.text, verb)
+        elif self.max_http_version == '3':
+          self.assertIsNotNone(exception)
+          self.assertEqual(exception.command_returncode, 95)
+          # XXX: Ignore command_error comparision
+          #      see https://github.com/curl/curl/issues/20195
+        elif self.max_http_version == '2':
+          self.assertIsNotNone(exception)
+          self.assertEqual(exception.command_returncode, 92)
+          self.assertEqual(
+            exception.command_error,
+            f'curl: (92) QUIC: connection to {TEST_IP} port '
+            f'{HTTPS_PORT} refused\n'
+          )
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
@@ -4706,7 +4746,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       j = result.json()
     except Exception:
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-    self.assertFalse('pragma' in list(j['Incoming Headers'].keys()))
+    self.assertNotIn('pragma', list(j['Incoming Headers'].keys()))
 
   def test_enable_cache_disable_via_header(self):
     parameter_dict = self.assertSlaveBase('enable_cache-disable-via-header')

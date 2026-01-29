@@ -111,7 +111,7 @@ config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
 {{ setconfig('data-to-vm', kvm_parameter_dict.get('data-to-vm', '')) }}
 
 config-disable-ansible-promise = {{ dumps(kvm_parameter_dict.get('disable-ansible-promise', False)) }}
-config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com/#page=ojsm_landing') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${publish-early:monitor-password}
 # Enable disk wipe options
@@ -290,7 +290,6 @@ recipe = slapos.cookbook:publish-early
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 username = admin
 password = ${publish-early:monitor-password}
 

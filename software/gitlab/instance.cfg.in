@@ -15,13 +15,14 @@ offline = true
 recipe = slapos.cookbook:switch-softwaretype
 gitlab = instance-gitlab.cfg:output
 gitlab-export = instance-gitlab-export.cfg:output
-default = $${:gitlab}
+default = $${:gitlab-export}
 # TODO -import, -pull-backup
 
 
 [slap-configuration]
 # std stuff to fetch slapos instance parameters
-recipe  = slapos.cookbook:slapconfiguration
+recipe  = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = ${software.cfg.json:target}
 computer= $${slap-connection:computer-id}
 partition=$${slap-connection:partition-id}
 url     = $${slap-connection:server-url}
@@ -82,6 +83,7 @@ context =
     raw node_bin_location           ${nodejs:location}/bin/
     raw openssl_bin                 ${openssl-output:openssl}
     raw postgresql_location         ${postgresql:location}
+    raw prometheus_location         ${prometheus:location}
     raw redis_binprefix             ${redis:location}/bin
     raw ruby_location               ${bundler-4gitlab:ruby-location}
     raw tar_location                ${tar:location}
@@ -104,6 +106,7 @@ context =
     raw smtp_settings_rb_in         ${smtp_settings.rb.in:target}
     raw gitlab_restore_sh_in        ${template-gitlab-resiliency-restore.sh.in:target}
     raw puma_rb_in                  ${puma.rb.in:target}
+    raw prometheus_yml_in           ${prometheus.yml.in:target}
 
     $${:context-extra}
 context-extra =

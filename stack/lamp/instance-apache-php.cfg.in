@@ -51,7 +51,7 @@ httpd-log = ${:log}/apache
 php-ini-dir = ${:etc}/php
 tmp-php = ${:tmp}/php
 upload-tmp = ${:tmp}/upload
-www = ${:srv}/www/
+www = ${:srv}/www
 apache.d = ${:etc}/apache.d
 
 #----------------
