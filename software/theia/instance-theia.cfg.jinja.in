@@ -39,6 +39,8 @@ additional-url = $${remote-additional-frontend:connection-secure_access}
 username = $${frontend-instance-password:username}
 password = $${frontend-instance-password:passwd}
 backend-url = $${frontend-instance:url}
+url-public = $${remote-frontend:connection-secure_access}/public/
+url-slapproxy = $${remote-frontend:connection-secure_access}/slapproxy/
 ipv6 = {{ ipv6_theia }}
 
 [directory]
@@ -266,6 +268,7 @@ content =
     log global
     bind $${:ip}:$${:port} ssl crt $${frontend-instance-certificate:cert-file} alpn h2,http/1.1
     acl is_public path_beg /public/
+    acl is_slapproxy path_beg /slapproxy
     acl auth_ok http_auth(basic-auth-list)
     # writing twice the same ACL is doing OR
     acl is_static path_beg /$${frontend-instance-fonts:folder-name}
@@ -277,7 +280,15 @@ content =
     # No authentication for public folder
     http-request auth unless auth_ok || is_public
     use_backend static if is_static || is_public
+    use_backend slapproxy if is_slapproxy
     default_backend nodejs
+
+  backend slapproxy
+    log global
+    server slapproxy_backend $${slapos-standalone-config:ipv4}:$${slapos-standalone-config:port}
+    http-request set-header X-Forwarded-Proto https
+    http-request set-header X-Forwarded-Prefix /slapproxy
+    http-request replace-path /slapproxy(/)?(.*) /\2
 
   backend nodejs
     log global
@@ -305,7 +316,7 @@ ip = $${frontend-instance-config:ip}
 hostname = $${frontend-instance-config:hostname}
 port = $${frontend-instance-config:port}
 pidfile = $${directory:pidfiles}/$${:_buildout_section_name_}.pid
-url = https://$${:hostname}:$${:port}/
+url = https://$${:hostname}:$${:port}
 
 [frontend-instance-fonts]
 ; XXX python server only serves one folder
@@ -580,6 +591,7 @@ software-root = $${directory:runner}/software
 instance-root = $${directory:runner}/instance
 {% endif %}
 local-software-release-root = $${directory:home}
+public-directory-path = $${slapos-repository:location}
 slapos-bin = ${buildout:bin-directory}/slapos
 slapos-configuration = $${directory:runner}/etc/slapos.cfg
 computer-id = slaprunner
