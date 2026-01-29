@@ -108,6 +108,9 @@
       "items": {
         "title": "IMPU",
         "type": "object",
+        "required": [
+          "impu"
+        ],
         "additionalProperties": false,
         "properties": {
           "impu": {
@@ -143,6 +146,10 @@
       "items": {
         "title": "Route",
         "type": "object",
+        "required": [
+          "ipv6_remote_addr_prefix",
+          "prefix_len"
+        ],
         "additionalProperties": false,
         "properties": {
           "ipv6_remote_addr_prefix": {
