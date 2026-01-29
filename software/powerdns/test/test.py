@@ -35,6 +35,7 @@ import unittest
 import urllib
 
 from slapos.recipe.librecipe import generateHashFromFiles
+from slapos.test.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 skip = unittest.skip('port conflit between powerdns instances')
@@ -444,3 +445,7 @@ class TestMultipleInstances(TestSlaveRequestDomains):
     self._test_slaves(
       dns_quantity=int(self.getInstanceParameterDict()['-dns-quantity'])
     )
+
+class TestPowerDNSReplicateMonitoringPropagation(
+  MonitoringPropagationTestMixin, PowerDNSTestCase):
+  """Verify monitor-interface-url propagation"""
