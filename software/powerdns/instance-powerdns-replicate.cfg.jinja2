@@ -89,7 +89,6 @@ username = admin
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8099
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 username = admin
 password = ${monitor-htpasswd:passwd}
 
@@ -117,7 +116,7 @@ config-ns-record = {{ ns_record }}
 config-{{parameter}} = {{ value }}
 {% endfor -%}
 config-{{ slave_list_name }} = {{ json_module.dumps(slave_instance_list) }}
-config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.node.vifib.com') }}
+config-monitor-interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com/#page=ojsm_landing') }}
 config-monitor-username = admin
 config-monitor-password = ${monitor-htpasswd:passwd}
 
