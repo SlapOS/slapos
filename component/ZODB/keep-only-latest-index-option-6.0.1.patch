@@ -1,0 +1,164 @@
+From 797e7a1586c9aece58f3e49913aadda0670263dd Mon Sep 17 00:00:00 2001
+From: Kazuhiko Shiozaki <kazuhiko@nexedi.com>
+Date: Wed, 16 Apr 2025 07:22:24 +0000
+Subject: [PATCH] repozo: cleanup dumped index files to make rsync'ish backup
+ more efficient.
+
+* keep the latest index only.
+* always use the fixed filename for the latest index and make a symlink
+  to it having the original datetime based filename.
+
+/reviewed-on https://lab.nexedi.com/nexedi/ZODB/-/merge_requests/2
+---
+ src/ZODB/scripts/repozo.py            | 36 ++++++++++++++++++++++++++-
+ src/ZODB/scripts/tests/test_repozo.py |  3 +++
+ 2 files changed, 38 insertions(+), 1 deletion(-)
+
+diff --git a/src/ZODB/scripts/repozo.py b/src/ZODB/scripts/repozo.py
+index 015418c1..69e03827 100755
+--- a/src/ZODB/scripts/repozo.py
++++ b/src/ZODB/scripts/repozo.py
+@@ -58,6 +58,12 @@ Options for -B/--backup:
+         backup files (and associated metadata files) from the repository
+         directory.
+ 
++    -K / --keep-only-latest-index
++        If a full backup is created, keep the latest index file only as the
++        fixed filename and make a symlink to it having the original datetime
++        based filename. Enabling this will reduce the date transfer using
++        rsync'ish backup.
++
+ Options for -R/--recover:
+     -D str
+     --date=str
+@@ -100,6 +106,7 @@ Options for -V/--verify:
+ 
+ import errno
+ import getopt
++import glob
+ import gzip
+ import os
+ import re
+@@ -175,7 +182,7 @@ def error(msg, *args):
+ def parseargs(argv):
+     global VERBOSE
+     try:
+-        opts, args = getopt.getopt(argv, 'BRVvhr:f:FQzkD:o:w',
++        opts, args = getopt.getopt(argv, 'BRVvhr:f:FQzkD:o:wK',
+                                    ['backup',
+                                     'recover',
+                                     'verify',
+@@ -190,6 +197,7 @@ def parseargs(argv):
+                                     'date=',
+                                     'output=',
+                                     'with-verify',
++                                    'keep-only-latest-index',
+                                     ])
+     except getopt.error as msg:
+         usage(1, msg)
+@@ -205,6 +213,7 @@ def parseargs(argv):
+         gzip = False        # -z flag state
+         killold = False     # -k flag state
+         withverify = False  # -w flag state
++        keep_only_latest_index = False  # -K flag state
+ 
+     options = Options()
+ 
+@@ -243,6 +252,8 @@ def parseargs(argv):
+             options.killold = True
+         elif opt in ('-w', '--with-verify'):
+             options.withverify = True
++        elif opt in ('-K', '--keep-only-latest-index'):
++            options.keep_only_latest_index = True
+         else:
+             assert False, (opt, arg)
+ 
+@@ -277,6 +288,9 @@ def parseargs(argv):
+         if options.full and options.quick:
+             log('--quick option is ignored if --full option is used')
+             options.quick = None
++        if options.keep_only_latest_index:
++            log('--keep-only-latest-index option is ignored in recover mode')
++            options.keep_only_latest_index = False
+     else:
+         assert options.mode == VERIFY
+         if options.date is not None:
+@@ -300,6 +314,9 @@ def parseargs(argv):
+         if options.withverify:
+             log('--with-verify option is ignored in verify mode')
+             options.withverify = False
++        if options.keep_only_latest_index:
++            log('--keep-only-latest-index option is ignored in recover mode')
++            options.keep_only_latest_index = False
+     return options
+ 
+ 
+@@ -597,6 +614,8 @@ def do_full_backup(options):
+     log('writing index')
+     fs._index.save(pos, index_file)
+     fs.close()
++    if options.keep_only_latest_index:
++        keep_only_latest_index(options)
+     log('writing full backup: %s bytes to %s', pos, dest)
+     sum = copyfile(options, dest, 0, pos)
+     # Write the data file for this full backup
+@@ -629,6 +648,8 @@ def do_incremental_backup(options, reposz, repofiles):
+                               gen_filename(options, '.index', tnow))
+     fs._index.save(pos, index_file)
+     fs.close()
++    if options.keep_only_latest_index:
++        keep_only_latest_index(options)
+     log('writing incremental: %s bytes to %s',  pos-reposz, dest)
+     sum = copyfile(options, dest, reposz, pos - reposz)
+     # The first file in repofiles points to the last full backup.  Use this to
+@@ -644,6 +665,19 @@ def do_incremental_backup(options, reposz, repofiles):
+     fp.close()
+ 
+ 
++def keep_only_latest_index(options):
++    index_file_list = glob.glob(os.path.join(options.repository, '*.index'))
++    index_file_list.sort()
++    for index_file in index_file_list[:-1]:
++        os.remove(index_file)
++    if not os.path.islink(index_file_list[-1]):
++        latest_index_file = os.path.join(options.repository, 'index.latest')
++        if os.path.isfile(latest_index_file):
++            os.remove(latest_index_file)
++        os.rename(index_file_list[-1], latest_index_file)
++        os.symlink(os.path.basename(latest_index_file), index_file_list[-1])
++
++
+ def do_backup(options):
+     repofiles = find_files(options)
+     # See if we need to do a full backup
+diff --git a/src/ZODB/scripts/tests/test_repozo.py b/src/ZODB/scripts/tests/test_repozo.py
+index 9d5696e7..bd344124 100644
+--- a/src/ZODB/scripts/tests/test_repozo.py
++++ b/src/ZODB/scripts/tests/test_repozo.py
+@@ -356,6 +356,7 @@ class OptionsTestBase:
+         class Options:
+             repository = self._repository_directory
+             date = None
++            keep_only_latest_index = False
+ 
+             def __init__(self, **kw):
+                 self.__dict__.update(kw)
+@@ -799,6 +800,7 @@ class Test_do_incremental_backup(OptionsTestBase, unittest.TestCase):
+                                     killold=False,
+                                     test_now=(2010, 5, 14, 10, 51, 22),
+                                     date=None,
++                                    keep_only_latest_index=True,
+                                     )
+         fullfile = os.path.join(self._repository_directory,
+                                 '2010-05-14-00-00-00.fs')
+@@ -836,6 +838,7 @@ class Test_do_incremental_backup(OptionsTestBase, unittest.TestCase):
+                                     killold=False,
+                                     test_now=(2010, 5, 14, 10, 51, 22),
+                                     date=None,
++                                    keep_only_latest_index=True,
+                                     )
+         fullfile = os.path.join(self._repository_directory,
+                                 '2010-05-14-00-00-00.fs')
+-- 
+2.48.0
+
