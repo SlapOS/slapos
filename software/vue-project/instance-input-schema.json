@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Parameters to instantiate a Vue frontend project",
+  "additionalProperties": false,
+  "required": [],
+  "properties": {
+    "repo-url": {
+      "title": "Repository URL",
+      "description": "Vue project repository URL",
+      "type": "string",
+      "default": "https://lab.nexedi.com/Daetalus/hello-vue.git"
+    },
+    "revision": {
+      "title": "Revision",
+      "description": "Vue project repository revision",
+      "type": "string",
+      "default": "f8f22a708b43223e38b8629cc67ab0d6e00ecc5f"
+    }
+  }
+}
