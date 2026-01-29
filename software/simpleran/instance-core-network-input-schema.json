@@ -81,6 +81,9 @@
       "items": {
         "title": "PDN",
         "type": "object",
+        "required": [
+          "name"
+        ],
         "additionalProperties": false,
         "properties": {
           "name": {
