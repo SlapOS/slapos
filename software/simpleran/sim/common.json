@@ -108,6 +108,9 @@
       "items": {
         "title": "IMPU",
         "type": "object",
+        "required": [
+          "impu"
+        ],
         "additionalProperties": false,
         "properties": {
           "impu": {
