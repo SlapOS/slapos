@@ -10,6 +10,13 @@
       "response": "instance-gitlab-output-schema.json",
       "index": 0
     },
+    "gitlab": {
+      "title": "Gitlab",
+      "description": "Gitlab export instance configuration",
+      "request": "instance-gitlab-input-schema.json",
+      "response": "instance-gitlab-output-schema.json",
+      "index": 1
+    },
     "gitlab-export": {
       "title": "Gitlab with backup",
       "description": "Gitlab export instance configuration, same as default",
