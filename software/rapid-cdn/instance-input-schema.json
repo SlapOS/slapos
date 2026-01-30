@@ -237,6 +237,35 @@
       "default": 4000
     }
   },
+  "patternProperties": {
+    "^-frontend-[0-9]+-software-release-url$": {
+      "description": "Software release URL for frontend instance (indexed).",
+      "title": "Frontend N Software Release URL",
+      "type": "string",
+      "format": "uri"
+    },
+    "^-frontend-[0-9]+-state$": {
+      "description": "State for frontend instance (indexed).",
+      "title": "Frontend N State",
+      "type": "string"
+    },
+    "^-frontend-config-[0-9]+-ram-cache-size$": {
+      "description": "RAM cache size for frontend config (indexed). The value can be provided with suffix 'K', 'M', 'G'.",
+      "title": "Frontend Config N RAM Cache Size",
+      "type": "string"
+    },
+    "^-kedifa-software-release-url$": {
+      "description": "Software release URL for KeDiFa.",
+      "title": "KeDiFa Software Release URL",
+      "type": "string",
+      "format": "uri"
+    },
+    "^-sla-[0-9]+-computer_guid$": {
+      "description": "Computer GUID for SLA instance (indexed).",
+      "title": "SLA N Computer GUID",
+      "type": "string"
+    }
+  },
   "additionalProperties": false,
   "title": "Input Parameters",
   "type": "object"
