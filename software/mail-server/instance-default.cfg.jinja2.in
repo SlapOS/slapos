@@ -798,7 +798,6 @@ init =
 {%   do relay_requests.append('request-relay-' ~ mail_domain) %}
 [request-relay-{{ mail_domain }}]
 <= slap-connection
-recipe = slapos.cookbook:requestoptional.serialised
 software-url = {{ slapparameter_dict['relay-sr-url'] }}
 software-type = cluster
 shared = true
@@ -807,10 +806,12 @@ config-name = {{ mail_domain }}
 config-mail-server-host = {{ ipv6 }}
 config-mail-server-port = {{ dumps(smtp_port) }}
 {% if not slapparameter_dict['no-relay'] %}
+recipe = slapos.cookbook:request.serialised
 return =
   outbound-host
   outbound-smtp-port
 {% else -%}
+recipe = slapos.cookbook:requestoptional.serialised
 state = destroyed
 {% endif %}
 {% endfor %}
