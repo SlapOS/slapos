@@ -5660,8 +5660,8 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
     return {
       '_': json.dumps({
         'domain': 'example.com',
-        'apache-certificate': cls.certificate_pem,
-        'apache-key': cls.key_pem,
+        'apache-certificate': cls.certificate_pem.decode(),
+        'apache-key': cls.key_pem.decode(),
         'port': HTTPS_PORT,
         'plain_http_port': HTTP_PORT,
         'kedifa_port': KEDIFA_PORT,
@@ -5820,8 +5820,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     return {
       '_': json.dumps({
         'domain': 'example.com',
-        'apache-certificate': cls.certificate_pem,
-        'apache-key': cls.key_pem,
+        'apache-certificate': cls.certificate_pem.decode(),
+        'apache-key': cls.key_pem.decode(),
         'port': HTTPS_PORT,
         'plain_http_port': HTTP_PORT,
         'kedifa_port': KEDIFA_PORT,
@@ -6392,8 +6392,8 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
   def getInstanceParameterDict(cls):
     if 'apache-certificate' not in cls.instance_parameter_dict:
       cls.instance_parameter_dict.update(**{
-        'apache-certificate': cls.certificate_pem,
-        'apache-key': cls.key_pem,
+        'apache-certificate': cls.certificate_pem.decode(),
+        'apache-key': cls.key_pem.decode(),
       })
     return {
       '_': json.dumps(cls.instance_parameter_dict)
@@ -7224,35 +7224,28 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       cls.kedifa_sr, cls.slap._computer_id, state="destroyed")
     super(TestPassedRequestParameter, cls).tearDownClass()
 
-  instance_parameter_dict = {
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
-  }
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      '_': json.dumps(cls.instance_parameter_dict)
-    }
-
-  def test(self):
-    self.instance_parameter_dict.update({
       # master partition parameters
       '-frontend-quantity': 3,
-      '-sla-2-computer_guid': self.slap._computer_id,
-      '-sla-3-computer_guid': self.slap._computer_id,
+      '-sla-2-computer_guid': cls.slap._computer_id,
+      '-sla-3-computer_guid': cls.slap._computer_id,
       '-frontend-2-state': 'stopped',
-      '-frontend-2-software-release-url': self.frontend_2_sr,
+      '-frontend-2-software-release-url': cls.frontend_2_sr,
       '-frontend-3-state': 'stopped',
-      '-frontend-3-software-release-url': self.frontend_3_sr,
-      '-kedifa-software-release-url': self.kedifa_sr,
+      '-frontend-3-software-release-url': cls.frontend_3_sr,
+      '-kedifa-software-release-url': cls.kedifa_sr,
       'automatic-internal-kedifa-caucase-csr': False,
       'automatic-internal-backend-client-caucase-csr': False,
       # all nodes partition parameters
-      'apache-certificate': self.certificate_pem,
-      'apache-key': self.key_pem,
+      'apache-certificate': cls.certificate_pem.decode(),
+      'apache-key': cls.key_pem.decode(),
       'domain': 'example.com',
       'enable-http2-by-default': True,
       're6st-verification-url': 're6st-verification-url',
@@ -7265,9 +7258,9 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       '-frontend-config-1-ram-cache-size': '512K',
       '-frontend-config-2-ram-cache-size': '256K',
     })
+  }
 
-    # re-request instance with updated parameters
-    self.requestDefaultInstance()
+  def test(self):
 
     # run once instance, it's only needed for later checks
     try:
