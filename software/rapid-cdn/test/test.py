@@ -5403,6 +5403,12 @@ class ReplicateSlaveMixin(object):
     _, *prefixlen = self._ipv6_address.split('/')
     return bool(prefixlen and int(prefixlen[0]) < 127)
 
+  @classmethod
+  def updateDefaultInstanceParameterDict(cls, parameter_dict):
+    cls._instance_parameter_dict = {
+      "_": json.dumps(parameter_dict)
+    }
+
   def requestSecondFrontend(self, final_state='stopped'):
     ipv6_collision = not self.frontends1And2HaveDifferentIPv6()
     # now instantiate 2nd partition in started state
@@ -5413,6 +5419,7 @@ class ReplicateSlaveMixin(object):
       '-frontend-1-state': 'stopped',
       '-frontend-2-state': 'started',
     })
+    self.updateDefaultInstanceParameterDict(self.instance_parameter_dict)
     self.requestDefaultInstance()
     self.requestSlaves()
     try:
@@ -5427,6 +5434,7 @@ class ReplicateSlaveMixin(object):
         '-frontend-1-state': 'started',
         '-frontend-2-state': final_state,
       })
+      self.updateDefaultInstanceParameterDict(self.instance_parameter_dict)
       self.requestDefaultInstance()
       for _ in range(3):
         try:
