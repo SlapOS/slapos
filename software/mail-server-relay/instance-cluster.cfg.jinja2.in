@@ -161,6 +161,6 @@ init =
       else:
         section += """
   outbound-host =
-  outbound-smtp-port =
+  outbound-smtp-port = 10025
         """
     self.buildout.parse(section)
