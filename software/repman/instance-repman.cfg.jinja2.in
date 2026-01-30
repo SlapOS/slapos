@@ -652,7 +652,6 @@ database-dict = {{ db_name_dict }}
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 username = admin
 password = ${publish-early:monitor-password}
 
