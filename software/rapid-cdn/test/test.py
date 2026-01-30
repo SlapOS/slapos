@@ -1766,6 +1766,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'strict-transport-security-sub-domains': True,
         'strict-transport-security-preload': True,
       },
+      'https-url-only': {
+        'https-url': cls.backend_url + 'https',
+      },
       'https-url-netloc-list': {
         'url': cls.backend_url + 'http',
         'https-url': cls.backend_url + 'https',
@@ -5340,6 +5343,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPResult(parameter_dict['domain'], 'path')
     # assure that the request went to backend NOT specified in the netloc
     self.assertNotIn('X-Backend-Identification', result.headers)
+
+  def test_https_url_only(self):
+    parameter_dict = self.assertSlaveBase('https-url-only')
+    raise NotImplementedError('https-url-only')
 
 
 class TestSlaveHttp3(TestSlave):
