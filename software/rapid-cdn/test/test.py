@@ -300,12 +300,13 @@ class TestDataMixin(object):
   maxDiff = None
 
   def getTrimmedProcessInfo(self):
-    return '\n'.join(sorted([
+    return '\n'.join([
       '%(group)s:%(name)s %(statename)s' % q for q
       in self.callSupervisorMethod('getAllProcessInfo')
-      if q['name'] != 'watchdog' and q['group'] != 'watchdog']))
+      if q['name'] != 'watchdog' and q['group'] != 'watchdog'])
 
-  def assertTestData(self, runtime_data, data_replacement_dict=None, msg=None):
+  def assertTestData(self, runtime_data, data_replacement_dict=None, msg=None,
+                     resort=True):
     if data_replacement_dict is None:
       data_replacement_dict = {}
     filename = '%s.txt' % (self.id(),)
@@ -326,6 +327,12 @@ class TestDataMixin(object):
       else:
         runtime_data = runtime_data.replace(value, replacement)
 
+    if resort:
+      # stabilize the comparison and output
+      def resort(s):
+        return '\n'.join(sorted(s.splitlines())).strip()
+      test_data = resort(test_data)
+      runtime_data = resort(runtime_data)
     longMessage = self.longMessage
     self.longMessage = True
     try:
@@ -335,11 +342,11 @@ class TestDataMixin(object):
         msg=msg
       )
     except AssertionError:
+      raise
+    finally:
       if os.environ.get('SAVE_TEST_DATA', '0') == '1':
         with open(test_data_file, 'w') as fh:
           fh.write(runtime_data.strip() + '\n')
-      raise
-    finally:
       self.longMessage = longMessage
 
   def _test_file_list(self, slave_dir_list, IGNORE_PATH_LIST=None):
@@ -353,7 +360,7 @@ class TestDataMixin(object):
             entry[0][len(self.instance_path) + 1:], filename)
           if not any([path.endswith(q) for q in IGNORE_PATH_LIST]):
             runtime_data.append(path)
-    runtime_data = '\n'.join(sorted(runtime_data))
+    runtime_data = '\n'.join(runtime_data)
     self.assertTestData(runtime_data)
 
   def test00file_list_log(self):
@@ -505,7 +512,8 @@ class TestDataMixin(object):
     )
     # again some mangling -- allow subclasses to update on need
     self._updateDataReplacementDict(data_replacement_dict)
-    self.assertTestData(json_data, data_replacement_dict=data_replacement_dict)
+    self.assertTestData(json_data, data_replacement_dict=data_replacement_dict,
+                        resort=False)
 
 
 def fakeSetupHeaders(headers):
@@ -559,7 +567,7 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
                    headers=None, source_ip=SOURCE_IP, verb='GET',
-                   timeout=None):
+                   timeout=None, http3=False):
   headers = fakeSetupHeaders(headers)
   if 'Host' not in headers:
     headers['Host'] = '%s:%s' % (domain, port)
@@ -574,7 +582,8 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
     resolve_all={
       port: TEST_IP
     },
-    timeout=timeout
+    timeout=timeout,
+    http3=http3
   )
 
 
@@ -941,7 +950,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         # ATS adds to existing header, so ","
         self.assertEqual(
           expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
-          'http/1.0 rapid-cdn-cache-%(via_id)s '
+          'https/1.0 rapid-cdn-cache-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
           via_header
@@ -1766,6 +1775,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'strict-transport-security-sub-domains': True,
         'strict-transport-security-preload': True,
       },
+      'https-url-only': {
+        'https-url': cls.backend_url + 'https',
+      },
       'https-url-netloc-list': {
         'url': cls.backend_url + 'http',
         'https-url': cls.backend_url + 'https',
@@ -2252,7 +2264,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # to have working monitor with local proxy
     with open(os.path.join(
       partition_path, 'etc', 'httpd-cors.cfg')) as fh:
-      self.assertTestData(fh.read().strip())
+      self.assertTestData(fh.read().strip(), resort=False)
 
   def test_node_information_json(self):
     node_information_file_path = glob.glob(os.path.join(
@@ -2408,7 +2420,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         [
           'http/1.1 clientvia',
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s, '
-          'http/1.1 rapid-cdn-cache-%(via_id)s' % dict(
+          'https/1.1 rapid-cdn-cache-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
@@ -2489,7 +2501,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       '_Url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _Url-http\/_Url-backend-http '
+      r'http-backend~ _Url-http\/_Url-backend-http '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
@@ -5341,6 +5353,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # assure that the request went to backend NOT specified in the netloc
     self.assertNotIn('X-Backend-Identification', result.headers)
 
+  def test_https_url_only(self):
+    parameter_dict = self.assertSlaveBase('https-url-only')
+    raise NotImplementedError('https-url-only')
+
 
 class TestSlaveHttp3(TestSlave):
   @classmethod
@@ -5489,19 +5505,9 @@ class TestReplicateSlave(
       parameter_dict
     )
 
-    result = fakeHTTPSResult(
-      parameter_dict['domain'], 'test-path')
-
-    self.assertEqual(
-      self.certificate_pem,
-      result.certificate)
-
-    self.assertEqualResultJson(result, 'Path', '/test-path')
-
-    result_http = fakeHTTPResult(
-      parameter_dict['domain'], 'test-path')
-    self.assertEqual(http.client.FOUND, result_http.status_code)
-
+    # Note: No access assertions are done, as this test is using two frontend
+    #       nodes and it's quite impossible to set up working CDN in test
+    #       environment due to having only one IPv4.
     # prove replication by asserting that slave ended up in both nodes
     frontend_haproxy_cfg_list = glob.glob(
       os.path.join(self.instance_path, '*', 'etc', 'frontend-haproxy.cfg'))
@@ -7709,7 +7715,7 @@ backend _health-check-default-http
       '_health-check-failover-url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'https-backend _health-check-failover-url-https-failover'
+      r'https-backend~ _health-check-failover-url-https-failover'
       r'\/_health-check-failover-url-backend-https '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'503 \d+ - - ---- '
@@ -7724,7 +7730,7 @@ backend _health-check-default-http
       '_health-check-failover-url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _health-check-failover-url-http-failover'
+      r'http-backend~ _health-check-failover-url-http-failover'
       r'\/_health-check-failover-url-backend-http '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'503 \d+ - - ---- '
@@ -7999,6 +8005,113 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNotIn('Installing _deleted-', slapgrid_log)
     self.assertIn('Uninstalling _deleted-', slapgrid_log)
     self.assertNotIn('Updating _deleted-', slapgrid_log)
+
+
+class TestCDNHTTP(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'enable-http3': True,
+      'enable-http2-by-default': True,
+      'http3-port': HTTPS_PORT,
+    }
+
+  ignore_status_code_slave_list = [
+    'cdnhttp1.example.com',
+    'cdnhttp2.example.com',
+    'cdnhttp3.example.com',
+  ]
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'cdnhttp1': {
+        'https-only': False,
+        'enable-http2': False,
+        'enable-http3': False,
+      },
+      'cdnhttp2': {
+        'https-only': False,
+        'enable-http2': True,
+        'enable-http3': False,
+      },
+      'cdnhttp3': {
+        'https-only': False,
+        'enable-http2': True,
+        'enable-http3': True,
+      },
+      'backendhttp10cdhttp1': {
+        'https-only': False,
+        'url': cls.backend_url,
+        'enable-http2': False,
+        'enable-http3': False,
+      },
+      'backendhttp10cdnhttp2': {
+        'https-only': False,
+        'url': cls.backend_url,
+        'enable-http2': True,
+        'enable-http3': False,
+      },
+      'backendhttp10cdnhttp3': {
+        'https-only': False,
+        'url': cls.backend_url,
+        'enable-http2': True,
+        'enable-http3': True,
+      }
+    }
+
+  def test(self):
+    def get_url_info(url, **kwargs):
+      if 'http3' not in kwargs:
+        kwargs['http3'] = False
+      try:
+        result = mimikra.get(
+          url=url, verify=False, allow_redirects=False,
+          resolve_all={HTTPS_PORT: TEST_IP, HTTP_PORT: TEST_IP},
+          **kwargs
+        )
+        return {
+          'header-connection': result.headers.get('connection'),
+          'effective_http_version': result.effective_http_version
+        }
+      except CurlException as e:
+        return {'CurlException.command_returncode': e.command_returncode}
+
+    result_list = []
+    for parameter_dict in self.getSlaveConnectionParameterDictDict().values():
+      url_https = 'https://%s:%s/' % (parameter_dict['domain'], HTTPS_PORT)
+      url_http = 'http://%s:%s/' % (parameter_dict['domain'], HTTP_PORT)
+
+      for url in url_https, url_http:
+        for kw in [
+          dict(http10=True),
+          dict(http11=True),
+          dict(http2=True),
+          dict(http3=True),
+        ]:
+          result_list.append({
+            'url': url,
+            'request_kw': kw,
+            'result_dict': get_url_info(url, **kw)
+          })
+
+    def formatresult(result_list):
+      format_list = []
+      for entry in result_list:
+        format_entry = []
+        format_entry.append(
+          '%s -- %s' % (entry['url'], entry['request_kw']))
+        format_entry.append('-->')
+        for key in sorted(entry['result_dict'].keys()):
+          format_entry.append('%s: %s' % (key, entry['result_dict'][key]))
+        format_list.append(' '.join(format_entry))
+      return '\n'.join(format_list)
+    self.assertTestData(formatresult(result_list))
 
 
 if __name__ == '__main__':
