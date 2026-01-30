@@ -41,10 +41,14 @@ class enbWebSocket:
 
     def send(self, msg):
         self.ws.send(json.dumps(msg))
-    def recv(self, message_type):
-        for i in range(1,20):
+    def recv(self, message_type=None, key=None):
+        for i in range(1,10):
             r = json.loads(self.ws.recv())
-            if r['message'] == message_type:
+            if message_type and r['message'] == message_type:
+                return r
+            if key and key in r:
+                return r
+            if not key and not message_type:
                 return r
 
     def stats(self):
@@ -53,8 +57,21 @@ class enbWebSocket:
             "samples": True,
             "rf": True
         })
-        r = self.recv('stats')
-        self.logger.info('Samples stats', extra={'data': json.dumps(r)})
+        r = self.recv(message_type='stats')
+        self.send({
+            "message": "rf",
+            "rf_info": True
+        })
+        r.update(self.recv(message_type='rf'))
+        self.send({
+            "message": "s1",
+        })
+        r.update(self.recv(key="s1_list"))
+        self.send({
+            "message": "ng",
+        })
+        r.update(self.recv(key="ng_list"))
+        self.logger.info('Amarisoft Stats', extra={'data': json.dumps(r)})
 
 if __name__ == '__main__':
     ws = enbWebSocket()
