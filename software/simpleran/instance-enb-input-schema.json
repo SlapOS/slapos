@@ -612,6 +612,12 @@
       "type": "boolean",
       "default": true
     },
+    "check_core_network": {
+      "title": "Check all S1 and NG connections",
+      "description": "check-core-network promise will fail if any S1 or NG connection is not setup",
+      "type": "boolean",
+      "default": true
+    },
     "wendelin_telecom_software_release_url": {
       "title": "Wendelin Telecom Software Release URL",
       "description": "URL of the Wendelin Telecom Software Release to use to request a shared instance",
