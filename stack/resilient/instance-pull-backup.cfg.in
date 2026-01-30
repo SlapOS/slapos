@@ -256,7 +256,6 @@ monitor-setup-url = $${monitor-publish:monitor-setup-url}
 [monitor-instance-parameter]
 monitor-httpd-port = {{ slapparameter_dict.get('monitor-httpd-port', 8070) }}
 monitor-title = {{ slapparameter_dict.get('monitor-title', 'PBS Instance') }}
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', '') }}
 username = {{ slapparameter_dict.get('monitor-username', 'admin') }}
 password = {{ slapparameter_dict.get('monitor-password', '$${monitor-htpasswd:passwd}') }}
 
