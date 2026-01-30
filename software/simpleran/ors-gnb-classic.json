@@ -1,27 +1,9 @@
 {
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ORS eNB / gNB Duo",
+  "title": "Input Parameters",
   "properties": {
-    "n_antenna_dl": {
-      "$ref": "ru/common.json#/$defs/n_antenna_dl",
-      "enum": [
-        1,
-        2,
-        4
-      ],
-      "default": 2
-    },
-    "n_antenna_ul": {
-      "$ref": "ru/common.json#/$defs/n_antenna_ul",
-      "enum": [
-        1,
-        2,
-        4
-      ],
-      "default": 2
-    },
-    "plmn_list_5g": {
+    "plmn_list": {
       "$ref": "instance-enb-input-schema.json#/properties/plmn_list_5g",
       "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: PLMN 00101 and TAC 1)",
       "default": [
