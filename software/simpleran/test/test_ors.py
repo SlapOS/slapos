@@ -145,6 +145,7 @@ enb_param_dict = {
     },
     'management': {
         'xlog_forwarding_enabled': False,
+        'check_core_network': False,
     },
 }
 gnb_param_dict = {
@@ -176,6 +177,7 @@ gnb_param_dict = {
     },
     'management': {
         'xlog_forwarding_enabled': False,
+        'check_core_network': False,
     },
 }
 gnb_param_dict1 = {
