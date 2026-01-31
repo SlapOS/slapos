@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Version 1.0.461 (2026-01-22)
+-------------
+
+* Support gNB + eNB mode on ORS Duo
+* Publish more parameters and re-organize them for better readability
+* Add gtp_payload_mtu parameter
+* Add ignore_gbr_congestion option
+* Add disk check promise to avoid logs filling disk
+* Add MME / AMF Backup option
+
 Version 1.0.457 (2025-12-17)
 -------------
 
