@@ -381,7 +381,7 @@ monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
 [replicate]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional.serialised
-config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com/#page=ojsm_landing') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
@@ -514,7 +514,7 @@ custom-group = instance-publish-slave-information:output
 [request-kedifa]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional.serialised
-config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-interface-url = {{ slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com/#page=ojsm_landing') }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
