@@ -3,15 +3,13 @@
   "title": "UE. Common properties",
   "type": "object",
   "required": [
-    "ue_type",
-    "rue_addr"
+    "ue_type"
   ],
   "properties": {
     "rue_addr": {
       "title": "[Required] Remote UE address",
       "description": "[Required] Address of remote UE server. Default port is 2152.",
-      "type": "string",
-      "default": ""
+      "type": "string"
     },
     "imsi": {
       "$ref": "../sim/common.json#/properties/imsi",
