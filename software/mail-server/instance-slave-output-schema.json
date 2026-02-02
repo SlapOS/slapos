@@ -2,7 +2,9 @@
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Values returned by account creation",
-  "required": ["address"],
+  "required": [
+    "address"
+  ],
   "properties": {
     "address": {
       "title": "E-mail address",
@@ -17,7 +19,9 @@
           "type": "string"
         }
       },
-      "required": ["error"]
+      "required": [
+        "error"
+      ]
     },
     {
       "properties": {
@@ -30,7 +34,10 @@
           "type": "string"
         }
       },
-      "required": ["token", "setup-url"]
+      "required": [
+        "token",
+        "setup-url"
+      ]
     }
   ]
 }

@@ -2,7 +2,5 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Values returned by mail server cluster",
   "type": "object",
-  "properties": {
-
-  }
+  "properties": {}
 }
