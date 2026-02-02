@@ -21,14 +21,23 @@
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "description": "Define the TDD UL/DL configuration.",
-      "type": "object",
       "anyOf": [
+        {
+          "title": "Pre-defined configurations",
+          "type": "string",
+          "enum": [
+            "DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default",
+            "DDDSUUDDDD (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, same ratios as default",
+            "DDDSUUUUDD (5ms,   5DL/4UL), S-slot=6DL:4GP:4UL, balanced downlink and uplink",
+            "DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink",
+            "DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink",
+            "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink",
+            "DDDSU      (2.5ms, 3DL/1UL), S-slot=10DL:2GP:2UL, reduced latency"
+          ]
+        },
         {
           "title": "Expert only: manual configuration",
           "type": "object",
-          "required": [
-            "pattern1"
-          ],
           "additionalProperties": false,
           "properties": {
             "pattern1": {
@@ -123,13 +132,6 @@
     },
     "pattern": {
       "type": "object",
-      "required": [
-        "period",
-        "dl_slots",
-        "ul_slots",
-        "dl_symbols",
-        "ul_symbols"
-      ],
       "additionalProperties": false,
       "properties": {
         "period": {
