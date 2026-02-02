@@ -47,6 +47,15 @@
     "integ_algo_pref": {
       "$ref": "cell/nr/input-schema.json#/properties/integ_algo_pref"
     },
+    "trs_presence": {
+      "$ref": "cell/nr/input-schema.json#/properties/trs_presence"
+    },
+    "uss": {
+      "$ref": "cell/nr/input-schema.json#/properties/uss"
+    },
+    "prach_config_index": {
+      "$ref": "cell/nr/input-schema.json#/properties/prach_config_index"
+    },
     "amarisoft_ssb_computation": {
       "title": "Expert: Enable Amarisoft SSB Computation",
       "description": "Export only. Enable this to let Amarisoft generate SSB NR ARFCN instead of Simpleran. Warning: enabling this will prevent SSB NR ARFCN to be correctely displayed in the connection parameters, you will need to check gNB log to know the value Amarisoft computed.",
