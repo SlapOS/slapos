@@ -18,21 +18,6 @@
       "$ref": "../../cell/common.json#/$defs/cell_type",
       "const": "nr"
     },
-    "tdd_ul_dl_config3": {
-      "title": "TDD Configuration 2",
-      "description": "TDD Configuration 2",
-      "type": "string",
-      "oneOf": [
-        {
-          "const": "1",
-          "title": "Test 1"
-        },
-        {
-          "const": "2",
-          "title": "Test 2"
-        }
-      ]
-    },
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "type": "string",
