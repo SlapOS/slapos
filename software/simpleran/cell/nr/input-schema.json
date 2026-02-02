@@ -38,6 +38,9 @@
         {
           "title": "Expert only: manual configuration",
           "type": "object",
+          "required": [
+            "pattern1"
+          ],
           "additionalProperties": false,
           "properties": {
             "pattern1": {
@@ -132,6 +135,13 @@
     },
     "pattern": {
       "type": "object",
+      "required": [
+        "period",
+        "dl_slots",
+        "ul_slots",
+        "dl_symbols",
+        "ul_symbols"
+      ],
       "additionalProperties": false,
       "properties": {
         "period": {
@@ -139,16 +149,16 @@
           "description": "DL/UL transmission periodicity in ms.",
           "type": "number",
           "enum": [
-            "0.5",
-            "0.625",
-            "1",
-            "1.25",
-            "2",
-            "2.5",
-            "3",
-            "4",
-            "5",
-            "10"
+            0.5,
+            0.625,
+            1,
+            1.25,
+            2,
+            2.5,
+            3,
+            4,
+            5,
+            10
           ]
         },
         "dl_slots": {
