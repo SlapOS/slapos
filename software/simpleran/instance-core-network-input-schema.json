@@ -19,7 +19,7 @@
         "anyOf": [
           {
             "title": "Automatic address",
-            "description": "IPv4 LAN: IPv4 on the ethernet LAN the Core Network is connected to. Ipv6 Re6st address: acquired through the Re6st VPN software. Localhost address: for eNBs / gNBs running on the same machine",
+            "description": "IPv4 LAN: IPv4 on the ethernet LAN the Core Network is connected to. Ipv6 Re6st address: acquired through the Re6st VPN software. Localhost address: for eNBs / gNBs running on the same machine (default: Localhost address)",
             "type": "string",
             "enum": [
               "IPv4 LAN address",
@@ -76,7 +76,7 @@
     },
     "pdn_list": {
       "title": "PDN list",
-      "description": "Configure the available EPS Packet Data Networks and 5GS Data Network Names.",
+      "description": "Configure the available EPS Packet Data Networks and 5GS Data Network Names. All PDNs will have the same IP range. (default: internet, default and sos)",
       "type": "array",
       "items": {
         "title": "PDN",
