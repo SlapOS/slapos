@@ -13,6 +13,7 @@
     },
     "amf_list": {
       "$ref": "instance-enb-input-schema.json#/properties/amf_list",
+      "description": "List of AMF to which the gNodeB is connected. (default: Local Core Network, 127.0.1.100)",
       "default": [
         {
           "name": "Local Core Network",
