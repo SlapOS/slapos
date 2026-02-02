@@ -21,7 +21,7 @@
       "anyOf": [
         {
           "title": "Automatic address",
-          "description": "Automatic: based on MME / AMF list. IPv4 LAN: IPv4 on the ethernet LAN the eNB / gNB is connected to. Ipv6 Re6st address: acquired through the Re6st VPN software. Localhost address: for core networks running on the same machine",
+          "description": "Automatic: based on MME / AMF list. IPv4 LAN: IPv4 on the ethernet LAN the eNB / gNB is connected to. Ipv6 Re6st address: acquired through the Re6st VPN software. Localhost address: for core networks running on the same machine. (default: Automatic)",
           "type": "string",
           "enum": [
             "Automatic",
@@ -203,7 +203,7 @@
     },
     "nssai": {
       "title": "AMF slices configuration",
-      "description": "AMF slices configuration.",
+      "description": "AMF slices configuration. (default: [{'sst': 1}])",
       "type": "array",
       "items": {
         "title": "AMF slice",
