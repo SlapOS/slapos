@@ -38,18 +38,20 @@
           "title": "Expert only: manual configuration",
           "description": "Format: 'ip_address' or 'ip_address:port'",
           "type": "object",
+          "required": [
+            "pattern1"
+          ],
           "additionalProperties": false,
           "properties": {
-            "sst": {
-              "default": 1,
-              "title": "Slice Service Type",
-              "description": "Integer (range 1 to 255).",
-              "type": "number"
+            "pattern1": {
+              "$ref": "#/$defs/pattern",
+              "title": "First TDD Pattern",
+              "description": "Definition of the first TDD pattern."
             },
-            "sd": {
-              "title": "Slice Differentiator",
-              "description": "Optional integer (range 0 to 0xFFFFFE)",
-              "type": "string"
+            "pattern2": {
+              "$ref": "#/$defs/pattern",
+              "title": "Second TDD Pattern (optional)",
+              "description": "Definition of the second TDD pattern."
             }
           }
         }
@@ -130,6 +132,57 @@
       "title": "Tracking Area Code",
       "description": "Tracking Area Code (range: 0x0001 to 0xffffff except 0xfffffe, format: integer or hexadecimal starting by 0x)",
       "type": "string"
+    },
+    "pattern": {
+      "type": "object",
+      "required": [
+        "period",
+        "dl_slots",
+        "ul_slots",
+        "dl_symbols",
+        "ul_symbols"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "period": {
+          "title": "Period",
+          "description": "DL/UL transmission periodicity in ms.",
+          "type": "number",
+          "enum": [
+            "0.5",
+            "0.625",
+            "1",
+            "1.25",
+            "2",
+            "2.5",
+            "3",
+            "4",
+            "5",
+            "10"
+          ]
+        },
+        "dl_slots": {
+          "title": "Downlink Slots",
+          "description": "Number of downlink slots.",
+          "type": "number"
+        },
+        "ul_slots": {
+          "title": "Uplink Slots",
+          "description": "Number of uplink slots.",
+          "type": "number"
+        },
+        "dl_symbols": {
+          "title": "Downlink Symbols",
+          "description": "Number of downlink symbols after the last complete downlink slot.",
+          "type": "number"
+        },
+        "ul_symbols": {
+          "title": "Uplink Symbols",
+          "description": "Number of uplink symbols before the first complete uplink slot.",
+          "type": "number"
+        }
+      },
+      "default": 1
     }
   }
 }
