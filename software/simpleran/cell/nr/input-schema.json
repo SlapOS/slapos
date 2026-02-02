@@ -20,10 +20,11 @@
     },
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
-      "type": "string",
+      "description": "Define the TDD UL/DL configuration.",
       "anyOf": [
         {
           "title": "Pre-defined configurations",
+          "type": "string",
           "enum": [
             "DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default",
             "DDDSUUDDDD (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, same ratios as default",
@@ -36,7 +37,6 @@
         },
         {
           "title": "Expert only: manual configuration",
-          "description": "Format: 'ip_address' or 'ip_address:port'",
           "type": "object",
           "required": [
             "pattern1"
