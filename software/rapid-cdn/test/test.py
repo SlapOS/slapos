@@ -6445,6 +6445,12 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
       parameter_dict
     )
 
+  @classmethod
+  def updateDefaultInstanceParameterDict(cls, parameter_dict):
+    cls._instance_parameter_dict = {
+      "_": json.dumps(parameter_dict)
+    }
+
   def test_apache_key_apache_certificate_update(self):
     parameter_dict = self.assertSlaveBase('ssl_from_master')
 
@@ -6465,10 +6471,11 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
       ])
 
     self.instance_parameter_dict.update(**{
-      'apache-certificate': certificate_pem,
-      'apache-key': key_pem,
+      'apache-certificate': certificate_pem.decode(),
+      'apache-key': key_pem.decode(),
 
     })
+    self.updateDefaultInstanceParameterDict(self.instance_parameter_dict)
     self.requestDefaultInstance()
     self.slap.waitForInstance()
     self.runKedifaUpdater()
