@@ -2719,14 +2719,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     try:
       # allow SSL downgrade on the backend...
-      instance_parameter_dict = self.getInstanceParameterDict()
+      instance_parameter_dict = json.loads(self.getInstanceParameterDict()['_'])
       instance_parameter_dict[
-        "-frontend-config-1-expert-backend-allow-downgrade-ssl"] = "true"
+        "-frontend-config-1-expert-backend-allow-downgrade-ssl"] = True
       self.slap.request(
           software_release=self.getSoftwareURL(),
           software_type=self.getInstanceSoftwareType(),
           partition_reference=self.default_partition_reference,
-          partition_parameter_kw=instance_parameter_dict,
+          partition_parameter_kw={"_": json.dumps(instance_parameter_dict)},
           state='started')
       # 1st run -- to update the master
       self.slap.waitForInstance(self.instance_max_retry)

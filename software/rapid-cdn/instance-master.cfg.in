@@ -420,7 +420,9 @@ config-cluster-identification = {{ instance_parameter_dict['root-instance-title'
 config-{{ config_key }} = {{ dumps(config_value) }}
 {%-     endfor -%}
 {%-     for config_key, config_value in base_node_configuration_dict.items() %}
+{%-       if not config_key in node_configuration_dict %}
 config-{{ config_key }} = {{ dumps(config_value) }}
+{%-       endif %}
 {%-     endfor -%}
 {%-     if frontend_request.get('sla') %}
 {%-       for parameter, value in frontend_request.get('sla').items() %}
