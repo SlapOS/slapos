@@ -1560,7 +1560,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
       {
         'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
         'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
-        'domain': 'None',
+        'domain': 'example.org',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
@@ -1682,7 +1682,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
       {
         'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
         'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
-        'domain': 'None',
+        'domain': 'example.org',
         'accepted-slave-amount': '0',
         'rejected-slave-amount': '0',
         'slave-amount': '0',
