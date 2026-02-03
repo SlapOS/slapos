@@ -7239,28 +7239,41 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       cls.kedifa_sr, cls.slap._computer_id, state="destroyed")
     super(TestPassedRequestParameter, cls).tearDownClass()
 
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      '_': json.dumps({
+  instance_parameter_dict = {
       'port': HTTPS_PORT,
       'plain_http_port': HTTP_PORT,
       'kedifa_port': KEDIFA_PORT,
       'caucase_port': CAUCASE_PORT,
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "_": json.dumps(cls.instance_parameter_dict)
+    }
+
+  @classmethod
+  def updateDefaultInstanceParameterDict(cls, parameter_dict):
+    cls._instance_parameter_dict = {
+      "_": json.dumps(parameter_dict)
+    }
+
+  def test(self):
+    self.instance_parameter_dict.update({
       # master partition parameters
       '-frontend-quantity': 3,
-      '-sla-2-computer_guid': cls.slap._computer_id,
-      '-sla-3-computer_guid': cls.slap._computer_id,
+      '-sla-2-computer_guid': self.slap._computer_id,
+      '-sla-3-computer_guid': self.slap._computer_id,
       '-frontend-2-state': 'stopped',
-      '-frontend-2-software-release-url': cls.frontend_2_sr,
+      '-frontend-2-software-release-url': self.frontend_2_sr,
       '-frontend-3-state': 'stopped',
-      '-frontend-3-software-release-url': cls.frontend_3_sr,
-      '-kedifa-software-release-url': cls.kedifa_sr,
+      '-frontend-3-software-release-url': self.frontend_3_sr,
+      '-kedifa-software-release-url': self.kedifa_sr,
       'automatic-internal-kedifa-caucase-csr': False,
       'automatic-internal-backend-client-caucase-csr': False,
       # all nodes partition parameters
-      'apache-certificate': cls.certificate_pem.decode(),
-      'apache-key': cls.key_pem.decode(),
+      'apache-certificate': self.certificate_pem.decode(),
+      'apache-key': self.key_pem.decode(),
       'domain': 'example.com',
       'enable-http2-by-default': True,
       're6st-verification-url': 're6st-verification-url',
@@ -7273,9 +7286,10 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       '-frontend-config-1-ram-cache-size': '512K',
       '-frontend-config-2-ram-cache-size': '256K',
     })
-  }
 
-  def test(self):
+    self.updateDefaultInstanceParameterDict(self.instance_parameter_dict)
+    # re-request instance with updated parameters
+    self.requestDefaultInstance()
 
     # run once instance, it's only needed for later checks
     try:
@@ -7293,7 +7307,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       instance_title = parameter_dict['instance_title']
       if '_' in parameter_dict:
         # "flatten" the instance parameter
-        parameter_dict = json.loads(parameter_dict['_'])
+        parameter_dict.update(json.loads(parameter_dict.pop('_')))
       partition_parameter_dict_dict[instance_title] = parameter_dict
       parameter_dict[
         'X-software_release_url'] = partition.getSoftwareRelease().getURI()
@@ -7313,12 +7327,24 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     assertKeyWithPop(
       partition_parameter_dict_dict['caddy-frontend-3'],
       'master-key-download-url')
-    assertKeyWithPop(
-      partition_parameter_dict_dict['testing partition 0'],
-      'timestamp')
-    assertKeyWithPop(
-      partition_parameter_dict_dict['testing partition 0'],
-      'ip_list')
+    check_is_present_parameter_list = [
+      'instance_title',
+      'ip_list',
+      'full_address_list',
+      'root_instance_title',
+      'slap_computer_id',
+      'slap_computer_partition_id',
+      'slap_software_release_url',
+      'slap_software_type',
+      'slave_instance_list',
+      'timestamp',
+    ]
+    for partition_title in ('caddy-frontend-1', 'caddy-frontend-2',
+                           'caddy-frontend-3', 'kedifa', 'testing partition 0'):
+      for parameter in check_is_present_parameter_list:
+        assertKeyWithPop(
+          partition_parameter_dict_dict[partition_title],
+          parameter)
 
     monitor_password = partition_parameter_dict_dict[
       'caddy-frontend-1'].pop('monitor-password')
@@ -7354,6 +7380,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'domain': 'example.com',
         'enable-http2-by-default': True,
         'enable-http3': False,
+        'expert-backend-allow-downgrade-ssl': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-1',
         'http3-port': 443,
@@ -7366,7 +7393,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ram-cache-size': '512K',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': 100,
-        'slave-kedifa-information': '{}'
+        'slave-kedifa-information': '{}',
       },
       'caddy-frontend-2': {
         'X-software_release_url': self.frontend_2_sr,
@@ -7381,6 +7408,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'domain': 'example.com',
         'enable-http2-by-default': True,
         'enable-http3': False,
+        'expert-backend-allow-downgrade-ssl': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-2',
         'http3-port': 443,
@@ -7393,7 +7421,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ram-cache-size': '256K',
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': 100,
-        'slave-kedifa-information': '{}'
+        'slave-kedifa-information': '{}',
       },
       'caddy-frontend-3': {
         'X-software_release_url': self.frontend_3_sr,
@@ -7408,6 +7436,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'domain': 'example.com',
         'enable-http2-by-default': True,
         'enable-http3': False,
+        'expert-backend-allow-downgrade-ssl': False,
         'extra_slave_instance_list': '[]',
         'frontend-name': 'caddy-frontend-3',
         'http3-port': 443,
@@ -7419,7 +7448,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'port': 11443,
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': 100,
-        'slave-kedifa-information': '{}'
+        'slave-kedifa-information': '{}',
       },
       'kedifa': {
         'X-software_release_url': self.kedifa_sr,
@@ -7438,7 +7467,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         '-frontend-3-state': 'stopped',
         '-frontend-config-1-ram-cache-size': '512K',
         '-frontend-config-2-ram-cache-size': '256K',
-        '-frontend-quantity': '3',
+        '-frontend-quantity': 3,
         '-kedifa-software-release-url': self.kedifa_sr,
         '-sla-2-computer_guid': 'local',
         '-sla-3-computer_guid': 'local',
@@ -7454,19 +7483,11 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'ciphers': 'ciphers',
         'domain': 'example.com',
         'enable-http2-by-default': True,
-        'full_address_list': [],
-        'instance_title': 'testing partition 0',
         'kedifa_port': 15080,
         'plain_http_port': 11080,
         'port': 11443,
         're6st-verification-url': 're6st-verification-url',
         'request-timeout': 100,
-        'root_instance_title': 'testing partition 0',
-        'slap_computer_id': 'local',
-        'slap_computer_partition_id': 'T-0',
-        'slap_software_release_url': base_software_url,
-        'slap_software_type': 'default',
-        'slave_instance_list': []
       }
     }
     self.assertEqual(
