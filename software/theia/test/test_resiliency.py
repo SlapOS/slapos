@@ -35,6 +35,8 @@ import sqlite3
 import subprocess
 import time
 
+from base64 import urlsafe_b64encode
+
 import requests
 
 from slapos.proxy.db_version import DB_VERSION
@@ -236,6 +238,7 @@ class ExportAndImportMixin(object):
     initial_exitdate = os.path.getmtime(exitfile)
 
     # Call the import script manually
+    breakpoint()
     theia_import_script = self.getPartitionPath('import', 'bin', 'theia-import-script')
     subprocess.check_call((theia_import_script,), stderr=subprocess.STDOUT)
 
@@ -346,7 +349,8 @@ class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
 
   def test_signature_mismatch(self):
     signature_file = self.getPartitionPath('import', self.signature_relpath)
-    self.writeFile(signature_file, 'Bogus Hash\n', mode='a')
+    bogus_path = urlsafe_b64encode('bogus/path'.encode()).decode()
+    self.writeFile(signature_file, 'bogushash ' + bogus_path + '\n', mode='a')
     self.assertImportFailure('ERROR the backup signatures do not match')
 
   def test_restore_script_error(self):

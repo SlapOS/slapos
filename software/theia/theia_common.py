@@ -7,7 +7,6 @@ import re
 import shutil
 import subprocess
 import sqlite3
-from base64 import urlsafe_b64encode
 
 import six
 import zc.buildout.configparser
@@ -99,6 +98,15 @@ def remove(path):
       raise
 
 
+def rmtree(path):
+  try:
+    shutil.rmtree(path)
+  except OSError as e:
+    if e.errno != errno.ENOENT:
+      raise
+
+
+
 def parse_installed(partition):
   paths = []
   for cfg in glob.glob(os.path.join(partition, '.installed*.cfg')):
@@ -149,27 +157,39 @@ def sha256sum(file_path, chunk_size=1024 * 1024):
   return sha256.hexdigest()
 
 
+def ordered_walk(root_dir):
+  for dirpath, dirnames, filenames in os.walk(root_dir):
+    dirnames.sort() # in-place sort affects recursive walk
+    filenames.sort()
+    yield dirpath, dirnames, filenames
+
+
+def encodepath(path):
+  # safe path representation on a single line
+  # probably the same as repr()
+  return path.encode('unicode_escape').decode('raw_unicode_escape')
+  # decode: code.encode('raw_unicode_escape').decode('unicode_escape')
+
+
 def fast_hashwalk(root_dir):
-  for dirpath, dirnames, filenames in os.walk(root_dir):
+  for dirpath, dirnames, filenames in ordered_walk(root_dir):
     for f in filenames:
       filepath = os.path.join(dirpath, f)
       if os.path.isfile(filepath):
-        displaypath = os.path.relpath(filepath, start=root_dir)
-        displaypath = urlsafe_b64encode(displaypath.encode()).decode()
-        yield '%s %s' % (sha256sum(filepath), displaypath)
+        relpath = encodepath(os.path.relpath(filepath, start=root_dir))
+        yield '%s %s' % (sha256sum(filepath), relpath)
 
 
-def exclude_hashwalk(root_dir, instance_dir):
+def exclude_hashwalk(root_dir, exclude):
   root_dir = os.path.abspath(root_dir)
-  instance_dir = os.path.abspath(instance_dir)
-  for dirpath, dirnames, filenames in os.walk(root_dir):
+  exclude = set(os.path.abspath(p) for p in exclude)
+  for dirpath, dirnames, filenames in ordered_walk(root_dir):
     for f in filenames:
       filepath = os.path.join(dirpath, f)
       if os.path.isfile(filepath):
-        displaypath = os.path.relpath(filepath, start=root_dir)
-        displaypath = urlsafe_b64encode(displaypath.encode()).decode()
-        yield '%s %s' % (sha256sum(filepath), displaypath)
-    if dirpath == instance_dir:
+        relpath = encodepath(os.path.relpath(filepath, start=root_dir))
+        yield '%s %s' % (sha256sum(filepath), relpath)
+    if dirpath in exclude:
       remaining_dirs = []
       for d in dirnames:
         if not d.startswith('slappart'):
@@ -177,10 +197,9 @@ def exclude_hashwalk(root_dir, instance_dir):
       dirnames[:] = remaining_dirs
 
 
-def hashwalk(root_dir, instance_dir=None):
-  if instance_dir and not os.path.relpath(
-      instance_dir, start=root_dir).startswith(os.pardir):
-    return exclude_hashwalk(root_dir, instance_dir)
+def hashwalk(root_dir, *exclude):
+  if exclude:
+    return exclude_hashwalk(root_dir, exclude)
   return fast_hashwalk(root_dir)
 
 
@@ -204,8 +223,7 @@ def cwd(path):
 def hashcustom(partition, script):
   workingdir = os.path.join(partition, os.pardir, os.pardir, os.pardir)
   with cwd(os.path.abspath(workingdir)):
-    for dirpath, dirnames, filenames in os.walk(partition):
-      dirnames.sort()
+    for dirpath, dirnames, filenames in ordered_walk(partition):
       filepaths = []
       for f in filenames:
         path = os.path.join(dirpath, f)
@@ -227,7 +245,16 @@ def hashcustom(partition, script):
         msg += "\nand stderr:\n%s" % bytes2str(err)
         raise Exception(msg)
       signatures = bytes2str(out).strip('\n').split('\n')
-      signatures.sort()
-      displaypath = os.path.relpath(dirpath, start=partition)
+      # signatures.sort() # input filepaths are already sorted
+      relpath = encodepath(os.path.relpath(dirpath, start=partition))
       for s in signatures:
-        yield '%s %s' % (s, displaypath)
+        yield '%s %s' % (s, relpath)
+
+
+def sign(outsidedir, signaturefile, signatures):
+  remove(signaturefile)
+  tmpfile = os.path.join(outsidedir, os.path.basename(signaturefile) + '.tmp')
+  with open(tmpfile, 'w') as f:
+    for s in signatures:
+      f.write(s + '\n')
+  shutil.move(tmpfile, signaturefile)
