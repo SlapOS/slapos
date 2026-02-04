@@ -24,6 +24,9 @@
     "xlog_forwarding_enabled": {
       "$ref": "instance-enb-input-schema.json#/properties/xlog_forwarding_enabled"
     },
+    "check_core_network": {
+      "$ref": "instance-enb-input-schema.json#/properties/check_core_network"
+    },
     "wendelin_telecom_software_release_url": {
       "$ref": "instance-enb-input-schema.json#/properties/wendelin_telecom_software_release_url"
     },
