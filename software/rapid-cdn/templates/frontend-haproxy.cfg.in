@@ -1,8 +1,4 @@
-{%- if configuration['http3-enable'] == 'True' %}
-{%-   set HTTP3 = True %}
-{%- else %}
-{%-   set HTTP3 = False %}
-{%- endif %}
+{%- set HTTP3 = configuration['http3-enable'] %}
 global
   pidfile {{ configuration['pid-file'] }}
   # master-worker is compatible with foreground with process management
