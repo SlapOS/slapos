@@ -1,0 +1,15 @@
+{
+  "name": "SSH",
+  "description": "SSH software release which provide the SSH service",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-asterisk-input-schema.json",
+      "response": "instance-asterisk-output-schema.json",
+      "index": 1
+    }
+  }
+}
