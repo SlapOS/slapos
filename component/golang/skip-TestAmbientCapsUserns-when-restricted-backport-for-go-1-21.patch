@@ -1,0 +1,30 @@
+diff --git a/src/syscall/exec_linux.go b/src/syscall/exec_linux.go
+index dfbb38ac16..b2a6ad73bb 100644
+--- a/src/syscall/exec_linux.go
++++ b/src/syscall/exec_linux.go
+@@ -53,6 +53,10 @@ const (
+ 
+ // SysProcIDMap holds Container ID to Host ID mappings used for User Namespaces in Linux.
+ // See user_namespaces(7).
++//
++// Note that User Namespaces are not available on a number of popular Linux
++// versions (due to security issues), or are available but subject to AppArmor
++// restrictions like in Ubuntu 24.04.
+ type SysProcIDMap struct {
+ 	ContainerID int // Container ID.
+ 	HostID      int // Host ID.
+diff --git a/src/syscall/exec_linux_test.go b/src/syscall/exec_linux_test.go
+index f4ff7bf81b..f3e0f2fbc6 100644
+--- a/src/syscall/exec_linux_test.go
++++ b/src/syscall/exec_linux_test.go
+@@ -538,6 +538,10 @@ func TestAmbientCaps(t *testing.T) {
+ }
+ 
+ func TestAmbientCapsUserns(t *testing.T) {
++	b, err := os.ReadFile("/proc/sys/kernel/apparmor_restrict_unprivileged_userns")
++	if err == nil && strings.TrimSpace(string(b)) == "1" {
++		t.Skip("AppArmor restriction for unprivileged user namespaces is enabled")
++	}
+ 	testAmbientCaps(t, true)
+ }
+ 
