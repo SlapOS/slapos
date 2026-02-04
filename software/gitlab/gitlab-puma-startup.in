@@ -54,15 +54,15 @@ fi
 #
 # Assets compilation is handled at instance deployment time. We do everything else here.
 
-# make sure all migrations are up
-migrate_log="{{ log_dir }}/db-migrate-`date +%s`.log"
-$RAKE db:migrate >$migrate_log 2>&1  || die "db:migrate failed"
-
 # XXX - Fix for For gitlab 15
 # migration crash with 'check constraint "check_70f294ef54" is violated by some row'
 # https://gitlab.com/gitlab-org/gitlab/-/merge_requests/112765#note_1395472875
 OATID=$(psql -AXqtc 'SELECT id FROM oauth_access_tokens WHERE expires_in IS NULL LIMIT 1;')
 test -n "$OATID" && psql -c 'UPDATE oauth_access_tokens SET expires_in = '86400' WHERE id = $OATID;'
+
+# make sure all migrations are up
+migrate_log="{{ log_dir }}/db-migrate-`date +%s`.log"
+$RAKE db:migrate >$migrate_log 2>&1  || die "db:migrate failed"
 
 # if it was a no-op "migration" - we don't need info about that - only keep
 # logs of actual migration run.
