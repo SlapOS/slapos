@@ -1,11 +1,4 @@
-{%- set http3_enable_value = configuration['http3-enable'] %}
-{%- if http3_enable_value is boolean %}
-{%-   set HTTP3 = http3_enable_value %}
-{%- elif str(http3_enable_value).lower() in ['y', 'yes', '1', 'true'] %}
-{%-   set HTTP3 = True %}
-{%- else %}
-{%-   set HTTP3 = False %}
-{%- endif %}
+{%- set HTTP3 = configuration['http3-enable'] %}
 global
   pidfile {{ configuration['pid-file'] }}
   # master-worker is compatible with foreground with process management
