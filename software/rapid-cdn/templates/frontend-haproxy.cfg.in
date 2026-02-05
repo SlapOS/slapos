@@ -2,7 +2,8 @@
 {%-   set HTTP3 = True %}
 {%- else %}
 {%-   set HTTP3 = False %}
-{%- endif %}global
+{%- endif %}
+global
   pidfile {{ configuration['pid-file'] }}
   # master-worker is compatible with foreground with process management
   master-worker
