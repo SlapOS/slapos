@@ -24,7 +24,7 @@
   {
     "_": {
       "cluster-identification": "testing partition 0",
-      "monitor-cors-domains": "monitor.app.officejs.com",
+      "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
       "monitor-httpd-port": "8402",
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
@@ -57,7 +57,7 @@
       "http3-port": "443",
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:8890",
       "master-key-download-url": "https://[@@_ipv6_address@@]:7879/@@master-key-download-url_endpoint@@",
-      "monitor-cors-domains": "monitor.app.officejs.com",
+      "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
       "monitor-httpd-port": 8411,
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
