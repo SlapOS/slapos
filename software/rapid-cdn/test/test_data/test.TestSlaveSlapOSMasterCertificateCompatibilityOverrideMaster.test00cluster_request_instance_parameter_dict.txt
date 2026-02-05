@@ -18,7 +18,7 @@
     "slap_software_type": "default",
     "slave_instance_list": [
       {
-        "enable_cache": "true",
+        "enable_cache": true,
         "slap_software_type": "default",
         "slave_reference": "_ssl_from_master_kedifa_overrides_master_certificate",
         "slave_title": "_ssl_from_master_kedifa_overrides_master_certificate",
@@ -38,7 +38,7 @@
       "monitor-username": "admin",
       "slave-list": [
         {
-          "enable_cache": "true",
+          "enable_cache": true,
           "slave_reference": "_ssl_from_master_kedifa_overrides_master_certificate",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         }
@@ -68,7 +68,7 @@
       "enable-http2-by-default": true,
       "enable-http3": false,
       "expert-backend-allow-downgrade-ssl": false,
-      "extra_slave_instance_list": "[{\"enable_cache\": \"true\", \"slave_reference\": \"_ssl_from_master_kedifa_overrides_master_certificate\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
+      "extra_slave_instance_list": "[{\"enable_cache\": true, \"slave_reference\": \"_ssl_from_master_kedifa_overrides_master_certificate\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
       "frontend-name": "caddy-frontend-1",
       "http3-port": 443,
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:15090",

@@ -1772,8 +1772,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'backend-connect-retries': 5,
         'request-timeout': 15,
         'strict-transport-security': '200',
-        'strict-transport-security-sub-domains': 'true',
-        'strict-transport-security-preload': 'true',
+        'strict-transport-security-sub-domains': True,
+        'strict-transport-security-preload': True,
       },
       'https-url-netloc-list': {
         'url': cls.backend_url + 'http',
@@ -1792,13 +1792,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': cls.backend_url,
         'server-alias': '',
         'strict-transport-security': '200',
-        'strict-transport-security-sub-domains': 'true',
+        'strict-transport-security-sub-domains': True,
       },
       'server-alias-wildcard': {
         'url': cls.backend_url,
         'server-alias': '*.alias1.example.com',
         'strict-transport-security': '200',
-        'strict-transport-security-preload': 'true',
+        'strict-transport-security-preload': True,
       },
       'server-alias-duplicated': {
         'url': cls.backend_url,
@@ -1811,21 +1811,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'ssl-proxy-verify_ssl_proxy_ca_crt': {
         'url': cls.backend_https_url,
-        'ssl-proxy-verify': 'true',
+        'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': cls.test_server_ca.certificate_pem,
       },
       'ssl-proxy-verify_ssl_proxy_ca_crt-unverified': {
         'url': cls.backend_https_url,
-        'ssl-proxy-verify': 'true',
+        'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': cls.another_server_ca.certificate_pem,
       },
       'ssl-proxy-verify-unverified': {
         'url': cls.backend_https_url,
-        'ssl-proxy-verify': 'true',
+        'ssl-proxy-verify': True,
       },
       'https-only': {
         'url': cls.backend_url,
-        'https-only': 'false',
+        'https-only': False,
       },
       'custom_domain': {
         'url': cls.backend_url,
@@ -1863,20 +1863,20 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'type-zope-prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
+        'prefer-gzip-encoding-to-backend': True,
         'type': 'zope',
       },
       'type-zope-prefer-gzip-encoding-to-backend-https-only': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
+        'prefer-gzip-encoding-to-backend': True,
         'type': 'zope',
-        'https-only': 'false',
+        'https-only': False,
       },
       'type-zope-virtualhostroot-http-port': {
         'url': cls.backend_url,
         'type': 'zope',
         'virtualhostroot-http-port': '12345',
-        'https-only': 'false',
+        'https-only': False,
       },
       'type-zope-virtualhostroot-https-port': {
         'url': cls.backend_url,
@@ -1926,19 +1926,19 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'type-websocket-websocket-transparent-false': {
         'url': cls.backend_url,
         'type': 'websocket',
-        'websocket-transparent': 'false',
+        'websocket-transparent': False,
       },
       'type-websocket-websocket-path-list-websocket-transparent-false': {
         'url': cls.backend_url,
         'type': 'websocket',
         'websocket-path-list': '////ws//// /with%20space/',
-        'websocket-transparent': 'false',
+        'websocket-transparent': False,
       },
       'type-redirect': {
         'url': cls.backend_url,
         'https-url': cls.backend_https_url,
         'type': 'redirect',
-        'https-only': 'false',
+        'https-only': False,
       },
       'type-redirect-custom_domain': {
         'url': cls.backend_url,
@@ -1949,44 +1949,44 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': 'http://example.com/',
         'https-url': 'https://example.com/',
         'type': 'redirect',
-        'https-only': 'false',
+        'https-only': False,
       },
       'enable_cache': {
         'url': cls.backend_url,
-        'enable_cache': 'true',
+        'enable_cache': True,
       },
       'enable_cache_custom_domain': {
         'url': cls.backend_url,
-        'enable_cache': 'true',
+        'enable_cache': True,
         'custom_domain': 'customdomainenablecache.example.com',
       },
       'enable_cache_server_alias': {
         'url': cls.backend_url,
-        'enable_cache': 'true',
+        'enable_cache': True,
         'server-alias': 'enablecacheserveralias1.example.com',
       },
       'enable_cache-disable-no-cache-request': {
         'url': cls.backend_url,
-        'enable_cache': 'true',
+        'enable_cache': True,
         'disable-no-cache-request': True,
       },
       'enable_cache-disable-via-header': {
         'url': cls.backend_url,
-        'enable_cache': 'true',
-        'disable-via-header': 'true',
+        'enable_cache': True,
+        'disable-via-header': True,
       },
       'enable_cache-https-only-false': {
         'url': cls.backend_url,
-        'https-only': 'false',
-        'enable_cache': 'true',
+        'https-only': False,
+        'enable_cache': True,
       },
       'enable-http2-false': {
         'url': cls.backend_url,
-        'enable-http2': 'false',
+        'enable-http2': False,
       },
       'enable-http2-true': {
         'url': cls.backend_url,
-        'enable-http2': 'true',
+        'enable-http2': True,
       },
       'enable-http2-default': {
         'url': cls.backend_url,
@@ -2004,7 +2004,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'enable-http3-default-enable-http2-false': {
         'url': cls.backend_url,
-        'enable-http2': 'false',
+        'enable-http2': False,
       },
       'enable-http3-true-enable-http2-false': {
         'url': cls.backend_url,
@@ -2013,12 +2013,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'prefer-gzip-encoding-to-backend': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
+        'prefer-gzip-encoding-to-backend': True,
       },
       'prefer-gzip-encoding-to-backend-https-only': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
-        'https-only': 'false',
+        'prefer-gzip-encoding-to-backend': True,
+        'https-only': False,
       },
       'disabled-cookie-list': {
         'url': cls.backend_url,
@@ -5466,7 +5466,7 @@ class TestReplicateSlave(
     return {
       'replicate': {
         'url': cls.backend_url,
-        'enable_cache': 'true',
+        'enable_cache': True,
       },
     }
 
@@ -5563,7 +5563,7 @@ class TestReplicateSlaveOtherDestroyed(
     return {
       'empty': {
         'url': cls.backend_url,
-        'enable_cache': 'true',
+        'enable_cache': True,
       }
     }
 
@@ -5616,7 +5616,7 @@ class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'default': {
         'url': cls.backend_url,
-        'enable_cache': 'true'
+        'enable_cache': True
       },
     }
 
@@ -5682,7 +5682,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityOverrideMaster(
     return {
       'ssl_from_master_kedifa_overrides_master_certificate': {
         'url': cls.backend_url,
-        'enable_cache': 'true'
+        'enable_cache': True
       },
     }
 
@@ -5842,7 +5842,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     return {
       'ssl_from_master': {
         'url': cls.backend_url,
-        'enable_cache': 'true',
+        'enable_cache': True,
       },
       'ssl_from_master_kedifa_overrides': {
         'url': cls.backend_url,
@@ -6412,7 +6412,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     return {
       'ssl_from_master': {
         'url': cls.backend_url,
-        'enable_cache': 'true',
+        'enable_cache': True,
       },
     }
 
@@ -6509,12 +6509,12 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     return {
       'default_ciphers': {
         'url': cls.backend_url,
-        'enable_cache': 'true',
+        'enable_cache': True,
       },
       'own_ciphers': {
         'ciphers': 'ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256',
         'url': cls.backend_url,
-        'enable_cache': 'true',
+        'enable_cache': True,
       },
     }
 
@@ -6629,22 +6629,22 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       },
       'SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED': {
         'url': cls.backend_https_url,
-        'ssl-proxy-verify': 'true',
+        'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': 'damaged',
       },
       'SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_EMPTY': {
         'url': cls.backend_https_url,
-        'ssl-proxy-verify': 'true',
+        'ssl-proxy-verify': True,
         'ssl_proxy_ca_crt': '',
       },
       'health-check-failover-SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED': {
         'url': cls.backend_https_url,
-        'health-check-failover-ssl-proxy-verify': 'true',
+        'health-check-failover-ssl-proxy-verify': True,
         'health-check-failover-ssl-proxy-ca-crt': 'damaged',
       },
       'health-check-failover-SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_EMPTY': {
         'url': cls.backend_https_url,
-        'health-check-failover-ssl-proxy-verify': 'true',
+        'health-check-failover-ssl-proxy-verify': True,
         'health-check-failover-ssl-proxy-ca-crt': '',
       },
       'BAD-BACKEND': {
@@ -6705,39 +6705,39 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         'ssl_crt': '${section:option}ssl_crtunsafe\nunsafe',
       },
       'health-check-http-method': {
-        'health-check': 'true',
+        'health-check': True,
         'health-check-http-method': 'WRONG',
       },
       'health-check-timeout': {
-        'health-check': 'true',
+        'health-check': True,
         'health-check-timeout': 'WRONG',
       },
       'health-check-timeout-negative': {
-        'health-check': 'true',
+        'health-check': True,
         'health-check-timeout': '-2',
       },
       'health-check-interval': {
-        'health-check': 'true',
+        'health-check': True,
         'health-check-interval': 'WRONG',
       },
       'health-check-interval-negative': {
-        'health-check': 'true',
+        'health-check': True,
         'health-check-interval': '-2',
       },
       'health-check-rise': {
-        'health-check': 'true',
+        'health-check': True,
         'health-check-rise': 'WRONG',
       },
       'health-check-rise-negative': {
-        'health-check': 'true',
+        'health-check': True,
         'health-check-rise': '-2',
       },
       'health-check-fall': {
-        'health-check': 'true',
+        'health-check': True,
         'health-check-fall': 'WRONG',
       },
       'health-check-fall-negative': {
-        'health-check': 'true',
+        'health-check': True,
         'health-check-fall': '-2',
       }
     }
@@ -7519,16 +7519,16 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'health-check-default': {
         'url': cls.backend_url,
-        'health-check': 'true',
+        'health-check': True,
       },
       'health-check-connect': {
         'url': cls.backend_url,
-        'health-check': 'true',
+        'health-check': True,
         'health-check-http-method': 'CONNECT',
       },
       'health-check-custom': {
         'url': cls.backend_url,
-        'health-check': 'true',
+        'health-check': True,
         'health-check-http-method': 'POST',
         'health-check-http-path': '/POST-path to be encoded',
         'health-check-timeout': '7',
@@ -7537,25 +7537,25 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'health-check-fall': '7',
       },
       'health-check-failover-url': {
-        'https-only': 'false',  # http and https access to check
-        'enable_cache': 'true',
+        'https-only': False,  # http and https access to check
+        'enable_cache': True,
         'health-check-timeout': 1,  # fail fast for test
         'health-check-interval': 1,  # fail fast for test
         'url': cls.backend_url + 'url',
         'https-url': cls.backend_url + 'https-url',
-        'health-check': 'true',
+        'health-check': True,
         'health-check-http-path': '/health-check-failover-url',
         'health-check-failover-url': cls.backend_url + 'failover-url?a=b&c=',
         'health-check-failover-https-url':
         cls.backend_url + 'failover-https-url?a=b&c=',
       },
       'health-check-failover-url-netloc-list': {
-        'https-only': 'false',  # http and https access to check
+        'https-only': False,  # http and https access to check
         'health-check-timeout': 1,  # fail fast for test
         'health-check-interval': 1,  # fail fast for test
         'url': cls.backend_url + 'url',
         'https-url': cls.backend_url + 'https-url',
-        'health-check': 'true',
+        'health-check': True,
         'health-check-http-path': '/health-check-failover-url',
         'health-check-failover-url': cls.backend_url + 'failover-url?a=b&c=',
         'health-check-failover-https-url':
@@ -7567,14 +7567,14 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
           'port_b': cls._server_netloc_b_http_port},
       },
       'health-check-failover-url-auth-to-backend': {
-        'https-only': 'false',  # http and https access to check
+        'https-only': False,  # http and https access to check
         'health-check-timeout': 1,  # fail fast for test
         'health-check-interval': 1,  # fail fast for test
         'url': cls.backend_url + 'url',
         'https-url': cls.backend_url + 'https-url',
-        'health-check': 'true',
+        'health-check': True,
         'health-check-http-path': '/health-check-failover-url-auth-to-backend',
-        'health-check-authenticate-to-failover-backend': 'true',
+        'health-check-authenticate-to-failover-backend': True,
         'health-check-failover-url': 'https://%s:%s/failover-url?a=b&c=' % (
           cls._ipv4_address, cls._server_https_auth_port),
         'health-check-failover-https-url':
@@ -7585,11 +7585,11 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': cls.backend_url,
         'health-check-timeout': 1,  # fail fast for test
         'health-check-interval': 1,  # fail fast for test
-        'health-check': 'true',
+        'health-check': True,
         'health-check-http-path': '/health-check-failover-url-ssl-proxy'
         '-verified',
         'health-check-failover-url': cls.backend_https_url,
-        'health-check-failover-ssl-proxy-verify': 'true',
+        'health-check-failover-ssl-proxy-verify': True,
         'health-check-failover-ssl-proxy-ca-crt':
         cls.test_server_ca.certificate_pem,
       },
@@ -7597,11 +7597,11 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': cls.backend_url,
         'health-check-timeout': 1,  # fail fast for test
         'health-check-interval': 1,  # fail fast for test
-        'health-check': 'true',
+        'health-check': True,
         'health-check-http-path': '/health-check-failover-url-ssl-proxy-verify'
         '-unverified',
         'health-check-failover-url': cls.backend_https_url,
-        'health-check-failover-ssl-proxy-verify': 'true',
+        'health-check-failover-ssl-proxy-verify': True,
         'health-check-failover-ssl-proxy-ca-crt':
         cls.another_server_ca.certificate_pem,
       },
@@ -7609,11 +7609,11 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': cls.backend_url,
         'health-check-timeout': 1,  # fail fast for test
         'health-check-interval': 1,  # fail fast for test
-        'health-check': 'true',
+        'health-check': True,
         'health-check-http-path': '/health-check-failover-url-ssl-proxy-verify'
         '-missing',
         'health-check-failover-url': cls.backend_https_url,
-        'health-check-failover-ssl-proxy-verify': 'true',
+        'health-check-failover-ssl-proxy-verify': True,
       },
     }
 
