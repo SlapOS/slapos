@@ -30,6 +30,27 @@
         }
       }
     },
+    "tdd_ul_dl_config3": {
+      "title": "TDD Configuration3",
+      "description": "Define the TDD UL/DL configuration.",
+      "anyOf": [
+        {
+          "title": "Pre-defined configurations",
+          "type": "string"
+        },
+        {
+          "title": "Expert only: manual configuration",
+          "type": "object",
+          "properties": {
+            "pattern1": {
+              "$ref": "#/$defs/pattern",
+              "title": "First TDD Pattern",
+              "description": "Definition of the first TDD pattern."
+            }
+          }
+        }
+      ]
+    },
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "description": "Define the TDD UL/DL configuration.",
