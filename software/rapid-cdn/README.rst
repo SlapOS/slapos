@@ -18,7 +18,6 @@ Slaves of the root instance are sent as a parameter to requested frontends which
 
 These parameters are:
 
-  * ``-frontend-type`` : the type to deploy frontends with. (defaults to "default")
   * ``-frontend-quantity`` : The quantity of frontends to request (defaults to "1")
   * ``-frontend-i-state``: The state of frontend i
   * ``-frontend-i-software-release-url``: Software release to be used for frontends, defaults to the current software release
@@ -33,7 +32,6 @@ These parameters are:
 For example::
 
   <parameter id="-frontend-quantity">3</parameter>
-  <parameter id="-frontend-type">custom-personal</parameter>
   <parameter id="-frontend-2-state">stopped</parameter>
   <parameter id="-sla-3-computer_guid">COMP-1234</parameter>
   <parameter id="-frontend-3-software-release-url">https://lab.nexedi.com/nexedi/slapos/raw/someid/software/rapid-cdn/software.cfg</parameter>
