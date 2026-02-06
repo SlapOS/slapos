@@ -36,6 +36,9 @@
     "tdd_ul_dl_config2": {
       "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config2"
     },
+    "tdd_ul_dl_config3": {
+      "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config3"
+    },
     "tdd_ul_dl_config": {
       "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
     },
