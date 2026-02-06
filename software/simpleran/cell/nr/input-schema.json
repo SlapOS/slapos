@@ -18,60 +18,6 @@
       "$ref": "../../cell/common.json#/$defs/cell_type",
       "const": "nr"
     },
-    "tdd_ul_dl_config2": {
-      "title": "TDD Configuration2",
-      "description": "Define the TDD UL/DL configuration.",
-      "type": "object",
-      "properties": {
-        "pattern1": {
-          "$ref": "#/$defs/pattern",
-          "title": "First TDD Pattern",
-          "description": "Definition of the first TDD pattern."
-        }
-      }
-    },
-    "tdd_ul_dl_config3": {
-      "title": "TDD Configuration3",
-      "description": "Define the TDD UL/DL configuration.",
-      "anyOf": [
-        { "type": "string", "maxLength": 5 },
-        { "type": "number", "minimum": 0 },
-        {
-          "title": "test",
-          "type": "object",
-          "required": [
-            "name"
-          ],
-          "properties": {
-            "name": {
-              "title": "APN name",
-              "description": "APN name",
-              "type": "string"
-            }
-          }
-        },
-        {
-          "title": "Expert only: manual configuration",
-          "type": "object",
-          "required": [
-            "pattern1"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "pattern1": {
-              "$ref": "#/$defs/pattern",
-              "title": "First TDD Pattern",
-              "description": "Definition of the first TDD pattern."
-            },
-            "pattern2": {
-              "$ref": "#/$defs/pattern",
-              "title": "Second TDD Pattern (optional)",
-              "description": "Definition of the second TDD pattern."
-            }
-          }
-        }
-      ]
-    },
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "description": "Define the TDD UL/DL configuration.",
