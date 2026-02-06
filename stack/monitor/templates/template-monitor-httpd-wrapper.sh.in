@@ -5,13 +5,11 @@ set -e
 
 pid_file="{{ pid_file }}"
 monitor_httpd_conf_file={{ monitor_httpd_conf }}
-to_delete_tmp_files="{{ to_delete_tmp_files }}"
 
 if [ -f "$pid_file" ]; then
     pid=$(cat "$pid_file")
-    result=$(ps aux | grep "^\S*\s*$pid\s")
 
-    if [ -n "$result" ]; then
+    if ps aux | grep "^\S*\s*$pid\s"; then
         # The process with the specified PID is running
         echo "there is a process running with the same pid"
         # Get the command line of the process and replace null characters with spaces
@@ -34,11 +32,11 @@ if [ -f "$pid_file" ]; then
     fi
 fi
 
-if [ -n "$to_delete_tmp_files" ]; then
-  # This is used to clean upcgisocket files
-  # not deleted aftera server shutdown
-  echo "Cleaning tmp files $to_delete_tmp_files before running the server"
-  find `dirname -- "$to_delete_tmp_files"` -wholename "$to_delete_tmp_files" -delete
-fi
+{% if to_delete_tmp_files != '' %}
+# This is used to clean upcgisocket files
+# not deleted aftera server shutdown
+echo "Cleaning tmp files {{ to_delete_tmp_files }} before running the server"
+find `dirname -- "{{ to_delete_tmp_files }}"` -wholename "{{ to_delete_tmp_files }}" -delete
+{% endif %}
 
 exec {{ monitor_httpd_wrapper_path }} "$@"
