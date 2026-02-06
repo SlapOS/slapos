@@ -35,7 +35,21 @@
       "description": "Define the TDD UL/DL configuration.",
       "anyOf": [
         { "type": "string", "maxLength": 5 },
-        { "type": "number", "minimum": 0 }
+        { "type": "number", "minimum": 0 },
+        {
+          "title": "test",
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "title": "APN name",
+              "description": "APN name",
+              "type": "string"
+            }
+          }
+        }
       ]
     },
     "tdd_ul_dl_config": {
