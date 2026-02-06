@@ -18,6 +18,12 @@
       "$ref": "../../cell/common.json#/$defs/cell_type",
       "const": "nr"
     },
+    "trs_presence": {
+      "default": true,
+      "title": "TRS Presence",
+      "description": "Add NZP CSI-RS resources for TRS.",
+      "type": "boolean"
+    },
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "description": "Define the TDD UL/DL configuration.",
