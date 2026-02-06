@@ -49,6 +49,26 @@
               "type": "string"
             }
           }
+        },
+        {
+          "title": "Expert only: manual configuration",
+          "type": "object",
+          "required": [
+            "pattern1"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "pattern1": {
+              "$ref": "#/$defs/pattern",
+              "title": "First TDD Pattern",
+              "description": "Definition of the first TDD pattern."
+            },
+            "pattern2": {
+              "$ref": "#/$defs/pattern",
+              "title": "Second TDD Pattern (optional)",
+              "description": "Definition of the second TDD pattern."
+            }
+          }
         }
       ]
     },
