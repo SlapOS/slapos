@@ -18,12 +18,6 @@
       "$ref": "../../cell/common.json#/$defs/cell_type",
       "const": "nr"
     },
-    "trs_presence": {
-      "default": true,
-      "title": "TRS Presence",
-      "description": "Add NZP CSI-RS resources for TRS.",
-      "type": "boolean"
-    },
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "description": "Define the TDD UL/DL configuration.",
@@ -102,6 +96,68 @@
       "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
       "default": 1
     },
+    "trs_presence": {
+      "default": true,
+      "title": "TRS Presence",
+      "description": "Add NZP CSI-RS resources for TRS.",
+      "type": "boolean"
+    },
+    "prach_config_index": {
+      "title": "Prach Config Index",
+      "description": "Expert Only: Integer (range 0 to 262). prach-ConfigurationIndex parameter. Default is 160 or 156 depending on TDD configuration",
+      "type": "number"
+    },
+    "uss": {
+      "type": "object",
+      "required": [
+        "n_candidates",
+        "dci_0_1_and_1_1"
+      ],
+      "additionalProperties": false,
+      "description": "Expert only: PDCCH UE dedicated search space configuration defined in RRC PDCCH-Config. Default value depends on TDD configuration, see generated configuration file in Monitor App as a reference",
+      "properties": {
+        "n_candidates": {
+          "title": "Number of Candidates List",
+          "description": "Mandatory for the DL BWP #0. nrofCandidates parameters for each aggregation level (1, 2, 4, 8, 16).",
+          "type": "object",
+          "required": [
+            "n_candidates_1",
+            "n_candidates_2",
+            "n_candidates_4",
+            "n_candidates_8",
+            "n_candidates_16"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "n_candidates_1": {
+              "title": "Number of Candidates for aggregation level 1",
+              "$ref": "#/$defs/n_candidates"
+            },
+            "n_candidates_2": {
+              "title": "Number of Candidates for aggregation level 2",
+              "$ref": "#/$defs/n_candidates"
+            },
+            "n_candidates_4": {
+              "title": "Number of Candidates for aggregation level 4",
+              "$ref": "#/$defs/n_candidates"
+            },
+            "n_candidates_8": {
+              "title": "Number of Candidates for aggregation level 8",
+              "$ref": "#/$defs/n_candidates"
+            },
+            "n_candidates_16": {
+              "title": "Number of Candidates for aggregation level 16",
+              "$ref": "#/$defs/n_candidates"
+            }
+          }
+        },
+        "dci_0_1_and_1_1": {
+          "title": "DCI 0_1 and DCI 1_1",
+          "description": "It defines whether DCI 0_1 and 1_1 are used for PDCCH in the search space. It is relevant only if css is false.",
+          "type": "boolean"
+        }
+      }
+    },
     "cipher_algo_pref": {
       "title": "Preferred Cipher algorithms",
       "decription": "Set the preferred algorithms for RRC and User Plane encryption in decreasing order of preference. If none match the UE capabilities, then NEA0 (no encryption) is selected",
@@ -138,6 +194,19 @@
       "title": "Tracking Area Code",
       "description": "Tracking Area Code (range: 0x0001 to 0xffffff except 0xfffffe, format: integer or hexadecimal starting by 0x)",
       "type": "string"
+    },
+    "n_candidates": {
+      "type": "number",
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8
+      ]
     },
     "pattern": {
       "type": "object",
@@ -187,8 +256,7 @@
           "description": "Number of uplink symbols before the first complete uplink slot.",
           "type": "number"
         }
-      },
-      "default": 1
+      }
     }
   }
 }
