@@ -33,9 +33,6 @@
       "title": "Expert: SSB Position Bitmap",
       "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap"
     },
-    "trs_presence": {
-      "$ref": "cell/nr/input-schema.json#/properties/trs_presence"
-    },
     "tdd_ul_dl_config": {
       "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
     },
@@ -49,6 +46,15 @@
     },
     "integ_algo_pref": {
       "$ref": "cell/nr/input-schema.json#/properties/integ_algo_pref"
+    },
+    "trs_presence": {
+      "$ref": "cell/nr/input-schema.json#/properties/trs_presence"
+    },
+    "uss": {
+      "$ref": "cell/nr/input-schema.json#/properties/uss"
+    },
+    "prach_config_index": {
+      "$ref": "cell/nr/input-schema.json#/properties/prach_config_index"
     },
     "amarisoft_ssb_computation": {
       "title": "Expert: Enable Amarisoft SSB Computation",
