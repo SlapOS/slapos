@@ -33,6 +33,9 @@
       "title": "Expert: SSB Position Bitmap",
       "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap"
     },
+    "tdd_ul_dl_config2": {
+      "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config2"
+    },
     "tdd_ul_dl_config": {
       "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
     },
