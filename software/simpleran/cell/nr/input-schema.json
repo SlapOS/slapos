@@ -18,6 +18,18 @@
       "$ref": "../../cell/common.json#/$defs/cell_type",
       "const": "nr"
     },
+    "tdd_ul_dl_config2": {
+      "title": "TDD Configuration2",
+      "description": "Define the TDD UL/DL configuration.",
+      "type": "object",
+      "properties": {
+        "pattern1": {
+          "$ref": "#/$defs/pattern",
+          "title": "First TDD Pattern",
+          "description": "Definition of the first TDD pattern."
+        }
+      }
+    },
     "tdd_ul_dl_config": {
       "title": "TDD Configuration",
       "description": "Define the TDD UL/DL configuration.",
