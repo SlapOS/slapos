@@ -78,6 +78,7 @@ trusted-proxy 0.0.0.0
   id_store_interval {{ parameter_dict['id-store-interval'] }}
 {%- endif %}
   cloudooo_url {{ parameter_dict['cloudooo-url'] }}
+  erp5_catalog_storage {{ parameter_dict['erp5-catalog-storage'] }}
 </product-config>
 
 {% endif -%}
