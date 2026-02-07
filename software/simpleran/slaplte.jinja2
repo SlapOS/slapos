@@ -49,8 +49,9 @@
 
       'cell/lte': {
         'inactivity_timer': 10000,
+        'ignore_gbr_congestion': False,
         'cipher_algo_pref': [],
-        'integ_algo_pref': ['EEA2 (128 bit AES)','EEA1 (Snow 3G)'],
+        'integ_algo_pref': ['EIA2 (128 bit AES)','EIA1 (Snow 3G)'],
       },
       'cell/lte/fdd': {
       },
@@ -60,8 +61,10 @@
 
       'cell/nr': {
         'inactivity_timer': 10000,
+        'ignore_gbr_congestion': False,
+        'trs_presence': True,
         'cipher_algo_pref': [],
-        'integ_algo_pref': ['NEA2 (128 bit AES)','NEA1 (Snow 3G)'],
+        'integ_algo_pref': ['NIA2 (128 bit AES)','NIA1 (Snow 3G)'],
       },
       'cell/nr/fdd': {
         'ssb_pos_bitmap':   '1000',
@@ -499,7 +502,7 @@
   {#- below we continue as if sdr and cpri are both supported by enb simultaneously #}
       args: "{{(dev_argv | join(',')) or '---'}}",
 
-  {%- if ors %}
+  {%- if ors and not sdr100 %}
       rx_antenna:"tx_rx",
       tdd_tx_mod: 1,
   {%- endif %}
