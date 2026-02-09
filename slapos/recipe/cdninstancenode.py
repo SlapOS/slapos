@@ -152,13 +152,13 @@ class DomainValidationDB(LocalDBAccessor):
       (instance_reference, domain, token, validated, timestamp)
     )
 
-class CDNRequestRecipe(InstanceNodeRecipe):
+class CDNInstanceNodeRecipe(InstanceNodeRecipe):
   """
   RequestInstanceListRecipe with custom domain verification for CDN.
   """
 
   def __init__(self, buildout, name, options):
-    super(CDNRequestRecipe, self).__init__(buildout, name, options)
+    super(CDNInstanceNodeRecipe, self).__init__(buildout, name, options)
     self.dns_entry_name = options.get('dns-entry-name', '_slapos-challenge')
     self.domain_validation_db = DomainValidationDB(self.options['domainvalidation-db-path'])
     # Get openssl binary from options (required for SSL validation)
@@ -319,7 +319,7 @@ class CDNRequestRecipe(InstanceNodeRecipe):
     # Remove domain validation and hosts (removeDomainValidationForInstance handles both)
     self.domain_validation_db.removeDomainValidationForInstance(instance_reference)
 
-    # For CDNRequestRecipe, do not call the master to destroy the instance.
+    # For CDNInstanceNodeRecipe, do not call the master to destroy the instance.
     # Simply remove the instance from the local request database.
     try:
       self._removeInstanceFromDB(instance_reference)
@@ -741,9 +741,9 @@ def main():
     if pidfile_lock:
       with pidfile_lock:
         # Create recipe instance
-        recipe = CDNRequestRecipe(
+        recipe = CDNInstanceNodeRecipe(
           buildout=None,
-          name='cdn-request',
+          name='cdn-instance-node',
           options=options
         )
 
@@ -752,9 +752,9 @@ def main():
     else:
       # No PID file locking
       # Create recipe instance
-      recipe = CDNRequestRecipe(
+      recipe = CDNInstanceNodeRecipe(
         buildout=None,
-        name='cdn-request',
+        name='cdn-instance-node',
         options=options
       )
 

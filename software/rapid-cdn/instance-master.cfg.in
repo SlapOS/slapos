@@ -1098,30 +1098,30 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 )}}
 
 [cdn-requester-configuration]
-cdn-requester-log = ${directory:log}/cdn-request.log
+cdn-requester-log = ${directory:log}/cdn-instance-node.log
 instance-db-path = {{ instance_parameter_dict["instance-db-path"] }}
 valided-instance-db-path = {{ instance_parameter_dict["valided-instance-db-path"] }}
 domainvalidation-db-path = ${directory:srv}/domainvalidation-db.sqlite
 openssl = {{ software_parameter_dict['openssl'] }}
 
-[cdn-request]
+[cdn-instance-node]
 recipe = slapos.recipe.template
 url = {{ software_parameter_dict['template_instancenode_config'] }}
 output = ${directory:etc}/instancenode.cfg
 
-[cdn-request-cron]
+[cdn-instance-node-cron]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
-name = cdn-request
+name = cdn-instance-node
 frequency = * * * * *
-command = {{ software_parameter_dict['cdnrequest-bin'] }} --cfg ${cdn-request:output} --pidfile ${buildout:directory}/cdn-request.pid --logfile ${cdn-requester-configuration:cdn-requester-log}
+command = {{ software_parameter_dict['cdninstancenode-bin'] }} --cfg ${cdn-instance-node:output} --pidfile ${buildout:directory}/cdn-instance-node.pid --logfile ${cdn-requester-configuration:cdn-requester-log}
 
 [logrotate-entry-cdn-requester]
 <= logrotate-entry-base
-name = cdn-request
+name = cdn-instance-node
 log = ${cdn-requester-configuration:cdn-requester-log}
 
-[cdn-request-activity-sense]
+[cdn-instance-node-activity-sense]
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 inline =
@@ -1161,7 +1161,7 @@ inline =
             return
 
           # Parse the last line that matches the log format
-          # Format: "2025-12-08 10:58:03,572 - cdn-request - INFO - ..."
+          # Format: "2025-12-08 10:58:03,572 - cdn-instance-node - INFO - ..."
           log_pattern = re.compile(
             r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d{3})'
           )
@@ -1231,12 +1231,12 @@ inline =
           e
         )
 
-[cdn-request-activity-promise]
+[cdn-instance-node-activity-promise]
 recipe = slapos.cookbook:promise.plugin
 eggs =
   slapos.core
-file = ${cdn-request-activity-sense:output}
-output = ${directory:plugins}/cdn_request_activity.py
+file = ${cdn-instance-node-activity-sense:output}
+output = ${directory:plugins}/cdn_instance_node_activity.py
 config-bang-on-failure = false
 
 [check-publish-failsafe-error]
@@ -1280,9 +1280,9 @@ parts =
   master-key-generate-auth-url-ready-promise-anomaly
   master-key-download-url-ready-promise-anomaly
   master-introspection-frontend
-  cdn-request-cron
+  cdn-instance-node-cron
   logrotate-entry-cdn-requester
-  cdn-request-activity-promise
+  cdn-instance-node-activity-promise
 {%- for part in part_list %}
 {{ '  %s' % part }}
 {%- endfor %}
