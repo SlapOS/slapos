@@ -98,12 +98,12 @@
     },
     "trs_presence": {
       "default": true,
-      "title": "TRS Presence",
-      "description": "Add NZP CSI-RS resources for TRS.",
+      "title": "Expert: TRS Presence",
+      "description": "Expert only: Add NZP CSI-RS resources for TRS.",
       "type": "boolean"
     },
     "prach_config_index": {
-      "title": "Prach Config Index",
+      "title": "Expert: Prach Config Index",
       "description": "Expert Only: Integer (range 0 to 262). prach-ConfigurationIndex parameter. Default is 160 or 156 depending on TDD configuration",
       "type": "number"
     },
@@ -119,6 +119,7 @@
       ]
     },
     "uss": {
+      "title": "Expert: PDCCH UE Search Space",
       "type": "object",
       "required": [
         "n_candidates",
