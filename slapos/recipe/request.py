@@ -131,6 +131,14 @@ class Recipe(object):
     requested_state = options.get('state', default_state)
     options['requested-state'] = requested_state
 
+    if options['requested-state'] == 'destroyed' and \
+       options.get('destroy-succeeded', '').lower() in \
+       librecipe.GenericBaseRecipe.TRUE_VALUES:
+      # destruction seems to succeed, nothing to do
+      self._raise_request_exception = None
+      self._raise_request_exception_formatted = None
+      self.instance = None
+      return
     slap = slapmodule.slap()
     slap.initializeConnection(
       options['server-url'],
@@ -165,6 +173,9 @@ class Recipe(object):
           filter_kw=filter_kw, shared=shared, state=requested_state)
       return_parameter_dict = self._getReturnParameterDict(self.instance,
           return_parameters)
+      if options['requested-state'] == 'destroyed':
+        if return_parameter_dict == {}:
+          options['destroy-succeeded'] = 'true'
       # Fetch the instance-guid and the instance-state
       # Note: SlapOS Master does not support it for shared instances
       if not shared:
@@ -195,6 +206,8 @@ class Recipe(object):
       )
       self._raise_request_exception = exc
       self._raise_request_exception_formatted = traceback.format_exc()
+      if options['requested-state'] == 'destroyed':
+        options['destroy-succeeded'] = 'true'
       return_parameter_dict = {}
 
     # Then try to get all the parameters. In case of problem, put empty string.
