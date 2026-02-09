@@ -184,17 +184,14 @@ def exclude_hashwalk(root_dir, exclude):
   root_dir = os.path.abspath(root_dir)
   exclude = set(os.path.abspath(p) for p in exclude)
   for dirpath, dirnames, filenames in ordered_walk(root_dir):
+    if dirpath in exclude:
+      del dirnames[:]
+      continue
     for f in filenames:
       filepath = os.path.join(dirpath, f)
       if os.path.isfile(filepath):
         relpath = encodepath(os.path.relpath(filepath, start=root_dir))
         yield '%s %s' % (sha256sum(filepath), relpath)
-    if dirpath in exclude:
-      remaining_dirs = []
-      for d in dirnames:
-        if not d.startswith('slappart'):
-          remaining_dirs.append(d)
-      dirnames[:] = remaining_dirs
 
 
 def hashwalk(root_dir, *exclude):
@@ -220,10 +217,10 @@ def cwd(path):
     os.chdir(old_path)
 
 
-def hashcustom(partition, script):
-  workingdir = os.path.join(partition, os.pardir, os.pardir, os.pardir)
+def hashcustom(mirror_partition, script):
+  workingdir = os.path.join(mirror_partition, os.pardir, os.pardir, os.pardir)
   with cwd(os.path.abspath(workingdir)):
-    for dirpath, dirnames, filenames in ordered_walk(partition):
+    for dirpath, dirnames, filenames in ordered_walk(mirror_partition):
       filepaths = []
       for f in filenames:
         path = os.path.join(dirpath, f)
@@ -240,13 +237,14 @@ def hashcustom(partition, script):
       out, err = hashprocess.communicate(str2bytes('\0'.join(filepaths)))
       if hashprocess.returncode != 0:
         template = "Custom signature script %s failed on inputs:\n%s"
+        # script = os.path.realpath(script)
         msg = template % (script, '\n'.join(filepaths))
         msg += "\nwith stdout:\n%s" % bytes2str(out)
         msg += "\nand stderr:\n%s" % bytes2str(err)
         raise Exception(msg)
       signatures = bytes2str(out).strip('\n').split('\n')
       # signatures.sort() # input filepaths are already sorted
-      relpath = encodepath(os.path.relpath(dirpath, start=partition))
+      relpath = encodepath(os.path.relpath(dirpath, start=mirror_partition))
       for s in signatures:
         yield '%s %s' % (s, relpath)
 

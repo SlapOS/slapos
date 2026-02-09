@@ -101,11 +101,9 @@ class TheiaExport(object):
 
   def sign_root(self):
     signaturefile = os.path.join(self.signaturedir, 'backup.signature')
-    signatures = hashwalk(
-      self.backup_dir,
-      self.mirror_path(self.instance_dir),
-      self.signaturedir,
-    )
+    exclude = [self.mirror_path(p) for p in self.partition_dirs]
+    exclude.append(self.signaturedir)
+    signatures = hashwalk(self.backup_dir, *exclude)
     self.sign(signaturefile, signatures)
 
   def sign_partition(self, partition):

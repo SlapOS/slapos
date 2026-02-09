@@ -69,6 +69,7 @@ class TheiaImport(object):
     self.mirror_partition_dirs = [p for p in partitions if os.path.isdir(p)]
     self.logs = []
     self.outsidedir = os.path.abspath(os.path.join(self.backup_dir, os.pardir))
+    self.signaturedir = os.path.join(self.backup_dir, 'backup.signatures')
 
   def mirror_path(self, dst):
     return os.path.abspath(os.path.join(
@@ -127,6 +128,8 @@ class TheiaImport(object):
     try:
       run_process(diffcommand)
     except subprocess.CalledProcessError as e:
+      if e.returncode != 1:
+        raise
       template = 'ERROR the backup signatures do not match\n\n%s\n%s'
       msg = template % (' '.join(diffcommand), e.output)
       print(msg)
@@ -138,11 +141,9 @@ class TheiaImport(object):
   def verify_root(self):
     signaturefile = os.path.join(self.signaturedir, 'backup.signature')
     proof = signaturefile + '.proof'
-    signatures = hashwalk(
-      self.backup_dir,
-      self.mirror_path(self.instance_dir),
-      self.signaturedir,
-    )
+    exclude = list(self.mirror_partition_dirs)
+    exclude.append(self.signaturedir)
+    signatures = hashwalk( self.backup_dir, *exclude)
     self.sign(proof, signatures)
     self.diff(signaturefile, proof)
 

@@ -35,8 +35,6 @@ import sqlite3
 import subprocess
 import time
 
-from base64 import urlsafe_b64encode
-
 import requests
 
 from slapos.proxy.db_version import DB_VERSION
@@ -238,7 +236,6 @@ class ExportAndImportMixin(object):
     initial_exitdate = os.path.getmtime(exitfile)
 
     # Call the import script manually
-    breakpoint()
     theia_import_script = self.getPartitionPath('import', 'bin', 'theia-import-script')
     subprocess.check_call((theia_import_script,), stderr=subprocess.STDOUT)
 
@@ -255,8 +252,10 @@ class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
   script_relpath = os.path.join(
     'srv', 'runner', 'instance', 'slappart0',
     'srv', '.backup_identity_script')
+  signature_folder_relpath = os.path.join(
+    'srv', 'backup', 'theia', 'backup.signatures')
   signature_relpath = os.path.join(
-    'srv', 'backup', 'theia', 'backup.signature')
+    signature_folder_relpath, 'backup.signature')
 
   def assertPromiseFailure(self, *msg):
     # Force promises to recompute regardless of periodicity
@@ -322,14 +321,18 @@ class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
     self.writeFile(self.getExportExitfile(), '0')
     self.writeFile(self.getImportExitfile(), '0')
 
+  def cleanupSignature(self):
+      try:
+        shutil.rmtree(self.signature_folder_relpath)
+      except OSError as e:
+        if e.errno != errno.ENOENT:
+          raise
+
   def setUp(self):
     self.customSignatureScript(content=None)
     self.customRestoreScript(content=None)
     self.cleanupExitfiles()
-    try:
-      os.remove(self.getPartitionPath('import', self.signature_relpath))
-    except OSError:
-      pass
+    self.cleanupSignature()
 
   def test_export_promise_error(self):
     self.writeFile(self.getExportExitfile(), '1')
@@ -343,14 +346,16 @@ class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
     errmsg = 'Bye bye'
     self.customSignatureScript(content='>&2 echo "%s"\nexit 1' % errmsg)
     custom_script = self.getPartitionPath('export', self.script_relpath)
-    self.assertExportFailure('Compute partitions backup signatures\n ... ERROR !',
-      'Custom signature script %s failed' % os.path.abspath(custom_script),
-      'and stderr:\n%s' % errmsg)
+    self.assertExportFailure(
+      'Compute partitions backup signatures\n ... ERROR !',
+      'Custom signature script %s failed' % os.path.realpath(custom_script),
+      'and stderr:\n%s' % errmsg
+    )
 
   def test_signature_mismatch(self):
     signature_file = self.getPartitionPath('import', self.signature_relpath)
-    bogus_path = urlsafe_b64encode('bogus/path'.encode()).decode()
-    self.writeFile(signature_file, 'bogushash ' + bogus_path + '\n', mode='a')
+    self.makedirs(signature_file)
+    self.writeFile(signature_file, 'Bogus Hash\n', mode='a')
     self.assertImportFailure('ERROR the backup signatures do not match')
 
   def test_restore_script_error(self):
