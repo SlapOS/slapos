@@ -107,6 +107,17 @@
       "description": "Expert Only: Integer (range 0 to 262). prach-ConfigurationIndex parameter. Default is 160 or 156 depending on TDD configuration",
       "type": "number"
     },
+    "subcarrier_spacing": {
+      "title": "Expert: Subcarrier Spacing (in kHz)",
+      "description": "Expert only: Subcarrier spacing in kHz for the data. Currently the same subcarrier spacing is used for downlink and uplink. Note that 60 Khz is not supported for NR SA cells operating in FR1. By default Subcarrier Spacing is 15 kHz for FDD and 30 kHz for TDD.",
+      "type": "number",
+      "enum": [
+        15,
+        30,
+        60,
+        120
+      ]
+    },
     "uss": {
       "title": "Expert: PDCCH UE Search Space",
       "type": "object",

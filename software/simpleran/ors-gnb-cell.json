@@ -47,6 +47,9 @@
     "integ_algo_pref": {
       "$ref": "cell/nr/input-schema.json#/properties/integ_algo_pref"
     },
+    "subcarrier_spacing": {
+      "$ref": "cell/nr/input-schema.json#/properties/subcarrier_spacing"
+    },
     "trs_presence": {
       "$ref": "cell/nr/input-schema.json#/properties/trs_presence"
     },
