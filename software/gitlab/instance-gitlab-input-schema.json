@@ -97,7 +97,12 @@
       "description": "SMTP openssl verify mode",
       "type": "string",
       "default": "peer",
-      "enum": ["none", "peer", "client_once", "fail_if_no_peer_cert"]
+      "enum": [
+        "none",
+        "peer",
+        "client_once",
+        "fail_if_no_peer_cert"
+      ]
     },
     "sidekiq_shutdown_timeout": {
       "title": "Sidekiq shutdown timeout",
@@ -170,7 +175,10 @@
       "description": "Real ip recursive: Enable or disable nginx real_ip_recursive option.",
       "type": "string",
       "default": "off",
-      "enum": ["off", "on"]
+      "enum": [
+        "off",
+        "on"
+      ]
     },
     "frontend-caucase-url-list": {
       "title": "Frontend caucase url list",
