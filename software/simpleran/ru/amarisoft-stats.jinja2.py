@@ -53,24 +53,29 @@ class enbWebSocket:
 
     def stats(self):
         self.send({
-            "message": "stats",
-            "samples": True,
-            "rf": True
-        })
-        r = self.recv(message_type='stats')
-        self.send({
-            "message": "rf",
-            "rf_info": True
-        })
-        r.update(self.recv(message_type='rf'))
-        self.send({
             "message": "s1",
         })
-        r.update(self.recv(key="s1_list"))
-        self.send({
-            "message": "ng",
-        })
-        r.update(self.recv(key="ng_list"))
+        r = self.recv(key="s1_list")
+
+        #self.send({
+        #    "message": "stats",
+        #    "samples": True,
+        #    "rf": True
+        #})
+        #r = self.recv(message_type='stats')
+        #self.send({
+        #    "message": "rf",
+        #    "rf_info": True
+        #})
+        #r.update(self.recv(message_type='rf'))
+        #self.send({
+        #    "message": "s1",
+        #})
+        #r.update(self.recv(key="s1_list"))
+        #self.send({
+        #    "message": "ng",
+        #})
+        #r.update(self.recv(key="ng_list"))
         self.logger.info('Amarisoft Stats', extra={'data': json.dumps(r)})
 
 if __name__ == '__main__':
