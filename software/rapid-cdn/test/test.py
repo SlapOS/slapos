@@ -1766,6 +1766,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'strict-transport-security-sub-domains': True,
         'strict-transport-security-preload': True,
       },
+      'https-url-only': {
+        'https-url': cls.backend_url + 'https-url',
+      },
+      'https-url-only-https-only-false': {
+        'https-url': cls.backend_url + 'https-url',
+        'https-only': False,
+      },
       'https-url-netloc-list': {
         'url': cls.backend_url + 'http',
         'https-url': cls.backend_url + 'https',
@@ -2206,9 +2213,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '66',
+      'accepted-slave-amount': '68',
       'rejected-slave-amount': '0',
-      'slave-amount': '66',
+      'slave-amount': '68',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -5340,6 +5347,34 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPResult(parameter_dict['domain'], 'path')
     # assure that the request went to backend NOT specified in the netloc
     self.assertNotIn('X-Backend-Identification', result.headers)
+
+  def test_https_url_only(self):
+    parameter_dict = self.assertSlaveBase('https-url-only')
+
+    result_http = fakeHTTPResult(parameter_dict['domain'], 'test-path')
+    self.assertEqual(
+      http.client.FOUND,
+      result_http.status_code
+    )
+    self.assertEqual(
+      'https://httpsurlonly.example.com:%s/test-path' % (HTTP_PORT,),
+      result_http.headers['Location']
+    )
+
+    result_https = fakeHTTPSResult(parameter_dict['domain'], 'test-path')
+    self.assertEqualResultJson(result_https, 'Path', '/https-url/test-path')
+
+  def test_https_url_only_https_only_false(self):
+    parameter_dict = self.assertSlaveBase('https-url-only-https-only-false')
+
+    result_https = fakeHTTPSResult(parameter_dict['domain'], 'test-path')
+    self.assertEqualResultJson(result_https, 'Path', '/https-url/test-path')
+
+    result_http = fakeHTTPResult(parameter_dict['domain'], 'test-path')
+    self.assertEqual(
+      http.client.SERVICE_UNAVAILABLE,
+      result_http.status_code
+    )
 
 
 class TestSlaveHttp3(TestSlave):
