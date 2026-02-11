@@ -327,6 +327,12 @@ url = {{ resque_yml_in }}
 context-extra =
     section redis                   service-redis
 
+[cable.yml]
+<= gitlab-etc-template
+url = {{ cable_yml_in }}
+context-extra =
+    section redis                   service-redis
+
 [smtp_settings.rb]
 <= gitlab-etc-template
 url = {{ smtp_settings_rb_in }}
@@ -460,6 +466,7 @@ tune-command =
     ln -sf ${gitlab.yml:output} gitlab.yml  &&
     ln -sf ${database.yml:output} database.yml  &&
     ln -sf ${resque.yml:output} resque.yml  &&
+    ln -sf ${cable.yml:output} cable.yml  &&
     ln -sf ${secrets:secrets}/gitlab_secrets.yml secrets.yml  &&
 # config/initializers/
     cd initializers  &&
