@@ -56,7 +56,8 @@ context =
 } %}
 {%- set DEFAULT_PORT = {'http': 80, 'https': 443, '': None} %}
 {%- for key in ['enable-http2-by-default'] %}
-{%-   do configuration.__setitem__(key, ('' ~ configuration[key]).lower() in TRUE_VALUES) %}
+{%-   set value = configuration[key] %}
+{%-   do configuration.__setitem__(key, value if value is boolean else (str(value).lower() in TRUE_VALUES)) %}
 {%- endfor %}
 {#- Loop thought slave list to set up slaves #}
 {%- for slave_instance in slave_instance_list %}
@@ -174,7 +175,8 @@ context =
 {%-     endif %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('strict-transport-security', int(slave_instance['strict-transport-security'])) %}
-{%-   do slave_instance.__setitem__('authenticate-to-backend', ('' ~ slave_instance.get('authenticate-to-backend', '')).lower() in TRUE_VALUES) %}
+{%-   set auth_to_backend_value = slave_instance.get('authenticate-to-backend', '') %}
+{%-   do slave_instance.__setitem__('authenticate-to-backend', auth_to_backend_value if auth_to_backend_value is boolean else (str(auth_to_backend_value).lower() in TRUE_VALUES)) %}
 {%-   do slave_instance.__setitem__('health-check-authenticate-to-failover-backend', ('' ~ slave_instance.get('health-check-authenticate-to-failover-backend', '')).lower() in TRUE_VALUES) %}
 {#-   Setup active check #}
 {%-   do slave_instance.__setitem__('health-check',  ('' ~ slave_instance.get('health-check', '')).lower() in TRUE_VALUES) %}
@@ -238,9 +240,11 @@ context =
 {%-     do slave_instance.__setitem__('enable-http2', False) %}
 {%-     do slave_instance.__setitem__('enable-http3', False) %}
 {%-   else %}
-{%-     do slave_instance.__setitem__('enable-http2', ('' ~ slave_instance.get('enable-http2', configuration['enable-http2-by-default'])).lower() in TRUE_VALUES) %}
+{%-     set enable_http2_value = slave_instance.get('enable-http2', configuration['enable-http2-by-default']) %}
+{%-     do slave_instance.__setitem__('enable-http2', enable_http2_value if enable_http2_value is boolean else (str(enable_http2_value).lower() in TRUE_VALUES)) %}
 {%-     if slave_instance['enable-http2'] %}
-{%-       do slave_instance.__setitem__('enable-http3', ('' ~ slave_instance.get('enable-http3', configuration['enable-http3'])).lower() in TRUE_VALUES) %}
+{%-       set enable_http3_value = slave_instance.get('enable-http3', configuration['enable-http3']) %}
+{%-       do slave_instance.__setitem__('enable-http3', enable_http3_value if enable_http3_value is boolean else (str(enable_http3_value).lower() in TRUE_VALUES)) %}
 {%-     else %}
 {%-       do slave_instance.__setitem__('enable-http3', False) %}
 {%-     endif %}
@@ -259,7 +263,9 @@ context =
 {%-   if not slave_instance['enable-http2'] %}
 {%-     do slave_instance.__setitem__('alpn', "alpn http/1.1,http/1.0") %}
 {%-   else %}
-{%-     if http3_enable.lower() in TRUE_VALUES and slave_instance['enable-http3'] %}
+{%-     set http3_enable_value = configuration.get('enable-http3', False) %}
+{%-     set http3_enable_bool = http3_enable_value if http3_enable_value is boolean else (str(http3_enable_value).lower() in TRUE_VALUES) %}
+{%-     if http3_enable_bool and slave_instance['enable-http3'] %}
 {%-       do slave_instance.__setitem__('alpn', "alpn h3,h2,http/1.1,http/1.0") %}
 {%-     else %}
 {%-       do slave_instance.__setitem__('alpn', "alpn h2,http/1.1,http/1.0") %}
