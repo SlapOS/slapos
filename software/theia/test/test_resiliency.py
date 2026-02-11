@@ -361,7 +361,7 @@ class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
   def test_restore_script_error(self):
     self._doExport()
     self._doTransfer()
-    restore_script = self.customRestoreScript('exit 1')
+    restore_script = os.path.realpath(self.customRestoreScript('exit 1'))
     self.assertImportFailure('Run custom restore script %s\n ... ERROR !' % restore_script)
 
   def assertFileState(self, filepath, expect_content):
@@ -425,7 +425,8 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
     # Copy ./resilience_dummy SR in export theia ~/srv/project/dummy
     dummy_target_path = self.getPartitionPath('export', 'srv', 'project', 'dummy')
     shutil.copytree(os.path.dirname(dummy_software_url), dummy_target_path)
-    self._test_software_url = os.path.join(dummy_target_path, 'software.cfg')
+    self._test_software_url = os.path.realpath(
+      os.path.join(dummy_target_path, 'software.cfg'))
 
     # the software.cfg extends slapos.cfg using a relative path, but since we
     # copied it to another location, the relative path can no longer be resolved.
@@ -482,7 +483,8 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
     dummy_root = self.import_dummy_root
 
     # Check that the software url is correct
-    adapted_test_url = self.getPartitionPath('import', 'srv', 'project', 'dummy', 'software.cfg')
+    adapted_test_url = os.path.realpath(
+      self.getPartitionPath('import', 'srv', 'project', 'dummy', 'software.cfg'))
     proxy_content = self.captureSlapos('proxy', 'show', instance_type='import', text=True)
     self.assertIn(adapted_test_url, proxy_content)
     self.assertNotIn(self._test_software_url, proxy_content)
@@ -503,7 +505,8 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
 
     # Check that ~/srv/.backup_identity_script was detected and called
     signature =  self.getPartitionPath(
-      'import', 'srv', 'backup', 'theia', 'slappart0.backup.signature.custom')
+      'import', 'srv', 'backup', 'theia',
+      'backup.signatures', 'slappart0.backup.signature.custom')
     self.assertTrue(os.path.exists(signature))
     with open(signature) as f:
       self.assertIn('Custom script', f.read())
