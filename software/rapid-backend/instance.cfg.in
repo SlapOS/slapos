@@ -1,0 +1,52 @@
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+parts +=
+  rapid-backend
+
+extends =
+  {{ profile_monitor }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+service = ${:etc}/service
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+tmp = ${buildout:directory}/tmp
+
+[rapid-backend]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+httpbin-url = http://[${rapid-backend-wrapper:ip}]:${rapid-backend-wrapper:port}/
+
+[rapid-backend-wrapper]
+ip = ${slap-configuration:ipv6-random} 
+port = ${slap-configuration:httpbin-port} 
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ flask }} --app httpbin:app  run --host ${:ip} --port ${:port} --no-debug
+wrapper-path = ${directory:service}/httpbin
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[slap_connection]
+# Kept for backward compatibility
+computer_id = ${slap-connection:computer-id}
+partition_id = ${slap-connection:partition-id}
+server_url = ${slap-connection:server-url}
+software_release_url = ${slap-connection:software-release-url}
+key_file = ${slap-connection:key-file}
+cert_file = ${slap-connection:cert-file}
+
+[slap-configuration]
+# Fetches parameters defined in SlapOS Master for this instance.
+# Always the same.
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+# defaults
+httpbin-port = 8080
