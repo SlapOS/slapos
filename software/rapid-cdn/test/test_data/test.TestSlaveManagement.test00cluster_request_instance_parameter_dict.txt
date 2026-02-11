@@ -23,9 +23,11 @@
   },
   {
     "_": {
+      "caucase_port": 8890,
       "cluster-identification": "testing partition 0",
+      "kedifa_port": 7879,
       "monitor-cors-domains": "monitor.app.officejs.com",
-      "monitor-httpd-port": "8402",
+      "monitor-httpd-port": 8402,
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
       "slave-list": [
@@ -49,18 +51,28 @@
   },
   {
     "_": {
+      "authenticate-to-backend": false,
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
+      "backend-connect-retries": 3,
+      "backend-connect-timeout": 5,
+      "ciphers": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA AES256-SHA AES128-SHA ECDHE-RSA-DES-CBC3-SHA DES-CBC3-SHA",
       "cluster-identification": "testing partition 0",
-      "enable-http3": "false",
+      "domain": "example.org",
+      "enable-http2-by-default": true,
+      "enable-http3": false,
+      "expert-backend-allow-downgrade-ssl": false,
       "extra_slave_instance_list": "[{\"slave_reference\": \"_deleted\"}, {\"slave_reference\": \"_first\"}]",
       "frontend-name": "caddy-frontend-1",
-      "http3-port": "443",
+      "http3-port": 443,
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:8890",
       "master-key-download-url": "https://[@@_ipv6_address@@]:7879/@@master-key-download-url_endpoint@@",
       "monitor-cors-domains": "monitor.app.officejs.com",
       "monitor-httpd-port": 8411,
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
+      "plain_http_port": 8080,
+      "port": 4443,
+      "request-timeout": 600,
       "slave-kedifa-information": "{\"_deleted\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@?auth=\"}, \"_first\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@?auth=\"}}"
     },
     "full_address_list": [],
