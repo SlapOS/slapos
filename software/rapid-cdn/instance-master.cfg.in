@@ -101,14 +101,14 @@
     ]
 %}
 {%- set FRONTEND_NODE_SLAVE_PASSED_KEY_LIST = FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_SCHEMA + FRONTEND_NODE_SLAVE_PASSED_KEY_LIST_INTERNAL %}
-{%- set aikc_enabled = slapparameter_dict.get('automatic-internal-kedifa-caucase-csr', 'true').lower() in TRUE_VALUES %}
-{%- set aibcc_enabled = slapparameter_dict.get('automatic-internal-backend-client-caucase-csr', 'true').lower() in TRUE_VALUES %}
+{%- set aikc_enabled = slapparameter_dict['automatic-internal-kedifa-caucase-csr'] %}
+{%- set aibcc_enabled = slapparameter_dict['automatic-internal-backend-client-caucase-csr'] %}
 {#- Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
 {%- set master_partition_monitor_monitor_httpd_port = 8401 %}
 {%- set kedifa_partition_monitor_httpd_port = 8402 %}
 {%- set frontend_monitor_httpd_base_port = 8410 %}
 {%- set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
-{%- set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_backend_client_port'] %}
+{%- set caucase_netloc = caucase_host ~ ':' ~ slapparameter_dict['caucase_backend_client_port'] %}
 {%- set caucase_url = 'http://' ~ caucase_netloc %}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -140,7 +140,7 @@ context =
 {#- Here we request individually each frontend. #}
 {#- The presence of sla parameters is checked and added if found #}
 {%- set NODE_DEFAULT_KEY_VALUE = {
-  'enable-http3': 'false',
+  'enable-http3': False,
   'http3-port': '443'
 } %}
 {%- for i in range(1, frontend_quantity + 1) %}
@@ -381,7 +381,7 @@ monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
 [replicate]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional.serialised
-config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-cors-domains = {{ slapparameter_dict['monitor-cors-domains'] }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
@@ -420,7 +420,9 @@ config-cluster-identification = {{ instance_parameter_dict['root-instance-title'
 config-{{ config_key }} = {{ dumps(config_value) }}
 {%-     endfor -%}
 {%-     for config_key, config_value in base_node_configuration_dict.items() %}
+{%-       if not config_key in node_configuration_dict %}
 config-{{ config_key }} = {{ dumps(config_value) }}
+{%-       endif %}
 {%-     endfor -%}
 {%-     if frontend_request.get('sla') %}
 {%-       for parameter, value in frontend_request.get('sla').items() %}
@@ -443,7 +445,7 @@ return =
 [publish-information]
 <= monitor-publish
 recipe = slapos.cookbook:publish
-domain = {{ slapparameter_dict.get('domain') }}
+domain = {{ slapparameter_dict['domain'] }}
 slave-amount = {{ instance_parameter_dict['slave-instance-list'] | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_dict | length }}
@@ -514,10 +516,10 @@ custom-group = instance-publish-slave-information:output
 [request-kedifa]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional.serialised
-config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-cors-domains = {{ slapparameter_dict['monitor-cors-domains'] }}
 config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
-config-monitor-httpd-port = {{ kedifa_partition_monitor_httpd_port }}
+config-monitor-httpd-port = !py!{{ kedifa_partition_monitor_httpd_port }}
 {%- for key in ['kedifa_port', 'caucase_port'] -%}
 {%-   if key in slapparameter_dict %}
 config-{{ key }} = {{ dumps(slapparameter_dict[key]) }}
