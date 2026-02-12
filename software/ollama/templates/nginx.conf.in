@@ -1,0 +1,38 @@
+pid {{ parameter_dict['pid-file'] }};
+error_log {{ parameter_dict['error-log'] }};
+
+daemon off;
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  access_log {{ parameter_dict['access-log'] }};
+
+  include {{ parameter_dict['nginx-mime-types'] }};
+  default_type application/octet-stream;
+
+  server {
+    listen [{{ parameter_dict['ipv6'] }}]:{{ parameter_dict['port'] }} ssl;
+
+    # SSL config
+    ssl_certificate {{ parameter_dict['ssl-certificate'] }};
+    ssl_certificate_key {{ parameter_dict['ssl-key'] }};
+    proxy_http_version 1.1;
+    proxy_buffering    off;
+    chunked_transfer_encoding on;
+    proxy_connect_timeout  3600s;
+    proxy_send_timeout     3600s;
+    proxy_read_timeout     3600s;
+
+    # proxy config
+    location / {
+      proxy_pass {{ parameter_dict['backend-url'] }};
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+    }
+  }
+}
