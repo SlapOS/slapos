@@ -58,6 +58,8 @@ class TheiaExport(object):
     self.partition_dirs = [p for p in partitions if os.path.isdir(p)]
     self.copytree_partitions_args = {}
     self.logs = []
+    self.outsidedir = os.path.abspath(os.path.join(self.backup_dir, os.pardir))
+    self.signaturedir = os.path.join(self.backup_dir, 'backup.signatures')
 
   def mirror_path(self, src):
     return os.path.abspath(os.path.join(
@@ -95,38 +97,25 @@ class TheiaExport(object):
         f.write('\n'.join(ignore))
 
   def sign(self, signaturefile, signatures):
-    remove(signaturefile)
-    pardir = os.path.abspath(os.path.join(self.backup_dir, os.pardir))
-    tmpfile = os.path.join(pardir, os.path.basename(signaturefile) + '.tmp')
-    with open(tmpfile, 'w') as f:
-      for s in signatures:
-        f.write(s + '\n')
-    shutil.move(tmpfile, signaturefile)
+    sign(self.outsidedir, signaturefile, signatures)
 
   def sign_root(self):
-    signaturefile = os.path.join(self.backup_dir, 'backup.signature')
-    signatures = hashwalk(self.backup_dir, self.mirror_path(self.instance_dir))
+    signaturefile = os.path.join(self.signaturedir, 'backup.signature')
+    exclude = [self.mirror_path(p) for p in self.partition_dirs]
+    exclude.append(self.signaturedir)
+    signatures = hashwalk(self.backup_dir, *exclude)
     self.sign(signaturefile, signatures)
 
   def sign_partition(self, partition):
     dst = self.mirror_path(partition)
     filename = os.path.basename(partition) + '.backup.signature'
-    signaturefile = os.path.join(self.backup_dir, filename)
+    signaturefile = os.path.join(self.signaturedir, filename)
     script = hashscript(partition)
     if script:
       signaturefile += '.custom'
       self.sign(signaturefile, hashcustom(dst, script))
     else:
       self.sign(signaturefile, hashwalk(dst))
-
-  def remove_signatures(self):
-    pattern = os.path.join(self.backup_dir, '*backup.signature*')
-    signature_files = glob.glob(pattern)
-    for f in signature_files:
-      try:
-        os.remove(f)
-      except OSError:
-        pass
 
   def check_partition(self, partition, pattern='/srv/backup/'):
     dst, ignore, delete = self.copytree_partitions_args[partition]
@@ -176,7 +165,8 @@ class TheiaExport(object):
     with open(timestamp, 'w') as f:
       f.write(str(export_start_date))
 
-    self.remove_signatures()
+    rmtree(self.signaturedir)
+    mkdir(self.signaturedir)
 
     self.backup_file(timestamp, fail_if_missing=True)
 

@@ -68,6 +68,8 @@ class TheiaImport(object):
     partitions = glob.glob(os.path.join(mirror_dir, 'slappart*'))
     self.mirror_partition_dirs = [p for p in partitions if os.path.isdir(p)]
     self.logs = []
+    self.outsidedir = os.path.abspath(os.path.join(self.backup_dir, os.pardir))
+    self.signaturedir = os.path.join(self.backup_dir, 'backup.signatures')
 
   def mirror_path(self, dst):
     return os.path.abspath(os.path.join(
@@ -121,57 +123,54 @@ class TheiaImport(object):
     print(' '.join(command))
     print(run_process(command))
 
-  def sign(self, signaturefile, root_dir):
-    with open(signaturefile, 'r') as f:
-      for line in f:
-        try:
-          _, relpath = line.strip().split(None, 1)
-        except ValueError:
-          yield 'Could not parse: %s' % line
-          continue
-        filepath = os.path.join(root_dir, relpath)
-        try:
-          signature = sha256sum(filepath)
-        except IOError:
-          yield 'Could not read: %s' % filepath
-          continue
-        yield '%s %s' % (signature, relpath)
+  def diff(self, signaturefile, proof):
+    diffcommand = ('diff', signaturefile, proof)
+    try:
+      run_process(diffcommand)
+    except subprocess.CalledProcessError as e:
+      if e.returncode != 1:
+        raise
+      template = 'ERROR the backup signatures do not match\n\n%s\n%s'
+      msg = template % (' '.join(diffcommand), e.output)
+      print(msg)
+      raise Exception(msg)
 
-  def sign_custom(self, root_dir):
-    partition = self.dst_path(root_dir)
+  def sign(self, signaturefile, signatures):
+    sign(self.outsidedir, signaturefile, signatures)
+
+  def verify_root(self):
+    signaturefile = os.path.join(self.signaturedir, 'backup.signature')
+    proof = signaturefile + '.proof'
+    exclude = list(self.mirror_partition_dirs)
+    exclude.append(self.signaturedir)
+    signatures = hashwalk( self.backup_dir, *exclude)
+    self.sign(proof, signatures)
+    self.diff(signaturefile, proof)
+
+  def verify_partition(self, signaturefile, m):
+    proof = signaturefile + '.proof'
+    self.sign(proof, hashwalk(m))
+    self.diff(signaturefile, proof)
+
+  def verify_custom(self, signaturefile, m):
+    proof = signaturefile + '.proof'
+    partition = self.dst_path(m)
     script = hashscript(partition)
     if not script:
       msg = 'ERROR: missing custom signature script for partition ' + partition
       raise Exception(msg)
-    return hashcustom(root_dir, script)
+    self.sign(proof, hashcustom(m, script))
+    self.diff(signaturefile, proof)
 
-  def find_signature_file(self, partition):
-    filename = os.path.basename(partition) + '.backup.signature'
-    signaturefile = os.path.join(self.backup_dir, filename)
+  def find_partition_signature(self, m):
+    filename = os.path.basename(m) + '.backup.signature'
+    signaturefile = os.path.join(self.signaturedir, filename)
     if os.path.exists(signaturefile):
       return signaturefile, False
     signaturefile += '.custom'
     if os.path.exists(signaturefile):
       return signaturefile, True
     raise Exception('ERROR: missing signature file for partition ' + partition)
-
-  def verify(self, signaturefile, root_dir, custom=False):
-    proof = signaturefile + '.proof'
-    if custom:
-      signatures = self.sign_custom(root_dir)
-    else:
-      signatures = self.sign(signaturefile, root_dir)
-    with open(proof, 'w') as f:
-      for s in signatures:
-        f.write(s + '\n')
-    diffcommand = ('diff', signaturefile, proof)
-    try:
-      run_process(diffcommand)
-    except subprocess.CalledProcessError as e:
-      template = 'ERROR the backup signatures do not match\n\n%s\n%s'
-      msg = template % (' '.join(diffcommand), e.output)
-      print(msg)
-      raise Exception(msg)
 
   def wait_for_proxy(self):
     timeout = 10
@@ -223,17 +222,17 @@ class TheiaImport(object):
 
   def restore(self):
     self.log('Verify main backup signature')
-    signaturefile = os.path.join(self.backup_dir, 'backup.signature')
-    self.verify(signaturefile, self.backup_dir)
+    self.verify_root()
 
     custom_partition_signatures = []
     for m in self.mirror_partition_dirs:
-      signaturefile, custom = self.find_signature_file(m)
+      signaturefile, custom = self.find_partition_signature(m)
       if custom:
+        self.log('Deferring custom backup signature for ' + m)
         custom_partition_signatures.append((signaturefile, m))
       else:
         self.log('Verify backup signature for ' + m)
-        self.verify(signaturefile, m)
+        self.verify_partition(signaturefile, m)
 
     self.log('Stop slapproxy')
     self.supervisorctl('stop', 'slapos-proxy')
@@ -309,9 +308,9 @@ class TheiaImport(object):
       else:
         break
 
-    self.log('Verify custom backup signatures')
     for signaturefile, m in custom_partition_signatures:
-      self.verify(signaturefile, m, True)
+      self.log('Verify deferred custom backup signature for ' + m)
+      self.verify_custom(signaturefile, m)
 
     for custom_script in glob.glob(scripts):
       self.log('Running custom instance script %s' % custom_script)
