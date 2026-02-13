@@ -9,7 +9,7 @@
     },
     "url": {
       "description": "URL of the backend",
-      "pattern": "^(http|https|ftp)://",
+      "pattern": "^(http|https|ftp)://.+",
       "title": "Backend URL",
       "type": "string"
     },
@@ -29,32 +29,28 @@
     "path": {
       "default": "",
       "description": "Path to proxy to in the backend",
+      "pattern": "^$|^/.*",
       "title": "type:zope Backend Path",
       "type": "string"
     },
     "enable_cache": {
       "default": "false",
       "description": "If set to true, http caching server (Apache Traffic Server) will be used between frontend and backend",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Enable Cache",
       "type": "string"
     },
     "https-only": {
       "default": "true",
       "description": "If set to true, http requests will be redirected to https",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "HTTPS Only",
       "type": "string"
     },
     "default-path": {
       "default": "",
       "description": "Provide default path to redirect user to when user access / (the site root)",
+      "pattern": "^$|^/.*",
       "title": "type:zope Default Path",
       "type": "string"
     },
@@ -71,10 +67,7 @@
     "disable-via-header": {
       "default": "false",
       "description": "If set to true, Via response headers will not be sent to client",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "enable_cache: Disable 'Via' headers from cache",
       "type": "string"
     },
@@ -87,32 +80,26 @@
     "enable-http2": {
       "default": "true",
       "description": "Use HTTP2 Protocol for the site",
-      "enum": [
-        "true",
-        "false"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Enable HTTP2 Protocol",
       "type": "string"
     },
     "enable-http3": {
       "default": "true",
       "description": "Use HTTP3 Protocol for the site. It requires enable-http2 to be set. The end results depends on the cluster configuration.",
-      "enum": [
-        "true",
-        "false"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Enable HTTP3 Protocol",
       "type": "string"
     },
     "https-url": {
-      "description": "HTTPS URL of the backend if it is different from url parameter",
+      "description": "URL of the backend to be used for HTTPS access if it is different from url parameter. In that case the CDN will use a different backend url depending on the protocol used by the client.",
       "pattern": "^(http|https|ftp)://",
-      "title": "HTTPS Backend URL",
+      "title": "Backend URL for HTTPS access",
       "type": "string"
     },
     "websocket-path-list": {
-      "default": "",
       "description": "Space separated list of path to the websocket application. If not set the whole slave will be websocket, if set then / will be HTTP, and /<websocket-path> will be WSS. In order to have ' ' in the space use '%20'",
+      "pattern": "^$|^(/[^ ]* ?)+$",
       "title": "type:websocket Websocket Application Path List",
       "type": "string"
     },
@@ -129,15 +116,11 @@
     "prefer-gzip-encoding-to-backend": {
       "default": "false",
       "description": "If set to true, frontend will rewrite Accept-Encoding request header to simply 'gzip' for all variants of Accept-Encoding containing 'gzip', in order to maximize cache hits for resources cached with Vary: Accept-Encoding when enable_cache is used",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Prefer gzip Encoding for Backend",
       "type": "string"
     },
     "server-alias": {
-      "default": "",
       "description": "Server Alias List separated by space",
       "title": "Server Alias",
       "type": "string"
@@ -145,36 +128,29 @@
     "ssl-proxy-verify": {
       "default": "false",
       "description": "If set to true, Backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Verify Backend Certificates",
       "type": "string"
     },
     "ssl_crt": {
-      "default": "",
       "description": "Content of the SSL Certificate file. Deprecated, please use key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Certificate",
       "type": "string"
     },
     "ssl_key": {
-      "default": "",
       "description": "Content of the SSL Key file. Deprecated, please use key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Key",
       "type": "string"
     },
     "ssl_ca_crt": {
-      "default": "",
       "description": "Content of the CA certificate file. Deprecated, please use key-upload-url.",
       "textarea": true,
       "title": "[DEPRECATED] SSL Certificate Authority's Certificate",
       "type": "string"
     },
     "ssl_proxy_ca_crt": {
-      "default": "",
       "description": "Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
       "textarea": true,
       "title": "SSL Backend Authority's Certificate",
@@ -183,27 +159,37 @@
     "virtualhostroot-http-port": {
       "default": 80,
       "description": "Port where http requests to frontend will be redirected.",
+      "maximum": 65535,
+      "minimum": 1,
       "title": "type:zope virtualhostroot-http-port",
       "type": "integer"
     },
     "virtualhostroot-https-port": {
       "default": 443,
       "description": "Port where https requests to frontend will be redirected.",
+      "maximum": 65535,
+      "minimum": 1,
       "title": "type:zope virtualhostroot-https-port",
       "type": "integer"
     },
     "backend-connect-timeout": {
       "description": "Time in seconds for establishing connection to the backend.",
+      "maximum": 3600,
+      "minimum": 1,
       "title": "Timeout for backend connection (seconds)",
       "type": "integer"
     },
     "backend-connect-retries": {
       "description": "Amount of retries to connect to the backend. The amount of backend-connect-timeout*backend-connect-retries seconds will be spent to connect to the backend.",
+      "maximum": 10,
+      "minimum": 0,
       "title": "Amount of retries to connect to the backend.",
       "type": "integer"
     },
     "request-timeout": {
       "description": "Timeout for HTTP requests.",
+      "maximum": 3600,
+      "minimum": 1,
       "title": "HTTP Request timeout in seconds",
       "type": "integer"
     },
@@ -214,20 +200,14 @@
     },
     "authenticate-to-backend": {
       "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Authenticate to backend",
       "type": "string"
     },
     "health-check": {
       "title": "Health Check",
       "description": "Enables active checks of the backend. For HTTP level checks the HTTP code shall be 2xx or 3xx, otherwise backend will be considered down.",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "default": "false",
       "type": "string"
     },
@@ -247,65 +227,65 @@
       "title": "Health Check HTTP Path",
       "description": "A path on which do the active check, unused in case of CONNECT.",
       "default": "/",
+      "pattern": "^/.*",
       "type": "string"
     },
     "health-check-timeout": {
       "title": "Health Check Timeout (seconds)",
       "description": "A timeout to for the request to be fulfilled, after connection happen.",
-      "default": "2",
+      "default": 2,
+      "maximum": 300,
+      "minimum": 1,
       "type": "integer"
     },
     "health-check-interval": {
       "title": "Health Check Interval (seconds)",
       "description": "An interval of health check.",
-      "default": "5",
+      "default": 5,
+      "maximum": 3600,
+      "minimum": 1,
       "type": "integer"
     },
     "health-check-rise": {
       "title": "Health Check Rise",
       "description": "Amount of correct responses from the backend to consider it up.",
-      "default": "1",
+      "default": 1,
+      "minimum": 1,
       "type": "integer"
     },
     "health-check-fall": {
       "title": "Health Check Fall",
       "description": "Amount of bad responses from the backend to consider it down.",
-      "default": "1",
+      "default": 1,
+      "minimum": 1,
       "type": "integer"
     },
     "health-check-failover-url": {
       "description": "URL of the failover backend",
-      "pattern": "^(http|https|ftp)://",
+      "pattern": "^(http|https|ftp)://.+",
       "title": "Failover backend URL",
       "type": "string"
     },
     "health-check-failover-https-url": {
       "description": "HTTPS URL of the failover backend if it is different from health-check-failover-url parameter. Note: It requires https-url to be configured, as otherwise the differentiation does not make sense..",
-      "pattern": "^(http|https|ftp)://",
+      "pattern": "^https://.+",
       "title": "Failover HTTPS Backend URL",
       "type": "string"
     },
     "health-check-authenticate-to-failover-backend": {
       "description": "If set to true the frontend certificate will be used as authentication certificate to the failover backend. Note: failover backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Authenticate to failover backend",
       "type": "string"
     },
     "health-check-failover-ssl-proxy-verify": {
       "default": "false",
       "description": "If set to true, failover backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "Verify failover backend certificates",
       "type": "string"
     },
     "health-check-failover-ssl-proxy-ca-crt": {
-      "default": "",
       "description": "Content of the SSL Certificate Authority file of the failover backend (to be used with health-check-failover-ssl-proxy-verify)",
       "textarea": true,
       "title": "SSL failover backend Authority's Certificate",
@@ -320,20 +300,14 @@
     "strict-transport-security-sub-domains": {
       "title": "Strict Transport Security Sub Domains",
       "description": "Configures Strict Transport Security for sub domains.",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "type": "string",
       "default": "false"
     },
     "strict-transport-security-preload": {
       "title": "Strict Transport Security Preload",
       "description": "Configures Strict Transport Security preload mechanism.",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "type": "string",
       "default": "false"
     },
