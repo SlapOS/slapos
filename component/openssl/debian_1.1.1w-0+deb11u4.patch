@@ -1,3 +1,594 @@
+From: Debian OpenSSL Team <pkg-openssl-devel@lists.alioth.debian.org>
+Date: Sun, 5 Nov 2017 15:09:09 +0100
+Subject: debian-targets
+
+---
+ Configurations/20-debian.conf | 210 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 210 insertions(+)
+ create mode 100644 Configurations/20-debian.conf
+
+diff --git a/Configurations/20-debian.conf b/Configurations/20-debian.conf
+new file mode 100644
+index 000000000000..a3d5f68d36aa
+--- /dev/null
++++ b/Configurations/20-debian.conf
+@@ -0,0 +1,210 @@
++my %targets = (
++	"debian" => {
++		cflags => add("-Wa,--noexecstack -Wall"),
++	},
++	"debian-alpha" => {
++		inherit_from => [ "linux-alpha-gcc", "debian" ],
++	},
++	"debian-alpha-ev4" => {
++		inherit_from => [ "debian-alpha" ],
++		cflags => add("-mcpu=ev4"),
++	},
++	"debian-alpha-ev5" => {
++		inherit_from => [ "debian-alpha" ],
++		cflags => add("-mcpu=ev5"),
++	},
++	"debian-arm64" => {
++		inherit_from => [ "linux-aarch64", "debian" ],
++	},
++	"debian-arm64ilp32" => {
++		inherit_from => [ "linux-arm64ilp32", "debian" ],
++	},
++	"debian-armel" => {
++		inherit_from => [ "linux-armv4", "debian" ],
++	},
++	"debian-armhf" => {
++		inherit_from => [ "linux-armv4", "debian" ],
++	},
++	"debian-amd64" => {
++		inherit_from => [ "linux-x86_64", "debian" ],
++	},
++	"debian-i386" => {
++		inherit_from => [ "linux-elf", "debian" ],
++	},
++	"debian-avr32" => {
++		inherit_from => [ "linux-generic32", "debian" ],
++	},
++	"debian-kfreebsd-amd64" => {
++		inherit_from => [ "debian-amd64" ],
++		enable		=> [ ],
++	},
++	"debian-kfreebsd-i386" => {
++		inherit_from => [ "debian-i386" ],
++		enable		=> [ ],
++	},
++	"debian-hppa" => {
++		inherit_from => [ "linux-generic32", "debian" ],
++	},
++	"debian-hurd-i386" => {
++		inherit_from => [ "hurd-x86", "debian" ],
++	},
++	"debian-ia64" => {
++		inherit_from => [ "linux-ia64", "debian" ],
++	},
++	"debian-m68k" => {
++		inherit_from => [ "linux-generic32", "debian" ],
++	},
++	"debian-mips" => {
++		inherit_from => [ "linux-mips32", "debian" ],
++		cflags => add("-DB_ENDIAN"),
++	},
++	"debian-mipsel" => {
++		inherit_from => [ "linux-mips32", "debian" ],
++		cflags => add("-DL_ENDIAN"),
++	},
++	"debian-mipsn32" => {
++		inherit_from => [ "linux-mips64", "debian" ],
++		cflags => add("-DB_ENDIAN"),
++	},
++	"debian-mipsn32el" => {
++		inherit_from => [ "linux-mips64", "debian" ],
++		cflags => add("-DL_ENDIAN"),
++	},
++	"debian-mips64" => {
++		inherit_from => [ "linux64-mips64", "debian" ],
++		cflags => add("-DB_ENDIAN"),
++	},
++	"debian-mips64el" => {
++		inherit_from => [ "linux64-mips64", "debian" ],
++		cflags => add("-DL_ENDIAN"),
++	},
++
++	# Temporary MIPS R6 targets. Those will vanish approx in 1.1.1 because
++	# aes-mips.pl creates proper R6 ASM code. After that, we can inherit from
++	# the linux*-mips* targets.
++	"linux-mips32r6" => {
++	# Configure script adds minimally required -march for assembly
++	# support, if no -march was specified at command line.
++		inherit_from     => [ "linux-generic32"],
++		cflags           => add("-mabi=32"),
++		perlasm_scheme   => "o32",
++		shared_ldflag    => add("-mabi=32"),
++	},
++	# mips32 and mips64 below refer to contemporary MIPS Architecture
++	# specifications, MIPS32 and MIPS64, rather than to kernel bitness.
++	"linux-mips64r6" => {
++		inherit_from     => [ "linux-generic32"],
++		cflags           => add("-mabi=n32"),
++		bn_ops           => "SIXTY_FOUR_BIT RC4_CHAR",
++		perlasm_scheme   => "n32",
++		shared_ldflag    => add("-mabi=n32"),
++		multilib         => "32",
++	},
++	"linux64-mips64r6" => {
++		inherit_from     => [ "linux-generic64"],
++		cflags           => add("-mabi=64"),
++		perlasm_scheme   => "64",
++		shared_ldflag    => add("-mabi=64"),
++		multilib         => "64",
++	},
++	"debian-mipsr6" => {
++		inherit_from => [ "linux-mips32r6", "debian" ],
++		cflags => add("-DB_ENDIAN"),
++	},
++	"debian-mipsr6el" => {
++		inherit_from => [ "linux-mips32r6", "debian" ],
++		cflags => add("-DL_ENDIAN"),
++	},
++	"debian-mipsn32r6" => {
++		inherit_from => [ "linux-mips64r6", "debian" ],
++		cflags => add("-DB_ENDIAN"),
++	},
++	"debian-mipsn32r6el" => {
++		inherit_from => [ "linux-mips64r6", "debian" ],
++		cflags => add("-DL_ENDIAN"),
++	},
++	"debian-mips64r6" => {
++		inherit_from => [ "linux64-mips64r6", "debian" ],
++		cflags => add("-DB_ENDIAN"),
++	},
++	"debian-mips64r6el" => {
++		inherit_from => [ "linux64-mips64r6", "debian" ],
++		cflags => add("-DL_ENDIAN"),
++	},
++
++	"debian-musl-linux-arm64" => {
++		inherit_from => [ "linux-aarch64", "debian" ],
++	},
++	"debian-musl-linux-armhf" => {
++		inherit_from => [ "linux-armv4", "debian" ],
++	},
++	"debian-musl-linux-i386" => {
++		inherit_from => [ "linux-elf", "debian" ],
++	},
++	"debian-musl-linux-mips" => {
++		inherit_from => [ "linux-mips32", "debian" ],
++		cflags => add("-DB_ENDIAN"),
++	},
++	"debian-musl-linux-mipsel" => {
++		inherit_from => [ "linux-mips32", "debian" ],
++		cflags => add("-DL_ENDIAN"),
++	},
++
++	"debian-nios2" => {
++		inherit_from => [ "linux-generic32", "debian" ],
++	},
++	"debian-powerpc" => {
++		inherit_from => [ "linux-ppc", "debian" ],
++	},
++	"debian-powerpcspe" => {
++		inherit_from => [ "linux-ppc", "debian" ],
++	},
++	"debian-ppc64" => {
++		inherit_from => [ "linux-generic64", "debian", asm("ppc64_asm") ],
++		cflags => add("-DB_ENDIAN"),
++		perlasm_scheme => "linux64",
++	},
++	"debian-ppc64el" => {
++		inherit_from => [ "linux-ppc64le", "debian" ],
++	},
++	"debian-riscv64" => {
++		inherit_from => [ "linux-generic64", "debian" ],
++	},
++	"debian-s390" => {
++		inherit_from => [ "linux-generic32", "debian" ],
++	},
++	"debian-s390x" => {
++		inherit_from => [ "linux64-s390x", "debian" ],
++	},
++	"debian-sh3" => {
++		inherit_from => [ "linux-generic32", "debian" ],
++	},
++	"debian-sh3eb" => {
++		inherit_from => [ "linux-generic32", "debian" ],
++	},
++	"debian-sh4" => {
++		inherit_from => [ "linux-generic32", "debian" ],
++	},
++	"debian-sh4eb" => {
++		inherit_from => [ "linux-generic32", "debian" ],
++	},
++	"debian-m32r" => {
++		inherit_from => [ "linux-generic32", "debian" ],
++	},
++	"debian-sparc" => {
++		inherit_from => [ "linux-generic32", "debian", asm("sparcv9_asm") ],
++		cflags => add("-DB_ENDIAN -DBN_DIV2W"),
++	},
++	"debian-sparc64" => {
++	        inherit_from => [ "linux-generic64", "debian", asm("sparcv9_asm") ],
++	        cflags => add("-m64 -mcpu=ultrasparc -DB_ENDIAN"),
++		bn_ops => "BN_LLONG RC4_CHAR",
++	},
++	"debian-tilegx" => {
++		inherit_from => [ "linux-generic64", "debian" ],
++	},
++	"debian-x32" => {
++		inherit_from => [ "linux-x32", "debian" ],
++	},
++);
++
+From: Debian OpenSSL Team <pkg-openssl-devel@lists.alioth.debian.org>
+Date: Sun, 5 Nov 2017 15:09:09 +0100
+Subject: man-section
+
+---
+ Configurations/unix-Makefile.tmpl | 6 ++++--
+ util/process_docs.pl              | 3 ++-
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/Configurations/unix-Makefile.tmpl b/Configurations/unix-Makefile.tmpl
+index 66617d6f4f90..68e391c08859 100644
+--- a/Configurations/unix-Makefile.tmpl
++++ b/Configurations/unix-Makefile.tmpl
+@@ -281,7 +281,8 @@ HTMLDIR=$(DOCDIR)/html
+ # MANSUFFIX is for the benefit of anyone who may want to have a suffix
+ # appended after the manpage file section number.  "ssl" is popular,
+ # resulting in files such as config.5ssl rather than config.5.
+-MANSUFFIX=
++MANSUFFIX=ssl
++MANSECTION=SSL
+ HTMLSUFFIX=html
+ 
+ # For "optional" echo messages, to get "real" silence
+@@ -823,7 +824,8 @@ uninstall_runtime: uninstall_programs uninstall_runtime_libs
+ 	@[ -n "$(INSTALLTOP)" ] || (echo INSTALLTOP should not be empty; exit 1)
+ 	@$(ECHO) "*** Installing manpages"
+ 	$(PERL) $(SRCDIR)/util/process_docs.pl \
+-		"--destdir=$(DESTDIR)$(MANDIR)" --type=man --suffix=$(MANSUFFIX)
++		"--destdir=$(DESTDIR)$(MANDIR)" --type=man --suffix=$(MANSUFFIX) \
++			--mansection=$(MANSECTION)
+ 
+ uninstall_man_docs:
+ 	@$(ECHO) "*** Uninstalling manpages"
+diff --git a/util/process_docs.pl b/util/process_docs.pl
+index 30b149eb8fcc..424155ea808e 100755
+--- a/util/process_docs.pl
++++ b/util/process_docs.pl
+@@ -37,6 +37,7 @@ GetOptions(\%options,
+            'type=s',            # The result type, 'man' or 'html'
+            'suffix:s',          # Suffix to add to the extension.
+                                 # Only used with type=man
++           'mansection:s',      # Section to put to manpage in
+            'remove',            # To remove files rather than writing them
+            'dry-run|n',         # Only output file names on STDOUT
+            'debug|D+',
+@@ -97,7 +98,7 @@ foreach my $section (sort @{$options{section}}) {
+         my $name = uc $podname;
+         my $suffix = { man  => ".$podinfo{section}".($options{suffix} // ""),
+                        html => ".html" } -> {$options{type}};
+-        my $generate = { man  => "pod2man --name=$name --section=$podinfo{section} --center=OpenSSL --release=$config{version} \"$podpath\"",
++        my $generate = { man  => "pod2man --name=$name --section=$podinfo{section}$options{mansection} --center=OpenSSL --release=$config{version} \"$podpath\"",
+                          html => "pod2html \"--podroot=$options{sourcedir}\" --htmldir=$updir --podpath=man1:man3:man5:man7 \"--infile=$podpath\" \"--title=$podname\" --quiet"
+                          } -> {$options{type}};
+         my $output_dir = catdir($options{destdir}, "man$podinfo{section}");
+From: Debian OpenSSL Team <pkg-openssl-devel@lists.alioth.debian.org>
+Date: Sun, 5 Nov 2017 15:09:09 +0100
+Subject: no-symbolic
+
+---
+ Configurations/shared-info.pl | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Configurations/shared-info.pl b/Configurations/shared-info.pl
+index 47eddd68355b..208132e7307f 100644
+--- a/Configurations/shared-info.pl
++++ b/Configurations/shared-info.pl
+@@ -25,7 +25,7 @@ sub detect_gnu_cc {
+ my %shared_info;
+ %shared_info = (
+     'gnu-shared' => {
+-        shared_ldflag         => '-shared -Wl,-Bsymbolic',
++        shared_ldflag         => '-shared',
+         shared_sonameflag     => '-Wl,-soname=',
+     },
+     'linux-shared' => sub {
+From: Debian OpenSSL Team <pkg-openssl-devel@lists.alioth.debian.org>
+Date: Sun, 5 Nov 2017 15:09:09 +0100
+Subject: pic
+
+---
+ crypto/des/asm/desboth.pl | 17 ++++++++++++++---
+ crypto/perlasm/cbc.pl     | 24 ++++++++++++++++++++----
+ crypto/perlasm/x86gas.pl  | 16 ++++++++++++++++
+ crypto/x86cpuid.pl        | 10 +++++-----
+ 4 files changed, 55 insertions(+), 12 deletions(-)
+
+diff --git a/crypto/des/asm/desboth.pl b/crypto/des/asm/desboth.pl
+index ef7054e27506..50765d2b1552 100644
+--- a/crypto/des/asm/desboth.pl
++++ b/crypto/des/asm/desboth.pl
+@@ -23,6 +23,11 @@ sub DES_encrypt3
+ 
+ 	&push("edi");
+ 
++	&call   (&label("pic_point0"));
++	&set_label("pic_point0");
++	&blindpop("ebp");
++	&add    ("ebp", "\$_GLOBAL_OFFSET_TABLE_+[.-" . &label("pic_point0") . "]");
++
+ 	&comment("");
+ 	&comment("Load the data words");
+ 	&mov($L,&DWP(0,"ebx","",0));
+@@ -54,15 +59,21 @@ sub DES_encrypt3
+ 	&mov(&swtmp(2),	(DWC(($enc)?"1":"0")));
+ 	&mov(&swtmp(1),	"eax");
+ 	&mov(&swtmp(0),	"ebx");
+-	&call("DES_encrypt2");
++	&exch("ebx", "ebp");
++	&call("DES_encrypt2\@PLT");
++	&exch("ebx", "ebp");
+ 	&mov(&swtmp(2),	(DWC(($enc)?"0":"1")));
+ 	&mov(&swtmp(1),	"edi");
+ 	&mov(&swtmp(0),	"ebx");
+-	&call("DES_encrypt2");
++	&exch("ebx", "ebp");
++	&call("DES_encrypt2\@PLT");
++	&exch("ebx", "ebp");
+ 	&mov(&swtmp(2),	(DWC(($enc)?"1":"0")));
+ 	&mov(&swtmp(1),	"esi");
+ 	&mov(&swtmp(0),	"ebx");
+-	&call("DES_encrypt2");
++	&exch("ebx", "ebp");
++	&call("DES_encrypt2\@PLT");
++	&exch("ebx", "ebp");
+ 
+ 	&stack_pop(3);
+ 	&mov($L,&DWP(0,"ebx","",0));
+diff --git a/crypto/perlasm/cbc.pl b/crypto/perlasm/cbc.pl
+index 01bafe457d68..c093be5a4fd6 100644
+--- a/crypto/perlasm/cbc.pl
++++ b/crypto/perlasm/cbc.pl
+@@ -129,7 +129,11 @@ sub cbc
+ 	&mov(&DWP($data_off,"esp","",0),	"eax");	# put in array for call
+ 	&mov(&DWP($data_off+4,"esp","",0),	"ebx");	#
+ 
+-	&call($enc_func);
++	&call	(&label("pic_point0"));
++	&set_label("pic_point0");
++	&blindpop("ebx");
++	&add	("ebx", "\$_GLOBAL_OFFSET_TABLE_+[.-" . &label("pic_point0") . "]");
++	&call("$enc_func\@PLT");
+ 
+ 	&mov("eax",	&DWP($data_off,"esp","",0));
+ 	&mov("ebx",	&DWP($data_off+4,"esp","",0));
+@@ -192,7 +196,11 @@ sub cbc
+ 	&mov(&DWP($data_off,"esp","",0),	"eax");	# put in array for call
+ 	&mov(&DWP($data_off+4,"esp","",0),	"ebx");	#
+ 
+-	&call($enc_func);
++	&call	(&label("pic_point1"));
++	&set_label("pic_point1");
++	&blindpop("ebx");
++	&add	("ebx", "\$_GLOBAL_OFFSET_TABLE_+[.-" . &label("pic_point1") . "]");
++	&call("$enc_func\@PLT");
+ 
+ 	&mov("eax",	&DWP($data_off,"esp","",0));
+ 	&mov("ebx",	&DWP($data_off+4,"esp","",0));
+@@ -225,7 +233,11 @@ sub cbc
+ 	&mov(&DWP($data_off,"esp","",0),	"eax");	# put back
+ 	&mov(&DWP($data_off+4,"esp","",0),	"ebx");	#
+ 
+-	&call($dec_func);
++	&call	(&label("pic_point2"));
++	&set_label("pic_point2");
++	&blindpop("ebx");
++	&add	("ebx", "\$_GLOBAL_OFFSET_TABLE_+[.-" . &label("pic_point2") . "]");
++	&call("$dec_func\@PLT");
+ 
+ 	&mov("eax",	&DWP($data_off,"esp","",0));	# get return
+ 	&mov("ebx",	&DWP($data_off+4,"esp","",0));	#
+@@ -268,7 +280,11 @@ sub cbc
+ 	&mov(&DWP($data_off,"esp","",0),	"eax");	# put back
+ 	&mov(&DWP($data_off+4,"esp","",0),	"ebx");	#
+ 
+-	&call($dec_func);
++	&call	(&label("pic_point3"));
++	&set_label("pic_point3");
++	&blindpop("ebx");
++	&add	("ebx", "\$_GLOBAL_OFFSET_TABLE_+[.-" . &label("pic_point3") . "]");
++	&call("$dec_func\@PLT");
+ 
+ 	&mov("eax",	&DWP($data_off,"esp","",0));	# get return
+ 	&mov("ebx",	&DWP($data_off+4,"esp","",0));	#
+diff --git a/crypto/perlasm/x86gas.pl b/crypto/perlasm/x86gas.pl
+index 5c7ea3880e4d..7e49b55e97c7 100644
+--- a/crypto/perlasm/x86gas.pl
++++ b/crypto/perlasm/x86gas.pl
+@@ -170,6 +170,7 @@ sub ::file_end
+ 	if ($::macosx)	{ push (@out,"$tmp,2\n"); }
+ 	elsif ($::elf)	{ push (@out,"$tmp,4\n"); }
+ 	else		{ push (@out,"$tmp\n"); }
++	if ($::elf)	{ push (@out,".hidden\tOPENSSL_ia32cap_P\n"); }
+     }
+     push(@out,$initseg) if ($initseg);
+ }
+@@ -228,8 +229,23 @@ ___
+     elsif ($::elf)
+     {	$initseg.=<<___;
+ .section	.init
++___
++        if ($::pic)
++	{   $initseg.=<<___;
++	pushl	%ebx
++	call	.pic_point0
++.pic_point0:
++	popl	%ebx
++	addl	\$_GLOBAL_OFFSET_TABLE_+[.-.pic_point0],%ebx
++	call	$f\@PLT
++	popl	%ebx
++___
++	}
++	else
++	{   $initseg.=<<___;
+ 	call	$f
+ ___
++	}
+     }
+     elsif ($::coff)
+     {   $initseg.=<<___;	# applies to both Cygwin and Mingw
+diff --git a/crypto/x86cpuid.pl b/crypto/x86cpuid.pl
+index ba4fd80fb32e..18c124707587 100644
+--- a/crypto/x86cpuid.pl
++++ b/crypto/x86cpuid.pl
+@@ -18,6 +18,8 @@ open OUT,">$output";
+ 
+ for (@ARGV) { $sse2=1 if (/-DOPENSSL_IA32_SSE2/); }
+ 
++push(@out, ".hidden OPENSSL_ia32cap_P\n");
++
+ &function_begin("OPENSSL_ia32_cpuid");
+ 	&xor	("edx","edx");
+ 	&pushf	();
+@@ -163,9 +165,7 @@ for (@ARGV) { $sse2=1 if (/-DOPENSSL_IA32_SSE2/); }
+ &set_label("nocpuid");
+ &function_end("OPENSSL_ia32_cpuid");
+ 
+-&external_label("OPENSSL_ia32cap_P");
+-
+-&function_begin_B("OPENSSL_rdtsc","EXTRN\t_OPENSSL_ia32cap_P:DWORD");
++&function_begin_B("OPENSSL_rdtsc");
+ 	&xor	("eax","eax");
+ 	&xor	("edx","edx");
+ 	&picmeup("ecx","OPENSSL_ia32cap_P");
+@@ -179,7 +179,7 @@ for (@ARGV) { $sse2=1 if (/-DOPENSSL_IA32_SSE2/); }
+ # This works in Ring 0 only [read DJGPP+MS-DOS+privileged DPMI host],
+ # but it's safe to call it on any [supported] 32-bit platform...
+ # Just check for [non-]zero return value...
+-&function_begin_B("OPENSSL_instrument_halt","EXTRN\t_OPENSSL_ia32cap_P:DWORD");
++&function_begin_B("OPENSSL_instrument_halt");
+ 	&picmeup("ecx","OPENSSL_ia32cap_P");
+ 	&bt	(&DWP(0,"ecx"),4);
+ 	&jnc	(&label("nohalt"));	# no TSC
+@@ -246,7 +246,7 @@ for (@ARGV) { $sse2=1 if (/-DOPENSSL_IA32_SSE2/); }
+ 	&ret	();
+ &function_end_B("OPENSSL_far_spin");
+ 
+-&function_begin_B("OPENSSL_wipe_cpu","EXTRN\t_OPENSSL_ia32cap_P:DWORD");
++&function_begin_B("OPENSSL_wipe_cpu");
+ 	&xor	("eax","eax");
+ 	&xor	("edx","edx");
+ 	&picmeup("ecx","OPENSSL_ia32cap_P");
+From: Ludwig Nussel <ludwig.nussel@suse.de>
+Date: Wed, 21 Apr 2010 15:52:10 +0200
+Subject: [PATCH] also create old hash for compatibility
+
+---
+ tools/c_rehash.in | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
+
+diff --git a/tools/c_rehash.in b/tools/c_rehash.in
+index 9d2a6f6db73b..d5673a3fa6e4 100644
+--- a/tools/c_rehash.in
++++ b/tools/c_rehash.in
+@@ -17,8 +17,6 @@ my $prefix = {- quotify1($config{prefix}) -};
+ my $errorcount = 0;
+ my $openssl = $ENV{OPENSSL} || "openssl";
+ my $pwd;
+-my $x509hash = "-subject_hash";
+-my $crlhash = "-hash";
+ my $verbose = 0;
+ my $symlink_exists=eval {symlink("",""); 1};
+ my $removelinks = 1;
+@@ -27,10 +25,7 @@ my $removelinks = 1;
+ while ( $ARGV[0] =~ /^-/ ) {
+     my $flag = shift @ARGV;
+     last if ( $flag eq '--');
+-    if ( $flag eq '-old') {
+-	    $x509hash = "-subject_hash_old";
+-	    $crlhash = "-hash_old";
+-    } elsif ( $flag eq '-h' || $flag eq '-help' ) {
++    if ( $flag eq '-h' || $flag eq '-help' ) {
+ 	    help();
+     } elsif ( $flag eq '-n' ) {
+ 	    $removelinks = 0;
+@@ -203,22 +198,24 @@ sub compute_hash {
+ # certificate fingerprints
+ 
+ sub link_hash_cert {
+-    link_hash($_[0], 'cert');
++    link_hash($_[0], 'cert', '-subject_hash');
++    link_hash($_[0], 'cert', '-subject_hash_old');
+ }
+ 
+ # Same as above except for a CRL. CRL links are of the form <hash>.r<n>
+ 
+ sub link_hash_crl {
+-    link_hash($_[0], 'crl');
++    link_hash($_[0], 'crl', '-hash');
++    link_hash($_[0], 'crl', '-hash_old');
+ }
+ 
+ sub link_hash {
+-    my ($fname, $type) = @_;
+-    my $is_cert = $type eq 'cert';
++    my ($fname, $type, $hash_name) = @_;
++    my $is_cert = $type eq 'cert' or $type eq 'cert_old';
+ 
+     my ($hash, $fprint) = compute_hash($openssl,
+                                        $is_cert ? "x509" : "crl",
+-                                       $is_cert ? $x509hash : $crlhash,
++                                       $hash_name,
+                                        "-fingerprint", "-noout",
+                                        "-in", $fname);
+     chomp $hash;
+From: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
+Date: Tue, 20 Mar 2018 22:07:30 +0100
+Subject: Set systemwide default settings for libssl users
+
+This config change enforeces a TLS1.2 protocol version as minimum. It
+can be overwritten by the system administrator.
+
+It also changes the default security level from 1 to 2, moving from the 80 bit
+security level to the 112 bit security level.
+
+Signed-off-by: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
+---
+ apps/openssl.cnf | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/apps/openssl.cnf b/apps/openssl.cnf
+index 4acca4b0446f..a6fed92a2e75 100644
+--- a/apps/openssl.cnf
++++ b/apps/openssl.cnf
+@@ -15,6 +15,9 @@ HOME			= .
+ #oid_file		= $ENV::HOME/.oid
+ oid_section		= new_oids
+ 
++# System default
++openssl_conf = default_conf
++
+ # To use this configuration file with the "-extfile" option of the
+ # "openssl x509" utility, name here the section containing the
+ # X.509v3 extensions to use:
+@@ -348,3 +351,12 @@ ess_cert_id_chain	= no	# Must the ESS cert id chain be included?
+ 				# (optional, default: no)
+ ess_cert_id_alg		= sha1	# algorithm to compute certificate
+ 				# identifier (optional, default: sha1)
++[default_conf]
++ssl_conf = ssl_sect
++
++[ssl_sect]
++system_default = system_default_sect
++
++[system_default_sect]
++MinProtocol = TLSv1.2
++CipherString = DEFAULT@SECLEVEL=2
 From: Richard Levitte <levitte@openssl.org>
 Date: Fri, 20 Oct 2023 09:18:19 +0200
 Subject: Make DH_check_pub_key() and DH_generate_key() safer yet
@@ -2810,3 +3401,152 @@ index 390f41f9d423..1590a18258b0 100644
      ADD_TEST(field_tests_ec2_simple);
  #endif
      ADD_ALL_TESTS(field_tests_default, crv_len);
+From 08682afa15085a658c6168612d46bf2f9b143c2e Mon Sep 17 00:00:00 2001
+From: Tomas Mraz <tomas@openssl.org>
+Date: Wed, 15 Jan 2025 18:27:02 +0100
+Subject: Fix timing side-channel in ECDSA signature computation
+
+There is a timing signal of around 300 nanoseconds when the top word of
+the inverted ECDSA nonce value is zero. This can happen with significant
+probability only for some of the supported elliptic curves. In particular
+the NIST P-521 curve is affected. To be able to measure this leak, the
+attacker process must either be located in the same physical computer or
+must have a very fast network connection with low latency.
+
+Attacks on ECDSA nonce are also known as Minerva attack.
+
+Fixes CVE-2024-13176
+
+Reviewed-by: Tim Hudson <tjh@openssl.org>
+Reviewed-by: Neil Horman <nhorman@openssl.org>
+Reviewed-by: Paul Dale <ppzgs1@gmail.com>
+(Merged from https://github.com/openssl/openssl/pull/26429)
+
+(cherry picked from commit 63c40a66c5dc287485705d06122d3a6e74a6a203)
+---
+ crypto/bn/bn_exp.c  | 21 +++++++++++++++------
+ crypto/ec/ec_lib.c  |  7 ++++---
+ include/crypto/bn.h |  3 +++
+ 3 files changed, 22 insertions(+), 9 deletions(-)
+
+diff --git a/crypto/bn/bn_exp.c b/crypto/bn/bn_exp.c
+index 517e3c29fc..0489658252 100644
+--- a/crypto/bn/bn_exp.c
++++ b/crypto/bn/bn_exp.c
+@@ -601,7 +601,7 @@ static int MOD_EXP_CTIME_COPY_FROM_PREBUF(BIGNUM *b, int top,
+  * out by Colin Percival,
+  * http://www.daemonology.net/hyperthreading-considered-harmful/)
+  */
+-int BN_mod_exp_mont_consttime(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
++int bn_mod_exp_mont_fixed_top(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
+                               const BIGNUM *m, BN_CTX *ctx,
+                               BN_MONT_CTX *in_mont)
+ {
+@@ -618,10 +618,6 @@ int BN_mod_exp_mont_consttime(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
+     unsigned int t4 = 0;
+ #endif
+ 
+-    bn_check_top(a);
+-    bn_check_top(p);
+-    bn_check_top(m);
+-
+     if (!BN_is_odd(m)) {
+         BNerr(BN_F_BN_MOD_EXP_MONT_CONSTTIME, BN_R_CALLED_WITH_EVEN_MODULUS);
+         return 0;
+@@ -1141,7 +1137,7 @@ int BN_mod_exp_mont_consttime(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
+             goto err;
+     } else
+ #endif
+-    if (!BN_from_montgomery(rr, &tmp, mont, ctx))
++    if (!bn_from_mont_fixed_top(rr, &tmp, mont, ctx))
+         goto err;
+     ret = 1;
+  err:
+@@ -1155,6 +1151,19 @@ int BN_mod_exp_mont_consttime(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
+     return ret;
+ }
+ 
++int BN_mod_exp_mont_consttime(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
++                              const BIGNUM *m, BN_CTX *ctx,
++                              BN_MONT_CTX *in_mont)
++{
++    bn_check_top(a);
++    bn_check_top(p);
++    bn_check_top(m);
++    if (!bn_mod_exp_mont_fixed_top(rr, a, p, m, ctx, in_mont))
++        return 0;
++    bn_correct_top(rr);
++    return 1;
++}
++
+ int BN_mod_exp_mont_word(BIGNUM *rr, BN_ULONG a, const BIGNUM *p,
+                          const BIGNUM *m, BN_CTX *ctx, BN_MONT_CTX *in_mont)
+ {
+diff --git a/crypto/ec/ec_lib.c b/crypto/ec/ec_lib.c
+index 08db89fcee..bd8c4f3093 100644
+--- a/crypto/ec/ec_lib.c
++++ b/crypto/ec/ec_lib.c
+@@ -13,6 +13,7 @@
+ #include <openssl/err.h>
+ #include <openssl/opensslv.h>
+ 
++#include "crypto/bn.h"
+ #include "ec_local.h"
+ 
+ /* functions for EC_GROUP objects */
+@@ -1155,10 +1156,10 @@ static int ec_field_inverse_mod_ord(const EC_GROUP *group, BIGNUM *r,
+     if (!BN_sub(e, group->order, e))
+         goto err;
+     /*-
+-     * Exponent e is public.
+-     * No need for scatter-gather or BN_FLG_CONSTTIME.
++     * Although the exponent is public we want the result to be
++     * fixed top.
+      */
+-    if (!BN_mod_exp_mont(r, x, e, group->order, ctx, group->mont_data))
++    if (!bn_mod_exp_mont_fixed_top(r, x, e, group->order, ctx, group->mont_data))
+         goto err;
+ 
+     ret = 1;
+diff --git a/include/crypto/bn.h b/include/crypto/bn.h
+index 250914c46a..8484047fd0 100644
+--- a/include/crypto/bn.h
++++ b/include/crypto/bn.h
+@@ -72,6 +72,9 @@ int bn_set_words(BIGNUM *a, const BN_ULONG *words, int num_words);
+  */
+ int bn_mul_mont_fixed_top(BIGNUM *r, const BIGNUM *a, const BIGNUM *b,
+                           BN_MONT_CTX *mont, BN_CTX *ctx);
++int bn_mod_exp_mont_fixed_top(BIGNUM *rr, const BIGNUM *a, const BIGNUM *p,
++                              const BIGNUM *m, BN_CTX *ctx,
++                              BN_MONT_CTX *in_mont);
+ int bn_to_mont_fixed_top(BIGNUM *r, const BIGNUM *a, BN_MONT_CTX *mont,
+                          BN_CTX *ctx);
+ int bn_from_mont_fixed_top(BIGNUM *r, const BIGNUM *a, BN_MONT_CTX *mont,
+-- 
+2.30.2
+
+From: Viktor Dukhovni <openssl-users@dukhovni.org>
+Date: Thu, 11 Sep 2025 18:10:12 +0200
+Subject: kek_unwrap_key(): Fix incorrect check of unwrapped key size
+
+Fixes CVE-2025-9230
+
+The check is off by 8 bytes so it is possible to overread by
+up to 8 bytes and overwrite up to 4 bytes.
+---
+ crypto/cms/cms_pwri.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/crypto/cms/cms_pwri.c b/crypto/cms/cms_pwri.c
+index d5c3c8d399df..33a7ccaa76a3 100644
+--- a/crypto/cms/cms_pwri.c
++++ b/crypto/cms/cms_pwri.c
+@@ -229,7 +229,7 @@ static int kek_unwrap_key(unsigned char *out, size_t *outlen,
+         /* Check byte failure */
+         goto err;
+     }
+-    if (inlen < (size_t)(tmp[0] - 4)) {
++    if (inlen < 4 + (size_t)tmp[0]) {
+         /* Invalid length value */
+         goto err;
+     }
