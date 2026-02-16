@@ -1777,6 +1777,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'https-url-only': {
         'https-url': cls.backend_url + 'https-url',
       },
+      'url_https-url-https-only-false': {
+        'url': cls.backend_url + 'http',
+        'https-url': cls.backend_url + 'https',
+        'https-only': False,
+      },
       'https-url-only-https-only-false': {
         'https-url': cls.backend_url + 'https-url',
         'https-only': False,
@@ -5383,6 +5388,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       http.client.SERVICE_UNAVAILABLE,
       result_http.status_code
     )
+
+  def test_url_http_url_https_only_false(self):
+    parameter_dict = self.assertSlaveBase('url_https-url-https-only-false')
+    raise NotImplementedError
 
 
 class TestSlaveHttp3(TestSlave):
