@@ -60,7 +60,7 @@ logfile = $${directory:log}/crond.log
 {%   set exclude = slave_instance.get('exclude', '') -%}
 {%   set exclude_string = '' -%}
 {%   set sudo = slave_instance.get('sudo', 'False') -%}
-{%   set remote_schema = slave_instance.get('remote_rdiff_path', 'rdiff-backup') + ' --server --restrict-read-only / -- "$@"' -%}
+{%   set remote_schema = slave_instance.get('remote_rdiff_path', 'rdiff-backup') + ' server --restrict-mode read-only --restrict-path / -- "$@"' -%}
 
 {%   if (exclude != '') -%}
 {%     set exclude_string = "' --exclude='".join(exclude.split(' ')) -%}
