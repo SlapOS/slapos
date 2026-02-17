@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Rapid.CDN slave instanciation",
+  "properties": {
+    "domain": {
+      "description": "Base domain used by the instance",
+      "type": "string"
+    },
+    "key-generate-auth-url": {
+      "description": "URL to GET once auth for key-upload-url",
+      "type": "string"
+    },
+    "key-upload-url": {
+      "description": "URL to PUT PEM bundle of certificate and key",
+      "type": "string"
+    },
+    "log-access-url": {
+      "description": "List of URLs to access logs",
+      "type": "array"
+    },
+    "replication_number": {
+      "description": "Number of nodes the slave is replicated",
+      "type": "integer"
+    },
+    "secure_access": {
+      "description": "URL for HTTP access",
+      "type": "string"
+    },
+    "site_url": {
+      "description": "URL for HTTP access",
+      "type": "string"
+    },
+    "url": {
+      "description": "Default URL provided",
+      "type": "string"
+    },
+    "request-error-list": {
+      "description": "In case if slave has been rejected by master or has error in the request, the list contains information about each problem",
+      "type": "array"
+    },
+    "warning-list": {
+      "description": "List of warning found during the request.",
+      "type": "array"
+    },
+    "kedifa-caucase-url": {
+      "description": "URL to caucase used by KeDiFa",
+      "type": "string"
+    },
+    "backend-client-caucase-url": {
+      "description": "URL to caucase used by authentication to the backend.",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
