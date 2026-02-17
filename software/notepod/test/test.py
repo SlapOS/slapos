@@ -1,0 +1,64 @@
+##############################################################################
+#
+# Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
+#
+# WARNING: This program as such is intended to be used by professional
+# programmers who take the whole responsibility of assessing all potential
+# consequences resulting from its eventual inadequacies and bugs
+# End users who are looking for a ready-to-use solution with commercial
+# guarantees and support are strongly adviced to contract a Free Software
+# Service Company
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 3
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+##############################################################################
+
+import gzip
+import json
+import os
+import requests
+
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+
+
+setUpModule, NotepodTestCase = makeModuleSetUpAndTestCaseClass(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+
+
+class TestBasic(NotepodTestCase):
+  def setUp(self):
+    self.assertIn("_", self.computer_partition.getConnectionParameterDict())
+    self.connection_parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+
+  def test_http_access(self):
+    self.assertIn("url", self.connection_parameter_dict)
+    self.url = self.connection_parameter_dict["url"]
+    r = requests.get(self.url, verify=False)
+    self.assertEqual(requests.codes.ok, r.status_code)
+    self.assertIn("NotePOD Installer Download", r.text)
+
+  def test_image(self):
+    # TODO find the image link in the bin/server of the partition
+    image = os.path.join(
+      self.computer_partition_root_path,
+      'software_release', 'parts', 'vm-ubuntu',
+      'ubuntu-desktop-2510.img')
+    self.assertTrue(os.path.isfile(image))
+    # very basic sanity check on the image
+    image_size = os.path.getsize(image)
+    self.assertGreater(image_size, 4*1024*1024)
+
+
