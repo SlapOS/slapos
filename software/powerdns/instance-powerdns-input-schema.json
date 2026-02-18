@@ -57,13 +57,7 @@
       "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
       "type": "string",
       "format": "uri",
-      "default": "https://monitor.app.officejs.com"
-    },
-    "monitor-cors-domains": {
-      "title": "Monitor CORS domains",
-      "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
-      "type": "string",
-      "default": "monitor.app.officejs.com"
+      "default": "https://monitor.app.officejs.com/#page=ojsm_landing"
     }
   }
 }
