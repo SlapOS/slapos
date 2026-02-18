@@ -2356,25 +2356,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'forsuredoesnotexists.example.com', '')
     self.assertEqual(http.client.NOT_FOUND, result_missing.status_code)
     self.assertEqual(
-      """<html>
-<head>
-  <title>Instance not found</title>
-</head>
-<body>
-<h1>The instance has not been found</h1>
-<p>The reasons of this could be:</p>
-<ul>
-<li>the instance does not exists or the URL is incorrect
-<ul>
-<li>in this case please check the URL
-</ul>
-<li>the instance has been stopped
-<ul>
-<li>in this case please check in the SlapOS Master if the instance is """
-      """started or wait a bit for it to start
-</ul>
-</ul>
-</body>
+      """<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+      <title>404 Not Found</title>
+  </head>
+  <body>
+    <p>404 Not Found
+  </body>
 </html>
 """,
       result_missing.text
@@ -2594,7 +2584,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
-          self.assertIn('Instance not found', result_verb.text, verb)
+          self.assertIn('404 Not Found', result_verb.text, verb)
       else:
         self.assertEqual(http.client.OK, result_verb.status_code, verb)
         if verb != 'HEAD':
@@ -4364,7 +4354,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
-          self.assertIn('Instance not found', result_verb.text, verb)
+          self.assertIn('404 Not Found', result_verb.text, verb)
       else:
         self.assertEqual(http.client.OK, result_verb.status_code, verb)
         if verb != 'HEAD':
