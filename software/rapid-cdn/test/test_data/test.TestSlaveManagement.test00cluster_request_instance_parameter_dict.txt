@@ -24,8 +24,8 @@
   {
     "_": {
       "cluster-identification": "testing partition 0",
-      "monitor-cors-domains": "monitor.app.officejs.com",
       "monitor-httpd-port": "8402",
+      "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
       "slave-list": [
@@ -57,8 +57,8 @@
       "http3-port": "443",
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:8890",
       "master-key-download-url": "https://[@@_ipv6_address@@]:7879/@@master-key-download-url_endpoint@@",
-      "monitor-cors-domains": "monitor.app.officejs.com",
       "monitor-httpd-port": 8411,
+      "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
       "slave-kedifa-information": "{\"_deleted\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@?auth=\"}, \"_first\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@?auth=\"}}"
