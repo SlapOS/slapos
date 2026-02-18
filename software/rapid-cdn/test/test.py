@@ -1777,6 +1777,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'https-url-only': {
         'https-url': cls.backend_url + 'https-url',
       },
+      'url_https-url-https-only-false': {
+        'url': cls.backend_url + 'http',
+        'https-url': cls.backend_url + 'https',
+        'https-only': False,
+      },
       'https-url-only-https-only-false': {
         'https-url': cls.backend_url + 'https-url',
         'https-only': False,
@@ -2221,9 +2226,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '68',
+      'accepted-slave-amount': '69',
       'rejected-slave-amount': '0',
-      'slave-amount': '68',
+      'slave-amount': '69',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -5383,6 +5388,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       http.client.SERVICE_UNAVAILABLE,
       result_http.status_code
     )
+
+  def test_url_https_url_https_only_false(self):
+    parameter_dict = self.assertSlaveBase('url_https-url-https-only-false')
+    result_https = fakeHTTPSResult(parameter_dict['domain'], 'test-path')
+    self.assertEqualResultJson(result_https, 'Path', '/https/test-path')
+
+    result_http = fakeHTTPResult(parameter_dict['domain'], 'test-path')
+    self.assertEqualResultJson(result_http, 'Path', '/http/test-path')
 
 
 class TestSlaveHttp3(TestSlave):
