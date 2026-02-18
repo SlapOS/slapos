@@ -47,6 +47,7 @@ from slapos.util import (
 )
 from slapos import format as slapformat
 from zc.buildout import UserError
+from slapos.recipe.localinstancedb import SharedInstanceResultDB
 
 
 logger = logging.getLogger("slapos")
@@ -704,6 +705,50 @@ class JsonSchema(Recipe):
     if validate.main or isinstance(parameter_dict, dict):
       return parameter_dict
     return {}
+
+
+class JsonSchemaWithDB(JsonSchema):
+  """
+  Extended JsonSchema that stores shared instance validation results
+  in a database using HostedInstanceLocalDB and InstanceListComparator.
+
+  This class inherits from JsonSchema and adds database persistence
+  for shared instance validation results. The database path is provided
+  via options['instance-db-path'] and results are stored with
+  the valid_parameter column differentiating valid from invalid instances.
+
+  Input:
+    instance-db-path
+      Path to the SQLite database file for storing shared instance results.
+      Example:
+        ${buildout:directory}/shared-instance-db.sqlite
+  """
+  def _expandParameterDict(self, options, parameter_dict):
+    # Add database storage for shared instances
+    validate = self._parseOption(options, 'validate-parameters', 'all')
+    if validate.shared:
+      # Require instance-db-path when shared validation is enabled
+      db_path = options.get('instance-db-path')
+      if not db_path:
+        raise UserError(
+          "instance-db-path option is required when using JsonSchemaWithDB "
+          "with shared instance validation enabled."
+        )
+
+    # Call parent method to do the validation
+    result = super(JsonSchemaWithDB, self)._expandParameterDict(options, parameter_dict)
+
+    # Store results in database and remove it from options to avoid spreading
+    # it to the logs
+    if validate.shared:
+      valid = options.pop('valid-shared-instance-list', [])
+      invalid = options.pop('invalid-shared-instance-list', [])
+
+      # Create/update database
+      db = SharedInstanceResultDB(db_path)
+      db.updateFromValidationResults(valid, invalid)
+
+    return result
 
 
 class JsonDump(Recipe):

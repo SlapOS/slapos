@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "properties": {
     "custom_domain": {
       "description": "Custom Domain to use for the website. Shall contain only letters, numbers and -, and can look like example.com, first2.example.com special-site.example.com.",
@@ -29,7 +29,6 @@
     "path": {
       "default": "",
       "description": "Path to proxy to in the backend",
-      "pattern": "^$|^/.*",
       "title": "type:zope Backend Path",
       "type": "string"
     },
@@ -115,7 +114,6 @@
     "websocket-path-list": {
       "default": "",
       "description": "Space separated list of path to the websocket application. If not set the whole slave will be websocket, if set then / will be HTTP, and /<websocket-path> will be WSS. In order to have ' ' in the space use '%20'",
-      "pattern": "^$|^(/[^ ]* ?)+$",
       "title": "type:websocket Websocket Application Path List",
       "type": "string"
     },
@@ -334,7 +332,7 @@
     "strict-transport-security": {
       "title": "Strict Transport Security",
       "description": "Enables Strict Transport Security (HSTS) on the slave, the default 0 results with option disabled. Setting the value enables HSTS and sets the value of max-age. More information: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security",
-      "default": "0",
+      "default": 0,
       "type": "integer"
     },
     "strict-transport-security-sub-domains": {
