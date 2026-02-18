@@ -567,7 +567,7 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
                    headers=None, source_ip=SOURCE_IP, verb='GET',
-                   timeout=None):
+                   timeout=None, http3=False):
   headers = fakeSetupHeaders(headers)
   if 'Host' not in headers:
     headers['Host'] = '%s:%s' % (domain, port)
@@ -582,7 +582,8 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
     resolve_all={
       port: TEST_IP
     },
-    timeout=timeout
+    timeout=timeout,
+    http3=http3
   )
 
 
@@ -949,7 +950,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         # ATS adds to existing header, so ","
         self.assertEqual(
           expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
-          'http/1.0 rapid-cdn-cache-%(via_id)s '
+          'https/1.0 rapid-cdn-cache-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
           via_header
@@ -1777,6 +1778,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'https-url-only': {
         'https-url': cls.backend_url + 'https-url',
       },
+      'url_https-url-https-only-false': {
+        'url': cls.backend_url + 'http',
+        'https-url': cls.backend_url + 'https',
+        'https-only': False,
+      },
       'https-url-only-https-only-false': {
         'https-url': cls.backend_url + 'https-url',
         'https-only': False,
@@ -2221,9 +2227,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '68',
+      'accepted-slave-amount': '69',
       'rejected-slave-amount': '0',
-      'slave-amount': '68',
+      'slave-amount': '69',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -2423,7 +2429,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         [
           'http/1.1 clientvia',
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s, '
-          'http/1.1 rapid-cdn-cache-%(via_id)s' % dict(
+          'https/1.1 rapid-cdn-cache-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
           'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
@@ -2504,11 +2510,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       '_Url_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _Url-http\/_Url-backend-http '
+      r'https~ _Url-url/_Url-backend '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
-      r'"GET (/test-path/deeper){250} HTTP/1.1"'
+      r'"GET (/test-path/deeper){250} HTTP/1.1" '
+      r'\d+/\d+\/\d+\/\d+\/\d+ '
+      r'-/.+/.+'
     )
 
     result_http = fakeHTTPResult(
@@ -2533,18 +2541,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
     with open(backend_configuration_file) as fh:
       content = fh.read()
-    self.assertIn("""backend _Url-http
+    self.assertIn("""backend _Url-url
   timeout server 12s
   timeout connect 5s
   retries 3""", content)
-    self.assertIn("""  timeout queue 60s
-  timeout server 12s
-  timeout client 12s
-  timeout connect 5s
-  retries 3""", content)
-    # check that no needless entries are generated
-    self.assertIn("backend _Url-http\n", content)
-    self.assertNotIn("backend _Url-https\n", content)
+    self.assertIn("backend _Url-https-url\nbackend", content)
 
     # check out access via IPv6
     out_ipv6, err_ipv6 = self._curl(
@@ -5308,7 +5309,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
     with open(backend_configuration_file) as fh:
       content = fh.read()
-      self.assertTrue("""backend _url_https-url-http
+      self.assertTrue("""backend _url_https-url-url
+  timeout server 15s
+  timeout connect 10s
+  retries 5""" in content)
+      self.assertTrue("""backend _url_https-url-https-url
   timeout server 15s
   timeout connect 10s
   retries 5""" in content)
@@ -5383,6 +5388,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       http.client.SERVICE_UNAVAILABLE,
       result_http.status_code
     )
+
+  def test_url_https_url_https_only_false(self):
+    parameter_dict = self.assertSlaveBase('url_https-url-https-only-false')
+    result_https = fakeHTTPSResult(parameter_dict['domain'], 'test-path')
+    self.assertEqualResultJson(result_https, 'Path', '/https/test-path')
+
+    result_http = fakeHTTPResult(parameter_dict['domain'], 'test-path')
+    self.assertEqualResultJson(result_http, 'Path', '/http/test-path')
 
 
 class TestSlaveHttp3(TestSlave):
@@ -7505,7 +7518,7 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'health-check-rise': '3',
         'health-check-fall': '7',
       },
-      'health-check-failover-url': {
+      'health-check-failover-url-https-only-false-both': {
         'https-only': False,  # http and https access to check
         'enable_cache': True,
         'health-check-timeout': 1,  # fail fast for test
@@ -7591,34 +7604,34 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     backend = urllib.parse.urlparse(cls.backend_url).netloc
     cls.assertion_dict = {
       'health-check-disabled': """\
-backend _health-check-disabled-http
+backend _health-check-disabled-url
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-disabled-backend-http %s""" % (backend,),
+  server _health-check-disabled-backend %s""" % (backend,),
       'health-check-connect': """\
-backend _health-check-connect-http
+backend _health-check-connect-url
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-connect-backend-http %s   check inter 5s"""
+  server _health-check-connect-backend %s   check inter 5s"""
       """ rise 1 fall 2
   timeout check 2s""" % (backend,),
       'health-check-custom': """\
-backend _health-check-custom-http
+backend _health-check-custom-url
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-custom-backend-http %s   check inter 15s"""
+  server _health-check-custom-backend %s   check inter 15s"""
       """ rise 3 fall 7
   option httpchk POST /POST-path%%%%20to%%%%20be%%%%20encoded
   timeout check 7s""" % (backend,),
       'health-check-default': """\
-backend _health-check-default-http
+backend _health-check-default-url
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-default-backend-http %s   check inter 5s"""
+  server _health-check-default-backend %s   check inter 5s"""
       """ rise 1 fall 2
   option httpchk GET /
   timeout check 2s""" % (backend, )
@@ -7653,9 +7666,16 @@ backend _health-check-default-http
     self._test('health-check-custom')
 
   def test_health_check_failover_url(self):
-    parameter_dict = self.assertSlaveBase('health-check-failover-url')
+    self.fail()
+
+  def test_health_check_failover_url_https_only_false_https_url_only(self):
+    self.fail()
+
+  def test_health_check_failover_url_https_only_false_both(self):
+    parameter_dict = self.assertSlaveBase(
+      'health-check-failover-url-https-only-false-both')
     slave_parameter_dict = self.getSlaveParameterDictDict()[
-      'health-check-failover-url']
+      'health-check-failover-url-https-only-false-both']
 
     source_ip = '127.0.0.1'
     max_stale_age = 30
@@ -7684,7 +7704,7 @@ backend _health-check-default-http
 
     def configureResult(status_code, body):
       backend_url = self.getSlaveParameterDictDict()[
-        'health-check-failover-url']['https-url']
+        'health-check-failover-url-https-only-false-both']['https-url']
       result = mimikra.config(
         '/'.join([backend_url, cached_path]),
         headers=d2h({
@@ -7739,30 +7759,34 @@ backend _health-check-default-http
     self.assertEqual(result.text, body_failover)
 
     self.assertLastLogLineRegexp(
-      '_health-check-failover-url_backend_log',
+      '_health-check-failover-url-https-only-false-both_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'https-backend _health-check-failover-url-https-failover'
-      r'\/_health-check-failover-url-backend-https '
+      r'https~ _health-check-failover-url-https-only-false-both-failover'
+      r'-https-url\/_health-check-failover-url-https-only-false-both-backend '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'503 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
-      r'"GET /failoverpath HTTP/1.1"'
+      r'"GET /failoverpath HTTP/1.1" '
+      r'\d+/\d+\/\d+\/\d+\/\d+ '
+      r'.+/.+/.+'
     )
 
     result = fakeHTTPResult(parameter_dict['domain'], '/failoverpath')
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
     self.assertEqual(result.text, body_failover)
     self.assertLastLogLineRegexp(
-      '_health-check-failover-url_backend_log',
+      '_health-check-failover-url-https-only-false-both_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _health-check-failover-url-http-failover'
-      r'\/_health-check-failover-url-backend-http '
+      r'https~ _health-check-failover-url-https-only-false-both-failover'
+      r'-url\/_health-check-failover-url-https-only-false-both-backend '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'503 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
-      r'"GET /failoverpath HTTP/1.1"'
+      r'"GET /failoverpath HTTP/1.1" '
+      r'\d+/\d+\/\d+\/\d+\/\d+ '
+      r'.+/.+/.+'
     )
 
     # It's time to check that ATS gives cached result, even if failover
@@ -8032,6 +8056,113 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNotIn('Installing _deleted-', slapgrid_log)
     self.assertIn('Uninstalling _deleted-', slapgrid_log)
     self.assertNotIn('Updating _deleted-', slapgrid_log)
+
+
+class TestCDNHTTP(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'enable-http3': True,
+      'enable-http2-by-default': True,
+      'http3-port': HTTPS_PORT,
+    }
+
+  ignore_status_code_slave_list = [
+    'cdnhttp1.example.com',
+    'cdnhttp2.example.com',
+    'cdnhttp3.example.com',
+  ]
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'cdnhttp1': {
+        'https-only': False,
+        'enable-http2': False,
+        'enable-http3': False,
+      },
+      'cdnhttp2': {
+        'https-only': False,
+        'enable-http2': True,
+        'enable-http3': False,
+      },
+      'cdnhttp3': {
+        'https-only': False,
+        'enable-http2': True,
+        'enable-http3': True,
+      },
+      'backendhttp10cdhttp1': {
+        'https-only': False,
+        'url': cls.backend_url,
+        'enable-http2': False,
+        'enable-http3': False,
+      },
+      'backendhttp10cdnhttp2': {
+        'https-only': False,
+        'url': cls.backend_url,
+        'enable-http2': True,
+        'enable-http3': False,
+      },
+      'backendhttp10cdnhttp3': {
+        'https-only': False,
+        'url': cls.backend_url,
+        'enable-http2': True,
+        'enable-http3': True,
+      }
+    }
+
+  def test(self):
+    def get_url_info(url, **kwargs):
+      if 'http3' not in kwargs:
+        kwargs['http3'] = False
+      try:
+        result = mimikra.get(
+          url=url, verify=False, allow_redirects=False,
+          resolve_all={HTTPS_PORT: TEST_IP, HTTP_PORT: TEST_IP},
+          **kwargs
+        )
+        return {
+          'header-connection': result.headers.get('connection'),
+          'effective_http_version': result.effective_http_version
+        }
+      except CurlException as e:
+        return {'CurlException.command_returncode': e.command_returncode}
+
+    result_list = []
+    for parameter_dict in self.getSlaveConnectionParameterDictDict().values():
+      url_https = 'https://%s:%s/' % (parameter_dict['domain'], HTTPS_PORT)
+      url_http = 'http://%s:%s/' % (parameter_dict['domain'], HTTP_PORT)
+
+      for url in url_https, url_http:
+        for kw in [
+          dict(http10=True),
+          dict(http11=True),
+          dict(http2=True),
+          dict(http3=True),
+        ]:
+          result_list.append({
+            'url': url,
+            'request_kw': kw,
+            'result_dict': get_url_info(url, **kw)
+          })
+
+    def formatresult(result_list):
+      format_list = []
+      for entry in result_list:
+        format_entry = []
+        format_entry.append(
+          '%s -- %s' % (entry['url'], entry['request_kw']))
+        format_entry.append('-->')
+        for key in sorted(entry['result_dict'].keys()):
+          format_entry.append('%s: %s' % (key, entry['result_dict'][key]))
+        format_list.append(' '.join(format_entry))
+      return '\n'.join(format_list)
+    self.assertTestData(formatresult(result_list))
 
 
 if __name__ == '__main__':
