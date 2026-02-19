@@ -248,7 +248,7 @@ inline =
   cat ${directory:mariadb-ssl}/mariadb-crt.pem ${directory:mariadb-ssl}/mariadb-key.pem \
     > ${:crt-and-key-path}
 {% if ipv6_reverse_proxy_enable %}
-  ${directory:bin}/mysql \
+  ${directory:bin}/mariadb \
     -u${proxysql-cfg:admin-user} \
     -p${proxysql-cfg:admin-password} \
     -S ${proxysql-cfg:socket} \
