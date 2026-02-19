@@ -1,3 +1,8 @@
+2026-03-10
+''''''''''
+
+- helper tool to deploy re6st & slapos
+
 2026-03-02
 ''''''''''
 
