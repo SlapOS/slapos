@@ -167,7 +167,7 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
 
     # Wait until changes have been catalogued
     mariadb_partition = self._getERP5PartitionPath('export', 'mariadb')
-    mysql_bin = os.path.join(mariadb_partition, 'bin', 'mysql')
+    mysql_bin = os.path.join(mariadb_partition, 'bin', 'mariadb')
     wait_activities_script = os.path.join(
       mariadb_partition, 'software_release', 'parts', 'erp5',
       'Products', 'CMFActivity', 'bin', 'wait_activities')
@@ -242,7 +242,7 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
 
     # Check that the mariadb catalog is not yet restored
     mariadb_partition = self._getERP5PartitionPath('export', 'mariadb')
-    mysql_bin = os.path.join(mariadb_partition, 'bin', 'mysql')
+    mysql_bin = os.path.join(mariadb_partition, 'bin', 'mariadb')
     query = 'SELECT title FROM catalog WHERE id="portal_types"'
     try:
       out = subprocess.check_output((mysql_bin, 'erp5', '-e', query), universal_newlines=True)
