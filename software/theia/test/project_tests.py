@@ -160,8 +160,8 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
 
     # Change title
     new_title = time.strftime("HelloTitle %a %d %b %Y %H:%M:%S", time.localtime(time.time()))
-    requests.get('%s/portal_types/setTitle?value=%s' % (url, new_title), auth=(user, password), verify=False)
-    resp = requests.get('%s/portal_types/getTitle' % url, auth=(user, password), verify=False, allow_redirects=False)
+    requests.post(f'{url}/portal_types/setTitle', auth=(user, password), verify=False, data={'value': new_title})
+    resp = requests.get(f'{url}/portal_types/getTitle', auth=(user, password), verify=False, allow_redirects=False)
     self.assertEqual(resp.text, new_title)
     self._erp5_new_title = new_title
 
@@ -237,7 +237,7 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
     url = self._getERP5Url(info, 'erp5')
     self._waitERP5connected(url, user, password)
 
-    resp = requests.get('%s/portal_types/getTitle' % url, auth=(user, password), verify=False, allow_redirects=False)
+    resp = requests.get(f'{url}/portal_types/getTitle', auth=(user, password), verify=False, allow_redirects=False)
     self.assertEqual(resp.text, self._erp5_new_title)
 
     # Check that the mariadb catalog is not yet restored
