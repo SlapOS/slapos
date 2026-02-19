@@ -19,30 +19,23 @@
       "type": "string"
     },
     "domain": {
+      "default": "example.org",
       "description": "Domain used to generate automatic hostnames for slaves. For example 'example.com' will result with slave hostname 'slaveref.example.com'.",
       "format": "idn-hostname",
       "title": "Domain",
       "type": "string"
     },
     "enable-http2-by-default": {
-      "default": "true",
+      "default": true,
       "description": "Use HTTP2 as default Protocol",
-      "enum": [
-        "true",
-        "false"
-      ],
       "title": "Enable HTTP2 by Default",
-      "type": "string"
+      "type": "boolean"
     },
     "enable-http3": {
-      "default": "false",
+      "default": false,
       "title": "Enable HTTP3",
       "description": "Globally enable HTTP3 protocol. Can be precisely set on each node by -frontend-i-config-enable-http3",
-      "enum": [
-        "true",
-        "false"
-      ],
-      "type": "string"
+      "type": "boolean"
     },
     "http3-port": {
       "default": 443,
@@ -68,24 +61,16 @@
       "type": "integer"
     },
     "automatic-internal-kedifa-caucase-csr": {
-      "default": "true",
+      "default": true,
       "description": "Automatically signs CSRs sent to KeDiFa's caucase, based on CSR comparison.",
-      "enum": [
-        "true",
-        "false"
-      ],
       "title": "Automatic Internal KeDiFa's Caucase CSR",
-      "type": "string"
+      "type": "boolean"
     },
     "automatic-internal-backend-client-caucase-csr": {
-      "default": "true",
+      "default": true,
       "description": "Automatically signs CSRs sent to Backend Client's caucase, based on CSR comparison.",
-      "enum": [
-        "true",
-        "false"
-      ],
       "title": "Automatic Internal Backend Client's Caucase CSR",
-      "type": "string"
+      "type": "boolean"
     },
     "ciphers": {
       "title": "Ordered space separated list of ciphers",
@@ -99,14 +84,10 @@
       "type": "integer"
     },
     "authenticate-to-backend": {
-      "default": "false",
+      "default": false,
       "description": "If set to true the frontend certificate will be used as authentication certificate to the backend. Note: backend might have to know the frontend CA, available with 'backend-client-caucase-url'.",
-      "enum": [
-        "false",
-        "true"
-      ],
       "title": "Authenticate to backend",
-      "type": "string"
+      "type": "boolean"
     },
     "ram-cache-size": {
       "default": "1G",
@@ -119,8 +100,172 @@
       "title": "Default size of disk cache on each node (bytes)",
       "description": "The value can be provided with suffix 'K', 'M', 'G'",
       "type": "string"
+    },
+    "monitor-interface-url": {
+      "title": "Monitor Web Interface URL",
+      "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
+      "type": "string",
+      "format": "uri",
+      "default": "https://monitor.app.officejs.com"
+    },
+    "monitor-cors-domains": {
+      "title": "Monitor CORS domains",
+      "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
+      "type": "string",
+      "default": "monitor.app.officejs.com"
+    },
+    "monitor-username": {
+      "title": "Monitor username",
+      "description": "Username used for basic auth in monitoring web server",
+      "type": "string",
+      "default": "admin"
+    },
+    "monitor-password": {
+      "title": "Monitor password",
+      "description": "Password used for basic auth in monitoring web server",
+      "type": "string"
+    },
+    "cluster-identification": {
+      "title": "Cluster Identification",
+      "description": "Identification of the cluster.",
+      "type": "string"
+    },
+    "backend-client-caucase-url": {
+      "title": "Backend Client Caucase URL",
+      "description": "URL of the backend client caucase.",
+      "type": "string",
+      "format": "uri"
+    },
+    "kedifa-caucase-url": {
+      "title": "KeDiFa Caucase URL",
+      "description": "URL of the caucase service for KeDiFa certificate management.",
+      "type": "string",
+      "format": "uri"
+    },
+    "kedifa_port": {
+      "title": "KeDiFa Port",
+      "description": "Port number for the KeDiFa server.",
+      "type": "integer",
+      "default": 7879
+    },
+    "master-key-download-url": {
+      "title": "Master Key Download URL",
+      "description": "URL for downloading the master key from the KeDiFa server.",
+      "type": "string",
+      "format": "uri"
+    },
+    "monitor-httpd-port": {
+      "title": "Monitor HTTPD Port",
+      "description": "Port number for the monitor HTTP server.",
+      "type": "integer"
+    },
+    "slave-kedifa-information": {
+      "title": "Slave KeDiFa Information",
+      "description": "JSON string containing KeDiFa configuration information for each slave instance.",
+      "type": "string"
+    },
+    "slave-introspection-https-port": {
+      "title": "Slave Introspection HTTPS Port",
+      "description": "Port number for the slave introspection HTTPS server.",
+      "type": "integer",
+      "default": 22443
+    },
+    "backend-haproxy-statistic-port": {
+      "title": "Backend Haproxy Statistic Port",
+      "description": "Port number for the backend haproxy statistics server.",
+      "type": "integer",
+      "default": 21444
+    },
+    "trafficserver-introspection-port": {
+      "title": "Trafficserver Introspection Port",
+      "description": "Port number for the trafficserver introspection server.",
+      "type": "integer",
+      "default": 23433
+    },
+    "expert-backend-allow-downgrade-ssl": {
+      "title": "Expert Backend Allow Downgrade SSL",
+      "description": "Allow SSL downgrade for backend connections (expert setting).",
+      "type": "boolean",
+      "default": false
+    },
+    "caucase_port": {
+      "title": "Caucase Port",
+      "description": "Port number for the caucase server.",
+      "type": "integer",
+      "default": 8890
+    },
+    "caucase_backend_client_port": {
+      "title": "Caucase Backend Client Port",
+      "description": "Port number for the backend client caucase server.",
+      "type": "integer",
+      "default": 8990
+    },
+    "port": {
+      "title": "HTTPS Port",
+      "description": "Port number for HTTPS connections.",
+      "type": "integer",
+      "default": 4443
+    },
+    "plain_http_port": {
+      "title": "Plain HTTP Port",
+      "description": "Port number for plain HTTP connections.",
+      "type": "integer",
+      "default": 8080
+    },
+    "backend-haproxy-http-port": {
+      "title": "Backend Haproxy HTTP Port",
+      "description": "Port number for the backend haproxy HTTP server.",
+      "type": "integer",
+      "default": 21080
+    },
+    "backend-haproxy-https-port": {
+      "title": "Backend Haproxy HTTPS Port",
+      "description": "Port number for the backend haproxy HTTPS server.",
+      "type": "integer",
+      "default": 21443
+    },
+    "dns-nameserver": {
+      "title": "DNS Nameserver",
+      "default": "",
+      "description": "DNS Nameserver used for checking DNS for custom domains",
+      "type": "string"
+    },
+    "rotate-num": {
+      "title": "Rotate Number",
+      "description": "Number of log files to keep before rotation.",
+      "type": "integer",
+      "default": 4000
     }
   },
+  "patternProperties": {
+    "^-frontend-[0-9]+-software-release-url$": {
+      "description": "Software release URL for frontend instance (indexed).",
+      "title": "Frontend N Software Release URL",
+      "type": "string",
+      "format": "uri"
+    },
+    "^-frontend-[0-9]+-state$": {
+      "description": "State for frontend instance (indexed).",
+      "title": "Frontend N State",
+      "type": "string"
+    },
+    "^-frontend-config-[0-9]+-.+$": {
+      "description": "Frontend config parameter (indexed). Key suffix after the number is a free string (e.g. ram-cache-size, expert-backend-allow-downgrade-ssl). Some parameters accept value with suffix 'K', 'M', 'G'.",
+      "title": "Frontend Config N Parameter"
+    },
+    "^-kedifa-software-release-url$": {
+      "description": "Software release URL for KeDiFa.",
+      "title": "KeDiFa Software Release URL",
+      "type": "string",
+      "format": "uri"
+    },
+    "^-sla-[0-9]+-computer_guid$": {
+      "description": "Computer GUID for SLA instance (indexed).",
+      "title": "SLA N Computer GUID",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
   "title": "Input Parameters",
   "type": "object"
 }

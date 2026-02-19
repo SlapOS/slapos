@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input Parameters",
+  "type": "object",
+  "properties": {
+    "monitor-interface-url": {
+      "title": "Monitor Web Interface URL",
+      "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
+      "type": "string",
+      "format": "uri",
+      "default": "https://monitor.app.officejs.com"
+    },
+    "monitor-cors-domains": {
+      "title": "Monitor CORS domains",
+      "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
+      "type": "string",
+      "default": "monitor.app.officejs.com"
+    },
+    "monitor-username": {
+      "title": "Monitor username",
+      "description": "Username used for basic auth in monitoring web server",
+      "type": "string",
+      "default": "admin"
+    },
+    "monitor-password": {
+      "title": "Monitor password",
+      "description": "Password used for basic auth in monitoring web server",
+      "type": "string"
+    },
+    "monitor-httpd-port": {
+      "title": "Monitor HTTPD Port",
+      "description": "Port number for the monitor HTTP server.",
+      "type": "integer"
+    },
+    "cluster-identification": {
+      "title": "Cluster Identification",
+      "description": "Identification of the cluster.",
+      "type": "string"
+    },
+    "slave-list": {
+      "title": "Slave list",
+      "description": "List of slaves in the cluster.",
+      "type": "array"
+    },
+    "caucase_port": {
+      "title": "Caucase Port",
+      "description": "Port number for the caucase server.",
+      "type": "integer"
+    },
+    "kedifa_port": {
+      "title": "KeDiFa Port",
+      "description": "Port number for the KeDiFa server.",
+      "type": "integer"
+    },
+    "rotate-num": {
+      "title": "Rotate Number",
+      "description": "Number of log files to keep before rotation.",
+      "type": "integer",
+      "default": 4000
+    }
+  },
+  "additionalProperties": false
+}
