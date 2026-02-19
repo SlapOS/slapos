@@ -987,6 +987,7 @@ command = mariadb-backup
 [binary-wrap-mariadb]
 < = binary-wrap-base
 command = mariadb
+deprecates = ${binary-wrap-deprecated-mysql:recipe}
 
 [binary-wrap-mariadb-dump]
 < = binary-wrap-base
@@ -1006,6 +1007,10 @@ command = mariadb-tzinfo-to-sql
 command-line = "{{ parameter_dict['percona-tools-location'] }}/bin/${:command}"
 command = pt-query-digest
 
+# BBB keep a wrapper in bin/mysql for compatibility
+[binary-wrap-deprecated-mysql]
+< = binary-wrap-base
+command = mysql
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
