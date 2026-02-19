@@ -29,6 +29,7 @@
     "_": {
       "caucase_port": "15090",
       "cluster-identification": "testing partition 0",
+      "cluster-reference": "local-T-0",
       "kedifa_port": "15080",
       "monitor-cors-domains": "monitor.app.officejs.com",
       "monitor-httpd-port": "8402",
@@ -58,6 +59,7 @@
       "apache-key": "@@key_pem@@",
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
       "cluster-identification": "testing partition 0",
+      "cluster-reference": "local-T-0",
       "domain": "example.com",
       "enable-http3": "false",
       "extra_slave_instance_list": "[{\"enable_cache\": true, \"slave_reference\": \"_ssl_from_master\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
