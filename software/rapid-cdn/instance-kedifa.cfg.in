@@ -26,14 +26,14 @@ parts =
 # Note: Workaround for monitor stack, which uses monitor-httpd-port parameter
 #       directly, and in our case it can come from the network, thus resulting
 #       with need to strip !py!'u'
-monitor-httpd-port = {{ instance_parameter_dict['configuration.monitor-httpd-port'] | int }}
-password = {{ instance_parameter_dict['configuration.monitor-password'] | string }}
+monitor-httpd-port = {{ slapparameter_dict['monitor-httpd-port'] }}
+password = {{ slapparameter_dict['monitor-password'] }}
 
 [caucased]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 {%  set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
-{%  set caucase_netloc = caucase_host ~ ':' ~ instance_parameter_dict['configuration.caucase_port'] -%}
+{%  set caucase_netloc = caucase_host ~ ':' ~ slapparameter_dict['caucase_port'] -%}
 {%  set caucase_url = 'http://' ~ caucase_netloc -%}
 {{  caucase.caucased(
       prefix='caucased',
@@ -201,7 +201,7 @@ context =
 
 [kedifa-config]
 ip = {{ instance_parameter_dict['ipv6-random'] }}
-port = {{ instance_parameter_dict['configuration.kedifa_port'] }}
+port = {{ slapparameter_dict['kedifa_port'] }}
 db = ${directory:kedifa}/kedifa.sqlite
 certificate = ${directory:etc-kedifa}/certificate.pem
 key = ${:certificate}
@@ -233,7 +233,7 @@ config-ca-cert-file = ${kedifa-config:ca-certificate}
 <= logrotate-entry-base
 name = kedifa
 log = ${kedifa-config:logfile}
-rotate-num = {{ instance_parameter_dict['configuration.rotate-num'] | int }}
+rotate-num = {{ slapparameter_dict['rotate-num'] | int }}
 delaycompress =
 
 [kedifa]

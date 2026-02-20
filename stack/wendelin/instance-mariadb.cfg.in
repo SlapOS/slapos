@@ -331,7 +331,7 @@ inline =
   #!{{ bash }}
   set -euo pipefail
   filepath="${directory:mariadb-dump-full}/"${dated-filename:command}.sql.gz
-  "${binary-wrap-mysqldump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup['enable'] %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
+  "${binary-wrap-mariadb-dump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup['enable'] %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
   ln -sf "$filepath" "${directory:mariadb-dump-full}/${:most-recent}"
 
 [{{ section('cron-entry-mariadb-dump') }}]
@@ -364,7 +364,7 @@ context =
   key logical_backup_enabled :logical-backup-enabled
   raw python_executable {{ parameter_dict['python-executable'] }}
   raw full_backup_retention_days {{ physical_backup['retention-days'] }}
-depends = ${binary-wrap-mariabackup:command}
+depends = ${binary-wrap-mariadb-backup:command}
 
 [mariabackup-restore-script]
 recipe = slapos.recipe.template:jinja2
@@ -379,7 +379,7 @@ context =
   key pid_file my-cnf-parameters:pid-file
   raw curl_executable {{ parameter_dict['curl-location'] }}/bin/curl
   raw python_executable {{ parameter_dict['python-executable'] }}
-depends = ${binary-wrap-mariabackup:command}
+depends = ${binary-wrap-mariadb-backup:command}
 
 {% if physical_backup['enable'] -%}
 [{{ section('cron-entry-mariabackup') }}]
@@ -413,7 +413,6 @@ max-connection-count = {{ dumps(slapparameter_dict.get('max-connection-count', 1
 innodb-buffer-pool-size = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-size', 0)) }}
 innodb-buffer-pool-instances = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-instances', 0)) }}
 innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0)) }}
-innodb-file-per-table = {{ dumps(slapparameter_dict.get('innodb-file-per-table', 0)) }}
 innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
 relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
 character-set-server = {{ dumps(slapparameter_dict.get('character-set-server', 'utf8mb4')) }}
@@ -505,7 +504,7 @@ context =
   key foreground_script :foreground-script
   raw extra_options --skip-networking
 foreground-script =
-  "${binary-wrap-mysql:wrapper-path}" < "${init-script:output}"
+  "${binary-wrap-mariadb:wrapper-path}" < "${init-script:output}"
 
 [pytz-path]
 recipe = slapos.recipe.build
@@ -531,14 +530,14 @@ context =
   key foreground_script :foreground-script
   raw extra_options --skip-networking
 foreground-script =
-  mysql="${binary-wrap-mysql:wrapper-path}"
-  mysql_upgrade="${binary-wrap-mysql_upgrade:wrapper-path}"
-  mysql_tzinfo_to_sql="${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}"
+  mariadb="${binary-wrap-mariadb:wrapper-path}"
+  mariadb_upgrade="${binary-wrap-mariadb-upgrade:wrapper-path}"
+  mariadb_tzinfo_to_sql="${binary-wrap-mariadb-tzinfo-to-sql:wrapper-path}"
   zoneinfo="${pytz-path:zoneinfo}"
-  if [ -z "$("$mysql" -e "SHOW SLAVE STATUS")" ]
+  if [ -z "$("$mariadb" -e "SHOW SLAVE STATUS")" ]
   then
-    "$mysql_upgrade" || true
-    "$mysql_tzinfo_to_sql" "$zoneinfo" | "$mysql" -B mysql || true
+    "$mariadb_upgrade" || true
+    "$mariadb_tzinfo_to_sql" "$zoneinfo" | "$mariadb" -B mysql || true
   fi
 
 {% if replication -%}
@@ -587,7 +586,7 @@ install-script =
   {%- endif %}
   curl="{{ parameter_dict['curl-location'] }}/bin/curl"
   zcat="{{ parameter_dict['gzip-location'] }}/bin/zcat"
-  mysql="${binary-wrap-mysql:wrapper-path}"
+  mariadb="${binary-wrap-mariadb:wrapper-path}"
 
   date
 
@@ -639,7 +638,7 @@ foreground-script =
 
   {% elif upstream_bootstrap_url -%}
   echo "Importing $bootstrap_file"
-  "$zcat" "$bootstrap_file" | "$mysql"
+  "$zcat" "$bootstrap_file" | "$mariadb"
 
   echo "Extracting GTID from backup"
   set +o pipefail
@@ -658,11 +657,11 @@ foreground-script =
   {%- endif %}
 
   echo "Configuring server as replica"
-  "$mysql" -e "$SQL_SET_GTID"
-  "$mysql" -e "
+  "$mariadb" -e "$SQL_SET_GTID"
+  "$mariadb" -e "
   ${:sql-change-master-command}
   "
-  "$mysql" -e "START SLAVE;"
+  "$mariadb" -e "START SLAVE;"
 sql-change-master-command =
   CHANGE MASTER TO
   MASTER_HOST='{{ upstream.hostname }}',
@@ -758,10 +757,10 @@ context =
 inline =
   #! /bin/sh
   set -eu
-  mysql="${binary-wrap-mysql:wrapper-path}"
+  mariadb="${binary-wrap-mariadb:wrapper-path}"
   {
     date
-    $mysql -e "
+    $mariadb -e "
       {{ sql | indent(4) }}
     "
     echo
@@ -967,7 +966,7 @@ inline = {{ dumps(slapparameter_dict.get('odbc-ini', ' ')) }}
 < = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
-post = "${binary-wrap-mysql:wrapper-path}" -B -e "FLUSH LOGS"
+post = "${binary-wrap-mariadb:wrapper-path}" -B -e "FLUSH LOGS"
 
 [{{ section('binary-link') }}]
 recipe = slapos.cookbook:symbolic.link
@@ -981,26 +980,26 @@ recipe = slapos.cookbook:wrapper
 command-line = "{{ mariadb['location'] }}/bin/${:command}" --defaults-file="${my-cnf:output}"
 wrapper-path = ${directory:bin}/${:command}
 
-[binary-wrap-mariabackup]
+[binary-wrap-mariadb-backup]
 < = binary-wrap-base
-command = mariabackup
+command = mariadb-backup
 
-[binary-wrap-mysql]
+[binary-wrap-mariadb]
 < = binary-wrap-base
-command = mysql
+command = mariadb
 
-[binary-wrap-mysqldump]
+[binary-wrap-mariadb-dump]
 < = binary-wrap-base
-command = mysqldump
+command = mariadb-dump
 
-[binary-wrap-mysql_upgrade]
+[binary-wrap-mariadb-upgrade]
 < = binary-wrap-base
-command = mysql_upgrade
+command = mariadb-upgrade
 
-[binary-wrap-mysql_tzinfo_to_sql]
+[binary-wrap-mariadb-tzinfo-to-sql]
 < = binary-wrap-base
 command-line = "{{ mariadb['location'] }}/bin/${:command}"
-command = mysql_tzinfo_to_sql
+command = mariadb-tzinfo-to-sql
 
 [binary-wrap-pt-digest]
 <= binary-wrap-base
@@ -1066,7 +1065,7 @@ url = {{ parameter_dict['mariadb-resiliency-after-import-script'] }}
 output = ${directory:bin}/restore-from-backup
 context =
   key dash dash:dash
-  key mysql_executable binary-wrap-mysql:wrapper-path
+  key mariadb_executable binary-wrap-mariadb:wrapper-path
   key mariadb_data_directory my-cnf-parameters:data-directory
   key mariadb_backup_directory directory:mariadb-dump-full
   key pid_file my-cnf-parameters:pid-file
@@ -1114,7 +1113,7 @@ config-command = "{{ parameter_dict["check-computer-memory-binary"] }}" -db ${mo
 <= monitor-promise-base
 promise = check_command_execute
 name = mariadb.py
-mysql = "${binary-wrap-mysql:wrapper-path}"
+mariadb = "${binary-wrap-mariadb:wrapper-path}"
 {%- if not replication and database_list and database_list[0].get('user') %}
 netloc = --host="${my-cnf-parameters:ip}" --port="${my-cnf-parameters:port}"
 auth = --user="{{ database_list[0]['user'] }}" --password="{{ database_list[0]['password'] }}"
@@ -1122,7 +1121,7 @@ auth = --user="{{ database_list[0]['user'] }}" --password="{{ database_list[0]['
 netloc =
 auth =
 {%- endif %}
-config-command = ${:mysql} --execute ';' ${:netloc} ${:auth}
+config-command = ${:mariadb} --execute ';' ${:netloc} ${:auth}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ public_ipv6 }}

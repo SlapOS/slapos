@@ -1,0 +1,27 @@
+This test fail on some of our debian 13 test machines:
+
+2026-02-12 16:28:20 slapos[44028] INFO --- FAIL: TestUnshareMountNameSpace (0.01s)
+2026-02-12 16:28:20 slapos[44028] INFO     exec_linux_test.go:286: unshare failed: exit status 2
+2026-02-12 16:28:20 slapos[44028] INFO         unshare: mount /tmp/TestUnshareMountNameSpace4102798364/001 failed: 0x1
+
+golang 1.17 is used only to build more recent golang versions, so it's pragmatic to just skip the test.
+
+See discussion on https://lab.nexedi.com/nexedi/slapos/-/merge_requests/1986#note_253362
+
+
+---
+ src/syscall/exec_linux_test.go | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/syscall/exec_linux_test.go b/src/syscall/exec_linux_test.go
+index 491333bd2f..f0d0f525e8 100644
+--- a/src/syscall/exec_linux_test.go
++++ b/src/syscall/exec_linux_test.go
+@@ -244,6 +244,7 @@ func TestGroupCleanupUserNamespace(t *testing.T) {
+ // Test for https://go.dev/issue/19661: unshare fails because systemd
+ // has forced / to be shared
+ func TestUnshareMountNameSpace(t *testing.T) {
++ 	t.Skip("skipping: not supported in SlapOS")
+ 	testenv.MustHaveExec(t)
+ 
+ 	if os.Getenv("GO_WANT_HELPER_PROCESS") == "1" {

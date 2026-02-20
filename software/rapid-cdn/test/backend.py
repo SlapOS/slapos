@@ -117,30 +117,30 @@ class TestHandler(BaseHTTPRequestHandler):
     self.wfile_write(response)
 
   def do_POST(self):
-    return self.do_GET(verb='POST')
+    return self.do_GET()
 
   def do_PUT(self):
-    return self.do_GET(verb='PUT')
+    return self.do_GET()
 
   def do_DELETE(self):
-    return self.do_GET(verb='DELETE')
+    return self.do_GET()
 
   def do_PATCH(self):
-    return self.do_GET(verb='PATCH')
+    return self.do_GET()
 
   def do_HEAD(self):
-    return self.do_GET(verb='HEAD')
+    return self.do_GET()
 
   def do_OPTIONS(self):
-    return self.do_GET(verb='OPTIONS')
+    return self.do_GET()
 
   def do_TRACE(self):
-    return self.do_GET(verb='TRACE')
+    return self.do_GET()
 
   def do_CONNECT(self):
-    return self.do_GET(verb='CONNECT')
+    return self.do_GET()
 
-  def do_GET(self, verb='GET'):
+  def do_GET(self):
     def generateDefaultResponse():
       header_dict = {}
       for header in list(self.headers.keys()):
@@ -156,7 +156,7 @@ class TestHandler(BaseHTTPRequestHandler):
         {
           'Path': self.path,
           'Incoming Headers': header_dict,
-          'Verb': verb
+          'Verb': self.command
         },
         indent=2).encode()
 

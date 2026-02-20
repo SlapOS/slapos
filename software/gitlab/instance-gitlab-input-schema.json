@@ -223,6 +223,12 @@
       "title": "Default root password",
       "description": "A default password for root user. Should be a strong password else it's rejected. This parameter is only used initialisation of gitlab.",
       "type": "string"
+    },
+    "backup_frequency": {
+      "title": "Gitlab backup frequency",
+      "description": "Periodicity of gitlab backup, in cron format. Default every 4h",
+      "type": "string",
+      "default": "0 */4 * * *"
     }
   },
   "unevaluatedProperties": false

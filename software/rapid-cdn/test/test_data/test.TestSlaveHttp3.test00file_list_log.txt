@@ -95,6 +95,12 @@ T-2/var/log/httpd/_https-only_frontend_log
 T-2/var/log/httpd/_https-url-netloc-list_access_log
 T-2/var/log/httpd/_https-url-netloc-list_backend_log
 T-2/var/log/httpd/_https-url-netloc-list_frontend_log
+T-2/var/log/httpd/_https-url-only-https-only-false_access_log
+T-2/var/log/httpd/_https-url-only-https-only-false_backend_log
+T-2/var/log/httpd/_https-url-only-https-only-false_frontend_log
+T-2/var/log/httpd/_https-url-only_access_log
+T-2/var/log/httpd/_https-url-only_backend_log
+T-2/var/log/httpd/_https-url-only_frontend_log
 T-2/var/log/httpd/_prefer-gzip-encoding-to-backend-https-only_access_log
 T-2/var/log/httpd/_prefer-gzip-encoding-to-backend-https-only_backend_log
 T-2/var/log/httpd/_prefer-gzip-encoding-to-backend-https-only_frontend_log
@@ -190,6 +196,9 @@ T-2/var/log/httpd/_url-trailing-slash-absent_frontend_log
 T-2/var/log/httpd/_url-trailing-slash-present_access_log
 T-2/var/log/httpd/_url-trailing-slash-present_backend_log
 T-2/var/log/httpd/_url-trailing-slash-present_frontend_log
+T-2/var/log/httpd/_url_https-url-https-only-false_access_log
+T-2/var/log/httpd/_url_https-url-https-only-false_backend_log
+T-2/var/log/httpd/_url_https-url-https-only-false_frontend_log
 T-2/var/log/httpd/_url_https-url_access_log
 T-2/var/log/httpd/_url_https-url_backend_log
 T-2/var/log/httpd/_url_https-url_frontend_log

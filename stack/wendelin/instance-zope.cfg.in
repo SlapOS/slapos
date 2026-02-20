@@ -444,7 +444,7 @@ post = test ! -s {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} || {{ bin_direc
 [{{ section("watch_activities") }}]
 <= userhosts-wrapper-base
 environment +=
-  MYSQL=${binary-link:target-directory}/mysql
+  MYSQL=${binary-link:target-directory}/mariadb
 wrapped-command-line = {{ parameter_dict['erp5-location'] }}/product/CMFActivity/bin/${:_buildout_section_name_} "-h erp5-catalog-0 -P  {{ mysql.port }}  -u {{ mysql.username }} -p{{ mysql.password}} {{ mysql_db }}" 5 3600
 wrapper-path = ${buildout:bin-directory}/${:_buildout_section_name_}
 
