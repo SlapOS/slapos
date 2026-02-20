@@ -180,6 +180,7 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
       self.assertIn('CREATE TABLE', dump.read())
 
   def test_full_mariabackup(self) -> None:
+    breakpoint()
     self._executeCrontabAtDate('mariabackup', '2050-01-01')
     self.assertTrue(glob.glob(
       os.path.join(
@@ -395,10 +396,10 @@ class TestMariaDBTLS(MariaDBTestCase):
     ssl['cert'], ssl['key'] = self._client_cert()
 
     with contextlib.closing(self.getReplicationUserDatabaseConnection(ssl)) as cnx:
-      cert_before = cnx._sock.getpeercert()
+      cert_before = cnx._sock.getpeercert()  # ty:ignore[unresolved-attribute]
     self._run_service('caucase-mariadb-updater', '(?s)Renewing.*Next wake-up', '+63days')
     with contextlib.closing(self.getReplicationUserDatabaseConnection(ssl)) as cnx:
-      cert_after = cnx._sock.getpeercert()
+      cert_after = cnx._sock.getpeercert()  # ty:ignore[unresolved-attribute]
     self.assertNotEqual(cert_before['notAfter'], cert_after['notAfter'])
 
   def test_mariadbackup_url_certificate_renewal(self):
@@ -686,10 +687,14 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
 
   @classmethod
   def runBackup(cls, mariadb, script='mariabackup-script'):
-    subprocess.check_output(
+    try:
+      out_err = subprocess.check_output(
       (os.path.join(cls.getComputerPartitionPath(mariadb), 'bin', script),),
       stderr=subprocess.STDOUT,
-    )
+      )
+    except Exception as e:
+      breakpoint()
+      raise
 
   @classmethod
   def runTakoever(cls, mariadb):
@@ -828,6 +833,10 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
       script = 'mariabackup' if 'mariabackup' in bootstrap else 'mariadb-dump'
       for _ in range(backups):
         self.runBackup(primary, script + '-script')
+        # XXX running mariabackup twice within a short time causes errors:
+        # mariadb-backup: Error writing file 'UNKNOWN' (errno: 32 "Broken pipe")
+        # because this seems a test only problem we ignore this problem for now.
+        time.sleep(1)
     # Request replica Mariadb
     replica = self.requestReplica(
       primary,
