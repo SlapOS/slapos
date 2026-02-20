@@ -38,7 +38,12 @@
     "_": {
       "caucase_port": 15090,
       "cluster-identification": "testing partition 0",
+<<<<<<< HEAD
       "kedifa_port": 15080,
+=======
+      "cluster-reference": "local-T-0",
+      "kedifa_port": "15080",
+>>>>>>> aaf68a9a1 (software/rapid-cdn: Implement fluent-bit client)
       "monitor-cors-domains": "monitor.app.officejs.com",
       "monitor-httpd-port": 8402,
       "monitor-password": "@@monitor-password@@",
@@ -75,6 +80,7 @@
       "backend-connect-timeout": 5,
       "ciphers": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384",
       "cluster-identification": "testing partition 0",
+      "cluster-reference": "local-T-0",
       "domain": "example.com",
       "enable-http2-by-default": true,
       "enable-http3": false,
