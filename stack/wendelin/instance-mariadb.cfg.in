@@ -643,7 +643,7 @@ foreground-script =
 
   echo "Extracting GTID from backup"
   set +o pipefail
-  SQL_SET_GTID=$("$zcat" "$bootstrap_file" 2>/dev/null | sed '100q; /^--\s*SET GLOBAL gtid_slave_pos=/!d; s/^--\s*//; q')
+  SQL_SET_GTID=$("$zcat" "$bootstrap_file" 2>/dev/null | sed -n '100q; /^--[[:space:]]*SET GLOBAL gtid_slave_pos=/{s/^--[[:space:]]*//;p;q;}')
   set -o pipefail
   if [ -z "$SQL_SET_GTID" ]; then
     echo "  \_ GTID not found in backup; ABORT"
