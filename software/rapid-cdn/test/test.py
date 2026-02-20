@@ -63,6 +63,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
+from slapos.test.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
@@ -8033,6 +8034,19 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertIn('Uninstalling _deleted-', slapgrid_log)
     self.assertNotIn('Updating _deleted-', slapgrid_log)
 
+class TestRapidCDNMonitoringPropagation(
+    MonitoringPropagationTestMixin, HttpFrontendTestCase):
+  """Verify monitor-interface-url propagation for the rapid-cdn master."""
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'monitor-interface-url': cls.MONITOR_INTERFACE_URL,
+    }
 
 if __name__ == '__main__':
   class HTTP6Server(backend.ThreadedHTTPServer):
