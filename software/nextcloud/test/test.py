@@ -32,7 +32,7 @@ import glob
 import re
 
 from six.moves.urllib.parse import urlparse
-
+from slapos.test.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 
@@ -376,3 +376,8 @@ class TestNextCloudParameters(NextCloudTestCase):
     self.assertEqual(
         turn_config.strip(),
         b'[{"server":"turn.example.net:5439","secret":"c4f0ead40a49bbbac3c58f7b9b43990f78ebd96900757ae67e10190a3a6b6053","protocols":"udp,tcp"}]')
+
+class TestNextCloudMonitoringPropagation(
+    MonitoringPropagationTestMixin, NextCloudTestCase):
+  """Verify monitor-interface-url propagation for a Nextcloud instance."""
+  __partition_reference__ = 'ncm'
