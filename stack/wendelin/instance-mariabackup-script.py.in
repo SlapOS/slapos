@@ -40,7 +40,7 @@ else:
   filename = '%s.full.xb.zstd' % timestamp
   metadir = '%s.full.meta' % timestamp
 process_mariadb_backup = subprocess.Popen([
-  mariadb_backup_executable, '--backup', '--stream=xbstream',
+  mariadb_backup_executable, '--skip-ssl', '--backup', '--stream=xbstream',
   '--extra-lsndir=%s/%s' % (mariadb_backup_directory, metadir),
 ] + extra_mariadb_backup_args, stdout=subprocess.PIPE)
 process_zstd = subprocess.Popen([

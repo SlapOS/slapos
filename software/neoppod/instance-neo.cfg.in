@@ -250,7 +250,7 @@ inline =
 < = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
-post = ${binary-wrap-mysql:command-line} -e "FLUSH LOGS"
+post = ${binary-wrap-mysql:command-line} --skip-ssl -e "FLUSH LOGS"
 
 {% if runTestSuite_in is defined -%}
 # bin/runTestSuite to run NEO tests

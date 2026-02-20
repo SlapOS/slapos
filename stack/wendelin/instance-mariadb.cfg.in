@@ -252,6 +252,7 @@ inline =
     -u${proxysql-cfg:admin-user} \
     -p${proxysql-cfg:admin-password} \
     -S ${proxysql-cfg:socket} \
+    --skip-ssl \
     -e 'PROXYSQL RELOAD TLS;'
 {% endif %}
   ${haproxy-reload:output}
@@ -331,7 +332,7 @@ inline =
   #!{{ bash }}
   set -euo pipefail
   filepath="${directory:mariadb-dump-full}/"${dated-filename:command}.sql.gz
-  "${binary-wrap-mariadb-dump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup['enable'] %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
+  "${binary-wrap-mariadb-dump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M --skip-ssl {% if incremental_backup['enable'] %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
   ln -sf "$filepath" "${directory:mariadb-dump-full}/${:most-recent}"
 
 [{{ section('cron-entry-mariadb-dump') }}]
@@ -966,7 +967,7 @@ inline = {{ dumps(slapparameter_dict.get('odbc-ini', ' ')) }}
 < = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
-post = "${binary-wrap-mariadb:wrapper-path}" -B -e "FLUSH LOGS"
+post = "${binary-wrap-mariadb:wrapper-path}" --skip-ssl -B -e "FLUSH LOGS"
 
 [{{ section('binary-link') }}]
 recipe = slapos.cookbook:symbolic.link
