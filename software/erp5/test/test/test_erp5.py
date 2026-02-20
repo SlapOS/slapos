@@ -25,7 +25,6 @@
 #
 ##############################################################################
 
-
 import concurrent.futures
 import contextlib
 import datetime
@@ -172,6 +171,8 @@ class TestDefaultParameters(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
   """
   __partition_reference__ = 'defp'
   __test_matrix__ = matrix((default,))
+  def test_pdb(self):
+    breakpoint()
 
   def test_frontend_request(self):
     with open(os.path.join(self.computer_partition_root_path,
@@ -645,6 +646,8 @@ class TestWatchActivities(ERP5InstanceTestCase):
   def test(self):
     # "watch_activities" scripts use watch command. We'll fake a watch command
     # that executes the actual command only once to check the output.
+    breakpoint()
+    
     tmpdir = tempfile.mkdtemp()
     self.addCleanup(shutil.rmtree, tmpdir)
     with open(os.path.join(tmpdir, 'watch'), 'w') as f:
