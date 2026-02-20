@@ -114,6 +114,7 @@ ssl_cipher = {{ parameter_dict['ssl-cipher'] }}
 [client]
 socket = {{ socket }}
 user = root
+ssl = false
 
 [mysql]
 no_auto_rehash
@@ -123,3 +124,4 @@ interactive_timeout
 
 [mysqldump]
 max_allowed_packet = 128M
+ssl = false
