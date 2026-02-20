@@ -331,7 +331,15 @@ inline =
   #!{{ bash }}
   set -euo pipefail
   filepath="${directory:mariadb-dump-full}/"${dated-filename:command}.sql.gz
-  "${binary-wrap-mariadb-dump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup['enable'] %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
+  {
+    echo "-- SET GLOBAL gtid_slave_pos='$(${binary-wrap-mariadb:wrapper-path} -Nse "SELECT @@GLOBAL.gtid_binlog_pos")';"
+    "${binary-wrap-mariadb-dump:wrapper-path}" \
+      --all-databases \
+      --flush-privileges \
+      --single-transaction \
+      --max-allowed-packet=128M \
+      {% if incremental_backup['enable'] %}--flush-logs --master-data=2 {% endif %}
+  } | {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
   ln -sf "$filepath" "${directory:mariadb-dump-full}/${:most-recent}"
 
 [{{ section('cron-entry-mariadb-dump') }}]
