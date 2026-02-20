@@ -6,7 +6,6 @@
     "cell1": {
       "title": "Cell Parameters",
       "description": "Radio parameters related to the cell",
-      "unevaluatedProperties": false,
       "allOf": [
         {
           "$ref": "ors-cell.json"
@@ -21,8 +20,10 @@
     "nodeb": {
       "title": "eNB Parameters",
       "description": "Parameters not related to the cell but to the eNB",
-      "unevaluatedProperties": false,
       "allOf": [
+        {
+          "$ref": "ors-enb-classic.json"
+        },
         {
           "$ref": "ors-enb-gnb-classic.json"
         },
@@ -39,7 +40,6 @@
     "management": {
       "title": "ORS Management Parameters",
       "description": "Parameters which are not related to radio, such as promise thresholds, statistical collection, log verbosity etc...",
-      "unevaluatedProperties": false,
       "allOf": [
         {
           "$ref": "ors-params.json"
@@ -50,6 +50,9 @@
     },
     "monitor-interface-url": {
       "$ref": "instance-ors-gnb-input-schema.json#/properties/monitor-interface-url"
+    },
+    "rf-info": {
+      "$ref": "instance-ors-gnb-input-schema.json#/properties/rf-info"
     }
   }
 }

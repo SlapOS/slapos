@@ -44,9 +44,22 @@ core_network_param_dict = {
     'lte_mock': True,
     'core_network_plmn': '00102',
 }
+rf_info = {
+    "sdr_map": {
+      "0": {
+        "serial": "B0",
+        "version": "4.2",
+        "band": "B39",
+        "tdd": "TDD",
+        "model": "ORS"
+      },
+    },
+    "flavour": "ORS"
+}
 param_dict = {
     'testing': True,
     'lte_mock': True,
+    'rf-info': json.dumps(rf_info),
     'cell1': {
         'tx_gain': 17,
         'rx_gain': 18,
@@ -132,6 +145,7 @@ enb_param_dict = {
     },
     'management': {
         'xlog_forwarding_enabled': False,
+        'check_core_network': False,
     },
 }
 gnb_param_dict = {
@@ -163,6 +177,7 @@ gnb_param_dict = {
     },
     'management': {
         'xlog_forwarding_enabled': False,
+        'check_core_network': False,
     },
 }
 gnb_param_dict1 = {
@@ -187,12 +202,20 @@ gnb_param_dict2 = {
         ],
     },
 }
+
+for k in param_dict:
+  if k in "cell1 nodeb management".split(" "):
+    enb_param_dict.setdefault(k,  {}).update(param_dict[k])
+    gnb_param_dict1.setdefault(k, {}).update(param_dict[k])
+    gnb_param_dict2.setdefault(k, {}).update(param_dict[k])
+  else:
+    enb_param_dict[k]  = param_dict[k]
+    gnb_param_dict1[k] = param_dict[k]
+    gnb_param_dict2[k] = param_dict[k]
+
 for s in "cell1 nodeb management".split(" "):
-    enb_param_dict.setdefault(s,  {}).update(param_dict.get(s, {}))
     gnb_param_dict1.setdefault(s, {}).update(gnb_param_dict.get(s, {}))
-    gnb_param_dict1.setdefault(s, {}).update(param_dict.get(s, {}))
     gnb_param_dict2.setdefault(s, {}).update(gnb_param_dict.get(s, {}))
-    gnb_param_dict2.setdefault(s, {}).update(param_dict.get(s, {}))
 
 for d in [enb_param_dict, gnb_param_dict1, gnb_param_dict2]:
     d['testing']  = True
@@ -380,10 +403,10 @@ class TestCoreNetworkParameters(ORSTestCase):
 
 def test_monitor_gadget_url(self):
   parameters = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
-  self.assertIn('monitor-gadget-url', parameters)
-  monitor_setup_url = parameters['monitor-setup-url']
-  monitor_gadget_url = parameters['monitor-gadget-url']
-  monitor_base_url = parameters['monitor-base-url']
+  self.assertIn('URL.monitor-gadget', parameters)
+  monitor_setup_url = parameters['URL.monitor-setup']
+  monitor_gadget_url = parameters['URL.monitor-gadget']
+  monitor_base_url = parameters['URL.monitor-base']
   public_url = monitor_base_url + '/public'
   response = requests.get(public_url, verify=False)
   self.assertEqual(requests.codes['OK'], response.status_code)

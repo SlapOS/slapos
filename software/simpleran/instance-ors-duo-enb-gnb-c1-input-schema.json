@@ -1,0 +1,139 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "cell1": {
+      "title": "First Cell",
+      "description": "Radio parameters of the first cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
+      "$ref": "#/$defs/ors_duo_cell"
+    },
+    "cell2": {
+      "title": "Second Cell",
+      "description": "Radio parameters of the second cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
+      "$ref": "#/$defs/ors_duo_cell"
+    },
+    "nodeb": {
+      "title": "eNB Parameters",
+      "description": "Parameters not related to a single cell but to the eNB",
+      "allOf": [
+        {
+          "$ref": "ors-enb-gnb-duo.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
+    },
+    "management": {
+      "title": "ORS Management Parameters",
+      "description": "Parameters which are not related to radio, such as promise thresholds, statistical collection, log verbosity etc...",
+      "allOf": [
+        {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Management",
+          "type": "object",
+          "properties": {
+            "xlog_enabled": {
+              "$ref": "instance-enb-input-schema.json#/properties/xlog_enabled"
+            },
+            "xlog_forwarding_enabled": {
+              "$ref": "instance-enb-input-schema.json#/properties/xlog_forwarding_enabled"
+            },
+            "websocket_url_ipv6": {
+              "$ref": "instance-enb-input-schema.json#/properties/websocket_url_ipv6"
+            }
+          }
+        }
+      ],
+      "type": "object",
+      "default": {}
+    }
+  },
+  "$defs": {
+    "ors_duo_cell": {
+      "required": [
+        "cell_type"
+      ],
+      "oneOf": [
+        {
+          "title": "gNB Cell",
+          "required": [
+            "cell_type"
+          ],
+          "properties": {
+            "cell_type": {
+              "title": "Cell Type: you must select this parameter to enable the cell",
+              "type": "string",
+              "const": "gNB"
+            },
+            "enable_cell": {
+              "$ref": "ors-cell.json#/properties/enable_cell"
+            },
+            "tx_power_dbm": {
+              "$ref": "ors-cell.json#/properties/tx_power_dbm",
+              "description": "Set transmission power of each antenna in dBm (Range: 0 to 30 dBm. Warning: setting TX Power above 28 dBm might impact radio signal quality)"
+            },
+            "rx_gain": {
+              "$ref": "ors-cell.json#/properties/rx_gain",
+              "description": "Rx gain (Range: 20 to 50 dB)"
+            },
+            "nr_bandwidth": {
+              "$ref": "ors-gnb-cell.json#/properties/nr_bandwidth",
+              "enum": [
+                20,
+                40
+              ]
+            },
+            "dl_frequency": {
+              "$ref": "ors-gnb-cell.json#/properties/dl_frequency",
+              "description": "Downlink center frequency of the cell. (Range: 4610.01 MHz - 4989.99 MHz with 20 MHz bandwidth, or 4620 MHz - 4979.985 MHz with 40 MHz bandwidth)"
+            },
+            "tdd_ul_dl_config": {
+              "$ref": "ors-gnb-cell.json#/properties/tdd_ul_dl_config"
+            }
+          },
+          "type": "object",
+          "default": {}
+        },
+        {
+          "title": "eNB Cell",
+          "required": [
+            "cell_type"
+          ],
+          "properties": {
+            "cell_type": {
+              "title": "Cell Type: you must select this parameter to enable the cell",
+              "type": "string",
+              "const": "eNB"
+            },
+            "enable_cell": {
+              "$ref": "ors-cell.json#/properties/enable_cell"
+            },
+            "tx_power_dbm": {
+              "$ref": "ors-cell.json#/properties/tx_power_dbm",
+              "description": "Set transmission power of each antenna in dBm (Range: 0 to 30 dBm. Warning: setting TX Power above 28 dBm might impact radio signal quality)"
+            },
+            "rx_gain": {
+              "$ref": "ors-cell.json#/properties/rx_gain",
+              "description": "Rx gain (Range: 20 to 50 dB)"
+            },
+            "bandwidth": {
+              "$ref": "ors-enb-cell.json#/properties/rx_gain"
+            },
+            "dl_frequency": {
+              "$ref": "ors-enb-cell.json#/properties/dl_frequency",
+              "description": "Downlink center frequency of the cell. (Range: 4610.01 MHz - 4989.99 MHz with 20 MHz bandwidth, or 4620 MHz - 4979.985 MHz with 40 MHz bandwidth)"
+            },
+            "tdd_ul_dl_config": {
+              "$ref": "ors-enb-cell.json#/properties/tdd_ul_dl_config"
+            }
+          },
+          "type": "object",
+          "default": {}
+        }
+      ],
+      "type": "object",
+      "default": {}
+    }
+  }
+}
