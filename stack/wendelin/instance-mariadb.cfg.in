@@ -628,7 +628,13 @@ foreground-script =
   {% if upstream_mariabackup_url -%}
   echo "Extracting GTID from mariabackup"
   set +o pipefail
-  MARIABACKUP_GTID=$(cat "${my-cnf-parameters:data-directory}/xtrabackup_binlog_info" | sed 's/.*\s\+//')
+  MARIABACKUP_GTID=$(
+    if [ -f "${my-cnf-parameters:data-directory}/mariadb_backup_binlog_info" ]; then
+      cat "${my-cnf-parameters:data-directory}/mariadb_backup_binlog_info"
+    else
+      # BBB this is for mariadb 10.X
+      cat "${my-cnf-parameters:data-directory}/xtrabackup_binlog_info"
+    fi | sed 's/.*\s\+//')
   SQL_SET_GTID="SET GLOBAL gtid_slave_pos=\"$MARIABACKUP_GTID\";"
   set -o pipefail
   if [ -z "$MARIABACKUP_GTID" ]; then
