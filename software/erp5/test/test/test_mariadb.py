@@ -47,6 +47,7 @@ from cryptography.x509.oid import NameOID
 import inotify_simple
 import pexpect
 import pymysql
+import pymysql.cursors
 import requests
 
 from slapos.testing.utils import CrontabMixin, getPromisePluginParameterDict
@@ -363,7 +364,7 @@ class TestMariaDBTLS(MariaDBTestCase):
       self.addClassCleanup(os.unlink, self._client_cert_crt)
     return self._client_cert_crt, self._client_cert_key
 
-  def getReplicationUserDatabaseConnection(self, ssl:dict) -> pymysql.connections.Connection:
+  def getReplicationUserDatabaseConnection(self, ssl:dict | None) -> pymysql.connections.Connection:
     connection_parameter_dict = json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
     db_url = urllib.parse.urlparse(
@@ -589,7 +590,7 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
     else:
       return
     try:
-      cls.slap.waitForInstance(max_retry=0)
+      cls.slap.waitForInstance(max_retry=0, debug=strict and cls._debug)
     except SlapOSNodeCommandError:
       if strict:
         raise
@@ -598,7 +599,7 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
   def waitForReport(cls, max_retry=None, strict=True):
     max_retry = 10 if max_retry is None else max_retry
     try:
-      cls.slap.waitForReport(max_retry=max_retry)
+      cls.slap.waitForReport(max_retry=max_retry, debug=strict and cls._debug)
     except SlapOSNodeCommandError:
       if strict:
         raise
