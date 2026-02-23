@@ -25,6 +25,8 @@
 #
 ##############################################################################
 
+import json
+
 from six.moves.urllib.parse import urlparse
 
 class MonitoringPropagationTestMixin(object):
@@ -39,6 +41,22 @@ class MonitoringPropagationTestMixin(object):
   def getInstanceParameterDict(cls):
     return {'monitor-interface-url': cls.MONITOR_INTERFACE_URL}
 
+  @staticmethod
+  def _decode_params(params):
+    """Return params, unwrapping JSON-serialised `_` key if present.
+
+    For cases like SRs that use `slapos.cookbook:request.serialised` or
+    `slapos.cookbook:publish.serialised`
+    """
+    if params and '_' in params and 'monitor-interface-url' not in params:
+      try:
+        decoded = json.loads(params['_'])
+        if isinstance(decoded, dict):
+          return decoded
+      except (ValueError, TypeError):
+        pass
+    return params
+
   def test_monitor_interface_url_propagation(self):
     """All monitored partitions carry the expected monitor-interface-url.
 
@@ -50,7 +68,7 @@ class MonitoringPropagationTestMixin(object):
     for partition in self.slap.computer.getComputerPartitionList():
       if partition.getState() == 'destroyed':
         continue
-      params = partition.getInstanceParameterDict()
+      params = self._decode_params(partition.getInstanceParameterDict())
       if 'monitor-interface-url' not in params:
         continue
       monitored_partition_ids.append(partition.getId())
@@ -71,7 +89,8 @@ class MonitoringPropagationTestMixin(object):
     """monitor-setup-url in connection params embeds monitor-interface-url."""
 
     setup_url_list = [
-      partition.getConnectionParameterDict().get('monitor-setup-url')
+      self._decode_params(partition.getConnectionParameterDict()).get(
+          'monitor-setup-url')
       for partition in self.slap.computer.getComputerPartitionList()
       if partition.getState() != 'destroyed'
     ]
