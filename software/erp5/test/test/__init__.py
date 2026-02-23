@@ -42,6 +42,9 @@ _setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     software_id=os.environ['SLAPOS_SR_TEST_NAME'],
 )
 
+import typing
+if typing.TYPE_CHECKING:
+  from slapos.testing.testcase import SlapOSInstanceTestCase
 
 setup_module_executed = False
 def setUpModule():
