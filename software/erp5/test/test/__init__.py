@@ -42,6 +42,9 @@ _setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     software_id=os.environ['SLAPOS_SR_TEST_NAME'],
 )
 
+import typing
+if typing.TYPE_CHECKING:
+  from slapos.testing.testcase import SlapOSInstanceTestCase
 
 setup_module_executed = False
 def setUpModule():
@@ -202,6 +205,6 @@ class ERP5InstanceTestCase(SlapOSInstanceTestCase, metaclass=ERP5InstanceTestMet
         return computer_partition
 
   @classmethod
-  def getComputerPartitionPath(cls, partition_reference):
+  def getComputerPartitionPath(cls, partition_reference: str) -> str:
     partition_id = cls.getComputerPartition(partition_reference).getId()
     return os.path.join(cls.slap._instance_root, partition_id)
