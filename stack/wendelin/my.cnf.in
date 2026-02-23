@@ -96,6 +96,10 @@ relay-log = mariadb-relay-bin
 character_set_server = {{ parameter_dict['character-set-server'] }}
 collation_server = {{ parameter_dict['collation-server'] }}
 skip_character_set_client_handshake
+# to make utf8 an alias for utf8mb4, not utf8mb3
+old_mode =
+# to use general_ci collation instead, not uca1400_ai_ci
+loose_character_set_collations =
 
 {% if 'ssl-key' in parameter_dict -%}
 ssl_cert = {{ parameter_dict['ssl-crt'] }}
