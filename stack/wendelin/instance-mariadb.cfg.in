@@ -248,10 +248,11 @@ inline =
   cat ${directory:mariadb-ssl}/mariadb-crt.pem ${directory:mariadb-ssl}/mariadb-key.pem \
     > ${:crt-and-key-path}
 {% if ipv6_reverse_proxy_enable %}
-  ${directory:bin}/mysql \
+  ${binary-wrap-mariadb:wrapper-path} \
     -u${proxysql-cfg:admin-user} \
     -p${proxysql-cfg:admin-password} \
     -S ${proxysql-cfg:socket} \
+    --skip-ssl \
     -e 'PROXYSQL RELOAD TLS;'
 {% endif %}
   ${haproxy-reload:output}
@@ -331,7 +332,7 @@ inline =
   #!{{ bash }}
   set -euo pipefail
   filepath="${directory:mariadb-dump-full}/"${dated-filename:command}.sql.gz
-  "${binary-wrap-mariadb-dump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M {% if incremental_backup['enable'] %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
+  "${binary-wrap-mariadb-dump:wrapper-path}" --all-databases --flush-privileges --single-transaction --max-allowed-packet=128M --skip-ssl {% if incremental_backup['enable'] %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > $filepath
   ln -sf "$filepath" "${directory:mariadb-dump-full}/${:most-recent}"
 
 [{{ section('cron-entry-mariadb-dump') }}]
@@ -627,7 +628,13 @@ foreground-script =
   {% if upstream_mariabackup_url -%}
   echo "Extracting GTID from mariabackup"
   set +o pipefail
-  MARIABACKUP_GTID=$(cat "${my-cnf-parameters:data-directory}/xtrabackup_binlog_info" | sed 's/.*\s\+//')
+  MARIABACKUP_GTID=$(
+    if [ -f "${my-cnf-parameters:data-directory}/mariadb_backup_binlog_info" ]; then
+      cat "${my-cnf-parameters:data-directory}/mariadb_backup_binlog_info"
+    else
+      # BBB this is for mariadb 10.X
+      cat "${my-cnf-parameters:data-directory}/xtrabackup_binlog_info"
+    fi | sed 's/.*\s\+//')
   SQL_SET_GTID="SET GLOBAL gtid_slave_pos=\"$MARIABACKUP_GTID\";"
   set -o pipefail
   if [ -z "$MARIABACKUP_GTID" ]; then
@@ -640,9 +647,9 @@ foreground-script =
   echo "Importing $bootstrap_file"
   "$zcat" "$bootstrap_file" | "$mariadb"
 
-  echo "Extracting GTID from backup"
+  echo "Extracting GTID from backup, this can take a while"
   set +o pipefail
-  SQL_SET_GTID=$("$zcat" "$bootstrap_file" 2>/dev/null | sed '100q; /^--\s*SET GLOBAL gtid_slave_pos=/!d; s/^--\s*//; q')
+  SQL_SET_GTID=$("$zcat" "$bootstrap_file" 2>/dev/null | sed -n '/^--[[:space:]]*SET GLOBAL gtid_slave_pos=/{s/^--[[:space:]]*//;p;q;}')
   set -o pipefail
   if [ -z "$SQL_SET_GTID" ]; then
     echo "  \_ GTID not found in backup; ABORT"
@@ -966,7 +973,7 @@ inline = {{ dumps(slapparameter_dict.get('odbc-ini', ' ')) }}
 < = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
-post = "${binary-wrap-mariadb:wrapper-path}" -B -e "FLUSH LOGS"
+post = "${binary-wrap-mariadb:wrapper-path}" --skip-ssl -B -e "FLUSH LOGS"
 
 [{{ section('binary-link') }}]
 recipe = slapos.cookbook:symbolic.link
@@ -987,6 +994,7 @@ command = mariadb-backup
 [binary-wrap-mariadb]
 < = binary-wrap-base
 command = mariadb
+deprecates = ${binary-wrap-deprecated-mysql:recipe}
 
 [binary-wrap-mariadb-dump]
 < = binary-wrap-base
@@ -1006,6 +1014,10 @@ command = mariadb-tzinfo-to-sql
 command-line = "{{ parameter_dict['percona-tools-location'] }}/bin/${:command}"
 command = pt-query-digest
 
+# BBB keep a wrapper in bin/mysql for compatibility
+[binary-wrap-deprecated-mysql]
+< = binary-wrap-base
+command = mysql
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
