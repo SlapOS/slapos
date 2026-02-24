@@ -686,18 +686,28 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
 
   @classmethod
   def runBackup(cls, mariadb, script='mariabackup-script'):
-    subprocess.check_output(
+    try:
+      subprocess.check_output(
       (os.path.join(cls.getComputerPartitionPath(mariadb), 'bin', script),),
       stderr=subprocess.STDOUT,
-    )
+      text=True
+      )
+    except subprocess.CalledProcessError as e:
+      cls.logger.exception("runBackup failed with output:\n%s", e.output)
+      raise
 
   @classmethod
   def runTakoever(cls, mariadb):
     script = 'mariadb-replica-become-primary'
-    subprocess.check_output(
-      (os.path.join(cls.getComputerPartitionPath(mariadb), 'bin', script),),
-      stderr=subprocess.STDOUT,
-    )
+    try:
+      subprocess.check_output(
+        (os.path.join(cls.getComputerPartitionPath(mariadb), 'bin', script),),
+        stderr=subprocess.STDOUT,
+        text=True
+      )
+    except subprocess.CalledProcessError as e:
+      cls.logger.exception("runTakoever failed with output:\n%s", e.output)
+      raise
 
   @classmethod
   def runSlapos(cls, command, timestamp=None):
@@ -707,7 +717,11 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
     args.append(cls.slap._slapos_bin)
     args.extend(command.split())
     args.extend(('--cfg', cls.slap._slapos_config))
-    return subprocess.check_output(args, stderr=subprocess.STDOUT)
+    try:
+      return subprocess.check_output(args, stderr=subprocess.STDOUT, text=True)
+    except subprocess.CalledProcessError as e:
+      cls.logger.exception("runSlapos %r failed with output:\n%s", command, e.output)
+      raise
 
   @classmethod
   def getPromiseStatus(cls, mariadb, promise='mariadb_replication'):
@@ -760,7 +774,7 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
       self.assertIsInstance(seconds_behind_master, int)
       return seconds_behind_master
     except (AssertionError, KeyError):
-      self.fail('Replica is in bad state:\n%r', replica_status)
+      self.fail('Replica is in bad state:\n%r' % replica_status)
 
   def checkDataReplication(self, primary, *replicas):
     cnx = self.getDatabaseConnection(primary)
