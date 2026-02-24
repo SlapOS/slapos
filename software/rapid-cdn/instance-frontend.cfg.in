@@ -30,6 +30,7 @@ parts =
   trafficserver-records-config
   trafficserver-remap-config
   trafficserver-plugin-config
+  trafficserver-ssl_multicert.config
   trafficserver-storage-config
   trafficserver-logging-yaml
   trafficserver-ip-allow-yaml
@@ -60,7 +61,6 @@ parts =
   logrotate-entry-backend-haproxy
   backend-haproxy
   backend-haproxy-graceful
-  promise-backend-haproxy-http
   promise-backend-haproxy-https
   promise-backend-haproxy-configuration
 
@@ -71,8 +71,138 @@ parts =
   logrotate-entry-slave-introspection
   backend-haproxy-statistic-frontend-promise
 
+  micro-caucased
+  micro-caucased-promise
+
+  ip-access-micro-caucase-updater
+  ip-access-micro-caucase-updater-promise
+
+  fallback-micro-caucase-updater
+  fallback-micro-caucase-updater-promise
+
+  backend-haproxy-certificate-micro-caucase-updater
+  backend-haproxy-certificate-micro-caucase-updater-promise
+
+  trafficserver-certificate-micro-caucase-updater
+  trafficserver-certificate-micro-caucase-updater-promise
+
+  micro-ssl-caucase-updater
+
 [software-py]
 recipe = software
+
+{%- set micro_caucased_host = instance_parameter_dict['ipv4-random'] %}
+{%- set micro_caucased_netloc = micro_caucased_host ~ ':' ~ slapparameter_dict['caucase-port'] %}
+{%- set micro_caucased_url = 'http://' ~ micro_caucased_netloc %}
+[micro-caucased-configuration]
+recipe = slapos.recipe.build
+# Note: The profile developer is responsible for setting the service list
+#       The best option is to add here part name related to given caucase-updater
+#       This will lead to re-generating the caucased directory
+service-list =
+  ip-access-micro-caucase-updater
+  fallback-micro-caucase-updater
+  backend-haproxy-certificate-micro-caucase-updater
+  trafficserver-certificate-micro-caucase-updater
+
+init =
+  import hashlib
+  import os
+  service_list = [q.strip() for q in options['service-list'].split() if len(q.strip())]
+  options['service-auto-approve-count'] = str(len(service_list))
+  options['user-auto-approve-count'] = str(0)
+  # Hash list of services, but sorted, so that it generates new directory on each change
+  service_hash = hashlib.md5(str(sorted(service_list)).encode('utf-8')).hexdigest()
+  options['directory'] = os.path.join(options['location'], service_hash)
+  options['backup'] = os.path.join(options['location'], service_hash + '_backup')
+install =
+  import os
+  if not os.path.isdir(options['location']):
+    os.mkdir(options['location'])
+
+[micro-caucased]
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+{{  caucase.caucased(
+      prefix='micro-caucased',
+      buildout_bin_directory=software_parameter_dict['bin_directory'],
+      caucased_path='${directory:service}/micro-caucased',
+      backup_dir='${micro-caucased-configuration:backup}',
+      data_dir='${micro-caucased-configuration:directory}',
+      netloc=micro_caucased_netloc,
+      tmp='${directory:tmp}',
+      service_auto_approve_count='${micro-caucased-configuration:service-auto-approve-count}',
+      user_auto_approve_count='${micro-caucased-configuration:user-auto-approve-count}',
+      key_len=2048
+)}}
+
+[backend-haproxy-csr]
+recipe = plone.recipe.command
+organization = {{ slapparameter_dict['cluster-identification'] }}
+organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
+common-name = backend-haproxy
+command =
+  if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
+    {{ software_parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}/CN=${:common-name}" \
+      -out ${:template-csr}
+  fi
+  test -f ${:key} && test -f ${:template-csr}
+update-command = ${:command}
+template-csr = ${directory:backend-haproxy-micro-ssl}/template-csr.pem
+key = ${directory:backend-haproxy-micro-ssl}/bundle.pem
+certificate = ${:key}
+{#- Can be stopped on error, as does not rely on self provided service #}
+stop-on-error = True
+
+{{ caucase.updater(
+     prefix='backend-haproxy-certificate-micro-caucase-updater',
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
+     updater_path='${directory:service}/backend-haproxy-certificate-micro-caucase-updater',
+     url=micro_caucased_url,
+     data_dir='${directory:backend-haproxy-micro-ssl-caucase-updater}',
+     crt_path='${backend-haproxy-csr:certificate}',
+     ca_path='${directory:backend-haproxy-micro-ssl-caucase-updater}/ca.pem',
+     crl_path='${directory:backend-haproxy-micro-ssl-caucase-updater}/crl.pem',
+     key_path='${backend-haproxy-csr:key}',
+     template_csr='${backend-haproxy-csr:template-csr}',
+     on_renew='${backend-haproxy-graceful:output}'
+)}}
+
+[trafficserver-csr]
+recipe = plone.recipe.command
+organization = {{ slapparameter_dict['cluster-identification'] }}
+organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
+common-name = trafficserver
+command =
+  if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
+    {{ software_parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}/CN=${:common-name}" \
+      -out ${:template-csr}
+  fi
+  test -f ${:key} && test -f ${:template-csr}
+update-command = ${:command}
+template-csr = ${directory:trafficserver-micro-ssl}/template-csr.pem
+bundle-name = bundle.pem
+key = ${directory:trafficserver-micro-ssl}/${:bundle-name}
+certificate = ${:key}
+{#- Can be stopped on error, as does not rely on self provided service #}
+stop-on-error = True
+
+{{ caucase.updater(
+     prefix='trafficserver-certificate-micro-caucase-updater',
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
+     updater_path='${directory:service}/trafficserver-certificate-micro-caucase-updater',
+     url=micro_caucased_url,
+     data_dir='${directory:trafficserver-micro-ssl-caucase-updater}',
+     crt_path='${trafficserver-csr:certificate}',
+     ca_path='${directory:trafficserver-micro-ssl-caucase-updater}/ca.pem',
+     crl_path='${directory:trafficserver-micro-ssl-caucase-updater}/crl.pem',
+     key_path='${trafficserver-csr:key}',
+     template_csr='${trafficserver-csr:template-csr}',
+     on_renew='${trafficserver-reload:wrapper-path}'
+)}}
 
 [frontend-node-id]
 # Store id file in top of hierarchy, so it does not depend on directory creation
@@ -182,6 +312,38 @@ slave-introspection-var = ${:var}/slave-introspection
 trafficserver-introspection-var = ${:var}/trafficserver-introspection
 trafficserver-introspection-srv = ${:srv}/trafficserver-introspection
 
+micro-ssl = ${:srv}/micro-ssl
+
+ip-access-micro-ssl = ${:micro-ssl}/ip-access
+ip-access-micro-ssl-caucase-updater = ${:ip-access-micro-ssl}/caucase-updater
+
+fallback-micro-ssl = ${:micro-ssl}/fallback
+fallback-micro-ssl-caucase-updater = ${:fallback-micro-ssl}/caucase-updater
+
+backend-haproxy-micro-ssl = ${:micro-ssl}/backend-haproxy
+backend-haproxy-micro-ssl-caucase-updater = ${:backend-haproxy-micro-ssl}/caucase-updater
+
+trafficserver-micro-ssl = ${:micro-ssl}/trafficserver
+trafficserver-micro-ssl-caucase-updater = ${:trafficserver-micro-ssl}/caucase-updater
+
+micro-ssl-caucase-updater = ${:micro-ssl}/caucase-updater
+
+micro-ssl = ${:srv}/micro-ssl
+
+ip-access-micro-ssl = ${:micro-ssl}/ip-access
+ip-access-micro-ssl-caucase-updater = ${:ip-access-micro-ssl}/caucase-updater
+
+fallback-micro-ssl = ${:micro-ssl}/fallback
+fallback-micro-ssl-caucase-updater = ${:fallback-micro-ssl}/caucase-updater
+
+backend-haproxy-micro-ssl = ${:micro-ssl}/backend-haproxy
+backend-haproxy-micro-ssl-caucase-updater = ${:backend-haproxy-micro-ssl}/caucase-updater
+
+trafficserver-micro-ssl = ${:micro-ssl}/trafficserver
+trafficserver-micro-ssl-caucase-updater = ${:trafficserver-micro-ssl}/caucase-updater
+
+micro-ssl-caucase-updater = ${:micro-ssl}/caucase-updater
+
 [switch-frontend-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-custom-personal-profile-slave-list:output
@@ -189,54 +351,80 @@ single-default = dynamic-custom-personal-profile-slave-list:output
 single-custom-personal = dynamic-custom-personal-profile-slave-list:output
 
 [frontend-configuration]
-ip-access-certificate = ${self-signed-ip-access:certificate}
+ip-access-certificate = ${ip-access:certificate}
 slave-introspection-configuration = ${directory:etc}/slave-introspection-httpd-nginx.conf
 slave-introspection-https-port = ${configuration:slave-introspection-https-port}
 slave-introspection-secure_access = ${slave-introspection-frontend:connection-secure_access}
 
-[self-signed-ip-access]
-# Self Signed certificate for HTTPS IP accesses to the frontend
+[ip-access]
 recipe = plone.recipe.command
 update-command = ${:command}
+organization = {{ slapparameter_dict['cluster-identification'] }}
+organizational_unit = {{ instance_parameter_dict['configuration.frontend-name'] }}
 ipv6 = ${slap-configuration:ipv6-random}
 ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${frontend-directory:master-autocert-dir}/ip-access-${:ipv6}-${:ipv4}.crt
-{#- Can be stopped on error, as does not rely on self provided service #}
+template-csr = ${directory:ip-access-micro-ssl}/template-csr.pem
+key = ${:certificate}
 stop-on-error = True
 command =
-  [ -f ${:certificate} ] && exit 0
-  rm -f ${:certificate}
   /bin/bash -c ' \
-  {{ software_parameter_dict['openssl'] }} req \
-     -new -newkey rsa -sha256 \
-     -nodes -x509 -days 36500 \
-     -keyout ${:certificate} \
-     -subj "/CN=Self Signed IP Access" \
-     -reqexts SAN \
-     -extensions SAN \
-     -config <(cat {{ software_parameter_dict['openssl_cnf'] }} \
-         <(printf "\n[SAN]\nsubjectAltName=IP:${:ipv6},IP:${:ipv4}")) \
-     -out ${:certificate}'
+  if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
+    {{ software_parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa -nodes -keyout ${:key} \
+      -subj "/O=${:organization}/OU=${:organizational_unit}" \
+      -reqexts SAN \
+      -extensions SAN \
+      -config <(cat {{ software_parameter_dict['openssl_cnf'] }} \
+          <(printf "\n[SAN]\nsubjectAltName=IP:${:ipv6},IP:${:ipv4}")) \
+      -out ${:template-csr}
+  fi
+  test -f ${:key} && test -f ${:template-csr}'
 
-[self-signed-fallback-access]
-# Self Signed certificate for HTTPS access to the frontend with fallback certificate
+{{ caucase.updater(
+     prefix='ip-access-micro-caucase-updater',
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
+     updater_path='${directory:service}/ip-access-micro-caucase-updater',
+     url=micro_caucased_url,
+     data_dir='${directory:ip-access-micro-ssl-caucase-updater}',
+     crt_path='${ip-access:certificate}',
+     ca_path='${directory:ip-access-micro-ssl-caucase-updater}/ca.pem',
+     crl_path='${directory:ip-access-micro-ssl-caucase-updater}/crl.pem',
+     key_path='${ip-access:key}',
+     template_csr='${ip-access:template-csr}'
+)}}
+
+[fallback-access]
 recipe = plone.recipe.command
 update-command = ${:command}
-ipv6 = ${slap-configuration:ipv6-random}
-ipv4 = {{instance_parameter_dict['ipv4-random']}}
 certificate = ${frontend-directory:master-autocert-dir}/fallback-access.crt
+key = ${:certificate}
+template-csr = ${directory:fallback-micro-ssl}/template-csr.pem
 {#- Can be stopped on error, as does not rely on self provided service #}
 stop-on-error = True
 command =
-  [ -f ${:certificate} ] && exit 0
-  rm -f ${:certificate}
   /bin/bash -c ' \
-  {{ software_parameter_dict['openssl'] }} req \
-     -new -newkey rsa -sha256 \
-     -nodes -x509 -days 36500 \
-     -keyout ${:certificate} \
-     -subj "/CN=Fallback certificate/OU={{ slapparameter_dict['frontend-name'] }}" \
-     -out ${:certificate}'
+  if [ ! -f ${:template-csr} ] && [ ! -f ${:key} ]  ; then
+    {{ software_parameter_dict['openssl'] }} req -new -sha256 \
+      -newkey rsa -nodes -keyout ${:key} \
+       -keyout ${:certificate} \
+       -subj "/CN=Fallback certificate/OU={{ slapparameter_dict['frontend-name'] }}" \
+       -out ${:template-csr}
+  fi
+  test -f ${:key} && test -f ${:template-csr}'
+
+{{ caucase.updater(
+     prefix='fallback-micro-caucase-updater',
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
+     updater_path='${directory:service}/fallback-micro-caucase-updater',
+     url=micro_caucased_url,
+     data_dir='${directory:fallback-micro-ssl-caucase-updater}',
+     crt_path='${fallback-access:certificate}',
+     ca_path='${directory:fallback-micro-ssl-caucase-updater}/ca.pem',
+     crl_path='${directory:fallback-micro-ssl-caucase-updater}/crl.pem',
+     key_path='${fallback-access:key}',
+     template_csr='${fallback-access:template-csr}'
+)}}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -474,7 +662,6 @@ pid-file = ${directory:run}/httpd.pid
 frontend-graceful-command = ${frontend-haproxy-validate:output} && kill -USR2 $(cat ${:pid-file})
 not-found-file = {{ software_parameter_dict['template_not_found_html'] }}
 master-certificate = ${frontend-directory:master-autocert-dir}/master.pem
-self-signed-fallback-certificate = ${self-signed-fallback-access:certificate}
 http-port = ${configuration:plain_http_port}
 https-port = ${configuration:port}
 # Communication with ATS
@@ -489,11 +676,33 @@ version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
 http3-enable = {{ FRONTEND_HTTP3 }}
 http3-port = {{ HTTP3_PORT }}
+micro-ssl-ca-path = ${micro-ssl:ca-path}
+micro-ssl-crl-path = ${micro-ssl:crl-path}
+backend-haproxy-certificate-common-name = ${backend-haproxy-csr:common-name}
+trafficserver-certificate-common-name = ${trafficserver-csr:common-name}
+
+[micro-ssl]
+directory = ${directory:micro-ssl-caucase-updater}
+ca-name = ca.pem
+crl-name = crl.pem
+ca-path = ${:directory}/${:ca-name}
+crl-path = ${:directory}/${:crl-name}
+
+{{ caucase.updater(
+     prefix='micro-ssl-caucase-updater',
+     buildout_bin_directory=software_parameter_dict['bin_directory'],
+     updater_path='${directory:service}/micro-ssl-caucase-updater',
+     url=micro_caucased_url,
+     data_dir='${directory:micro-ssl-caucase-updater}',
+     ca_path='${micro-ssl:ca-path}',
+     crl_path='${micro-ssl:crl-path}',
+     promise=False
+)}}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
-[get-self-signed-fallback-access]
+[get-fallback-access]
 recipe = slapos.recipe.build
-certificate-file = ${self-signed-fallback-access:certificate}
+certificate-file = ${fallback-access:certificate}
 init =
   import os
   options['certificate'] = ''
@@ -510,7 +719,7 @@ inline =
 {% endraw %}
 context =
   section configuration configuration
-  key fallback_certificate get-self-signed-fallback-access:certificate
+  key fallback_certificate get-fallback-access:certificate
 output = ${directory:bbb-ssl-dir}/frontend.crt
 # BBB: SlapOS Master non-zero knowledge END
 
@@ -539,6 +748,11 @@ wrapper-path = ${directory:service}/trafficserver
 reload-path = ${directory:etc-run}/trafficserver-reload
 local-ip = {{ instance_parameter_dict['ipv4-random'] }}
 input-port = 23432
+certificate-path = ${directory:trafficserver-micro-ssl}
+certificate-name = ${trafficserver-csr:bundle-name}
+micro-ssl-ca-dir = ${micro-ssl:directory}
+micro-ssl-ca-file = ${micro-ssl:ca-name}
+micro-ssl-crl-file = ${micro-ssl:crl-name}
 hostname = ${configuration:frontend-name}
 plugin-config =
 cache-path = ${trafficserver-directory:cache-path}
@@ -610,8 +824,7 @@ filename = ip_allow.yaml
 <= trafficserver-jinja2-template-base
 {%- raw %}
 inline =
-  map /HTTPS/ http://{{ ipv4 }}:{{ https_port }}
-  map /HTTP/ http://{{ ipv4 }}:{{ http_port }}
+  map /CACHE/ https://{{ ipv4 }}:{{ port }}
   map /inspect-cache/ http://{cache}
   map /inspect-cache-internal/ http://{cache-internal}
   map /inspect-hostdb/ http://{hostdb}
@@ -620,10 +833,17 @@ inline =
 {%- endraw %}
 extra-context =
   raw ipv4 {{ instance_parameter_dict['ipv4-random'] }}
-  key https_port backend-haproxy-configuration:https-port
-  key http_port backend-haproxy-configuration:http-port
+  key port backend-haproxy-configuration:port
 
 filename = remap.config
+
+[trafficserver-ssl_multicert.config]
+<= trafficserver-jinja2-template-base
+{%- raw %}
+inline =
+  dest_ip=* ssl_cert_name=${trafficserver-variable:certificate-name}
+{%- endraw %}
+filename = ssl_multicert.config
 
 [trafficserver-plugin-config]
 < = trafficserver-jinja2-template-base
@@ -683,7 +903,7 @@ command = ${trafficserver-rotate-script:output}
 url = {{ software_parameter_dict['template_configuration_state_script'] }}
 output = ${directory:bin}/${:_buildout_section_name_}
 
-path_list = ${frontend-haproxy-configuration:file} ${frontend-haproxy-configuration:crt-list} ${frontend-directory:master-autocert-dir}/*.key ${frontend-directory:master-autocert-dir}/*.crt ${frontend-directory:master-autocert-dir}/*.pem ${frontend-directory:autocert}/*.pem ${frontend-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt
+path_list = ${frontend-haproxy-configuration:file} ${frontend-haproxy-configuration:crt-list} ${frontend-directory:master-autocert-dir}/*.key ${frontend-directory:master-autocert-dir}/*.crt ${frontend-directory:master-autocert-dir}/*.pem ${frontend-directory:autocert}/*.pem ${frontend-directory:custom-ssl-directory}/*.proxy_ca_crt ${directory:bbb-ssl-dir}/*.crt ${frontend-haproxy-configuration:micro-ssl-ca-path} ${frontend-haproxy-configuration:micro-ssl-crl-path}
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
@@ -793,36 +1013,24 @@ name = frontend_haproxy_ipv6_http.py
 config-host = {{ instance_parameter_dict['ipv6-random'] }}
 config-port = ${configuration:plain_http_port}
 
-[promise-backend-haproxy-http]
-<= monitor-promise-base
-promise = check_socket_listening
-name = backend_haproxy_http.py
-config-host = {{ instance_parameter_dict['ipv4-random'] }}
-config-port = ${backend-haproxy-configuration:http-port}
-
 [promise-backend-haproxy-https]
 <= monitor-promise-base
 promise = check_socket_listening
 name = backend_haproxy_https.py
 config-host = {{ instance_parameter_dict['ipv4-random'] }}
-config-port = ${backend-haproxy-configuration:https-port}
+config-port = ${backend-haproxy-configuration:port}
 
 [backend-haproxy-configuration]
 file = ${directory:etc}/backend-haproxy.cfg
 pid-file = ${directory:run}/backend-haproxy.pid
 log-socket = ${backend-haproxy-rsyslogd-config:log-socket}
 graceful-command = ${backend-haproxy-validate:output} && kill -USR2 $(cat ${:pid-file})
-http-port = ${configuration:backend-haproxy-http-port}
-https-port = ${configuration:backend-haproxy-https-port}
+port = ${configuration:backend-haproxy-port}
 # Caucase related configuration
-caucase-url = {{ slapparameter_dict['backend-client-caucase-url'] }}
-ca-certificate = ${backend-client-login-config:ca-certificate}
-certificate = ${backend-client-login-config:certificate}
-cas-ca-certificate = ${backend-client-login-config:cas-ca-certificate}
-csr = ${backend-client-caucase-updater-csr:csr}
-crl = ${backend-client-login-config:crl}
+backend-client-login-certificate = ${backend-client-login-config:certificate}
+backend-client-caucase-csr = ${backend-client-caucase-updater-csr:csr}
 # the statistic page
-statistic-certificate = ${self-signed-ip-access:certificate}
+statistic-certificate = ${ip-access:certificate}
 statistic-port = ${configuration:backend-haproxy-statistic-port}
 statistic-username = ${monitor-instance-parameter:username}
 statistic-password = ${monitor-htpasswd:passwd}
@@ -830,6 +1038,7 @@ statistic-identification = {{ slapparameter_dict['frontend-name'] + ' @ ' + slap
 statistic-frontend-secure_access = ${backend-haproxy-statistic-frontend:connection-secure_access}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
+backend-haproxy-internal-certificate = ${backend-haproxy-csr:certificate}
 
 [frontend-haproxy]
 recipe = slapos.cookbook:wrapper
@@ -896,7 +1105,7 @@ delaycompress =
 url = {{ software_parameter_dict['template_configuration_state_script'] }}
 output = ${directory:bin}/${:_buildout_section_name_}
 
-path_list = ${backend-haproxy-configuration:file} ${backend-client-login-config:certificate}
+path_list = ${backend-haproxy-configuration:file} ${backend-haproxy-configuration:backend-client-login-certificate} ${backend-haproxy-configuration:backend-haproxy-internal-certificate}
 sha256sum = {{ software_parameter_dict['sha256sum'] }}
 
 extra-context =
@@ -1048,7 +1257,7 @@ config-url =
 
 [trafficserver-configuration]
 # the introspection page
-introspection-certificate = ${self-signed-ip-access:certificate}
+introspection-certificate = ${ip-access:certificate}
 introspection-port = ${configuration:trafficserver-introspection-port}
 introspection-username = ${introspection-htpasswd:username}
 introspection-password = ${introspection-htpasswd:password}
@@ -1081,9 +1290,12 @@ access-log = ${trafficserver-configuration:introspection-access-log}
 error-log = ${trafficserver-configuration:introspection-error-log}
 var = ${trafficserver-configuration:introspection-var}
 pid = ${trafficserver-configuration:introspection-pid-file}
-trafficserver-url-root = http://${trafficserver-variable:local-ip}:${trafficserver-variable:input-port}
+trafficserver-url-root = https://${trafficserver-variable:local-ip}:${trafficserver-variable:input-port}
+trafficserver-certificate-common-name = ${trafficserver-csr:common-name}
 htpasswd-path = ${introspection-htpasswd:htpasswd-path}
 introspection-identification = {{ slapparameter_dict['frontend-name'] + ' @ ' + slapparameter_dict['cluster-identification'] }}
+ca-certificate = ${micro-ssl:ca-path}
+crl-list = ${micro-ssl:crl-path}
 inspect-list =
   /inspect-cache/
   /inspect-cache-internal/
