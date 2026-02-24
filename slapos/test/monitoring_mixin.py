@@ -32,7 +32,7 @@ from six.moves.urllib.parse import urlparse
 class MonitoringPropagationTestMixin(object):
   """Verify that monitor-interface-url propagates correctly to all partitions."""
 
-  # A recognisable URL with a domain that cannot appear in default configs.
+  # fake URL for test
   MONITOR_CORS_DOMAIN = 'monitor.propagation.test'
   MONITOR_INTERFACE_URL = (
       'https://' + MONITOR_CORS_DOMAIN + '/#page=ojsm_landing')
@@ -58,7 +58,7 @@ class MonitoringPropagationTestMixin(object):
     return params
 
   def test_monitor_interface_url_propagation(self):
-    """All monitored partitions carry the expected monitor-interface-url.
+    """All monitored partitions gets the expected monitor-interface-url.
 
     For single-partition SRs only the root partition is checked.  For
     multi-partition SRs the root forwards ``config-monitor-interface-url`` to
