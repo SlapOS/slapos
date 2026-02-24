@@ -567,7 +567,7 @@ def fakeHTTPSResult(domain, path, port=HTTPS_PORT,
 
 def fakeHTTPResult(domain, path, port=HTTP_PORT,
                    headers=None, source_ip=SOURCE_IP, verb='GET',
-                   timeout=None):
+                   timeout=None, http3=False):
   headers = fakeSetupHeaders(headers)
   if 'Host' not in headers:
     headers['Host'] = '%s:%s' % (domain, port)
@@ -582,7 +582,8 @@ def fakeHTTPResult(domain, path, port=HTTP_PORT,
     resolve_all={
       port: TEST_IP
     },
-    timeout=timeout
+    timeout=timeout,
+    http3=http3
   )
 
 
@@ -8108,6 +8109,113 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNotIn('Installing _deleted-', slapgrid_log)
     self.assertIn('Uninstalling _deleted-', slapgrid_log)
     self.assertNotIn('Updating _deleted-', slapgrid_log)
+
+
+class TestCDNHTTP(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+      'enable-http3': True,
+      'enable-http2-by-default': True,
+      'http3-port': HTTPS_PORT,
+    }
+
+  ignore_status_code_slave_list = [
+    'cdnhttp1.example.com',
+    'cdnhttp2.example.com',
+    'cdnhttp3.example.com',
+  ]
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'cdnhttp1': {
+        'https-only': False,
+        'enable-http2': False,
+        'enable-http3': False,
+      },
+      'cdnhttp2': {
+        'https-only': False,
+        'enable-http2': True,
+        'enable-http3': False,
+      },
+      'cdnhttp3': {
+        'https-only': False,
+        'enable-http2': True,
+        'enable-http3': True,
+      },
+      'backendhttp10cdhttp1': {
+        'https-only': False,
+        'url': cls.backend_url,
+        'enable-http2': False,
+        'enable-http3': False,
+      },
+      'backendhttp10cdnhttp2': {
+        'https-only': False,
+        'url': cls.backend_url,
+        'enable-http2': True,
+        'enable-http3': False,
+      },
+      'backendhttp10cdnhttp3': {
+        'https-only': False,
+        'url': cls.backend_url,
+        'enable-http2': True,
+        'enable-http3': True,
+      }
+    }
+
+  def test(self):
+    def get_url_info(url, **kwargs):
+      if 'http3' not in kwargs:
+        kwargs['http3'] = False
+      try:
+        result = mimikra.get(
+          url=url, verify=False, allow_redirects=False,
+          resolve_all={HTTPS_PORT: TEST_IP, HTTP_PORT: TEST_IP},
+          **kwargs
+        )
+        return {
+          'header-connection': result.headers.get('connection'),
+          'effective_http_version': result.effective_http_version
+        }
+      except CurlException as e:
+        return {'CurlException.command_returncode': e.command_returncode}
+
+    result_list = []
+    for parameter_dict in self.getSlaveConnectionParameterDictDict().values():
+      url_https = 'https://%s:%s/' % (parameter_dict['domain'], HTTPS_PORT)
+      url_http = 'http://%s:%s/' % (parameter_dict['domain'], HTTP_PORT)
+
+      for url in url_https, url_http:
+        for kw in [
+          dict(http10=True),
+          dict(http11=True),
+          dict(http2=True),
+          dict(http3=True),
+        ]:
+          result_list.append({
+            'url': url,
+            'request_kw': kw,
+            'result_dict': get_url_info(url, **kw)
+          })
+
+    def formatresult(result_list):
+      format_list = []
+      for entry in result_list:
+        format_entry = []
+        format_entry.append(
+          '%s -- %s' % (entry['url'], entry['request_kw']))
+        format_entry.append('-->')
+        for key in sorted(entry['result_dict'].keys()):
+          format_entry.append('%s: %s' % (key, entry['result_dict'][key]))
+        format_list.append(' '.join(format_entry))
+      return '\n'.join(format_list)
+    self.assertTestData(formatresult(result_list))
 
 
 if __name__ == '__main__':

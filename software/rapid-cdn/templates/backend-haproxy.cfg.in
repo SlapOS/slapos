@@ -8,7 +8,7 @@ global
 defaults
   log global
   mode http
-  option httplog
+  option httpslog
   timeout queue 60s
   timeout server {{ configuration['request-timeout'] }}s
   timeout client {{ configuration['request-timeout'] }}s
@@ -75,7 +75,7 @@ frontend https-backend
 {%-       set ssl_list = [] %}
 {%-       if info_dict['scheme'] == 'https' %}
 {%-         if slave_instance['authenticate-to-backend'] %}
-{%-           do ssl_list.append('crt %s' % (configuration['certificate'],)) %}
+{%-           do ssl_list.append('crt %s' % (configuration['backend-client-login-certificate'],)) %}
 {%-         endif %}
 {%-         do ssl_list.append('ssl verify') %}
 {%-         if slave_instance['ssl_proxy_verify'] %}
@@ -137,7 +137,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-       set ssl_list = [] %}
 {%-       if info_dict['health-check-failover-scheme'] == 'https' %}
 {%-         if slave_instance['health-check-authenticate-to-failover-backend'] %}
-{%-           do ssl_list.append('crt %s' % (configuration['certificate'],)) %}
+{%-           do ssl_list.append('crt %s' % (configuration['backend-client-login-certificate'],)) %}
 {%-         endif %}
 {%-         do ssl_list.append('ssl verify') %}
 {%-         if slave_instance['health-check-failover-ssl-proxy-verify'] %}
