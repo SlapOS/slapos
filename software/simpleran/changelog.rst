@@ -1,6 +1,23 @@
 Changelog
 =========
 
+Version 1.0.464 (2026-02-02)
+-------------
+
+* Support gNB + eNB mode on ORS Duo
+* Publish more parameters and re-organize them for better readability
+* Add TTI Bundling support
+* Add gtp_payload_mtu parameter
+* Add ignore_gbr_congestion option
+* Add disk check promise to avoid logs filling disk
+* Add MME / AMF Backup option
+* Add promise to check if all Core Networks are properly connected
+* Reduce RX Saturated and Check Baseband Latency promise sensitivity
+* Prevent entering empty objects in input parameters (will prevent services not starting when empty IMPU are entered for instance)
+* Detect DHCP IP correctly if both DHCP and static IP is configured on the ORS
+* Fix typo on integ algos (EEAx -> EIAx, NEAx -> NIAx)
+* Add option to let Amarisoft compute SSB
+
 Version 1.0.457 (2025-12-17)
 -------------
 

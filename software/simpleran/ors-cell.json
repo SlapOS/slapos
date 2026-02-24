@@ -33,6 +33,9 @@
     "cell_id": {
       "$ref": "cell/common.json#/properties/cell_id",
       "description": "Cell ID. Equal to ORS Serial number modulo 256 by default"
+    },
+    "ignore_gbr_congestion": {
+      "$ref": "cell/common.json#/properties/ignore_gbr_congestion"
     }
   }
 }

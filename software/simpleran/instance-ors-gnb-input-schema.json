@@ -24,6 +24,9 @@
       "unevaluatedProperties": false,
       "allOf": [
         {
+          "$ref": "ors-gnb-classic.json"
+        },
+        {
           "$ref": "ors-enb-gnb-classic.json"
         },
         {
@@ -50,9 +53,15 @@
     },
     "monitor-interface-url": {
       "title": "Monitor Interface URL",
-      "description": "URL to the monitor app used in monitor-setup-url",
+      "description": "URL to the monitor app used in monitor setup URL",
       "type": "string",
       "default": "https://monitor.app.officejs.com/#page=ojsm_landing"
+    },
+    "rf-info": {
+      "title": "Expert: RF Info",
+      "description": "Expert only: override RF Info from parameters",
+      "type": "string",
+      "textarea": true
     }
   }
 }
