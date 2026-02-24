@@ -26,6 +26,14 @@ def run_process(command, **kwargs):
   return subprocess.check_output(command, **kwargs)
 
 
+def mkdir(path):
+  try:
+    os.mkdir(path)
+  except OSError as e:
+    if e.errno != errno.EEXIST:
+      raise
+
+
 def makedirs(path):
   try:
     os.makedirs(path)
@@ -40,7 +48,7 @@ def copyfile(src, dst):
   shutil.copy2(src, dst)
 
 
-def copytree(rsyncbin, src, dst, delete=(), ignorefile=None, extrargs=(), verbosity='-v'):
+def copytree(rsyncbin, src, dst, ignore=(), delete=(), extrargs=(), verbosity='-v'):
   # Ensure there is a trailing slash in the source directory
   # to avoid creating an additional directory level at the destination
   src = os.path.join(src, '')
@@ -59,9 +67,11 @@ def copytree(rsyncbin, src, dst, delete=(), ignorefile=None, extrargs=(), verbos
 
   command.extend(EXCLUDE_FLAGS)
   # Put ignore patterns before delete patterns, so that ignoring takes precedence
-  if ignorefile:
-    command.append('--filter=.-/ {}'.format(ignorefile))
-  command.extend(('--filter=-/ {}'.format(x) for x in sorted(delete)))
+  # Ignore patterns must always be relative to the root of the transfer, so that
+  # they match the same on the sending and the receiving side. Delete patterns
+  # may be absolute paths, as they need only match on the sending side.
+  command.extend(('--filter=- {}'.format(x) for x in sorted(ignore)))
+  command.extend(('--filter=-s/ {}'.format(x) for x in sorted(delete)))
   command.extend(extrargs)
   command.append(verbosity)
   command.append(src)
@@ -88,6 +98,15 @@ def remove(path):
       raise
 
 
+def rmtree(path):
+  try:
+    shutil.rmtree(path)
+  except OSError as e:
+    if e.errno != errno.ENOENT:
+      raise
+
+
+
 def parse_installed(partition):
   paths = []
   for cfg in glob.glob(os.path.join(partition, '.installed*.cfg')):
@@ -106,6 +125,28 @@ def parse_installed(partition):
   return paths
 
 
+def parse_ignored(partition, *ignore_relpath):
+  partition = os.path.normpath(os.path.abspath(partition))
+  ignorefile = os.path.join(partition, *ignore_relpath)
+  try:
+    with open(ignorefile) as f:
+      rules = f.read().splitlines()
+  except OSError as e:
+    if e.errno != errno.ENOENT:
+      raise
+    return ()
+  parsed = []
+  for rule in rules:
+    rule = rule.strip()
+    if rule:
+      relpath = os.path.relpath(rule, start=partition)
+      if not relpath.startswith(os.pardir):
+        parsed.append(relpath)
+      else:
+        parsed.append(rule)
+  return parsed
+
+
 def sha256sum(file_path, chunk_size=1024 * 1024):
   sha256 = hashlib.sha256()
   with open(file_path, 'rb') as f:
@@ -116,36 +157,46 @@ def sha256sum(file_path, chunk_size=1024 * 1024):
   return sha256.hexdigest()
 
 
+def ordered_walk(root_dir):
+  for dirpath, dirnames, filenames in os.walk(root_dir):
+    dirnames.sort() # in-place sort affects recursive walk
+    filenames.sort()
+    yield dirpath, dirnames, filenames
+
+
+def encodepath(path):
+  # safe path representation on a single line
+  # probably the same as repr()
+  return path.encode('unicode_escape').decode('raw_unicode_escape')
+  # decode: code.encode('raw_unicode_escape').decode('unicode_escape')
+
+
 def fast_hashwalk(root_dir):
-  for dirpath, dirnames, filenames in os.walk(root_dir):
+  for dirpath, dirnames, filenames in ordered_walk(root_dir):
     for f in filenames:
       filepath = os.path.join(dirpath, f)
       if os.path.isfile(filepath):
-        displaypath = os.path.relpath(filepath, start=root_dir)
-        yield '%s %s' % (sha256sum(filepath), displaypath)
+        relpath = encodepath(os.path.relpath(filepath, start=root_dir))
+        yield '%s %s' % (sha256sum(filepath), relpath)
 
 
-def exclude_hashwalk(root_dir, instance_dir):
+def exclude_hashwalk(root_dir, exclude):
   root_dir = os.path.abspath(root_dir)
-  instance_dir = os.path.abspath(instance_dir)
-  for dirpath, dirnames, filenames in os.walk(root_dir):
+  exclude = set(os.path.abspath(p) for p in exclude)
+  for dirpath, dirnames, filenames in ordered_walk(root_dir):
+    if dirpath in exclude:
+      del dirnames[:]
+      continue
     for f in filenames:
       filepath = os.path.join(dirpath, f)
       if os.path.isfile(filepath):
-        displaypath = os.path.relpath(filepath, start=root_dir)
-        yield '%s %s' % (sha256sum(filepath), displaypath)
-    if dirpath == instance_dir:
-      remaining_dirs = []
-      for d in dirnames:
-        if not d.startswith('slappart'):
-          remaining_dirs.append(d)
-      dirnames[:] = remaining_dirs
+        relpath = encodepath(os.path.relpath(filepath, start=root_dir))
+        yield '%s %s' % (sha256sum(filepath), relpath)
 
 
-def hashwalk(root_dir, instance_dir=None):
-  if instance_dir and not os.path.relpath(
-      instance_dir, start=root_dir).startswith(os.pardir):
-    return exclude_hashwalk(root_dir, instance_dir)
+def hashwalk(root_dir, *exclude):
+  if exclude:
+    return exclude_hashwalk(root_dir, exclude)
   return fast_hashwalk(root_dir)
 
 
@@ -166,11 +217,10 @@ def cwd(path):
     os.chdir(old_path)
 
 
-def hashcustom(partition, script):
-  workingdir = os.path.join(partition, os.pardir, os.pardir, os.pardir)
+def hashcustom(mirror_partition, script):
+  workingdir = os.path.join(mirror_partition, os.pardir, os.pardir, os.pardir)
   with cwd(os.path.abspath(workingdir)):
-    for dirpath, dirnames, filenames in os.walk(partition):
-      dirnames.sort()
+    for dirpath, dirnames, filenames in ordered_walk(mirror_partition):
       filepaths = []
       for f in filenames:
         path = os.path.join(dirpath, f)
@@ -187,12 +237,22 @@ def hashcustom(partition, script):
       out, err = hashprocess.communicate(str2bytes('\0'.join(filepaths)))
       if hashprocess.returncode != 0:
         template = "Custom signature script %s failed on inputs:\n%s"
+        # script = os.path.realpath(script)
         msg = template % (script, '\n'.join(filepaths))
         msg += "\nwith stdout:\n%s" % bytes2str(out)
         msg += "\nand stderr:\n%s" % bytes2str(err)
         raise Exception(msg)
       signatures = bytes2str(out).strip('\n').split('\n')
-      signatures.sort()
-      displaypath = os.path.relpath(dirpath, start=partition)
+      # signatures.sort() # input filepaths are already sorted
+      relpath = encodepath(os.path.relpath(dirpath, start=mirror_partition))
       for s in signatures:
-        yield '%s %s' % (s, displaypath)
+        yield '%s %s' % (s, relpath)
+
+
+def sign(outsidedir, signaturefile, signatures):
+  remove(signaturefile)
+  tmpfile = os.path.join(outsidedir, os.path.basename(signaturefile) + '.tmp')
+  with open(tmpfile, 'w', errors='surrogateescape') as f:
+    for s in signatures:
+      f.write(s + '\n')
+  shutil.move(tmpfile, signaturefile)
