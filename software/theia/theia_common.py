@@ -252,7 +252,7 @@ def hashcustom(mirror_partition, script):
 def sign(outsidedir, signaturefile, signatures):
   remove(signaturefile)
   tmpfile = os.path.join(outsidedir, os.path.basename(signaturefile) + '.tmp')
-  with open(tmpfile, 'w') as f:
+  with open(tmpfile, 'w', errors='surrogateescape') as f:
     for s in signatures:
       f.write(s + '\n')
   shutil.move(tmpfile, signaturefile)
