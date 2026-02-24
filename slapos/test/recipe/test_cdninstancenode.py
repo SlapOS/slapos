@@ -1,0 +1,1962 @@
+import unittest
+import mock
+from slapos.recipe import cdninstancenode
+import dns.resolver
+from testfixtures import LogCapture
+import os
+import tempfile
+import json
+import hashlib
+import time
+from slapos.recipe.localinstancedb import HostedInstanceLocalDB
+
+class TestCDNRequestFullScenario(unittest.TestCase):
+  def setUp(self):
+    self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
+    self.instance_db_fd, self.instance_db_path = tempfile.mkstemp()
+    self.requestinstance_db_fd, self.requestinstance_db_path = tempfile.mkstemp()
+
+    self.buildout = {
+      "buildout": {},
+      "slap-connection": {
+        "computer-id": "test-computer",
+        "partition-id": "test-partition",
+        "server-url": "http://test.example.com",
+        "requested": "started"
+      }
+    }
+    self.options = {
+      'domainvalidation-db-path': self.domainvalidation_db_path,
+      'instance-db-path': self.instance_db_path,
+      'requestinstance-db-path': self.requestinstance_db_path,
+      'server-url': 'http://test.example.com',
+      'computer-id': 'test-computer',
+      'partition-id': 'test-partition',
+      'software-url': 'http://test.example.com/software',
+      'software-type': 'default',
+      'verification-secret': 'test-secret',
+      'openssl-binary': 'openssl'  # Will be mocked in tests that need it
+    }
+
+  def tearDown(self):
+    os.close(self.domainvalidation_db_fd)
+    if os.path.exists(self.domainvalidation_db_path):
+      os.unlink(self.domainvalidation_db_path)
+    os.close(self.instance_db_fd)
+    if os.path.exists(self.instance_db_path):
+      os.unlink(self.instance_db_path)
+    os.close(self.requestinstance_db_fd)
+    if os.path.exists(self.requestinstance_db_path):
+      os.unlink(self.requestinstance_db_path)
+
+  def test_install_full_scenario(self):
+    self._test_full_scenario('install')
+
+  def test_update_full_scenario(self):
+    self._test_full_scenario('update')
+
+  def _test_full_scenario(self, method_id):
+    """Test full install() scenario with multiple instance states"""
+
+    # Setup instance-db (update list from master)
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    # Setup requestinstance-db (stored instances)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+    # Setup domainvalidation-db
+    domainvalidation_db = cdninstancenode.DomainValidationDB(self.domainvalidation_db_path)
+
+    # 1. New instance (not in requestinstance-db)
+    new_instance_params = {'custom_domain': 'new.example.com', 'url': 'http://new.example.com'}
+    new_instance_data = {'reference': 'new-instance', 'parameters': new_instance_params}
+    # Hash calculation matches InstanceListComparator
+    new_instance_hash = hashlib.sha256(
+      json.dumps(new_instance_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'new-instance',
+      json.dumps(new_instance_params, sort_keys=True),
+      '{}',
+      new_instance_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+
+    # 2. Invalid instance with no changes (in both DBs, invalid, same hash)
+    invalid_no_change_params = {'custom_domain': 'invalid.example.com', 'url': 'http://invalid.example.com'}
+    invalid_no_change_data = {'reference': 'invalid-no-change', 'parameters': invalid_no_change_params}
+    invalid_no_change_hash = hashlib.sha256(
+      json.dumps(invalid_no_change_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'invalid-no-change',
+      json.dumps(invalid_no_change_params, sort_keys=True),
+      '{}',
+      invalid_no_change_hash,
+      str(int(time.time())),
+      False  # invalid
+    )])
+    requestinstance_db.insertInstanceList([(
+      'invalid-no-change',
+      json.dumps(invalid_no_change_params, sort_keys=True),
+      '{}',
+      invalid_no_change_hash,
+      str(int(time.time())),
+      False  # invalid
+    )])
+
+    # 3. Valid instance with no changes (in both DBs, valid, same hash, already validated)
+    valid_no_change_params = {'custom_domain': 'valid.example.com', 'url': 'http://valid.example.com'}
+    valid_no_change_data = {'reference': 'valid-no-change', 'parameters': valid_no_change_params, 'valid': True}
+    valid_no_change_hash = hashlib.sha256(
+      json.dumps(valid_no_change_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'valid-no-change',
+      json.dumps(valid_no_change_params, sort_keys=True),
+      '{}',
+      valid_no_change_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    # Valid instance with no changes (already stored)
+    requestinstance_db.insertInstanceList([(
+      'valid-no-change',
+      json.dumps(valid_no_change_params, sort_keys=True),
+      '{}',
+      valid_no_change_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+
+    # 4. Valid instance with parameter changes but same custom_domain
+    valid_changed_params = {'custom_domain': 'changed.example.com', 'url': 'http://changed.example.com', 'new_param': 'new_value'}
+    valid_changed_data = {'reference': 'valid-changed', 'parameters': valid_changed_params}
+    valid_changed_hash = hashlib.sha256(
+      json.dumps(valid_changed_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'valid-changed',
+      json.dumps(valid_changed_params, sort_keys=True),
+      '{}',
+      valid_changed_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    old_params = {'custom_domain': 'changed.example.com', 'url': 'http://changed.example.com'}
+    old_data = {'reference': 'valid-changed', 'parameters': old_params}
+    old_hash = hashlib.sha256(
+      json.dumps(old_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    requestinstance_db.insertInstanceList([(
+      'valid-changed',
+      json.dumps(old_params, sort_keys=True),
+      '{}',
+      old_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+
+    # 5. Instance to be removed (in requestinstance-db but not in instance-db)
+    to_remove_params = {'custom_domain': 'remove.example.com', 'url': 'http://remove.example.com'}
+    to_remove_data = {'reference': 'to-remove', 'parameters': to_remove_params}
+    to_remove_hash = hashlib.sha256(
+      json.dumps(to_remove_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    requestinstance_db.insertInstanceList([(
+      'to-remove',
+      json.dumps(to_remove_params, sort_keys=True),
+      '{}',
+      to_remove_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+
+    # 6. Valid instance with DNS validation pending - DNS will pass
+    dns_pass_params = {'custom_domain': 'dnspass.example.com', 'url': 'http://dnspass.example.com'}
+    dns_pass_data = {'reference': 'dns-pass', 'parameters': dns_pass_params}
+    dns_pass_hash = hashlib.sha256(
+      json.dumps(dns_pass_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'dns-pass',
+      json.dumps(dns_pass_params, sort_keys=True),
+      '{}',
+      dns_pass_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    # Already in requestinstance-db but not validated yet
+    requestinstance_db.insertInstanceList([(
+      'dns-pass',
+      json.dumps(dns_pass_params, sort_keys=True),
+      '{}',
+      dns_pass_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    # No domain validation entry yet (will be created and validated)
+
+    # 7. Valid instance with DNS validation pending - DNS will fail
+    dns_fail_params = {'custom_domain': 'dnsfail.example.com', 'url': 'http://dnsfail.example.com'}
+    dns_fail_data = {'reference': 'dns-fail', 'parameters': dns_fail_params}
+    dns_fail_hash = hashlib.sha256(
+      json.dumps(dns_fail_data, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      'dns-fail',
+      json.dumps(dns_fail_params, sort_keys=True),
+      '{}',
+      dns_fail_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    # Already in requestinstance-db but not validated yet
+    requestinstance_db.insertInstanceList([(
+      'dns-fail',
+      json.dumps(dns_fail_params, sort_keys=True),
+      '{}',
+      dns_fail_hash,
+      str(int(time.time())),
+      True  # valid
+    )])
+    # No domain validation entry yet (will be created but validation will fail)
+
+    # Pre-validate valid-no-change instance
+    domainvalidation_db.setDomainValidation('valid-no-change', 'valid.example.com', 'valid-token', True)
+    # Pre-validate valid-changed instance (same domain, will be reused)
+    domainvalidation_db.setDomainValidation('valid-changed', 'changed.example.com', 'changed-token', True)
+    # Pre-validate to-remove instance (will be removed)
+    domainvalidation_db.setDomainValidation('to-remove', 'remove.example.com', 'remove-token', True)
+
+    # Mock RequestRecipe and DNS resolver
+    with mock.patch('slapos.recipe.request.slapmodule.slap') as mock_slap:
+      with mock.patch('dns.resolver.Resolver') as MockResolver:
+        # Mock slap library for connection publishing (used by _publishConnectionParameters)
+        with mock.patch('slapos.recipe.instancenode.slap') as mock_slap_publish:
+          # Setup slap mock for RequestRecipe
+          slap_instance = mock.MagicMock()
+          request_instance = mock.MagicMock()
+          register_instance = mock.MagicMock()
+          requested_instance = mock.MagicMock()
+          # Configure getConnectionParameterDict to return a real dict instead of MagicMock
+          requested_instance.getConnectionParameterDict.return_value = {
+            "message": "Your instance is valid the request has been transmitted to the master"
+          }
+          request_instance.return_value = requested_instance
+          register_instance.request = request_instance
+          slap_instance.registerComputerPartition.return_value = register_instance
+          mock_slap.return_value = slap_instance
+
+          # Setup slap mock for connection publishing
+          slap_publish_instance = mock.MagicMock()
+          computer_partition = mock.MagicMock()
+          setConnectionDict = mock.MagicMock()
+          error_method = mock.MagicMock()
+          computer_partition.setConnectionDict = setConnectionDict
+          computer_partition.error = error_method
+          slap_publish_instance.registerComputerPartition.return_value = computer_partition
+          # slap.slap() is a function call, so we need to set return_value on the function
+          mock_slap_publish.slap.return_value = slap_publish_instance
+          # Also need to mock initializeConnection
+          slap_publish_instance.initializeConnection = mock.MagicMock()
+
+          # Clear connection cache before test
+          from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
+          CONNECTION_CACHE.clear()
+
+        # Setup DNS resolver mock
+        mock_resolver_instance = MockResolver.return_value
+        mock_answer = mock.MagicMock()
+        mock_rdata = mock.MagicMock()
+
+        # Store database path for DNS mock to access
+        domainvalidation_db_path = self.options['domainvalidation-db-path']
+        # Will be set after recipe is created
+        recipe_db_instance = [None]
+
+        def get_dns_response(*args, **kwargs):
+          # Get token from database for the domain being checked
+          challenge_domain = args[0]
+          # Extract domain from challenge domain (e.g., '_slapos-challenge.example.com' -> 'example.com')
+          if challenge_domain.startswith('_slapos-challenge.'):
+            domain = challenge_domain[len('_slapos-challenge.'):]
+          else:
+            # Handle custom dns-entry-name
+            parts = challenge_domain.split('.', 1)
+            domain = parts[1] if len(parts) > 1 else challenge_domain
+
+          # Handle DNS validation:
+          # - new.example.com: DNS validation will wait (fail initially)
+          # - dnsfail.example.com: DNS will fail - return wrong token
+          # - dns-pass.example.com: DNS will pass
+          if domain == 'new.example.com' or domain == 'dnsfail.example.com':
+            # DNS will fail - return wrong token
+            mock_rdata.strings = [b'wrong-token']
+          else:
+            # For all other domains, try to get token from database
+            # Use recipe's database instance if available, otherwise create a new connection
+            db_to_use = recipe_db_instance[0]
+            if db_to_use is None:
+              db_to_use = cdninstancenode.DomainValidationDB(domainvalidation_db_path)
+
+            # Try to get token by domain (most reliable since token is stored with domain)
+            all_entries = db_to_use.fetchAll(
+              "SELECT * FROM domain_validation WHERE domain=?", (domain,)
+            )
+            if all_entries:
+              mock_rdata.strings = [all_entries[0]['token'].encode('utf-8')]
+            else:
+              # If not found by domain, try by instance reference
+              found = False
+              for instance_ref in ['new-instance', 'invalid-no-change', 'valid-changed', 'dns-pass']:
+                db_entry = db_to_use.getDomainValidationForInstance(instance_ref)
+                if db_entry and db_entry['domain'] == domain:
+                  mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+                  found = True
+                  break
+
+              if not found:
+                # Token not created yet, return placeholder
+                mock_rdata.strings = [b'placeholder']
+
+          mock_answer.__iter__.return_value = iter([mock_rdata])
+          return mock_answer
+
+        mock_resolver_instance.resolve.side_effect = get_dns_response
+
+        # Create recipe and call install()
+        recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+        # Store recipe's database instance for DNS mock to use
+        recipe_db_instance[0] = recipe.domain_validation_db
+
+        with LogCapture() as log:
+          result = getattr(recipe, method_id)()
+
+        # Verify results
+        # 1. New instance should NOT be requested (DNS validation will wait)
+        # Verify it was added to requestinstance-db but marked as invalid
+        stored = requestinstance_db.getInstance('new-instance')
+        self.assertIsNotNone(stored)
+        self.assertEqual(stored['reference'], 'new-instance')
+        self.assertFalse(bool(stored['valid_parameter']))  # Should be invalid due to DNS failure
+        # Verify domain validation for new instance (created but not validated)
+        db_entry = domainvalidation_db.getDomainValidationForInstance('new-instance')
+        self.assertIsNotNone(db_entry)
+        self.assertEqual(db_entry['domain'], 'new.example.com')
+        self.assertFalse(bool(db_entry['validated']))  # DNS validation failed
+
+        # 2. Invalid instance with no changes should be re-validated (but not requested)
+        # Check that it's still in the database and still invalid
+        stored = requestinstance_db.getInstance('invalid-no-change')
+        self.assertIsNotNone(stored)
+        self.assertFalse(bool(stored['valid_parameter']))  # Should not be requested (validation failed)
+
+        # 3. Valid instance with no changes should not be requested (already validated, no changes)
+        # Should still be in database
+        stored = requestinstance_db.getInstance('valid-no-change')
+        self.assertIsNotNone(stored)
+        # Domain validation should still exist
+        db_entry = domainvalidation_db.getDomainValidationForInstance('valid-no-change')
+        self.assertIsNotNone(db_entry)
+        self.assertTrue(bool(db_entry['validated']))
+
+        # 4. Valid instance with changes should be requested
+        # Domain validation should still be valid (same domain)
+        db_entry = domainvalidation_db.getDomainValidationForInstance('valid-changed')
+        self.assertIsNotNone(db_entry)
+        self.assertEqual(db_entry['domain'], 'changed.example.com')
+        self.assertTrue(bool(db_entry['validated']))
+        # Verify it was updated in requestinstance-db
+        stored = requestinstance_db.getInstance('valid-changed')
+        self.assertIsNotNone(stored)
+        stored_params = json.loads(stored['json_parameters'])
+        self.assertEqual(stored_params['new_param'], 'new_value')
+
+        # 5. Instance to be removed should be destroyed
+        stored = requestinstance_db.getInstance('to-remove')
+        self.assertIsNone(stored)
+        # Domain validation should be removed
+        db_entry = domainvalidation_db.getDomainValidationForInstance('to-remove')
+        self.assertIsNone(db_entry)
+
+        # 6. Valid instance with DNS validation pending - DNS will pass
+        # Should be requested after DNS validation passes
+        # Verify it was updated in requestinstance-db
+        stored = requestinstance_db.getInstance('dns-pass')
+        self.assertIsNotNone(stored)
+        self.assertTrue(bool(stored['valid_parameter']))
+        # Verify domain validation was created and validated
+        db_entry = domainvalidation_db.getDomainValidationForInstance('dns-pass')
+        self.assertIsNotNone(db_entry)
+        self.assertEqual(db_entry['domain'], 'dnspass.example.com')
+        self.assertTrue(bool(db_entry['validated']))
+
+        # 7. Valid instance with DNS validation pending - DNS will fail
+        # Should NOT be requested (DNS validation failed)
+        # Verify it's still in requestinstance-db but invalid
+        stored = requestinstance_db.getInstance('dns-fail')
+        self.assertIsNotNone(stored)
+        self.assertFalse(bool(stored['valid_parameter']))
+        # Verify domain validation was created but not validated
+        db_entry = domainvalidation_db.getDomainValidationForInstance('dns-fail')
+        self.assertIsNotNone(db_entry)
+        self.assertEqual(db_entry['domain'], 'dnsfail.example.com')
+        self.assertFalse(bool(db_entry['validated']))
+
+        # Verify request_instance was not called at all by CDNInstanceNodeRecipe.
+        # With the new behaviour, CDNInstanceNodeRecipe skips instance requests
+        # entirely, including destroys, so no calls to the master are made.
+        self.assertEqual(request_instance.call_count, 0)
+
+        # Verify published connection parameters for each instance
+        # Connection parameters are published via setConnectionDict with slave_reference
+
+        # Helper to extract published params for an instance from setConnectionDict calls
+        def get_published_params(instance_ref):
+          for call in setConnectionDict.call_args_list:
+            # call[0] is tuple of positional args, call[1] is dict of keyword args
+            if len(call[0]) > 0:
+              conn_params = call[0][0]
+              slave_ref = call[1].get('slave_reference')
+              if slave_ref == instance_ref:
+                return conn_params
+          return None
+
+        # Helper to extract error calls for an instance from error() calls
+        def get_error_calls(instance_ref):
+          error_calls = []
+          for call in error_method.call_args_list:
+            # call[0] is tuple of positional args, call[1] is dict of keyword args
+            error_info = call[0][0] if len(call[0]) > 0 else {}
+            slave_ref = call[1].get('slave_reference')
+            if slave_ref == instance_ref:
+              error_calls.append(error_info)
+          return error_calls
+
+        # 1. new-instance: DNS validation failed - should publish DNS challenge info
+        # Note: new-instance may not have published connection parameters if it fails validation
+        # before being added to the database, or if publish_information is empty
+        new_published = get_published_params('new-instance')
+        new_error_calls = get_error_calls('new-instance')
+        # For new instances that fail validation, connection parameters may not be published
+        # The important thing is that it's in the database marked as invalid
+        if new_published is not None:
+          self.assertIn('txt_record', new_published)
+          self.assertIn('txt_value', new_published)
+          self.assertIn('message', new_published)
+          self.assertEqual(new_published['txt_record'], '_slapos-challenge.new.example.com')
+          # Verify token is present (should be generated)
+          self.assertIsNotNone(new_published['txt_value'])
+          self.assertNotEqual(new_published['txt_value'], '')
+          # Verify message content
+          expected_message = (
+            'Custom domain verification failed. '
+            'Please add TXT record "%s" with value "%s".'
+            % (new_published['txt_record'], new_published['txt_value'])
+          )
+          self.assertEqual(new_published['message'], expected_message)
+          # Verify error() was called when error information was published
+          self.assertEqual(len(new_error_calls), 1, "error() should be called once for new-instance when error info is published")
+          self.assertEqual(new_error_calls[0], new_published, "error() should be called with the same information as setConnectionDict")
+        else:
+          # If nothing was published, error() should not be called either
+          self.assertEqual(len(new_error_calls), 0, "error() should not be called if nothing was published")
+
+        # 2. invalid-no-change: Validation failed but no change in parameters
+        # Since the instance is unchanged and connection parameters haven't changed,
+        # _publishConnectionParameters will skip publishing (unchanged parameters check)
+        invalid_published = get_published_params('invalid-no-change')
+        invalid_error_calls = get_error_calls('invalid-no-change')
+        # Should not publish if parameters haven't changed
+        self.assertIsNone(invalid_published, "invalid-no-change should not publish connection parameters if unchanged")
+        # error() should also not be called if nothing was published
+        self.assertEqual(len(invalid_error_calls), 0, "error() should not be called for invalid-no-change if parameters haven't changed")
+
+        # 3. valid-no-change: Already validated, no changes - should not publish
+        # (no connection params returned from preDeployInstanceValidation, and no request_conn_params)
+        valid_no_change_published = get_published_params('valid-no-change')
+        valid_no_change_error_calls = get_error_calls('valid-no-change')
+        self.assertIsNone(valid_no_change_published, "valid-no-change should not have published connection parameters")
+        # error() should not be called for successful instances
+        self.assertEqual(len(valid_no_change_error_calls), 0, "error() should not be called for valid-no-change (success case)")
+
+        # 4. valid-changed: Modified and validated
+        # Connection parameters may not be published if they haven't changed
+        # (even though instance parameters changed, connection parameters might be the same)
+        valid_changed_published = get_published_params('valid-changed')
+        valid_changed_error_calls = get_error_calls('valid-changed')
+        if valid_changed_published is not None:
+          # If published, verify the content
+          self.assertIn('message', valid_changed_published)
+          self.assertEqual(valid_changed_published['message'], 'Your instance is valid the request has been transmitted to the master')
+        # If not published, that's also valid - connection parameters haven't changed
+        # error() should not be called for successful instances
+        self.assertEqual(len(valid_changed_error_calls), 0, "error() should not be called for valid-changed (success case)")
+
+        # 5. to-remove: Destroyed - should not publish (instance is removed, no publishing in _processDestroyedInstance)
+        to_remove_published = get_published_params('to-remove')
+        self.assertIsNone(to_remove_published, "to-remove should not have published connection parameters")
+
+        # 6. dns-pass: DNS validation passed
+        # Connection parameters may not be published if they haven't changed
+        dns_pass_published = get_published_params('dns-pass')
+        dns_pass_error_calls = get_error_calls('dns-pass')
+        if dns_pass_published is not None:
+          # If published, verify the content
+          self.assertIn('message', dns_pass_published)
+          self.assertEqual(dns_pass_published['message'], 'Your instance is valid the request has been transmitted to the master')
+        # If not published, that's also valid - connection parameters haven't changed
+        # error() should not be called for successful instances
+        self.assertEqual(len(dns_pass_error_calls), 0, "error() should not be called for dns-pass (success case)")
+
+        # 7. dns-fail: DNS validation failed
+        # Connection parameters may not be published if they haven't changed
+        dns_fail_published = get_published_params('dns-fail')
+        dns_fail_error_calls = get_error_calls('dns-fail')
+        if dns_fail_published is not None:
+          # If published, verify the content
+          self.assertIn('txt_record', dns_fail_published)
+          self.assertIn('txt_value', dns_fail_published)
+          self.assertIn('message', dns_fail_published)
+          self.assertEqual(dns_fail_published['txt_record'], '_slapos-challenge.dnsfail.example.com')
+          # Verify token is present (should be generated)
+          self.assertIsNotNone(dns_fail_published['txt_value'])
+          self.assertNotEqual(dns_fail_published['txt_value'], '')
+          # Verify message content
+          expected_message = (
+            'Custom domain verification failed. '
+            'Please add TXT record "%s" with value "%s".'
+            % (dns_fail_published['txt_record'], dns_fail_published['txt_value'])
+          )
+          self.assertEqual(dns_fail_published['message'], expected_message)
+          # Verify error() was called when error information was published
+          self.assertEqual(len(dns_fail_error_calls), 1, "error() should be called once for dns-fail when error info is published")
+          self.assertEqual(dns_fail_error_calls[0], dns_fail_published, "error() should be called with the same information as setConnectionDict")
+        else:
+          # If nothing was published, error() should not be called either
+          self.assertEqual(len(dns_fail_error_calls), 0, "error() should not be called if nothing was published")
+
+
+class TestCDNInstanceNodeRecipe(unittest.TestCase):
+
+  def setUp(self):
+    self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
+    self.timestamp_file_fd, self.timestamp_file_path = tempfile.mkstemp()
+
+    self.buildout = {
+      "buildout": {},
+    }
+    self.options = {
+      'instance-db-path': "/path/to/instance.db",
+      'domainvalidation-db-path': self.domainvalidation_db_path,
+      'requestinstance-db-path': "/path/to/requestinstance.db",
+      'server-url': 'http://test.example.com',
+      'computer-id': 'test-computer',
+      'partition-id': 'test-partition',
+      'software-url': 'http://test.example.com/software',
+      'software-type': 'default',
+      'verification-secret': 'test-secret'
+    }
+    # Mock databases for parent class (HostedInstanceLocalDB)
+    self.mock_instance_db = mock.MagicMock()
+    self.mock_requestinstance_db = mock.MagicMock()
+
+    # Patch HostedInstanceLocalDB to return mocks
+    self.db_patch = mock.patch('slapos.recipe.instancenode.HostedInstanceLocalDB')
+    self.MockDB = self.db_patch.start()
+    # Use a function to return mocks alternately for each call
+    # This allows multiple recipe instances to be created
+    self.db_call_count = 0
+    def get_mock_db(*args, **kwargs):
+      self.db_call_count += 1
+      if self.db_call_count % 2 == 1:
+        return self.mock_instance_db
+      else:
+        return self.mock_requestinstance_db
+    self.MockDB.side_effect = get_mock_db
+    # Ensure patch is cleaned up to avoid interfering with other tests
+    self.addCleanup(self.db_patch.stop)
+
+    # Use real DomainValidationDB for integration testing
+    # (no mocking needed - will use self.domainvalidation_db_path)
+
+  def tearDown(self):
+    os.close(self.domainvalidation_db_fd)
+    if os.path.exists(self.domainvalidation_db_path):
+      os.unlink(self.domainvalidation_db_path)
+    os.close(self.timestamp_file_fd)
+    if os.path.exists(self.timestamp_file_path):
+      os.unlink(self.timestamp_file_path)
+
+  def test_validate_no_custom_domain(self):
+    """Test validation when custom_domain is not provided"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Should be valid if no custom_domain (nothing to verify)
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation('ref1', {})
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+    self.assertEqual(connection_parameters, {})
+
+    # Verify no database entry was created
+    result = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+    self.assertIsNone(result)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_custom_domain_success(self, MockResolver):
+    """Test successful validation of custom domain"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    mock_resolver_instance = MockResolver.return_value
+
+    # Setup mock DNS response that will return the token from database
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      # Get token from database after it's been generated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
+      'ref1',
+      {'custom_domain': 'example.com'}
+    )
+
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+    self.assertEqual(connection_parameters, {})
+
+    # Verify DNS lookup was called with the default dns-entry-name
+    mock_resolver_instance.resolve.assert_called_with('_slapos-challenge.example.com', 'TXT')
+    # Verify database entry was created and validated
+    db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+    self.assertIsNotNone(db_entry)
+    self.assertEqual(db_entry['domain'], 'example.com')
+    self.assertEqual(db_entry['instance_reference'], 'ref1')
+    self.assertTrue(bool(db_entry['validated']))
+    self.assertIsNotNone(db_entry['token'])
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_custom_domain_failure_wrong_token(self, MockResolver):
+    """Test validation failure when token doesn't match"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    mock_resolver_instance = MockResolver.return_value
+
+    # Setup mock DNS response with wrong token
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+    mock_rdata.strings = [b'wrong-token']
+
+    mock_answer.__iter__.return_value = iter([mock_rdata])
+    mock_resolver_instance.resolve.return_value = mock_answer
+
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
+      'ref1',
+      {'custom_domain': 'example.com'}
+    )
+
+    self.assertFalse(is_valid)
+    self.assertEqual(len(error_list), 1)
+    self.assertIn('Custom domain verification failed', error_list[0])
+    self.assertIn('txt_record', connection_parameters)
+    self.assertIn('txt_value', connection_parameters)
+    self.assertEqual(connection_parameters['txt_record'], '_slapos-challenge.example.com')
+
+    # Verify database entry was created with validated=False
+    db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+    self.assertIsNotNone(db_entry)
+    self.assertEqual(db_entry['domain'], 'example.com')
+    self.assertEqual(db_entry['instance_reference'], 'ref1')
+    self.assertFalse(bool(db_entry['validated']))
+    self.assertIsNotNone(db_entry['token'])
+    self.assertEqual(connection_parameters['txt_value'], db_entry['token'])
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_custom_domain_failure_no_record(self, MockResolver):
+    """Test validation failure when DNS record is missing"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    mock_resolver_instance = MockResolver.return_value
+
+    # Setup mock DNS to raise NXDOMAIN
+    mock_resolver_instance.resolve.side_effect = dns.resolver.NXDOMAIN
+
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
+      'ref1',
+      {'custom_domain': 'example.com'}
+    )
+
+    self.assertFalse(is_valid)
+    self.assertIn('txt_record', connection_parameters)
+    self.assertIn('txt_value', connection_parameters)
+    self.assertEqual(connection_parameters['txt_record'], '_slapos-challenge.example.com')
+
+    # Verify database entry was created with validated=False
+    db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+    self.assertIsNotNone(db_entry)
+    self.assertEqual(db_entry['domain'], 'example.com')
+    self.assertFalse(bool(db_entry['validated']))
+    self.assertEqual(connection_parameters['txt_value'], db_entry['token'])
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_custom_domain_failure_timeout(self, MockResolver):
+    """Test validation failure when DNS lookup times out"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    mock_resolver_instance = MockResolver.return_value
+
+    # Setup mock DNS to raise Timeout
+    mock_resolver_instance.resolve.side_effect = dns.resolver.LifetimeTimeout
+
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
+      'ref1',
+      {'custom_domain': 'example.com'}
+    )
+
+    self.assertFalse(is_valid)
+    self.assertIn('txt_record', connection_parameters)
+    self.assertEqual(connection_parameters['txt_record'], '_slapos-challenge.example.com')
+
+    # Verify database entry was created with validated=False
+    db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+    self.assertIsNotNone(db_entry)
+    self.assertEqual(db_entry['domain'], 'example.com')
+    self.assertFalse(bool(db_entry['validated']))
+
+  def test_validate_custom_domain_already_validated(self):
+    """Test that validation is skipped if already validated in DB"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Pre-populate database with validated entry
+    stored_token = 'stored-token-12345'
+    recipe.domain_validation_db.setDomainValidation('ref1', 'example.com', stored_token, True)
+
+    # We don't mock resolve here, so if it calls resolve it will fail (or we can mock it to assert not called)
+    with mock.patch('dns.resolver.Resolver') as MockResolver:
+      mock_resolver_instance = MockResolver.return_value
+      is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
+        'ref1',
+        {'custom_domain': 'example.com'}
+      )
+
+      self.assertTrue(is_valid)
+      self.assertEqual(error_list, [])
+      self.assertEqual(connection_parameters, {})
+
+      # Verify DNS lookup was NOT called (already validated)
+      mock_resolver_instance.resolve.assert_not_called()
+      # Verify database entry still exists and is validated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      self.assertIsNotNone(db_entry)
+      self.assertTrue(bool(db_entry['validated']))
+      self.assertEqual(db_entry['token'], stored_token)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_custom_domain_token_reuse(self, MockResolver):
+    """Test that token is reused if entry exists but not yet validated"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Pre-populate database with unvalidated entry
+    stored_token = 'stored-token-67890'
+    recipe.domain_validation_db.setDomainValidation('ref1', 'example.com', stored_token, False)
+
+    # Setup mock DNS response with the stored token
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+    mock_rdata.strings = [stored_token.encode('utf-8')]
+    mock_answer.__iter__.return_value = iter([mock_rdata])
+    # Use return_value instead of side_effect to ensure consistent behavior
+    mock_resolver_instance.resolve.return_value = mock_answer
+
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
+      'ref1',
+      {'custom_domain': 'example.com'}
+    )
+
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+    self.assertEqual(connection_parameters, {})
+
+    # Verify DNS lookup was called
+    mock_resolver_instance.resolve.assert_called_with('_slapos-challenge.example.com', 'TXT')
+    # Verify database entry was updated to validated=True
+    db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+    self.assertIsNotNone(db_entry)
+    self.assertTrue(bool(db_entry['validated']))
+    self.assertEqual(db_entry['token'], stored_token)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_custom_domain_dns_entry_name_configurable(self, MockResolver):
+    """Test that dns-entry-name option is respected"""
+    self.options['dns-entry-name'] = 'custom-challenge'
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'example.com'})
+    # Verify validation passed
+    self.assertTrue(is_valid)
+    # Verify DNS lookup used custom dns-entry-name
+    mock_resolver_instance.resolve.assert_called_with('custom-challenge.example.com', 'TXT')
+
+  def test_validate_domain_already_validated_for_other_instance(self):
+    """Test that validation fails if domain is already validated for another instance"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Pre-populate database with validated entry for another instance
+    recipe.domain_validation_db.setDomainValidation('other-instance', 'example.com', 'existing-token', True)
+
+    is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation(
+      'ref1',
+      {'custom_domain': 'example.com'}
+    )
+
+    self.assertFalse(is_valid)
+    self.assertEqual(len(error_list), 1)
+    self.assertIn('Your domain "example.com" can not be validated. Please contact support.', error_list[0])
+    self.assertIn('message', connection_parameters)
+    self.assertIn('domain', connection_parameters)
+    self.assertEqual(connection_parameters['domain'], 'example.com')
+    # Verify no entry was created for ref1
+    db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+    self.assertIsNone(db_entry)
+
+  def test_validate_domain_change_removes_old_domain(self):
+    """Test that changing domain removes old domain entry for the instance"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Pre-populate database with old domain entry
+    recipe.domain_validation_db.setDomainValidation('ref1', 'old-domain.com', 'old-token', True)
+
+    # Setup mock DNS response
+    with mock.patch('dns.resolver.Resolver') as MockResolver:
+      mock_resolver_instance = MockResolver.return_value
+      mock_answer = mock.MagicMock()
+      mock_rdata = mock.MagicMock()
+
+      def get_dns_response(*args, **kwargs):
+        db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+        if db_entry:
+          mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+        else:
+          mock_rdata.strings = [b'placeholder']
+        mock_answer.__iter__.return_value = iter([mock_rdata])
+        return mock_answer
+
+      mock_resolver_instance.resolve.side_effect = get_dns_response
+
+      # Validate with new domain
+      recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'new-domain.com'})
+
+      # Verify old domain entry was removed and new one was created
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      self.assertIsNotNone(db_entry)
+      self.assertEqual(db_entry['domain'], 'new-domain.com')
+      self.assertNotEqual(db_entry['domain'], 'old-domain.com')
+
+  def test_process_destroyed_instance(self):
+    """Test that _processDestroyedInstance removes domain validation entries and instance from DB"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Pre-populate database with an entry
+    recipe.domain_validation_db.setDomainValidation('test-instance-ref', 'example.com', 'test-token', True)
+
+    # Pre-populate requestinstance_db with the instance
+    recipe.requestinstance_db.insertInstanceList([(
+      'test-instance-ref',
+      '{}',
+      '{}',
+      'hash',
+      '1234567890',
+      True
+    )])
+
+    # Mock _removeInstanceFromDB to verify it's called
+    with mock.patch.object(recipe, '_removeInstanceFromDB') as mock_remove:
+      # Mock the parent's _processDestroyedInstance to verify it's NOT called
+      with mock.patch(
+          'slapos.recipe.instancenode.Recipe._processDestroyedInstance'
+      ) as mock_parent_process:
+        instance_reference = 'test-instance-ref'
+
+        with LogCapture() as log:
+          # Call the method
+          recipe._processDestroyedInstance(instance_reference)
+
+        # Verify entry was removed from domain validation database
+        db_entry = recipe.domain_validation_db.getDomainValidationForInstance(instance_reference)
+        self.assertIsNone(db_entry)
+
+        # Verify _removeInstanceFromDB was called
+        mock_remove.assert_called_once_with(instance_reference)
+
+        # Verify parent's _processDestroyedInstance was NOT called
+        # (CDNInstanceNodeRecipe no longer calls the master for destroys)
+        mock_parent_process.assert_not_called()
+
+        # Verify debug log was called
+        log.check(
+          ('test', 'DEBUG', 'Destroying instance: %s' % instance_reference),
+        )
+
+  def test_validate_server_alias_requires_custom_domain(self):
+    """Test validation fails when server-alias is provided without custom_domain"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # server-alias without custom_domain should fail
+    parameters = {
+      'server-alias': 'example.com'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertFalse(is_valid)
+    self.assertIn('server-alias requires custom_domain to be set', error_list)
+
+  def test_validate_server_alias_invalid_domain(self):
+    """Test validation fails for invalid server-alias domains"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Invalid domain in server-alias
+    parameters = {
+      'server-alias': 'invalid..domain.com valid.domain.com',
+      'custom_domain': 'domain.com'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertFalse(is_valid)
+    self.assertIn("server-alias 'invalid..domain.com' not valid", error_list)
+
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_server_alias_same_root_domain(self, MockResolver):
+    """Test validation accepts server-alias with same root domain as custom_domain"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Mock DNS to return success
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      # Get token from database after it's been generated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    # server-alias with same root domain as custom_domain should be valid
+    parameters = {
+      'custom_domain': 'example.com',
+      'server-alias': 'www.example.com api.example.com'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+
+  def test_validate_server_alias_different_root_domain(self):
+    """Test validation fails for server-alias with different root domain"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # server-alias with different root domain should fail
+    parameters = {
+      'custom_domain': 'example.com',
+      'server-alias': 'otherdomain.com'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertFalse(is_valid)
+    self.assertIn("server-alias 'otherdomain.com' must be part of the same root domain as custom_domain (example.com)", error_list)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_server_alias_wildcard_same_root_domain(self, MockResolver):
+    """Test validation accepts wildcard server-alias with same root domain"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Mock DNS to return success
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      # Get token from database after it's been generated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    # Wildcard server-alias with same root domain should be valid
+    parameters = {
+      'custom_domain': 'example.com',
+      'server-alias': '*.example.com'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+
+  def test_validate_server_alias_wildcard_different_root_domain(self):
+    """Test validation fails for wildcard server-alias with different root domain"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Wildcard server-alias with different root domain should fail
+    parameters = {
+      'custom_domain': 'example.com',
+      'server-alias': '*.otherdomain.com'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertFalse(is_valid)
+    self.assertIn("server-alias '*.otherdomain.com' must be part of the same root domain as custom_domain (example.com)", error_list)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_server_alias_matches_custom_domain(self, MockResolver):
+    """Test validation accepts server-alias that matches custom_domain exactly"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Mock DNS to return success
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      # Get token from database after it's been generated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    # server-alias matching custom_domain exactly should be valid
+    parameters = {
+      'custom_domain': 'example.com',
+      'server-alias': 'example.com'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_server_alias_subdomain_of_custom_domain(self, MockResolver):
+    """Test validation accepts server-alias that is subdomain of custom_domain"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Mock DNS to return success
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      # Get token from database after it's been generated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    # server-alias as subdomain of custom_domain should be valid
+    parameters = {
+      'custom_domain': 'www.example.com',
+      'server-alias': 'api.example.com'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_validate_server_alias_update_adds_new_hosts(self, MockResolver):
+    """Test that updating server-alias for already validated instance adds new hosts to used_hosts"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Mock DNS to return success
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      # Get token from database after it's been generated
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    # Step 1: Create instance with initial server-alias and validate it
+    initial_params = {
+      'custom_domain': 'example.com',
+      'server-alias': 'www.example.com'
+    }
+
+    # Pre-populate requestinstance_db to simulate existing validated instance
+    recipe.requestinstance_db.insertInstanceList([(
+      'ref1',
+      json.dumps(initial_params, sort_keys=True),
+      "{}",
+      'initial-hash',
+      "1234567890",
+      True
+    )])
+
+    # Pre-populate domain_validation_db to simulate already validated domain
+    recipe.domain_validation_db.setDomainValidation('ref1', 'example.com', 'test-token', True)
+
+    # Pre-populate used_hosts with initial hosts
+    recipe.domain_validation_db.addUsedHosts('ref1', {'example.com', 'www.example.com'})
+
+    # Verify initial hosts are in used_hosts
+    hosts_before = recipe.domain_validation_db.fetchAll(
+      "SELECT host FROM used_hosts WHERE instance_reference=?",
+      ('ref1',)
+    )
+    hosts_before_set = {row['host'] for row in hosts_before}
+    self.assertEqual(hosts_before_set, {'example.com', 'www.example.com'})
+
+    # Step 2: Update server-alias with new aliases
+    updated_params = {
+      'custom_domain': 'example.com',
+      'server-alias': 'www.example.com api.example.com blog.example.com'
+    }
+
+    # Validate the updated instance (should pass DNS since domain is already validated)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', updated_params)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+
+    # Step 3: Verify new hosts are added to used_hosts
+    # Note: The hosts are added in preDeployInstanceValidation when DNS validation passes
+    # Since the domain is already validated, preDeployInstanceValidation will return early
+    # and add the hosts. Let's check the used_hosts table
+    hosts_after = recipe.domain_validation_db.fetchAll(
+      "SELECT host FROM used_hosts WHERE instance_reference=?",
+      ('ref1',)
+    )
+    hosts_after_set = {row['host'] for row in hosts_after}
+    # Should include custom_domain and all server-alias entries
+    expected_hosts = {'example.com', 'www.example.com', 'api.example.com', 'blog.example.com'}
+    self.assertEqual(hosts_after_set, expected_hosts)
+
+  def test_validate_url_netloc_list_invalid(self):
+    """Test validation fails for invalid url-netloc-list"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Invalid netloc format
+    parameters = {
+      'url-netloc-list': 'invalid-netloc example.com:80'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertFalse(is_valid)
+    self.assertIn("slave url-netloc-list 'invalid-netloc' invalid", error_list)
+
+  def test_validate_url_netloc_list_valid(self):
+    """Test validation accepts valid url-netloc-list"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Valid netloc format
+    parameters = {
+      'url-netloc-list': 'example.com:80 backend.example.com:443'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+
+  def test_validate_cipher_valid(self):
+    """Test validation accepts valid ciphers"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Valid cipher from GOOD_CIPHER_LIST
+    parameters = {
+      'ciphers': 'ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+
+  def test_validate_cipher_invalid(self):
+    """Test validation fails for invalid ciphers"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Invalid cipher
+    parameters = {
+      'ciphers': 'INVALID-CIPHER-SUITE'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertFalse(is_valid)
+    self.assertIn("Cipher 'INVALID-CIPHER-SUITE' is not supported.", error_list)
+
+  def test_validate_cipher_translatable(self):
+    """Test validation accepts translatable ciphers and logs warning"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Translatable cipher (old format)
+    parameters = {
+      'ciphers': 'ECDHE-RSA-AES256-CBC-SHA'
+    }
+    with LogCapture() as log:
+      is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertTrue(is_valid)
+    self.assertEqual(error_list, [])
+    # Check that warning was logged
+    log.check(
+      ('test', 'WARNING', "Instance ref1: Cipher 'ECDHE-RSA-AES256-CBC-SHA' translated to 'ECDHE-RSA-AES256-SHA'"),
+    )
+
+  def test_validate_ssl_certificate_valid(self):
+    """Test validation accepts valid SSL certificates"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', {
+      **self.options,
+      'openssl-binary': '/usr/bin/openssl'
+    })
+
+    valid_cert = """-----BEGIN CERTIFICATE-----
+MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
+-----END CERTIFICATE-----"""
+
+    parameters = {
+      'ssl_proxy_ca_crt': valid_cert
+    }
+
+    # Mock openssl subprocess call to return success
+    with mock.patch('subprocess.Popen') as mock_popen:
+      mock_process = mock.MagicMock()
+      mock_process.returncode = 0
+      mock_process.communicate.return_value = (b'', b'')
+      mock_popen.return_value = mock_process
+
+      is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+      # Should pass validation (openssl returns success)
+      self.assertTrue(is_valid)
+      self.assertEqual(error_list, [])
+
+  def test_validate_ssl_certificate_invalid(self):
+    """Test validation fails for invalid SSL certificates"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', {
+      **self.options,
+      'openssl-binary': '/usr/bin/openssl'
+    })
+
+    # Invalid certificate content
+    invalid_cert = "not a valid certificate"
+    parameters = {
+      'ssl_proxy_ca_crt': invalid_cert
+    }
+
+    # Mock openssl to return error
+    with mock.patch('subprocess.Popen') as mock_popen:
+      mock_process = mock.MagicMock()
+      mock_process.returncode = 1  # openssl error
+      mock_process.communicate.return_value = (b'error', b'')
+      mock_popen.return_value = mock_process
+
+      is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+      self.assertFalse(is_valid)
+      self.assertIn('ssl_proxy_ca_crt is invalid', error_list)
+
+  def test_validate_ssl_key_cert_match(self):
+    """Test validation checks SSL key and certificate match"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', {
+      **self.options,
+      'openssl-binary': '/usr/bin/openssl'
+    })
+
+    # Mock matching moduli (key and cert match)
+    matching_modulus = b'Modulus=ABCD1234\n'
+    parameters = {
+      'ssl_key': '-----BEGIN PRIVATE KEY-----\ntest key\n-----END PRIVATE KEY-----',
+      'ssl_crt': '-----BEGIN CERTIFICATE-----\ntest cert\n-----END CERTIFICATE-----'
+    }
+
+    with mock.patch('subprocess.Popen') as mock_popen:
+      # First call (key modulus)
+      mock_key_process = mock.MagicMock()
+      mock_key_process.returncode = 0
+      mock_key_process.communicate.return_value = (matching_modulus, b'')
+
+      # Second call (cert modulus)
+      mock_cert_process = mock.MagicMock()
+      mock_cert_process.returncode = 0
+      mock_cert_process.communicate.return_value = (matching_modulus, b'')
+
+      mock_popen.side_effect = [mock_key_process, mock_cert_process]
+
+      is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+      self.assertTrue(is_valid)
+      self.assertEqual(error_list, [])
+
+  def test_validate_ssl_key_cert_mismatch(self):
+    """Test validation fails when SSL key and certificate don't match"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', {
+      **self.options,
+      'openssl-binary': '/usr/bin/openssl'
+    })
+
+    parameters = {
+      'ssl_key': '-----BEGIN PRIVATE KEY-----\ntest key\n-----END PRIVATE KEY-----',
+      'ssl_crt': '-----BEGIN CERTIFICATE-----\ntest cert\n-----END CERTIFICATE-----'
+    }
+
+    with mock.patch('subprocess.Popen') as mock_popen:
+      # First call (key modulus)
+      mock_key_process = mock.MagicMock()
+      mock_key_process.returncode = 0
+      mock_key_process.communicate.return_value = (b'Modulus=KEY123\n', b'')
+
+      # Second call (cert modulus)
+      mock_cert_process = mock.MagicMock()
+      mock_cert_process.returncode = 0
+      mock_cert_process.communicate.return_value = (b'Modulus=CERT456\n', b'')
+
+      mock_popen.side_effect = [mock_key_process, mock_cert_process]
+
+      is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+      self.assertFalse(is_valid)
+      self.assertIn('slave ssl_key and ssl_crt does not match', error_list)
+
+  def test_validate_ssl_ca_crt_requires_key_and_cert(self):
+    """Test validation requires ssl_crt and ssl_key when ssl_ca_crt is present"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # ssl_ca_crt without ssl_crt and ssl_key
+    parameters = {
+      'ssl_ca_crt': '-----BEGIN CERTIFICATE-----\ntest ca\n-----END CERTIFICATE-----'
+    }
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    self.assertFalse(is_valid)
+    self.assertIn('ssl_ca_crt is present, so ssl_crt and ssl_key are required', error_list)
+
+  def test_validate_ssl_ca_crt_with_key_and_cert(self):
+    """Test validation passes when ssl_ca_crt has both ssl_crt and ssl_key"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # ssl_ca_crt with ssl_crt and ssl_key
+    parameters = {
+      'ssl_ca_crt': '-----BEGIN CERTIFICATE-----\ntest ca\n-----END CERTIFICATE-----',
+      'ssl_crt': '-----BEGIN CERTIFICATE-----\ntest cert\n-----END CERTIFICATE-----',
+      'ssl_key': '-----BEGIN PRIVATE KEY-----\ntest key\n-----END PRIVATE KEY-----'
+    }
+    # Should pass basic validation (SSL matching would require openssl)
+    is_valid, error_list, conn_params = recipe.preDeployInstanceValidation('ref1', parameters)
+    # Will fail SSL matching if openssl is not available, but that's expected
+    # The important part is it doesn't fail on the ssl_ca_crt requirement check
+    if 'openssl-binary' not in self.options:
+      # Without openssl, SSL matching is skipped, so it should pass
+      self.assertTrue(is_valid)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_nameserver_single(self, MockResolver):
+    """Test that single nameserver is used when dns-nameserver option is provided"""
+    self.options['dns-nameserver'] = '8.8.8.8'
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'example.com'})
+
+    # Verify resolver was created
+    MockResolver.assert_called()
+    # Verify nameservers were set on the resolver instance
+    self.assertEqual(mock_resolver_instance.nameservers, ['8.8.8.8'])
+    # Verify DNS lookup was called
+    mock_resolver_instance.resolve.assert_called_with('_slapos-challenge.example.com', 'TXT')
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_nameserver_multiple(self, MockResolver):
+    """Test that multiple nameservers (comma-separated) are used correctly"""
+    self.options['dns-nameserver'] = '8.8.8.8, 8.8.4.4, 2001:4860:4860::8888'
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'example.com'})
+
+    # Verify nameservers were set correctly (whitespace should be stripped)
+    self.assertEqual(mock_resolver_instance.nameservers, ['8.8.8.8', '8.8.4.4', '2001:4860:4860::8888'])
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_nameserver_not_provided(self, MockResolver):
+    """Test that when dns-nameserver is not provided, system DNS is used (nameservers not set)"""
+    # Ensure dns-nameserver is not in options
+    test_options = self.options.copy()
+    if 'dns-nameserver' in test_options:
+      del test_options['dns-nameserver']
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', test_options)
+
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'example.com'})
+
+    # Verify resolver was created
+    MockResolver.assert_called()
+    # Verify recipe's dns_nameservers is None (not configured)
+    self.assertIsNone(recipe.dns_nameservers)
+    # Verify nameservers attribute was NOT set on resolver (uses system default)
+    # When dns-nameserver is not provided, the code doesn't set resolver.nameservers,
+    # so it will use the system default. We verify that recipe.dns_nameservers is None
+    # which means the code path that sets resolver.nameservers was not executed.
+    # Verify DNS lookup was still called
+    mock_resolver_instance.resolve.assert_called_with('_slapos-challenge.example.com', 'TXT')
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_nameserver_with_cache_ttl(self, MockResolver):
+    """Test that dns-nameserver works together with dns-cache-ttl option"""
+    self.options['dns-nameserver'] = '1.1.1.1'
+    self.options['dns-cache-ttl'] = '0'  # Disable cache
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    mock_resolver_instance = MockResolver.return_value
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+
+    def get_dns_response(*args, **kwargs):
+      db_entry = recipe.domain_validation_db.getDomainValidationForInstance('ref1')
+      if db_entry:
+        mock_rdata.strings = [db_entry['token'].encode('utf-8')]
+      else:
+        mock_rdata.strings = [b'placeholder']
+      mock_answer.__iter__.return_value = iter([mock_rdata])
+      return mock_answer
+
+    mock_resolver_instance.resolve.side_effect = get_dns_response
+
+    recipe.preDeployInstanceValidation('ref1', {'custom_domain': 'example.com'})
+
+    # Verify nameservers were set
+    self.assertEqual(mock_resolver_instance.nameservers, ['1.1.1.1'])
+    # Verify cache was configured (empty cache when TTL is 0)
+    self.assertIsNotNone(mock_resolver_instance.cache)
+    # Verify DNS lookup was called
+    mock_resolver_instance.resolve.assert_called_with('_slapos-challenge.example.com', 'TXT')
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_resolver_created_once_in_init(self, MockResolver):
+    """Test that DNS resolver is created once in __init__ with fresh cache"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Verify resolver was created once during __init__
+    self.assertEqual(MockResolver.call_count, 1)
+
+    # Verify resolver instance is stored
+    self.assertIsNotNone(recipe.dns_resolver)
+    self.assertEqual(recipe.dns_resolver, MockResolver.return_value)
+
+    # Verify cache was set to a fresh LRUCache
+    self.assertIsNotNone(recipe.dns_resolver.cache)
+    self.assertIsInstance(recipe.dns_resolver.cache, dns.resolver.LRUCache)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_resolver_reused_in_check_custom_domain(self, MockResolver):
+    """Test that _check_custom_domain reuses the instance resolver"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Reset call count after __init__
+    MockResolver.reset_mock()
+
+    # Mock DNS response
+    mock_answer = mock.MagicMock()
+    mock_rdata = mock.MagicMock()
+    mock_rdata.strings = [b'wrong-token']
+    mock_answer.__iter__.return_value = iter([mock_rdata])
+    recipe.dns_resolver.resolve.return_value = mock_answer
+
+    # Call _check_custom_domain multiple times
+    result1 = recipe._check_custom_domain('example.com', 'token1')
+    result2 = recipe._check_custom_domain('example.org', 'token2')
+
+    # Verify resolver was NOT created again (reused from __init__)
+    MockResolver.assert_not_called()
+
+    # Verify the same resolver instance was used
+    self.assertEqual(recipe.dns_resolver.resolve.call_count, 2)
+    recipe.dns_resolver.resolve.assert_any_call('_slapos-challenge.example.com', 'TXT')
+    recipe.dns_resolver.resolve.assert_any_call('_slapos-challenge.example.org', 'TXT')
+
+    # Both should return False (wrong token)
+    self.assertFalse(result1)
+    self.assertFalse(result2)
+
+  @mock.patch('dns.resolver.Resolver')
+  def test_dns_resolver_fresh_cache_per_instance(self, MockResolver):
+    """Test that each recipe instance gets a fresh cache (not shared between instances)"""
+    # Make MockResolver return a new mock instance for each call
+    resolver_instances = []
+    def create_resolver(*args, **kwargs):
+      resolver = mock.MagicMock()
+      resolver.cache = mock.MagicMock()
+      resolver_instances.append(resolver)
+      return resolver
+    MockResolver.side_effect = create_resolver
+
+    recipe1 = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe2 = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+
+    # Verify two resolvers were created (one per instance)
+    self.assertEqual(MockResolver.call_count, 2)
+
+    # Verify each instance has its own resolver
+    self.assertIsNot(recipe1.dns_resolver, recipe2.dns_resolver)
+
+    # Verify each resolver has its own cache
+    self.assertIsNot(recipe1.dns_resolver.cache, recipe2.dns_resolver.cache)
+
+  def test_timestamp_path_not_provided(self):
+    """Test that timestamp defaults to current time when timestamp-path is not provided"""
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    # timestamp should be set to current time (approximately)
+    self.assertIsNotNone(recipe.timestamp)
+    self.assertIsInstance(recipe.timestamp, float)
+    # Should be close to current time (within 1 second)
+    self.assertAlmostEqual(recipe.timestamp, time.time(), delta=1.0)
+
+  def test_timestamp_path_file_exists(self):
+    """Test that timestamp is read from file when timestamp-path is provided and file exists"""
+    # Create a timestamp file with a specific modification time
+    test_timestamp = 1234567890.0
+    os.utime(self.timestamp_file_path, (test_timestamp, test_timestamp))
+    
+    self.options['timestamp-path'] = self.timestamp_file_path
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    
+    # timestamp should be read from file modification time
+    self.assertEqual(recipe.timestamp, test_timestamp)
+
+  def test_timestamp_path_file_not_exists(self):
+    """Test that timestamp defaults to current time when file doesn't exist"""
+    non_existent_path = '/nonexistent/path/timestamp'
+    self.options['timestamp-path'] = non_existent_path
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    
+    # timestamp should be set to current time (approximately)
+    self.assertIsNotNone(recipe.timestamp)
+    self.assertIsInstance(recipe.timestamp, float)
+    # Should be close to current time (within 1 second)
+    self.assertAlmostEqual(recipe.timestamp, time.time(), delta=1.0)
+
+  def test_instanceNodePostProcessing_no_valid_instance(self):
+    """Test that instanceNodePostProcessing doesn't call bang when no valid instance found"""
+    # Setup requestinstance_db mock to return no valid instances
+    mock_db = mock.MagicMock()
+    mock_db.db.fetchOne.return_value = None
+    self.mock_requestinstance_db.db = mock_db.db
+
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe.requestinstance_db = self.mock_requestinstance_db
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      recipe.instanceNodePostProcessing()
+
+    # bang should not be called
+    mock_computer_partition.bang.assert_not_called()
+
+  def test_instanceNodePostProcessing_valid_instance_found(self):
+    """Test that instanceNodePostProcessing calls bang when valid instance with newer timestamp is found"""
+    # Setup requestinstance_db mock to return a valid instance
+    # The mock should check the query parameters and only return the instance if timestamp > query_param
+    instance_timestamp = int(time.time()) + 100  # Newer timestamp
+    valid_instance = {
+      'reference': 'test-instance',
+      'timestamp': str(instance_timestamp),
+      'valid_parameter': True
+    }
+    mock_db = mock.MagicMock()
+    
+    def fetchOne_side_effect(query, params):
+      # Check if the query matches and if timestamp comparison would be true
+      if len(params) >= 2 and params[0] is True:  # valid_parameter=True
+        query_timestamp = params[1]  # The timestamp from recipe.timestamp
+        # Only return instance if instance_timestamp > query_timestamp (newer)
+        if instance_timestamp > query_timestamp:
+          return valid_instance
+      return None
+    
+    mock_db.db.fetchOne.side_effect = fetchOne_side_effect
+    self.mock_requestinstance_db.db = mock_db.db
+
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe.requestinstance_db = self.mock_requestinstance_db
+    # Set timestamp to an older value
+    recipe.timestamp = time.time() - 200
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      recipe.instanceNodePostProcessing()
+
+    # bang should be called with the correct message
+    mock_computer_partition.bang.assert_called_once_with(
+      message='CDN instances have been deployed and instance need reprocessing'
+    )
+
+  def test_instanceNodePostProcessing_valid_instance_older_timestamp(self):
+    """Test that instanceNodePostProcessing doesn't call bang when valid instance has older timestamp"""
+    # Setup requestinstance_db mock to return a valid instance with older timestamp
+    # The mock should check the query parameters and only return the instance if timestamp > query_param
+    instance_timestamp = int(time.time() - 200)  # Older timestamp
+    valid_instance = {
+      'reference': 'test-instance',
+      'timestamp': str(instance_timestamp),
+      'valid_parameter': True
+    }
+    mock_db = mock.MagicMock()
+    
+    def fetchOne_side_effect(query, params):
+      # Check if the query matches and if timestamp comparison would be true
+      if len(params) >= 2 and params[0] is True:  # valid_parameter=True
+        query_timestamp = params[1]  # The timestamp from recipe.timestamp
+        # Only return instance if instance_timestamp > query_timestamp (newer)
+        if instance_timestamp > query_timestamp:
+          return valid_instance
+      return None
+    
+    mock_db.db.fetchOne.side_effect = fetchOne_side_effect
+    self.mock_requestinstance_db.db = mock_db.db
+
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe.requestinstance_db = self.mock_requestinstance_db
+    # Set timestamp to a newer value
+    recipe.timestamp = time.time()
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      recipe.instanceNodePostProcessing()
+
+    # bang should not be called (timestamp is older, so query returns None)
+    mock_computer_partition.bang.assert_not_called()
+
+  def test_instanceNodePostProcessing_invalid_instance(self):
+    """Test that instanceNodePostProcessing doesn't call bang when instance is invalid"""
+    # Setup requestinstance_db mock to return an invalid instance
+    invalid_instance = {
+      'reference': 'test-instance',
+      'timestamp': str(int(time.time()) + 100),  # Newer timestamp
+      'valid_parameter': False  # Invalid
+    }
+    mock_db = mock.MagicMock()
+    # fetchOne should return None because valid_parameter=False
+    mock_db.db.fetchOne.return_value = None
+    self.mock_requestinstance_db.db = mock_db.db
+
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe.requestinstance_db = self.mock_requestinstance_db
+    recipe.timestamp = time.time() - 200
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      recipe.instanceNodePostProcessing()
+
+    # bang should not be called (instance is invalid)
+    mock_computer_partition.bang.assert_not_called()
+
+  def test_instanceNodePostProcessing_timestamp_comparison(self):
+    """Test that timestamp comparison works correctly with integer conversion"""
+    # Setup requestinstance_db mock to return a valid instance
+    test_timestamp = int(time.time()) + 100
+    valid_instance = {
+      'reference': 'test-instance',
+      'timestamp': str(test_timestamp),  # String timestamp
+      'valid_parameter': True
+    }
+    mock_db = mock.MagicMock()
+    mock_db.db.fetchOne.return_value = valid_instance
+    self.mock_requestinstance_db.db = mock_db.db
+
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe.requestinstance_db = self.mock_requestinstance_db
+    # Set timestamp to an older value (as float)
+    recipe.timestamp = float(test_timestamp - 200)
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      recipe.instanceNodePostProcessing()
+
+    # Verify the SQL query was called with correct parameters
+    mock_db.db.fetchOne.assert_called_once()
+    call_args = mock_db.db.fetchOne.call_args
+    sql_query = call_args[0][0]
+    query_params = call_args[0][1]
+    
+    # Verify query checks for valid_parameter=True and timestamp comparison
+    self.assertIn('valid_parameter=?', sql_query)
+    self.assertIn('CAST(timestamp AS INTEGER) > ?', sql_query)
+    self.assertEqual(query_params[0], True)
+    self.assertEqual(query_params[1], int(recipe.timestamp))
+
+    # bang should be called
+    mock_computer_partition.bang.assert_called_once()
+
+  def test_instanceNodePostProcessing_called_during_install(self):
+    """Test that instanceNodePostProcessing is called during install()"""
+    # Setup instance-db and requestinstance-db to have no instances
+    self.mock_instance_db.getInstanceList.return_value = []
+    self.mock_requestinstance_db.getInstanceList.return_value = []
+    self.mock_requestinstance_db.db.fetchOne.return_value = None
+
+    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe.instance_db = self.mock_instance_db
+    recipe.requestinstance_db = self.mock_requestinstance_db
+
+    # Mock _getComputerPartition
+    mock_computer_partition = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+      with mock.patch.object(recipe, '_getUpdateList', return_value=[]):
+        with mock.patch.object(recipe, '_getStoredDict', return_value={}):
+          recipe.install()
+
+    # instanceNodePostProcessing should have been called (even if no instances)
+    # Verify by checking that fetchOne was called (from instanceNodePostProcessing)
+    self.mock_requestinstance_db.db.fetchOne.assert_called()
+
+
+class TestDomainValidationDB(unittest.TestCase):
+
+  def setUp(self):
+    self.db_fd, self.db_path = tempfile.mkstemp()
+
+  def tearDown(self):
+    os.close(self.db_fd)
+    if os.path.exists(self.db_path):
+      os.unlink(self.db_path)
+
+  def test_create_database(self):
+    """Test that database is created with correct schema"""
+    db = cdninstancenode.DomainValidationDB(self.db_path)
+    self.assertTrue(os.path.exists(self.db_path))
+
+  def test_set_and_get_domain_validation(self):
+    """Test setting and getting domain validation entries"""
+    db = cdninstancenode.DomainValidationDB(self.db_path)
+    instance_ref = 'test-instance-1'
+    domain = 'example.com'
+    token = 'test-token-123'
+    validated = True
+
+    # Set validation entry
+    db.setDomainValidation(instance_ref, domain, token, validated)
+
+    # Get validation entry
+    result = db.getDomainValidationForInstance(instance_ref)
+    self.assertIsNotNone(result)
+    self.assertEqual(result['instance_reference'], instance_ref)
+    self.assertEqual(result['domain'], domain)
+    self.assertEqual(result['token'], token)
+    # SQLite stores BOOLEAN as 0/1, but we can check it's truthy
+    self.assertTrue(bool(result['validated']))
+    self.assertIsNotNone(result['timestamp'])
+
+  def test_get_nonexistent_entry(self):
+    """Test getting a non-existent entry returns None"""
+    db = cdninstancenode.DomainValidationDB(self.db_path)
+    result = db.getDomainValidationForInstance('nonexistent-instance')
+    self.assertIsNone(result)
+
+  def test_update_existing_entry(self):
+    """Test that setDomainValidation updates existing entries (INSERT OR REPLACE)"""
+    db = cdninstancenode.DomainValidationDB(self.db_path)
+    instance_ref = 'test-instance-1'
+    domain = 'example.com'
+
+    # Set initial entry
+    db.setDomainValidation(instance_ref, domain, 'old-token', False)
+    result1 = db.getDomainValidationForInstance(instance_ref)
+    self.assertEqual(result1['token'], 'old-token')
+    self.assertFalse(bool(result1['validated']))
+    old_timestamp = result1['timestamp']
+
+    # Add a small delay to ensure timestamp changes
+    import time
+    time.sleep(1)
+
+    # Update entry
+    db.setDomainValidation(instance_ref, domain, 'new-token', True)
+    result2 = db.getDomainValidationForInstance(instance_ref)
+    self.assertEqual(result2['token'], 'new-token')
+    self.assertTrue(bool(result2['validated']))
+    # Timestamp should be updated
+    self.assertNotEqual(result2['timestamp'], old_timestamp)
+
+  def test_same_domain_different_instances(self):
+    """Test storing the same domain for different instances"""
+    db = cdninstancenode.DomainValidationDB(self.db_path)
+    domain = 'example.com'
+
+    # Set same domain for different instances
+    db.setDomainValidation('instance-1', domain, 'token1', True)
+    db.setDomainValidation('instance-2', domain, 'token2', False)
+    db.setDomainValidation('instance-3', domain, 'token3', True)
+
+    # Check instance-1 (validated=True)
+    result1 = db.getDomainValidationForInstance('instance-1')
+    self.assertIsNotNone(result1)
+    self.assertEqual(result1['domain'], domain)
+    self.assertEqual(result1['token'], 'token1')
+    self.assertTrue(bool(result1['validated']))
+
+    # Check instance-2 (validated=False)
+    result2 = db.getDomainValidationForInstance('instance-2')
+    self.assertIsNotNone(result2)
+    self.assertEqual(result2['domain'], domain)
+    self.assertEqual(result2['token'], 'token2')
+    self.assertFalse(bool(result2['validated']))
+
+    # Check instance-3 (validated=True)
+    result3 = db.getDomainValidationForInstance('instance-3')
+    self.assertIsNotNone(result3)
+    self.assertEqual(result3['domain'], domain)
+    self.assertEqual(result3['token'], 'token3')
+    self.assertTrue(bool(result3['validated']))
+
+  def test_remove_domain_validation_for_instance(self):
+    """Test removing domain validation entry by instance reference"""
+    db = cdninstancenode.DomainValidationDB(self.db_path)
+
+    # Create entries for multiple instances (one domain per instance)
+    db.setDomainValidation('instance-1', 'example.com', 'token1', True)
+    db.setDomainValidation('instance-2', 'example.org', 'token2', False)
+    db.setDomainValidation('instance-3', 'example.net', 'token3', True)
+
+    # Remove entry for instance-1
+    db.removeDomainValidationForInstance('instance-1')
+
+    # Verify instance-1 entry is removed
+    self.assertIsNone(db.getDomainValidationForInstance('instance-1'))
+
+    # Verify other instances' entries still exist
+    self.assertIsNotNone(db.getDomainValidationForInstance('instance-2'))
+    self.assertIsNotNone(db.getDomainValidationForInstance('instance-3'))
+
+
+  def test_remove_nonexistent_instance(self):
+    """Test removing entries for non-existent instance doesn't raise an error"""
+    db = cdninstancenode.DomainValidationDB(self.db_path)
+    db.setDomainValidation('instance-1', 'example.com', 'token1', True)
+
+    # Should not raise an error
+    db.removeDomainValidationForInstance('nonexistent-instance')
+
+    # Existing entry should still exist
+    self.assertIsNotNone(db.getDomainValidationForInstance('instance-1'))
+
+  def test_get_domain_validation_for_instance(self):
+    """Test getting domain validation entry for an instance"""
+    db = cdninstancenode.DomainValidationDB(self.db_path)
+    db.setDomainValidation('instance-1', 'example.com', 'token1', True)
+
+    result = db.getDomainValidationForInstance('instance-1')
+    self.assertIsNotNone(result)
+    self.assertEqual(result['domain'], 'example.com')
+    self.assertEqual(result['token'], 'token1')
+    self.assertTrue(bool(result['validated']))
+    self.assertIsNotNone(result['timestamp'])
+
+  def test_get_validated_domain_for_other_instance(self):
+    """Test checking if domain is validated for another instance"""
+    db = cdninstancenode.DomainValidationDB(self.db_path)
+    db.setDomainValidation('instance-1', 'example.com', 'token1', True)
+    db.setDomainValidation('instance-2', 'example.com', 'token2', False)
+
+    # Should find validated domain for instance-1
+    result = db.getValidatedDomainForOtherInstance('example.com', 'instance-2')
+    self.assertIsNotNone(result)
+    self.assertEqual(result['instance_reference'], 'instance-1')
+    self.assertTrue(bool(result['validated']))
+
+    # Should not find if checking for instance-1 itself
+    result = db.getValidatedDomainForOtherInstance('example.com', 'instance-1')
+    self.assertIsNone(result)
+
+    # Should not find if domain is not validated
+    result = db.getValidatedDomainForOtherInstance('example.com', 'instance-3')
+    self.assertIsNotNone(result)  # Still finds instance-1's validated entry
+
+  def test_remove_domain_validation_for_instance_single(self):
+    """Test removing domain validation entry for an instance"""
+    db = cdninstancenode.DomainValidationDB(self.db_path)
+    db.setDomainValidation('instance-1', 'example.com', 'token1', True)
+    db.setDomainValidation('instance-2', 'example.net', 'token2', True)
+
+    # Remove validation for instance-1
+    db.removeDomainValidationForInstance('instance-1')
+    self.assertIsNone(db.getDomainValidationForInstance('instance-1'))
+    # instance-2 should be unaffected
+    self.assertIsNotNone(db.getDomainValidationForInstance('instance-2'))

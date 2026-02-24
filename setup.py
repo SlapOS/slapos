@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.459'
+version = '1.0.460.dev1'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -64,6 +64,7 @@ setup(name=name,
       include_package_data=True,
       install_requires=[
         'jsonschema',
+        'dnspython',
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
         'inotify_simple',
@@ -84,6 +85,7 @@ setup(name=name,
           'apacheproxy = slapos.recipe.apacheproxy:Recipe',
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
+          'cdninstancenode = slapos.recipe.cdninstancenode:CDNInstanceNodeRecipe',
           'check_page_content = slapos.recipe.check_page_content:Recipe',
           'check_port_listening = slapos.recipe.check_port_listening:Recipe',
           'check_url_available = slapos.recipe.check_url_available:Recipe',
@@ -139,6 +141,7 @@ setup(name=name,
           'request = slapos.recipe.request:Recipe',
           'request.serialised = slapos.recipe.request:RequestJSONEncoded',
           'request.edge = slapos.recipe.request:RequestEdge',
+          'instancenode = slapos.recipe.instancenode:Recipe',
           'requestoptional = slapos.recipe.request:RequestOptional',
           'requestoptional.serialised = '
           'slapos.recipe.request:RequestOptionalJSONEncoded',
@@ -149,6 +152,9 @@ setup(name=name,
           'slapconfiguration = slapos.recipe.slapconfiguration:Recipe',
           'slapconfiguration.serialised = slapos.recipe.slapconfiguration:Serialised',
           'slapconfiguration.jsonschema = slapos.recipe.slapconfiguration:JsonSchema',
+          'slapconfiguration.jsonschema.localdb = slapos.recipe.slapconfiguration:JsonSchemaWithDB',
+          'slapconfiguration.instancenode.deferred = '
+          'slapos.recipe.slapconfiguration:JsonSchemaWithDBFromInstanceNode',
           'slapconfiguration.jsondump = slapos.recipe.slapconfiguration:JsonDump',
           'squid = slapos.recipe.squid:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
@@ -169,6 +175,9 @@ setup(name=name,
         'zc.buildout.uninstall': [
           'publish_failsafe = slapos.recipe.publish:RecipeFailsafe.uninstall',
           'publish.serialised_failsafe = slapos.recipe.publish:SerialisedFailsafe.uninstall',
+        ],
+        'console_scripts': [
+          'cdninstancenode-script = slapos.recipe.cdninstancenode:main',
         ]
       },
       extras_require=extras_require,
