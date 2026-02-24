@@ -584,7 +584,7 @@ command =
 [expose-csr-link-csr-backend-haproxy]
 <= template-expose-csr-link-csr
 filename = backend-haproxy-csr.pem
-csr = {{ backend_haproxy_configuration['csr'] }}
+csr = {{ backend_haproxy_configuration['backend-client-caucase-csr'] }}
 
 [expose-csr-link-csr-kedifa]
 <= template-expose-csr-link-csr
