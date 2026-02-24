@@ -28,6 +28,7 @@ config-{{ key }} = {{ dumps(value) }}
 {%  endif -%}
 {% endfor -%}
 config-monitor-passwd = ${monitor-instance-parameter:password}
+config-monitor-interface-url = ${monitor-parameters-propagation:config-monitor-interface-url}
 config-database-list = ${request-mariadb:connection-database-list}
 return =
   url
@@ -51,6 +52,7 @@ config-max-slowqueries-threshold = {{ dumps(1000) }}
 config-slowest-query-threshold =
 config-computer-memory-percent-threshold = {{ dumps(80) }}
 config-monitor-passwd = ${monitor-instance-parameter:password}
+config-monitor-interface-url = ${monitor-parameters-propagation:config-monitor-interface-url}
 config-name = ${:name}
 config-innodb-file-per-table = {{ dumps(slapparameter_dict.get('innodb-file-per-table', 1)) }}
 config-caucased = {{ dumps({'enable': False})}}
