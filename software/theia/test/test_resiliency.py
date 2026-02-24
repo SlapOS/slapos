@@ -50,7 +50,7 @@ from test import TheiaTestCase, ResilientTheiaMixin, theia_software_release_url
 
 dummy_software_url = os.path.abspath(
   os.path.join('resilience_dummy', 'software.cfg'))
-non_ascii_filename = ' 🙊 \t nonascii \n $ \r é '
+non_ascii_filename = '\udca9 🙊 \t nonascii \n $ \r é '
 
 
 class WorkaroundSnapshotConflict(TheiaTestCase):
@@ -451,6 +451,11 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
 
     # Check that dummy instance was properly deployed
     self.initial_log = self.checkLog(os.path.join(dummy_root, 'log.log'))
+
+    # Assert that non_assci_filename is actually not utf8 and contains \n
+    self.assertRaises(UnicodeEncodeError, lambda: non_ascii_filename.encode())
+    self.assertIn('\n', non_ascii_filename)
+    self.assertIn('\r', non_ascii_filename)
 
     # Create a non ascii filename, to ensure signature correctly handles it
     self.writeFile(
