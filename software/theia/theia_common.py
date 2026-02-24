@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import sqlite3
+from base64 import urlsafe_b64encode
 
 import six
 import zc.buildout.configparser
@@ -122,6 +123,7 @@ def fast_hashwalk(root_dir):
       filepath = os.path.join(dirpath, f)
       if os.path.isfile(filepath):
         displaypath = os.path.relpath(filepath, start=root_dir)
+        displaypath = urlsafe_b64encode(displaypath.encode()).decode()
         yield '%s %s' % (sha256sum(filepath), displaypath)
 
 
@@ -133,6 +135,7 @@ def exclude_hashwalk(root_dir, instance_dir):
       filepath = os.path.join(dirpath, f)
       if os.path.isfile(filepath):
         displaypath = os.path.relpath(filepath, start=root_dir)
+        displaypath = urlsafe_b64encode(displaypath.encode()).decode()
         yield '%s %s' % (sha256sum(filepath), displaypath)
     if dirpath == instance_dir:
       remaining_dirs = []
