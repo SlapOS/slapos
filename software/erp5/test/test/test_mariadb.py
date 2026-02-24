@@ -842,6 +842,7 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
       script = 'mariabackup' if 'mariabackup' in bootstrap else 'mariadb-dump'
       for _ in range(backups):
         self.runBackup(primary, script + '-script')
+        time.sleep(1)  # do not run two backups at the same second, since the backup filenames have a timestamp.
     # Request replica Mariadb
     replica = self.requestReplica(
       primary,
