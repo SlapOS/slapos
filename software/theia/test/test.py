@@ -31,9 +31,11 @@ import json
 import logging
 import socket
 import os
+import random
 import re
 import subprocess
 import sqlite3
+import string
 import time
 import unittest
 
@@ -150,7 +152,11 @@ class TestTheia(TheiaTestCase):
 
   def test_http_get(self):
     url = self.connection_parameters['url']
+    url_public = self.connection_parameters['url-public']
+    url_slapproxy = self.connection_parameters['url-slapproxy']
     self.get(url, requests.codes.unauthorized)
+    self.get(url_slapproxy, requests.codes.unauthorized)
+    self.get(url_public)
 
     # with login/password, this is allowed
     parsed_url = urlparse(self.connection_parameters['url'])
@@ -168,11 +174,26 @@ class TestTheia(TheiaTestCase):
               'w') as f:
       f.write("hello")
     def get(path_info):
-      resp = self.get(urljoin(url, path_info))
+      resp = self.get(urljoin(url_public, path_info))
       self.assertIn('Content-Security-Policy', resp.headers)
       return resp.text
-    self.assertIn('test_file', get('/public/'))
-    self.assertEqual('hello', get('/public/test_file'))
+    self.assertIn('test_file', get(''))
+    self.assertEqual('hello', get('test_file'))
+
+    # we can reach slapproxy GUI and get files from slapos repository
+    self.assertEqual(url + '/slapproxy/', url_slapproxy)
+    resp = self.get(authenticated_url + '/slapproxy/')
+    self.assertIn('Panel',resp.text)
+    resp = self.get(authenticated_url + '/slapproxy/panel/public/software/theia/instance-input-schema.json')
+    self.assertIn('Parameters to instantiate Theia',resp.text)
+    random_text = ''.join(random.choice(string.ascii_letters) for _ in range(8))
+    with open(self.getPath() + '/srv/project/slapos/test_file',
+              'w') as f:
+      f.write(random_text)
+    resp = self.get(authenticated_url + '/slapproxy/panel/public/test_file')
+    self.assertEqual(random_text, resp.text)
+    # check that this file is not publicly accessible
+    self.get(url + '/slapproxy/panel/public/test_file', requests.codes.unauthorized)
 
     # favicon is not empty
     self.get(urljoin(url, '/favicon.ico'), requests.codes.unauthorized)

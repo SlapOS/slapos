@@ -50,6 +50,7 @@ from test import TheiaTestCase, ResilientTheiaMixin, theia_software_release_url
 
 dummy_software_url = os.path.abspath(
   os.path.join('resilience_dummy', 'software.cfg'))
+non_ascii_filename = '\udca9 🙊 \t nonascii \n $ \r é '
 
 
 class WorkaroundSnapshotConflict(TheiaTestCase):
@@ -251,8 +252,10 @@ class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
   script_relpath = os.path.join(
     'srv', 'runner', 'instance', 'slappart0',
     'srv', '.backup_identity_script')
+  signature_folder_relpath = os.path.join(
+    'srv', 'backup', 'theia', 'backup.signatures')
   signature_relpath = os.path.join(
-    'srv', 'backup', 'theia', 'backup.signature')
+    signature_folder_relpath, 'backup.signature')
 
   def assertPromiseFailure(self, *msg):
     # Force promises to recompute regardless of periodicity
@@ -318,14 +321,18 @@ class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
     self.writeFile(self.getExportExitfile(), '0')
     self.writeFile(self.getImportExitfile(), '0')
 
+  def cleanupSignature(self):
+      try:
+        shutil.rmtree(self.signature_folder_relpath)
+      except OSError as e:
+        if e.errno != errno.ENOENT:
+          raise
+
   def setUp(self):
     self.customSignatureScript(content=None)
     self.customRestoreScript(content=None)
     self.cleanupExitfiles()
-    try:
-      os.remove(self.getPartitionPath('import', self.signature_relpath))
-    except OSError:
-      pass
+    self.cleanupSignature()
 
   def test_export_promise_error(self):
     self.writeFile(self.getExportExitfile(), '1')
@@ -339,19 +346,22 @@ class TestTheiaExportAndImport(ExportAndImportMixin, ResilientTheiaTestCase):
     errmsg = 'Bye bye'
     self.customSignatureScript(content='>&2 echo "%s"\nexit 1' % errmsg)
     custom_script = self.getPartitionPath('export', self.script_relpath)
-    self.assertExportFailure('Compute partitions backup signatures\n ... ERROR !',
-      'Custom signature script %s failed' % os.path.abspath(custom_script),
-      'and stderr:\n%s' % errmsg)
+    self.assertExportFailure(
+      'Compute partitions backup signatures\n ... ERROR !',
+      'Custom signature script %s failed' % os.path.realpath(custom_script),
+      'and stderr:\n%s' % errmsg
+    )
 
   def test_signature_mismatch(self):
     signature_file = self.getPartitionPath('import', self.signature_relpath)
+    self.makedirs(signature_file)
     self.writeFile(signature_file, 'Bogus Hash\n', mode='a')
     self.assertImportFailure('ERROR the backup signatures do not match')
 
   def test_restore_script_error(self):
     self._doExport()
     self._doTransfer()
-    restore_script = self.customRestoreScript('exit 1')
+    restore_script = os.path.realpath(self.customRestoreScript('exit 1'))
     self.assertImportFailure('Run custom restore script %s\n ... ERROR !' % restore_script)
 
   def assertFileState(self, filepath, expect_content):
@@ -415,7 +425,8 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
     # Copy ./resilience_dummy SR in export theia ~/srv/project/dummy
     dummy_target_path = self.getPartitionPath('export', 'srv', 'project', 'dummy')
     shutil.copytree(os.path.dirname(dummy_software_url), dummy_target_path)
-    self._test_software_url = os.path.join(dummy_target_path, 'software.cfg')
+    self._test_software_url = os.path.realpath(
+      os.path.join(dummy_target_path, 'software.cfg'))
 
     # the software.cfg extends slapos.cfg using a relative path, but since we
     # copied it to another location, the relative path can no longer be resolved.
@@ -440,6 +451,16 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
 
     # Check that dummy instance was properly deployed
     self.initial_log = self.checkLog(os.path.join(dummy_root, 'log.log'))
+
+    # Assert that non_assci_filename is actually not utf8 and contains \n
+    self.assertRaises(UnicodeEncodeError, lambda: non_ascii_filename.encode())
+    self.assertIn('\n', non_ascii_filename)
+    self.assertIn('\r', non_ascii_filename)
+
+    # Create a non ascii filename, to ensure signature correctly handles it
+    self.writeFile(
+      self.getPartitionPath('export', 'srv', 'project', non_ascii_filename),
+      'This file should be included in resilient backup')
 
     # Create ~/include and ~/include/included
     self.writeFile(os.path.join(dummy_root, 'include', 'included'),
@@ -467,7 +488,8 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
     dummy_root = self.import_dummy_root
 
     # Check that the software url is correct
-    adapted_test_url = self.getPartitionPath('import', 'srv', 'project', 'dummy', 'software.cfg')
+    adapted_test_url = os.path.realpath(
+      self.getPartitionPath('import', 'srv', 'project', 'dummy', 'software.cfg'))
     proxy_content = self.captureSlapos('proxy', 'show', instance_type='import', text=True)
     self.assertIn(adapted_test_url, proxy_content)
     self.assertNotIn(self._test_software_url, proxy_content)
@@ -482,9 +504,15 @@ class TestTheiaResilienceImportAndExport(ResilienceMixin, ExportAndImportMixin, 
     # Check that the dummy instance is not yet started
     self.checkLog(os.path.join(dummy_root, 'log.log'), self.initial_log, newline=None)
 
+    # Check that the non ascii filename has been correctly propagated
+    self.assertTrue(os.path.exists(
+      self.getPartitionPath('import', 'srv', 'project', non_ascii_filename)
+    ))
+
     # Check that ~/srv/.backup_identity_script was detected and called
     signature =  self.getPartitionPath(
-      'import', 'srv', 'backup', 'theia', 'slappart0.backup.signature.custom')
+      'import', 'srv', 'backup', 'theia',
+      'backup.signatures', 'slappart0.backup.signature.custom')
     self.assertTrue(os.path.exists(signature))
     with open(signature) as f:
       self.assertIn('Custom script', f.read())

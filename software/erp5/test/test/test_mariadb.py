@@ -47,6 +47,7 @@ from cryptography.x509.oid import NameOID
 import inotify_simple
 import pexpect
 import pymysql
+import pymysql.cursors
 import requests
 
 from slapos.testing.utils import CrontabMixin, getPromisePluginParameterDict
@@ -363,7 +364,7 @@ class TestMariaDBTLS(MariaDBTestCase):
       self.addClassCleanup(os.unlink, self._client_cert_crt)
     return self._client_cert_crt, self._client_cert_key
 
-  def getReplicationUserDatabaseConnection(self, ssl:dict) -> pymysql.connections.Connection:
+  def getReplicationUserDatabaseConnection(self, ssl:dict | None) -> pymysql.connections.Connection:
     connection_parameter_dict = json.loads(
       self.computer_partition.getConnectionParameterDict()['_'])
     db_url = urllib.parse.urlparse(
@@ -589,7 +590,7 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
     else:
       return
     try:
-      cls.slap.waitForInstance(max_retry=0)
+      cls.slap.waitForInstance(max_retry=0, debug=strict and cls._debug)
     except SlapOSNodeCommandError:
       if strict:
         raise
@@ -598,7 +599,7 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
   def waitForReport(cls, max_retry=None, strict=True):
     max_retry = 10 if max_retry is None else max_retry
     try:
-      cls.slap.waitForReport(max_retry=max_retry)
+      cls.slap.waitForReport(max_retry=max_retry, debug=strict and cls._debug)
     except SlapOSNodeCommandError:
       if strict:
         raise
@@ -685,18 +686,28 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
 
   @classmethod
   def runBackup(cls, mariadb, script='mariabackup-script'):
-    subprocess.check_output(
+    try:
+      subprocess.check_output(
       (os.path.join(cls.getComputerPartitionPath(mariadb), 'bin', script),),
       stderr=subprocess.STDOUT,
-    )
+      text=True
+      )
+    except subprocess.CalledProcessError as e:
+      cls.logger.exception("runBackup failed with output:\n%s", e.output)
+      raise
 
   @classmethod
   def runTakoever(cls, mariadb):
     script = 'mariadb-replica-become-primary'
-    subprocess.check_output(
-      (os.path.join(cls.getComputerPartitionPath(mariadb), 'bin', script),),
-      stderr=subprocess.STDOUT,
-    )
+    try:
+      subprocess.check_output(
+        (os.path.join(cls.getComputerPartitionPath(mariadb), 'bin', script),),
+        stderr=subprocess.STDOUT,
+        text=True
+      )
+    except subprocess.CalledProcessError as e:
+      cls.logger.exception("runTakoever failed with output:\n%s", e.output)
+      raise
 
   @classmethod
   def runSlapos(cls, command, timestamp=None):
@@ -706,7 +717,11 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
     args.append(cls.slap._slapos_bin)
     args.extend(command.split())
     args.extend(('--cfg', cls.slap._slapos_config))
-    return subprocess.check_output(args, stderr=subprocess.STDOUT)
+    try:
+      return subprocess.check_output(args, stderr=subprocess.STDOUT, text=True)
+    except subprocess.CalledProcessError as e:
+      cls.logger.exception("runSlapos %r failed with output:\n%s", command, e.output)
+      raise
 
   @classmethod
   def getPromiseStatus(cls, mariadb, promise='mariadb_replication'):
@@ -759,7 +774,7 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
       self.assertIsInstance(seconds_behind_master, int)
       return seconds_behind_master
     except (AssertionError, KeyError):
-      self.fail('Replica is in bad state:\n%r', replica_status)
+      self.fail('Replica is in bad state:\n%r' % replica_status)
 
   def checkDataReplication(self, primary, *replicas):
     cnx = self.getDatabaseConnection(primary)
@@ -827,6 +842,7 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
       script = 'mariabackup' if 'mariabackup' in bootstrap else 'mariadb-dump'
       for _ in range(backups):
         self.runBackup(primary, script + '-script')
+        time.sleep(1)  # do not run two backups at the same second, since the backup filenames have a timestamp.
     # Request replica Mariadb
     replica = self.requestReplica(
       primary,
