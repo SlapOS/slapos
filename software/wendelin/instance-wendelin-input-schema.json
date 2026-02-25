@@ -56,6 +56,11 @@
       "description": "A space-separated list of Business Templates to install at automatic site creation (e.g. \"erp5_full_text_mroonga_catalog erp5_base\"). By default, all configurators are installed.",
       "type": "string"
     },
+    "erp5-catalog-storage": {
+      "description": "BT5 used to handle catalog.",
+      "default": "erp5_mysql_innodb_catalog",
+      "type": "string"
+    },
     "id-store-interval": {
       "description": "Set Store Interval of default SQL Non Continuous Increasing Id Generator at automatic site creation. If unset, the value from the erp5_core Business Template is not touched.",
       "type": "integer"
