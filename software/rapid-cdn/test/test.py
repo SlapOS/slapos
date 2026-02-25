@@ -2725,7 +2725,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     try:
       # allow SSL downgrade on the backend...
-      instance_parameter_dict = json.loads(self.getInstanceParameterDict()['_'])
+      instance_parameter_dict = json.loads(
+        self.getInstanceParameterDict()['_'])
       instance_parameter_dict[
         "-frontend-config-1-expert-backend-allow-downgrade-ssl"] = True
       self.slap.request(
@@ -7385,8 +7386,9 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
       'slave_instance_list',
       'timestamp',
     ]
-    for partition_title in ('caddy-frontend-1', 'caddy-frontend-2',
-                           'caddy-frontend-3', 'kedifa', 'testing partition 0'):
+    for partition_title in (
+      'caddy-frontend-1', 'caddy-frontend-2', 'caddy-frontend-3', 'kedifa',
+      'testing partition 0'):
       for parameter in check_is_present_parameter_list:
         assertKeyWithPop(
           partition_parameter_dict_dict[partition_title],
