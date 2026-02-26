@@ -7636,6 +7636,11 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
           'ip': cls._ipv4_address,
           'port_a': cls._server_netloc_a_http_port,
           'port_b': cls._server_netloc_b_http_port},
+        'health-check-failover-https-url-netloc-list':
+        '%(ip)s:%(port_a)s %(ip)s:%(port_b)s' % {
+          'ip': cls._ipv4_address,
+          'port_a': cls._server_netloc_a_http_port,
+          'port_b': cls._server_netloc_b_http_port},
       },
       'health-check-failover-url-auth-to-backend': {
         'https-only': False,  # http and https access to check
