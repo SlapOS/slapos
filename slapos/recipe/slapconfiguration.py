@@ -147,7 +147,7 @@ class Recipe(object):
           options.get('key-file') or options.get('key'),
           options.get('cert-file') or options.get('cert'),
       )
-      computer_partition = slap.registerComputerPartition(
+      self._computer_partition = computer_partition = slap.registerComputerPartition(
           options.get('computer-id') or options['computer'],
           options.get('partition-id') or options['partition'],
       )
@@ -603,6 +603,13 @@ class JsonSchema(Recipe):
       Default value: none.
       Example:
         shared
+    report-error
+      Enum to control reporting validation errors to the master
+      for both/neither/either-of main and shared instances.
+      Accepted values: all|main|shared|none.
+      Default value: all.
+      Example:
+        shared
   """
   def _description(self, options):
     path = options['jsonschema']
@@ -640,7 +647,7 @@ class JsonSchema(Recipe):
         errors = list(e.args)
       shared_item = {'reference': reference, 'parameters': instance}
       if errors:
-        shared_item['errors'] = [str(e) for e in errors]
+        shared_item['errors'] = str(SoftwareReleaseSchemaValidationError(errors).format_error(indent=2))
         invalid.append(shared_item)
       else:
         valid.append(shared_item)
@@ -664,6 +671,7 @@ class JsonSchema(Recipe):
     validate = self._parseOption(options, 'validate-parameters', 'all')
     set_defaults = self._parseOption(options, 'set-default', 'none')
     unstringify = self._parseOption(options, 'unstringify', 'none')
+    report_error = self._parseOption(options, 'report-error', 'all')
     software_description = self._description(options)
     serialisation = software_description.getSerialisation(strict=True)
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
@@ -680,7 +688,12 @@ class JsonSchema(Recipe):
         set_defaults.main,
         {'integer': int} if unstringify.main else None,
       )
-      parameter_dict = self._validateMain(schema, validator, parameter_dict)
+      try:
+        parameter_dict = self._validateMain(schema, validator, parameter_dict)
+      except UserError as e:
+        if report_error.main:
+          self._computer_partition.error(str(e), logger=logger)
+        raise
     if validate.shared:
       shared_list = options.pop('slave-instance-list')
       if shared_list:
@@ -698,6 +711,13 @@ class JsonSchema(Recipe):
       else:
         schema = validator = None
       valid, invalid = self._validateShared(schema, validator, shared_list)
+      if report_error.shared and invalid:
+        for shared_item in invalid:
+          self._computer_partition.error(
+            shared_item['errors'],
+            logger=logger,
+            slave_reference=shared_item['reference'],
+          )
       options['valid-shared-instance-list'] = valid
       options['invalid-shared-instance-list'] = invalid
     options['configuration'] = parameter_dict
