@@ -1,0 +1,138 @@
+[buildout]
+parts =
+  nginx-certificate
+  nginx-service
+  nginx-frontend-promise
+  vue-frontend-promise
+  publish-connection-parameter
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+
+extends =
+  {{ monitor_template_cfg }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+bin = ${:home}/bin
+log = ${:var}/log
+run = ${:var}/run
+services = ${:etc}/service
+httpd-log = ${:var}/log/apache
+ssl = ${:etc}/ssl
+
+[slap-configuration]
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = {{ software_json_target }}
+set-default = main
+validate-parameters = main
+unstringify = main
+
+[vue-project-src]
+recipe = slapos.recipe.build:gitclone
+repository = ${slap-configuration:configuration.repo-url}
+revision = ${slap-configuration:configuration.revision}
+use-cache = true
+
+[vue-project-build]
+recipe = slapos.recipe.build
+dist = ${buildout:parts-directory}/vue-project-build/dist
+install =
+  import os, shutil, subprocess
+
+  src = r"""${vue-project-src:location}"""
+  env = os.environ.copy()
+  env["PATH"] = r"""{{ nodejs_location }}/bin""" + ":" + env.get("PATH", "")
+
+  # Install dependencies from lockfile, then build
+  subprocess.check_call(["npm", "ci", "--no-audit", "--fund=false"], cwd=src, env=env)
+  subprocess.check_call(["npm", "run", "build"], cwd=src, env=env)
+
+  # Export dist to a stable buildout location
+  dist_src = os.path.join(src, "dist")
+  dist_dst = os.path.join(location, "dist")
+
+  if os.path.exists(location):
+    shutil.rmtree(location)
+  os.makedirs(location)
+  shutil.copytree(dist_src, dist_dst)
+
+  # Write down the revision numbder to a file, allow user to check it quickly
+  with open(os.path.join(location, "REVISION"), "w", encoding="utf-8") as f:
+    f.write(r"""${vue-project-src:revision}""")
+
+[nginx-parameters]
+ipv6 = ${slap-configuration:ipv6-random}
+ipv4 = ${slap-configuration:ipv4-random}
+port = 4443
+
+pid-file = ${directory:run}/nginx.pid
+config-file = ${directory:etc}/nginx.conf
+access-log = ${directory:httpd-log}/nginx-access.log
+error-log = ${directory:httpd-log}/nginx-error.log
+nginx-mime-types = {{ nginx_location }}/conf/mime.types
+backend-url = http://${:ipv4}:${:port}
+ssl-certificate = ${directory:etc}/ssl/nginx.crt
+ssl-key = ${directory:etc}/ssl/nginx.key
+
+web-root = ${vue-project-build:dist}
+
+[nginx-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${:key-file} ]
+  then
+    mkdir -p ${directory:ssl}
+    {{ openssl_location }}/bin/openssl req -x509 -nodes -sha256 -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${nginx-parameters:ipv6}" \
+      -newkey rsa -keyout ${:key-file} \
+      -out ${:cert-file}
+  fi
+update-command = ${:command}
+key-file = ${nginx-parameters:ssl-key}
+cert-file = ${nginx-parameters:ssl-certificate}
+common-name = ${nginx-parameters:ipv6}
+stop-on-error = true
+
+[nginx-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ nginx_conf_in }}
+output = ${nginx-parameters:config-file}
+context =
+    section parameter_dict nginx-parameters
+
+[nginx-service]
+recipe = slapos.cookbook:wrapper
+command-line = {{ nginx_location }}/sbin/nginx -c ${nginx-conf:output} -p ${directory:srv} -g "error_log ${directory:log}/nginx-startup.log debug;"
+wrapper-path = ${directory:services}/nginx-service
+wait-for-files =
+  ${nginx-parameters:ssl-certificate}
+  ${nginx-parameters:ssl-key}
+
+[nginx-frontend-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = nginx-ipv6-port-listening.py
+config-host = ${nginx-parameters:ipv6}
+config-port = ${nginx-parameters:port}
+
+[request-frontend]
+<= monitor-frontend
+name = vue-site Frontend
+config-url = https://[${nginx-parameters:ipv6}]:${nginx-parameters:port}
+
+[vue-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = vue-http-frontend.py
+config-url = ${request-frontend:connection-secure_access}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = ${request-frontend:connection-secure_access}
+backend-url = ${request-frontend:config-url}
