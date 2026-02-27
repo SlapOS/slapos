@@ -86,11 +86,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {#-     Support https-only if connected via http #}
   redirect scheme https code 302
 {%-     elif slave_instance['type'] == 'redirect' %}
-{%-       if 'backend-https-url' in slave_instance and scheme == 'https' %}
-  redirect prefix {{ slave_instance['backend-https-url'] }} code 302
-{%-       else %}
   redirect prefix {{ slave_instance['backend-url'] }} code 302
-{%-       endif %}
 {%-     else %}
 {%-       set parsed_backend_url = urllib_module.parse.urlparse(slave_instance['backend-url']) %}
   server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ parsed_backend_url.hostname }}:{{ parsed_backend_url.port }} ssl verify required verifyhost {{ slave_instance['backend-name'] }} ca-file {{ configuration['micro-ssl-ca-path'] }} crl-file {{ configuration['micro-ssl-crl-path'] }}
@@ -168,8 +164,6 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         endif %}
   http-request set-path /VirtualHostBase/{{ scheme }}/%[req.hdr(Host),field(1,:)]:{{ slave_instance['virtualhostroot-%s-port' % (scheme,)] }}/{{ zope_path }}VirtualHostRoot%[path] {{ not_path_acl }}
 {%-       endif %}
-{%-       set parsed_url = urllib_module.parse.urlparse(slave_instance.get('url')) %}
-{%-       set parsed_https_url = urllib_module.parse.urlparse(slave_instance.get('https-url')) %}
 {%-     endif %} {# if scheme == 'http' and slave_instance['https-only'] #}
 {%-   endfor %} {# for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() #}
 {%- endfor %} {# for slave_reference in sorted(frontend_slave_dict) #}

@@ -24,32 +24,18 @@ defaults
 {%-     set matcher = '^' ~ hostname ~ '$' %}
 {%-   endif %}
 {%-     set matcher_acl = '{ req.hdr(host),host_only -m reg ' ~ matcher ~ ' }' %}
-{%-   if 'health-check-failover-url' in slave_instance or 'health-check-failover-https-url' in slave_instance %}
-{%-     if 'health-check-failover-url' in slave_instance and 'health-check-failover-https-url' not in slave_instance %}
+{%-   if 'health-check-failover-url' in slave_instance %}
+{%-     if 'health-check-failover-url' in slave_instance %}
   acl is_failover_{{ slave_reference }} nbsrv({{ slave_reference }}-url) eq 0
   use_backend {{ slave_reference }}-url if {{ matcher_acl }} ! is_failover_{{ slave_reference }}
   use_backend {{ slave_reference }}-failover-url if {{ matcher_acl }} is_failover_{{ slave_reference }}
-{%-     elif 'health-check-failover-url' not in slave_instance and 'health-check-failover-https-url' in slave_instance %}
-  acl is_failover_{{ slave_reference }} nbsrv({{ slave_reference }}-https-url) eq 0
-  use_backend {{ slave_reference }}-https-url if {{ matcher_acl }} ! is_failover_{{ slave_reference }} is_x_forwarded_proto_https
-  use_backend {{ slave_reference }}-failover-https-url if {{ matcher_acl }} is_failover_{{ slave_reference }} is_x_forwarded_proto_https
 {%-     else %}
   acl is_failover_{{ slave_reference }}-url nbsrv({{ slave_reference }}-url) eq 0
-  acl is_failover_{{ slave_reference }}-https-url nbsrv({{ slave_reference }}-https-url) eq 0
-  use_backend {{ slave_reference }}-url if {{ matcher_acl }} ! is_failover_{{ slave_reference }}-url is_x_forwarded_proto_http
-  use_backend {{ slave_reference }}-failover-url if {{ matcher_acl }} is_failover_{{ slave_reference }}-url is_x_forwarded_proto_http
-  use_backend {{ slave_reference }}-https-url if {{ matcher_acl }} ! is_failover_{{ slave_reference }}-https-url is_x_forwarded_proto_https
-  use_backend {{ slave_reference }}-failover-https-url if {{ matcher_acl}} is_failover_{{ slave_reference }}-https-url is_x_forwarded_proto_https
+  use_backend {{ slave_reference }}-url if {{ matcher_acl }} ! is_failover_{{ slave_reference }}-url
+  use_backend {{ slave_reference }}-failover-url if {{ matcher_acl }} is_failover_{{ slave_reference }}-url
 {%-     endif %}
-{%-   elif 'url' in slave_instance or 'https-url' in slave_instance %}
-{%-     if 'url' in slave_instance and 'https-url' not in slave_instance %}
+{%-   elif 'url' in slave_instance  %}
   use_backend {{ slave_reference }}-url if {{ matcher_acl }}
-{%-     elif 'url' not in slave_instance and 'https-url' in slave_instance %}
-  use_backend {{ slave_reference }}-https-url if {{ matcher_acl }} is_x_forwarded_proto_https
-{%-     else %}
-  use_backend {{ slave_reference }}-url if {{ matcher_acl }} is_x_forwarded_proto_http
-  use_backend {{ slave_reference }}-https-url if {{ matcher_acl }} is_x_forwarded_proto_https
-{%-     endif %}
 {%-   endif %}
 {%- endmacro %}
 
@@ -69,8 +55,6 @@ frontend https
   http-after-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
   # setup Date
   http-after-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
-  acl is_x_forwarded_proto_http req.hdr(x-forwarded-proto) -m str http
-  acl is_x_forwarded_proto_https req.hdr(x-forwarded-proto) -m str https
 {%- for entry in backend_slave_order | sort(attribute="index,hostname", reverse=True) %}
 {{- frontend_entry(entry['slave_reference'], entry['hostname'], backend_slave_dict[entry['slave_reference']]) -}}
 {%- endfor %}
@@ -221,6 +205,5 @@ backend {{ slave_instance['slave_reference'] }}-failover-{{ kind }}
 {%- for slave_reference in sorted(backend_slave_dict) %}
 {%-   set slave_instance = backend_slave_dict[slave_reference] %}
 {{-   backend_entry(slave_reference, slave_instance, 'url') }}
-{{-   backend_entry(slave_reference, slave_instance, 'https-url') }}
 {%- endfor %} {#- for slave_reference in sorted(backend_slave_dict) #}
 {# END OF FILE #}
