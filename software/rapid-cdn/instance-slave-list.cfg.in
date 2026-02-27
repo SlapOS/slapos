@@ -101,9 +101,6 @@ context =
 {#-   Setup backend URLs for frontend-haproxy #}
 {%-   if slave_type == 'redirect' %}
 {%-     do slave_instance.__setitem__('backend-url', slave_instance.get('url', '').rstrip('/')) %}
-{%-     if slave_instance.get('https-url') %}
-{%-       do slave_instance.__setitem__('backend-https-url', slave_instance.get('https-url', '').rstrip('/')) %}
-{%-     endif %}
 {%-   elif enable_cache %}
 {%-     do slave_instance.__setitem__('backend-name', frontend_haproxy_configuration['trafficserver-certificate-common-name']) %}
 {%-     if 'domain' in slave_instance %}
@@ -112,9 +109,6 @@ context =
 {%-       endif %}
 {%-     endif %}
 {%-     do slave_instance.__setitem__('backend-url', cache_access) %}
-{%-     if slave_instance.get('https-url') %}
-{%-       do slave_instance.__setitem__('backend-https-url', ssl_cache_access) %}
-{%-     endif %}
 {%-     do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) %}
 {%-   else %}
 {%-     do slave_instance.__setitem__('backend-name', frontend_haproxy_configuration['backend-haproxy-certificate-common-name']) %}
