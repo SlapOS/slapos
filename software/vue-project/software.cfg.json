@@ -1,0 +1,14 @@
+{
+  "name": "Vue project configuration",
+  "description": "This SR is for deploy Vue project that need to install npm dependencies and build the project.",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Default Vue project configuration",
+      "request": "instance-input-schema.json",
+      "response": "",
+      "index": 0
+    }
+  }
+}
