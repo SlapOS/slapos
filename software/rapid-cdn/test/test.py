@@ -1773,36 +1773,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': cls.backend_https_url,
         'authenticate-to-backend': True,
       },
-      'url_https-url': {
-        'url': cls.backend_url + 'http',
-        'https-url': cls.backend_url + 'https',
-        'backend-connect-timeout': 10,
-        'backend-connect-retries': 5,
-        'request-timeout': 15,
-        'strict-transport-security': '200',
-        'strict-transport-security-sub-domains': True,
-        'strict-transport-security-preload': True,
-      },
-      'https-url-only': {
-        'https-url': cls.backend_url + 'https-url',
-      },
-      'url_https-url-https-only-false': {
-        'url': cls.backend_url + 'http',
-        'https-url': cls.backend_url + 'https',
-        'https-only': False,
-      },
-      'https-url-only-https-only-false': {
-        'https-url': cls.backend_url + 'https-url',
-        'https-only': False,
-      },
-      'https-url-netloc-list': {
-        'url': cls.backend_url + 'http',
-        'https-url': cls.backend_url + 'https',
-        'https-url-netloc-list': '%(ip)s:%(port_a)s %(ip)s:%(port_b)s' % {
-          'ip': cls._ipv4_address,
-          'port_a': cls._server_netloc_a_http_port,
-          'port_b': cls._server_netloc_b_http_port},
-      },
       'server-alias': {
         'url': cls.backend_url,
         'server-alias': 'alias1.example.com alias2.example.com',
@@ -1956,7 +1926,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'type-redirect': {
         'url': cls.backend_url,
-        'https-url': cls.backend_https_url,
         'type': 'redirect',
         'https-only': False,
       },
@@ -1967,7 +1936,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'type-redirect-to-standard-port': {
         'url': 'http://example.com/',
-        'https-url': 'https://example.com/',
         'type': 'redirect',
         'https-only': False,
       },
@@ -2235,11 +2203,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '69',
+      'accepted-slave-amount': '64',
       'rejected-slave-amount': '0',
-      'slave-amount': '69',
-      'rejected-slave-dict': {
-      },
+      'slave-amount': '64',
+      'rejected-slave-dict': {},
       'warning-slave-dict': {
         '_Url': [
           "slave url ' %(backend)s/?a=b&c= ' has been converted to "
@@ -2266,7 +2233,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
           "Cipher 'RSA-AES128-CBC-SHA' translated to 'AES128-SHA'",
           "Cipher 'RSA-AES256-CBC-SHA' translated to 'AES256-SHA'"]
       }
-
     }
 
     self.assertEqual(
@@ -2553,7 +2519,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   timeout server 12s
   timeout connect 5s
   retries 3""", content)
-    self.assertIn("backend _Url-https-url\nbackend", content)
 
     # check out access via IPv6
     out_ipv6, err_ipv6 = self._curl(
@@ -3835,7 +3800,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      '%stest-path/deeper' % (self.backend_https_url,),
+      '%stest-path/deeper' % (self.backend_url,),
       result.headers['Location']
     )
 
@@ -3901,7 +3866,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://example.com/test-path/deeper',
+      'http://example.com/test-path/deeper',
       result.headers['Location']
     )
 
@@ -5277,62 +5242,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Coffee=present',
       json.loads(out)['Incoming Headers']['cookie'])
 
-  def test_https_url(self):
-    parameter_dict = self.assertSlaveBase('url_https-url')
-
-    result = fakeHTTPSResult(
-      parameter_dict['domain'],
-      'test-path/deep/.././deeper')
-
-    self.assertEqual(
-      self.certificate_pem,
-      result.certificate)
-
-    self.assertEqual(
-      'max-age=200; includeSubDomains; preload',
-      result.headers['Strict-Transport-Security'])
-
-    self.assertEqualResultJson(result, 'Path', '/https/test-path/deeper')
-    self.assertRequestHeaders(
-      result.json()['Incoming Headers'],
-      parameter_dict['domain'])
-
-    result_http = fakeHTTPResult(
-      parameter_dict['domain'],
-      'test-path/deep/.././deeper')
-
-    self.assertEqual(
-      http.client.FOUND,
-      result_http.status_code
-    )
-
-    self.assertNotIn('Strict-Transport-Security', result_http.headers)
-
-    self.assertEqual(
-      'https://urlhttpsurl.example.com:%s/test-path/deeper' % (HTTP_PORT,),
-      result_http.headers['Location']
-    )
-
-    # check that timeouts are correctly set in the haproxy configuration
-    backend_configuration_file = glob.glob(os.path.join(
-      self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
-    with open(backend_configuration_file) as fh:
-      content = fh.read()
-      self.assertTrue("""backend _url_https-url-url
-  timeout server 15s
-  timeout connect 10s
-  retries 5""" in content)
-      self.assertTrue("""backend _url_https-url-https-url
-  timeout server 15s
-  timeout connect 10s
-  retries 5""" in content)
-
   def test_header_date(self):
     # Precisely check out Date header behaviour
-    frontend = 'url_https-url'
+    frontend = 'url-trailing-slash-present'
     parameter_dict = self.assertSlaveBase(frontend)
     backend_url = self.getSlaveParameterDictDict()[
-      frontend]['https-url'].strip()
+      frontend]['url'].strip()
     normal_path = '/normal'
     with_date_path = '/with_date'
     specific_date = 'Fri, 07 Dec 2001 00:00:00 GMT'
@@ -5356,55 +5271,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # modified by the CDN, but some Date header is added, if backend sends non
     self.assertEqual(result_with_date.headers['Date'], specific_date)
     self.assertNotEqual(result_normal.headers['Date'], specific_date)
-
-  def test_https_url_netloc_list(self):
-    parameter_dict = self.assertSlaveBase('https-url-netloc-list')
-    result = fakeHTTPSResult(parameter_dict['domain'], 'path')
-    # assure that the request went to backend specified in the netloc
-    self.assertEqual(
-      result.headers['X-Backend-Identification'],
-      'netloc'
-    )
-
-    result = fakeHTTPResult(parameter_dict['domain'], 'path')
-    # assure that the request went to backend NOT specified in the netloc
-    self.assertNotIn('X-Backend-Identification', result.headers)
-
-  def test_https_url_only(self):
-    parameter_dict = self.assertSlaveBase('https-url-only')
-
-    result_http = fakeHTTPResult(parameter_dict['domain'], 'test-path')
-    self.assertEqual(
-      http.client.FOUND,
-      result_http.status_code
-    )
-    self.assertEqual(
-      'https://httpsurlonly.example.com:%s/test-path' % (HTTP_PORT,),
-      result_http.headers['Location']
-    )
-
-    result_https = fakeHTTPSResult(parameter_dict['domain'], 'test-path')
-    self.assertEqualResultJson(result_https, 'Path', '/https-url/test-path')
-
-  def test_https_url_only_https_only_false(self):
-    parameter_dict = self.assertSlaveBase('https-url-only-https-only-false')
-
-    result_https = fakeHTTPSResult(parameter_dict['domain'], 'test-path')
-    self.assertEqualResultJson(result_https, 'Path', '/https-url/test-path')
-
-    result_http = fakeHTTPResult(parameter_dict['domain'], 'test-path')
-    self.assertEqual(
-      http.client.SERVICE_UNAVAILABLE,
-      result_http.status_code
-    )
-
-  def test_url_https_url_https_only_false(self):
-    parameter_dict = self.assertSlaveBase('url_https-url-https-only-false')
-    result_https = fakeHTTPSResult(parameter_dict['domain'], 'test-path')
-    self.assertEqualResultJson(result_https, 'Path', '/https/test-path')
-
-    result_http = fakeHTTPResult(parameter_dict['domain'], 'test-path')
-    self.assertEqualResultJson(result_http, 'Path', '/http/test-path')
 
 
 class TestSlaveHttp3(TestSlave):
@@ -6670,9 +6536,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'URL': {
         'url': "https://[fd46::c2ae]:!py!u'123123'",
       },
-      'HTTPS-URL': {
-        'https-url': "https://[fd46::c2ae]:!py!u'123123'",
-      },
       'SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED': {
         'url': cls.backend_https_url,
         'ssl-proxy-verify': True,
@@ -6695,11 +6558,9 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       },
       'BAD-BACKEND': {
         'url': 'http://1:2:3:4',
-        'https-url': 'http://host.domain:badport',
       },
       'EMPTY-BACKEND': {
         'url': '',
-        'https-url': '',
       },
       'CUSTOM_DOMAIN-UNSAFE': {
         'custom_domain': '${section:option} afterspace\nafternewline',
@@ -6832,8 +6693,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'rejected-slave-amount': '27',
       'slave-amount': '30',
       'rejected-slave-dict': {
-        '_HTTPS-URL': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
-                       ' invalid'],
         '_URL': ['slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid'],
         '_SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED': [
           'ssl_proxy_ca_crt is invalid'
@@ -6860,14 +6719,12 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         '_SSL_KEY-SSL_CRT-UNSAFE': [
           "slave ssl_key and ssl_crt does not match"],
         '_BAD-BACKEND': [
-          "slave https-url 'http://host.domain:badport' invalid",
           "slave url 'http://1:2:3:4' invalid"],
         '_VIRTUALHOSTROOT-HTTP-PORT-UNSAFE': [
           "Wrong virtualhostroot-http-port '${section:option}'"],
         '_VIRTUALHOSTROOT-HTTPS-PORT-UNSAFE': [
           "Wrong virtualhostroot-https-port '${section:option}'"],
         '_EMPTY-BACKEND': [
-          "slave https-url '' invalid",
           "slave url '' invalid"],
         '_health-check-failover-SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED': [
           'health-check-failover-ssl-proxy-ca-crt is invalid'
@@ -6914,17 +6771,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       {
         'request-error-list': [
           "slave url \"https://[fd46::c2ae]:!py!u'123123'\" invalid"]
-      },
-      parameter_dict
-    )
-
-  def test_https_url(self):
-    parameter_dict = self.parseSlaveParameterDict('HTTPS-URL')
-    self.assertNodeInformationWithPop(parameter_dict)
-    self.assertEqual(
-      {
-        'request-error-list': [
-          "slave https-url \"https://[fd46::c2ae]:!py!u'123123'\" invalid"]
       },
       parameter_dict
     )
@@ -7148,7 +6994,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertEqual(
       {
         'request-error-list': [
-          "slave https-url 'http://host.domain:badport' invalid",
           "slave url 'http://1:2:3:4' invalid"],
       },
       parameter_dict
@@ -7160,7 +7005,6 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertEqual(
       {
         'request-error-list': [
-          "slave https-url '' invalid",
           "slave url '' invalid"]
       },
       parameter_dict
