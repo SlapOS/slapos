@@ -71,7 +71,7 @@ extra-context =
 [slap-configuration]
 # Fetches parameters defined in SlapOS Master for this instance.
 # Always the same.
-recipe = slapos.cookbook:slapconfiguration.jsonschema
+recipe = slapos.cookbook:slapconfiguration.instancenode.deferred
 jsonschema = {{ software_parameter_dict['software.cfg.json'] }}
 depends =
   {{ software_parameter_dict['instance-input-schema.json'] }}
@@ -79,7 +79,10 @@ depends =
   {{ software_parameter_dict['instance-slave-input-schema.json'] }}
   {{ software_parameter_dict['instance-kedifa-input-schema.json'] }}
 set-default = main
-validate-parameters = main
+validate-parameters = all
+allow-invalid-instance = true
+instance-db-path = ${buildout:directory}/slapconfiguration-shared-instance.sqlite
+valided-instance-db-path = ${buildout:directory}/validated-shared-instance.sqlite
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
