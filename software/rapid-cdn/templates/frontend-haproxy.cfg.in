@@ -23,7 +23,7 @@ defaults
   timeout tunnel 1h
   default-server init-addr last,libc,none
 
-{%- set SCHEME_PREFIX_MAPPING = { 'http': 'backend-http-info', 'https': 'backend-https-info'} %}
+{%- set SCHEME_PREFIX_MAPPING = { 'http': 'backend-info', 'https': 'backend-info'} %}
 
 {%- macro frontend_entry(slave_reference, hostname, scheme) %}
 {%-   if hostname.startswith('*') %}
@@ -74,7 +74,6 @@ frontend https-frontend
 {%- for slave_reference in sorted(frontend_slave_dict) %}
 {%-   set slave_instance = frontend_slave_dict[slave_reference] %}
 {%-   for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() %}
-{%-     set info_dict = slave_instance.get(prefix, slave_instance.get('backend-http-info')) %}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   # setup Date
   http-after-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
@@ -86,93 +85,85 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-     if scheme == 'http' and slave_instance['https-only'] %}
 {#-     Support https-only if connected via http #}
   redirect scheme https code 302
+{%-     elif slave_instance['type'] == 'redirect' %}
+  redirect prefix {{ slave_instance['backend-url'] }} code 302
 {%-     else %}
-{%-       if 'hostname' in info_dict and 'port' in info_dict %}
-{%-         if slave_instance['type'] == 'redirect' %}
-{%-           if (info_dict['scheme'] == 'https' and info_dict['port'] == 443) or (info_dict['scheme'] == 'http' and info_dict['port'] == 80) %}
-{%-             set port_suffix = '' %}
-{%-           else %}
-{%-             set port_suffix = ':%s' % (info_dict['port'],) %}
-{%-           endif %}
-  redirect prefix {{ info_dict['scheme'] }}://{{ info_dict['hostname'] }}{{ port_suffix }} code 302
-{%-         else %}
-  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
-{%-           if slave_instance['disable-via-header'] %}
+{%-       set parsed_backend_url = urllib_module.parse.urlparse(slave_instance['backend-url']) %}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ parsed_backend_url.hostname }}:{{ parsed_backend_url.port }} ssl verify required verifyhost {{ slave_instance['backend-name'] }} ca-file {{ configuration['micro-ssl-ca-path'] }} crl-file {{ configuration['micro-ssl-crl-path'] }}
+{%-       if parsed_backend_url.path %}
+  http-request set-path {{ parsed_backend_url.path }}%[path]
+{%-       endif %}
+{%-       if slave_instance['disable-via-header'] %}
   http-after-response del-header Via
-{%-           else %}
+{%-       else %}
   http-after-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
+{%-       endif %}
+{%-       if scheme == 'https' %}
+{%-         if slave_instance['strict-transport-security'] > 0 %}
+{%-           set strict_transport_security = ['max-age=%i' % (slave_instance['strict-transport-security'],)] %}
+{%-           if slave_instance['strict-transport-security-sub-domains'] %}
+{%-             do strict_transport_security.append('; includeSubDomains') %}
 {%-           endif %}
-{%-           if scheme == 'https' %}
-{%-             if slave_instance['strict-transport-security'] > 0 %}
-{%-               set strict_transport_security = ['max-age=%i' % (slave_instance['strict-transport-security'],)] %}
-{%-               if slave_instance['strict-transport-security-sub-domains'] %}
-{%-                 do strict_transport_security.append('; includeSubDomains') %}
-{%-               endif %}
-{%-               if slave_instance['strict-transport-security-preload'] %}
-{%-                 do strict_transport_security.append('; preload') %}
-{%-               endif %}
+{%-           if slave_instance['strict-transport-security-preload'] %}
+{%-             do strict_transport_security.append('; preload') %}
+{%-           endif %}
   http-after-response set-header Strict-Transport-Security "{{ ''.join(strict_transport_security) }}"
-{%-             endif %}
-{%-           endif %}
-{%-           for disabled_cookie in slave_instance['disabled-cookie-list'] %}
+{%-         endif %}
+{%-       endif %}
+{%-       for disabled_cookie in slave_instance['disabled-cookie-list'] %}
   http-request replace-header Cookie (.*)(^{{ disabled_cookie | replace('%', '%%') }}=[^;]*;\ |;\ {{ disabled_cookie }}=[^;]*|^{{ disabled_cookie }}=[^;]*$)(.*) \1\3
-{%-           endfor %}
-{%-           if slave_instance['disable-no-cache-request'] %}
+{%-       endfor %}
+{%-       if slave_instance['disable-no-cache-request'] %}
   http-request del-header Cache-Control
   http-request del-header Pragma
-{%-           endif %}
-{%-           if slave_instance['prefer-gzip-encoding-to-backend'] %}
+{%-       endif %}
+{%-       if slave_instance['prefer-gzip-encoding-to-backend'] %}
   http-request set-header Accept-Encoding gzip if { hdr(Accept-Encoding) -m sub gzip }
-{%-           endif %}
-{%-           if slave_instance['type'] == 'notebook' %}
-{#-             In haproxy world type:notebook is simple type:websocket with default parameters #}
-{%-             do slave_instance.__setitem__('type', 'websocket') %}
-{%-             do slave_instance.__setitem__('websocket-path-list', None) %}
-{%-             do slave_instance.__setitem__('websocket-transparent', True) %}
-{%-           endif %}
-{%-           if slave_instance['type'] == 'websocket' %}
-{%-             if slave_instance['websocket-path-list'] %}
-{%-               set acl_entry = ['acl is_websocket '] %}
-{%-               for path in slave_instance['websocket-path-list'] %}
-{%-                 do acl_entry.append('path -i -m beg /%s || ' % (path.replace('%', '%%'),)) %}
-{%-               endfor %}
-{%-               do acl_entry.append('always_false') %}
+{%-       endif %}
+{%-       if slave_instance['type'] == 'notebook' %}
+{#-         In haproxy world type:notebook is simple type:websocket with default parameters #}
+{%-         do slave_instance.__setitem__('type', 'websocket') %}
+{%-         do slave_instance.__setitem__('websocket-path-list', None) %}
+{%-         do slave_instance.__setitem__('websocket-transparent', True) %}
+{%-       endif %}
+{%-       if slave_instance['type'] == 'websocket' %}
+{%-         if slave_instance['websocket-path-list'] %}
+{%-           set acl_entry = ['acl is_websocket '] %}
+{%-           for path in slave_instance['websocket-path-list'] %}
+{%-             do acl_entry.append('path -i -m beg /%s || ' % (path.replace('%', '%%'),)) %}
+{%-           endfor %}
+{%-           do acl_entry.append('always_false') %}
   {{ ''.join(acl_entry) }}
-{%-             else %}
+{%-         else %}
   acl is_websocket always_true
-{%-             endif %}
+{%-         endif %}
   http-request set-header X-Forwarded-Proto {{ scheme }} if !is_websocket
   http-request set-header X-Forwarded-Port {{ configuration[scheme + '-port'] }} if !is_websocket
-{%-             if slave_instance['websocket-transparent'] %}
+{%-         if slave_instance['websocket-transparent'] %}
   http-request set-header X-Real-Ip "%ci" if is_websocket
   http-request set-header X-Forwarded-Proto {{ scheme }} if is_websocket
   http-request set-header X-Forwarded-Port {{ configuration[scheme + '-port'] }} if is_websocket
-{%-             else %}
+{%-         else %}
 {#-               Pass-thourgh: X-Forwarded-Proto, X-Forwarded-Port #}
-{%-             endif %}
-{%-           else %}
+{%-         endif %}
+{%-       else %}
   http-request set-header X-Forwarded-Proto {{ scheme }}
   http-request set-header X-Forwarded-Port {{ configuration[scheme + '-port'] }}
-{%-           endif %} {# if slave_instance['type'] == 'websocket' #}
-{%-           if slave_instance['type'] == 'zope' %}
-{%-             if slave_instance['default-path'] %}
+{%-       endif %} {# if slave_instance['type'] == 'websocket' #}
+{%-       if slave_instance['type'] == 'zope' %}
+{%-         if slave_instance['default-path'] %}
   http-request redirect location {{ scheme}}://%[hdr(host)]/{{ slave_instance['default-path'] | replace('%', '%%') }} code 301 if { path / }
-{%-               set not_path_acl = 'if ! { path / }' %}
-{%-             else %}
-{%-               set not_path_acl = '' %}
-{%-             endif %}
-{%-             if slave_instance['path'].strip().strip('/') %}
-{%-               set zope_path = slave_instance['path'].strip().strip('/').replace('%', '%%') ~ '/' %}
-{%-             else %}
-{%-               set zope_path = '' %}
-{%-             endif %}
+{%-           set not_path_acl = 'if ! { path / }' %}
+{%-         else %}
+{%-           set not_path_acl = '' %}
+{%-         endif %}
+{%-         if slave_instance['path'].strip().strip('/') %}
+{%-           set zope_path = slave_instance['path'].strip().strip('/').replace('%', '%%') ~ '/' %}
+{%-         else %}
+{%-           set zope_path = '' %}
+{%-         endif %}
   http-request set-path /VirtualHostBase/{{ scheme }}/%[req.hdr(Host),field(1,:)]:{{ slave_instance['virtualhostroot-%s-port' % (scheme,)] }}/{{ zope_path }}VirtualHostRoot%[path] {{ not_path_acl }}
-{%-           endif %}
-{%-           if info_dict['path'] %}
-  http-request set-path {{ info_dict['path'] }}%[path]
-{%-           endif %} {# if info_dict['path'] #}
-{%-         endif %} {# if slave_instance['type'] == 'redirect' #}
-{%-       endif %} {# if 'hostname' in info_dict and 'port' in info_dict #}
+{%-       endif %}
 {%-     endif %} {# if scheme == 'http' and slave_instance['https-only'] #}
 {%-   endfor %} {# for (scheme, prefix) in SCHEME_PREFIX_MAPPING.items() #}
 {%- endfor %} {# for slave_reference in sorted(frontend_slave_dict) #}
