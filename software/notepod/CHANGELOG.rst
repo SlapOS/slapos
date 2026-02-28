@@ -1,7 +1,8 @@
-2026-02-26
+2026-03-02
 ''''''''''
 
 - disk encryption: add support for FIDO2 tokens
+- disk encryption: stricter password checking
 
 2026-02-24
 ''''''''''
