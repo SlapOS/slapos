@@ -364,7 +364,7 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
     slap = mock.MagicMock()
     slap_object = slap.return_value
     slap_object.initializeConnection.return_value = None
-    computer_partition = slap_object.registerComputerPartition.return_value
+    self.mock_computer_partition = computer_partition = slap_object.registerComputerPartition.return_value
     computer_partition.getInstanceParameterDict.return_value = d
     d['ip_list'] = []
     d['slap_software_type'] = software_type
@@ -803,3 +803,179 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
         self.receiveParameters,
         {'validate-parameters': 'shared'},
       )
+
+
+class JsonSchemaReportErrorTest(JsonSchemaTestCase):
+
+  MAIN_MISSING_NUMBER_ERROR = (
+    "Invalid parameters:\n"
+    "  $: 'number' is a required property"
+  )
+
+  def test_report_error_main_default(self):
+    """Main validation error is reported to master by default (report-error='all')."""
+    self.writeJsonSchema()
+    parameters = {}  # missing required "number"
+    with self.patchSlap(parameters):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+      )
+      self.mock_computer_partition.error.assert_called_once()
+      args, kwargs = self.mock_computer_partition.error.call_args
+      self.assertEqual(args[0], self.MAIN_MISSING_NUMBER_ERROR)
+
+  def test_report_error_main_only(self):
+    """Main validation error is reported when report-error='main'."""
+    self.writeJsonSchema()
+    parameters = {}
+    with self.patchSlap(parameters):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+        {'report-error': 'main'},
+      )
+      self.mock_computer_partition.error.assert_called_once()
+      args, kwargs = self.mock_computer_partition.error.call_args
+      self.assertEqual(args[0], self.MAIN_MISSING_NUMBER_ERROR)
+
+  def test_report_error_main_none(self):
+    """Main validation error is NOT reported when report-error='none'."""
+    self.writeJsonSchema()
+    parameters = {}
+    with self.patchSlap(parameters):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+        {'report-error': 'none'},
+      )
+      self.mock_computer_partition.error.assert_not_called()
+
+  def test_report_error_main_shared_only(self):
+    """Main validation error is NOT reported when report-error='shared'."""
+    self.writeJsonSchema()
+    parameters = {}
+    with self.patchSlap(parameters):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.receiveParameters,
+        {'report-error': 'shared'},
+      )
+      self.mock_computer_partition.error.assert_not_called()
+
+  def test_report_error_main_still_raises(self):
+    """Main validation still raises UserError even after reporting."""
+    self.writeJsonSchema()
+    parameters = {}
+    with self.patchSlap(parameters):
+      with self.assertRaises(slapconfiguration.UserError):
+        self.receiveParameters({'report-error': 'all'})
+      self.mock_computer_partition.error.assert_called_once()
+      args, kwargs = self.mock_computer_partition.error.call_args
+      self.assertEqual(args[0], self.MAIN_MISSING_NUMBER_ERROR)
+
+  SHARED_INVALID_KIND_ERROR = (
+    "  $: {'kind': 0} is not valid under any of the given schemas"
+  )
+
+  def test_report_error_shared_default(self):
+    """Shared validation errors are reported to master by default with slave_reference."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 0}]  # invalid kind
+    with self.patchSlap(parameters, shared):
+      valid, invalid = self.receiveSharedParameters()
+      self.assertEqual(len(invalid), 1)
+      self.mock_computer_partition.error.assert_called_once()
+      args, kwargs = self.mock_computer_partition.error.call_args
+      self.assertEqual(kwargs['slave_reference'], 'SHARED0')
+      self.assertEqual(args[0], self.SHARED_INVALID_KIND_ERROR)
+
+  def test_report_error_shared_only(self):
+    """Shared validation errors are reported when report-error='shared'."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 0}]
+    with self.patchSlap(parameters, shared):
+      valid, invalid = self.receiveSharedParameters(
+        {'set-default': 'all', 'report-error': 'shared'})
+      self.assertEqual(len(invalid), 1)
+      self.mock_computer_partition.error.assert_called_once()
+      args, kwargs = self.mock_computer_partition.error.call_args
+      self.assertEqual(args[0], self.SHARED_INVALID_KIND_ERROR)
+
+  def test_report_error_shared_none(self):
+    """Shared validation errors are NOT reported when report-error='none'."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 0}]
+    with self.patchSlap(parameters, shared):
+      valid, invalid = self.receiveSharedParameters(
+        {'set-default': 'all', 'report-error': 'none'})
+      self.assertEqual(len(invalid), 1)
+      self.mock_computer_partition.error.assert_not_called()
+
+  def test_report_error_shared_main_only(self):
+    """Shared validation errors are NOT reported when report-error='main'."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 0}]
+    with self.patchSlap(parameters, shared):
+      valid, invalid = self.receiveSharedParameters(
+        {'set-default': 'all', 'report-error': 'main'})
+      self.assertEqual(len(invalid), 1)
+      self.mock_computer_partition.error.assert_not_called()
+
+  # Both kind and thing become unevaluated in each oneOf branch because the
+  # failing sub-schema discards its properties annotation.  When multiple
+  # properties are unevaluated, jsonschema groups them into a single error.
+  # Branch 1 (kind=1): kind fails const=1 → both unevaluated + const error.
+  # Branch 2 (kind=2): thing fails type=integer → both unevaluated + type error.
+  SHARED_INVALID_THING_ERROR = (
+    "  $: {'kind': 2, 'thing': 'hello'} is not valid under any of the given schemas"
+  )
+
+  def test_report_error_shared_multiple_invalid(self):
+    """Each invalid shared instance is reported separately with its slave_reference."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 0}, {"kind": 2, "thing": "hello"}]
+    with self.patchSlap(parameters, shared):
+      valid, invalid = self.receiveSharedParameters()
+      self.assertEqual(len(invalid), 2)
+      self.assertEqual(self.mock_computer_partition.error.call_count, 2)
+      calls = self.mock_computer_partition.error.call_args_list
+      self.assertEqual(calls[0][1]['slave_reference'], 'SHARED0')
+      self.assertEqual(calls[1][1]['slave_reference'], 'SHARED1')
+      self.assertEqual(calls[0][0][0], self.SHARED_INVALID_KIND_ERROR)
+      self.assertEqual(calls[1][0][0], self.SHARED_INVALID_THING_ERROR)
+
+  def test_report_error_main_no_json_path_notation(self):
+    """Error messages use readable parameter names, not JSON path $ notation."""
+    self.writeJsonSchema()
+    parameters = {"number": "not_a_number"}
+    with self.patchSlap(parameters):
+      with self.assertRaises(slapconfiguration.UserError) as cm:
+        self.receiveParameters()
+      error_msg = str(cm.exception)
+      # unevaluatedProperties fires because the allOf sub-schema fails
+      # (annotations from failing schemas are discarded per JSON Schema spec),
+      # followed by the type error on the path to the property.
+      self.assertEqual(
+        error_msg,
+        "Invalid parameters:\n"
+        "  $: Unevaluated properties are not allowed ('number' was unexpected)\n"
+        "  $.number: 'not_a_number' is not of type 'integer'",
+      )
+
+  def test_report_error_shared_expands_context(self):
+    """Shared oneOf validation errors expand context sub-errors."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 0}]  # invalid: neither kind 1 nor kind 2
+    with self.patchSlap(parameters, shared):
+      valid, invalid = self.receiveSharedParameters()
+      self.assertEqual(len(invalid), 1)
+      self.mock_computer_partition.error.assert_called_once()
+      args, kwargs = self.mock_computer_partition.error.call_args
+      self.assertEqual(args[0], self.SHARED_INVALID_KIND_ERROR)
