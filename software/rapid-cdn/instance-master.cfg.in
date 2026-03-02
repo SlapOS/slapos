@@ -454,6 +454,7 @@ backend-client-caucase-url = {{ caucase_url }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict, sort_keys=True)) }}
 rejected-slave-url = ${rejected-slave-publish:url}
 publish-failsafe-error-promise-url = ${publish-failsafe-error-promise:config-url}
+publish-slave-sqlite-validation-database = ${master-introspection-frontend-url:frontend-url}/${master-slave-instrospection-server:access-slave-list-path}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
 kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
@@ -909,6 +910,16 @@ init =
   url.set(path = '')
   options['frontend-url'] = url.tostr()
 
+
+[master-slave-instrospection-server]
+ip = {{ instance_parameter_dict['ipv4-random'] }}
+port = 14968
+access-slave-list-path = slave-database
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:service}/sqlite-web-slave-introspection
+command-line = {{ software_parameter_dict['sqlite-web-bin'] }} -T -H ${:ip} -p ${:port} -u ${:access-slave-list-path} -r ${cdn-requester-configuration:valided-instance-db-path} 
+
+
 [rejected-slave-publish]
 url = ${master-introspection-frontend-url:frontend-url}/${master-introspection-template:rejected-slave-path}/${rejected-slave-json:filename}
 
@@ -985,6 +996,15 @@ inline =
         sendfile on;
         sendfile_max_chunk 1m;
       }
+      location /${master-slave-instrospection-server:access-slave-list-path} {
+          proxy_pass http://${master-slave-instrospection-server:ip}:${master-slave-instrospection-server:port};
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header X-Forwarded-Prefix /${master-slave-instrospection-server:access-slave-list-path};
+          proxy_redirect off;
+      }
     }
   }
 
@@ -996,6 +1016,13 @@ promise = check_socket_listening
 name = master-introspection-server-ip-port-listening.py
 config-host = ${master-introspection-server-configuration:ip}
 config-port = ${master-introspection-server-configuration:port}
+
+[master-introspection-slave-server-ip-port]
+<= monitor-promise-base
+promise = check_socket_listening
+name = master-introspection-slave-server-ip-port-listening.py
+config-host = ${master-slave-instrospection-server:ip}
+config-port = ${master-slave-instrospection-server:port}
 
 [master-key-upload-url-ready]
 recipe = slapos.recipe.build
@@ -1070,6 +1097,148 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
       key_len=2048
 )}}
 
+[cdn-requester-configuration]
+cdn-requester-log = ${directory:log}/cdn-instance-node.log
+instance-db-path = {{ instance_parameter_dict["instance-db-path"] }}
+valided-instance-db-path = {{ instance_parameter_dict["valided-instance-db-path"] }}
+domainvalidation-db-path = ${directory:srv}/domainvalidation-db.sqlite
+openssl = {{ software_parameter_dict['openssl'] }}
+
+[cdn-instance-node]
+recipe = slapos.recipe.template
+url = {{ software_parameter_dict['template_instancenode_config'] }}
+output = ${directory:etc}/instancenode.cfg
+
+[cdn-instance-node-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = cdn-instance-node
+frequency = * * * * *
+command = {{ software_parameter_dict['cdninstancenode-bin'] }} --cfg ${cdn-instance-node:output} --pidfile ${buildout:directory}/cdn-instance-node.pid --logfile ${cdn-requester-configuration:cdn-requester-log}
+
+[logrotate-entry-cdn-requester]
+<= logrotate-entry-base
+name = cdn-instance-node
+log = ${cdn-requester-configuration:cdn-requester-log}
+
+[cdn-instance-node-activity-sense]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  from datetime import datetime
+  import os
+  import re
+
+  from zope.interface import implementer
+  from slapos.grid.promise import interface
+  from slapos.grid.promise.generic import GenericPromise
+
+  log_file = '${cdn-requester-configuration:cdn-requester-log}'
+  max_age_seconds = 300  # 5 minutes
+
+  @implementer(interface.IPromise)
+  class RunPromise(GenericPromise):
+    def sense(self):
+      if not os.path.exists(log_file):
+        self.logger.error(
+          "CDN request log file does not exist: %s",
+          log_file
+        )
+        return
+
+      # Read the log file and find the latest entry
+      latest_timestamp = None
+      try:
+        with open(log_file, 'r') as f:
+          # Read file in reverse to get the last line efficiently
+          # For small files, reading all lines is fine
+          lines = f.readlines()
+          if not lines:
+            self.logger.error(
+              "CDN request log file is empty: %s",
+              log_file
+            )
+            return
+
+          # Parse the last line that matches the log format
+          # Format: "2025-12-08 10:58:03,572 - cdn-instance-node - INFO - ..."
+          log_pattern = re.compile(
+            r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d{3})'
+          )
+          for line in reversed(lines):
+            match = log_pattern.match(line.strip())
+            if match:
+              timestamp_str = match.group(1)  # "2025-12-08 10:58:03"
+              milliseconds = match.group(2)  # "572"
+              # Parse datetime (format: "YYYY-MM-DD HH:MM:SS")
+              latest_timestamp = datetime.strptime(
+                timestamp_str,
+                '%Y-%m-%d %H:%M:%S'
+              )
+              break
+
+        if latest_timestamp is None:
+          self.logger.error(
+            "Could not find a valid timestamp in CDN request log file: %s",
+            log_file
+          )
+          return
+
+        # Calculate age of the latest entry
+        now = datetime.now()
+        age_seconds = (now - latest_timestamp).total_seconds()
+
+        if age_seconds < 0:
+          # Log file has a future timestamp (clock skew or log rotation)
+          self.logger.warning(
+            "Latest log entry timestamp is in the future: %s (age: %.1f seconds)",
+            latest_timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            age_seconds
+          )
+          return
+
+        if age_seconds > max_age_seconds:
+          self.logger.error(
+            "CDN request log has no recent activity. "
+            "Latest entry is from %s (%.1f minutes ago, threshold: %.1f minutes)",
+            latest_timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            age_seconds / 60.0,
+            max_age_seconds / 60.0
+          )
+        else:
+          self.logger.info(
+            "CDN request log is active. Latest entry is from %s (%.1f minutes ago)",
+            latest_timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            age_seconds / 60.0
+          )
+
+      except IOError as e:
+        self.logger.error(
+          "Failed to read CDN request log file %s: %s",
+          log_file,
+          e
+        )
+      except ValueError as e:
+        self.logger.error(
+          "Failed to parse timestamp in CDN request log file %s: %s",
+          log_file,
+          e
+        )
+      except Exception as e:
+        self.logger.error(
+          "Unexpected error checking CDN request log file %s: %s",
+          log_file,
+          e
+        )
+
+[cdn-instance-node-activity-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.core
+file = ${cdn-instance-node-activity-sense:output}
+output = ${directory:plugins}/cdn_instance_node_activity.py
+config-bang-on-failure = false
+
 [check-publish-failsafe-error]
 recipe = plone.recipe.command
 directory = ${directory:publish-failsafe-check-var}
@@ -1101,6 +1270,7 @@ parts =
   publish-information
   request-kedifa
   master-introspection-server-ip-port
+  master-introspection-slave-server-ip-port
   caucased-backend-client
   caucased-backend-client-promise
   master-key-upload-url-ready-promise
@@ -1110,6 +1280,9 @@ parts =
   master-key-generate-auth-url-ready-promise-anomaly
   master-key-download-url-ready-promise-anomaly
   master-introspection-frontend
+  cdn-instance-node-cron
+  logrotate-entry-cdn-requester
+  cdn-instance-node-activity-promise
 {%- for part in part_list %}
 {{ '  %s' % part }}
 {%- endfor %}
