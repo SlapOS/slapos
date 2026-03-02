@@ -122,6 +122,8 @@ class Recipe(object):
 
     self.shared = options.get('shared', 'false').lower() in ['y', 'yes', '1', 'true']
 
+    self.report_error = True
+
     # Optional prefix for request names
     self.request_name_prefix = options.get('request-name-prefix', '')
 
@@ -414,7 +416,7 @@ class Recipe(object):
     # Publish connection parameters
     self._publishConnectionParameters(instance_reference, publish_information)
 
-  def publishInstanceErrorInformation(self, instance_reference, publish_information):
+  def publishInstanceErrorInformation(self, instance_reference, publish_information, report_error=None):
     """
     Publish error/validation information for an instance.
     Called when an instance fails validation or deployment.
@@ -423,6 +425,8 @@ class Recipe(object):
     Args:
       instance_reference: Reference name for the instance
       publish_information: Dict of error information or validation instructions
+      report_error: If False, skip calling computer_partition.error().
+        If None, falls back to self.report_error.
     """
     # Check if we need to publish (information has changed)
     if not self._shouldPublishInformation(instance_reference, publish_information):
@@ -431,19 +435,22 @@ class Recipe(object):
     # Publish connection parameters (error information)
     self._publishConnectionParameters(instance_reference, publish_information)
 
-    # Also call computer_partition.error() to notify the master about the error
-    try:
-      computer_partition = self._getComputerPartition()
-      computer_partition.error(publish_information, slave_reference=instance_reference)
-      self.logger.debug(
-        'Published error information for instance %s',
-        instance_reference
-      )
-    except Exception as e:
-      self.logger.warning(
-        'Failed to publish error information for instance %s: %s',
-        instance_reference, e
-      )
+    # Call computer_partition.error() to notify the master about the error,
+    # unless explicitly disabled
+    should_report = report_error if report_error is not None else self.report_error
+    if should_report:
+      try:
+        computer_partition = self._getComputerPartition()
+        computer_partition.error(publish_information, slave_reference=instance_reference)
+        self.logger.debug(
+          'Published error information for instance %s',
+          instance_reference
+        )
+      except Exception as e:
+        self.logger.warning(
+          'Failed to publish error information for instance %s: %s',
+          instance_reference, e
+        )
 
   def _publishConnectionParameters(self, instance_reference, conn_params):
     """
@@ -606,8 +613,13 @@ class Recipe(object):
         'Instance %s failed validation and needs reprocessing: %s',
         instance_reference, publish_information
       )
-      # Publish error information when instance needs reprocessing
-      self.publishInstanceErrorInformation(instance_reference, publish_information)
+      # Publish error information when instance needs reprocessing.
+      # If slapconfiguration already reported this instance as invalid,
+      # skip calling error() API (it was already called by slapconfiguration).
+      if not parameters_passed_initial_validation:
+        self.publishInstanceErrorInformation(instance_reference, publish_information, report_error=False)
+      else:
+        self.publishInstanceErrorInformation(instance_reference, publish_information)
     else:
       # Publish connection parameters only when post-deploy checks are successful
       self.publishInstanceInformation(instance_reference, publish_information)

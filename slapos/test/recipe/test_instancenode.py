@@ -1141,7 +1141,12 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(stored[0]['valid_parameter'], False)
 
   def test_publish_error_info_for_new_invalid_instance(self):
-    """Test that error info is published for new invalid instances"""
+    """Test that error info is published for new invalid instances
+
+    slapconfiguration already reported this error via error() API,
+    so instancenode should NOT call error() again (avoiding duplicates).
+    setConnectionDict should still be called.
+    """
     validation_errors = {
       'message': 'Invalid parameters: field "name" is required',
       'errors': ['field "name" is required']
@@ -1163,16 +1168,16 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(conn_params['message'], validation_errors['message'])
     self.assertEqual(conn_params['errors'], validation_errors['errors'])
 
-    # error() should be called once with the same information
-    self.error.assert_called_once()
-    error_call = self.error.call_args
-    error_info = error_call[0][0]
-    error_slave_ref = error_call[1]['slave_reference']
-    self.assertEqual(error_slave_ref, 'instance1')
-    self.assertEqual(error_info, conn_params)
+    # error() should NOT be called — slapconfiguration already reported this error
+    self.error.assert_not_called()
 
   def test_publish_error_info_for_modified_invalid_instance(self):
-    """Test that error info is published for modified invalid instances with changed error info"""
+    """Test that error info is published for modified invalid instances with changed error info
+
+    slapconfiguration already reported this error via error() API,
+    so instancenode should NOT call error() again (avoiding duplicates).
+    setConnectionDict should still be called.
+    """
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
 
@@ -1229,13 +1234,8 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(conn_params['errors'], new_errors['errors'])
     self.assertNotEqual(conn_params['message'], old_errors['message'])
 
-    # error() should be called once with the same information
-    self.error.assert_called_once()
-    error_call = self.error.call_args
-    error_info = error_call[0][0]
-    error_slave_ref = error_call[1]['slave_reference']
-    self.assertEqual(error_slave_ref, 'instance1')
-    self.assertEqual(error_info, conn_params)
+    # error() should NOT be called — slapconfiguration already reported this error
+    self.error.assert_not_called()
 
   def test_removed_invalid_instance_re_validation(self):
     """Test that removed invalid instances are not re-processed for re-validation
@@ -1429,13 +1429,8 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(conn_params['errors'], new_errors['errors'])
     self.assertNotEqual(conn_params['message'], old_errors['message'])
 
-    # error() should be called once with the same information
-    self.error.assert_called_once()
-    error_call = self.error.call_args
-    error_info = error_call[0][0]
-    error_slave_ref = error_call[1]['slave_reference']
-    self.assertEqual(error_slave_ref, 'instance1')
-    self.assertEqual(error_info, conn_params)
+    # error() should NOT be called — slapconfiguration already reported this error
+    self.error.assert_not_called()
 
   def test_json_error_read_from_database_for_invalid_instances(self):
     """Test that json_error is actually read from database for invalid instances"""
@@ -1499,6 +1494,9 @@ class TestRequestInstanceList(unittest.TestCase):
     self.assertEqual(conn_params['message'], validation_errors['message'])
     self.assertEqual(conn_params['errors'], validation_errors['errors'])
 
+    # error() should NOT be called — slapconfiguration already reported this error
+    self.error.assert_not_called()
+
   def test_publish_validation_errors_from_database_modified(self):
     """Test that validation errors from the database are published for modified invalid instances"""
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
@@ -1548,6 +1546,9 @@ class TestRequestInstanceList(unittest.TestCase):
     conn_params = call_args[0][0]
     self.assertEqual(conn_params['message'], validation_errors['message'])
     self.assertEqual(conn_params['errors'], validation_errors['errors'])
+
+    # error() should NOT be called — slapconfiguration already reported this error
+    self.error.assert_not_called()
 
   def test_publish_connection_parameters_unchanged_skips_publish(self):
     """Test that unchanged connection parameters are not republished"""
