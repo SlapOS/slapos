@@ -47,6 +47,7 @@ from slapos.util import (
 )
 from slapos import format as slapformat
 from zc.buildout import UserError
+from slapos.recipe.localinstancedb import SharedInstanceResultDB, HostedInstanceLocalDB
 
 
 logger = logging.getLogger("slapos")
@@ -147,7 +148,7 @@ class Recipe(object):
           options.get('key-file') or options.get('key'),
           options.get('cert-file') or options.get('cert'),
       )
-      computer_partition = slap.registerComputerPartition(
+      self._computer_partition = computer_partition = slap.registerComputerPartition(
           options.get('computer-id') or options['computer'],
           options.get('partition-id') or options['partition'],
       )
@@ -603,6 +604,13 @@ class JsonSchema(Recipe):
       Default value: none.
       Example:
         shared
+    report-error
+      Enum to control reporting validation errors to the master
+      for both/neither/either-of main and shared instances.
+      Accepted values: all|main|shared|none.
+      Default value: all.
+      Example:
+        shared
   """
   def _description(self, options):
     path = options['jsonschema']
@@ -640,7 +648,7 @@ class JsonSchema(Recipe):
         errors = list(e.args)
       shared_item = {'reference': reference, 'parameters': instance}
       if errors:
-        shared_item['errors'] = [str(e) for e in errors]
+        shared_item['errors'] = str(SoftwareReleaseSchemaValidationError(errors).format_error(indent=2))
         invalid.append(shared_item)
       else:
         valid.append(shared_item)
@@ -664,6 +672,7 @@ class JsonSchema(Recipe):
     validate = self._parseOption(options, 'validate-parameters', 'all')
     set_defaults = self._parseOption(options, 'set-default', 'none')
     unstringify = self._parseOption(options, 'unstringify', 'none')
+    report_error = self._parseOption(options, 'report-error', 'all')
     software_description = self._description(options)
     serialisation = software_description.getSerialisation(strict=True)
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
@@ -680,7 +689,12 @@ class JsonSchema(Recipe):
         set_defaults.main,
         {'integer': int} if unstringify.main else None,
       )
-      parameter_dict = self._validateMain(schema, validator, parameter_dict)
+      try:
+        parameter_dict = self._validateMain(schema, validator, parameter_dict)
+      except UserError as e:
+        if report_error.main:
+          self._computer_partition.error(str(e), logger=logger)
+        raise
     if validate.shared:
       shared_list = options.pop('slave-instance-list')
       if shared_list:
@@ -698,12 +712,172 @@ class JsonSchema(Recipe):
       else:
         schema = validator = None
       valid, invalid = self._validateShared(schema, validator, shared_list)
+      if report_error.shared and invalid:
+        for shared_item in invalid:
+          self._computer_partition.error(
+            shared_item['errors'],
+            logger=logger,
+            slave_reference=shared_item['reference'],
+          )
       options['valid-shared-instance-list'] = valid
       options['invalid-shared-instance-list'] = invalid
     options['configuration'] = parameter_dict
     if validate.main or isinstance(parameter_dict, dict):
       return parameter_dict
     return {}
+
+
+class JsonSchemaWithDB(JsonSchema):
+  """
+  Extended JsonSchema that stores shared instance validation results
+  in a database using HostedInstanceLocalDB and InstanceListComparator.
+
+  This class inherits from JsonSchema and adds database persistence
+  for shared instance validation results. The database path is provided
+  via options['instance-db-path'] and results are stored with
+  the valid_parameter column differentiating valid from invalid instances.
+
+  Input:
+    instance-db-path
+      Path to the SQLite database file for storing shared instance results.
+      Example:
+        ${buildout:directory}/shared-instance-db.sqlite
+  """
+  def _expandParameterDict(self, options, parameter_dict):
+    # Add database storage for shared instances
+    validate = self._parseOption(options, 'validate-parameters', 'all')
+    if validate.shared:
+      # Require instance-db-path when shared validation is enabled
+      db_path = options.get('instance-db-path')
+      if not db_path:
+        raise UserError(
+          "instance-db-path option is required when using JsonSchemaWithDB "
+          "with shared instance validation enabled."
+        )
+
+    # Call parent method to do the validation
+    result = super(JsonSchemaWithDB, self)._expandParameterDict(options, parameter_dict)
+
+    # Store results in database and remove it from options to avoid spreading
+    # it to the logs
+    if validate.shared:
+      valid = options.pop('valid-shared-instance-list', [])
+      invalid = options.pop('invalid-shared-instance-list', [])
+
+      # Create/update database
+      db = SharedInstanceResultDB(db_path)
+      db.updateFromValidationResults(valid, invalid)
+
+    return result
+
+
+class JsonSchemaWithDBFromInstanceNode(JsonSchemaWithDB):
+  """
+  Variant of JsonSchemaWithDB that loads the shared ``slave-instance-list``
+  from the local instance database managed by ``slapos.recipe.instancenode``.
+
+  It reads valid instances from the database at ``requestinstance-db-path``
+  (using ``HostedInstanceLocalDB``), loads their parameters, and builds
+  ``options['slave-instance-list']`` as a list of dicts where:
+
+    - each dict contains all parameters loaded from ``json_parameters``
+    - an extra key ``slave_reference`` is added with the instance reference
+
+  This list is then passed to the standard shared-instance validation logic
+  implemented by ``JsonSchemaWithDB``.
+
+  If the parameter ``allow-invalid-instance`` is present and has a true value
+  (True, 'true', 'yes', '1', or 1) in both ``options`` and ``parameter_dict``,
+  all instances (both valid and invalid) will be loaded from the database.
+  Otherwise, only valid instances are loaded (default behavior).
+  """
+
+  def _load_valid_instances_from_db(self, db_path, valid_only=True):
+    """
+    Load parameters of instances from the given database path.
+
+    Args:
+      db_path: Path to the database file
+      valid_only: If True, only load valid instances. If False, load all instances.
+
+    Returns a list of dicts combining the instance parameters with an extra
+    ``slave_reference`` key equal to the instance reference.
+    """
+    instance_db = HostedInstanceLocalDB(db_path)
+    rows = instance_db.getInstanceList(
+      select_tuple_string="reference, json_parameters",
+      valid_only=valid_only,
+    )
+    slave_instance_list = []
+    for row in rows:
+      reference = row["reference"]
+      raw_params = row["json_parameters"] or "{}"
+      try:
+        params = json.loads(raw_params)
+      except (ValueError, TypeError):
+        # If parameters cannot be parsed, skip this instance rather than failing
+        continue
+      if not isinstance(params, dict):
+        # Shared validation expects mapping-like parameters
+        continue
+      # Copy parameters and add slave_reference
+      item = dict(params)
+      item["slave_reference"] = reference
+      slave_instance_list.append(item)
+    return slave_instance_list
+
+  def _expandParameterDict(self, options, parameter_dict):
+    """
+    Populate ``options['slave-instance-list']`` from instancenode's database
+    after delegating to ``JsonSchemaWithDB`` (which pops it during validation).
+
+    Note: We populate it before calling super so validation can use it, then
+    repopulate it after since JsonSchema pops it during validation.
+    """
+    # Database containing valid instances managed by instancenode.Recipe
+    # Note: this MUST be different from the database used by JsonSchemaWithDB
+    # (instance-db-path) to avoid mixing concerns.
+    db_path = options.get('valided-instance-db-path')
+    if not db_path:
+      raise UserError(
+        "valided-instance-db-path option is required when using "
+        "JsonSchemaWithDBFromInstanceNode."
+      )
+
+    instance_db_path = options.get('instance-db-path')
+    if instance_db_path and instance_db_path == db_path:
+      raise UserError(
+        "valided-instance-db-path must be different from instance-db-path."
+      )
+
+    # Delegate to standard JsonSchemaWithDB behavior
+    # This will pop 'slave-instance-list' during validation if validate.shared is True
+    result = super(JsonSchemaWithDBFromInstanceNode, self)._expandParameterDict(
+      options,
+      parameter_dict,
+    )
+
+    # Repopulate slave-instance-list after validation (it was popped by JsonSchema)
+    # Use the original list which still has slave_reference (not the modified copy)
+    # Load instances from database
+    # Check if allow-invalid-instance parameter is present and true in both options and parameter_dict
+    def is_true_value(value):
+      """Check if value is a true value (true, yes, 1, etc.)"""
+      if isinstance(value, bool):
+        return value is True
+      if isinstance(value, six.string_types):
+        return value.lower() in ('true', 'yes', '1')
+      return value == 1
+    
+    allow_invalid_options = is_true_value(options.get('allow-invalid-instance'))
+    allow_invalid_params = False
+    if isinstance(parameter_dict, dict):
+      allow_invalid_params = is_true_value(result.get('allow-invalid-instance'))
+    allow_invalid = allow_invalid_options and allow_invalid_params
+    slave_instance_list = self._load_valid_instances_from_db(db_path, valid_only=not allow_invalid)
+    options['slave-instance-list'] = slave_instance_list
+
+    return result
 
 
 class JsonDump(Recipe):
