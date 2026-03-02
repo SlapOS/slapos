@@ -1975,6 +1975,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'enable_cache': {
         'url': cls.backend_url,
         'enable_cache': True,
+        'https-only': False,
       },
       'enable_cache_custom_domain': {
         'url': cls.backend_url,
@@ -4304,6 +4305,30 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     backend_headers = result.json()['Incoming Headers']
     self.assertRequestHeaders(
       backend_headers, parameter_dict['domain'], cached=True)
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'cached',
+      source_ip=source_ip
+    )
+
+    self.assertEqualResultJson(result, 'Path', '/cached')
+
+    headers = self.assertResponseHeaders(
+      result, cached=True, age=True, client_version="1.1")
+
+    self.assertHeaderMessage(
+      {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'max-age=1, stale-while-revalidate=3600, '
+                         'stale-if-error=3600'
+      },
+      headers
+    )
+
+    backend_headers = result.json()['Incoming Headers']
+    self.assertRequestHeaders(
+      backend_headers, parameter_dict['domain'], cached=True, port=HTTP_PORT,
+      proto='http', client_version='1.1')
 
     # BEGIN: Check that squid.log is correctly filled in
     direct_pattern = re.compile(
