@@ -23,6 +23,15 @@ T-2/var/log/httpd/_health-check-disabled_frontend_log
 T-2/var/log/httpd/_health-check-failover-url-auth-to-backend_access_log
 T-2/var/log/httpd/_health-check-failover-url-auth-to-backend_backend_log
 T-2/var/log/httpd/_health-check-failover-url-auth-to-backend_frontend_log
+T-2/var/log/httpd/_health-check-failover-url-https-only-false-both_access_log
+T-2/var/log/httpd/_health-check-failover-url-https-only-false-both_backend_log
+T-2/var/log/httpd/_health-check-failover-url-https-only-false-both_frontend_log
+T-2/var/log/httpd/_health-check-failover-url-https-only-https-url-only_access_log
+T-2/var/log/httpd/_health-check-failover-url-https-only-https-url-only_backend_log
+T-2/var/log/httpd/_health-check-failover-url-https-only-https-url-only_frontend_log
+T-2/var/log/httpd/_health-check-failover-url-https-only-url-only_access_log
+T-2/var/log/httpd/_health-check-failover-url-https-only-url-only_backend_log
+T-2/var/log/httpd/_health-check-failover-url-https-only-url-only_frontend_log
 T-2/var/log/httpd/_health-check-failover-url-netloc-list_access_log
 T-2/var/log/httpd/_health-check-failover-url-netloc-list_backend_log
 T-2/var/log/httpd/_health-check-failover-url-netloc-list_frontend_log
@@ -35,9 +44,6 @@ T-2/var/log/httpd/_health-check-failover-url-ssl-proxy-verify-missing_frontend_l
 T-2/var/log/httpd/_health-check-failover-url-ssl-proxy-verify-unverified_access_log
 T-2/var/log/httpd/_health-check-failover-url-ssl-proxy-verify-unverified_backend_log
 T-2/var/log/httpd/_health-check-failover-url-ssl-proxy-verify-unverified_frontend_log
-T-2/var/log/httpd/_health-check-failover-url_access_log
-T-2/var/log/httpd/_health-check-failover-url_backend_log
-T-2/var/log/httpd/_health-check-failover-url_frontend_log
 T-2/var/log/monitor-httpd-access.log
 T-2/var/log/monitor-httpd-error.log
 T-2/var/log/slave-introspection-access.log
