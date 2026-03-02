@@ -165,14 +165,8 @@
       "type": "integer",
       "default": 4000
     },
-    "backend-haproxy-http-port": {
-      "title": "Backend Haproxy HTTP Port",
-      "description": "Port number for the backend haproxy HTTP server.",
-      "type": "integer",
-      "default": 21080
-    },
-    "backend-haproxy-https-port": {
-      "title": "Backend Haproxy HTTPS Port",
+    "backend-haproxy-port": {
+      "title": "Backend Haproxy Port",
       "description": "Port number for the backend haproxy HTTPS server.",
       "type": "integer",
       "default": 21443
@@ -193,6 +187,11 @@
       "description": "Port number for the trafficserver introspection server.",
       "type": "integer",
       "default": 23433
+    },
+    "caucase-port": {
+      "title": "Frontend Node Caucase Port",
+      "type": "integer",
+      "default": 8890
     }
   },
   "additionalProperties": false
