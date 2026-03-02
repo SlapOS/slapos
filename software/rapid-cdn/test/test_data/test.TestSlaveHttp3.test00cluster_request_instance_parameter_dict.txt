@@ -175,6 +175,7 @@
       },
       {
         "enable_cache": true,
+        "https-only": false,
         "slap_software_type": "default",
         "slave_reference": "_enable_cache",
         "slave_title": "_enable_cache",
@@ -659,6 +660,7 @@
         },
         {
           "enable_cache": true,
+          "https-only": false,
           "slave_reference": "_enable_cache",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
