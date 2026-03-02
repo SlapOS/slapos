@@ -2156,6 +2156,116 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify instanceNodePostProcessing was called
     self.assertEqual(len(post_processing_called), 1)
 
+  def test_report_error_option_default(self):
+    """Test that error() IS called for instancenode validation errors by default
+
+    When preDeployInstanceValidation fails (instancenode's own validation),
+    error() should be called by default (report-error defaults to true).
+    """
+    class TestRecipe(instancenode.Recipe):
+      def preDeployInstanceValidation(self, instance_reference, parameters):
+        return False, ['Validation failed'], {'message': 'Error message', 'errors': ['Validation failed']}
+
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    recipe = TestRecipe(self.buildout, 'test', self.options)
+    recipe.install()
+
+    # setConnectionDict should be called
+    self.setConnectionDict.assert_called_once()
+
+    # error() should be called (report-error defaults to true)
+    self.error.assert_called_once()
+    error_call = self.error.call_args
+    error_info = error_call[0][0]
+    error_slave_ref = error_call[1]['slave_reference']
+    self.assertEqual(error_slave_ref, 'instance1')
+    self.assertEqual(error_info['message'], 'Error message')
+
+  def test_report_error_option_false(self):
+    """Test that error() is NOT called when report-error=false
+
+    When report-error is set to false, instancenode should not call
+    error() for its own validation errors, but setConnectionDict
+    should still be called.
+    """
+    class TestRecipe(instancenode.Recipe):
+      def preDeployInstanceValidation(self, instance_reference, parameters):
+        return False, ['Validation failed'], {'message': 'Error message', 'errors': ['Validation failed']}
+
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    options = self.options.copy()
+    options['report-error'] = 'false'
+
+    recipe = TestRecipe(self.buildout, 'test', options)
+    recipe.install()
+
+    # setConnectionDict should still be called
+    self.setConnectionDict.assert_called_once()
+    call_args = self.setConnectionDict.call_args
+    conn_params = call_args[0][0]
+    self.assertEqual(conn_params['message'], 'Error message')
+
+    # error() should NOT be called (report-error=false)
+    self.error.assert_not_called()
+
+  def test_report_error_option_true(self):
+    """Test that error() IS called when report-error=true
+
+    Explicit report-error=true should behave the same as the default.
+    """
+    class TestRecipe(instancenode.Recipe):
+      def preDeployInstanceValidation(self, instance_reference, parameters):
+        return False, ['Validation failed'], {'message': 'Error message', 'errors': ['Validation failed']}
+
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, True)
+    ])
+
+    options = self.options.copy()
+    options['report-error'] = 'true'
+
+    recipe = TestRecipe(self.buildout, 'test', options)
+    recipe.install()
+
+    # setConnectionDict should be called
+    self.setConnectionDict.assert_called_once()
+
+    # error() should be called (report-error=true)
+    self.error.assert_called_once()
+
+  def test_slapconfiguration_invalid_never_calls_error(self):
+    """Test that slapconfiguration-invalid instances never trigger error()
+
+    Even with report-error=true, instances that slapconfiguration already
+    reported as invalid (valid=False in the database) should NOT trigger
+    error() from instancenode.
+    """
+    validation_errors = {
+      'message': 'Schema validation failed',
+      'errors': ['field "name" is required']
+    }
+    self._createInstanceDB([
+      ('instance1', {'key': 'value'}, False)
+    ], connection_params={'instance1': validation_errors})
+
+    options = self.options.copy()
+    options['report-error'] = 'true'
+
+    recipe = instancenode.Recipe(self.buildout, 'test', options)
+    recipe.install()
+
+    # setConnectionDict should be called (error info is published)
+    self.setConnectionDict.assert_called_once()
+
+    # error() should NOT be called — slapconfiguration already reported this
+    self.error.assert_not_called()
+
 
 class TestCommandLineInterface(unittest.TestCase):
   """Tests for command-line interface functions"""
