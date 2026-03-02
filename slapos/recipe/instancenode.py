@@ -82,6 +82,14 @@ class Recipe(object):
     request-name-prefix (optional, defaults to empty string)
       Prefix to prepend to instance reference when making requests to the master.
       The prefix is only applied to the request name, not to local database references.
+
+    report-error (optional, defaults to true)
+      Whether to call computer_partition.error() to notify the SlapOS master
+      when instancenode's own validation (preDeployInstanceValidation) fails.
+      Set to "false" to disable error reporting to the master.
+      Note: instances that slapconfiguration already reported as invalid
+      (valid=False in the database) never trigger error() from instancenode,
+      regardless of this option.
   """
 
   def __init__(self, buildout, name, options):
@@ -122,7 +130,7 @@ class Recipe(object):
 
     self.shared = options.get('shared', 'false').lower() in ['y', 'yes', '1', 'true']
 
-    self.report_error = True
+    self.report_error = options.get('report-error', 'true').lower() in ['y', 'yes', '1', 'true']
 
     # Optional prefix for request names
     self.request_name_prefix = options.get('request-name-prefix', '')
