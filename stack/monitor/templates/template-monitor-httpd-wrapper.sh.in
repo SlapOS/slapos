@@ -32,7 +32,7 @@ if [ -f "$pid_file" ]; then
     fi
 fi
 
-{% if to_delete_tmp_files != '' %}
+{% if to_delete_tmp_files is defined and to_delete_tmp_files != None and to_delete_tmp_files != ''  %}
 # This is used to clean upcgisocket files
 # not deleted aftera server shutdown
 echo "Cleaning tmp files {{ to_delete_tmp_files }} before running the server"
