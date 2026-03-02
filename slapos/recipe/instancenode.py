@@ -368,45 +368,6 @@ class Recipe(object):
 
     return self._computer_partition
 
-  def _shouldPublishInformation(self, instance_reference, publish_information):
-    """
-    Check if publish_information should be published by comparing with stored json_error.
-
-    Args:
-      instance_reference: Reference name for the instance
-      publish_information: Dict of information to publish (connection parameters or error info)
-
-    Returns:
-      True if information should be published (different from stored), False otherwise
-    """
-    if not publish_information:
-      return False
-
-    # Check if we've already published the same information
-    # by comparing with what's stored in the database
-    try:
-      stored_instance = self.requestinstance_db.getInstance(instance_reference)
-      try:
-        stored_info = json.loads(stored_instance['json_error'])
-        # Compare dictionaries (order-independent comparison)
-        if stored_info == publish_information:
-          self.logger.debug(
-            'Information for instance %s unchanged, skipping publish',
-            instance_reference
-          )
-          return False
-      except (ValueError, TypeError):
-        # If json_error can't be parsed, treat as different and publish
-        pass
-    except Exception as e:
-      # If we can't retrieve stored instance, log and continue with publish
-      self.logger.debug(
-        'Could not retrieve stored instance %s for comparison: %s',
-        instance_reference, e
-      )
-
-    return True
-
   def publishInstanceInformation(self, instance_reference, publish_information):
     """
     Publish instance information (connection parameters) for a successfully deployed instance.
@@ -417,11 +378,6 @@ class Recipe(object):
       instance_reference: Reference name for the instance
       publish_information: Dict of connection parameters or instance information
     """
-    # Check if we need to publish (information has changed)
-    if not self._shouldPublishInformation(instance_reference, publish_information):
-      return
-
-    # Publish connection parameters
     self._publishConnectionParameters(instance_reference, publish_information)
 
   def publishInstanceErrorInformation(self, instance_reference, publish_information, report_error=None):
@@ -436,11 +392,6 @@ class Recipe(object):
       report_error: If False, skip calling computer_partition.error().
         If None, falls back to self.report_error.
     """
-    # Check if we need to publish (information has changed)
-    if not self._shouldPublishInformation(instance_reference, publish_information):
-      return
-
-    # Publish connection parameters (error information)
     self._publishConnectionParameters(instance_reference, publish_information)
 
     # Call computer_partition.error() to notify the master about the error,
@@ -464,8 +415,6 @@ class Recipe(object):
     """
     Internal method to publish connection parameters for an instance using the slap library.
     Parameters are published to the SlapOS master for the specified slave instance.
-    This method does not check if information has changed - that check should be done
-    by the caller (publishInstanceInformation or publishInstanceErrorInformation).
 
     Args:
       instance_reference: Reference name for the instance (used as slave_reference)
