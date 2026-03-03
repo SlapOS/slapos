@@ -855,6 +855,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     except Exception as e:
       self.fail(e)
 
+  def assertSqliteValidationDatabaseWithPop(self, parameter_dict):
+    parameter_dict.pop('publish-slave-sqlite-validation-database')
+
   def assertHttp2(self, domain):
     result = mimikra.get(
       'https://%(domain)s:%(https_port)s/' % dict(
@@ -1520,6 +1523,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
     self.assertEqual(
@@ -1556,6 +1560,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1671,6 +1676,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertKeyWithPop('kedifa-csr-certificate', parameter_dict)
     self.assertKeyWithPop('kedifa-csr-url', parameter_dict)
     self.assertKeyWithPop('frontend-node-1-kedifa-csr-url', parameter_dict)
@@ -2229,6 +2235,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -5962,6 +5969,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -6472,6 +6480,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -6574,6 +6583,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -6824,6 +6834,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
