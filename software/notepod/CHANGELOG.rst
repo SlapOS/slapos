@@ -1,6 +1,7 @@
-2026-03-10
+2026-03-16
 ''''''''''
 
+- all snaps are upgraded when generating installer image
 - helper tool to deploy re6st & slapos
 
 2026-03-02
