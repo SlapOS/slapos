@@ -80,6 +80,7 @@ depends =
   {{ software_parameter_dict['instance-kedifa-input-schema.json'] }}
 set-default = main
 validate-parameters = main
+report-error = main
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
