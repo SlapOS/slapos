@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Values returned by instantiation",
+  "properties": {
+    "backend-url": {
+      "description": "URL to connect directly to the download page, bypassing the CDN",
+      "type": "string"
+    },
+    "url": {
+      "description": "Download page URL",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
