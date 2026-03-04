@@ -693,6 +693,13 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
     """
     return True, [], publish_information
 
+  def _publishConnectionParameters(self, instance_reference, conn_params):
+    """
+    Override to prevent calling setConnectionDict.
+    CDN instances do not publish connection parameters to the master.
+    """
+    pass
+
   def publishInstanceInformation(self, instance_reference, publish_information):
     """
     Override to prevent publishing connection parameters on success.

@@ -408,20 +408,10 @@ class TestCDNRequestFullScenario(unittest.TestCase):
         # entirely, including destroys, so no calls to the master are made.
         self.assertEqual(request_instance.call_count, 0)
 
-        # Verify published connection parameters for each instance
-        # Connection parameters are published via setConnectionDict with slave_reference
+        # Verify setConnectionDict is never called for CDN instances
+        setConnectionDict.assert_not_called()
 
-        # Helper to extract published params for an instance from setConnectionDict calls
-        def get_published_params(instance_ref):
-          for call in setConnectionDict.call_args_list:
-            # call[0] is tuple of positional args, call[1] is dict of keyword args
-            if len(call[0]) > 0:
-              conn_params = call[0][0]
-              slave_ref = call[1].get('slave_reference')
-              if slave_ref == instance_ref:
-                return conn_params
-          return None
-
+        # Verify error() is still called for instances with validation errors
         # Helper to extract error calls for an instance from error() calls
         def get_error_calls(instance_ref):
           error_calls = []
@@ -433,108 +423,39 @@ class TestCDNRequestFullScenario(unittest.TestCase):
               error_calls.append(error_info)
           return error_calls
 
-        # 1. new-instance: DNS validation failed - should publish DNS challenge info
-        # Note: new-instance may not have published connection parameters if it fails validation
-        # before being added to the database, or if publish_information is empty
-        new_published = get_published_params('new-instance')
+        # 1. new-instance: DNS validation failed - error() should be called
         new_error_calls = get_error_calls('new-instance')
-        # For new instances that fail validation, connection parameters may not be published
-        # The important thing is that it's in the database marked as invalid
-        if new_published is not None:
-          self.assertIn('txt_record', new_published)
-          self.assertIn('txt_value', new_published)
-          self.assertIn('message', new_published)
-          self.assertEqual(new_published['txt_record'], '_slapos-challenge.new.example.com')
-          # Verify token is present (should be generated)
-          self.assertIsNotNone(new_published['txt_value'])
-          self.assertNotEqual(new_published['txt_value'], '')
-          # Verify message content
-          expected_message = (
-            'Custom domain verification failed. '
-            'Please add TXT record "%s" with value "%s".'
-            % (new_published['txt_record'], new_published['txt_value'])
-          )
-          self.assertEqual(new_published['message'], expected_message)
-          # Verify error() was called when error information was published
-          self.assertEqual(len(new_error_calls), 1, "error() should be called once for new-instance when error info is published")
-          self.assertEqual(new_error_calls[0], new_published, "error() should be called with the same information as setConnectionDict")
-        else:
-          # If nothing was published, error() should not be called either
-          self.assertEqual(len(new_error_calls), 0, "error() should not be called if nothing was published")
+        if len(new_error_calls) > 0:
+          self.assertEqual(len(new_error_calls), 1)
+          self.assertIn('txt_record', new_error_calls[0])
+          self.assertIn('txt_value', new_error_calls[0])
+          self.assertIn('message', new_error_calls[0])
+          self.assertEqual(new_error_calls[0]['txt_record'], '_slapos-challenge.new.example.com')
 
-        # 2. invalid-no-change: Validation failed but no change in parameters
-        # Since the instance is unchanged and connection parameters haven't changed,
-        # _publishConnectionParameters will skip publishing (unchanged parameters check)
-        invalid_published = get_published_params('invalid-no-change')
+        # 2. invalid-no-change: unchanged, error() should not be called
         invalid_error_calls = get_error_calls('invalid-no-change')
-        # Should not publish if parameters haven't changed
-        self.assertIsNone(invalid_published, "invalid-no-change should not publish connection parameters if unchanged")
-        # error() should also not be called if nothing was published
-        self.assertEqual(len(invalid_error_calls), 0, "error() should not be called for invalid-no-change if parameters haven't changed")
+        self.assertEqual(len(invalid_error_calls), 0)
 
-        # 3. valid-no-change: Already validated, no changes - should not publish
-        # (no connection params returned from preDeployInstanceValidation, and no request_conn_params)
-        valid_no_change_published = get_published_params('valid-no-change')
+        # 3. valid-no-change: success, error() should not be called
         valid_no_change_error_calls = get_error_calls('valid-no-change')
-        self.assertIsNone(valid_no_change_published, "valid-no-change should not have published connection parameters")
-        # error() should not be called for successful instances
-        self.assertEqual(len(valid_no_change_error_calls), 0, "error() should not be called for valid-no-change (success case)")
+        self.assertEqual(len(valid_no_change_error_calls), 0)
 
-        # 4. valid-changed: Modified and validated
-        # Connection parameters may not be published if they haven't changed
-        # (even though instance parameters changed, connection parameters might be the same)
-        valid_changed_published = get_published_params('valid-changed')
+        # 4. valid-changed: success, error() should not be called
         valid_changed_error_calls = get_error_calls('valid-changed')
-        if valid_changed_published is not None:
-          # If published, verify the content
-          self.assertIn('message', valid_changed_published)
-          self.assertEqual(valid_changed_published['message'], 'Your instance is valid the request has been transmitted to the master')
-        # If not published, that's also valid - connection parameters haven't changed
-        # error() should not be called for successful instances
-        self.assertEqual(len(valid_changed_error_calls), 0, "error() should not be called for valid-changed (success case)")
+        self.assertEqual(len(valid_changed_error_calls), 0)
 
-        # 5. to-remove: Destroyed - should not publish (instance is removed, no publishing in _processDestroyedInstance)
-        to_remove_published = get_published_params('to-remove')
-        self.assertIsNone(to_remove_published, "to-remove should not have published connection parameters")
-
-        # 6. dns-pass: DNS validation passed
-        # Connection parameters may not be published if they haven't changed
-        dns_pass_published = get_published_params('dns-pass')
+        # 6. dns-pass: success, error() should not be called
         dns_pass_error_calls = get_error_calls('dns-pass')
-        if dns_pass_published is not None:
-          # If published, verify the content
-          self.assertIn('message', dns_pass_published)
-          self.assertEqual(dns_pass_published['message'], 'Your instance is valid the request has been transmitted to the master')
-        # If not published, that's also valid - connection parameters haven't changed
-        # error() should not be called for successful instances
-        self.assertEqual(len(dns_pass_error_calls), 0, "error() should not be called for dns-pass (success case)")
+        self.assertEqual(len(dns_pass_error_calls), 0)
 
-        # 7. dns-fail: DNS validation failed
-        # Connection parameters may not be published if they haven't changed
-        dns_fail_published = get_published_params('dns-fail')
+        # 7. dns-fail: DNS validation failed - error() should be called
         dns_fail_error_calls = get_error_calls('dns-fail')
-        if dns_fail_published is not None:
-          # If published, verify the content
-          self.assertIn('txt_record', dns_fail_published)
-          self.assertIn('txt_value', dns_fail_published)
-          self.assertIn('message', dns_fail_published)
-          self.assertEqual(dns_fail_published['txt_record'], '_slapos-challenge.dnsfail.example.com')
-          # Verify token is present (should be generated)
-          self.assertIsNotNone(dns_fail_published['txt_value'])
-          self.assertNotEqual(dns_fail_published['txt_value'], '')
-          # Verify message content
-          expected_message = (
-            'Custom domain verification failed. '
-            'Please add TXT record "%s" with value "%s".'
-            % (dns_fail_published['txt_record'], dns_fail_published['txt_value'])
-          )
-          self.assertEqual(dns_fail_published['message'], expected_message)
-          # Verify error() was called when error information was published
-          self.assertEqual(len(dns_fail_error_calls), 1, "error() should be called once for dns-fail when error info is published")
-          self.assertEqual(dns_fail_error_calls[0], dns_fail_published, "error() should be called with the same information as setConnectionDict")
-        else:
-          # If nothing was published, error() should not be called either
-          self.assertEqual(len(dns_fail_error_calls), 0, "error() should not be called if nothing was published")
+        if len(dns_fail_error_calls) > 0:
+          self.assertEqual(len(dns_fail_error_calls), 1)
+          self.assertIn('txt_record', dns_fail_error_calls[0])
+          self.assertIn('txt_value', dns_fail_error_calls[0])
+          self.assertIn('message', dns_fail_error_calls[0])
+          self.assertEqual(dns_fail_error_calls[0]['txt_record'], '_slapos-challenge.dnsfail.example.com')
 
 
 class TestCDNInstanceNodeRecipe(unittest.TestCase):
