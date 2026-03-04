@@ -7,8 +7,8 @@
       "title": "Default",
       "software-type": "default",
       "description": "Default setup for NotePOD Instance.",
-      "request": "instance-notepod.json",
-      "response": "",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
       "index": 0
     }
   }
