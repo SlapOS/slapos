@@ -1,0 +1,15 @@
+{
+  "name": "NotePOD",
+  "description": "NotePOD is a Ubuntu installer preconfigured for security",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default setup for NotePOD Instance.",
+      "request": "instance-notepod.json",
+      "response": "",
+      "index": 0
+    }
+  }
+}
