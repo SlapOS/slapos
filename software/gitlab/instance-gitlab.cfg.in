@@ -466,6 +466,7 @@ tune-command =
     ln -sf ${gitlab.yml:output} gitlab.yml  &&
     ln -sf ${database.yml:output} database.yml  &&
     ln -sf ${resque.yml:output} resque.yml  &&
+    ln -sf ${resque.yml:output} redis.yml  &&
     ln -sf ${cable.yml:output} cable.yml  &&
     ln -sf ${secrets:secrets}/gitlab_secrets.yml secrets.yml  &&
 # config/initializers/
