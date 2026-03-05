@@ -93,6 +93,17 @@ spool-trace = $${:var-spool}/trace
 {%   do source_host_list.append("[" + domain['mail-server-host'] + "]") %}
 {% endfor %}
 
+{# Group sending domains by mail-server-host for per-host sender restrictions #}
+{% set sender_host_domains = {} %}
+{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
+{%   set host = domain['mail-server-host'] %}
+{%   if host not in sender_host_domains %}
+{%     do sender_host_domains.update({host: []}) %}
+{%   endif %}
+{%   do sender_host_domains[host].append(domain['name']) %}
+{% endfor %}
+{% set sorted_sender_hosts = sender_host_domains.keys() | sort %}
+
 [postfix-conf-main]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
@@ -101,6 +112,7 @@ smtp-port = 10025
 submission-port = 10025
 mail-domains = {{ dumps(slapparameter_dict['mail-domains']) }}
 mail-hosts = {{ dumps(source_host_list) }}
+sender-host-domains = {{ dumps(sender_host_domains) }}
 log-file = $${directory:var-log}/postfix.log
 context =
   key bin_directory directory:bin
@@ -126,6 +138,8 @@ context =
   key postfix_cert_file postfix-generate-certificate:cert-file
   key postfix_key_file postfix-generate-certificate:key-file
   raw postfix_log_path $${:log-file}
+  key sender_host_domains :sender-host-domains
+  raw postfix_etc_directory $${postfix-directory:etc}
 
 [postfix-conf-master]
 recipe = slapos.recipe.template:jinja2
@@ -169,6 +183,25 @@ context =
   import json_module json
   raw mail_domains {{ json_module.dumps(slapparameter_dict['mail-domains']) }}
 
+{% for host in sorted_sender_hosts %}
+[postfix-sender-access-{{ loop.index }}]
+recipe = slapos.recipe.template:jinja2
+url = ${postfix_sender_access.jinja2:target}
+output = $${postfix-directory:etc}/sender_access_{{ loop.index }}
+context =
+  import json_module json
+  raw domains {{ json_module.dumps(sender_host_domains[host]) }}
+{% endfor %}
+{% if sorted_sender_hosts %}
+[postfix-client-sender-access]
+recipe = slapos.recipe.template:jinja2
+url = ${postfix_client_sender_access.jinja2:target}
+output = $${postfix-directory:etc}/client_sender_access
+context =
+  import json_module json
+  raw sender_host_domains {{ json_module.dumps(sender_host_domains) }}
+{% endif %}
+
 [postfix-symlinks-libexec]
 recipe = slapos.cookbook:symbolic.link
 target-directory = $${postfix-directory:usr}
@@ -195,9 +228,21 @@ hash-files =
   $${postfix-conf-main:output}
   $${postfix-conf-master:output}
   $${postfix-wrapper:output}
+{%- for host in sorted_sender_hosts %}
+  $${postfix-sender-access-{{ loop.index }}:output}
+{%- endfor %}
+{%- if sorted_sender_hosts %}
+  $${postfix-client-sender-access:output}
+{%- endif %}
 depends =
   $${postfix-symlinks-libexec:recipe}
   $${logrotate-entry-postfix:recipe}
+{%- for host in sorted_sender_hosts %}
+  $${postfix-sender-access-{{ loop.index }}:recipe}
+{%- endfor %}
+{%- if sorted_sender_hosts %}
+  $${postfix-client-sender-access:recipe}
+{%- endif %}
 
 [postfix-service-master]
 < = base-wrapper
