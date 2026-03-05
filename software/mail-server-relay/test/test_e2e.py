@@ -182,13 +182,19 @@ class E2E(SlapOSInstanceTestCase):
       params = json.loads(server.getConnectionParameterDict()['_'])
       self.assertIn('imap-port', params, "Vibe check")
 
-  def _send_email_via_smtp(self, smtp_server_instance, sender, recipient, subject, body):
-    """Helper method to send email via SMTP"""
+  def _send_email_via_smtp(self, smtp_server_instance, sender, recipient, subject, body, login_as=None):
+    """Helper method to send email via SMTP.
+    
+    Args:
+      login_as: If set, authenticate as this address instead of sender.
+                Useful for testing sender domain restrictions (impersonation).
+    """
     smtp_params = json.loads(smtp_server_instance.getConnectionParameterDict()['_'])
     msg = f"Subject: {subject}\n\n{body}"
+    login_user = login_as or sender
     
     with smtplib.SMTP(smtp_params['imap-smtp-ipv6'], smtp_params['smtp-port'], timeout=10) as smtp:
-      smtp.login(sender, "password123")
+      smtp.login(login_user, "password123")
       smtp.sendmail(
         from_addr=sender,
         to_addrs=[recipient],
@@ -287,3 +293,70 @@ class E2E(SlapOSInstanceTestCase):
     
     # Verify email was received at mail1
     self._verify_email_received(mail1, recipient, "This is a test email from external via relay.")
+
+  def _verify_email_not_received(self, imap_server_instance, recipient, unexpected_content, wait_time=30):
+    """Helper method to verify an email was NOT received.
+
+    Waits ``wait_time`` seconds (giving time for potential delivery),
+    then asserts no email in the inbox contains ``unexpected_content``.
+    """
+    # Give the mail system time to potentially (incorrectly) deliver
+    time.sleep(wait_time)
+
+    imap_params = json.loads(imap_server_instance.getConnectionParameterDict()['_'])
+    with imaplib.IMAP4(imap_params['imap-smtp-ipv6'], imap_params['imap-port'], timeout=10) as imap:
+      imap.login(recipient, "password123")
+      imap.select("INBOX")
+      result, data = imap.search(None, 'ALL')
+      if result != 'OK' or not data[0]:
+        return  # no emails at all — pass
+
+      for email_id in data[0].split():
+        result, email_data = imap.fetch(email_id, '(RFC822)')
+        if result == 'OK':
+          body = email_data[0][1].decode('utf-8')
+          self.assertNotIn(
+            unexpected_content, body,
+            f"Email with unexpected content '{unexpected_content}' was found in {recipient}'s inbox"
+          )
+
+  def test_sender_restriction_legitimate(self):
+    """mail1 (whitelisted) sends as @mail1.domain.lan through the relay to
+    mail2 — this is a legitimate sender domain and must be accepted."""
+    mail1, mail2 = self.mail_server_instances[:2]
+    sender = "testmail@mail1.domain.lan"
+    recipient = "testmail@mail2.domain.lan"
+
+    self._send_email_via_smtp(
+      mail1, sender, recipient,
+      "Legit Sender Test",
+      "This is a legitimate sender domain test."
+    )
+    self._verify_email_received(mail2, recipient, "This is a legitimate sender domain test.")
+
+  def test_sender_restriction_impersonation_blocked(self):
+    """mail1 backend tries to send with From: @mail2.domain.lan (a domain
+    belonging to another backend). The relay must reject this."""
+    mail1 = self.mail_server_instances[0]
+    ext = self.ext_mail_server
+
+    legitimate_user = "testmail@mail1.domain.lan"
+    spoofed_sender = "testmail@mail2.domain.lan"
+    recipient = "testmail@example.com"
+
+    # Authenticate on mail1 as the real user but set MAIL FROM to mail2's domain
+    self._send_email_via_smtp(
+      mail1, spoofed_sender, recipient,
+      "Impersonation Test",
+      "This impersonated email should be blocked by the relay.",
+      login_as=legitimate_user,
+    )
+
+    # The backend accepted the mail (user is authenticated locally), but
+    # the relay should reject it when the backend tries to forward it.
+    # Verify the email never arrives at the external server.
+    self._verify_email_not_received(
+      ext, recipient,
+      "This impersonated email should be blocked by the relay.",
+      wait_time=30,
+    )
