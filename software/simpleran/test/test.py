@@ -336,6 +336,7 @@ class ENBTestCase4(RFTestCase4):
             {'plmn': '55555', 'tac': '0x125', 'ranac': 210, 'reserved': True},
         ],
         'xlog_forwarding_enabled': False,
+        'check_core_network': False,
     })}
 
   @classmethod
