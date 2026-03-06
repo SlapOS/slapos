@@ -6,7 +6,8 @@
     "name": {
       "title": "Domain Name",
       "description": "The domain name for this slave instance",
-      "type": "string"
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9.-]+$"
     },
     "mail-server-host": {
       "title": "Mail Server Host",
@@ -18,6 +19,13 @@
       "description": "The mail server port for this domain",
       "type": "integer",
       "default": 10025
+    },
+    "authentication": {
+      "title": "Authentication Method",
+      "description": "How this domain authenticates to the relay for outbound mail. 'none' uses IP-based host verification, 'password' uses SASL username/password.",
+      "type": "string",
+      "enum": ["none", "password"],
+      "default": "none"
     }
   },
   "required": [

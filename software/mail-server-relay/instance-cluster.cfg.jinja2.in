@@ -68,6 +68,7 @@ recipe = slapos.recipe.build
 # Error only if a different reference claims an already assigned domain
 target = $${directory:etc}/relay-domains.json
 init =
+  import secrets
   whitelist = {{ set(slapparameter_dict['outbound-domain-whitelist']) }}
   target = options['target']
 
@@ -83,11 +84,21 @@ init =
   slave_list = {{ (slap_configuration.get('valid-shared-instance-list', [])) }}
 
   def make_entry(slave):
-    return {
+    authentication = slave['parameters'].get('authentication', 'none')
+    entry = {
       'can-send': slave['parameters']['name'] in whitelist,
       **slave['parameters'],
       'reference': slave['reference'],
+      'authentication': authentication,
     }
+    # For password-auth domains, generate or reuse a password
+    if authentication == 'password' and entry['can-send']:
+      prev = previous.get(slave['parameters']['name'], {})
+      if prev.get('authentication') == 'password' and prev.get('reference') == slave['reference'] and prev.get('password'):
+        entry['password'] = prev['password']
+      else:
+        entry['password'] = secrets.token_urlsafe(24)
+    return entry
 
   # 1st pass: keep only slaves matching both domain and reference ( = previously accepted slaves)
   for slave in slave_list:
@@ -95,7 +106,8 @@ init =
     
     if prev_entry := previous.get(domain):
       if prev_entry['reference'] == slave['reference']:
-        output[domain] = make_entry(slave)
+        entry = output[domain] = make_entry(slave)
+        pub_domain_dict[slave['reference']] = {'addr': domain, 'can-send': entry['can-send'], 'authentication': entry.get('authentication', 'none'), 'password': entry.get('password', '')}
       else:
         # domain is already used by another slave, 2nd pass will handle it
         pass
@@ -115,7 +127,7 @@ init =
     else:
       # address not yet claimed
       entry = output[domain] = make_entry(slave)
-      pub_domain_dict[slave['reference']] = {'addr': domain, 'can-send': entry['can-send']}
+      pub_domain_dict[slave['reference']] = {'addr': domain, 'can-send': entry['can-send'], 'authentication': entry.get('authentication', 'none'), 'password': entry.get('password', '')}
 
   options['published-domain-dict'] = pub_domain_dict
   options['accepted-domain-list'] = list(output.values())
@@ -154,7 +166,16 @@ init =
     {info['addr']} MX 10 {self.buildout['request-all-relays']['relay-host']}
       """
       if info['can-send']:
-        section += f"""
+        if info.get('authentication') == 'password' and info.get('password'):
+          section += f"""
+  outbound-host = {self.buildout['request-all-relays']['relay-host']}
+  outbound-smtp-port = 10025
+  outbound-submission-port = 10587
+  outbound-user = {info['addr']}
+  outbound-password = {info['password']}
+        """
+        else:
+          section += f"""
   outbound-host = {self.buildout['request-all-relays']['relay-host']}
   outbound-smtp-port = 10025
         """
