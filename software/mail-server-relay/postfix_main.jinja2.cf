@@ -29,7 +29,7 @@ smtp_bind_address = {{ ipv4 }}
 smtp_bind_address6 = {{ ipv6 }}
 
 import_environment =
-  MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
+  MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C SASL_CONF_PATH
 
 smtp_tls_security_level = none
 smtp_sasl_auth_enable = yes
@@ -68,3 +68,19 @@ transport_maps = texthash:{{ transport_maps }}
 # no aliases
 alias_maps =
 alias_database =
+
+# Per-host sender domain restrictions
+# Each sending backend is only allowed to use MAIL FROM with its own domains.
+{% set sorted_sender_hosts = sender_host_domains.keys() | sort -%}
+{% if sorted_sender_hosts %}
+smtpd_restriction_classes =
+{%- for host in sorted_sender_hosts %}
+  restrict_sender_{{ loop.index }}
+{%- endfor %}
+
+{% for host in sorted_sender_hosts -%}
+restrict_sender_{{ loop.index }} = check_sender_access texthash:{{ postfix_etc_directory }}/sender_access_{{ loop.index }}, reject
+{% endfor %}
+smtpd_sender_restrictions =
+  check_client_access cidr:{{ postfix_etc_directory }}/client_sender_access
+{% endif %}

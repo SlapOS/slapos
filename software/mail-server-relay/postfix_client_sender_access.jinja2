@@ -1,0 +1,8 @@
+{% set shd = json_module.loads(sender_host_domains) -%}
+{% for host in shd.keys() | sort -%}
+{% if ':' in host -%}
+{{ host }}/128 restrict_sender_{{ loop.index }}
+{% else -%}
+{{ host }}/32 restrict_sender_{{ loop.index }}
+{% endif -%}
+{% endfor -%}
