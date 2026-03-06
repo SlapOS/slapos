@@ -750,6 +750,7 @@ base-path = ${directory:public}
 wrapper = ${directory:bin}/http-server
 log-file = ${directory:log}/httpd.log
 use-hash-url = false
+allow-write = true
 
 [httpd-service]
 recipe = slapos.cookbook:wrapper
