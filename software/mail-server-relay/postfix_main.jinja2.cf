@@ -29,7 +29,7 @@ smtp_bind_address = {{ ipv4 }}
 smtp_bind_address6 = {{ ipv6 }}
 
 import_environment =
-  MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
+  MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C SASL_CONF_PATH
 
 smtp_tls_security_level = none
 smtp_sasl_auth_enable = yes
