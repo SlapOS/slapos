@@ -28,6 +28,18 @@
           "description": "The port of the relay server",
           "type": "integer",
           "default": 25
+        },
+        "user": {
+          "title": "SMTP User",
+          "description": "Username for SMTP authentication on the custom relay. If non-empty, SASL auth is used.",
+          "type": "string",
+          "default": ""
+        },
+        "password": {
+          "title": "SMTP Password",
+          "description": "Password for SMTP authentication on the custom relay.",
+          "type": "string",
+          "default": ""
         }
       },
       "default": {}
