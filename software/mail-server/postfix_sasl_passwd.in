@@ -1,0 +1,11 @@
+{# SASL credentials for outbound relay authentication.
+   Maps [host]:port to user:password for each domain that has SASL credentials. #}
+{% for domain in mail_domains.split(",") -%}
+{%   set host = outbound_relay_info.get('outbound-host-' + domain, '') -%}
+{%   set port = outbound_relay_info.get('outbound-port-' + domain, '') -%}
+{%   set user = outbound_relay_info.get('outbound-user-' + domain, '') -%}
+{%   set password = outbound_relay_info.get('outbound-password-' + domain, '') -%}
+{%   if host and user -%}
+[{{ host }}]:{{ port }} {{ user }}:{{ password }}
+{%   endif -%}
+{% endfor -%}
