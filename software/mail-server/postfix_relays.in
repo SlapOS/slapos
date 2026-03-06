@@ -1,7 +1,14 @@
 {% for domain in mail_domains.split(",") -%}
 
 {% if outbound_relay_info.get('outbound-host-' + domain, '') -%}
-@{{ domain }} smtp:[{{ outbound_relay_info['outbound-host-' + domain] }}]:{{ outbound_relay_info['outbound-port-' + domain] }}
+{%   set host = outbound_relay_info['outbound-host-' + domain] -%}
+{%   set port = outbound_relay_info['outbound-port-' + domain] -%}
+{%   set user = outbound_relay_info.get('outbound-user-' + domain, '') -%}
+{%   if user -%}
+@{{ domain }} relay-auth:[{{ host }}]:{{ port }}
+{%   else -%}
+@{{ domain }} smtp:[{{ host }}]:{{ port }}
+{%   endif -%}
 {% endif -%}
 
 {% endfor -%}
