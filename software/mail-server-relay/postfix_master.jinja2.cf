@@ -13,7 +13,7 @@
   -o smtpd_sasl_path=smtpd
   -o smtpd_sasl_local_domain=relay
   -o smtpd_sasl_security_options=noanonymous
-  -o smtpd_tls_security_level=may
+  -o smtpd_tls_security_level=encrypt
   -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
   -o smtpd_sender_restrictions=reject_sender_login_mismatch
   -o smtpd_sender_login_maps=texthash:{{ postfix_etc_directory }}/sender_login_map
