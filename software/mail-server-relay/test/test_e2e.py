@@ -460,3 +460,17 @@ class E2E(SlapOSInstanceTestCase):
           to_addrs=[recipient],
           msg=msg,
         )
+
+  def test_password_auth_rejected_without_tls(self):
+    """Attempting to authenticate on the submission port without STARTTLS
+    must be rejected — credentials must never be sent in cleartext."""
+    relay_host, submission_port = self._get_relay_submission_info()
+    self.assertIsNotNone(relay_host, "Could not find relay host")
+
+    user, password = self._get_mail4_password_credentials()
+    self.assertTrue(password, "Could not retrieve mail4 SASL password")
+
+    with self.assertRaises(smtplib.SMTPNotSupportedError):
+      with smtplib.SMTP(relay_host, submission_port, timeout=10) as smtp:
+        # Attempt login without starttls — server must refuse
+        smtp.login(user, password)
