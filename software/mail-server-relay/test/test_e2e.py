@@ -119,7 +119,9 @@ class E2E(SlapOSInstanceTestCase):
           },
           "outbound-domain-whitelist": [
             "mail1.domain.lan",
-            "mail2.domain.lan"
+            "mail2.domain.lan",
+            "mail3.domain.lan",
+            "mail4.domain.lan"
           ],
           "topology": {
               "relay-foo": {
@@ -142,6 +144,22 @@ class E2E(SlapOSInstanceTestCase):
     cls.mail_server_instances = [
       cls.requestMailServerForDomain(domain, state) for domain in cls.domain_list
     ]
+    # Request a direct relay slave for mail4 with password authentication.
+    # Uses a different domain than mail1-3 (which are IP-based via mail-server)
+    # to avoid the cluster's duplicate-domain-name rejection.
+    cls.mail4_password_slave = cls.slap.request(
+      software_release=software_urls[0],
+      partition_reference="password-auth-mail4",
+      partition_parameter_kw={'_': json.dumps({
+        "name": "mail4.domain.lan",
+        "mail-server-host": "::1",
+        "mail-server-port": 10025,
+        "authentication": "password",
+      })},
+      shared=True,
+      software_type='cluster',
+      state=state,
+    )
     cls.waitForInstance()
     return default_instance
 
@@ -182,13 +200,19 @@ class E2E(SlapOSInstanceTestCase):
       params = json.loads(server.getConnectionParameterDict()['_'])
       self.assertIn('imap-port', params, "Vibe check")
 
-  def _send_email_via_smtp(self, smtp_server_instance, sender, recipient, subject, body):
-    """Helper method to send email via SMTP"""
+  def _send_email_via_smtp(self, smtp_server_instance, sender, recipient, subject, body, login_as=None):
+    """Helper method to send email via SMTP.
+    
+    Args:
+      login_as: If set, authenticate as this address instead of sender.
+                Useful for testing sender domain restrictions (impersonation).
+    """
     smtp_params = json.loads(smtp_server_instance.getConnectionParameterDict()['_'])
     msg = f"Subject: {subject}\n\n{body}"
+    login_user = login_as or sender
     
     with smtplib.SMTP(smtp_params['imap-smtp-ipv6'], smtp_params['smtp-port'], timeout=10) as smtp:
-      smtp.login(sender, "password123")
+      smtp.login(login_user, "password123")
       smtp.sendmail(
         from_addr=sender,
         to_addrs=[recipient],
@@ -287,3 +311,152 @@ class E2E(SlapOSInstanceTestCase):
     
     # Verify email was received at mail1
     self._verify_email_received(mail1, recipient, "This is a test email from external via relay.")
+
+  def _verify_email_not_received(self, imap_server_instance, recipient, unexpected_content, wait_time=30):
+    """Helper method to verify an email was NOT received.
+
+    Waits ``wait_time`` seconds (giving time for potential delivery),
+    then asserts no email in the inbox contains ``unexpected_content``.
+    """
+    # Give the mail system time to potentially (incorrectly) deliver
+    time.sleep(wait_time)
+
+    imap_params = json.loads(imap_server_instance.getConnectionParameterDict()['_'])
+    with imaplib.IMAP4(imap_params['imap-smtp-ipv6'], imap_params['imap-port'], timeout=10) as imap:
+      imap.login(recipient, "password123")
+      imap.select("INBOX")
+      result, data = imap.search(None, 'ALL')
+      if result != 'OK' or not data[0]:
+        return  # no emails at all — pass
+
+      for email_id in data[0].split():
+        result, email_data = imap.fetch(email_id, '(RFC822)')
+        if result == 'OK':
+          body = email_data[0][1].decode('utf-8')
+          self.assertNotIn(
+            unexpected_content, body,
+            f"Email with unexpected content '{unexpected_content}' was found in {recipient}'s inbox"
+          )
+
+  def test_sender_restriction_legitimate(self):
+    """mail1 (whitelisted) sends as @mail1.domain.lan through the relay to
+    mail2 — this is a legitimate sender domain and must be accepted."""
+    mail1, mail2 = self.mail_server_instances[:2]
+    sender = "testmail@mail1.domain.lan"
+    recipient = "testmail@mail2.domain.lan"
+
+    self._send_email_via_smtp(
+      mail1, sender, recipient,
+      "Legit Sender Test",
+      "This is a legitimate sender domain test."
+    )
+    self._verify_email_received(mail2, recipient, "This is a legitimate sender domain test.")
+
+  def test_sender_restriction_impersonation_blocked(self):
+    """mail1 backend tries to send with From: @mail2.domain.lan (a domain
+    belonging to another backend). The relay must reject this."""
+    mail1 = self.mail_server_instances[0]
+    ext = self.ext_mail_server
+
+    legitimate_user = "testmail@mail1.domain.lan"
+    spoofed_sender = "testmail@mail2.domain.lan"
+    recipient = "testmail@example.com"
+
+    # Authenticate on mail1 as the real user but set MAIL FROM to mail2's domain
+    self._send_email_via_smtp(
+      mail1, spoofed_sender, recipient,
+      "Impersonation Test",
+      "This impersonated email should be blocked by the relay.",
+      login_as=legitimate_user,
+    )
+
+    # The backend accepted the mail (user is authenticated locally), but
+    # the relay should reject it when the backend tries to forward it.
+    # Verify the email never arrives at the external server.
+    self._verify_email_not_received(
+      ext, recipient,
+      "This impersonated email should be blocked by the relay.",
+      wait_time=30,
+    )
+
+  def _get_relay_submission_info(self):
+    """Return (relay_host, submission_port) from the cluster's DNS entries."""
+    cluster_params = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    dns_entries = cluster_params.get('dns-entries', '')
+    relay_host = None
+    for line in dns_entries.strip().split('\n'):
+      if 'MX' in line:
+        parts = line.strip().split()
+        if len(parts) >= 4:
+          relay_host = parts[3]
+          if relay_host.startswith('[') and relay_host.endswith(']'):
+            relay_host = relay_host[1:-1]
+          break
+    return relay_host, 10587
+
+  def _get_mail4_password_credentials(self):
+    """Return (user, password) for the mail4 SASL password-auth slave."""
+    slave_params = json.loads(
+      self.mail4_password_slave.getConnectionParameterDict().get('_', '{}')
+    )
+    user = slave_params.get('outbound-user', '')
+    password = slave_params.get('outbound-password', '')
+    return user, password
+
+  def test_password_auth_slave_output(self):
+    """The password-auth slave (mail4) receives outbound-password,
+    outbound-user and outbound-submission-port in its connection params."""
+    params = json.loads(
+      self.mail4_password_slave.getConnectionParameterDict().get('_', '{}')
+    )
+    self.assertTrue(params.get('outbound-password'), "Password must be published")
+    self.assertTrue(params.get('outbound-user'), "User must be published")
+    self.assertEqual(params.get('outbound-submission-port'), '10587')
+
+  def test_password_auth_legitimate(self):
+    """Authenticate as mail4.domain.lan on the relay's submission port
+    and send as @mail4.domain.lan — must be accepted."""
+    mail1 = self.mail_server_instances[0]
+    relay_host, submission_port = self._get_relay_submission_info()
+    self.assertIsNotNone(relay_host, "Could not find relay host")
+
+    user, password = self._get_mail4_password_credentials()
+    self.assertTrue(password, "Could not retrieve mail4 SASL password")
+
+    sender = "testmail@mail4.domain.lan"
+    recipient = "testmail@mail1.domain.lan"
+
+    msg = "Subject: Password Auth Legit\n\nPassword auth legitimate test."
+    with smtplib.SMTP(relay_host, submission_port, timeout=10) as smtp:
+      smtp.starttls()
+      smtp.login(user, password)
+      smtp.sendmail(
+        from_addr=sender,
+        to_addrs=[recipient],
+        msg=msg,
+      )
+
+    self._verify_email_received(mail1, recipient, "Password auth legitimate test.")
+
+  def test_password_auth_impersonation_blocked(self):
+    """Authenticate as mail4.domain.lan on the submission port but try
+    to send as @mail1.domain.lan — relay must reject."""
+    relay_host, submission_port = self._get_relay_submission_info()
+    self.assertIsNotNone(relay_host, "Could not find relay host")
+
+    user, password = self._get_mail4_password_credentials()
+    self.assertTrue(password, "Could not retrieve mail4 SASL password")
+
+    spoofed_sender = "testmail@mail1.domain.lan"
+    recipient = "testmail@example.com"
+
+    msg = "Subject: Password Auth Impersonation\n\nThis should be rejected."
+    with self.assertRaises((smtplib.SMTPSenderRefused, smtplib.SMTPRecipientsRefused)):
+      with smtplib.SMTP(relay_host, submission_port, timeout=10) as smtp:
+        smtp.starttls()
+        smtp.login(user, password)
+        smtp.sendmail(
+          from_addr=spoofed_sender,
+          to_addrs=[recipient],
+          msg=msg,
+        )

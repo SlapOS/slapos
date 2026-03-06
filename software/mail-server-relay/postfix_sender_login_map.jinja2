@@ -1,0 +1,6 @@
+{# Maps sender domain to SASL login name (= domain@relay).
+   The @relay suffix matches smtpd_sasl_local_domain=relay in master.cf
+   and the -u relay flag used with saslpasswd2. #}
+{%- for domain in json_module.loads(password_auth_domains) %}
+@{{ domain }} {{ domain }}@relay
+{%- endfor %}
