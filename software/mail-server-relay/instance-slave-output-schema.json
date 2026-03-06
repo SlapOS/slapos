@@ -14,6 +14,18 @@
     "dns-entries": {
       "description": "DNS entries to add",
       "type": "string"
+    },
+    "outbound-submission-port": {
+      "description": "SMTP submission port for password-authenticated outbound mail",
+      "type": "integer"
+    },
+    "outbound-password": {
+      "description": "Password for SASL authentication (only when authentication is 'password')",
+      "type": "string"
+    },
+    "outbound-user": {
+      "description": "SASL username for authentication (only when authentication is 'password')",
+      "type": "string"
     }
   },
   "required": [

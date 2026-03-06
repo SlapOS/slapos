@@ -49,6 +49,16 @@
           "can-send": {
             "type": "boolean",
             "description": "Whether this domain can send (outbound) emails through the relay"
+          },
+          "authentication": {
+            "type": "string",
+            "enum": ["none", "password"],
+            "description": "Authentication method: 'none' for IP-based, 'password' for SASL",
+            "default": "none"
+          },
+          "password": {
+            "type": "string",
+            "description": "SASL password (only when authentication is 'password')"
           }
         }
       },
