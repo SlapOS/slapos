@@ -49,6 +49,7 @@ import sys
 
 from slapos.proxy.db_version import DB_VERSION
 from slapos.recipe.librecipe import generateHashFromFiles
+from slapos.test.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.slap.standalone import SlapOSNodeCommandError
 from slapos.testing.utils import findFreeTCPPort
@@ -3017,3 +3018,61 @@ class TestResilientDiskImageCorruption(TestDefaultDiskImageCorruption):
 
   def test_kvm_import(self):
     self._test('kvm-import')
+
+@skipUnlessKvm
+class TestKVMMonitoringPropagation(
+    MonitoringPropagationTestMixin, KVMTestCase):
+  """Verify monitor-interface-url propagation for a standalone KVM instance."""
+  __partition_reference__ = 'km'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      'monitor-interface-url': cls.MONITOR_INTERFACE_URL,
+    })}
+
+
+@skipUnlessKvm
+class TestKVMClusterMonitoringPropagation(
+    MonitoringPropagationTestMixin, KVMTestCase):
+  """Verify monitor-interface-url propagation for the 'parent' kvm-cluster."""
+  __partition_reference__ = 'kcm'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      'monitor-interface-url': cls.MONITOR_INTERFACE_URL,
+      'kvm-partition-dict': {
+        'KVM0': {
+          'disable-ansible-promise': True,
+        }
+      },
+    })}
+
+@skipUnlessKvm
+class TestKVMResilientMonitoringPropagation(
+    MonitoringPropagationTestMixin, KVMTestCase):
+  """Verify monitor-interface-url propagation for the kvm-resilient."""
+  __partition_reference__ = 'krm'
+  instance_max_retry = 20
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'kvm-resilient'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps({
+      'monitor-interface-url': cls.MONITOR_INTERFACE_URL,
+    })}
+
+  @classmethod
+  def waitForInstance(cls):
+    # First pass: parent runs child partition requests.
+    # Second pass: children run their buildout and set their monitoring params.
+    for _ in range(2):
+      super().waitForInstance()
