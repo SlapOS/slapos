@@ -42,29 +42,17 @@ eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 
 # ─────────────────────────────────────────────────
-# Partition network configuration from SlapOS
+# Instance parameters
 # ─────────────────────────────────────────────────
-[slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = ${slap-connection:computer-id}
-partition = ${slap-connection:partition-id}
-url = ${slap-connection:server-url}
-key = ${slap-connection:key-file}
-cert = ${slap-connection:cert-file}
-
-# ─────────────────────────────────────────────────
-# Instance parameters with defaults
-# ─────────────────────────────────────────────────
-{# Extract parameters with safe defaults #}
-{% set slapparameter_dict = slapparameter_dict or {} -%}
-{% set mcp_port = slapparameter_dict.get('mcp-port', 8765) -%}
-{% set mcp_internal_port = slapparameter_dict.get('mcp-internal-port', 18765) -%}
-{% set erp5_url = slapparameter_dict.get('erp5-url', 'https://erp5.example.com') -%}
+{# Schema defaults are applied by slapconfiguration.jsonschema #}
+{% set mcp_port = slapparameter_dict['mcp-port'] -%}
+{% set mcp_internal_port = slapparameter_dict['mcp-internal-port'] -%}
+{% set erp5_url = slapparameter_dict['erp5-url'] -%}
 {% set erp5_ac_cookie = slapparameter_dict.get('erp5-ac-cookie', '') -%}
-{% set mcp_transport = slapparameter_dict.get('mcp-transport', 'streamable-http') -%}
+{% set mcp_transport = slapparameter_dict['mcp-transport'] -%}
 {% set mcp_server_url = slapparameter_dict.get('mcp-server-url', '') -%}
-{% set mcp_log_level = slapparameter_dict.get('mcp-log-level', 'INFO') -%}
-{% set logrotate_num = slapparameter_dict.get('logrotate-num', 30) -%}
+{% set mcp_log_level = slapparameter_dict['mcp-log-level'] -%}
+{% set logrotate_num = slapparameter_dict['logrotate-num'] -%}
 
 {% set ipv6 = slap_configuration.get('ipv6-random', '::1') -%}
 {% set ipv4 = slap_configuration.get('ipv4-random', '127.0.0.1') -%}
