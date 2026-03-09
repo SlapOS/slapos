@@ -711,15 +711,33 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
   def instanceNodePostProcessing(self):
     """
     Post processing for the instance node.
+    Triggers bang when instances have changed so the master partition
+    re-reads valided-instance-db-path via slapconfiguration.instancenode.deferred.
     """
-    # Check if there is a valid instance in the database with a timestamp superior to self.timestamp
-    # Valid instances are those with valid_parameter=TRUE
-    timestamp_int = int(self.timestamp)
-    valid_instance = self.requestinstance_db.db.fetchOne(
-      "SELECT * FROM instance WHERE valid_parameter=? AND CAST(timestamp AS INTEGER) > ?",
-      (True, timestamp_int)
-    )
-    if valid_instance:
+    needs_bang = False
+    # Use the comparison result to detect added, modified, or removed
+    # instances. This avoids a same-second race between the slapgrid
+    # timestamp and the DB write timestamp, and also catches removed
+    # instances (which are deleted from the DB and invisible to a
+    # timestamp query).
+    comparison = getattr(self, '_comparison', None)
+    if comparison and (
+        comparison.get('added') or
+        comparison.get('modified') or
+        comparison.get('removed')
+    ):
+      needs_bang = True
+    if not needs_bang:
+      # Unchanged invalid instances that changed validity after
+      # reprocessing are only detectable via a timestamp comparison.
+      timestamp_int = int(self.timestamp)
+      changed_instance = self.requestinstance_db.db.fetchOne(
+        "SELECT * FROM instance WHERE CAST(timestamp AS INTEGER) > ?",
+        (timestamp_int,)
+      )
+      if changed_instance:
+        needs_bang = True
+    if needs_bang:
       computer_partition = self._getComputerPartition()
       computer_partition.bang(message='CDN instances have been deployed and instance need reprocessing')
 

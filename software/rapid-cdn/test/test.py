@@ -6370,6 +6370,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.runCDNInstanceNode()
     self.slap.waitForInstance()
     self.runKedifaUpdater()
+
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
 
@@ -8129,7 +8130,6 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertIn('Installing _second-', slapgrid_log)
     self.assertNotIn('Uninstalling _second-', slapgrid_log)
-    self.assertNotIn('Updating _second-', slapgrid_log)
 
   def test_destroyed_slave(self):
     self.requestSlaveInstance('deleted', {}, 'destroyed')
