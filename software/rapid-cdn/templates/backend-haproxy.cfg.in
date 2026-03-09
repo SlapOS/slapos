@@ -116,7 +116,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ kind }}
 {%-       if len(netloc_list) > 0 %}
 {%-         set counter = {'count': 1} %}
 {%-         for netloc in netloc_list %}
-  server {{ slave_instance['slave_reference'] }}-backend-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}} alpn h2,http/1.1,http/1.0
 {%-           do counter.__setitem__('count', counter['count'] + 1) %}
 {%-         endfor %}
 {%-       else %}
@@ -128,7 +128,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ kind }}
 {%-           set port = '443' %}
 {%-         endif %}
 {%-         set origin = '%s:%s' % (hostname, port) %}
-  server {{ slave_instance['slave_reference'] }}-backend {{ origin }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}}
+  server {{ slave_instance['slave_reference'] }}-backend {{ origin }} {{ ' '.join(ssl_list) }} {{ ' ' + ' '.join(active_check_list)}} alpn h2,http/1.1,http/1.0
 {%-       endif %}
 {%-       for active_check_option in active_check_option_list %}
   {{ active_check_option }}
@@ -179,7 +179,7 @@ backend {{ slave_instance['slave_reference'] }}-failover-{{ kind }}
 {%-       if len(health_check_netloc_list) > 0 %}
 {%-         set counter = {'count': 1} %}
 {%-         for netloc in health_check_netloc_list %}
-  server {{ slave_instance['slave_reference'] }}-backend-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }}
+  server {{ slave_instance['slave_reference'] }}-backend-{{ counter['count'] }} {{ netloc }} {{ ' '.join(ssl_list) }} alpn h2,http/1.1,http/1.0
 {%-           do counter.__setitem__('count', counter['count'] + 1) %}
 {%-         endfor %}
 {%-       else %}
@@ -191,7 +191,7 @@ backend {{ slave_instance['slave_reference'] }}-failover-{{ kind }}
 {%-           set port = '443' %}
 {%-         endif %}
 {%-         set origin = '%s:%s' % (hostname, port) %}
-  server {{ slave_instance['slave_reference'] }}-backend {{ origin }} {{ ' '.join(ssl_list) }}
+  server {{ slave_instance['slave_reference'] }}-backend {{ origin }} {{ ' '.join(ssl_list) }} alpn h2,http/1.1,http/1.0
 {%-       endif %}
   timeout connect {{ slave_instance['backend-connect-timeout'] }}s
   timeout server {{ slave_instance['request-timeout'] }}s
