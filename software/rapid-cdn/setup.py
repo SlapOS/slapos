@@ -10,6 +10,8 @@ setup(
     'orderedmultidict',
     'caucase',
     'python2-secrets',
+    'websockets',  # for server
+    'websocket-client',  # for the client
   ],
   entry_points={
     'zc.buildout': [
