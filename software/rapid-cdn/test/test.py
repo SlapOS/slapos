@@ -990,7 +990,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       elif cached:
         # ATS adds to existing header, so ","
         self.assertEqual(
-          expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
+          expected_via + 'HTTP/2.0 rapid-cdn-backend-%(via_id)s, '
           'https/1.0 rapid-cdn-cache-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
@@ -998,7 +998,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         )
       else:
         self.assertEqual(
-          expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s '
+          expected_via + 'HTTP/2.0 rapid-cdn-backend-%(via_id)s '
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
           via_header
@@ -2480,7 +2480,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s, '
           'https/1.1 rapid-cdn-cache-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
+          'HTTP/2.0 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
         header_dict['via']
       )
@@ -2490,7 +2490,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
           'http/1.1 clientvia',
           'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
             via_id=via_id, client_version=client_version),
-          'HTTP/1.1 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
+          'HTTP/2.0 rapid-cdn-backend-%(via_id)s' % dict(via_id=via_id)
         ],
         header_dict['via']
       )
