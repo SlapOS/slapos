@@ -50,7 +50,7 @@ frontend statistic
   stats scope https
 
 frontend https
-  bind {{ configuration['local-ipv4'] }}:{{ configuration['port'] }} ssl crt {{ configuration['backend-haproxy-internal-certificate'] }}
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['port'] }} ssl crt {{ configuration['backend-haproxy-internal-certificate'] }} alpn h2,http/1.1,http/1.0
   http-request add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
   http-after-response add-header Via "%HV rapid-cdn-backend-{{ configuration['node-id'] }}-{{ configuration['version-hash']}}"
   # setup Date
