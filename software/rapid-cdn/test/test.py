@@ -811,6 +811,24 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       time.sleep(2)
 
   @classmethod
+  def runCDNInstanceNode(cls):
+    instancenode_cfg = None
+    for instancenode_cfg in sorted(glob.glob(
+        os.path.join(
+          cls.instance_path, '*', 'etc', 'instancenode.cfg'))):
+      break
+    if instancenode_cfg is not None:
+      cdninstancenode_bin = os.path.join(
+        cls.software_path, 'bin', 'cdninstancenode-script')
+      for i in range(10):
+        return_code, output = subprocess_status_output(
+          [cdninstancenode_bin, '--cfg', instancenode_cfg])
+        if return_code == 0:
+          break
+        time.sleep(2)
+      assert return_code == 0, output
+
+  @classmethod
   def createWildcardExampleComCertificate(cls):
     _, cls.key_pem, _, cls.certificate_pem = createSelfSignedCertificate(
       [
@@ -1342,6 +1360,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def setUpClass(cls):
     super(SlaveHttpFrontendTestCase, cls).setUpClass()
+    cls.runCDNInstanceNode()
+    cls.slap.waitForInstance(cls.instance_max_retry)
 
     for backend_url in [cls.backend_url, cls.backend_https_url]:
       config_result = mimikra.config(
@@ -6347,6 +6367,8 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     self.slap.waitForInstance()
+    self.runCDNInstanceNode()
+    self.slap.waitForInstance()
     self.runKedifaUpdater()
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
@@ -8090,6 +8112,8 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_added_slave(self):
     # request additional slave
     self.requestSlaveInstance('second', {})
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.runCDNInstanceNode()
     slapgrid_log_file = self.clean_frontend_log_file()
     self.slap.waitForInstance(self.instance_max_retry)
 
@@ -8107,6 +8131,8 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_destroyed_slave(self):
     self.requestSlaveInstance('deleted', {}, 'destroyed')
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.runCDNInstanceNode()
     slapgrid_log_file = self.clean_frontend_log_file()
     self.slap.waitForInstance(self.instance_max_retry)
 
