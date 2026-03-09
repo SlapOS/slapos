@@ -11595,6 +11595,97 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
       time.sleep(2)
 
 
+class TestWebsocket(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'monitor-interface-url': cls.MONITOR_INTERFACE_URL,
+        'enable-http3': True,
+        'enable-http2-by-default': True,
+        'http3-port': HTTPS_PORT,
+      })
+    }
+
+  ignore_status_code_slave_list = [
+    'websockethttp1.example.com',
+    'websockethttp2.example.com',
+    'websockethttp1cache.example.com',
+    'websockethttp2cache.example.com',
+  ]
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'url': {  # so that setup will work
+        'url': cls.backend_url,
+      },
+      'websockethttp1': {
+        'https-only': False,
+        'url': cls.websocket_url,
+        'enable-http2': False,
+        'enable-http3': False,
+      },
+      'websockethttp2': {
+        'https-only': False,
+        'url': cls.websocket_url,
+        'enable-http2': True,
+        'enable-http3': False,
+      },
+      'websockethttp1cache': {
+        'https-only': False,
+        'url': cls.websocket_url,
+        'enable_cache': True,
+        'enable-http2': False,
+        'enable-http3': False,
+      },
+      'websockethttp2cache': {
+        'https-only': False,
+        'url': cls.websocket_url,
+        'enable_cache': True,
+        'enable-http2': True,
+        'enable-http3': False,
+      },
+    }
+
+  def _test_websocket(self, parameter_dict):
+    ws = websocket.create_connection(
+      'ws://%s:%s/' % (TEST_IP, HTTP_PORT), host=parameter_dict['domain']
+    )
+    try:
+      ws.send('Websocket')
+      self.assertEqual('tekcosbeW', ws.recv())
+    finally:
+      ws.close()
+
+    wss = websocket.create_connection(
+      'wss://%s:%s/' % (TEST_IP, HTTPS_PORT), host=parameter_dict['domain'],
+      sslopt={"cert_reqs": ssl.CERT_NONE}
+    )
+    try:
+      wss.send('Websocket')
+      self.assertEqual('tekcosbeW', wss.recv())
+    finally:
+      wss.close()
+
+  def test_websocket_http1(self):
+    self._test_websocket(self.assertSlaveBase('websockethttp1'))
+
+  def test_websocket_http2(self):
+    self._test_websocket(self.assertSlaveBase('websockethttp2'))
+
+  def test_websocket_http1_cache(self):
+    self._test_websocket(self.assertSlaveBase('websockethttp1cache'))
+
+  def test_websocket_http2_cache(self):
+    self._test_websocket(self.assertSlaveBase('websockethttp2cache'))
+
+
 if __name__ == '__main__':
   class HTTP6Server(backend.ThreadedHTTPServer):
     address_family = socket.AF_INET6
