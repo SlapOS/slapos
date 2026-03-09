@@ -6556,6 +6556,8 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.updateDefaultInstanceParameterDict(self.instance_parameter_dict)
     self.requestDefaultInstance()
     self.slap.waitForInstance()
+    self.runCDNInstanceNode()
+    self.slap.waitForInstance()
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
