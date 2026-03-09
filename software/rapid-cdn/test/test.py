@@ -53,6 +53,9 @@ import caucase.client
 import caucase.utils
 from bs4 import BeautifulSoup
 import furl
+import asyncio
+import websocket
+import websockets
 
 import datetime
 
@@ -91,6 +94,21 @@ TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 
 def unicode_escape(s):
   return s.encode('unicode_escape').decode()
+
+
+async def _reverse(websocket):
+  async for message in websocket:
+    await websocket.send(message[::-1])
+
+
+async def _websocket_serve(ip, port):
+  async with websockets.serve(
+    _reverse, ip, port):
+    await asyncio.Future()
+
+
+def websocket_reverse_server(ip, port):
+  asyncio.run(_websocket_serve(ip, port))
 
 
 # comes from https://stackoverflow.com/a/21788372/9256748
@@ -472,6 +490,7 @@ class TestDataMixin(object):
       '@@_server_http_port@@': str(self._server_http_port),
       '@@_server_https_auth_port@@': str(self._server_https_auth_port),
       '@@_server_https_port@@': str(self._server_https_port),
+      '@@_server_websocket_port@@': str(self._server_websocket_port),
       '@@_server_https_weak_port@@': str(self._server_https_weak_port),
       '@@_server_netloc_a_http_port@@': str(self._server_netloc_a_http_port),
       '@@_server_netloc_b_http_port@@': str(self._server_netloc_b_http_port),
@@ -684,11 +703,19 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     netloc_b_http_process.start()
     netloc_b_http.socket.close()
 
+    cls.websocket_url = 'http://%s:%s/' % (
+      cls._ipv4_address, cls._server_websocket_port)
+    server_websocket_process = multiprocessing.Process(
+      target=websocket_reverse_server,
+      args=(cls._ipv4_address, cls._server_websocket_port),
+      name='WebsocketServer', daemon=True)
+    server_websocket_process.start()
     cls.server_process_list = [
       server_process,
       server_https_process,
       netloc_a_http_process,
       netloc_b_http_process,
+      server_websocket_process
     ]
 
   @classmethod
@@ -1265,6 +1292,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       cls._server_https_auth_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_netloc_a_http_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_netloc_b_http_port = findFreeTCPPort(cls._ipv4_address)
+      cls._server_websocket_port = findFreeTCPPort(cls._ipv4_address)
       cls.startServerProcess()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
@@ -8438,6 +8466,97 @@ class TestRapidCDNMonitoringPropagation(
         'monitor-interface-url': cls.MONITOR_INTERFACE_URL,
       })
     }
+
+
+class TestWebsocket(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'monitor-interface-url': cls.MONITOR_INTERFACE_URL,
+        'enable-http3': True,
+        'enable-http2-by-default': True,
+        'http3-port': HTTPS_PORT,
+      })
+    }
+
+  ignore_status_code_slave_list = [
+    'websockethttp1.example.com',
+    'websockethttp2.example.com',
+    'websockethttp1cache.example.com',
+    'websockethttp2cache.example.com',
+  ]
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'url': {  # so that setup will work
+        'url': cls.backend_url,
+      },
+      'websockethttp1': {
+        'https-only': False,
+        'url': cls.websocket_url,
+        'enable-http2': False,
+        'enable-http3': False,
+      },
+      'websockethttp2': {
+        'https-only': False,
+        'url': cls.websocket_url,
+        'enable-http2': True,
+        'enable-http3': False,
+      },
+      'websockethttp1cache': {
+        'https-only': False,
+        'url': cls.websocket_url,
+        'enable_cache': True,
+        'enable-http2': False,
+        'enable-http3': False,
+      },
+      'websockethttp2cache': {
+        'https-only': False,
+        'url': cls.websocket_url,
+        'enable_cache': True,
+        'enable-http2': True,
+        'enable-http3': False,
+      },
+    }
+
+  def _test_websocket(self, parameter_dict):
+    ws = websocket.create_connection(
+      'ws://%s:%s/' % (TEST_IP, HTTP_PORT), host=parameter_dict['domain']
+    )
+    try:
+      ws.send('Websocket')
+      self.assertEqual('tekcosbeW', ws.recv())
+    finally:
+      ws.close()
+
+    wss = websocket.create_connection(
+      'wss://%s:%s/' % (TEST_IP, HTTPS_PORT), host=parameter_dict['domain'],
+      sslopt={"cert_reqs": ssl.CERT_NONE}
+    )
+    try:
+      wss.send('Websocket')
+      self.assertEqual('tekcosbeW', wss.recv())
+    finally:
+      wss.close()
+
+  def test_websocket_http1(self):
+    self._test_websocket(self.assertSlaveBase('websockethttp1'))
+
+  def test_websocket_http2(self):
+    self._test_websocket(self.assertSlaveBase('websockethttp2'))
+
+  def test_websocket_http1_cache(self):
+    self._test_websocket(self.assertSlaveBase('websockethttp1cache'))
+
+  def test_websocket_http2_cache(self):
+    self._test_websocket(self.assertSlaveBase('websockethttp2cache'))
 
 
 if __name__ == '__main__':
