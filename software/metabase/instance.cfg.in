@@ -125,7 +125,7 @@ recipe = slapos.cookbook:generate.password
 
 [postgresql]
 recipe = slapos.cookbook:postgres
-bin = ${postgresql10:location}/bin
+bin = ${postgresql:location}/bin
 services = $${directory:service}
 dbname  = metabase_db
 superuser = metabase-psql
@@ -173,11 +173,13 @@ command-line =
     sh -c "$${postgresql:bin}/pg_dump \
       -h $${postgresql:pgdata-directory} \
       -U $${postgresql:superuser} \
-      --format=custom \
+      --format=plain \
+      --no-owner \
+      --no-privileges \
       -f $${:backup-file}.tmp \
       $${postgresql:dbname} \
     && mv $${:backup-file}.tmp $${:backup-file}"
-backup-file = $${directory:srv-backup}/backup.pg_dump
+backup-file = $${directory:srv-backup}/backup.sql
 
 [postgresql-restore-backup]
 recipe = slapos.cookbook:wrapper
@@ -195,12 +197,12 @@ command-line =
         -h $${postgresql:pgdata-directory} \
         -U $${postgresql:superuser} \
         $${postgresql:dbname};
-    $${postgresql:bin}/pg_restore \
-        --exit-on-error \
+    $${postgresql:bin}/psql \
         -h $${postgresql:pgdata-directory} \
         -U $${postgresql:superuser} \
         -d $${postgresql:dbname} \
-        $${postgresql-backup:backup-file}"
+        -f $${postgresql-backup:backup-file};
+    "
 
 [cron]
 recipe = slapos.cookbook:cron

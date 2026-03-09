@@ -110,19 +110,19 @@ class TestMetabaseBackup(MetabaseTestCase, CrontabMixin):
     self._executeCrontabAtDate('postgresql-backup-crontab-entry', '2100-01-01')
     with open(
       os.path.join(
-        self.computer_partition_root_path, 'srv', 'backup', 'backup.pg_dump'),
+        self.computer_partition_root_path, 'srv', 'backup', 'backup.sql'),
       'rb') as f:
-      self.assertIn(b'CREATE DATABASE metabase_db', f.read())
+      self.assertIn(b'CREATE TABLE', f.read())
 
   def test_restore(self):
     # restore a "known good" backup and check we can login with the
     # user from the backup.
     url = self.computer_partition.getConnectionParameterDict()['url']
-
+    #breakpoint()
     shutil.copyfile(
-      os.path.join(os.path.dirname(__file__), 'testdata', 'backup.pg_dump'),
+      os.path.join(os.path.dirname(__file__), 'testdata', 'backup.sql'),
       os.path.join(
-        self.computer_partition_root_path, 'srv', 'backup', 'backup.pg_dump')
+        self.computer_partition_root_path, 'srv', 'backup', 'backup.sql')
     )
 
     with self.slap.instance_supervisor_rpc as supervisor:
