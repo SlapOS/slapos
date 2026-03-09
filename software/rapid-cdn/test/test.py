@@ -63,6 +63,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
+from slapos.test.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
@@ -7433,7 +7434,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'frontend-name': 'caddy-frontend-1',
         'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
-        'monitor-cors-domains': 'monitor.app.officejs.com',
+        'monitor-interface-url': 'https://monitor.app.officejs.com/#page=ojsm_landing',
         'monitor-httpd-port': 8411,
         'monitor-username': 'admin',
         'plain_http_port': 11080,
@@ -7461,7 +7462,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'frontend-name': 'caddy-frontend-2',
         'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
-        'monitor-cors-domains': 'monitor.app.officejs.com',
+        'monitor-interface-url': 'https://monitor.app.officejs.com/#page=ojsm_landing',
         'monitor-httpd-port': 8412,
         'monitor-username': 'admin',
         'plain_http_port': 11080,
@@ -7489,7 +7490,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'frontend-name': 'caddy-frontend-3',
         'http3-port': 443,
         'kedifa-caucase-url': kedifa_caucase_url,
-        'monitor-cors-domains': 'monitor.app.officejs.com',
+        'monitor-interface-url': 'https://monitor.app.officejs.com/#page=ojsm_landing',
         'monitor-httpd-port': 8413,
         'monitor-username': 'admin',
         'plain_http_port': 11080,
@@ -7503,7 +7504,7 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
         'caucase_port': 15090,
         'cluster-identification': 'testing partition 0',
         'kedifa_port': 15080,
-        'monitor-cors-domains': 'monitor.app.officejs.com',
+        'monitor-interface-url': 'https://monitor.app.officejs.com/#page=ojsm_landing',
         'monitor-httpd-port': 8402,
         'monitor-username': 'admin',
         'slave-list': []
@@ -8220,6 +8221,23 @@ class TestCDNHTTP(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         format_list.append(' '.join(format_entry))
       return '\n'.join(format_list)
     self.assertTestData(formatresult(result_list))
+
+
+class TestRapidCDNMonitoringPropagation(
+    MonitoringPropagationTestMixin, HttpFrontendTestCase):
+  """Verify monitor-interface-url propagation for the rapid-cdn master."""
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'monitor-interface-url': cls.MONITOR_INTERFACE_URL,
+      })
+    }
 
 
 if __name__ == '__main__':
