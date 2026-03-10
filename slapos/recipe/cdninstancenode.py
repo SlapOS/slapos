@@ -330,10 +330,10 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
 
     if existing['valid_parameter'] == 'stopped':
       # Already in retention — check expiry
-      self._already_retained_references.add(instance_reference)
       disappeared_at = int(existing['timestamp'])
       if time.time() - disappeared_at >= self.instance_retention_delay:
         return True  # Retention expired → destroy
+      self._already_retained_references.add(instance_reference)
       return False  # Still within retention → keep
 
     # First disappearance — enter retention
@@ -689,17 +689,19 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
     # Check if instance is returning from retention with preserved domain
     if (validation_entry and validation_entry['domain'] == custom_domain
         and not validation_entry['validated']):
-      # Check if domain was claimed by another instance during retention
-      other = self.domain_validation_db.getValidatedDomainForOtherInstance(
-        custom_domain, instance_reference)
-      if not other:
-        # No one else claimed it — restore validation without DNS re-challenge
-        self.domain_validation_db.setDomainValidation(
-          instance_reference, custom_domain, validation_entry['token'], True)
-        instance_hosts = self._extractHostsFromParameters(parameters)
-        self.domain_validation_db.addUsedHosts(instance_reference, instance_hosts)
-        return True, [], {}
-      # else: someone else owns it — fall through to conflict check below
+      existing_instance = self.requestinstance_db.getInstance(instance_reference)
+      if existing_instance and existing_instance['valid_parameter'] == 'stopped':
+        # Only restore for instances returning from retention
+        other = self.domain_validation_db.getValidatedDomainForOtherInstance(
+          custom_domain, instance_reference)
+        if not other:
+          # No one else claimed it — restore validation without DNS re-challenge
+          self.domain_validation_db.setDomainValidation(
+            instance_reference, custom_domain, validation_entry['token'], True)
+          instance_hosts = self._extractHostsFromParameters(parameters)
+          self.domain_validation_db.addUsedHosts(instance_reference, instance_hosts)
+          return True, [], {}
+        # else: someone else owns it — fall through to conflict check below
 
     # Check if domain is already validated for another instance
     other_instance_entry = self.domain_validation_db.getValidatedDomainForOtherInstance(
