@@ -210,7 +210,7 @@ output = ${directory:scripts}/monitor-httpd-graceful
 context =
     key content :command
     raw dash_binary {{ dash_executable_location }}
-command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
+command = {{ bin_directory }}/slapos-kill --pidfile '${monitor-httpd-conf-parameter:pid-file}' -s USR1
 
 [logrotate-entry-monitor-httpd]
 <= logrotate-entry-base
