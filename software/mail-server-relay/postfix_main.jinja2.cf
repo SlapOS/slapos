@@ -2,7 +2,7 @@
 # http://www.postfix.org/postconf.5.html
 queue_directory = {{ queue_directory }}
 command_directory = {{ bin_directory }}
-daemon_directory = {{ usr_directory }}/libexec/postfix
+daemon_directory = {{ postfix_location }}/usr/libexec/postfix
 data_directory = {{ data_directory }}
 mail_spool_directory = {{ spool_directory }}
 html_directory = no
