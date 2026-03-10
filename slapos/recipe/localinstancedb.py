@@ -175,7 +175,7 @@ class HostedInstanceLocalDB(object):
     json_error TEXT,
     hash VARCHAR(255),
     timestamp VARCHAR(255),
-    valid_parameter BOOLEAN,
+    valid_parameter VARCHAR(255), -- 'valid', 'invalid', or 'stopped'
     PRIMARY KEY (reference)
     );
     CREATE INDEX IF NOT EXISTS idx_reference ON instance(reference);
@@ -192,12 +192,12 @@ class HostedInstanceLocalDB(object):
     if valid_only and not invalid_only:
       return self.db.fetchAll(
         "select %s from instance where valid_parameter = ?" % select_tuple_string,
-        (True,)
+        ('valid',)
       )
     elif invalid_only and not valid_only:
       return self.db.fetchAll(
-        "select %s from instance where valid_parameter = ?" % select_tuple_string,
-        (False,)
+        "select %s from instance where valid_parameter != ?" % select_tuple_string,
+        ('valid',)
       )
     else:
       return self.db.fetchAll(
@@ -222,6 +222,20 @@ class HostedInstanceLocalDB(object):
       reference_list,
       connection=connection,
       commit=commit
+    )
+
+  def setInstanceState(self, reference, state):
+    """
+    Update valid_parameter and timestamp for a given instance.
+
+    Args:
+      reference: Instance reference
+      state: New state string ('valid', 'invalid', or 'stopped')
+    """
+    timestamp = str(int(time.time()))
+    self.db.execute(
+      "UPDATE instance SET valid_parameter = ?, timestamp = ? WHERE reference = ?",
+      (state, timestamp, reference)
     )
 
   def updateInstanceList(self, update_query, instance_list_tuple, connection=None, commit=True):
@@ -348,7 +362,7 @@ class SharedInstanceResultDB(HostedInstanceLocalDB):
     # Create a mapping of reference to (parameters, valid_parameter, error_info)
     instance_map = {}
     for item in valid_list:
-      instance_map[item["reference"]] = (item["parameters"], True, {})  # Empty error_info for valid
+      instance_map[item["reference"]] = (item["parameters"], 'valid', {})  # Empty error_info for valid
     for item in invalid_list:
       errors = item.get("errors", [])
       error_info = {}
@@ -357,7 +371,7 @@ class SharedInstanceResultDB(HostedInstanceLocalDB):
           "message": "; ".join(errors),
           "errors": errors
         }
-      instance_map[item["reference"]] = (item["parameters"], False, error_info)
+      instance_map[item["reference"]] = (item["parameters"], 'invalid', error_info)
 
     # Perform all operations in a single transaction using existing methods
     connection = self.db._connectDB()
@@ -378,7 +392,7 @@ class SharedInstanceResultDB(HostedInstanceLocalDB):
           instance_hash = computed_hashes[instance_reference]
           # For valid instances, json_error should always be empty
           # For invalid instances, use the error information (validation errors)
-          if valid:
+          if valid == 'valid':
             error_json = "{}"
           else:
             error_json = json.dumps(error_info, sort_keys=True) if error_info else "{}"
@@ -397,7 +411,7 @@ class SharedInstanceResultDB(HostedInstanceLocalDB):
           instance_hash = computed_hashes[instance_reference]
           # For valid instances, json_error should always be empty
           # For invalid instances, use the error information (validation errors)
-          if valid:
+          if valid == 'valid':
             error_json = "{}"
           else:
             error_json = json.dumps(error_info, sort_keys=True) if error_info else "{}"

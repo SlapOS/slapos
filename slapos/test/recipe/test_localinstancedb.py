@@ -101,8 +101,8 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
 
   def test_getInstanceList(self):
     instance_rows = [
-      ("ref1", "{}", "{}", "hash1", "1762531540", True),
-      ("ref2", "{}", "{}", "hash2", "1762531560", False)
+      ("ref1", "{}", "{}", "hash1", "1762531540", "valid"),
+      ("ref2", "{}", "{}", "hash2", "1762531560", "invalid")
     ]
     self.db.insertInstanceList(instance_rows)
     result = self.db.getInstanceList()
@@ -111,8 +111,8 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
 
   def test_getInstanceList_multiple_select(self):
     instance_rows = [
-      ("ref1", "{}", "{}", "hash1", "1762531540", True),
-      ("ref2", "{}", "{}", "hash2", "1762531560", False)
+      ("ref1", "{}", "{}", "hash1", "1762531540", "valid"),
+      ("ref2", "{}", "{}", "hash2", "1762531560", "invalid")
     ]
     self.db.insertInstanceList(instance_rows)
     result = self.db.getInstanceList("reference, hash, timestamp")
@@ -126,7 +126,7 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
       self.assertEqual(values, {r[index] for r in instance_rows})
 
   def test_getInstance(self):
-    row = ("unique_ref", "params", "conn_params", "some_hash", "1762531560", True)
+    row = ("unique_ref", "params", "conn_params", "some_hash", "1762531560", "valid")
     self.db.insertInstanceList([row])
     out = self.db.getInstance("unique_ref")
     self.assertIsNotNone(out)
@@ -139,9 +139,9 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
 
   def test_removeInstanceList(self):
     instance_rows = [
-      ("ref1", "{}", "{}", "hash1", "1762531540", True),
-      ("ref2", "{}", "{}", "hash2", "1762531560", False),
-      ("ref3", "{}", "{}", "hash2", "1762531560", False)
+      ("ref1", "{}", "{}", "hash1", "1762531540", "valid"),
+      ("ref2", "{}", "{}", "hash2", "1762531560", "invalid"),
+      ("ref3", "{}", "{}", "hash2", "1762531560", "invalid")
     ]
     self.db.insertInstanceList(instance_rows)
     self.db.removeInstanceList(["ref1", "ref3"])
@@ -151,15 +151,15 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
 
   def test_updateInstanceList(self):
     instance_rows = [
-      ("ref1", "{}", "{}", "hash1", "1762531540", True),
-      ("ref2", "{}", "{}", "hash2", "1762531560", False),
-      ("ref3", "{}", "{}", "hash3", "1762531560", False)
+      ("ref1", "{}", "{}", "hash1", "1762531540", "valid"),
+      ("ref2", "{}", "{}", "hash2", "1762531560", "invalid"),
+      ("ref3", "{}", "{}", "hash3", "1762531560", "invalid")
     ]
     self.db.insertInstanceList(instance_rows)
     instance_rows = [
-      ("ref1", '{ "updated": 1 }', "{}", "hash1", "1762531541", True),
-      ("ref2", "{}", "{}", "hash2", "1762531560", False),
-      ("ref3", '{ "updated": 1 }', "{}", "hash3", "1762531561", False)
+      ("ref1", '{ "updated": 1 }', "{}", "hash1", "1762531541", "valid"),
+      ("ref2", "{}", "{}", "hash2", "1762531560", "invalid"),
+      ("ref3", '{ "updated": 1 }', "{}", "hash3", "1762531561", "invalid")
     ]
     update_query = "UPDATE instance SET json_parameters = ?, timestamp = ? WHERE reference = ?"
     update_list = [(instance_rows[0][1], instance_rows[0][4], "ref1"),
@@ -178,9 +178,9 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
   def test_getInstanceList_valid_only(self):
     """Test getInstanceList with valid_only parameter."""
     instance_rows = [
-      ("ref1", "{}", "{}", "hash1", "1762531540", True),
-      ("ref2", "{}", "{}", "hash2", "1762531560", False),
-      ("ref3", "{}", "{}", "hash3", "1762531570", True)
+      ("ref1", "{}", "{}", "hash1", "1762531540", "valid"),
+      ("ref2", "{}", "{}", "hash2", "1762531560", "invalid"),
+      ("ref3", "{}", "{}", "hash3", "1762531570", "valid")
     ]
     self.db.insertInstanceList(instance_rows)
     result = self.db.getInstanceList(valid_only=True)
@@ -190,9 +190,9 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
   def test_getInstanceList_invalid_only(self):
     """Test getInstanceList with invalid_only parameter."""
     instance_rows = [
-      ("ref1", "{}", "{}", "hash1", "1762531540", True),
-      ("ref2", "{}", "{}", "hash2", "1762531560", False),
-      ("ref3", "{}", "{}", "hash3", "1762531570", True)
+      ("ref1", "{}", "{}", "hash1", "1762531540", "valid"),
+      ("ref2", "{}", "{}", "hash2", "1762531560", "invalid"),
+      ("ref3", "{}", "{}", "hash3", "1762531570", "valid")
     ]
     self.db.insertInstanceList(instance_rows)
     result = self.db.getInstanceList(invalid_only=True)
@@ -202,8 +202,8 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
   def test_getInstanceList_both_filters_none(self):
     """Test getInstanceList with both valid_only and invalid_only set to None uses default behavior."""
     instance_rows = [
-      ("ref1", "{}", "{}", "hash1", "1762531540", True),
-      ("ref2", "{}", "{}", "hash2", "1762531560", False)
+      ("ref1", "{}", "{}", "hash1", "1762531540", "valid"),
+      ("ref2", "{}", "{}", "hash2", "1762531560", "invalid")
     ]
     self.db.insertInstanceList(instance_rows)
     result = self.db.getInstanceList(valid_only=None, invalid_only=None)
@@ -213,8 +213,8 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
   def test_getInstanceList_both_filters_true(self):
     """Test getInstanceList with both valid_only and invalid_only set to True uses default behavior."""
     instance_rows = [
-      ("ref1", "{}", "{}", "hash1", "1762531540", True),
-      ("ref2", "{}", "{}", "hash2", "1762531560", False)
+      ("ref1", "{}", "{}", "hash1", "1762531540", "valid"),
+      ("ref2", "{}", "{}", "hash2", "1762531560", "invalid")
     ]
     self.db.insertInstanceList(instance_rows)
     # When both are True, the elif condition fails, so it uses default behavior
@@ -225,9 +225,9 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
   def test_getInstanceList_valid_only_with_custom_select(self):
     """Test getInstanceList with valid_only and custom select columns."""
     instance_rows = [
-      ("ref1", '{"name": "test1"}', "{}", "hash1", "1762531540", True),
-      ("ref2", '{"name": "test2"}', "{}", "hash2", "1762531560", False),
-      ("ref3", '{"name": "test3"}', "{}", "hash3", "1762531570", True)
+      ("ref1", '{"name": "test1"}', "{}", "hash1", "1762531540", "valid"),
+      ("ref2", '{"name": "test2"}', "{}", "hash2", "1762531560", "invalid"),
+      ("ref3", '{"name": "test3"}', "{}", "hash3", "1762531570", "valid")
     ]
     self.db.insertInstanceList(instance_rows)
     result = self.db.getInstanceList("reference, json_parameters", valid_only=True)
@@ -245,7 +245,7 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
   def test_removeInstanceList_empty_list(self):
     """Test removeInstanceList with empty list does nothing."""
     instance_rows = [
-      ("ref1", "{}", "{}", "hash1", "1762531540", True)
+      ("ref1", "{}", "{}", "hash1", "1762531540", "valid")
     ]
     self.db.insertInstanceList(instance_rows)
     # Should not raise error
@@ -256,7 +256,7 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
   def test_updateInstanceList_empty_list(self):
     """Test updateInstanceList with empty list does nothing."""
     instance_rows = [
-      ("ref1", "{}", "{}", "hash1", "1762531540", True)
+      ("ref1", "{}", "{}", "hash1", "1762531540", "valid")
     ]
     self.db.insertInstanceList(instance_rows)
     # Should not raise error
@@ -264,6 +264,32 @@ class TestHostedInstanceLocalDB(unittest.TestCase):
     self.db.updateInstanceList(update_query, [])
     result = self.db.getInstance("ref1")
     self.assertEqual(result["json_parameters"], "{}")
+
+  def test_setInstanceState(self):
+    """Test setInstanceState updates valid_parameter and timestamp."""
+    instance_rows = [
+      ("ref1", "{}", "{}", "hash1", "1000000000", "valid")
+    ]
+    self.db.insertInstanceList(instance_rows)
+
+    self.db.setInstanceState("ref1", "stopped")
+    result = self.db.getInstance("ref1")
+    self.assertEqual(result["valid_parameter"], "stopped")
+    # Timestamp should be updated (greater than original)
+    self.assertGreater(int(result["timestamp"]), 1000000000)
+
+  def test_getInstanceList_invalid_only_includes_stopped(self):
+    """Test that invalid_only=True returns both 'invalid' and 'stopped' instances."""
+    instance_rows = [
+      ("ref1", "{}", "{}", "hash1", "1762531540", "valid"),
+      ("ref2", "{}", "{}", "hash2", "1762531560", "invalid"),
+      ("ref3", "{}", "{}", "hash3", "1762531570", "stopped")
+    ]
+    self.db.insertInstanceList(instance_rows)
+    result = self.db.getInstanceList(invalid_only=True)
+    references = {r["reference"] for r in result}
+    self.assertEqual(references, {"ref2", "ref3"})
+
 
 class TestInstanceListComparator(unittest.TestCase):
   """Unit tests for InstanceListComparator class"""
@@ -505,7 +531,7 @@ class TestSharedInstanceResultDB(unittest.TestCase):
       json.dumps(initial_error, sort_keys=True),
       "initial_hash",
       str(int(time.time())),
-      False  # Invalid
+      'invalid'
     )
     self.db.insertInstanceList([instance_row])
 
@@ -542,8 +568,8 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     hash2 = hashlib.sha256(json.dumps(params2, sort_keys=True).encode('utf-8')).hexdigest()
 
     instance_rows = [
-      ("ref1", json.dumps(params1), "{}", hash1, str(int(time.time())), True),
-      ("ref2", json.dumps(params2), "{}", hash2, str(int(time.time())), False)
+      ("ref1", json.dumps(params1), "{}", hash1, str(int(time.time())), "valid"),
+      ("ref2", json.dumps(params2), "{}", hash2, str(int(time.time())), "invalid")
     ]
     self.db.insertInstanceList(instance_rows)
 
@@ -573,9 +599,9 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     ref1 = self.db.getInstance("ref1")
     ref2 = self.db.getInstance("ref2")
     ref3 = self.db.getInstance("ref3")
-    self.assertTrue(ref1["valid_parameter"])
-    self.assertTrue(ref2["valid_parameter"])
-    self.assertFalse(ref3["valid_parameter"])
+    self.assertEqual(ref1["valid_parameter"], 'valid')
+    self.assertEqual(ref2["valid_parameter"], 'valid')
+    self.assertEqual(ref3["valid_parameter"], 'invalid')
 
   def test_updateFromValidationResults_remove_instances(self):
     """Test updateFromValidationResults removes instances that are no longer in the list."""
@@ -631,7 +657,7 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     self.db.updateFromValidationResults(valid_list1, [])
 
     instance = self.db.getInstance("ref1")
-    self.assertTrue(instance["valid_parameter"])
+    self.assertEqual(instance["valid_parameter"], 'valid')
 
     # Move to invalid
     invalid_list = [
@@ -640,7 +666,7 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     self.db.updateFromValidationResults([], invalid_list)
 
     instance = self.db.getInstance("ref1")
-    self.assertFalse(instance["valid_parameter"])
+    self.assertEqual(instance["valid_parameter"], 'invalid')
 
     # Move back to valid
     valid_list2 = [
@@ -649,7 +675,7 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     self.db.updateFromValidationResults(valid_list2, [])
 
     instance = self.db.getInstance("ref1")
-    self.assertTrue(instance["valid_parameter"])
+    self.assertEqual(instance["valid_parameter"], 'valid')
 
   def test_updateFromValidationResults_empty_lists(self):
     """Test updateFromValidationResults with empty lists preserves existing data.
@@ -753,8 +779,8 @@ class TestSharedInstanceResultDB(unittest.TestCase):
 
     # Verify ref4 added as valid
     ref4 = self.db.getInstance("ref4")
-    self.assertTrue(ref4["valid_parameter"])
+    self.assertEqual(ref4["valid_parameter"], 'valid')
 
     # Verify ref5 added as invalid
     ref5 = self.db.getInstance("ref5")
-    self.assertFalse(ref5["valid_parameter"])
+    self.assertEqual(ref5["valid_parameter"], 'invalid')
