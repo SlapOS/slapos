@@ -214,7 +214,7 @@ mode = 700
 input =
   inline:
   #!/bin/sh
-  kill -USR2 $(cat "${haproxy-cfg-parameter-dict:pidfile}")
+  {{ bin_directory }}/slapos-kill -s USR2 --pidfile '${haproxy-cfg-parameter-dict:pidfile}'
 
 [{{ section('haproxy') }}]
 recipe = slapos.cookbook:wrapper
@@ -322,8 +322,7 @@ monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 < = logrotate-entry-base
 name = rsyslogd
 log = ${rsyslogd-cfg-parameter-dict:access-log-file} ${rsyslogd-cfg-parameter-dict:error-log-file}
-post = test ! -s ${rsyslogd-cfg-parameter-dict:pid-file} || kill -HUP $(cat ${rsyslogd-cfg-parameter-dict:pid-file})
-
+post = test ! -s ${rsyslogd-cfg-parameter-dict:pid-file} || {{ bin_directory }}/slapos-kill -s HUP --pidfile '${rsyslogd-cfg-parameter-dict:pid-file}'
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
