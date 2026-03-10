@@ -51,19 +51,6 @@ srv = $${buildout:directory}/srv
 [userinfo]
 recipe = slapos.cookbook:userinfo
 
-[ethernet-ip]
-recipe = slapos.recipe.build
-init =
-  import netifaces
-  for i in netifaces.interfaces():
-      if not (i.startswith("slaptun") or i.startswith("re6stnet") or i == "lo"):
-          a = netifaces.ifaddresses(i)
-          if netifaces.AF_INET in a:
-              try:
-                  options['ipv4'] = a[netifaces.AF_INET][0]['addr']
-              except:
-                  options['ipv4'] = "0.0.0.0"
-
 
 # Postfix SMTP server
 # -------------------
@@ -304,11 +291,6 @@ depends =
   $${inbound-postfix-sasldb:recipe}
 {%- endif %}
 
-[inbound-postfix-service-master]
-< = base-wrapper
-command-line = $${directory:usr}/libexec/postfix/master -c $${inbound-postfix-directory:etc}
-wrapper-path = $${directory:run}/inbound-postfix-master
-
 {% if has_password_auth %}
 [inbound-postfix-submission-promise]
 <= monitor-promise-base
@@ -331,7 +313,6 @@ init =
   ""
 depends =
   $${inbound-postfix-service:recipe}
-  $${inbound-postfix-service-master:recipe}
   $${postfix-wrappers:depends}
 {%- if has_password_auth %}
   $${inbound-postfix-submission-promise:recipe}
@@ -584,11 +565,6 @@ depends =
   $${outbound-postfix-sasldb:recipe}
 {%- endif %}
 
-[outbound-postfix-service-master]
-< = base-wrapper
-command-line = $${directory:usr}/libexec/postfix/master -c $${outbound-postfix-directory:etc}
-wrapper-path = $${directory:run}/outbound-postfix-master
-
 {% if has_password_auth %}
 [outbound-postfix-submission-promise]
 <= monitor-promise-base
@@ -611,7 +587,6 @@ init =
   ""
 depends =
   $${outbound-postfix-service:recipe}
-  $${outbound-postfix-service-master:recipe}
   $${postfix-wrappers:depends}
 {%- if has_password_auth %}
   $${outbound-postfix-submission-promise:recipe}
