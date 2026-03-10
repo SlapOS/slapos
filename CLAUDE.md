@@ -6,13 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **slapos.cookbook** is a Python package providing 90+ [zc.buildout](https://www.buildout.org/) recipes for the [SlapOS](https://slapos.nexedi.com/) distributed cloud operating system. Each recipe is a buildout plugin that configures and deploys a specific software component within a SlapOS partition.
 
+## Local Environment
+
+Machine-specific paths are stored in `.claude/env.local.json` (not committed). Copy `.claude/env.local.json.example` and fill in paths for your environment. Keys:
+
+- `cookbook-repository`: path to the slapos.cookbook checkout used for running unit tests
+- `environment-script`: path to `slapos-local-development-environment.sh` for unit tests
+- `integration-test-environment-script`: path to the environment script for integration tests
+- `python-binary`: path to the Python binary with slapos.cookbook installed
+- `public-dir`: path to the frontend-static public directory for publishing eggs
+
 ## Running Tests
 
-Tests must be run from the **instance path** (not the main repo path):
+Tests must be run from the **cookbook-repository** path (see `env.local.json`):
 
 ```bash
-cd /srv/slapgrid/slappart76/srv/runner/instance/slappart8/software_release/parts/slapos.cookbook-repository/
-source /srv/slapgrid/slappart76/srv/runner/instance/slappart8/etc/slapos-local-development-environment.sh
+cd <cookbook-repository>
+source <environment-script>
 python -m unittest slapos.test.recipe.test_<module_name>
 ```
 
