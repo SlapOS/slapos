@@ -35,7 +35,8 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       'software-url': 'http://test.example.com/software',
       'software-type': 'default',
       'verification-secret': 'test-secret',
-      'openssl-binary': 'openssl'  # Will be mocked in tests that need it
+      'openssl-binary': 'openssl',  # Will be mocked in tests that need it
+      'instance-retention-delay': '0',
     }
 
   def tearDown(self):
