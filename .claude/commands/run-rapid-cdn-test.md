@@ -15,6 +15,12 @@ Run a rapid-cdn integration test in the background with proper environment setup
 
 Default behaviour (no flags): skip software rebuild, skip software check, debug off.
 
+## Environment Setup
+
+Read `.claude/env.local.json` for machine-specific paths. The relevant key is:
+
+- `slapos-sr-testing-environment`: path to the `slapos-local-development-environment.sh` for integration tests
+
 ## Pre-flight
 
 Before launching the test, verify no other test is already running:
@@ -28,11 +34,13 @@ use fixed SlapOS proxy ports and cannot run concurrently.
 
 ## Execution
 
-Run the test **in the background** using the Bash tool with `run_in_background: true`:
+Run the test **in the background** using the Bash tool with `run_in_background: true`.
+
+Build the command using the environment script from `.claude/env.local.json`:
 
 ```bash
-cd /srv/slapgrid/slappart76/srv/project/rapid-cdn/software/rapid-cdn/test/ && \
-source /srv/slapgrid/slappart76/srv/runner/instance/slappart9/etc/slapos-local-development-environment.sh && \
+cd <project-root>/software/rapid-cdn/test/ && \
+source <slapos-sr-testing-environment> && \
 SLAPOS_TEST_DEBUG=${DEBUG:-0} \
 ${SAVE_DATA:+SAVE_TEST_DATA=1} \
 ${SKIP_REBUILD:+SLAPOS_TEST_SKIP_SOFTWARE_REBUILD=1} \
