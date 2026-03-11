@@ -452,6 +452,19 @@ class JsonSchemaTest(JsonSchemaTestCase):
       recovered = self.recoverStrToInt(parameters, ('number',))
       self.assertEqual(received, recovered)
 
+  def test_jsonschema_unstringify_boolean_input(self):
+    schema_path = self.writeObjectSchema(
+      'boolean-unstringify',
+      {"enabled": {"type": "boolean"}}
+    )
+    self.writeSoftwareJson([('default', schema_path)], [])
+    parameters = {"enabled": "True"}
+    expected = {"enabled": True}
+    with self.patchSlap(parameters):
+      received = self.receiveParameters({'unstringify': 'main'})
+      self.assertEqual(received, expected)
+      self.assertIsInstance(received['enabled'], bool)
+
   def test_jsonschema_incomplete_input(self):
     self.writeJsonSchema()
     parameters = {}
