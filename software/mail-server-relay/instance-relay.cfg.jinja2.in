@@ -248,7 +248,7 @@ recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
-  rm -f var/spool/postfix/inbound/pid/*.pid
+  rm -f $${inbound-postfix-directory:spool-pid}/*.pid
   $${inbound-postfix-directory:usr}/libexec/postfix/master -c $${inbound-postfix-directory:etc}
 
 [inbound-postfix-service]
@@ -508,7 +508,7 @@ recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
-  rm -f var/spool/postfix/outbound/pid/*.pid
+  rm -f $${outbound-postfix-directory:spool-pid}/*.pid
   $${outbound-postfix-directory:usr}/libexec/postfix/master -c $${outbound-postfix-directory:etc}
 
 [outbound-postfix-service]
