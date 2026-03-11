@@ -324,8 +324,6 @@ recipe = slapos.cookbook:mkdirectory
 etc = $${directory:postfix-etc}/outbound
 var-lib = $${directory:var-lib}/postfix/outbound
 var-spool = $${directory:var-spool}/postfix/outbound
-ca-private = $${:etc}/private
-ca-certs = $${:etc}/certs
 # Not used at buildout level, presence needed by postfix.
 spool-active = $${:var-spool}/active
 spool-bounce = $${:var-spool}/bounce
