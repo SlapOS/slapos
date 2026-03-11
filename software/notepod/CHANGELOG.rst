@@ -1,6 +1,8 @@
 2026-03-16
 ''''''''''
 
+- Firefox: preconfigure with some settings from LibreWolf, uBlock Origin
+  and a few other extensions
 - all snaps are upgraded when generating installer image
 - helper tool to deploy re6st & slapos
 
