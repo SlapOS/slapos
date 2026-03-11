@@ -158,12 +158,8 @@ sender-host-domains = {{ dumps(sender_host_domains) }}
 password-auth-domains = {{ dumps(password_auth_domains) }}
 log-file = $${directory:var-log}/inbound_postfix.log
 context =
-  key bin_directory directory:bin
-  key queue_directory inbound-postfix-directory:var-spool
-  key data_directory inbound-postfix-directory:var-lib
-  key spool_directory inbound-postfix-directory:var-spool
-  key vhosts_directory directory:vhosts
-  key log_directory directory:var-log
+  section directory directory
+  section postfix_directory inbound-postfix-directory
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
   raw server_fqdn {{ server_fqdn }}
@@ -181,7 +177,6 @@ context =
   key postfix_key_file postfix-generate-certificate:key-file
   raw postfix_log_path $${:log-file}
   key sender_host_domains :sender-host-domains
-  raw postfix_etc_directory $${inbound-postfix-directory:etc}
 
 [inbound-postfix-conf-master]
 recipe = slapos.recipe.template:jinja2
@@ -361,12 +356,8 @@ sender-host-domains = {{ dumps(sender_host_domains) }}
 password-auth-domains = {{ dumps(password_auth_domains) }}
 log-file = $${directory:var-log}/outbound_postfix.log
 context =
-  key bin_directory directory:bin
-  key queue_directory outbound-postfix-directory:var-spool
-  key data_directory outbound-postfix-directory:var-lib
-  key spool_directory outbound-postfix-directory:var-spool
-  key vhosts_directory directory:vhosts
-  key log_directory directory:var-log
+  section directory directory
+  section postfix_directory outbound-postfix-directory
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
   raw server_fqdn {{ server_fqdn }}
@@ -384,7 +375,6 @@ context =
   key postfix_key_file postfix-generate-certificate:key-file
   raw postfix_log_path $${:log-file}
   key sender_host_domains :sender-host-domains
-  raw postfix_etc_directory $${outbound-postfix-directory:etc}
 
 [outbound-postfix-conf-master]
 recipe = slapos.recipe.template:jinja2
