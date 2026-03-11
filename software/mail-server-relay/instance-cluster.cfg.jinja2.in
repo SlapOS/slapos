@@ -169,7 +169,7 @@ init =
         if info.get('authentication') == 'password' and info.get('password'):
           section += f"""
   outbound-host = {self.buildout['request-all-relays']['relay-host']}
-  outbound-smtp-port = 10026
+  outbound-smtp-port = 10587
   outbound-submission-port = 10587
   outbound-user = {info['addr']}
   outbound-password = {info['password']}
@@ -177,11 +177,11 @@ init =
         else:
           section += f"""
   outbound-host = {self.buildout['request-all-relays']['relay-host']}
-  outbound-smtp-port = 10026
+  outbound-smtp-port = 10587
         """
       else:
         section += """
   outbound-host =
-  outbound-smtp-port = 10026
+  outbound-smtp-port = 10587
         """
     self.buildout.parse(section)
