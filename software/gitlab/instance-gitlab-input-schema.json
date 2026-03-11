@@ -146,6 +146,42 @@
       "type": "integer",
       "default": 16
     },
+    "gitaly_rate_limiting": {
+      "title": "Gitaly rate limiting",
+      "description": "Rate limiting some important gitaly task to a specified amount per second. Default value is 50.",
+      "type": "integer",
+      "default": 50
+    },
+    "gitaly_catfile_cache_size": {
+      "title": "Git cat-file cache size",
+      "description": "Number of 'git cat-file' processes kept around for re-use. Default value: 200.",
+      "type": "integer",
+      "default": 200
+    },
+    "gitaly_concurrency_get_blob": {
+      "title": "Gitaly simultaneous getblob per repository",
+      "description": "Gitaly simultaneous getblob per repository.",
+      "type": "integer",
+      "default": 10
+    },
+    "gitaly_concurrency_find_commit": {
+      "title": "Gitaly simultaneous FindCommit per repository",
+      "description": "Gitaly simultaneous FindCommit per repository (git cat-file, ...).",
+      "type": "integer",
+      "default": 4
+    },
+    "gitaly_concurrency_find_commit": {
+      "title": "Gitaly simultaneous Listcommits per repository",
+      "description": "Gitaly simultaneous git Listcommits per repository (git blame, git log, ...).",
+      "type": "integer",
+      "default": 2
+    },
+    "gitaly_daily_maintenance": {
+      "title": "Gitaly dailly maintenance time slots",
+      "description": "Daily maintenance designates time slots to run daily to optimize and maintain enabled storages. Default: 22h 45min duration 60min",
+      "type": "string",
+      "default": "22 45 60"
+    }
     "nginx_worker_processes": {
       "title": "Nginx worker processes",
       "description": "Nginx worker processes amount",
