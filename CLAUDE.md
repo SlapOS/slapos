@@ -43,11 +43,11 @@ python setup.py test --test-suite slapos.test.test_recipe.additional_tests
 
 ## Running rapid-cdn Integration Tests
 
-rapid-cdn has full SlapOS instance deployment tests in `software/rapid-cdn/test/test.py`. Use the **`/run-rapid-cdn-test`** command to run them:
+rapid-cdn has full SlapOS instance deployment tests in `software/rapid-cdn/test/test.py`. Use the **`/run-sr-test`** command to run them:
 
 ```
-/run-rapid-cdn-test test.TestClassName.test_method_name
-/run-rapid-cdn-test test.TestClassName --save-data --rebuild --debug
+/run-sr-test rapid-cdn test.TestClassName.test_method_name
+/run-sr-test rapid-cdn test.TestClassName --save-data --rebuild --debug
 ```
 
 Flags: `--save-data` (regenerate expected output), `--rebuild` (rebuild software), `--debug` (keep instances alive on failure).
