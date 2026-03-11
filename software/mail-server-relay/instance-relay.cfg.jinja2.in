@@ -47,9 +47,24 @@ var-lib = $${:var}/lib
 var-spool = $${:var}/spool
 vhosts = $${:home}/vhosts
 srv = $${buildout:directory}/srv
+postfix-usr = $${:usr}/postfix
+postfix-etc = $${:etc}/postfix
+postfix-ca-private = $${:postfix-etc}/private
+postfix-ca-certs = $${:postfix-etc}/certs
 
 [userinfo]
 recipe = slapos.cookbook:userinfo
+
+[postfix-generate-certificate]
+recipe  = plone.recipe.command
+stop-on-error   = true
+key-file    = $${directory:postfix-ca-private}/postfix.key
+cert-file   = $${directory:postfix-ca-certs}/postfix.crt
+command =
+    test -e $${:key-file} || \
+        ${openssl:location}/bin/openssl req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes   \
+        -keyout $${:key-file} -out $${:cert-file}
+update-command = $${:command}
 
 
 # Postfix SMTP server
@@ -57,12 +72,10 @@ recipe = slapos.cookbook:userinfo
 
 [inbound-postfix-directory]
 recipe = slapos.cookbook:mkdirectory
-usr = $${directory:usr}/postfix/inbound
-etc = $${directory:etc}/postfix/inbound
+usr = $${directory:postfix-usr}/inbound
+etc = $${directory:postfix-etc}/inbound
 var-lib = $${directory:var-lib}/postfix/inbound
 var-spool = $${directory:var-spool}/postfix/inbound
-ca-private = $${:etc}/private
-ca-certs = $${:etc}/certs
 # Not used at buildout level, presence needed by postfix.
 spool-active = $${:var-spool}/active
 spool-bounce = $${:var-spool}/bounce
@@ -140,8 +153,8 @@ context =
   raw proxy_port {{ slapparameter_dict['proxy-port'] }}
   key mail_domains :mail-domains
   key mail_hosts :mail-hosts
-  key postfix_cert_file inbound-postfix-generate-certificate:cert-file
-  key postfix_key_file inbound-postfix-generate-certificate:key-file
+  key postfix_cert_file postfix-generate-certificate:cert-file
+  key postfix_key_file postfix-generate-certificate:key-file
   raw postfix_log_path $${:log-file}
   key sender_host_domains :sender-host-domains
   raw postfix_etc_directory $${inbound-postfix-directory:etc}
@@ -157,20 +170,6 @@ context =
   raw ipv6 {{ ipv6 }}
   raw has_password_auth {{ 'true' if has_password_auth else 'false' }}
   raw postfix_etc_directory $${inbound-postfix-directory:etc}
-
-[inbound-postfix-generate-certificate]
-recipe  = plone.recipe.command
-stop-on-error   = true
-
-key-file    = $${inbound-postfix-directory:ca-private}/postfix.key
-cert-file   = $${inbound-postfix-directory:ca-certs}/postfix.crt
-
-command =
-    test -e $${:key-file} || \
-        ${openssl:location}/bin/openssl req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes   \
-        -keyout $${:key-file} -out $${:cert-file}
-
-update-command = $${:command}
 
 [inbound-postfix-sasl-passwd]
 recipe = slapos.recipe.template:jinja2
@@ -331,8 +330,8 @@ copytruncate = true
 
 [outbound-postfix-directory]
 recipe = slapos.cookbook:mkdirectory
-usr = $${directory:usr}/postfix/outbound
-etc = $${directory:etc}/postfix/outbound
+usr = $${directory:postfix-usr}/outbound
+etc = $${directory:postfix-etc}/outbound
 var-lib = $${directory:var-lib}/postfix/outbound
 var-spool = $${directory:var-spool}/postfix/outbound
 ca-private = $${:etc}/private
@@ -414,8 +413,8 @@ context =
   raw proxy_port {{ slapparameter_dict['proxy-port'] }}
   key mail_domains :mail-domains
   key mail_hosts :mail-hosts
-  key postfix_cert_file outbound-postfix-generate-certificate:cert-file
-  key postfix_key_file outbound-postfix-generate-certificate:key-file
+  key postfix_cert_file postfix-generate-certificate:cert-file
+  key postfix_key_file postfix-generate-certificate:key-file
   raw postfix_log_path $${:log-file}
   key sender_host_domains :sender-host-domains
   raw postfix_etc_directory $${outbound-postfix-directory:etc}
@@ -431,20 +430,6 @@ context =
   raw ipv6 {{ ipv6 }}
   raw has_password_auth {{ 'true' if has_password_auth else 'false' }}
   raw postfix_etc_directory $${outbound-postfix-directory:etc}
-
-[outbound-postfix-generate-certificate]
-recipe  = plone.recipe.command
-stop-on-error   = true
-
-key-file    = $${outbound-postfix-directory:ca-private}/postfix.key
-cert-file   = $${outbound-postfix-directory:ca-certs}/postfix.crt
-
-command =
-    test -e $${:key-file} || \
-        ${openssl:location}/bin/openssl req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes   \
-        -keyout $${:key-file} -out $${:cert-file}
-
-update-command = $${:command}
 
 [outbound-postfix-sasl-passwd]
 recipe = slapos.recipe.template:jinja2
