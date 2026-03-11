@@ -206,7 +206,7 @@ input = inline:[buildout]
   offline = true
   parts =
 
-output = ${directory:directory/instance-legacy.cfg
+output = ${directory:directory}/instance-legacy.cfg
 mode = 644
 
 # we need this value to be present in a section,
