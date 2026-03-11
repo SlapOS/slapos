@@ -72,7 +72,6 @@ update-command = $${:command}
 
 [inbound-postfix-directory]
 recipe = slapos.cookbook:mkdirectory
-usr = $${directory:postfix-usr}/inbound
 etc = $${directory:postfix-etc}/inbound
 var-lib = $${directory:var-lib}/postfix/inbound
 var-spool = $${directory:var-spool}/postfix/inbound
@@ -134,7 +133,6 @@ password-auth-domains = {{ dumps(password_auth_domains) }}
 log-file = $${directory:var-log}/inbound_postfix.log
 context =
   key bin_directory directory:bin
-  key usr_directory inbound-postfix-directory:usr
   key queue_directory inbound-postfix-directory:var-spool
   key data_directory inbound-postfix-directory:var-lib
   key spool_directory inbound-postfix-directory:var-spool
@@ -237,19 +235,13 @@ command =
 update-command = $${:command}
 {% endif %}
 
-[inbound-postfix-symlinks-libexec]
-recipe = slapos.cookbook:symbolic.link
-target-directory = $${inbound-postfix-directory:usr}
-link-binary =
-    ${postfix:location}/usr/libexec
-
 [inbound-postfix-wrapper]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   rm -f $${inbound-postfix-directory:spool-pid}/*.pid
-  $${inbound-postfix-directory:usr}/libexec/postfix/master -c $${inbound-postfix-directory:etc}
+  ${postfix:location}/usr/libexec/postfix/master -c $${inbound-postfix-directory:etc}
 
 [inbound-postfix-service]
 recipe = slapos.cookbook:wrapper
@@ -276,7 +268,6 @@ hash-files =
   $${inbound-postfix-sasldb:sasldb-path}
 {%- endif %}
 depends =
-  $${inbound-postfix-symlinks-libexec:recipe}
   $${inbound-logrotate-entry-postfix:recipe}
 {%- for host in sorted_sender_hosts %}
   $${inbound-postfix-sender-access-{{ loop.index }}:recipe}
@@ -330,7 +321,6 @@ copytruncate = true
 
 [outbound-postfix-directory]
 recipe = slapos.cookbook:mkdirectory
-usr = $${directory:postfix-usr}/outbound
 etc = $${directory:postfix-etc}/outbound
 var-lib = $${directory:var-lib}/postfix/outbound
 var-spool = $${directory:var-spool}/postfix/outbound
@@ -394,7 +384,6 @@ password-auth-domains = {{ dumps(password_auth_domains) }}
 log-file = $${directory:var-log}/outbound_postfix.log
 context =
   key bin_directory directory:bin
-  key usr_directory outbound-postfix-directory:usr
   key queue_directory outbound-postfix-directory:var-spool
   key data_directory outbound-postfix-directory:var-lib
   key spool_directory outbound-postfix-directory:var-spool
@@ -497,19 +486,13 @@ command =
 update-command = $${:command}
 {% endif %}
 
-[outbound-postfix-symlinks-libexec]
-recipe = slapos.cookbook:symbolic.link
-target-directory = $${outbound-postfix-directory:usr}
-link-binary =
-    ${postfix:location}/usr/libexec
-
 [outbound-postfix-wrapper]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh
   rm -f $${outbound-postfix-directory:spool-pid}/*.pid
-  $${outbound-postfix-directory:usr}/libexec/postfix/master -c $${outbound-postfix-directory:etc}
+  ${postfix:location}/usr/libexec/postfix/master -c $${outbound-postfix-directory:etc}
 
 [outbound-postfix-service]
 recipe = slapos.cookbook:wrapper
@@ -536,7 +519,6 @@ hash-files =
   $${outbound-postfix-sasldb:sasldb-path}
 {%- endif %}
 depends =
-  $${outbound-postfix-symlinks-libexec:recipe}
   $${outbound-logrotate-entry-postfix:recipe}
 {%- for host in sorted_sender_hosts %}
   $${outbound-postfix-sender-access-{{ loop.index }}:recipe}
