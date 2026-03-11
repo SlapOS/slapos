@@ -433,7 +433,7 @@ class TestDefaultInstance(CloudOooTestCase, ImageComparisonTestCase):
     """Test HTML to PDF conversion using wkhtmltopdf."""
     self.assert_pdf_conversion_metadata(
       self.html_to_pdf_libreoffice_convert,
-      expected_producer="LibreOffice 25.2.3.2 (X86_64) / LibreOffice Community",
+      expected_producer="LibreOffice 26.2.1.2 (X86_64)",
       expected_font_mapping=LIBREOFFICE_FONT_MAPPING,
     )
 
