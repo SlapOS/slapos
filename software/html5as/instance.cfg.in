@@ -10,7 +10,7 @@ offline = true
 nginx_location = {{ nginx_location }}
 dash_location = {{ dash_location }}
 template_nginx_conf = {{ template_nginx_conf_target }}
-template_mime_types = {{ template_mime_types_target }} 
+template_mime_types = {{ template_mime_types_target }}
 template_launcher = {{ template_launcher_target }}
 template_index_html = {{ template_index_html_target }}
 template_graceful  = {{ template_graceful_target }}
@@ -29,6 +29,7 @@ context =
 # slapparameter_dict: dictionary of all parameters
   key slapparameter_dict slap-configuration:configuration
   jsonkey default_parameter_dict :default-parameters
+  key bin_directory buildout:bin-directory
 default-parameters =
   {
     "title": "",
