@@ -67,8 +67,8 @@ command =
 update-command = $${:command}
 
 
-# Postfix SMTP server
-# -------------------
+# Postfix Inbound SMTP server
+# ---------------------------
 
 [inbound-postfix-directory]
 recipe = slapos.cookbook:mkdirectory
