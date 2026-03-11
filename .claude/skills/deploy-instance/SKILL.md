@@ -67,11 +67,10 @@ software_url = os.path.expanduser("~/srv/project/erp5-mcp/software/<software-nam
 
 #### For `json-in-xml` serialisation:
 ```python
-json_parameter = """{
+parameter_dict = {
   "param1": "value1",
-  "param2": 42
-}"""
-json.loads(json_parameter)  # validate
+  "param2": 42,
+}
 
 print("Supplying %s" % software_url)
 supply(software_url, "slaprunner")
@@ -81,7 +80,7 @@ print("requesting instance")
 instance = request(
   software_url,
   "<instance-name>",
-  partition_parameter_kw={"_": json_parameter}
+  partition_parameter_kw={"_": json.dumps(parameter_dict)},
 )
 print("instance requested")
 params = instance.getConnectionParameterDict()

@@ -63,11 +63,9 @@ import os
 
 software_url = os.path.expanduser("<software_release with ~ replacing home dir>")
 
-json_parameter = """\
-{
-  <pretty-printed JSON content from the _ parameter>
-}"""
-json.loads(json_parameter)  # validate
+parameter_dict = {
+  <key-value pairs from the parsed JSON>
+}
 
 print("Supplying %s" % software_url)
 supply(software_url, "slaprunner")
@@ -77,7 +75,7 @@ print("requesting instance")
 instance = request(
   software_url,
   "<partition_reference>",
-  partition_parameter_kw={"_": json_parameter},
+  partition_parameter_kw={"_": json.dumps(parameter_dict)},
 )
 print("instance requested")
 params = instance.getConnectionParameterDict()
@@ -116,7 +114,8 @@ print(json.dumps(instance.getConnectionParameterDict(), indent=2))
 - Replace the home directory prefix (e.g. `/srv/slapgrid/slappart76`) with `~` in the `software_url`, using `os.path.expanduser("~/...")`
 - If the software URL is an external URL (starts with `http`), use it as-is without `os.path.expanduser`
 - Only include `import os` if `os.path.expanduser` is actually used
-- Pretty-print the JSON parameter string with 2-space indentation
+- For json-in-xml parameters, define a Python `parameter_dict` dict literal and use `json.dumps(parameter_dict)` in the `partition_parameter_kw` — never use raw JSON strings
+- Use native Python types in `parameter_dict`: integers for numbers (not strings), nested dicts/lists as-is
 
 ## Step 5: Show summary
 
