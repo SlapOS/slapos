@@ -47,6 +47,40 @@ class ERP5MCPTestCase(SlapOSInstanceTestCase):
     * Checks deployment works and promises pass
   """
 
+  def _internal_url(self, path=''):
+    """Build an HTTP URL to the internal MCP server (bypasses HAProxy)."""
+    params = self.computer_partition.getConnectionParameterDict()
+    return 'http://[%s]:18765%s' % (params['mcp-ipv6'], path)
+
+  def _oauth_metadata(self):
+    """Fetch and return the OAuth authorization server metadata."""
+    response = requests.get(
+        self._internal_url('/.well-known/oauth-authorization-server'),
+        timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+  def _register_oauth_client(self):
+    """Register a dynamic OAuth client and return its metadata."""
+    metadata = self._oauth_metadata()
+    # The registration endpoint in metadata points to the external HAProxy URL,
+    # but the test accesses the internal HTTP server directly to avoid
+    # self-signed certificate issues with HAProxy.
+    from urllib.parse import urlparse
+    parsed = urlparse(metadata['registration_endpoint'])
+    reg_url = self._internal_url(parsed.path)
+    response = requests.post(reg_url, json={
+        'redirect_uris': ['http://localhost:9999/callback'],
+        'client_name': 'integration-test',
+        'grant_types': ['authorization_code', 'refresh_token'],
+        'response_types': ['code'],
+        'token_endpoint_auth_method': 'client_secret_post',
+    }, timeout=10)
+    if not response.ok:
+      raise AssertionError(
+        'OAuth registration failed: %s %s' % (response.status_code, response.text))
+    return response.json()
+
 
 class TestDefaultDeploy(ERP5MCPTestCase):
   """
@@ -91,11 +125,47 @@ class TestDefaultDeploy(ERP5MCPTestCase):
 
   def test_oauth_discovery_endpoint(self):
     """Verify the OAuth authorization server metadata endpoint returns valid JSON."""
-    params = self.getConnectionParameterDict()
-    ipv6 = params['mcp-ipv6']
-    # Hit the internal MCP server directly to avoid HAProxy 503 timing issues
-    url = 'http://[%s]:18765/.well-known/oauth-authorization-server' % ipv6
-    response = requests.get(url, timeout=10)
-    self.assertEqual(response.status_code, 200)
-    data = response.json()
+    data = self._oauth_metadata()
     self.assertIn('issuer', data)
+    self.assertIn('authorization_endpoint', data)
+    self.assertIn('token_endpoint', data)
+    self.assertIn('registration_endpoint', data)
+
+  def test_oauth_client_registration(self):
+    """Verify dynamic OAuth client registration succeeds."""
+    client_info = self._register_oauth_client()
+    self.assertIn('client_id', client_info)
+    self.assertIn('client_secret', client_info)
+
+  def test_mcp_post_unauthenticated_returns_401(self):
+    """MCP tool calls without a Bearer token must return 401."""
+    response = requests.post(
+        self._internal_url('/mcp'),
+        json={
+            'jsonrpc': '2.0',
+            'method': 'initialize',
+            'params': {
+                'protocolVersion': '2025-03-26',
+                'capabilities': {},
+                'clientInfo': {'name': 'test', 'version': '0.1'},
+            },
+            'id': 1,
+        },
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json, text/event-stream'},
+        timeout=10,
+    )
+    self.assertEqual(response.status_code, 401)
+
+  def test_mcp_startup_script_sets_tmpdir(self):
+    """Verify the startup script sets TMPDIR to the partition tmp directory.
+
+    This ensures erp5_download writes temporary files inside the partition
+    (via tempfile.gettempdir()), not to the system-wide /tmp/.
+    """
+    # Read the generated startup script from the partition
+    partition_path = self.computer_partition_root_path
+    startup_script = os.path.join(partition_path, 'etc', 'erp5-mcp-start.sh')
+    with open(startup_script) as f:
+      content = f.read()
+    self.assertIn('export TMPDIR=', content)
+    self.assertNotIn("TMPDIR=/tmp", content)
