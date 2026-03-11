@@ -67,14 +67,11 @@ command =
 update-command = $${:command}
 
 
-# Postfix Inbound SMTP server
-# ---------------------------
+# Postfix macros
+# --------------
 
-[inbound-postfix-directory]
+[macro.postfix-spool-directory]
 recipe = slapos.cookbook:mkdirectory
-etc = $${directory:postfix-etc}/inbound
-var-lib = $${directory:var-lib}/postfix/inbound
-var-spool = $${directory:var-spool}/postfix/inbound
 # Not used at buildout level, presence needed by postfix.
 spool-active = $${:var-spool}/active
 spool-bounce = $${:var-spool}/bounce
@@ -90,6 +87,31 @@ spool-private = $${:var-spool}/private
 spool-public = $${:var-spool}/public
 spool-saved = $${:var-spool}/saved
 spool-trace = $${:var-spool}/trace
+
+[macro.postfix-directory]
+recipe = slapos.recipe.build
+role = $${missing_option_role:error}
+impl-section = $${:_buildout_section_name_}-impl
+init =
+  section = """
+  [%(impl-section)s]
+  <= macro.postfix-spool-directory
+  etc = $${directory:postfix-etc}/%(role)s
+  var-lib = $${directory:var-lib}/postfix/%(role)s
+  var-spool = $${directory:var-lib}/postfix/%(role)s
+  """ % options
+  self.buildout.parse(section)
+  part = self.buildout[options['impl-section']]
+  for opt in part:
+    options.setdefault(opt, part[opt])
+
+
+# Postfix Inbound SMTP server
+# ---------------------------
+
+[inbound-postfix-directory]
+<= macro.postfix-directory
+role = inbound
 
 {% set source_host_list = [] %}
 {% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
@@ -320,25 +342,8 @@ copytruncate = true
 # ----------------------------
 
 [outbound-postfix-directory]
-recipe = slapos.cookbook:mkdirectory
-etc = $${directory:postfix-etc}/outbound
-var-lib = $${directory:var-lib}/postfix/outbound
-var-spool = $${directory:var-spool}/postfix/outbound
-# Not used at buildout level, presence needed by postfix.
-spool-active = $${:var-spool}/active
-spool-bounce = $${:var-spool}/bounce
-spool-corrupt = $${:var-spool}/corrupt
-spool-defer = $${:var-spool}/defer
-spool-deferred = $${:var-spool}/deferred
-spool-flush = $${:var-spool}/flush
-spool-hold = $${:var-spool}/hold
-spool-incoming = $${:var-spool}/incoming
-spool-maildrop = $${:var-spool}/maildrop
-spool-pid = $${:var-spool}/pid
-spool-private = $${:var-spool}/private
-spool-public = $${:var-spool}/public
-spool-saved = $${:var-spool}/saved
-spool-trace = $${:var-spool}/trace
+<= macro.postfix-directory
+role = outbound
 
 {% set source_host_list = [] %}
 {% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
