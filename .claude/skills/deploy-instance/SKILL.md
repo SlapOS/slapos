@@ -33,7 +33,7 @@ If any required parameters are missing from the user's `param=value` args, ask b
 
 Run:
 ```bash
-~/bin/theia-shell -c "export PATH=/opt/slapgrid/cfaa2217e0f9ea9ef9e05b634f6dbecb/bin:\$PATH && export SLAPOS_CONFIGURATION=/srv/slapgrid/slappart76/srv/runner/etc/slapos.cfg && export SLAPOS_CLIENT_CONFIGURATION=\$SLAPOS_CONFIGURATION && slapos proxy show" 2>&1
+~/bin/theia-shell -c "export PATH=/opt/slapgrid/cfaa2217e0f9ea9ef9e05b634f6dbecb/bin:\$PATH && export SLAPOS_CONFIGURATION=\$HOME/srv/runner/etc/slapos.cfg && export SLAPOS_CLIENT_CONFIGURATION=\$SLAPOS_CONFIGURATION && slapos proxy show" 2>&1
 ```
 
 Show existing instances using the same software release. Warn if ports or names would conflict. Identify which ports are already in use so the new instance uses a different one.
@@ -52,7 +52,7 @@ Generate a Python request script at `~/srv/project/<instance-name>-request.py`.
 
 The software release path is:
 ```
-/srv/slapgrid/slappart76/srv/project/erp5-mcp/software/<software-name>/software.cfg
+~/srv/project/erp5-mcp/software/<software-name>/software.cfg
 ```
 
 ### Script structure
@@ -62,7 +62,7 @@ The software release path is:
 import json
 import os
 
-software_url = "/srv/slapgrid/slappart76/srv/project/erp5-mcp/software/<software-name>/software.cfg"
+software_url = os.path.expanduser("~/srv/project/erp5-mcp/software/<software-name>/software.cfg")
 ```
 
 #### For `json-in-xml` serialisation:
@@ -155,7 +155,7 @@ Run these checks:
 
 1. **Supervisor status**: check that the new process is RUNNING:
    ```bash
-   ~/bin/theia-shell -c "export PATH=/opt/slapgrid/cfaa2217e0f9ea9ef9e05b634f6dbecb/bin:\$PATH && export SLAPOS_CONFIGURATION=/srv/slapgrid/slappart76/srv/runner/etc/slapos.cfg && export SLAPOS_CLIENT_CONFIGURATION=\$SLAPOS_CONFIGURATION && slapos node supervisorctl status" 2>&1 | grep <software-name-pattern>
+   ~/bin/theia-shell -c "export PATH=/opt/slapgrid/cfaa2217e0f9ea9ef9e05b634f6dbecb/bin:\$PATH && export SLAPOS_CONFIGURATION=\$HOME/srv/runner/etc/slapos.cfg && export SLAPOS_CLIENT_CONFIGURATION=\$SLAPOS_CONFIGURATION && slapos node supervisorctl status" 2>&1 | grep <software-name-pattern>
    ```
 
 2. **Connection parameters**: re-run the request script to retrieve published connection parameters:

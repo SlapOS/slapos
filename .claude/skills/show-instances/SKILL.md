@@ -16,7 +16,7 @@ Parse `$ARGUMENTS` as `<software-name>` — the directory name under `software/`
 
 The software release path is:
 ```
-/srv/slapgrid/slappart76/srv/project/erp5-mcp/software/<software-name>/software.cfg
+~/srv/project/erp5-mcp/software/<software-name>/software.cfg
 ```
 
 Read `software/<software-name>/software.cfg.json` to get the software release name and serialisation mode.
@@ -26,7 +26,7 @@ Read `software/<software-name>/instance-input-schema.json` to know the available
 
 Run:
 ```bash
-~/bin/theia-shell -c "export PATH=/opt/slapgrid/cfaa2217e0f9ea9ef9e05b634f6dbecb/bin:\$PATH && export SLAPOS_CONFIGURATION=/srv/slapgrid/slappart76/srv/runner/etc/slapos.cfg && export SLAPOS_CLIENT_CONFIGURATION=\$SLAPOS_CONFIGURATION && slapos proxy show" 2>&1
+~/bin/theia-shell -c "export PATH=/opt/slapgrid/cfaa2217e0f9ea9ef9e05b634f6dbecb/bin:\$PATH && export SLAPOS_CONFIGURATION=\$HOME/srv/runner/etc/slapos.cfg && export SLAPOS_CLIENT_CONFIGURATION=\$SLAPOS_CONFIGURATION && slapos proxy show" 2>&1
 ```
 
 From the output, find all partitions whose `software_release` matches the software release path. For each matching partition, extract:
