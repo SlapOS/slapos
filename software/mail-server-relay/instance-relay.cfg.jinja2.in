@@ -67,6 +67,39 @@ command =
 update-command = $${:command}
 
 
+# Postfix authentication
+# ----------------------
+
+{% set source_host_list = [] %}
+{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
+{%   if domain.get('authentication', 'none') == 'none' %}
+{%     do source_host_list.append("[" + domain['mail-server-host'] + "]") %}
+{%   endif %}
+{% endfor %}
+
+{# Group IP-based sending domains by mail-server-host for per-host sender restrictions #}
+{% set sender_host_domains = {} %}
+{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
+{%   if domain.get('authentication', 'none') == 'none' %}
+{%     set host = domain['mail-server-host'] %}
+{%     if host not in sender_host_domains %}
+{%       do sender_host_domains.update({host: []}) %}
+{%     endif %}
+{%     do sender_host_domains[host].append(domain['name']) %}
+{%   endif %}
+{% endfor %}
+{% set sorted_sender_hosts = sender_host_domains.keys() | sort %}
+
+{# Collect password-authenticated sending domains #}
+{% set password_auth_domains = {} %}
+{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
+{%   if domain.get('authentication', 'none') == 'password' and domain.get('password') %}
+{%     do password_auth_domains.update({domain['name']: domain['password']}) %}
+{%   endif %}
+{% endfor %}
+{% set has_password_auth = password_auth_domains | length > 0 %}
+
+
 # Postfix macros
 # --------------
 
@@ -112,35 +145,6 @@ init =
 [inbound-postfix-directory]
 <= macro.postfix-directory
 role = inbound
-
-{% set source_host_list = [] %}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
-{%   if domain.get('authentication', 'none') == 'none' %}
-{%     do source_host_list.append("[" + domain['mail-server-host'] + "]") %}
-{%   endif %}
-{% endfor %}
-
-{# Group IP-based sending domains by mail-server-host for per-host sender restrictions #}
-{% set sender_host_domains = {} %}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
-{%   if domain.get('authentication', 'none') == 'none' %}
-{%     set host = domain['mail-server-host'] %}
-{%     if host not in sender_host_domains %}
-{%       do sender_host_domains.update({host: []}) %}
-{%     endif %}
-{%     do sender_host_domains[host].append(domain['name']) %}
-{%   endif %}
-{% endfor %}
-{% set sorted_sender_hosts = sender_host_domains.keys() | sort %}
-
-{# Collect password-authenticated sending domains #}
-{% set password_auth_domains = {} %}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
-{%   if domain.get('authentication', 'none') == 'password' and domain.get('password') %}
-{%     do password_auth_domains.update({domain['name']: domain['password']}) %}
-{%   endif %}
-{% endfor %}
-{% set has_password_auth = password_auth_domains | length > 0 %}
 
 [inbound-postfix-conf-main]
 recipe = slapos.recipe.template:jinja2
@@ -344,35 +348,6 @@ copytruncate = true
 [outbound-postfix-directory]
 <= macro.postfix-directory
 role = outbound
-
-{% set source_host_list = [] %}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
-{%   if domain.get('authentication', 'none') == 'none' %}
-{%     do source_host_list.append("[" + domain['mail-server-host'] + "]") %}
-{%   endif %}
-{% endfor %}
-
-{# Group IP-based sending domains by mail-server-host for per-host sender restrictions #}
-{% set sender_host_domains = {} %}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
-{%   if domain.get('authentication', 'none') == 'none' %}
-{%     set host = domain['mail-server-host'] %}
-{%     if host not in sender_host_domains %}
-{%       do sender_host_domains.update({host: []}) %}
-{%     endif %}
-{%     do sender_host_domains[host].append(domain['name']) %}
-{%   endif %}
-{% endfor %}
-{% set sorted_sender_hosts = sender_host_domains.keys() | sort %}
-
-{# Collect password-authenticated sending domains #}
-{% set password_auth_domains = {} %}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
-{%   if domain.get('authentication', 'none') == 'password' and domain.get('password') %}
-{%     do password_auth_domains.update({domain['name']: domain['password']}) %}
-{%   endif %}
-{% endfor %}
-{% set has_password_auth = password_auth_domains | length > 0 %}
 
 [outbound-postfix-conf-main]
 recipe = slapos.recipe.template:jinja2
