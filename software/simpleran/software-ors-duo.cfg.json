@@ -3,21 +3,29 @@
   "description": "4G and 5G amarisoft stack for ORS DUO",
   "serialisation": "json-in-xml",
   "software-type": {
-    "gnb": {
-      "title": "gNB",
-      "software-type": "gnb",
-      "description": "gNodeB Configuration",
-      "request": "instance-ors-duo-gnb-input-schema.json",
-      "response": "instance-ors-gnb-schema.json",
+    "enb-gnb": {
+      "title": "eNB / gNB",
+      "software-type": "enb-gnb",
+      "description": "eNodeB / gNodeB Configuration",
+      "request": "instance-ors-duo-enb-gnb-input-schema.json",
+      "response": "instance-ors-enb-schema.json",
       "index": 1
     },
-    "enb": {
-      "title": "eNB",
-      "software-type": "enb",
-      "description": "eNodeB Configuration",
-      "request": "instance-ors-duo-enb-input-schema.json",
-      "response": "instance-ors-enb-schema.json",
+    "gnb": {
+      "title": "eNB / gNB",
+      "software-type": "gnb",
+      "description": "eNodeB / gNodeB Configuration",
+      "request": "instance-ors-duo-enb-gnb-input-schema.json",
+      "response": "instance-ors-gnb-schema.json",
       "index": 2
+    },
+    "enb": {
+      "title": "eNB / gNB",
+      "software-type": "enb",
+      "description": "eNodeB / eNodeB Configuration",
+      "request": "instance-ors-duo-enb-gnb-input-schema.json",
+      "response": "instance-ors-enb-schema.json",
+      "index": 3
     },
     "ue": {
       "title": "UE",
@@ -25,7 +33,7 @@
       "description": "User Equipment Configuration",
       "request": "instance-ors-duo-ue-input-schema.json",
       "response": "instance-ors-ue-schema.json",
-      "index": 3
+      "index": 4
     },
     "core-network": {
       "title": "Core Network",

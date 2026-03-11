@@ -13,20 +13,11 @@
     },
     "amf_list": {
       "$ref": "instance-enb-input-schema.json#/properties/amf_list",
+      "description": "List of AMF to which the gNodeB is connected. (default: Local Core Network, 127.0.1.100)",
       "default": [
         {
           "name": "Local Core Network",
           "amf_addr": "127.0.1.100"
-        }
-      ]
-    },
-    "plmn_list": {
-      "$ref": "instance-enb-input-schema.json#/properties/plmn_list_5g",
-      "description": "List of PLMNs broadcasted by the gNodeB, at most 12 (default: PLMN 00101 and TAC 1)",
-      "default": [
-        {
-          "plmn": "00101",
-          "tac": "0x01"
         }
       ]
     },
@@ -38,27 +29,6 @@
     },
     "nr_eutra_handover": {
       "$ref": "instance-enb-input-schema.json#/properties/nr_eutra_handover"
-    },
-    "xn_peers": {
-      "title": "XN Peers",
-      "description": "XN Peers",
-      "type": "array",
-      "items": {
-        "title": "XN Peer",
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "title": "(Optional) Neighbour Cell Name",
-            "description": "Neighbour Cell name (for management purposes only)",
-            "type": "string"
-          },
-          "xn_addr": {
-            "$ref": "peer/nr/input-schema.json#/properties/xn_addr"
-          }
-        }
-      },
-      "default": []
     }
   }
 }
