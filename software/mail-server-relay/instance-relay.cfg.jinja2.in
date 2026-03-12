@@ -2,16 +2,15 @@
 extends =
   ${monitor2-template:output}
   ${template-logrotate-base:output}
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
 parts =
   cron-entry-logrotate
   directory
   publish-connection-information
   inbound-postfix
   outbound-postfix
-
-eggs-directory = ${buildout:eggs-directory}
-develop-eggs-directory = ${buildout:develop-eggs-directory}
-offline = true
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
@@ -290,7 +289,7 @@ content =
   smtp_tls_security_level = none
   smtp_sasl_auth_enable = yes
   smtp_sasl_security_options = noanonymous
-  smtp_sasl_password_maps = texthash:$${outbound-postfix-sasl-passwd:output}
+  smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
 
   # smtpd_relay_restrictions =
   #   permit_mynetworks
@@ -343,10 +342,10 @@ content =
     reject_sender_login_mismatch
   smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
 
-[outbound-postfix-sasl-passwd]
+[outbound-postfix-proxy-passwd]
 recipe = slapos.recipe.template:jinja2
-url = ${postfix_sasl_passwd.in:target}
-output = $${outbound-postfix-directory:etc}/sasl_passwd
+url = ${postfix_proxy_sasl_passwd.in:target}
+output = $${outbound-postfix-directory:etc}/proxy_sasl_passwd
 context =
   raw proxy_host {{ slapparameter_dict['proxy-host'] }}
   raw proxy_port {{ slapparameter_dict['proxy-port'] }}
