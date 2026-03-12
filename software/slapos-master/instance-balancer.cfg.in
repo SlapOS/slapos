@@ -199,7 +199,7 @@ output = ${directory:bin}/apache-httpd-graceful
 mode = 700
 input = inline:
   #!/bin/sh
-  kill -USR1 "$(cat '${apache-conf-parameter-dict:pid-file}')"
+  {{ parameter_dict['bin-directory'] }}/slapos-kill -s USR1 --pidfile '${apache-conf-parameter-dict:pid-file}'
 
 [{{ section('apache-promise') }}]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
