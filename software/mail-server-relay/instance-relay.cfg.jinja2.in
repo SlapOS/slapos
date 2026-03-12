@@ -156,6 +156,14 @@ context =
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
 
+[macro.postfix-conf-master]
+recipe = slapos.recipe.template:jinja2
+url = ${postfix_master.jinja2.cf:target}
+context =
+  key port :port
+  raw ipv4 {{ ipv4 }}
+  raw ipv6 {{ ipv6 }}
+
 
 # Internal Postfix Transport Map
 # ------------------------------
@@ -213,13 +221,9 @@ content =
   transport_maps = texthash:$${internal-postfix-transport:output}
 
 [inbound-postfix-conf-master]
-recipe = slapos.recipe.template:jinja2
-url = ${postfix_master.jinja2.cf:target}
+<= macro.postfix-conf-master
 output = $${inbound-postfix-directory:etc}/master.cf
-context =
-  key port inbound-postfix-conf-main:smtp-port
-  raw ipv4 {{ ipv4 }}
-  raw ipv6 {{ ipv6 }}
+port = $${inbound-postfix-conf-main:smtp-port}
 
 [inbound-postfix-wrapper]
 recipe = slapos.recipe.template
@@ -340,13 +344,9 @@ content =
   smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
 
 [outbound-postfix-conf-master]
-recipe = slapos.recipe.template:jinja2
-url = ${postfix_master.jinja2.cf:target}
+<= macro.postfix-conf-master
 output = $${outbound-postfix-directory:etc}/master.cf
-context =
-  key port outbound-postfix-conf-main:submission-port
-  raw ipv4 {{ ipv4 }}
-  raw ipv6 {{ ipv6 }}
+port = $${outbound-postfix-conf-main:submission-port}
 
 [outbound-postfix-sasl-passwd]
 recipe = slapos.recipe.template:jinja2
