@@ -455,7 +455,7 @@ class TestTheiaForwardFrontendRequestsEnabled(TheiaTestCase):
       f"SELECT partition_reference FROM forwarded_partition_request{DB_VERSION}"
     )
 
-  def requestEmbeddedFrontendInstance(self, state='available'):
+  def requestEmbeddedFrontendInstance(self, state='started'):
     self.checkSlapos(
       'request',
       '--state',
