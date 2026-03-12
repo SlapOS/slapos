@@ -35,6 +35,15 @@ import_environment =
 alias_maps =
 alias_database =
 
+maillog_file = {{ postfix_log_path }}
+maillog_file_compressor = {{ xz_utils_location }}/bin/xz
+maillog_file_prefixes = {{ directory['var-log'] }}
+
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
 smtp_tls_security_level = none
 smtp_sasl_auth_enable = yes
 smtp_sasl_security_options = noanonymous
@@ -50,15 +59,6 @@ virtual_transport = relay
 relay_recipient_maps =
 relay_domains = {{ (mail_domains) | map(attribute='name') | join(',') }}
 relayhost = [{{ proxy_host }}]:{{ proxy_port }}
-
-maillog_file = {{ postfix_log_path }}
-maillog_file_compressor = {{ xz_utils_location }}/bin/xz
-maillog_file_prefixes = {{ directory['var-log'] }}
-
-biff = no
-
-# appending .domain is the MUA's job.
-append_dot_mydomain = no
 
 # TLS parameters
 smtpd_tls_cert_file={{ postfix_cert_file }}
@@ -84,3 +84,4 @@ restrict_sender_{{ loop.index }} = check_sender_access texthash:{{ postfix_direc
 smtpd_sender_restrictions =
   check_client_access cidr:{{ postfix_directory['etc'] }}/client_sender_access
 {% endif %}
+
