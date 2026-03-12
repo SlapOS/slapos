@@ -1,7 +1,7 @@
 ---
 name: run-sr-test
 description: Run a software release integration test in the background with proper environment setup
-argument-hint: "<software-name> <test-target> [--save-data] [--rebuild] [--debug]"
+argument-hint: "<software-name> <test-target> [--save-data] [--debug]"
 allowed-tools: Bash, Read
 ---
 
@@ -18,10 +18,9 @@ Run a software release integration test in the background with proper environmen
   `test.TestSlave` (whole class) or
   `test.TestSlave.test_url` (single method)
 - **--save-data**: set `SAVE_TEST_DATA=1` to regenerate expected test data files
-- **--rebuild**: omit `SLAPOS_TEST_SKIP_SOFTWARE_REBUILD=1` so software is rebuilt
 - **--debug**: set `SLAPOS_TEST_DEBUG=1` to keep instances alive after failure
 
-Default behaviour (no flags): skip software rebuild, skip software check, debug off.
+Default behaviour (no flags): rebuild software, check software, debug off.
 
 ## Environment Setup
 
@@ -51,14 +50,12 @@ cd <project-root>/software/<software-name>/test/ && \
 source <slapos-sr-testing-environment> && \
 SLAPOS_TEST_DEBUG=${DEBUG:-0} \
 ${SAVE_DATA:+SAVE_TEST_DATA=1} \
-${SKIP_REBUILD:+SLAPOS_TEST_SKIP_SOFTWARE_REBUILD=1} \
-${SKIP_CHECK:+SLAPOS_TEST_SKIP_SOFTWARE_CHECK=1} \
 python_for_test -m unittest ${TEST_TARGET} -v 2>&1
 ```
 
 Construct the actual command by substituting:
 - `${TEST_TARGET}` = the test target from arguments
-- Include `SLAPOS_TEST_SKIP_SOFTWARE_REBUILD=1 SLAPOS_TEST_SKIP_SOFTWARE_CHECK=1` unless `--rebuild` was passed
+- Do NOT set `SLAPOS_TEST_SKIP_SOFTWARE_REBUILD` or `SLAPOS_TEST_SKIP_SOFTWARE_CHECK` — always let the framework rebuild and check software
 - Include `SLAPOS_TEST_DEBUG=1` only if `--debug` was passed (otherwise `SLAPOS_TEST_DEBUG=0`)
 - Include `SAVE_TEST_DATA=1` only if `--save-data` was passed
 
@@ -74,7 +71,7 @@ After the test finishes, check the output for these patterns:
 | `FAILED (failures=N)` | Assertion failures | Show failing test names and first diff/assertion |
 | `assertTestData` mismatch | Expected output changed | Suggest re-running with `--save-data` if the new output is correct |
 | `Connection refused` on port 21584 | Another test is running or proxy didn't start | Wait a few minutes and retry |
-| `nxdbom ... Cannot load .installed.cfg` | Software not built for current hash | Re-run with `--rebuild` |
+| `nxdbom ... Cannot load .installed.cfg` | Software not built for current hash | Software will be rebuilt automatically |
 | `ERROR` with traceback | Code error | Show the traceback and suggest a fix |
 
 ## rapid-cdn Test Class Reference

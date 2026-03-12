@@ -47,15 +47,14 @@ rapid-cdn has full SlapOS instance deployment tests in `software/rapid-cdn/test/
 
 ```
 /run-sr-test rapid-cdn test.TestClassName.test_method_name
-/run-sr-test rapid-cdn test.TestClassName --save-data --rebuild --debug
+/run-sr-test rapid-cdn test.TestClassName --save-data --debug
 ```
 
-Flags: `--save-data` (regenerate expected output), `--rebuild` (rebuild software), `--debug` (keep instances alive on failure).
+Flags: `--save-data` (regenerate expected output), `--debug` (keep instances alive on failure).
 
 Key constraints:
 - Tests **cannot run in parallel** — they share a SlapOS proxy on port 21584
 - Before launching, check for active runners: `ps aux | grep '[p]ython_for_test.*unittest'`
-- If config files changed (`instance.cfg.in`, `buildout.hash.cfg`, etc.), run with `--rebuild` first
 - Slave test classes take ~4-15 min; master-only classes take ~4 min
 
 ## Running Software Release Deployment Tests (slapos-sr-testing)
@@ -67,11 +66,8 @@ Software releases can have integration tests in `software/<name>/test/` using th
 ```bash
 source <slapos-sr-testing-environment>
 cd software/<name>/test/
-SLAPOS_TEST_SKIP_SOFTWARE_REBUILD=1 SLAPOS_TEST_SKIP_SOFTWARE_CHECK=1 python_for_test -m unittest discover -v
+python_for_test -m unittest discover -v
 ```
-
-- `SLAPOS_TEST_SKIP_SOFTWARE_REBUILD=1` — skip rebuilding software (use when already built)
-- `SLAPOS_TEST_SKIP_SOFTWARE_CHECK=1` — skip software validation (faster iteration)
 - `SLAPOS_TEST_DEBUG=1` — invoke debugger on error
 
 ### Test structure (reference: `software/html5as/test/`)
