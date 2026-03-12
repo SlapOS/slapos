@@ -2,16 +2,15 @@
 extends =
   ${monitor2-template:output}
   ${template-logrotate-base:output}
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
 parts =
   cron-entry-logrotate
   directory
   publish-connection-information
   inbound-postfix
   outbound-postfix
-
-eggs-directory = ${buildout:eggs-directory}
-develop-eggs-directory = ${buildout:develop-eggs-directory}
-offline = true
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
@@ -57,12 +56,12 @@ recipe = slapos.cookbook:userinfo
 
 [postfix-certificate]
 recipe  = plone.recipe.command
-stop-on-error   = true
-key-file    = $${directory:postfix-ca-private}/postfix.key
-cert-file   = $${directory:postfix-ca-certs}/postfix.crt
+stop-on-error = true
+key-file = $${directory:postfix-ca-private}/postfix.key
+cert-file = $${directory:postfix-ca-certs}/postfix.crt
 command =
     test -e $${:key-file} || \
-        ${openssl:location}/bin/openssl req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes   \
+        ${openssl:location}/bin/openssl req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
         -keyout $${:key-file} -out $${:cert-file}
 update-command = $${:command}
 
@@ -321,7 +320,7 @@ content =
   smtp_tls_security_level = none
   smtp_sasl_auth_enable = yes
   smtp_sasl_security_options = noanonymous
-  smtp_sasl_password_maps = texthash:$${outbound-postfix-sasl-passwd:output}
+  smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
 
   # Per-host sender domain restrictions
   # Each sending backend is only allowed to use MAIL FROM with its own domains.
@@ -341,10 +340,10 @@ content =
     check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
   {% endif %}
 
-[outbound-postfix-sasl-passwd]
+[outbound-postfix-proxy-passwd]
 recipe = slapos.recipe.template:jinja2
-url = ${postfix_sasl_passwd.in:target}
-output = $${outbound-postfix-directory:etc}/sasl_passwd
+url = ${postfix_proxy_sasl_passwd.in:target}
+output = $${outbound-postfix-directory:etc}/proxy_sasl_passwd
 context =
   raw proxy_host {{ slapparameter_dict['proxy-host'] }}
   raw proxy_port {{ slapparameter_dict['proxy-port'] }}
@@ -433,17 +432,6 @@ hash-files =
 {%- endif %}
 depends =
   $${outbound-logrotate-entry-postfix:recipe}
-{%- for host in sorted_sender_hosts %}
-  $${outbound-postfix-sender-access-{{ loop.index }}:recipe}
-{%- endfor %}
-{%- if sorted_sender_hosts %}
-  $${outbound-postfix-client-sender-access:recipe}
-{%- endif %}
-{%- if has_password_auth %}
-  $${outbound-postfix-smtpd-sasl-conf:recipe}
-  $${outbound-postfix-sender-login-map:recipe}
-  $${outbound-postfix-sasldb:recipe}
-{%- endif %}
 
 [outbound-postfix-submission-promise]
 <= monitor-promise-base
@@ -530,3 +518,4 @@ depends =
 {% for postfix_wrapper in postfix_wrappers -%}
   {{ "  $${" + postfix_wrapper + ":recipe}" }}
 {% endfor -%}
+
