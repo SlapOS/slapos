@@ -183,7 +183,6 @@ backend BACKEND_NOT_FOUND
   {#- inspired by https://sleeplessbeastie.eu/2020/05/11/how-to-serve-single-file-using-haproxy/ #}
   # setup Via
   http-after-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
-  http-request set-log-level silent
-  errorfile 503 {{ configuration['not-found-file'] }}
+  errorfile 404 {{ configuration['not-found-file'] }}
 
 {# END OF FILE #}
