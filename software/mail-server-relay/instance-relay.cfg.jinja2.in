@@ -165,24 +165,22 @@ output = $${inbound-postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/inbound_postfix.log
 postfix-directory = inbound-postfix-directory
 smtp-port = 10025
-# submission-port = 10588
 content =
   smtp_tls_security_level = none
-
   smtpd_relay_restrictions =
     reject_unauth_destination
 
   virtual_transport = relay
   relay_recipient_maps =
   relay_domains = {{ (mail_domains) | map(attribute='name') | join(',') }}
-
   transport_maps = texthash:$${internal-postfix-transport:output}
 
-  # TLS parameters
+  # Server TLS parameters
   smtpd_tls_cert_file=$${postfix-certificate:cert-file}
   smtpd_tls_key_file=$${postfix-certificate:key-file}
   smtpd_tls_security_level=may
 
+  # Client TLS parameters
   smtp_tls_CApath=/etc/ssl/certs
   smtp_tls_session_cache_database = btree:$${inbound-postfix-directory:var-lib}/smtp_scache
 
@@ -283,18 +281,8 @@ port = $${outbound-postfix-main.cf:submission-port}
 output = $${outbound-postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/outbound_postfix.log
 postfix-directory = outbound-postfix-directory
-# smtp-port = 10026
 submission-port = 10587
 content =
-  smtp_tls_security_level = none
-  smtp_sasl_auth_enable = yes
-  smtp_sasl_security_options = noanonymous
-  smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
-
-  # smtpd_relay_restrictions =
-  #   permit_mynetworks
-  #   reject_unauth_destination
-
   mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8 {{ (source_host_list) | join(' ') }}
 
   virtual_transport = relay
@@ -302,14 +290,37 @@ content =
   relay_domains = {{ (mail_domains) | map(attribute='name') | join(',') }}
   relayhost = [{{ proxy_host }}]:{{ proxy_port }}
 
-  # TLS parameters
+  transport_maps = texthash:$${internal-postfix-transport:output}
+
+  # Server TLS parameters
   smtpd_tls_cert_file=$${postfix-certificate:cert-file}
   smtpd_tls_key_file=$${postfix-certificate:key-file}
-  # smtpd_tls_security_level=may
+  smtpd_tls_security_level=encrypt
+
+  # Server SASL
+  smtpd_sasl_auth_enable=yes
+  smtpd_sasl_path=smtpd
+  smtpd_sasl_local_domain=relay
+  smtpd_sasl_security_options=noanonymous
+
+  # Server access restrictions
+  smtpd_relay_restrictions =
+    permit_mynetworks
+    permit_sasl_authenticated
+    reject
+  smtpd_sender_restrictions =
+    reject_sender_login_mismatch
+  smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
+
+  # Client TLS parameters
   smtp_tls_CApath=/etc/ssl/certs
   smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
 
-  transport_maps = texthash:$${internal-postfix-transport:output}
+  # Client TLS & SASL parameters
+  smtp_tls_security_level = none
+  smtp_sasl_auth_enable = yes
+  smtp_sasl_security_options = noanonymous
+  smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
 
   # Per-host sender domain restrictions
   # Each sending backend is only allowed to use MAIL FROM with its own domains.
@@ -328,19 +339,6 @@ content =
   smtpd_sender_restrictions =
     check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
   {% endif %}
-
-  smtpd_sasl_auth_enable=yes
-  smtpd_sasl_path=smtpd
-  smtpd_sasl_local_domain=relay
-  smtpd_sasl_security_options=noanonymous
-  smtpd_tls_security_level=encrypt
-  smtpd_relay_restrictions=
-    permit_mynetworks
-    permit_sasl_authenticated
-    reject
-  smtpd_sender_restrictions=
-    reject_sender_login_mismatch
-  smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
 
 [outbound-postfix-proxy-passwd]
 recipe = slapos.recipe.template:jinja2
