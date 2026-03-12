@@ -188,12 +188,9 @@ output = $${inbound-postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/inbound_postfix.log
 postfix-directory = inbound-postfix-directory
 smtp-port = 10025
-submission-port = 10588
+# submission-port = 10588
 content =
   smtp_tls_security_level = none
-  smtp_sasl_auth_enable = yes
-  smtp_sasl_security_options = noanonymous
-  smtp_sasl_password_maps = texthash:$${outbound-postfix-sasl-passwd:output}
 
   smtpd_relay_restrictions =
     permit_mynetworks
@@ -204,7 +201,6 @@ content =
   virtual_transport = relay
   relay_recipient_maps =
   relay_domains = {{ (mail_domains) | map(attribute='name') | join(',') }}
-  relayhost = [{{ proxy_host }}]:{{ proxy_port }}
 
   # TLS parameters
   smtpd_tls_cert_file=$${postfix-generate-certificate:cert-file}
@@ -216,35 +212,14 @@ content =
 
   transport_maps = texthash:$${internal-postfix-transport:output}
 
-  # Per-host sender domain restrictions
-  # Each sending backend is only allowed to use MAIL FROM with its own domains.
-  {% set sorted_sender_hosts = sender_host_domains.keys() | sort -%}
-  {% if sorted_sender_hosts %}
-  smtpd_restriction_classes =
-  {%- for host in sorted_sender_hosts %}
-    restrict_sender_{{ loop.index }}
-  {%- endfor %}
-
-  {% for host in sorted_sender_hosts -%}
-  restrict_sender_{{ loop.index }} =
-    check_sender_access texthash:$${outbound-postfix-directory:etc}/sender_access_{{ loop.index }}
-    reject
-  {% endfor %}
-  smtpd_sender_restrictions =
-    check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
-  {% endif %}
-
 [inbound-postfix-conf-master]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_master.jinja2.cf:target}
 output = $${inbound-postfix-directory:etc}/master.cf
 context =
-  key smtp_port inbound-postfix-conf-main:smtp-port
-  key submission_port inbound-postfix-conf-main:submission-port
+  key port inbound-postfix-conf-main:smtp-port
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
-  raw has_password_auth {{ 'true' if has_password_auth else 'false' }}
-  raw postfix_etc_directory $${outbound-postfix-directory:etc}
 
 [inbound-postfix-wrapper]
 recipe = slapos.recipe.template
@@ -270,15 +245,6 @@ hash-files =
 depends =
   $${inbound-logrotate-entry-postfix:recipe}
 
-{% if has_password_auth %}
-[inbound-postfix-submission-promise]
-<= monitor-promise-base
-promise = check_socket_listening
-name = inbound_subm_listen.py
-config-host = {{ ipv6 }}
-config-port = $${inbound-postfix-conf-main:submission-port}
-{% endif %}
-
 [inbound-postfix-smtp-promise]
 <= monitor-promise-base
 promise = check_socket_listening
@@ -293,9 +259,6 @@ init =
 depends =
   $${inbound-postfix-service:recipe}
   $${postfix-wrappers:depends}
-{%- if has_password_auth %}
-  $${inbound-postfix-submission-promise:recipe}
-{%- endif %}
   $${inbound-postfix-smtp-promise:recipe}
 
 [inbound-logrotate-entry-postfix]
@@ -317,7 +280,7 @@ role = outbound
 output = $${outbound-postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/outbound_postfix.log
 postfix-directory = outbound-postfix-directory
-smtp-port = 10026
+# smtp-port = 10026
 submission-port = 10587
 content =
   smtp_tls_security_level = none
@@ -325,9 +288,9 @@ content =
   smtp_sasl_security_options = noanonymous
   smtp_sasl_password_maps = texthash:$${outbound-postfix-sasl-passwd:output}
 
-  smtpd_relay_restrictions =
-    permit_mynetworks
-    reject_unauth_destination
+  # smtpd_relay_restrictions =
+  #   permit_mynetworks
+  #   reject_unauth_destination
 
   mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8 {{ (source_host_list) | join(' ') }}
 
@@ -339,7 +302,7 @@ content =
   # TLS parameters
   smtpd_tls_cert_file=$${postfix-generate-certificate:cert-file}
   smtpd_tls_key_file=$${postfix-generate-certificate:key-file}
-  smtpd_tls_security_level=may
+  # smtpd_tls_security_level=may
   smtp_tls_CApath=/etc/ssl/certs
   smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
 
@@ -363,17 +326,27 @@ content =
     check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
   {% endif %}
 
+  smtpd_sasl_auth_enable=yes
+  smtpd_sasl_path=smtpd
+  smtpd_sasl_local_domain=relay
+  smtpd_sasl_security_options=noanonymous
+  smtpd_tls_security_level=encrypt
+  smtpd_relay_restrictions=
+    permit_mynetworks
+    permit_sasl_authenticated
+    reject
+  smtpd_sender_restrictions=
+    reject_sender_login_mismatch
+  smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
+
 [outbound-postfix-conf-master]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_master.jinja2.cf:target}
 output = $${outbound-postfix-directory:etc}/master.cf
 context =
-  key smtp_port outbound-postfix-conf-main:smtp-port
-  key submission_port outbound-postfix-conf-main:submission-port
+  key port outbound-postfix-conf-main:submission-port
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
-  raw has_password_auth {{ 'true' if has_password_auth else 'false' }}
-  raw postfix_etc_directory $${outbound-postfix-directory:etc}
 
 [outbound-postfix-sasl-passwd]
 recipe = slapos.recipe.template:jinja2
@@ -479,21 +452,12 @@ depends =
   $${outbound-postfix-sasldb:recipe}
 {%- endif %}
 
-{% if has_password_auth %}
 [outbound-postfix-submission-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = outbound_subm_listen.py
 config-host = {{ ipv6 }}
 config-port = $${outbound-postfix-conf-main:submission-port}
-{% endif %}
-
-[outbound-postfix-smtp-promise]
-<= monitor-promise-base
-promise = check_socket_listening
-name = outbound_smtp_listen.py
-config-host = {{ ipv6 }}
-config-port = $${outbound-postfix-conf-main:smtp-port}
 
 [outbound-postfix]
 recipe = slapos.recipe.build
@@ -502,10 +466,7 @@ init =
 depends =
   $${outbound-postfix-service:recipe}
   $${postfix-wrappers:depends}
-{%- if has_password_auth %}
   $${outbound-postfix-submission-promise:recipe}
-{%- endif %}
-  $${outbound-postfix-smtp-promise:recipe}
 
 [outbound-logrotate-entry-postfix]
 <= logrotate-entry-base
