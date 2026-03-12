@@ -17,8 +17,8 @@ offline = true
 recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 # todo: we use same for two since it's behind a port forward anyways
-submission-port = $${outbound-postfix-conf-main:submission-port}
-smtp-port = $${inbound-postfix-conf-main:smtp-port}
+submission-port = $${outbound-postfix-main.cf:submission-port}
+smtp-port = $${inbound-postfix-main.cf:smtp-port}
 smtp-ipv6 = {{ ipv6 }}
 # todo: publishes internal ip instead of external
 dns-entries =
@@ -138,7 +138,15 @@ init =
   for opt in part:
     options.setdefault(opt, part[opt])
 
-[macro.postfix-conf-main]
+[macro.postfix-master.cf]
+recipe = slapos.recipe.template:jinja2
+url = ${postfix_master.jinja2.cf:target}
+context =
+  key port :port
+  raw ipv4 {{ ipv4 }}
+  raw ipv6 {{ ipv6 }}
+
+[macro.postfix-main.cf]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
 log-file = $${missing_option_log-file:error}
@@ -156,17 +164,13 @@ context =
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
 
-[macro.postfix-conf-master]
-recipe = slapos.recipe.template:jinja2
-url = ${postfix_master.jinja2.cf:target}
-context =
-  key port :port
-  raw ipv4 {{ ipv4 }}
-  raw ipv6 {{ ipv6 }}
 
+# Postfix Transport Information
+# -----------------------------
 
-# Internal Postfix Transport Map
-# ------------------------------
+{% set mail_domains = slapparameter_dict['mail-domains'] %}
+{% set proxy_host = slapparameter_dict['proxy-host'] %}
+{% set proxy_port = slapparameter_dict['proxy-port'] %}
 
 [internal-postfix-transport]
 recipe = slapos.recipe.template:jinja2
@@ -184,14 +188,13 @@ context =
 <= macro.postfix-directory
 role = inbound
 
+[inbound-postfix-master.cf]
+<= macro.postfix-master.cf
+output = $${inbound-postfix-directory:etc}/master.cf
+port = $${inbound-postfix-main.cf:smtp-port}
 
-{% set mail_domains = slapparameter_dict['mail-domains'] %}
-{% set proxy_host = slapparameter_dict['proxy-host'] %}
-{% set proxy_port = slapparameter_dict['proxy-port'] %}
-
-
-[inbound-postfix-conf-main]
-<= macro.postfix-conf-main
+[inbound-postfix-main.cf]
+<= macro.postfix-main.cf
 output = $${inbound-postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/inbound_postfix.log
 postfix-directory = inbound-postfix-directory
@@ -220,11 +223,6 @@ content =
 
   transport_maps = texthash:$${internal-postfix-transport:output}
 
-[inbound-postfix-conf-master]
-<= macro.postfix-conf-master
-output = $${inbound-postfix-directory:etc}/master.cf
-port = $${inbound-postfix-conf-main:smtp-port}
-
 [inbound-postfix-wrapper]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
@@ -243,8 +241,8 @@ environment =
   MAIL_CONFIG=$${inbound-postfix-directory:etc}
   SASL_CONF_PATH=$${inbound-postfix-directory:etc}
 hash-files =
-  $${inbound-postfix-conf-main:output}
-  $${inbound-postfix-conf-master:output}
+  $${inbound-postfix-main.cf:output}
+  $${inbound-postfix-master.cf:output}
   $${inbound-postfix-wrapper:output}
 depends =
   $${inbound-logrotate-entry-postfix:recipe}
@@ -254,7 +252,7 @@ depends =
 promise = check_socket_listening
 name = inbound_smtp_listen.py
 config-host = {{ ipv6 }}
-config-port = $${inbound-postfix-conf-main:smtp-port}
+config-port = $${inbound-postfix-main.cf:smtp-port}
 
 [inbound-postfix]
 recipe = slapos.recipe.build
@@ -268,7 +266,7 @@ depends =
 [inbound-logrotate-entry-postfix]
 <= logrotate-entry-base
 name = inbound_postfix
-log = $${inbound-postfix-conf-main:log-file}
+log = $${inbound-postfix-main.cf:log-file}
 copytruncate = true
 
 
@@ -279,8 +277,13 @@ copytruncate = true
 <= macro.postfix-directory
 role = outbound
 
-[outbound-postfix-conf-main]
-<= macro.postfix-conf-main
+[outbound-postfix-master.cf]
+<= macro.postfix-master.cf
+output = $${outbound-postfix-directory:etc}/master.cf
+port = $${outbound-postfix-main.cf:submission-port}
+
+[outbound-postfix-main.cf]
+<= macro.postfix-main.cf
 output = $${outbound-postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/outbound_postfix.log
 postfix-directory = outbound-postfix-directory
@@ -342,11 +345,6 @@ content =
   smtpd_sender_restrictions=
     reject_sender_login_mismatch
   smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
-
-[outbound-postfix-conf-master]
-<= macro.postfix-conf-master
-output = $${outbound-postfix-directory:etc}/master.cf
-port = $${outbound-postfix-conf-main:submission-port}
 
 [outbound-postfix-sasl-passwd]
 recipe = slapos.recipe.template:jinja2
@@ -424,8 +422,8 @@ environment =
   MAIL_CONFIG=$${outbound-postfix-directory:etc}
   SASL_CONF_PATH=$${outbound-postfix-directory:etc}
 hash-files =
-  $${outbound-postfix-conf-main:output}
-  $${outbound-postfix-conf-master:output}
+  $${outbound-postfix-main.cf:output}
+  $${outbound-postfix-master.cf:output}
   $${outbound-postfix-wrapper:output}
 {%- for host in sorted_sender_hosts %}
   $${outbound-postfix-sender-access-{{ loop.index }}:output}
@@ -457,7 +455,7 @@ depends =
 promise = check_socket_listening
 name = outbound_subm_listen.py
 config-host = {{ ipv6 }}
-config-port = $${outbound-postfix-conf-main:submission-port}
+config-port = $${outbound-postfix-main.cf:submission-port}
 
 [outbound-postfix]
 recipe = slapos.recipe.build
@@ -471,7 +469,7 @@ depends =
 [outbound-logrotate-entry-postfix]
 <= logrotate-entry-base
 name = outbound_postfix
-log = $${outbound-postfix-conf-main:log-file}
+log = $${outbound-postfix-main.cf:log-file}
 copytruncate = true
 
 
