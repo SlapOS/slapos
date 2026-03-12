@@ -44,44 +44,5 @@ biff = no
 # appending .domain is the MUA's job.
 append_dot_mydomain = no
 
-smtp_tls_security_level = none
-smtp_sasl_auth_enable = yes
-smtp_sasl_security_options = noanonymous
-smtp_sasl_password_maps = texthash:{{ sasl_passwd }}
-
-smtpd_relay_restrictions = 
-  permit_mynetworks 
-  reject_unauth_destination
-
-mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8 {{ (mail_hosts) | join(' ') }}
-
-virtual_transport = relay
-relay_recipient_maps =
-relay_domains = {{ (mail_domains) | map(attribute='name') | join(',') }}
-relayhost = [{{ proxy_host }}]:{{ proxy_port }}
-
-# TLS parameters
-smtpd_tls_cert_file={{ postfix_cert_file }}
-smtpd_tls_key_file={{ postfix_key_file }}
-smtpd_tls_security_level=may
-smtp_tls_CApath=/etc/ssl/certs
-smtp_tls_session_cache_database = btree:{{ postfix_directory['var-lib'] }}/smtp_scache
-
-transport_maps = texthash:{{ transport_maps }}
-
-# Per-host sender domain restrictions
-# Each sending backend is only allowed to use MAIL FROM with its own domains.
-{% set sorted_sender_hosts = sender_host_domains.keys() | sort -%}
-{% if sorted_sender_hosts %}
-smtpd_restriction_classes =
-{%- for host in sorted_sender_hosts %}
-  restrict_sender_{{ loop.index }}
-{%- endfor %}
-
-{% for host in sorted_sender_hosts -%}
-restrict_sender_{{ loop.index }} = check_sender_access texthash:{{ postfix_directory['etc']  }}/sender_access_{{ loop.index }}, reject
-{% endfor %}
-smtpd_sender_restrictions =
-  check_client_access cidr:{{ postfix_directory['etc'] }}/client_sender_access
-{% endif %}
+{{ content }}
 
