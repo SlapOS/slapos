@@ -88,6 +88,7 @@ environment +=
   JUPYTER_PATH=${directory:jupyter-dir}
   JUPYTER_CONFIG_DIR=${directory:jupyter-config-dir}
   JUPYTER_RUNTIME_DIR=${directory:jupyter-runtime-dir}
+  erp5_catalog_storage={{ slapparameter_dict['erp5-catalog-storage'] }}
 {% if slapparameter_dict.get('python-hash-seed') != '' %}
   PYTHONHASHSEED={{ slapparameter_dict['python-hash-seed'] }}
 {% endif %}
@@ -275,6 +276,7 @@ bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
 id-store-interval = {{ dumps(slapparameter_dict['id-store-interval']) }}
 home = ${buildout:directory}
 cloudooo-url = {{ ",".join(slapparameter_dict['cloudooo-url-list']) }}
+erp5-catalog-storage = {{ slapparameter_dict['erp5-catalog-storage'] }}
 
 {% endif -%}
 developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
@@ -532,6 +534,7 @@ command-line =
   --volatile_memcached_server_port={{ port_dict['erp5-memcached-volatile'] }}
   --persistent_memcached_server_hostname=erp5-memcached-persistent
   --persistent_memcached_server_port={{ port_dict['erp5-memcached-persistent'] }}
+  --erp5_catalog_storage={{ slapparameter_dict['erp5-catalog-storage'] }}
 
 [test-runner-configuration]
 recipe = slapos.recipe.template:jinja2
