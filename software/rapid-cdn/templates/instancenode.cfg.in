@@ -12,4 +12,4 @@ partition-id = ${slap-connection:partition-id}
 server-url = ${slap-connection:server-url}
 report-error = false
 timestamp-path = ${buildout:directory}/.timestamp
-instance-retention-delay = ${slap-configuration:configuration.instance-retention-delay}
+instance-retention-delay = ${cdn-requester-configuration:instance-retention-delay}

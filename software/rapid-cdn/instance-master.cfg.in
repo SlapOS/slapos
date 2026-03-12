@@ -1103,6 +1103,7 @@ instance-db-path = {{ instance_parameter_dict["instance-db-path"] }}
 valided-instance-db-path = {{ instance_parameter_dict["valided-instance-db-path"] }}
 domainvalidation-db-path = ${directory:srv}/domainvalidation-db.sqlite
 openssl = {{ software_parameter_dict['openssl'] }}
+instance-retention-delay = {{ slapparameter_dict['instance-retention-delay'] | string }}
 
 [cdn-instance-node]
 recipe = slapos.recipe.template
