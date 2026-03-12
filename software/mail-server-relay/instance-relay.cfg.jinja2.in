@@ -166,7 +166,6 @@ log-file = $${directory:var-log}/inbound_postfix.log
 postfix-directory = inbound-postfix-directory
 smtp-port = 10025
 content =
-  smtp_tls_security_level = none
   smtpd_relay_restrictions =
     reject_unauth_destination
 
@@ -176,12 +175,12 @@ content =
   transport_maps = texthash:$${internal-postfix-transport:output}
 
   # Server TLS parameters
-  smtpd_tls_cert_file=$${postfix-certificate:cert-file}
-  smtpd_tls_key_file=$${postfix-certificate:key-file}
-  smtpd_tls_security_level=may
+  smtpd_tls_cert_file = $${postfix-certificate:cert-file}
+  smtpd_tls_key_file = $${postfix-certificate:key-file}
+  smtpd_tls_security_level = may
 
   # Client TLS parameters
-  smtp_tls_CApath=/etc/ssl/certs
+  smtp_tls_security_level = may
   smtp_tls_session_cache_database = btree:$${inbound-postfix-directory:var-lib}/smtp_scache
 
 [inbound-postfix-wrapper]
@@ -293,15 +292,15 @@ content =
   transport_maps = texthash:$${internal-postfix-transport:output}
 
   # Server TLS parameters
-  smtpd_tls_cert_file=$${postfix-certificate:cert-file}
-  smtpd_tls_key_file=$${postfix-certificate:key-file}
-  smtpd_tls_security_level=encrypt
+  smtpd_tls_cert_file = $${postfix-certificate:cert-file}
+  smtpd_tls_key_file = $${postfix-certificate:key-file}
+  smtpd_tls_security_level = encrypt
 
   # Server SASL
-  smtpd_sasl_auth_enable=yes
-  smtpd_sasl_path=smtpd
-  smtpd_sasl_local_domain=relay
-  smtpd_sasl_security_options=noanonymous
+  smtpd_sasl_auth_enable = yes
+  smtpd_sasl_path = smtpd
+  smtpd_sasl_local_domain = relay
+  smtpd_sasl_security_options = noanonymous
 
   # Server access restrictions
   smtpd_relay_restrictions =
@@ -312,12 +311,15 @@ content =
     reject_sender_login_mismatch
   smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
 
-  # Client TLS parameters
-  smtp_tls_CApath=/etc/ssl/certs
-  smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
+  # Use system CAs to authenticate proxy; do not use permit_tls_all_clientcerts
+  # Currently useless, because we only set may, not verify or better
+  # We probably want to check backend certificates differently than proxy's,
+  # assuming we keep allowing shortcut backend -> relay -> backend transport.
+  tls_append_default_CA = yes
 
   # Client TLS & SASL parameters
-  smtp_tls_security_level = none
+  smtp_tls_security_level = may
+  smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
   smtp_sasl_auth_enable = yes
   smtp_sasl_security_options = noanonymous
   smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
