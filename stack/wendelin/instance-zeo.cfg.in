@@ -104,6 +104,7 @@ inline =
     --kill-old-on-full \
     --gzip \
     --quick \
+    --keep-only-latest-index \
     --repository="$zodb_backup_directory/$storage_name" \
     --file="$zodb_directory/$zodb_path"
 
