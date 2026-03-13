@@ -146,9 +146,9 @@ class TestMetabaseBackup(MetabaseTestCase, CrontabMixin):
     with self.slap.instance_supervisor_rpc as supervisor:
       supervisor.startProcess(metabase_process_name)
 
-    for _ in range(30):
+    for i in range(20):
       with contextlib.suppress(requests.exceptions.RequestException):
-        time.sleep(1)
+        time.sleep(min(i, 10))
         resp = requests.post(
           parse.urljoin(url, '/api/session'),
           verify=False,
