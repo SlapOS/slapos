@@ -44,6 +44,12 @@
     "ru": {
       "$ref": "#/$defs/ru-of-cell",
       "propertyOrder": 9999
+    },
+    "ignore_gbr_congestion": {
+      "title": "Ignore GBR Congestion",
+      "description": "If set to true, no GBR congestion check is performed.",
+      "type": "boolean",
+      "default": false
     }
   },
   "$defs": {

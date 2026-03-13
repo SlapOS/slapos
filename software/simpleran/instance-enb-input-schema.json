@@ -21,7 +21,7 @@
       "anyOf": [
         {
           "title": "Automatic address",
-          "description": "Automatic: based on MME / AMF list. IPv4 LAN: IPv4 on the ethernet LAN the eNB / gNB is connected to. Ipv6 Re6st address: acquired through the Re6st VPN software. Localhost address: for core networks running on the same machine",
+          "description": "Automatic: based on MME / AMF list. IPv4 LAN: IPv4 on the ethernet LAN the eNB / gNB is connected to. Ipv6 Re6st address: acquired through the Re6st VPN software. Localhost address: for core networks running on the same machine. (default: Automatic)",
           "type": "string",
           "enum": [
             "Automatic",
@@ -37,6 +37,12 @@
         }
       ],
       "default": "Automatic"
+    },
+    "gtp_payload_mtu": {
+      "title": "GTP Payload MTU",
+      "description": "Range 68 to 16384. MTU in bytes for the GTP-U payload. Do not forget to update the network interface MTU accordingly for optimal performance. For example with a GTP MTU of 1500 bytes, interface should have a MTU of at least 1564 bytes.",
+      "type": "number",
+      "default": 1500
     },
     "mbmsgw_addr": {
       "title": "SGW Address",
@@ -63,6 +69,11 @@
           "mme_addr": {
             "title": "MME Address",
             "description": "IP address (and optional port) of S1AP SCTP connection to the MME. The default port is 36412.",
+            "type": "string"
+          },
+          "backup_mme_addr": {
+            "title": "Backup MME Address",
+            "description": "Defines the IP address (and optional port) of the backup MME to be used if the S1 connection is not established with the current MME. If the S1 connection is established, the backup MME will not be used. There must be a corresponding object for the backup MME in the mme_list array.",
             "type": "string"
           },
           "s1ap_bind_addr": {
@@ -140,6 +151,11 @@
             "description": "IP address (and optional port) of NGAP SCTP connection to the AMF. The default port is 38412.",
             "type": "string"
           },
+          "backup_amf_addr": {
+            "title": "Backup AMF Address",
+            "description": "Defines the IP address (and optional port) of the backup AMF to be used if the NG connection is not established with the current AMF. If the NG connection is established, the backup AMF will not be used. There must be a corresponding object for the backup AMF in the amf_list array.",
+            "type": "string"
+          },
           "ngap_bind_addr": {
             "title": "NGAP Bind Address",
             "description": "Optional string. IP address and optional port on which the NGAP SCTP connection is bound.",
@@ -187,7 +203,7 @@
     },
     "nssai": {
       "title": "AMF slices configuration",
-      "description": "AMF slices configuration.",
+      "description": "AMF slices configuration. (default: [{'sst': 1}])",
       "type": "array",
       "items": {
         "title": "AMF slice",
@@ -593,6 +609,12 @@
     "xlog_forwarding_enabled": {
       "title": "Enable eNB/gNB xlog forwarding",
       "description": "Enable eNB/gNB xlog forwarding through fluentbit",
+      "type": "boolean",
+      "default": true
+    },
+    "check_core_network": {
+      "title": "Check all S1 and NG connections",
+      "description": "check-core-network promise will fail if any S1 or NG connection is not setup",
       "type": "boolean",
       "default": true
     },
