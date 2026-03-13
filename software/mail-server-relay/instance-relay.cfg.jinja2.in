@@ -167,7 +167,7 @@ context =
   raw has_password_auth {{ 'true' if has_password_auth else 'false' }}
   raw postfix_etc_directory $${postfix-directory:etc}
   key mail_owner userinfo:pw-name
-  raw policyd_spf_bin ${buildout:bin-directory}/policyd-spf
+  raw policyd_spf_bin ${spf-engine:bin-directory}/policyd-spf
   key policyd_spf_conf policyd-spf-conf:output
 
 [postfix-generate-certificate]
