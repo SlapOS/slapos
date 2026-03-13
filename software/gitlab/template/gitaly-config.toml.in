@@ -36,7 +36,7 @@ internal_socket_dir = "{{ gitaly.internal_socket }}"
 # # Git settings
 [git]
 bin_path = "{{ git }}"
-catfile_cache_size = "{{ gitaly.catfile_cache_size }}"
+catfile_cache_size = {{ gitaly.catfile_cache_size }}
 
 # # Set this setting to `true` to start ignoring gitconfig files installed in
 # # the system. This includes both system-level (e.g. '/etc/gitconffig') and
@@ -45,6 +45,14 @@ catfile_cache_size = "{{ gitaly.catfile_cache_size }}"
 # # so via `[[git.config]]`. The default value is `false`.
 # ignore_gitconfig = false
 
+{%- if gitaly.pack_objects_cache == 'True' %}
+# Enable pack-objects cache
+[pack_objects_cache]
+enabled = true
+{%- if int(gitaly.pack_objects_cache_max_age) > 0 %}
+max_age = "{{ gitaly.pack_objects_cache_max_age }}m"
+{% endif %}
+{%- endif %}
 
 # [[git.config]]
 # key = fetch.fsckObjects
@@ -110,26 +118,18 @@ max_per_repo = 1
 max_queue_wait = "1m"
 max_queue_size = 10
 
-[[concurrency]]
-rpc = "/gitaly.CommitService/FindAllCommits"
-max_per_repo = {{ gitaly.concurrency_find_all_commits }}
-
-[[concurrency]]
-rpc = "/gitaly.CommitService/ListCommits"
-max_per_repo = {{ gitaly.concurrency_list_commits }}
-
+{%- if int(gitaly.concurrency_find_commit) > 0 %}
 [[concurrency]]
 rpc = "/gitaly.CommitService/FindCommit"
 max_per_repo = {{ gitaly.concurrency_find_commit }}
+{%- endif %}
 
-[[concurrency]]
-rpc = "/gitaly.BlobService/GetBlob"
-max_per_repo = {{ gitaly.concurrency_get_blob }}
-
+{%- if int(gitaly.rate_limiting) > 0 %}
 [[rate_limiting]]
 rpc = "/gitaly.SmartHTTPService/PostUploadPackWithSidechannel"
 interval = "1s"
 burst = {{ gitaly.rate_limiting }}
+{%- endif %}
 
 # Daily maintenance designates time slots to run daily to optimize and maintain
 # enabled storages.
