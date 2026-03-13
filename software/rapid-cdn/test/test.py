@@ -8074,14 +8074,19 @@ backend _health-check-default-http
 
 
 class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
-  parameter_dict = {
-    'domain': 'example.com',
-    'port': HTTPS_PORT,
-    'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
-    'request-timeout': 12,
-  }
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': 12,
+        'instance-retention-delay': 0,
+      })
+    }
 
   @classmethod
   def waitForFrontend(cls):
