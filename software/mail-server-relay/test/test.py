@@ -121,7 +121,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       slave_instance = self.requestSlaveInstanceForDomain(domain)
       connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
       self.assertEqual(connection_dict.get("outbound-host", "<missing>"), "foobaz.lan")
-      self.assertEqual(connection_dict.get("outbound-smtp-port", "<missing>"), "10025")
+      self.assertEqual(connection_dict.get("outbound-smtp-port", "<missing>"), "10587")
       self.assertEqual(connection_dict.get("dns-entries", "<missing>"), f"{domain} MX 10 foobaz.lan")
       
       slave_dup_instance = self.requestSlaveInstanceForDomain(domain, suffix="-test")
