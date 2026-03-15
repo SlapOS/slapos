@@ -861,7 +861,7 @@ inline =
 {% endfor %}
   mv $CA.tmp $CA
   mv $CRL.tmp $CRL
-  kill -HUP $(cat ${directory:run}/nginx.pid)
+  {{ bin_directory }}/slapos-kill -p ${directory:run}/nginx.pid -s HUP
 {% endif %}
 
 # srv/nginx/ prefix  +  etc/ log/ ...
@@ -936,7 +936,7 @@ promise = check_url_available
 <= logrotate-entry-base
 log     = ${nginx:log}/*.log
 name    = nginx
-post = kill -USR1 $(cat ${directory:run}/nginx.pid)
+post = {{ bin_directory }}/slapos-kill -p ${directory:run}/nginx.pid -s USR1
 
 # base entry for clients who registers to cron
 [cron-entry]
