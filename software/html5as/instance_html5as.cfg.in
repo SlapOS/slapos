@@ -197,7 +197,7 @@ monitor-httpd-port = {{ parameter_dict['monitor-httpd-port'] }}
 <= logrotate-entry-base
 name = nginx
 log = ${html5as:path_access_log} ${html5as:path_error_log}
-post = kill -USR1 $(cat ${html5as:path_pid})
+post = {{ bin_directory }}/slapos-kill -p ${html5as:path_pid} -s USR1
 
 # Publish nginx address
 [publish-connection-information]
