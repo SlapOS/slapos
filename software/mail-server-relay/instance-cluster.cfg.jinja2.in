@@ -13,8 +13,6 @@ offline = true
 [request-relay-base]
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
-software-url = $${slap-connection:software-release-url}
-software-type = relay
 config-monitor-password = $${monitor-instance-parameter:password}
 {% for key, value in slapparameter_dict['default-proxy-config'].items() -%}
 config-{{ key }} = {{ dumps(value) }}
@@ -34,6 +32,8 @@ dns-entries = $${filter-shared-instances:dns-entries}
 <= request-relay-base
 name = {{ relay_name }}
 state = {{ config['state'] }}
+software-url = {{ config.get('sr-url') or '$${:software-release-url}' }}
+software-type = {{ config.get('software-type') or 'relay' }}
 
 {% for key, value in config.get('config', {}).items() -%}
 config-{{ key }} = {{ dumps(value) }}
