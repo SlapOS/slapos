@@ -72,6 +72,11 @@
               },
               "additionalProperties": true
             },
+            "sr-url": {
+              "type": "string",
+              "description": "Software release URL for this relay. If empty, defaults to the cluster's software release URL.",
+              "default": ""
+            },
             "state": {
               "type": "string",
               "enum": [
