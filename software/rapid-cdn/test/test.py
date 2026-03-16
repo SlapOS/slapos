@@ -1747,6 +1747,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'url-trailing-slash-present': {
         'url': cls.backend_url + 'index.html/',
       },
+      'url-path-with-percent-encoded-whitespace': {
+        'url': cls.backend_url + '%20whitespace%20',
+      },
       'url-netloc-list': {
         'url': cls.backend_url,
         'url-netloc-list': '%(ip)s:%(port_a)s %(ip)s:%(port_b)s' % {
@@ -2706,6 +2709,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(
       fakeHTTPSResult(parameter_dict['domain'], 'path/').json()['Path'],
       '/index.html/path/')
+
+  def test_url_path_with_percent_encoded_whitespace(self):
+    parameter_dict = self.assertSlaveBase(
+      'url-path-with-percent-encoded-whitespace')
+    self.assertEqual(
+      fakeHTTPSResult(parameter_dict['domain'], '').json()['Path'],
+      '/%20whitespace%20')
+    self.assertEqual(
+      fakeHTTPSResult(parameter_dict['domain'], 'path').json()['Path'],
+      '/%20whitespace%20/path')
 
   def test_url_netloc_list(self):
     parameter_dict = self.assertSlaveBase('url-netloc-list')
