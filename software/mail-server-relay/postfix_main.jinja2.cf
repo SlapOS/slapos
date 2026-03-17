@@ -40,6 +40,15 @@ smtpd_relay_restrictions =
   permit_mynetworks 
   reject_unauth_destination
 
+# SPF policy check for inbound mail
+# Mail from mynetworks (backend servers) bypasses SPF.
+# External mail destined for our domains is checked.
+smtpd_recipient_restrictions =
+  permit_mynetworks
+  check_policy_service unix:private/policyd-spf
+
+policyd-spf_time_limit = 3600
+
 mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8 {{ (mail_hosts) | join(' ') }}
 
 virtual_transport = relay
