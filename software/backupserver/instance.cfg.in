@@ -27,6 +27,7 @@ recipe = slapos.cookbook:slapconfiguration.jsonschema
 jsonschema = ${template:software.json}
 set-default = main
 validate-parameters = main
+unstringify = main
 computer = $${slap-connection:computer-id}
 partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}

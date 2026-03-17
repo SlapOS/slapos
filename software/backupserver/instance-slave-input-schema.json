@@ -30,8 +30,8 @@
     },
     "sudo": {
       "title": "Use Sudo",
-      "type": "string",
-      "enum": ["True", "False"],
+      "type": "boolean",
+      "enum": [True, False],
       "description": "Use Sudo (sudo needed to the target hostname)"
     }
   },
