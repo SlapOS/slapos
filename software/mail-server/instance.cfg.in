@@ -21,6 +21,7 @@ context =
   key computer_id slap-configuration:computer
   key user_name slap-configuration:user-name
   key slave_instance_list slap-configuration:valid-shared-instance-list
+  key bin_directory buildout:bin-directory
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.jsonschema
