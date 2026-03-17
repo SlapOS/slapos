@@ -1,0 +1,25 @@
+{
+  "name": "Backupserver",
+  "description": "Backupserver",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
+      "index": 1
+    },
+    "default-slave": {
+      "description": "Default",
+      "index": 4,
+      "request": "instance-slave-input-schema.json",
+      "response": "instance-slave-output-schema.json",
+      "shared": true,
+      "software-type": "default",
+      "title": "Default (slave)"
+    }
+  }
+}
+
