@@ -154,6 +154,7 @@ context =
   raw postfix_log_path $${:log-file}
   key sender_host_domains :sender-host-domains
   raw postfix_etc_directory $${postfix-directory:etc}
+  key pyspf_milter_socket pyspf-milter:socket
 
 [postfix-conf-master]
 recipe = slapos.recipe.template:jinja2
@@ -167,8 +168,25 @@ context =
   raw has_password_auth {{ 'true' if has_password_auth else 'false' }}
   raw postfix_etc_directory $${postfix-directory:etc}
   key mail_owner userinfo:pw-name
-  raw policyd_spf_bin ${spf-engine:bin-directory}/policyd-spf
-  key policyd_spf_conf policyd-spf-conf:output
+
+[pyspf-milter-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${pyspf_milter.jinja2.conf:target}
+output = $${postfix-directory:etc}/pyspf_milter.conf
+socket = $${directory:run}/pyspf_milter.sock
+pidfile = $${directory:run}/pyspf_milter.pid
+context =
+  key socket :socket
+  key pidfile :pidfile
+
+[pyspf-milter]
+recipe = slapos.cookbook:wrapper
+socket = $${pyspf-milter-conf:socket}
+wrapper-path = $${directory:service}/pyslf-milter
+command-line =
+  ${spf-engine:bin-directory}/pyspf-milter \
+    $${pyspf-milter-conf:output}
+hash-files = $${pyspf-milter-conf:output}
 
 [postfix-generate-certificate]
 recipe  = plone.recipe.command
@@ -256,12 +274,6 @@ target-directory = $${postfix-directory:usr}
 link-binary =
     ${postfix:location}/usr/libexec
 
-[policyd-spf-conf]
-recipe = slapos.recipe.template:jinja2
-url = ${policyd_spf.jinja2.conf:target}
-output = $${postfix-directory:etc}/policyd-spf.conf
-context =
-
 [postfix-wrapper]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
@@ -283,7 +295,6 @@ hash-files =
   $${postfix-conf-main:output}
   $${postfix-conf-master:output}
   $${postfix-wrapper:output}
-  $${policyd-spf-conf:output}
 {%- for host in sorted_sender_hosts %}
   $${postfix-sender-access-{{ loop.index }}:output}
 {%- endfor %}
@@ -297,7 +308,6 @@ hash-files =
 {%- endif %}
 depends =
   $${postfix-symlinks-libexec:recipe}
-  $${policyd-spf-conf:recipe}
   $${logrotate-entry-postfix:recipe}
 {%- for host in sorted_sender_hosts %}
   $${postfix-sender-access-{{ loop.index }}:recipe}
