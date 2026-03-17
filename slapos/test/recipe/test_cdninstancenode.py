@@ -35,7 +35,8 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       'software-url': 'http://test.example.com/software',
       'software-type': 'default',
       'verification-secret': 'test-secret',
-      'openssl-binary': 'openssl'  # Will be mocked in tests that need it
+      'openssl-binary': 'openssl',  # Will be mocked in tests that need it
+      'instance-retention-delay': '0',
     }
 
   def tearDown(self):
@@ -78,7 +79,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       new_instance_hash,
       str(int(time.time())),
-      True  # valid
+      'valid'
     )])
 
     # 2. Invalid instance with no changes (in both DBs, invalid, same hash)
@@ -93,7 +94,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       invalid_no_change_hash,
       str(int(time.time())),
-      False  # invalid
+      'invalid'
     )])
     requestinstance_db.insertInstanceList([(
       'invalid-no-change',
@@ -101,7 +102,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       invalid_no_change_hash,
       str(int(time.time())),
-      False  # invalid
+      'invalid'
     )])
 
     # 3. Valid instance with no changes (in both DBs, valid, same hash, already validated)
@@ -116,7 +117,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       valid_no_change_hash,
       str(int(time.time())),
-      True  # valid
+      'valid'
     )])
     # Valid instance with no changes (already stored)
     requestinstance_db.insertInstanceList([(
@@ -125,7 +126,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       valid_no_change_hash,
       str(int(time.time())),
-      True  # valid
+      'valid'
     )])
 
     # 4. Valid instance with parameter changes but same custom_domain
@@ -140,7 +141,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       valid_changed_hash,
       str(int(time.time())),
-      True  # valid
+      'valid'
     )])
     old_params = {'custom_domain': 'changed.example.com', 'url': 'http://changed.example.com'}
     old_data = {'reference': 'valid-changed', 'parameters': old_params}
@@ -153,7 +154,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       old_hash,
       str(int(time.time())),
-      True  # valid
+      'valid'
     )])
 
     # 5. Instance to be removed (in requestinstance-db but not in instance-db)
@@ -168,7 +169,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       to_remove_hash,
       str(int(time.time())),
-      True  # valid
+      'valid'
     )])
 
     # 6. Valid instance with DNS validation pending - DNS will pass
@@ -183,7 +184,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       dns_pass_hash,
       str(int(time.time())),
-      True  # valid
+      'valid'
     )])
     # Already in requestinstance-db but not validated yet
     requestinstance_db.insertInstanceList([(
@@ -192,7 +193,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       dns_pass_hash,
       str(int(time.time())),
-      True  # valid
+      'valid'
     )])
     # No domain validation entry yet (will be created and validated)
 
@@ -208,7 +209,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       dns_fail_hash,
       str(int(time.time())),
-      True  # valid
+      'valid'
     )])
     # Already in requestinstance-db but not validated yet
     requestinstance_db.insertInstanceList([(
@@ -217,7 +218,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       '{}',
       dns_fail_hash,
       str(int(time.time())),
-      True  # valid
+      'valid'
     )])
     # No domain validation entry yet (will be created but validation will fail)
 
@@ -338,7 +339,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
         stored = requestinstance_db.getInstance('new-instance')
         self.assertIsNotNone(stored)
         self.assertEqual(stored['reference'], 'new-instance')
-        self.assertFalse(bool(stored['valid_parameter']))  # Should be invalid due to DNS failure
+        self.assertNotEqual(stored['valid_parameter'], 'valid')  # Should be invalid due to DNS failure
         # Verify domain validation for new instance (created but not validated)
         db_entry = domainvalidation_db.getDomainValidationForInstance('new-instance')
         self.assertIsNotNone(db_entry)
@@ -349,7 +350,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
         # Check that it's still in the database and still invalid
         stored = requestinstance_db.getInstance('invalid-no-change')
         self.assertIsNotNone(stored)
-        self.assertFalse(bool(stored['valid_parameter']))  # Should not be requested (validation failed)
+        self.assertNotEqual(stored['valid_parameter'], 'valid')  # Should not be requested (validation failed)
 
         # 3. Valid instance with no changes should not be requested (already validated, no changes)
         # Should still be in database
@@ -384,7 +385,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
         # Verify it was updated in requestinstance-db
         stored = requestinstance_db.getInstance('dns-pass')
         self.assertIsNotNone(stored)
-        self.assertTrue(bool(stored['valid_parameter']))
+        self.assertEqual(stored['valid_parameter'], 'valid')
         # Verify domain validation was created and validated
         db_entry = domainvalidation_db.getDomainValidationForInstance('dns-pass')
         self.assertIsNotNone(db_entry)
@@ -396,7 +397,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
         # Verify it's still in requestinstance-db but invalid
         stored = requestinstance_db.getInstance('dns-fail')
         self.assertIsNotNone(stored)
-        self.assertFalse(bool(stored['valid_parameter']))
+        self.assertNotEqual(stored['valid_parameter'], 'valid')
         # Verify domain validation was created but not validated
         db_entry = domainvalidation_db.getDomainValidationForInstance('dns-fail')
         self.assertIsNotNone(db_entry)
@@ -812,7 +813,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
       '{}',
       'hash',
       '1234567890',
-      True
+      'valid'
     )])
 
     # Mock _removeInstanceFromDB to verify it's called
@@ -1054,7 +1055,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
       "{}",
       'initial-hash',
       "1234567890",
-      True
+      'valid'
     )])
 
     # Pre-populate domain_validation_db to simulate already validated domain
@@ -1864,3 +1865,249 @@ class TestDomainValidationDB(unittest.TestCase):
     self.assertIsNone(db.getDomainValidationForInstance('instance-1'))
     # instance-2 should be unaffected
     self.assertIsNotNone(db.getDomainValidationForInstance('instance-2'))
+
+
+class TestInstanceRetentionDelay(unittest.TestCase):
+
+  def setUp(self):
+    self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
+    self.instance_db_fd, self.instance_db_path = tempfile.mkstemp()
+    self.requestinstance_db_fd, self.requestinstance_db_path = tempfile.mkstemp()
+
+    self.buildout = None
+    self.options = {
+      'domainvalidation-db-path': self.domainvalidation_db_path,
+      'instance-db-path': self.instance_db_path,
+      'requestinstance-db-path': self.requestinstance_db_path,
+      'server-url': 'http://test.example.com',
+      'computer-id': 'test-computer',
+      'partition-id': 'test-partition',
+      'software-url': 'http://test.example.com/software',
+      'software-type': 'default',
+      'verification-secret': 'test-secret',
+      'openssl-binary': 'openssl',
+    }
+
+  def tearDown(self):
+    os.close(self.domainvalidation_db_fd)
+    if os.path.exists(self.domainvalidation_db_path):
+      os.unlink(self.domainvalidation_db_path)
+    os.close(self.instance_db_fd)
+    if os.path.exists(self.instance_db_path):
+      os.unlink(self.instance_db_path)
+    os.close(self.requestinstance_db_fd)
+    if os.path.exists(self.requestinstance_db_path):
+      os.unlink(self.requestinstance_db_path)
+
+  def _makeRecipe(self, retention_delay=None):
+    options = self.options.copy()
+    if retention_delay is not None:
+      options['instance-retention-delay'] = str(retention_delay)
+    return cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', options)
+
+  def test_default_retention_value(self):
+    """Test that default retention delay is 7 days (604800 seconds)."""
+    recipe = self._makeRecipe()
+    self.assertEqual(recipe.instance_retention_delay, 604800)
+
+  def test_retention_delay_zero_immediate_removal(self):
+    """Test that retention=0 causes immediate destruction."""
+    recipe = self._makeRecipe(retention_delay=0)
+
+    # Add instance to requestinstance_db
+    recipe.requestinstance_db.insertInstanceList([(
+      'inst1', '{}', '{}', 'hash1', '1000000000', 'valid'
+    )])
+    recipe.domain_validation_db.setDomainValidation('inst1', 'example.com', 'tok1', True)
+
+    result = recipe.shouldDestroyInstance('inst1')
+    self.assertTrue(result)
+
+  def test_instance_enters_retention(self):
+    """Test that a disappeared instance enters retention instead of being destroyed."""
+    recipe = self._makeRecipe(retention_delay=604800)
+
+    # Add instance to requestinstance_db
+    recipe.requestinstance_db.insertInstanceList([(
+      'inst1', '{}', '{}', 'hash1', '1000000000', 'valid'
+    )])
+    recipe.domain_validation_db.setDomainValidation('inst1', 'example.com', 'tok1', True)
+    recipe.domain_validation_db.addUsedHosts('inst1', {'example.com'})
+
+    result = recipe.shouldDestroyInstance('inst1')
+    self.assertFalse(result)
+
+    # Verify state changed to 'stopped'
+    stored = recipe.requestinstance_db.getInstance('inst1')
+    self.assertEqual(stored['valid_parameter'], 'stopped')
+    # Timestamp should be updated
+    self.assertGreater(int(stored['timestamp']), 1000000000)
+
+    # Verify domain_validation entry preserved but validated=False
+    dv = recipe.domain_validation_db.getDomainValidationForInstance('inst1')
+    self.assertIsNotNone(dv)
+    self.assertEqual(dv['domain'], 'example.com')
+    self.assertFalse(dv['validated'])
+
+    # Verify used_hosts cleared
+    hosts_row = recipe.domain_validation_db.fetchOne(
+      "SELECT * FROM used_hosts WHERE instance_reference=?", ('inst1',))
+    self.assertIsNone(hosts_row)
+
+  def test_instance_removed_after_expiry(self):
+    """Test that a retained instance is destroyed after retention delay expires."""
+    recipe = self._makeRecipe(retention_delay=10)
+
+    # Simulate instance already in retention (stopped state)
+    stopped_timestamp = str(int(time.time()) - 11)  # 11 seconds ago
+    recipe.requestinstance_db.insertInstanceList([(
+      'inst1', '{}', '{}', 'hash1', stopped_timestamp, 'stopped'
+    )])
+
+    result = recipe.shouldDestroyInstance('inst1')
+    self.assertTrue(result)
+
+  def test_instance_kept_during_retention(self):
+    """Test that a retained instance is kept during retention period."""
+    recipe = self._makeRecipe(retention_delay=10)
+
+    # Simulate instance recently stopped (2 seconds ago)
+    stopped_timestamp = str(int(time.time()) - 2)
+    recipe.requestinstance_db.insertInstanceList([(
+      'inst1', '{}', '{}', 'hash1', stopped_timestamp, 'stopped'
+    )])
+
+    result = recipe.shouldDestroyInstance('inst1')
+    self.assertFalse(result)
+    # Should be tracked as already retained
+    self.assertIn('inst1', recipe._already_retained_references)
+
+  def test_instance_returns_no_conflict(self):
+    """Test that a returning retained instance with no domain conflict is restored."""
+    recipe = self._makeRecipe(retention_delay=604800)
+
+    # Simulate retained instance (stopped, domain_validation preserved with validated=False)
+    recipe.requestinstance_db.insertInstanceList([(
+      'inst1',
+      json.dumps({'custom_domain': 'example.com'}, sort_keys=True),
+      '{}', 'hash1', str(int(time.time())), 'stopped'
+    )])
+    recipe.domain_validation_db.setDomainValidation('inst1', 'example.com', 'tok1', False)
+
+    # preDeployInstanceValidation should restore without DNS re-challenge
+    is_valid, errors, info = recipe.preDeployInstanceValidation(
+      'inst1', {'custom_domain': 'example.com'})
+    self.assertTrue(is_valid)
+    self.assertEqual(errors, [])
+
+    # Domain should be re-validated
+    dv = recipe.domain_validation_db.getDomainValidationForInstance('inst1')
+    self.assertTrue(dv['validated'])
+
+    # used_hosts should be restored
+    hosts_row = recipe.domain_validation_db.fetchOne(
+      "SELECT * FROM used_hosts WHERE instance_reference=?", ('inst1',))
+    self.assertIsNotNone(hosts_row)
+
+  def test_instance_returns_params_changed_same_domain(self):
+    """Test returning instance with changed params but same domain restores without DNS re-challenge."""
+    recipe = self._makeRecipe(retention_delay=604800)
+
+    # Simulate retained instance
+    recipe.requestinstance_db.insertInstanceList([(
+      'inst1',
+      json.dumps({'custom_domain': 'example.com', 'url': 'http://old.example.com'}, sort_keys=True),
+      '{}', 'hash1', str(int(time.time())), 'stopped'
+    )])
+    recipe.domain_validation_db.setDomainValidation('inst1', 'example.com', 'tok1', False)
+
+    # Call with new params but same domain
+    is_valid, errors, info = recipe.preDeployInstanceValidation(
+      'inst1', {'custom_domain': 'example.com', 'url': 'http://new.example.com'})
+    self.assertTrue(is_valid)
+
+    dv = recipe.domain_validation_db.getDomainValidationForInstance('inst1')
+    self.assertTrue(dv['validated'])
+
+  def test_domain_not_blocked_during_retention(self):
+    """Test that a new instance can claim a domain from a retained instance."""
+    recipe = self._makeRecipe(retention_delay=604800)
+
+    # Instance A disappeared (domain_validation has validated=False)
+    recipe.domain_validation_db.setDomainValidation('instA', 'example.com', 'tokA', False)
+
+    # Instance B wants the same domain — should NOT be blocked
+    # (getValidatedDomainForOtherInstance only checks validated=True)
+    with mock.patch.object(recipe, '_check_custom_domain', return_value=True):
+      is_valid, errors, info = recipe.preDeployInstanceValidation(
+        'instB', {'custom_domain': 'example.com'})
+    self.assertTrue(is_valid)
+
+  def test_instance_returns_after_domain_claimed(self):
+    """Test that a returning instance gets blocked if its domain was claimed by another."""
+    recipe = self._makeRecipe(retention_delay=604800)
+
+    # Instance A's domain_validation preserved (validated=False)
+    recipe.domain_validation_db.setDomainValidation('instA', 'example.com', 'tokA', False)
+    # Instance B claimed and validated the domain
+    recipe.domain_validation_db.setDomainValidation('instB', 'example.com', 'tokB', True)
+
+    # Instance A returns — should be blocked
+    is_valid, errors, info = recipe.preDeployInstanceValidation(
+      'instA', {'custom_domain': 'example.com'})
+    self.assertFalse(is_valid)
+    self.assertIn('can not be validated', info.get('message', ''))
+
+  def test_bang_only_on_first_disappearance(self):
+    """Test that bang fires on first disappearance but not on subsequent cycles."""
+    recipe = self._makeRecipe(retention_delay=604800)
+
+    # First disappearance: instance is valid, enters retention
+    recipe.requestinstance_db.insertInstanceList([(
+      'inst1', '{}', '{}', 'hash1', '1000000000', 'valid'
+    )])
+
+    # First call: not in _already_retained_references
+    recipe.shouldDestroyInstance('inst1')
+    self.assertNotIn('inst1', recipe._already_retained_references)
+
+    # Simulate second cycle: instance is now 'stopped'
+    recipe2 = self._makeRecipe(retention_delay=604800)
+    recipe2.requestinstance_db = recipe.requestinstance_db
+
+    recipe2.shouldDestroyInstance('inst1')
+    # Second call: should be in _already_retained_references
+    self.assertIn('inst1', recipe2._already_retained_references)
+
+    # Simulate instanceNodePostProcessing with already_retained filtering
+    recipe2._comparison = {'added': [], 'modified': [], 'removed': ['inst1']}
+    mock_cp = mock.MagicMock()
+    with mock.patch.object(recipe2, '_getComputerPartition', return_value=mock_cp):
+      recipe2.instanceNodePostProcessing()
+    # Bang should NOT fire (inst1 is in _already_retained_references)
+    mock_cp.bang.assert_not_called()
+
+  def test_bang_on_retention_expiry(self):
+    """Test that bang fires when a retained instance is finally destroyed."""
+    recipe = self._makeRecipe(retention_delay=10)
+
+    # Instance expired from retention
+    stopped_timestamp = str(int(time.time()) - 11)
+    recipe.requestinstance_db.insertInstanceList([(
+      'inst1', '{}', '{}', 'hash1', stopped_timestamp, 'stopped'
+    )])
+    recipe.domain_validation_db.setDomainValidation('inst1', 'example.com', 'tok1', False)
+
+    # shouldDestroyInstance returns True (expired)
+    result = recipe.shouldDestroyInstance('inst1')
+    self.assertTrue(result)
+    # inst1 is NOT in _already_retained_references (it's being destroyed)
+    self.assertNotIn('inst1', recipe._already_retained_references)
+
+    # instanceNodePostProcessing with inst1 in removed (not filtered out)
+    recipe._comparison = {'added': [], 'modified': [], 'removed': ['inst1']}
+    mock_cp = mock.MagicMock()
+    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_cp):
+      recipe.instanceNodePostProcessing()
+    # Bang should fire
+    mock_cp.bang.assert_called_once()
