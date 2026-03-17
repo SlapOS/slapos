@@ -623,6 +623,7 @@ class Recipe(object):
     # and return the new instances, the instances that are removed and the instances that are modified
     comparator = InstanceListComparator(update_list, stored_dict)
     comparison = comparator.compare()
+    self._comparison = comparison
 
     # Create mapping of reference to instance data
     instance_map = {item['reference']: item for item in update_list}
