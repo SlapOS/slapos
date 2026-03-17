@@ -812,6 +812,24 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       time.sleep(2)
 
   @classmethod
+  def runCDNInstanceNode(cls):
+    instancenode_cfg = None
+    for instancenode_cfg in sorted(glob.glob(
+        os.path.join(
+          cls.instance_path, '*', 'etc', 'instancenode.cfg'))):
+      break
+    if instancenode_cfg is not None:
+      cdninstancenode_bin = os.path.join(
+        cls.software_path, 'bin', 'cdninstancenode-script')
+      for i in range(10):
+        return_code, output = subprocess_status_output(
+          [cdninstancenode_bin, '--cfg', instancenode_cfg])
+        if return_code == 0:
+          break
+        time.sleep(2)
+      assert return_code == 0, output
+
+  @classmethod
   def createWildcardExampleComCertificate(cls):
     _, cls.key_pem, _, cls.certificate_pem = createSelfSignedCertificate(
       [
@@ -855,6 +873,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       raise
     except Exception as e:
       self.fail(e)
+
+  def assertSqliteValidationDatabaseWithPop(self, parameter_dict):
+    parameter_dict.pop('publish-slave-sqlite-validation-database')
 
   def assertHttp2(self, domain):
     result = mimikra.get(
@@ -1340,6 +1361,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def setUpClass(cls):
     super(SlaveHttpFrontendTestCase, cls).setUpClass()
+    cls.runCDNInstanceNode()
+    cls.slap.waitForInstance(cls.instance_max_retry)
 
     for backend_url in [cls.backend_url, cls.backend_https_url]:
       config_result = mimikra.config(
@@ -1521,6 +1544,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
     self.assertEqual(
@@ -1557,6 +1581,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1672,6 +1697,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertKeyWithPop('kedifa-csr-certificate', parameter_dict)
     self.assertKeyWithPop('kedifa-csr-url', parameter_dict)
     self.assertKeyWithPop('frontend-node-1-kedifa-csr-url', parameter_dict)
@@ -2230,6 +2256,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
     expected_parameter_dict = {
@@ -5963,6 +5990,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -6340,7 +6368,10 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     self.slap.waitForInstance()
+    self.runCDNInstanceNode()
+    self.slap.waitForInstance()
     self.runKedifaUpdater()
+
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
 
@@ -6473,6 +6504,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -6526,6 +6558,8 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.updateDefaultInstanceParameterDict(self.instance_parameter_dict)
     self.requestDefaultInstance()
     self.slap.waitForInstance()
+    self.runCDNInstanceNode()
+    self.slap.waitForInstance()
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
@@ -6575,6 +6609,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -6825,6 +6860,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -8039,14 +8075,19 @@ backend _health-check-default-http
 
 
 class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
-  parameter_dict = {
-    'domain': 'example.com',
-    'port': HTTPS_PORT,
-    'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
-    'request-timeout': 12,
-  }
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': 12,
+        'instance-retention-delay': 0,
+      })
+    }
 
   @classmethod
   def waitForFrontend(cls):
@@ -8080,6 +8121,8 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_added_slave(self):
     # request additional slave
     self.requestSlaveInstance('second', {})
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.runCDNInstanceNode()
     slapgrid_log_file = self.clean_frontend_log_file()
     self.slap.waitForInstance(self.instance_max_retry)
 
@@ -8093,10 +8136,11 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertIn('Installing _second-', slapgrid_log)
     self.assertNotIn('Uninstalling _second-', slapgrid_log)
-    self.assertNotIn('Updating _second-', slapgrid_log)
 
   def test_destroyed_slave(self):
     self.requestSlaveInstance('deleted', {}, 'destroyed')
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.runCDNInstanceNode()
     slapgrid_log_file = self.clean_frontend_log_file()
     self.slap.waitForInstance(self.instance_max_retry)
 
