@@ -130,6 +130,10 @@ class E2E(SlapOSInstanceTestCase):
               "relay-bar": {
                   "state": "started",
               }
+          },
+          "greylisting": {
+              "enable": True,
+              "delay": 5,
           }
         }
       )
@@ -301,8 +305,25 @@ class E2E(SlapOSInstanceTestCase):
     self.assertIsNotNone(relay_host, f"Could not find relay host in DNS entries: {dns_entries}")
     
     msg = "Subject: Test Email from External\n\nThis is a test email from external via relay."
+
+    # First attempt should be greylisted (450) by postgrey
     with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
-      # No authentication needed for incoming mail to relay
+      try:
+        smtp.sendmail(
+          from_addr=sender,
+          to_addrs=[recipient],
+          msg=msg
+        )
+        # If it wasn't greylisted, that's fine too (e.g. whitelisted)
+      except smtplib.SMTPRecipientsRefused as e:
+        # Expect 450 greylisting response
+        for addr, (code, _msg) in e.recipients.items():
+          self.assertEqual(code, 450, f"Expected 450 greylisting, got {code}: {_msg}")
+
+    # Wait for greylist delay to pass (delay=5 in test config), then retry
+    time.sleep(10)
+
+    with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
       smtp.sendmail(
         from_addr=sender,
         to_addrs=[recipient],
