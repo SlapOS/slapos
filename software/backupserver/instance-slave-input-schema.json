@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input parameters for Slave Backup",
+  "type": "object",
+  "properties": {
+    "hostname": {
+      "title": "Target Hostname",
+      "type": "string",
+    },
+    "connection": {
+      "title": "Connection String",
+      "type": "string",
+      "description": "example: username@hostname"
+    },
+    "exclude": {
+      "title": "Exclude Pattern",
+      "type": "string",
+      "description": "rsync exclude pattern"
+    },
+    "include": {
+      "title": "Include Path",
+      "type": "string",
+      "description": "rsync include pattern"
+    },
+    "frequency": {
+      "title": "Cron Frequency",
+      "type": "string",
+      "example": "7 1 * * *",
+      "description": "UNIX cron format"
+    },
+    "sudo": {
+      "title": "Use Sudo",
+      "type": "boolean",
+      "description": "Use Sudo (sudo needed to the target hostname)"
+    }
+  },
+  "required": ["hostname", "connection", "exclude", "include", "frequency" , "sudo"]
+}
