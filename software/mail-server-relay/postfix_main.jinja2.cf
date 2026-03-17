@@ -40,6 +40,16 @@ smtpd_relay_restrictions =
   permit_mynetworks 
   reject_unauth_destination
 
+{% if greylisting_enable == 'true' %}
+# Greylisting via postgrey for external (non-mynetworks) inbound mail.
+# Internal mail from backend servers (mynetworks) and authenticated
+# submission users bypass greylisting.
+smtpd_recipient_restrictions =
+  permit_mynetworks
+  permit_sasl_authenticated
+  check_policy_service inet:127.0.0.1:{{ postgrey_port }}
+{% endif %}
+
 mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8 {{ (mail_hosts) | join(' ') }}
 
 virtual_transport = relay
