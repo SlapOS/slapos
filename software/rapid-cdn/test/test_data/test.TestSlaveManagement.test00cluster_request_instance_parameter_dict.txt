@@ -1,5 +1,8 @@
 [
   {
+    "_": {
+      "instance-retention-delay": 0
+    },
     "full_address_list": [],
     "instance_title": "testing partition 0",
     "root_instance_title": "testing partition 0",
