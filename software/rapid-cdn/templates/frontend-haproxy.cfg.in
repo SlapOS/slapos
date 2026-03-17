@@ -57,9 +57,14 @@ frontend http-frontend
 {%- endfor %}
   default_backend BACKEND_NOT_FOUND
 
+{%- if configuration['enable-http2-by-default'] %}
+{%-   set alpn = 'h2,http/1.1,http/1.0' %}
+{%- else %}
+{%-   set alpn = 'http/1.1,http/1.0' %}
+{%- endif %}
 frontend https-frontend
-  bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
-  bind {{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }}
+  bind {{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn {{ alpn }}
+  bind {{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn {{ alpn }}
 {%- if HTTP3 %}
   bind quic4@{{ configuration['local-ipv4'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn h3
   bind quic6@{{ configuration['global-ipv6'] }}:{{ configuration['https-port'] }} ssl crt-list {{ crt_list }} alpn h3
@@ -85,6 +90,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-     endif %}
 {%-     if scheme == 'http' and slave_instance['https-only'] %}
 {#-     Support https-only if connected via http #}
+  http-after-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
   redirect scheme https code 302
 {%-     else %}
 {%-       if 'hostname' in info_dict and 'port' in info_dict %}
@@ -180,7 +186,10 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 backend BACKEND_NOT_FOUND
   {#- a bit hacky but working way to provide default CDN's 404 #}
   {#- inspired by https://sleeplessbeastie.eu/2020/05/11/how-to-serve-single-file-using-haproxy/ #}
-  http-request set-log-level silent
+  # setup Date
+  http-after-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
+  # setup Via
+  http-after-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
   errorfile 503 {{ configuration['not-found-file'] }}
 
 {# END OF FILE #}
