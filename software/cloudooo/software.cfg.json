@@ -6,6 +6,7 @@
     "default": {
       "title": "Default",
       "description": "Cloudooo",
+      "software-type": "default",
       "request": "instance-cloudooo-input-schema.json",
       "response": "instance-cloudooo-output-schema.json",
       "index": 0
