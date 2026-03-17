@@ -64,6 +64,7 @@ setup(name=name,
       include_package_data=True,
       install_requires=[
         'jsonschema',
+        'dnspython',
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
         'inotify_simple',
@@ -82,6 +83,7 @@ setup(name=name,
           'apacheperl = slapos.recipe.apacheperl:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
           'apacheproxy = slapos.recipe.apacheproxy:Recipe',
+          'cdninstancenode = slapos.recipe.cdninstancenode:CDNInstanceNodeRecipe',
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
           'check_page_content = slapos.recipe.check_page_content:Recipe',
@@ -173,6 +175,9 @@ setup(name=name,
         'zc.buildout.uninstall': [
           'publish_failsafe = slapos.recipe.publish:RecipeFailsafe.uninstall',
           'publish.serialised_failsafe = slapos.recipe.publish:SerialisedFailsafe.uninstall',
+        ],
+        'console_scripts': [
+          'cdninstancenode-script = slapos.recipe.cdninstancenode:main',
         ]
       },
       extras_require=extras_require,
