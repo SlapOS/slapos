@@ -159,6 +159,8 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
 
   def __init__(self, buildout, name, options):
     super(CDNInstanceNodeRecipe, self).__init__(buildout, name, options)
+    self.instance_retention_delay = int(options.get('instance-retention-delay', '604800'))
+    self._already_retained_references = set()
     self.dns_entry_name = options.get('dns-entry-name', '_slapos-challenge')
     self.domain_validation_db = DomainValidationDB(self.options['domainvalidation-db-path'])
     # Get openssl binary from options (required for SSL validation)
@@ -308,6 +310,46 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
         'message': error_message
       }
       return False, error_message, validation_info
+
+  def shouldDestroyInstance(self, instance_reference):
+    """
+    Decide whether a disappeared instance should be destroyed, applying
+    retention delay logic. During retention, the instance stays in the DB
+    as 'stopped' and its domain_validation entry is preserved (with
+    validated=False) so a returning instance can reclaim the domain
+    without DNS re-challenge.
+
+    Returns True if the instance should be destroyed, False to keep it.
+    """
+    if self.instance_retention_delay <= 0:
+      return True
+
+    existing = self.requestinstance_db.getInstance(instance_reference)
+    if existing is None:
+      return True
+
+    if existing['valid_parameter'] == 'stopped':
+      # Already in retention — check expiry
+      disappeared_at = int(existing['timestamp'])
+      if time.time() - disappeared_at >= self.instance_retention_delay:
+        return True  # Retention expired → destroy
+      self._already_retained_references.add(instance_reference)
+      return False  # Still within retention → keep
+
+    # First disappearance — enter retention
+    # Preserve domain_validation entry but set validated=False
+    validation_entry = self.domain_validation_db.getDomainValidationForInstance(instance_reference)
+    if validation_entry:
+      self.domain_validation_db.setDomainValidation(
+        instance_reference, validation_entry['domain'],
+        validation_entry['token'], False)
+    # Clear used_hosts so the domain can be claimed by others
+    self.domain_validation_db.execute(
+      "DELETE FROM used_hosts WHERE instance_reference=?",
+      (instance_reference,))
+    # Mark as stopped (timestamp is updated by setInstanceState)
+    self.requestinstance_db.setInstanceState(instance_reference, 'stopped')
+    return False
 
   def _processDestroyedInstance(self, instance_reference):
     """
@@ -644,6 +686,23 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
       self.domain_validation_db.removeDomainValidationForInstance(instance_reference)
       validation_entry = None
 
+    # Check if instance is returning from retention with preserved domain
+    if (validation_entry and validation_entry['domain'] == custom_domain
+        and not validation_entry['validated']):
+      existing_instance = self.requestinstance_db.getInstance(instance_reference)
+      if existing_instance and existing_instance['valid_parameter'] == 'stopped':
+        # Only restore for instances returning from retention
+        other = self.domain_validation_db.getValidatedDomainForOtherInstance(
+          custom_domain, instance_reference)
+        if not other:
+          # No one else claimed it — restore validation without DNS re-challenge
+          self.domain_validation_db.setDomainValidation(
+            instance_reference, custom_domain, validation_entry['token'], True)
+          instance_hosts = self._extractHostsFromParameters(parameters)
+          self.domain_validation_db.addUsedHosts(instance_reference, instance_hosts)
+          return True, [], {}
+        # else: someone else owns it — fall through to conflict check below
+
     # Check if domain is already validated for another instance
     other_instance_entry = self.domain_validation_db.getValidatedDomainForOtherInstance(
       custom_domain, instance_reference
@@ -721,12 +780,14 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
     # instances (which are deleted from the DB and invisible to a
     # timestamp query).
     comparison = getattr(self, '_comparison', None)
-    if comparison and (
-        comparison.get('added') or
-        comparison.get('modified') or
-        comparison.get('removed')
-    ):
-      needs_bang = True
+    if comparison:
+      # Exclude instances that were already in retention (not first disappearance)
+      # from the removed set to avoid triggering bang every cycle during retention
+      effective_removed = set(comparison.get('removed', [])) - self._already_retained_references
+      if (comparison.get('added') or
+          comparison.get('modified') or
+          effective_removed):
+        needs_bang = True
     if not needs_bang:
       # Unchanged invalid instances that changed validity after
       # reprocessing are only detectable via a timestamp comparison.
