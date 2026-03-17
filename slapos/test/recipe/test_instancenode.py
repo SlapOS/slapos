@@ -132,13 +132,15 @@ class TestRequestInstanceList(unittest.TestCase):
         error_json = "{}"  # Invalid but no error info provided
       else:
         error_json = "{}"  # Valid instances have empty error
+      # Convert boolean valid to string state
+      valid_state = 'valid' if valid else 'invalid'
       instance_list.append((
         ref,
         params_json,
         error_json,
         instance_hash,
         "1234567890",
-        valid
+        valid_state
       ))
     db.insertInstanceList(instance_list)
 
@@ -198,7 +200,7 @@ class TestRequestInstanceList(unittest.TestCase):
     stored_error = json.loads(stored[0]['json_error'])
     self.assertEqual(stored_error, {"foo": "bar"})
     # Instance should be valid since connection parameters were available
-    self.assertEqual(stored[0]['valid_parameter'], True)
+    self.assertEqual(stored[0]['valid_parameter'], 'valid')
 
   def test_new_invalid_instance(self):
     """Test that invalid instances are tracked but not requested"""
@@ -221,7 +223,7 @@ class TestRequestInstanceList(unittest.TestCase):
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
     self.assertEqual(stored[0]['reference'], 'instance1')
-    self.assertEqual(stored[0]['valid_parameter'], False)
+    self.assertEqual(stored[0]['valid_parameter'], 'invalid')
 
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
@@ -251,7 +253,7 @@ class TestRequestInstanceList(unittest.TestCase):
       "{}",
       new_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     # Add to requestinstance-db with old parameters
@@ -265,7 +267,7 @@ class TestRequestInstanceList(unittest.TestCase):
       '{"param1": "old_conn1"}',
       old_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     # Connection parameters are not extracted since 'return' is not a recipe option
@@ -288,7 +290,7 @@ class TestRequestInstanceList(unittest.TestCase):
     stored_error = json.loads(stored[0]['json_error'])
     self.assertEqual(stored_error, {"foo": "bar"})
     # Instance should be valid since connection parameters were available
-    self.assertEqual(stored[0]['valid_parameter'], True)
+    self.assertEqual(stored[0]['valid_parameter'], 'valid')
 
   def test_modified_invalid_instance(self):
     """Test that modified invalid instances are tracked but not requested"""
@@ -306,7 +308,7 @@ class TestRequestInstanceList(unittest.TestCase):
       "{}",
       new_hash,
       "1234567890",
-      False  # Now invalid
+      'invalid'  # Now invalid
     )])
 
     old_params = {'key': 'old_value'}
@@ -319,7 +321,7 @@ class TestRequestInstanceList(unittest.TestCase):
       '{"param1": "old_conn1"}',
       old_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     recipe = instancenode.Recipe(
@@ -335,7 +337,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify instance was updated in requestinstance-db (marked as invalid)
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    self.assertEqual(stored[0]['valid_parameter'], False)
+    self.assertEqual(stored[0]['valid_parameter'], 'invalid')
     # Error info should contain the default message for invalid instances when no errors are provided
     stored_error = json.loads(stored[0]['json_error'])
     self.assertEqual(stored_error, {'message': 'Instance validation failed'})
@@ -366,7 +368,7 @@ class TestRequestInstanceList(unittest.TestCase):
       '{"param1": "conn1"}',
       instance_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     recipe = instancenode.Recipe(
@@ -400,7 +402,7 @@ class TestRequestInstanceList(unittest.TestCase):
       "{}",
       new_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     # Modified instance
@@ -414,7 +416,7 @@ class TestRequestInstanceList(unittest.TestCase):
       "{}",
       mod_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     # Old version in requestinstance-db
@@ -428,7 +430,7 @@ class TestRequestInstanceList(unittest.TestCase):
       '{}',
       old_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     # Instance to destroy
@@ -442,7 +444,7 @@ class TestRequestInstanceList(unittest.TestCase):
       '{}',
       destroy_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     self.instance_getConnectionParameter.return_value = 'conn_value'
@@ -495,7 +497,7 @@ class TestRequestInstanceList(unittest.TestCase):
       "{}",
       new_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     # Reset call count
@@ -734,7 +736,7 @@ class TestRequestInstanceList(unittest.TestCase):
       "{}",
       new_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     # Add to requestinstance-db with old parameters
@@ -748,7 +750,7 @@ class TestRequestInstanceList(unittest.TestCase):
       '{"param1": "old_conn1"}',
       old_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     options = self.options.copy()
@@ -783,7 +785,7 @@ class TestRequestInstanceList(unittest.TestCase):
       '{"param1": "conn1"}',
       instance_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     options = self.options.copy()
@@ -886,7 +888,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Instance should be tracked in DB as invalid (deployInstance returned False)
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    self.assertEqual(stored[0]['valid_parameter'], False)
+    self.assertEqual(stored[0]['valid_parameter'], 'invalid')
 
   def test_connection_parameters_preserved_on_update_failure(self):
     """Test that existing connection parameters are preserved when update fails"""
@@ -904,7 +906,7 @@ class TestRequestInstanceList(unittest.TestCase):
       "{}",
       new_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     old_params = {'key': 'old_value'}
@@ -917,7 +919,7 @@ class TestRequestInstanceList(unittest.TestCase):
       '{"param1": "existing_conn1", "param2": "existing_conn2"}',
       old_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     # Make getConnectionParameter fail (simulating instance not ready)
@@ -944,7 +946,7 @@ class TestRequestInstanceList(unittest.TestCase):
     stored_error = json.loads(stored[0]['json_error'])
     self.assertEqual(stored_error, {'message': 'Your instance is valid the request has been transmitted to the master'})
     # Instance should be invalid since connection parameters were not available (exception raised)
-    self.assertEqual(stored[0]['valid_parameter'], False)
+    self.assertEqual(stored[0]['valid_parameter'], 'invalid')
 
   def test_publish_connection_parameters_on_validation_failure(self):
     """Test that connection parameters are published when validation fails"""
@@ -1000,7 +1002,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify instance is invalid since getConnectionParameterDict returned empty dict
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    self.assertEqual(stored[0]['valid_parameter'], False)
+    self.assertEqual(stored[0]['valid_parameter'], 'invalid')
 
   def test_publish_connection_parameters_empty(self):
     """Test that empty connection parameters are not published"""
@@ -1138,7 +1140,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify instance is invalid since getConnectionParameterDict returned empty dict
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    self.assertEqual(stored[0]['valid_parameter'], False)
+    self.assertEqual(stored[0]['valid_parameter'], 'invalid')
 
   def test_publish_error_info_for_new_invalid_instance(self):
     """Test that error info is published for new invalid instances
@@ -1198,7 +1200,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(new_errors, sort_keys=True),
       new_hash,
       "1234567890",
-      False
+      'invalid'
     )])
 
     # Old parameters and error info in requestinstancedb
@@ -1216,7 +1218,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(old_errors, sort_keys=True),
       old_hash,
       "1234567890",
-      False
+      'invalid'
     )])
 
     recipe = instancenode.Recipe(self.buildout, 'test', self.options)
@@ -1265,7 +1267,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(error_info, sort_keys=True),
       instance_hash,  # Same hash (parameters didn't change)
       "1234567890",
-      False  # invalid
+      'invalid'  # invalid
     )])
 
 
@@ -1312,7 +1314,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(error_info, sort_keys=True),
       instance_hash,
       "1234567890",
-      True  # invalid
+      'valid'  # invalid
     )])
 
     # Add to requestinstance-db (same parameters, same hash, invalid)
@@ -1322,7 +1324,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(error_info, sort_keys=True),
       instance_hash,  # Same hash (parameters didn't change) - NOT in 'modified'
       "1234567890",
-      False  # invalid
+      'invalid'  # invalid
     )])
 
     # Create a custom recipe to track if preDeployInstanceValidation was called
@@ -1361,7 +1363,7 @@ class TestRequestInstanceList(unittest.TestCase):
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
     self.assertEqual(stored[0]['reference'], 'instance1')
-    self.assertEqual(stored[0]['valid_parameter'], False)
+    self.assertEqual(stored[0]['valid_parameter'], 'invalid')
 
     log.check_present(
       ('test', 'INFO', 'Starting instance node processing'),
@@ -1396,7 +1398,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(new_errors, sort_keys=True),
       instance_hash,
       "1234567890",
-      False
+      'invalid'
     )])
 
     # Old error info in requestinstancedb (same parameters, different error)
@@ -1410,7 +1412,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(old_errors, sort_keys=True),
       instance_hash,  # Same hash (parameters didn't change)
       "1234567890",
-      False
+      'invalid'
     )])
 
     recipe = instancenode.Recipe(self.buildout, 'test', self.options)
@@ -1516,7 +1518,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(validation_errors, sort_keys=True),
       new_hash,
       "1234567890",
-      False
+      'invalid'
     )])
 
     old_params = {'key': 'old_value'}
@@ -1529,7 +1531,7 @@ class TestRequestInstanceList(unittest.TestCase):
       "{}",
       old_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     class TestRecipe(instancenode.Recipe):
@@ -1574,7 +1576,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(conn_params, sort_keys=True),
       instance_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     # Add to requestinstance-db with same connection parameters but different hash
@@ -1589,7 +1591,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(conn_params, sort_keys=True),
       old_hash,  # Different hash (parameters changed, so in "modified")
       "1234567890",
-      True
+      'valid'
     )])
 
     # Mock request to return same connection parameters (empty dict -> success message)
@@ -1606,7 +1608,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify instance is invalid since getConnectionParameterDict returned empty dict
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    self.assertEqual(stored[0]['valid_parameter'], False)
+    self.assertEqual(stored[0]['valid_parameter'], 'invalid')
 
     # Verify log shows instance was processed and published
     log.check_present(
@@ -1649,7 +1651,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(new_conn_params, sort_keys=True),
       instance_hash,
       "1234567890",
-      True
+      'valid'
     )])
 
     # Add to requestinstance-db with old connection parameters but different hash
@@ -1664,7 +1666,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(old_conn_params, sort_keys=True),
       old_hash,  # Different hash (parameters changed, so in "modified")
       "1234567890",
-      True
+      'valid'
     )])
 
     # Mock request to return new connection parameters
@@ -1688,7 +1690,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify instance is valid since connection parameters were available
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    self.assertEqual(stored[0]['valid_parameter'], True)
+    self.assertEqual(stored[0]['valid_parameter'], 'valid')
 
     # Verify log shows publishing
     log.check_present(
@@ -1731,7 +1733,7 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify instance is valid since connection parameters were available
     stored = self._getRequestInstanceDB()
     self.assertEqual(len(stored), 1)
-    self.assertEqual(stored[0]['valid_parameter'], True)
+    self.assertEqual(stored[0]['valid_parameter'], 'valid')
 
     # Verify log shows publishing
     log.check_present(
@@ -1768,7 +1770,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(validation_errors, sort_keys=True),
       instance_hash,
       "1234567890",
-      False
+      'invalid'
     )])
 
     # Add to requestinstance-db with same validation errors
@@ -1778,7 +1780,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(validation_errors, sort_keys=True),
       instance_hash,  # Same hash (parameters didn't change)
       "1234567890",
-      False
+      'invalid'
     )])
 
     recipe = instancenode.Recipe(self.buildout, 'test', self.options)
@@ -1831,7 +1833,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(new_errors, sort_keys=True),
       instance_hash,
       "1234567890",
-      False
+      'invalid'
     )])
 
     # Add to requestinstance-db with old validation errors
@@ -1841,7 +1843,7 @@ class TestRequestInstanceList(unittest.TestCase):
       json.dumps(old_errors, sort_keys=True),
       instance_hash,  # Same hash (parameters didn't change)
       "1234567890",
-      False
+      'invalid'
     )])
 
     recipe = instancenode.Recipe(self.buildout, 'test', self.options)
