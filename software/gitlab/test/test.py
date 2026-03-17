@@ -30,6 +30,8 @@ import functools
 import urllib.parse
 import subprocess
 import time
+from datetime import datetime, timedelta
+
 from typing import Optional, Tuple
 
 import bs4
@@ -167,13 +169,15 @@ class TestGitlab(SlapOSInstanceTestCase):
   def test_download_archive_rate_limiting(self):
     gitlab_rails_bin = self.computer_partition_root_path / 'bin' / 'gitlab-rails'
 
+    dt = datetime.now() + timedelta(hours=4)
+    expiration_date = dt.strftime("%Y-%m-%d")
     subprocess.check_call(
       (gitlab_rails_bin,
       'runner',
       "user = User.find(1);" \
-      "token = user.personal_access_tokens.create(scopes: [:api], name: 'Root token');" \
+      "token = user.personal_access_tokens.create(scopes: [:api], name: 'Root token', expires_at: %s);" \
       "token.set_token('SLurtnxPscPsU-SDm4oN');" \
-      "token.save!"),
+      "token.save!" % expiration_date),
     )
 
     client_certificate = self.getManagedResource('client_certificate', CaucaseCertificate)
