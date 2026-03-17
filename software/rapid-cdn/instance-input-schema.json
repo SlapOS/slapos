@@ -43,6 +43,12 @@
       "description": "As most common deloyment is using iptables for port redirection and in case of udp it is advertising to the process it's bind port instead of the really connected to, it's required to manually set this port for the whole cluster. Can be precisely set on each node by -frontend-i-config-http3-port",
       "type": "integer"
     },
+    "instance-retention-delay": {
+      "default": 604800,
+      "description": "Seconds to keep a disappeared instance before removing it. Default is 7 days (604800 seconds). 0 means immediate removal.",
+      "title": "Instance Retention Delay",
+      "type": "integer"
+    },
     "re6st-verification-url": {
       "description": "Url to verify if the internet and/or re6stnet is working.",
       "title": "Test Verification URL",
@@ -235,6 +241,16 @@
       "description": "Number of log files to keep before rotation.",
       "type": "integer",
       "default": 4000
+    },
+    "allow-invalid-instance": {
+      "title": "Allow Invalid Instance",
+      "description": "Allow invalid instance to be added to the cluster.",
+      "type": "string",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "default": "true"
     }
   },
   "patternProperties": {
