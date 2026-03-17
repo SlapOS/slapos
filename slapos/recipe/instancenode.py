@@ -221,11 +221,11 @@ class Recipe(object):
             error_info = json.loads(row['json_error'])
           except (ValueError, TypeError):
             error_info = {}
-        valid_parameter = row['valid_parameter'] if row['valid_parameter'] is not None else True
+        valid_parameter = row['valid_parameter'] if row['valid_parameter'] is not None else 'valid'
         update_list.append({
           'reference': row['reference'],
           'parameters': parameters,
-          'valid': bool(valid_parameter),
+          'valid': valid_parameter == 'valid',
           'error_info': error_info
         })
       except (ValueError, TypeError) as e:
@@ -453,7 +453,7 @@ class Recipe(object):
     # Store validation_info (connection parameters or error info) in json_error
     # This allows us to compare and avoid republishing unchanged connection parameters
     error_json = json.dumps(publish_information, sort_keys=True) if publish_information else "{}"
-    is_valid = not instance_needs_reprocessing # if the instance needs reprocessing, it is not valid
+    is_valid = 'valid' if not instance_needs_reprocessing else 'invalid'
     if not is_new:
       update_instance_list = [(
         params_json,
@@ -585,6 +585,19 @@ class Recipe(object):
     self.updateInstanceInDB(instance_reference, instance_data, instance_hash, publish_information, instance_needs_reprocessing, is_new)
 
 
+  def shouldDestroyInstance(self, instance_reference):
+    """
+    Decide whether a disappeared instance should be destroyed.
+    Base class always destroys. Subclasses can override for retention logic.
+
+    Args:
+      instance_reference: Reference name for the instance
+
+    Returns:
+      True if the instance should be destroyed, False to keep it
+    """
+    return True
+
   def _processDestroyedInstance(self, instance_reference):
     """
     Process a destroyed instance: request the destroy and remove it from the database.
@@ -666,7 +679,8 @@ class Recipe(object):
 
     # Destroy removed instances
     for instance_reference in comparison['removed']:
-      self._processDestroyedInstance(instance_reference)
+      if self.shouldDestroyInstance(instance_reference):
+        self._processDestroyedInstance(instance_reference)
       self._progress_processed_count += 1
       self.logIfTimePassed()
 
