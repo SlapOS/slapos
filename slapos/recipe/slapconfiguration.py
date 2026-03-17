@@ -573,6 +573,9 @@ class DefaultValidator(object):
               except ValueError:
                 pass
 
+def str_to_bool(s):
+  """Convert string to boolean"""
+  return bool(('False', 'True').index(s))
 
 class JsonSchema(Recipe):
   """
@@ -686,7 +689,7 @@ class JsonSchema(Recipe):
         )
       validator = DefaultValidator(
         set_defaults.main,
-        {'integer': int} if unstringify.main else None,
+        {'integer': int, 'boolean': str_to_bool} if unstringify.main else None,
       )
       try:
         parameter_dict = self._validateMain(schema, validator, parameter_dict)
@@ -706,7 +709,7 @@ class JsonSchema(Recipe):
           )
         validator = DefaultValidator(
           set_defaults.shared,
-          {'integer': int} if unstringify.shared else None,
+          {'integer': int, 'boolean': str_to_bool} if unstringify.shared else None,
         )
       else:
         schema = validator = None
