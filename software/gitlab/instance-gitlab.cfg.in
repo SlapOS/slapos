@@ -135,6 +135,7 @@ uploads = ${:var}/uploads
 shared  = ${:var}/shared
 artifacts = ${:shared}/artifacts
 lfs-objects = ${:shared}/lfs-objects
+ci-secure-files = ${:shared}/ci_secure_files
 builds  = ${:var}/builds
 backup  = ${directory:var}/backup
 public  = ${:var}/public
@@ -152,12 +153,17 @@ stop-on-error = yes
 repositories = ${gitlab-repo-dir:repositories}
 command = chmod 02770 ${:repositories}
 
+[gitlab-upload-dir]
+recipe  = slapos.cookbook:mkdirectory
+uploads = ${gitlab-dir:var}/uploads
+mode    = 0700
+
 [gitlab]
 etc     = ${gitlab-dir:etc}
 log     = ${gitlab-dir:log}
 var     = ${gitlab-dir:var}
 tmp     = ${gitlab-dir:tmp}
-uploads = ${gitlab-dir:uploads}
+uploads = ${gitlab-upload-dir:uploads}
 shared  = ${gitlab-dir:shared}
 artifacts = ${gitlab-dir:artifacts}
 lfs-objects = ${gitlab-dir:lfs-objects}
@@ -396,9 +402,8 @@ output= ${directory:bin}/${:_buildout_section_name_}
 context =
     raw     bash_bin                {{ bash_bin }}
     raw     gitlab_rake             ${gitlab-rake:wrapper-path}
-    raw     gitlab_puma            ${gitlab-puma:wrapper-path}
-    raw     psql_bin                {{ postgresql_location }}/bin/psql
-    section pgsql                   service-postgresql
+    raw     gitlab_puma             ${gitlab-puma:wrapper-path}
+    raw     psql_bin                ${psql:wrapper-path}
     raw     log_dir                 ${gitlab:log}
     raw     var_dir                 ${directory:var}
     section puma_rb                 puma.rb
@@ -442,7 +447,7 @@ command =
 
 update-command =
     cd ${:location}  &&
-    {{ git }} fetch software  &&
+    {{ git }} fetch software HEAD &&
     {{ git }} reset --hard `cd ${:software} && {{ git }} rev-parse HEAD`  &&
     ${:tune-command}
 
@@ -549,16 +554,20 @@ max-connections = ${instance-parameter:configuration.postgresql_max_connections}
 depend  =
     ${promise-postgresql:recipe}
 
+[psql]
+recipe  = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/psql
+command-line = {{ postgresql_location }}/bin/psql
+        -h ${service-postgresql:pgdata-directory}
+        -U ${service-postgresql:superuser}
+        -d ${service-postgresql:dbname}
+
 [promise-postgresql]
 <= monitor-promise-base
 promise = check_command_execute
 name = promise-postgresql.py
 config-command =
-    {{ postgresql_location }}/bin/psql \
-        -h ${service-postgresql:pgdata-directory} \
-        -U ${service-postgresql:superuser} \
-        -d ${service-postgresql:dbname} \
-        -c '\q'
+    ${psql:wrapper-path} -c '\q'
 
 # postgresql logs to stdout/stderr - logs are handled by slapos not us
 # [logrotate-entry-postgresql]
@@ -619,6 +628,14 @@ socket  = ${directory:srv}/gitlab-workhorse.socket
 log     = ${directory:log}/gitlab-workhorse.log
 secret  = ${secrets:secrets}/gitlab_workhorse_secret
 
+[workhorse-config.toml]
+<= etc-template
+url = {{ workhorse_config_toml_in }}
+output= ${directory:etc}/${:_buildout_section_name_}
+context-extra =
+    raw redis_socket ${service-redis:unixsocket}
+    raw document_root ${gitlab-work:location}/public/assets
+
 [service-gitlab-workhorse]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/gitlab-workhorse
@@ -630,8 +647,7 @@ command-line    = {{ gitlab_workhorse }}
     -secretPath ${gitlab-workhorse:secret}
     -logFile ${gitlab-workhorse:log}
     -prometheusListenAddr "${prometheus:host}:${prometheus:workhorse-port}"
-# repoPath is for patched gitlab-workhorse
-#    -repoPath ${gitlab-repo-dir:repositories}
+    -config ${workhorse-config.toml:output}
 # NOTE for profiling
 #   -pprofListenAddr ...
 
@@ -640,7 +656,7 @@ command-line    = {{ gitlab_workhorse }}
 #   - ruby to be available on path  (gitlab-workhorse -> gitlab-shell -> hooks  on push)
 #   - gitconfig be found from ~/.gitconfig
 environment =
-    PATH={{ git_location }}/bin:{{ ruby_location }}/bin:{{ gzip_location }}/bin:{{ bzip2_location}}/bin
+    PATH={{ git_location }}/bin:{{ gzip_location }}/bin:{{ bzip2_location}}/bin
     HOME=${directory:home}
 
 depend  =
@@ -868,7 +884,7 @@ inline =
 {% endfor %}
   mv $CA.tmp $CA
   mv $CRL.tmp $CRL
-  {{ bin_directory }}/slapos-kill -p ${directory:run}/nginx.pid -s HUP
+  {{ slapos_kill_bin }} -p ${directory:run}/nginx.pid -s HUP
 {% endif %}
 
 # srv/nginx/ prefix  +  etc/ log/ ...
@@ -877,6 +893,8 @@ recipe  = slapos.cookbook:mkdirectory
 srv     = ${directory:srv}/nginx
 etc     = ${directory:etc}/nginx
 log     = ${directory:log}/nginx
+var     = ${directory:var}/nginx
+custom  = ${:etc}/custom
 
 [nginx-ssl-dir]
 recipe  = slapos.cookbook:mkdirectory
@@ -906,6 +924,8 @@ srv     = ${nginx-dir:srv}
 etc     = ${nginx-dir:etc}
 log     = ${nginx-dir:log}
 ssl     = ${nginx-ssl-dir:ssl}
+var     = ${nginx-dir:var}
+custom  = ${nginx-dir:custom}
 
 cert_file   = ${nginx-generate-certificate:cert_file}
 key_file    = ${nginx-generate-certificate:key_file}
@@ -926,7 +946,16 @@ command-line    = {{ nginx_bin }} -p ${nginx:srv} -c ${nginx.conf:output}
 depend  =
     ${nginx-symlinks:recipe}
     ${promise-nginx:recipe}
+    ${nginx-graceful:output}
     ${logrotate-entry-nginx:recipe}
+
+[nginx-graceful]
+recipe = slapos.recipe.template
+output = ${directory:bin}/nginx-graceful
+inline =
+  #!/bin/sh
+  exec {{ slapos_kill_bin }} --pidfile '${directory:run}/nginx.pid' -s SIGHUP
+
 {% for section in frontend_caucase_updater_section_list %}
     {{ '${' ~  section ~ ':recipe}' }}
 {% endfor %}
@@ -943,7 +972,7 @@ promise = check_url_available
 <= logrotate-entry-base
 log     = ${nginx:log}/*.log
 name    = nginx
-post = {{ bin_directory }}/slapos-kill -p ${directory:run}/nginx.pid -s USR1
+post = {{ slapos_kill_bin }} -p ${directory:run}/nginx.pid -s USR1
 
 # base entry for clients who registers to cron
 [cron-entry]
