@@ -1992,6 +1992,23 @@ class TestRequestInstanceList(unittest.TestCase):
     # Verify instanceNodePostProcessing was called
     self.assertEqual(len(post_processing_called), 1)
 
+  def test_comparison_stored_during_install(self):
+    """Test that install() stores _comparison with the correct keys"""
+    # Setup empty databases
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    recipe = instancenode.Recipe(self.buildout, 'test', self.options)
+
+    with LogCapture() as log:
+      recipe.install()
+
+    # Verify _comparison is set and has expected keys
+    self.assertIsInstance(recipe._comparison, dict)
+    self.assertIn('added', recipe._comparison)
+    self.assertIn('modified', recipe._comparison)
+    self.assertIn('removed', recipe._comparison)
+
   def test_report_error_option_default(self):
     """Test that error() IS called for instancenode validation errors by default
 
