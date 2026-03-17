@@ -17,6 +17,9 @@ config-monitor-password = $${monitor-instance-parameter:password}
 {% for key, value in slapparameter_dict['default-proxy-config'].items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
+{% set greylisting = slapparameter_dict['greylisting'] -%}
+config-greylisting-enable = {{ dumps(greylisting['enable']) }}
+config-greylisting-delay = {{ dumps(greylisting['delay']) }}
 config-mail-domains = $${filter-shared-instances:accepted-domain-list}
 return =
   smtp-ipv6

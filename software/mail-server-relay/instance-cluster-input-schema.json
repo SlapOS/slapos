@@ -49,6 +49,27 @@
       "description": "The domain that will point to all relay instances",
       "type": "string"
     },
+    "greylisting": {
+      "title": "Greylisting",
+      "description": "Greylisting configuration for inbound mail via postgrey",
+      "type": "object",
+      "properties": {
+        "enable": {
+          "title": "Enable Greylisting",
+          "description": "Whether to enable greylisting on inbound mail",
+          "type": "boolean",
+          "default": true
+        },
+        "delay": {
+          "title": "Greylist Delay",
+          "description": "Seconds a new sender triplet must wait before being accepted",
+          "type": "integer",
+          "default": 60
+        }
+      },
+      "default": {},
+      "additionalProperties": false
+    },
     "topology": {
       "title": "Topology",
       "description": "Cluster topology configuration",

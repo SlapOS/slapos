@@ -66,6 +66,18 @@
         }
       },
       "default": []
+    },
+    "greylisting-enable": {
+      "title": "Enable Greylisting",
+      "description": "Whether to enable greylisting on inbound mail",
+      "type": "boolean",
+      "default": true
+    },
+    "greylisting-delay": {
+      "title": "Greylist Delay",
+      "description": "Seconds a new sender triplet must wait before being accepted",
+      "type": "integer",
+      "default": 60
     }
   },
   "required": [
