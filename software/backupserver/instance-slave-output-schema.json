@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Values returned by backupserver instanciation",
+  "properties": {
+    "authorized_key": {
+      "description": "authorized_key",
+      "type": "string"
+    },
+    "rss": {
+      "description": "RSS giving the logs and the important events of the backup process",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
