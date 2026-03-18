@@ -23,7 +23,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             if DEV:
                 cls.enb_gnb_instance_name = "simbox005-enb-gnb"
                 cls.core_network_instance_name = "simbox005-core-network"
-                cls.core_network_sim_instance_name = "simbox005-sim"
+                cls.core_network_sim_instance_name = "simbox005-simcard"
                 cls.ue_instance_name = "e2e-sb005-ue"
                 cls.ue_cell_instance_name = "e2e-sb005-ue-cell"
                 cls.ue_ue_instance_name = "e2e-sb005-ue-ue"
@@ -67,14 +67,12 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             cls.parameters = {}
             cls.parameters["enb-gnb"] = {
                 "cell1": {
-                    "cell_type": "eNB",
-                    "enable_cell": True,
+                    "enable_cell": "Enable eNB",
                     "tx_power_dbm": 0,
                     "rx_gain": 35,
                 },
                 "cell2": {
-                    "cell_type": "eNB",
-                    "enable_cell": False,
+                    "enable_cell": "Enable eNB",
                     "tx_power_dbm": 0,
                     "rx_gain": 35,
                 },
@@ -214,7 +212,6 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             parameters.pop("lock", None)
           parameters = {"_": json.dumps(parameters)}
 
-        cls.logger.info(f"Update {instance_name}")
         args = [instance_infos.software_url, instance_name,]
         kwargs = {
                       "shared"                : shared,
@@ -290,8 +287,9 @@ class ORSTest(WebsocketTestClass):
           self.update_service(ref, "started", parameters=self.parameters[ref], lock=False)
 
         self.logger.info("Waiting until instances are green")
-        self.waitUntilGreen(self.enb_gnb_instance_name, timeout=60 * 3)
-        self.waitUntilGreen(self.ue_instance_name)
+        time.sleep(5 * 60)
+        self.waitUntilGreen(self.enb_gnb_instance_name, timeout=60 * 2)
+        self.waitUntilGreen(self.ue_instance_name, timeout=60 * 2)
 
         retry = True
 
@@ -320,7 +318,7 @@ class ORSTest(WebsocketTestClass):
                 except _exceptions.WebSocketConnectionClosedException:
                     pass
 
-    def check_ue_connect(self, nr, band, rf_mode, bandwidth, freq=None):
+    def check_ue_connect(self, nr, band, rf_mode, bandwidth, freq=None, ssb=None):
 
         self.logger.info(f"Checking following configuration: 5G={nr}, {band}, {rf_mode}, {bandwidth}, {freq}")
 
@@ -331,14 +329,15 @@ class ORSTest(WebsocketTestClass):
             })
 
         self.parameters["enb-gnb"]["cell1"] = {
-              "enable_cell": True,
-              "cell_type": "gNB" if nr else "eNB",
+              "enable_cell": f'Enable {"gNB" if nr else "eNB"}',
             }
         if freq:
             self.parameters["enb-gnb"]["cell1"]["dl_frequency"] = freq
+        if ssb:
+            self.parameters["enb-gnb"]["cell1"]['ssb_nr_arfcn'] = ssb
 
         self.parameters["enb-gnb"]["cell2"].update({
-              "enable_cell": False,
+              "enable_cell": 'Disable eNB',
             })
         self.parameters["enb-gnb"]["rf-info"] = json.dumps(rf_info)
         self.parameters["ue#cell"].update(
@@ -348,7 +347,7 @@ class ORSTest(WebsocketTestClass):
               "bandwidth": bandwidth,
             })
         if nr:
-            self.parameters["enb-gnb"]["cell1"]["nr_bandwidth"] = bandwidth
+            self.parameters["enb-gnb"]["cell1"]["nr_bandwidth"] = f"{bandwidth} MHz"
             self.parameters["ue#cell"].pop("dl_earfcn", None)
             self.parameters["ue#cell"].pop("ul_earfcn", None)
             self.parameters["ue#ue"]["ue_type"] = "nr"
@@ -368,38 +367,46 @@ class ORSTest(WebsocketTestClass):
             connection_params = self.getInstanceInfos(self.enb_gnb_instance_name).connection_dict
             model = connection_params['HARDWARE.ors-version'].split(' ')[2]
             try:
-              bandwidth = int(connection_params['RADIO.bandwidth'].removesuffix(" MHz"))
+              bandwidth = float(connection_params['RADIO.bandwidth'].removesuffix(" MHz"))
             except ValueError:
+              self.logger.info(f"Bandwidth missing in connection parameters")
               continue
             if not model.startswith(band):
                 self.logger.info(f"{model} != {band}")
                 continue
-            if nr and bandwidth != params['nr_bandwidth']:
-                self.logger.info(f"{bandwidth} != {params['nr_bandwidth']}")
+            if nr and bandwidth != float(params['nr_bandwidth'].removesuffix(" MHz")):
+                self.logger.info(f'{bandwidth} != {params["nr_bandwidth"].removesuffix(" MHz")}')
                 continue
-            if not nr and bandwidth != int(params['bandwidth'].removesuffix(" MHz")):
-                self.logger.info(f"{bandwidth} != " + params['bandwidth'].removesuffix(" MHz"))
+            if not nr and bandwidth != float(params['bandwidth'].removesuffix(" MHz")):
+                self.logger.info(f'{bandwidth} != {params["bandwidth"].removesuffix(" MHz")}')
                 continue
             break
         else:
             self.assertTrue(False, "Service was not ready in time")
+        self.logger.info("Parameters updated")
 
         float(connection_params['POWER.tx-gain'].removesuffix(" dB"))
             
         if nr:
             self.parameters["ue#cell"].update({
               "ssb_nr_arfcn": int(connection_params['RADIO.ssb-nr-arfcn']),
-              "dl_nr_arfcn": int(connection_params['RADIO.dl-arfcn']),
-              "ul_nr_arfcn": int(connection_params['RADIO.ul-arfcn']),
+              "dl_nr_arfcn": int(connection_params['RADIO.dl-nr-arfcn']),
+              "ul_nr_arfcn": int(connection_params['RADIO.ul-nr-arfcn']),
               "nr_band": int(connection_params['RADIO.band'][1:]),
             })
+            if ssb:
+                self.parameters["ue#cell"]['ssb_nr_arfcn'] = ssb
         else:
             self.parameters["ue#cell"].update({
-              "dl_earfcn": int(connection_params['RADIO.dl-arfcn']),
-              "ul_earfcn": int(connection_params['RADIO.ul-arfcn']),
+              "dl_earfcn": int(connection_params['RADIO.dl-earfcn']),
+              "ul_earfcn": int(connection_params['RADIO.ul-earfcn']),
             })
-        tx_gain = 90
-        rx_gain = 40
+        #tx_gain = 90
+        #rx_gain = 40
+        tx_gain = 73
+        rx_gain = 28
+        tx_gain_gnb = 81
+        rx_gain_gnb = 28
         tx_power_list = [
             (500 ,  12.0),
             (1000,  12.0),
@@ -416,9 +423,11 @@ class ORSTest(WebsocketTestClass):
             if float(connection_params['RADIO.dl-frequency'].removesuffix(" MHz")) < freq:
                 tx_gain -= db
                 rx_gain -= db
+                tx_gain_gnb -= db
+                rx_gain_gnb -= db
                 break
-        self.parameters["enb-gnb"]["cell1"]["tx_gain"] = tx_gain
-        self.parameters["enb-gnb"]["cell1"]["rx_gain"] = rx_gain
+        self.parameters["enb-gnb"]["cell1"]["tx_gain"] = tx_gain_gnb
+        self.parameters["enb-gnb"]["cell1"]["rx_gain"] = rx_gain_gnb
         self.parameters["ue#cell"]["ru"]["tx_gain"] = tx_gain
         self.parameters["ue#cell"]["ru"]["rx_gain"] = rx_gain
 
@@ -453,7 +462,7 @@ class ORSTest(WebsocketTestClass):
     def test_nr_B43_20(self):
         self.check_ue_connect(True, 'B43', 'TDD', 20)
     def test_nr_N79_20(self):
-        self.check_ue_connect(True, 'N79', 'TDD', 20)
+        self.check_ue_connect(True, 'N79', 'TDD', 20, ssb=719712)
 
     # TODO: uncomment these tests
     #def test_max_rx_sample_db(self):
