@@ -120,7 +120,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                       "ru_type": "sdr",
                       "ru_link_type": "sdr",
                       "sdr_dev_list": [
-                          1
+                          2
                       ],
                       "n_antenna_dl": 1,
                       "n_antenna_ul": 1,
@@ -398,8 +398,10 @@ class ORSTest(WebsocketTestClass):
               "dl_earfcn": int(connection_params['RADIO.dl-arfcn']),
               "ul_earfcn": int(connection_params['RADIO.ul-arfcn']),
             })
-        tx_gain = 90
-        rx_gain = 40
+        #tx_gain = 90
+        #rx_gain = 40
+        tx_gain = 60
+        rx_gain = 0
         tx_power_list = [
             (500 ,  12.0),
             (1000,  12.0),
@@ -412,11 +414,11 @@ class ORSTest(WebsocketTestClass):
             (4500,  -20.0),
             (5000,  -20.0),
         ]
-        for freq,db in tx_power_list:
-            if float(connection_params['RADIO.dl-frequency'].removesuffix(" MHz")) < freq:
-                tx_gain -= db
-                rx_gain -= db
-                break
+        #for freq,db in tx_power_list:
+        #    if float(connection_params['RADIO.dl-frequency'].removesuffix(" MHz")) < freq:
+        #        tx_gain -= db
+        #        rx_gain -= db
+        #        break
         self.parameters["enb-gnb"]["cell1"]["tx_gain"] = tx_gain
         self.parameters["enb-gnb"]["cell1"]["rx_gain"] = rx_gain
         self.parameters["ue#cell"]["ru"]["tx_gain"] = tx_gain
