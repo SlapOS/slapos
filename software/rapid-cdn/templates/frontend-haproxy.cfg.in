@@ -22,6 +22,11 @@ defaults
   retries 3
   timeout tunnel 1h
   default-server init-addr last,libc,none
+{%- if configuration.get('error-pages-dir') %}
+{%-   for code in ['400', '408', '500', '502', '503', '504'] %}
+  errorfile {{ code }} {{ configuration['error-pages-dir'] }}/default/{{ code }}.http
+{%-   endfor %}
+{%- endif %}
 
 {%- set SCHEME_PREFIX_MAPPING = { 'http': 'backend-http-info', 'https': 'backend-https-info'} %}
 
