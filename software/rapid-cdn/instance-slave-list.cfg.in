@@ -534,6 +534,7 @@ local-ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 global-ipv6 = ${slap-configuration:ipv6-random}
 request-timeout = {{ dumps('' ~ configuration['request-timeout']) }}
 autocert-directory = {{ frontend_directory['autocert'] }}
+enable-http2-by-default = {{ dumps(configuration['enable-http2-by-default']) }}
 
 ##</Frontend haproxy>
 
