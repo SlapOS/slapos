@@ -677,6 +677,7 @@ class JsonSchema(Recipe):
     report_error = self._parseOption(options, 'report-error', 'all')
     software_description = self._description(options)
     serialisation = software_description.getSerialisation(strict=True)
+    unstringify_types_dict = {'integer': int, 'boolean': str_to_bool}
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
       parameter_dict = unwrap(parameter_dict)
     if validate.main:
@@ -689,7 +690,7 @@ class JsonSchema(Recipe):
         )
       validator = DefaultValidator(
         set_defaults.main,
-        {'integer': int, 'boolean': str_to_bool} if unstringify.main else None,
+        unstringify_types_dict if unstringify.main else None,
       )
       try:
         parameter_dict = self._validateMain(schema, validator, parameter_dict)
@@ -709,7 +710,7 @@ class JsonSchema(Recipe):
           )
         validator = DefaultValidator(
           set_defaults.shared,
-          {'integer': int, 'boolean': str_to_bool} if unstringify.shared else None,
+          unstringify_types_dict if unstringify.shared else None,
         )
       else:
         schema = validator = None
