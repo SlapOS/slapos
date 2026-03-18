@@ -2379,25 +2379,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'forsuredoesnotexists.example.com', '')
     self.assertEqual(http.client.NOT_FOUND, result_missing.status_code)
     self.assertEqual(
-      """<html>
-<head>
-  <title>Instance not found</title>
-</head>
-<body>
-<h1>The instance has not been found</h1>
-<p>The reasons of this could be:</p>
-<ul>
-<li>the instance does not exists or the URL is incorrect
-<ul>
-<li>in this case please check the URL
-</ul>
-<li>the instance has been stopped
-<ul>
-<li>in this case please check in the SlapOS Master if the instance is """
-      """started or wait a bit for it to start
-</ul>
-</ul>
-</body>
+      """<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+      <title>404 Not Found</title>
+  </head>
+  <body>
+    <p>404 Not Found
+  </body>
 </html>
 """,
       result_missing.text
@@ -2646,7 +2636,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
-          self.assertIn('Instance not found', result_verb.text, verb)
+          self.assertIn('404 Not Found', result_verb.text, verb)
       else:
         self.assertEqual(http.client.OK, result_verb.status_code, verb)
         if verb != 'HEAD':
@@ -4417,7 +4407,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
-          self.assertIn('Instance not found', result_verb.text, verb)
+          self.assertIn('404 Not Found', result_verb.text, verb)
       else:
         self.assertEqual(http.client.OK, result_verb.status_code, verb)
         if verb != 'HEAD':
@@ -6679,6 +6669,57 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
         '_own_ciphers.pem [ciphers '
         'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256 ',
         fh.read())
+
+
+CUSTOM_ERROR_PAGE_CONTENT = """\
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Custom Error Page</title>
+  </head>
+  <body>
+    <p>Custom error page for testing
+  </body>
+</html>
+"""
+
+
+class TestSlaveCustomErrorPage(SlaveHttpFrontendTestCase, TestDataMixin):
+  max_client_version = '2.0'
+  max_http_version = '2'
+  alt_svc = False
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'custom-error-page': CUSTOM_ERROR_PAGE_CONTENT,
+      })
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'default': {
+        'url': cls.backend_url,
+      },
+    }
+
+  def test_custom_error_page(self):
+    self.assertSlaveBase('default')
+    result = fakeHTTPSResult(
+      'forsuredoesnotexists.example.com', '')
+    self.assertEqual(http.client.NOT_FOUND, result.status_code)
+    self.assertEqual(CUSTOM_ERROR_PAGE_CONTENT, result.text)
+    self.assertResponseHeaders(
+      result, via=True, via_frontend_only=True, backend_reached=False,
+      content_length=False)
 
 
 class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):

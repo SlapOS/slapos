@@ -46,6 +46,11 @@
       "title": "Ordered space separated list of ciphers",
       "type": "string"
     },
+    "custom-error-page": {
+      "title": "Custom error page HTML content",
+      "description": "HTML content to serve when no matching slave is found.",
+      "type": "string"
+    },
     "cluster-identification": {
       "title": "Cluster Identification",
       "description": "Identification of the cluster.",

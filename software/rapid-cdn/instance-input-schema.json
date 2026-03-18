@@ -72,6 +72,11 @@
       "title": "Automatic Internal Backend Client's Caucase CSR",
       "type": "boolean"
     },
+    "custom-error-page": {
+      "title": "Custom error page HTML content",
+      "description": "HTML content to serve when no matching slave is found. If not set, a default 404 Not Found page is served.",
+      "type": "string"
+    },
     "ciphers": {
       "title": "Ordered space separated list of ciphers",
       "type": "string",
