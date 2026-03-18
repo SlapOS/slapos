@@ -45,9 +45,9 @@ smtpd_relay_restrictions =
 # External mail destined for our domains is checked.
 smtpd_recipient_restrictions =
   permit_mynetworks
+  check_policy_service unix:private/policyd-spf
 
-smtpd_milters =
-  unix:{{ pyspf_milter_socket }}
+policyd-spf_time_limit = 3600
 
 mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8 {{ (mail_hosts) | join(' ') }}
 
