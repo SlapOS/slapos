@@ -9,13 +9,13 @@
       "title": "Repository URL",
       "description": "Vue project repository URL",
       "type": "string",
-      "default": "https://lab.nexedi.com/Daetalus/hello-vue.git"
+      "default": ""
     },
-    "revision": {
-      "title": "Revision",
-      "description": "Vue project repository revision",
+    "branch": {
+      "title": "Branch",
+      "description": "Vue project repository branch",
       "type": "string",
-      "default": "f8f22a708b43223e38b8629cc67ab0d6e00ecc5f"
+      "default": ""
     }
   }
 }

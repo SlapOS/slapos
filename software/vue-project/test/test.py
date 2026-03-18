@@ -28,6 +28,7 @@ from __future__ import unicode_literals
 
 import json
 import os
+import pathlib
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
@@ -36,22 +37,46 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '../software.cfg')))
+repo_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '../test/hello-vue'))
 
+if not os.path.isdir(os.path.join(repo_path, '.git')):
+    subprocess.check_call(['git', 'init'], cwd=repo_path)
+    subprocess.check_call(['git', 'add', '.'], cwd=repo_path)
+    subprocess.check_call(['git', 'commit', '-m', 'initial commit'], cwd=repo_path)
+
+default_vue_project_url = pathlib.Path(repo_path).resolve().as_uri()
 
 class TestVueProject(SlapOSInstanceTestCase):
   __partition_reference__ = 'G'
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'_': json.dumps({})}
+    return {
+      'repo-url': default_vue_project_url,
+    }
 
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
   def test_url_get(self):
-    print("*********************")
-    print("*********************")
-    print("*********************")
-    print(self.connection_parameters)
     resp = requests.get(self.connection_parameters['backend-url'], verify=False)
     self.assertEqual(requests.codes.ok, resp.status_code)
+    html = resp.text
+
+    # 1. not the original source code index.html
+    self.assertNotIn('/src/main.js', html)
+
+    # 2. it should contains the js file built by Vite
+    script_match = re.search(
+        r'<script[^>]+type="module"[^>]+src="([^"]*assets/[^"]+\.js)"',
+        html,
+    )
+    self.assertIsNotNone(script_match, html)
+
+    js_url = urljoin(base_url, script_match.group(1))
+    js_resp = requests.get(js_url, verify=False)
+    self.assertEqual(requests.codes.ok, js_resp.status_code)
+
+    # 3. The default Vue HelloWorld page contains it.
+    self.assertIn('Vite + Vue', js_resp.text)

@@ -36,7 +36,7 @@ unstringify = main
 [vue-project-src]
 recipe = slapos.recipe.build:gitclone
 repository = ${slap-configuration:configuration.repo-url}
-revision = ${slap-configuration:configuration.revision}
+branch = ${slap-configuration:configuration.branch}
 use-cache = true
 
 [vue-project-build]
@@ -64,7 +64,7 @@ install =
 
   # Write down the revision numbder to a file, allow user to check it quickly
   with open(os.path.join(location, "REVISION"), "w", encoding="utf-8") as f:
-    f.write(r"""${vue-project-src:revision}""")
+    f.write(r"${vue-project-src:revision}")
 
 [nginx-parameters]
 ipv6 = ${slap-configuration:ipv6-random}
@@ -108,7 +108,7 @@ context =
 
 [nginx-service]
 recipe = slapos.cookbook:wrapper
-command-line = {{ nginx_location }}/sbin/nginx -c ${nginx-conf:output} -p ${directory:srv} -g "error_log ${directory:log}/nginx-startup.log debug;"
+command-line = {{ nginx_location }}/sbin/nginx -c ${nginx-conf:output}
 wrapper-path = ${directory:services}/nginx-service
 wait-for-files =
   ${nginx-parameters:ssl-certificate}
