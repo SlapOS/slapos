@@ -1906,9 +1906,9 @@ class TestInstanceRetentionDelay(unittest.TestCase):
     return cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', options)
 
   def test_default_retention_value(self):
-    """Test that default retention delay is 7 days (604800 seconds)."""
+    """Test that default retention delay is 90 days (7776000 seconds)."""
     recipe = self._makeRecipe()
-    self.assertEqual(recipe.instance_retention_delay, 604800)
+    self.assertEqual(recipe.instance_retention_delay, 7776000)
 
   def test_retention_delay_zero_immediate_removal(self):
     """Test that retention=0 causes immediate destruction."""
