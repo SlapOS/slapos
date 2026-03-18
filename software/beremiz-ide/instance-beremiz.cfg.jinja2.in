@@ -71,8 +71,7 @@ recipe = slapos.recipe.template
 output = ${directory:scripts}/nginx-graceful
 inline =
   #!/bin/sh
-  exec kill -s SIGHUP $(cat ${nginx-params:path-pid})
-
+  exec {{ bin_directory }}/slapos-kill --pidfile '${nginx-params:path-pid}' -s SIGHUP
 [novnc-promise]
 <= monitor-promise-base
 promise = check_socket_listening
