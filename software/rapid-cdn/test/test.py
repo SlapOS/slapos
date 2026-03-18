@@ -8326,6 +8326,33 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertIn('Uninstalling _deleted-', slapgrid_log)
     self.assertNotIn('Updating _deleted-', slapgrid_log)
 
+  def test_domain_reuse_after_destruction(self):
+    # destroy slave 'deleted' and process the destruction
+    self.requestSlaveInstance('deleted', {}, 'destroyed')
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.runCDNInstanceNode()
+    slapgrid_log_file = self.clean_frontend_log_file()
+    self.slap.waitForInstance(self.instance_max_retry)
+
+    with open(slapgrid_log_file) as fh:
+      slapgrid_log = fh.read()
+    self.assertIn('Uninstalling _deleted-', slapgrid_log)
+
+    # request a new slave 'reuse' claiming the same domain as 'deleted'
+    self.requestSlaveInstance('reuse', {
+      'server-alias': 'deleted.example.com',
+    })
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.runCDNInstanceNode()
+    slapgrid_log_file = self.clean_frontend_log_file()
+    self.slap.waitForInstance(self.instance_max_retry)
+
+    with open(slapgrid_log_file) as fh:
+      slapgrid_log = fh.read()
+    # the new slave reusing the domain is installed
+    self.assertIn('Installing _reuse-', slapgrid_log)
+    self.assertNotIn('Uninstalling _reuse-', slapgrid_log)
+
 
 class TestCDNHTTP(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   @classmethod
