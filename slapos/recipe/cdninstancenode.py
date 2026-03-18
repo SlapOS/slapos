@@ -159,7 +159,7 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
 
   def __init__(self, buildout, name, options):
     super(CDNInstanceNodeRecipe, self).__init__(buildout, name, options)
-    self.instance_retention_delay = int(options.get('instance-retention-delay', '604800'))
+    self.instance_retention_delay = int(options.get('instance-retention-delay', '7776000'))
     self._already_retained_references = set()
     self.dns_entry_name = options.get('dns-entry-name', '_slapos-challenge')
     self.domain_validation_db = DomainValidationDB(self.options['domainvalidation-db-path'])
