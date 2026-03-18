@@ -14,6 +14,9 @@ offline = true
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
 config-monitor-password = $${monitor-instance-parameter:password}
+{% set greylisting = slapparameter_dict['greylisting'] -%}
+config-greylisting-enable = {{ dumps(greylisting['enable']) }}
+config-greylisting-delay = {{ dumps(greylisting['delay']) }}
 {% for key, value in slapparameter_dict['default-proxy-config'].items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}

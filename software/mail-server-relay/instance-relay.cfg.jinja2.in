@@ -44,6 +44,10 @@ var-spool = $${:var}/spool
 vhosts = $${:home}/vhosts
 srv = $${buildout:directory}/srv
 
+[postgrey-directory]
+recipe = slapos.cookbook:mkdirectory
+data = $${directory:var-lib}/postgrey
+
 [userinfo]
 recipe = slapos.cookbook:userinfo
 
@@ -116,6 +120,8 @@ spool-trace = $${:var-spool}/trace
 {%   endif %}
 {% endfor %}
 {% set has_password_auth = password_auth_domains | length > 0 %}
+{% set greylisting_enable = slapparameter_dict['greylisting-enable'] %}
+{% set greylisting_delay = slapparameter_dict['greylisting-delay'] %}
 
 [postfix-conf-main]
 recipe = slapos.recipe.template:jinja2
@@ -154,6 +160,10 @@ context =
   raw postfix_log_path $${:log-file}
   key sender_host_domains :sender-host-domains
   raw postfix_etc_directory $${postfix-directory:etc}
+  raw greylisting_enable {{ 'true' if greylisting_enable else 'false' }}
+{% if greylisting_enable %}
+  key postgrey_port postgrey-service:port
+{% endif %}
 
 [postfix-conf-master]
 recipe = slapos.recipe.template:jinja2
@@ -304,6 +314,43 @@ depends =
 < = base-wrapper
 command-line = $${directory:usr}/libexec/postfix/master -c $${postfix-directory:etc}
 wrapper-path = $${directory:run}/postfix-master
+
+# Postgrey greylisting policy server
+# -----------------------------------
+{% if greylisting_enable %}
+[postgrey-service]
+recipe = slapos.cookbook:wrapper
+port = 10023
+command-line =
+  ${postgrey-perl:perl-bin} ${postgrey:location}/postgrey
+    --inet=$${:port}
+    --dbdir=$${postgrey-directory:data}
+    --delay={{ greylisting_delay }}
+    --max-age=30
+    --user=$${userinfo:pw-name}
+    --group=$${userinfo:gr-name}
+    --whitelist-clients=$${postgrey-whitelist-clients:output}
+    --whitelist-recipients=$${postgrey-whitelist-recipients:output}
+wrapper-path = $${directory:service}/postgrey
+depends =
+  $${postgrey-whitelist-clients:recipe}
+  $${postgrey-whitelist-recipients:recipe}
+
+[postgrey-whitelist-clients]
+recipe = slapos.recipe.template
+output = $${postfix-directory:etc}/postgrey_whitelist_clients
+inline =
+  # Postgrey client whitelist
+  # Internal backend servers are already whitelisted by postfix (permit_mynetworks)
+
+[postgrey-whitelist-recipients]
+recipe = slapos.recipe.template
+output = $${postfix-directory:etc}/postgrey_whitelist_recipients
+inline =
+  # Postgrey recipient whitelist
+  # Add recipients that should never be greylisted, e.g.:
+  # postmaster@
+{% endif %}
 
 {% if has_password_auth %}
 [postfix-submission-promise]
