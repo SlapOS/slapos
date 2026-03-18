@@ -173,7 +173,7 @@ output = ${directory:scripts}/apache-httpd-graceful
 mode = 700
 input = inline:
   #!/bin/sh
-  kill -USR1 "$(cat '${apache-php-configuration:pid-file}')"
+  {{ bin_directory }}/slapos-kill -s USR1 --pidfile '${apache-php-configuration:pid-file}'
 
 [logrotate-entry-apache]
 <= logrotate-entry-base
