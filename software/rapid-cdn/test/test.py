@@ -6671,6 +6671,57 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
         fh.read())
 
 
+CUSTOM_ERROR_PAGE_CONTENT = """\
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Custom Error Page</title>
+  </head>
+  <body>
+    <p>Custom error page for testing
+  </body>
+</html>
+"""
+
+
+class TestSlaveCustomErrorPage(SlaveHttpFrontendTestCase, TestDataMixin):
+  max_client_version = '2.0'
+  max_http_version = '2'
+  alt_svc = False
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'custom-error-page': CUSTOM_ERROR_PAGE_CONTENT,
+      })
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'default': {
+        'url': cls.backend_url,
+      },
+    }
+
+  def test_custom_error_page(self):
+    self.assertSlaveBase('default')
+    result = fakeHTTPSResult(
+      'forsuredoesnotexists.example.com', '')
+    self.assertEqual(http.client.NOT_FOUND, result.status_code)
+    self.assertEqual(CUSTOM_ERROR_PAGE_CONTENT, result.text)
+    self.assertResponseHeaders(
+      result, via=True, via_frontend_only=True, backend_reached=False,
+      content_length=False)
+
+
 class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   @classmethod
   def prepareCertificate(cls):

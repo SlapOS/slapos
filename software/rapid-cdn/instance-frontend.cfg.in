@@ -8,6 +8,7 @@
 {%-   set FRONTEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_executable'] %}
 {%- endif %}
 {%- set BACKEND_HAPROXY_EXECUTABLE = software_parameter_dict['haproxy_executable'] %}
+{%- set CUSTOM_ERROR_PAGE = slapparameter_dict.get('custom-error-page', '') %}
 [buildout]
 extends =
   {{ software_parameter_dict['profile_common'] }}
@@ -44,6 +45,9 @@ parts =
   monitor-verify-re6st-connectivity
 {%- endif %}
 
+{%- if CUSTOM_ERROR_PAGE %}
+  custom-error-page-file
+{%- endif %}
   frontend-haproxy-rsyslogd-configuration
   frontend-haproxy-rsyslogd
   logrotate-entry-frontend-haproxy
@@ -472,7 +476,11 @@ access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
 pid-file = ${directory:run}/httpd.pid
 frontend-graceful-command = ${frontend-haproxy-validate:output} && kill -USR2 $(cat ${:pid-file})
+{%- if CUSTOM_ERROR_PAGE %}
+not-found-file = ${custom-error-page-file:output}
+{%- else %}
 not-found-file = {{ software_parameter_dict['template_not_found_html'] }}
+{%- endif %}
 master-certificate = ${frontend-directory:master-autocert-dir}/master.pem
 self-signed-fallback-certificate = ${self-signed-fallback-access:certificate}
 http-port = ${configuration:plain_http_port}
@@ -513,6 +521,26 @@ context =
   key fallback_certificate get-self-signed-fallback-access:certificate
 output = ${directory:bbb-ssl-dir}/frontend.crt
 # BBB: SlapOS Master non-zero knowledge END
+
+{%- if CUSTOM_ERROR_PAGE %}
+[custom-error-page-file]
+recipe = slapos.recipe.build
+custom-error-page = ${configuration:custom-error-page}
+output = ${directory:etc}/notfound.html
+init =
+  import os
+  os.makedirs(os.path.dirname(options['output']), exist_ok=True)
+  custom = options['custom-error-page'].strip()
+  with open(options['output'], 'w') as f:
+    f.write('HTTP/1.0 404 Not Found\n')
+    f.write('Cache-Control: no-cache\n')
+    f.write('Connection: close\n')
+    f.write('Content-Type: text/html\n')
+    f.write('\n')
+    f.write(custom)
+    if not custom.endswith('\n'):
+      f.write('\n')
+{%- endif %}
 
 [frontend-directory]
 recipe = slapos.cookbook:mkdirectory
