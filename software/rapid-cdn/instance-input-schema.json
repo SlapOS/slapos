@@ -233,7 +233,7 @@
     "dns-nameserver": {
       "title": "DNS Nameserver",
       "default": "",
-      "description": "DNS Nameserver used for checking DNS for custom domains",
+      "description": "Comma-separated list of DNS nameservers used for checking DNS for custom domains. Each entry may include an explicit port (`ip:port`, or `[ipv6]:port`); default port is 53.",
       "type": "string"
     },
     "rotate-num": {
