@@ -67,6 +67,11 @@
       "description": "Network interface to be used for Pub/Sub.",
       "type": "string",
       "default": ""
+    },
+    "max_connections": {
+      "description": "Maximum number of TCP/IP connections the OPC UA server supports.",
+      "type": "integer",
+      "default": 1
     }
   }
 }
