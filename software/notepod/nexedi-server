@@ -1,0 +1,247 @@
+#!/usr/bin/python3
+import os, subprocess, sys
+from functools import partial
+from http import HTTPStatus
+from urllib.parse import urlparse
+from wsgiref.simple_server import WSGIServer
+from bottle import HTTPResponse, \
+    app, debug, post, request, response, route, run, static_file, template
+
+debug()
+
+form = """<!doctype html>
+<html><head><meta charset="utf-8"><style>
+body {
+  margin: 0 10px 0 0;
+}
+html, body, form, table {
+  height: 100%;
+}
+img {
+  {{!get('img','')}}
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th {
+  text-align: left;
+}
+th:first-child {
+  background-color: {{!bgcolor}};
+  box-shadow: inset -30px 0 15px -10px white;
+  padding: {{!get('padding','0')}};
+}
+th:last-child, .field > td:last-child, .w100 {
+  width: 100%;
+}
+.field > td:first-child {
+  padding-right: 2em;
+  white-space: nowrap;
+}
+tr {
+  height: 50px;
+}
+tr:last-child {
+  text-align: center;
+  input {
+    --button-width: 10em;
+    width: var(--button-width);
+    margin-left: calc(100%/3 - var(--button-width));
+  }
+  input:first-child {
+    {{!back}}
+    margin-left: 0;
+  }
+}
+.modal {
+  position: fixed;
+  top: 0;
+  z-index: 1;
+  background-color: rgba(0,0,0,0.4);
+  width: 100%;
+  height: 100%;
+  > * {
+    background-color: white;
+    position: relative;
+    left: 50%;
+    top: 50%;
+    width: fit-content;
+    max-width: 80%;
+    padding: 0 2em;
+    border: 1px solid #888;
+    border-radius: 1ex;
+    transform: translate(-50%,-50%);
+    > div {
+      text-align: center;
+    }
+    > pre {
+      white-space: pre-wrap;
+    }
+    > * {
+      margin: 2ex 0;
+    }
+  }
+}
+</style><script>
+function button(action) {
+  const form = document.forms[0];
+  form.elements.other.value = action;
+  form.submit();
+}
+function modal(i, display) {
+  document.getElementsByClassName("modal")[i].style.display = display;
+}
+</script></head><body>
+
+<form action="{{step}}" id="form" method="post">
+<input type="hidden" name="other">
+<table>
+<tr><th rowspan="4"><a href="https://{{step}}.nexedi.com/" tabindex = "-1" target="_blank">
+<img src="{{step}}.png"></a>{{!form}}
+<tr class="field"><td><label>Token</label>
+<td><input class="w100" name="token" required>
+<tr><td colspan="2" class="buttons">
+<input type="button" value="Back" onclick="button('back')">
+<input type="submit" value="Register">
+<input type="button" value="{{skip_text}}" onclick="{{skip_click}}">
+</table>
+</form>
+
+<div class="modal" style="display: none">
+  <div>
+    <p>Are you sure?</p>
+    <div>
+      <input type="button" value="Yes" onclick="button('skip')">
+      <input type="button" value="No" onclick="modal(0, 'none')">
+    </div>
+  </div>
+</div>
+
+% if defined('error'):
+<div class="modal">
+  <div>
+    <p>Registration failed with exit status {{ error.returncode }}</p>
+    <pre>{{ error.output }}</pre>
+    <div>
+      <input type="button" value="Close" onclick="modal(1, 'none')">
+    </div>
+  </div>
+</div>
+% end
+
+</body></html>"""
+
+steps = []
+
+class step:
+
+    def __new__(cls, setup_path, form, **kw):
+        def decorator(submit):
+            self = object.__new__(cls)
+            self.setup_path = setup_path
+            if not self.configured():
+                steps.append(self)
+                self.form = form
+                name = submit.__name__
+                self.template = partial(template, step=name, **kw)
+                self._submit = submit
+                post('/' + name)(self.submit)
+        return decorator
+
+    def configured(self):
+        return os.path.exists(self.setup_path)
+
+    def render(self, **kw):
+        last = steps[-1] is self
+        return self.template(form, form=self.template(self.form),
+            back="visibility: hidden;" if steps[0] is self else "",
+            skip_text="Uninstall" if last else "Skip",
+            skip_click="modal(0, 'block')" if last else "button('skip')",
+            **kw)
+
+    def submit(self):
+        i = steps.index(self)
+        forms = request.forms
+        other = forms.pop('other')
+        if other:
+            i += {'back': -1, 'skip': 1}[other]
+            def quit():
+                # Spawn as a separate service because prerm will stop us.
+                args = ['systemd-run', 'apt-get', '-y', 'purge', 'nexedi-setup']
+                for step in steps:
+                    args.append(step._submit.__name__ + '-node')
+                os.execvp(args[0], args)
+        else:
+            try:
+                self._submit(**forms)
+            except subprocess.CalledProcessError as e:
+                print(e.output)
+                if self.configured():
+                    raise
+                return self.render(error=e)
+            del steps[i]
+            quit = None if steps else sys.exit
+        if len(steps) > i:
+            return steps[i].render()
+        if quit:
+            app().wsgi_server.service_actions = quit
+        response.status = HTTPStatus.NO_CONTENT
+
+def spawn(*args, capture=False, **kw):
+    if capture:
+        kw['stdout'] = subprocess.PIPE
+        kw['stderr'] = subprocess.STDOUT
+    p = subprocess.run(args, check=True, **kw)
+    if capture:
+        print(p.stdout)
+
+registry_dict = {k: (os.environ['RE6ST_%s_REGISTRY_URL' % k],
+                     os.environ['RE6ST_%s_FINGERPRINT' % k])
+                 for k in ('PROD', 'GNET')}
+
+@step("/etc/re6stnet/re6stnet.conf", """
+<th colspan="2">Resilient and Scalable IPv6 Network
+<tr class="field"><td><label>Network</label><br>&nbsp;
+<td>{{ !registry("PROD", "Production", "required") }}
+<br>{{ !registry("GNET", "Freefib") }}
+""", bgcolor="#009fe3", img="margin-left:-30px; width:200px;",
+     registry=lambda net, name, required="": """\
+<input type="radio" name="network" value="%s" %s><label>%s (%s)</label>
+""" % (net, required, name, urlparse(registry_dict[net][0]).netloc))
+def re6st(token, network):
+    registry, fingerprint = registry_dict[network]
+    spawn('re6st-conf',
+        '--registry', registry,
+        '--fingerprint', fingerprint,
+        '--token', token,
+        '-r', 'title', token,
+        '-d', '/etc/re6stnet',
+        capture=True)
+    spawn('systemctl', 'start', 're6stnet.service')
+
+@step("/etc/opt/slapos/slapos.cfg", """
+<th colspan="2">Edge Cloud Computing and Orchestration
+<tr><td colspan="2">NOTE: SlapOS requires fixed IPv6 range on the default interface (lo),
+which is usually provided by re6st.
+""", bgcolor="#ebf2fa", padding="0 50px 0 20px")
+def slapos(token):
+    spawn('slapos', 'node', 'register', '--token', token, token, capture=True)
+    spawn('systemd-run', 'slapos', 'node', 'format', '--now')
+
+
+route('/')(lambda: steps[0].render())
+
+@route(r'/<logo:re:.+\.png>')
+def static(logo):
+    return static_file(logo, '.')
+
+class WSGIServer(WSGIServer):
+
+    def set_app(self, application):
+        super().set_app(application)
+        application.wsgi_server = self
+
+
+if __name__ == '__main__':
+    run(server_class=WSGIServer)

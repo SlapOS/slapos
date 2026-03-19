@@ -896,7 +896,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   def assertResponseHeaders(
     self, result, cached=False, via=True, backend_reached=True,
-    client_version=None, alt_svc=None, age=False):
+    client_version=None, alt_svc=None, age=False, via_frontend_only=False,
+    content_length=True):
     if client_version is None:
       client_version = self.max_client_version
     if alt_svc is None:
@@ -912,7 +913,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       pop_header_list.append(header.lower())
       return assertSingleHeader(header)
 
-    assertAndPopSingleHeader('Content-Length')
+    if content_length:
+      assertAndPopSingleHeader('Content-Length')
     if 'Connection' in result.headers:
       if assertSingleHeader('Connection').lower() == 'keep-alive':
         pop_header_list.append('Connection'.lower())
@@ -947,7 +949,13 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         expected_via = 'http/1.1 backendvia '
       else:
         expected_via = ''
-      if cached:
+      if via_frontend_only:
+        self.assertEqual(
+          'HTTP/%(client_version)s rapid-cdn-frontend-%(via_id)s' % dict(
+            via_id=via_id, client_version=client_version),
+          via_header
+        )
+      elif cached:
         # ATS adds to existing header, so ","
         self.assertEqual(
           expected_via + 'HTTP/1.1 rapid-cdn-backend-%(via_id)s, '
@@ -1747,6 +1755,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'url-trailing-slash-present': {
         'url': cls.backend_url + 'index.html/',
       },
+      'url-path-with-percent-encoded-whitespace': {
+        'url': cls.backend_url + '%20whitespace%20',
+      },
       'url-netloc-list': {
         'url': cls.backend_url,
         'url-netloc-list': '%(ip)s:%(port_a)s %(ip)s:%(port_b)s' % {
@@ -2236,9 +2247,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '69',
+      'accepted-slave-amount': '70',
       'rejected-slave-amount': '0',
-      'slave-amount': '69',
+      'slave-amount': '70',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -2395,6 +2406,34 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result_missing.text
     )
 
+    self.assertResponseHeaders(
+      result_missing, via=True, via_frontend_only=True, backend_reached=False,
+      content_length=False)
+
+    def assertLastFrontendHaproxyLineRegexp(log_regexp):
+      log_file = glob.glob(
+        os.path.join(
+          self.instance_path, '*', 'var', 'log', 'frontend-haproxy.log'
+        ))[0]
+
+      # sometimes logs appear with a bit of delay, so give it a chance
+      for _ in range(5):
+        with open(log_file, 'r') as fh:
+          line = fh.readlines()[-1]
+        if re.match(log_regexp, line):
+          break
+        time.sleep(0.5)
+      self.assertRegex(
+        line,
+        log_regexp)
+    assertLastFrontendHaproxyLineRegexp(
+      r'{BACKEND_NOT_FOUND} \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] https-frontend~ '
+      r'BACKEND_NOT_FOUND\/<NOSRV> .+/.+\/.+\/.+\/.+ - - '
+      r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] "GET / '
+      r'HTTP/\d.\d" 503 \d+ "-" ".+" \d+'
+    )
+
   def test_server_polluted_keys_removed(self):
     buildout_file = os.path.join(
       self.getMasterPartitionPath(), 'instance-master.cfg')
@@ -2536,7 +2575,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     headers = self.assertResponseHeaders(
-      result_http, via=False, backend_reached=False)
+      result_http, via=True, via_frontend_only=True, backend_reached=False,
+      client_version='1.1')
 
     self.assertEqual(
       'https://url.example.com:%s/test-path/deeper' % (HTTP_PORT,),
@@ -2706,6 +2746,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(
       fakeHTTPSResult(parameter_dict['domain'], 'path/').json()['Path'],
       '/index.html/path/')
+
+  def test_url_path_with_percent_encoded_whitespace(self):
+    parameter_dict = self.assertSlaveBase(
+      'url-path-with-percent-encoded-whitespace')
+    self.assertEqual(
+      fakeHTTPSResult(parameter_dict['domain'], '').json()['Path'],
+      '/%20whitespace%20')
+    self.assertEqual(
+      fakeHTTPSResult(parameter_dict['domain'], 'path').json()['Path'],
+      '/%20whitespace%20/path')
 
   def test_url_netloc_list(self):
     parameter_dict = self.assertSlaveBase('url-netloc-list')

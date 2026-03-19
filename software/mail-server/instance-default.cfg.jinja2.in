@@ -167,7 +167,7 @@ init =
   # 1st pass: keep only slaves matching both address and reference ( = previously accepted slaves)
   for slave in slave_list:
     addr = slave['parameters']['address']
-    
+
     if prev_entry := previous.get(addr):
       if prev_entry['shell'] == slave['reference']:
         output[addr] = make_entry(slave, previous=prev_entry)
@@ -186,7 +186,7 @@ init =
     if existing := output.get(addr):
       if existing['shell'] != slave['reference']:
         error_dict[slave['reference']] = {
-          'address': addr, 
+          'address': addr,
           'error': 'address_already_used'
         }
       # (if it matches, there's nothing to do)
@@ -572,7 +572,7 @@ input = inline:
 
             container.querySelector('.forgot-link a')?.addEventListener('click', e => {
               e.preventDefault();
-              // to reset their password the user should update the shared instance's params with a "reset-token" param set to something and that can be used 
+              // to reset their password the user should update the shared instance's params with a "reset-token" param set to something and that can be used
               showInfoDialog(
                 rl.i18n(forgot),
                 'To reset your password, add a "reset-token" parameter to your account\'s shared instance parameters and set it to any value. A password reset URL will be returned to you.'
@@ -672,7 +672,7 @@ output = $${directory:script}/apache-httpd-graceful
 mode = 700
 input = inline:
   #!/bin/sh
-  kill -USR1 "$(cat '$${apache-php-configuration:pid-file}')"
+  {{ bin_directory }}/slapos-kill -s USR1 --pidfile '$${apache-php-configuration:pid-file}'
 
 [apache-php-conf]
 recipe = slapos.recipe.template:jinja2
@@ -794,7 +794,7 @@ init =
   token = {content['token']}
   setup-url = {options['pw-url']}?user={content['address']}&token={content['token']}
     """)
-  
+
   for ref, content in options['error-dict'].items():
     self.buildout.parse(f"""
   [publish-{ref}]

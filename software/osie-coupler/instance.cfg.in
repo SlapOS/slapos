@@ -18,7 +18,7 @@ extends = {{ template_monitor }}
 [coupler-opc-ua]
 recipe = slapos.cookbook:wrapper
 command-line =
-    {{ coupler_location }}server -d ${instance-parameter:configuration.coupler_block_device} -s ${instance-parameter:configuration.coupler_i2c_slave_list} -p ${instance-parameter:configuration.opc_ua_port} -u ${instance-parameter:configuration.username} -w ${instance-parameter:configuration.password} -b ${instance-parameter:configuration.heart_beat} -t ${instance-parameter:configuration.heart_beat_interval} -l ${instance-parameter:configuration.heart_beat_id_list} -n ${instance-parameter:configuration.network_address_url_data_type} -o ${instance-parameter:configuration.heart_beat_timeout_interval} -i ${instance-parameter:configuration.id} -m ${instance-parameter:configuration.mode} -j ${instance-parameter:configuration.network_interface}
+    {{ coupler_location }}server -d ${instance-parameter:configuration.coupler_block_device} -s ${instance-parameter:configuration.coupler_i2c_slave_list} -p ${instance-parameter:configuration.opc_ua_port} -u ${instance-parameter:configuration.username} -w ${instance-parameter:configuration.password} -b ${instance-parameter:configuration.heart_beat} -t ${instance-parameter:configuration.heart_beat_interval} -l ${instance-parameter:configuration.heart_beat_id_list} -n ${instance-parameter:configuration.network_address_url_data_type} -o ${instance-parameter:configuration.heart_beat_timeout_interval} -i ${instance-parameter:configuration.id} -m ${instance-parameter:configuration.mode} -j ${instance-parameter:configuration.network_interface} -x ${instance-parameter:configuration.max_connections}
 wrapper-path = ${directory:service}/coupler-opc-ua
 
 [instance-parameter]
@@ -42,6 +42,7 @@ configuration.heart_beat_id_list = ""
 configuration.network_address_url_data_type = opc.udp://224.0.0.22:4840/
 configuration.heart_beat_timeout_interval = 100
 configuration.network_interface = ""
+configuration.max_connections = 1
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
