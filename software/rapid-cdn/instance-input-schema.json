@@ -236,6 +236,12 @@
       "description": "DNS Nameserver used for checking DNS for custom domains",
       "type": "string"
     },
+    "dns-nameserver-port": {
+      "title": "DNS Nameserver Port",
+      "default": "",
+      "description": "Port number for the DNS nameserver used for domain validation. Uses default port 53 when empty.",
+      "type": "string"
+    },
     "rotate-num": {
       "title": "Rotate Number",
       "description": "Number of log files to keep before rotation.",

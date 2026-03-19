@@ -201,6 +201,10 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
       self.logger.debug('Querying DNS using nameserver(s): %s',
                         ', '.join(self.dns_nameservers))
 
+    dns_port = options.get('dns-nameserver-port')
+    if dns_port:
+      self.dns_resolver.port = int(dns_port)
+
   def _check_custom_domain(self, domain, token):
     """
     Check if the custom domain has the required TXT record.

@@ -5,6 +5,7 @@ domainvalidation-db-path = ${cdn-requester-configuration:domainvalidation-db-pat
 shared = true
 openssl-binary = ${cdn-requester-configuration:openssl}
 dns-nameserver = ${slap-configuration:configuration.dns-nameserver}
+dns-nameserver-port = ${slap-configuration:configuration.dns-nameserver-port}
 key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
