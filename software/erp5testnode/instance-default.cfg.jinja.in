@@ -166,7 +166,7 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = $${basedirectory:services}/$${:_buildout_section_name_}
 command-line =
   ${bash:location}/bin/bash -c
-  "kill -s USR2 $$(${coreutils:location}/bin/cat $${shellinabox-frontend:pidfile}) \
+  "{{ bin_directory }}/slapos-kill -p $${shellinabox-frontend:pidfile} -s USR2 \
     && ${coreutils:location}/bin/sleep infinity"
 hash-files =
   $${shellinabox-frontend-config:output}
