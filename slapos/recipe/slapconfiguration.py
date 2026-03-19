@@ -317,8 +317,13 @@ class DefaultValidator(object):
         return f(value) if type(value) in self.strings else value
       except ValueError:
         return value
+    def type_checker_for(t, f):
+      # jsonschema.TypeChecker callback api: fn(type_checker, value)
+      def callback(_, value):
+        return original_is_type(unstringify(value, f), t)
+      return callback
     return original_type_checker.redefine_many({
-      t: lambda _, value: original_is_type(unstringify(value, f), t)
+      t: type_checker_for(t, f)
       for t, f in self.unstringify.items()
     })
 
