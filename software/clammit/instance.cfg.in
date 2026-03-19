@@ -108,7 +108,7 @@ config-command = test -S ${clam-config:clamd-socket-file}
 <= logrotate-entry-base
 name = clamd
 log = ${clam-config:clamd-log-file}
-post = {{ buildout.directory }}/bin/slapos-kill --pidfile ${clam-config:clamd-pid-file} -s SIGHUP
+post = {{ bin_directory }}/slapos-kill --pidfile ${clam-config:clamd-pid-file} -s SIGHUP
 
 ################################################################################
 # Freshclam
@@ -310,7 +310,7 @@ mode = 700
 input =
   inline:
   #!/bin/sh
-  kill -USR2 $(cat "${haproxy.conf:pidfile}")
+  {{ bin_directory }}/slapos-kill --pidfile '${haproxy.conf:pidfile}' -s USR2
 
 [frontend]
 recipe = slapos.cookbook:wrapper
