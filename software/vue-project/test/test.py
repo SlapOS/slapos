@@ -47,6 +47,8 @@ if not os.path.isdir(os.path.join(repo_path, '.git')):
     subprocess.check_call(['git', 'commit', '-m', 'initial commit'], cwd=repo_path)
 
 default_vue_project_url = pathlib.Path(repo_path).resolve().as_uri()
+print('**********************')
+print(default_vue_project_url)
 
 class TestVueProject(SlapOSInstanceTestCase):
   __partition_reference__ = 'G'

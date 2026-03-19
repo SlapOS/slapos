@@ -45,7 +45,7 @@ dist = ${buildout:parts-directory}/vue-project-build/dist
 install =
   import os, shutil, subprocess
 
-  src = r"""${vue-project-src:location}"""
+  src = r"${vue-project-src:location}"
   env = os.environ.copy()
   env["PATH"] = r"""{{ nodejs_location }}/bin""" + ":" + env.get("PATH", "")
 
@@ -61,6 +61,7 @@ install =
     shutil.rmtree(location)
   os.makedirs(location)
   print("*************************")
+  print(r"${vue-project-src:repository}")
   print(location)
   shutil.copytree(dist_src, dist_dst)
   print(dist_dst)
