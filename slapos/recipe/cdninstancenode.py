@@ -181,25 +181,32 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
     # - Consistent DNS resolution regardless of system configuration
     # - Faster queries (direct to authoritative nameserver)
     # - Avoiding local DNS cache issues
+    # Each comma-separated entry may carry an explicit port using
+    # `ip:port` (or `[ipv6]:port`); the default port is 53.
     dns_nameserver = options.get('dns-nameserver')
-    if dns_nameserver:
-      # Validate that it's a valid IP address (IPv4 or IPv6)
-      # Split by comma to support multiple nameservers
-      nameserver_list = [ns.strip() for ns in dns_nameserver.split(',')]
-      self.dns_nameservers = nameserver_list
-      self.logger.info('Using custom nameserver(s) for DNS validation: %s', ', '.join(self.dns_nameservers))
-    else:
-      self.dns_nameservers = None
 
     # Create DNS resolver with fresh cache at initialization
     # This bypasses system DNS cache and remote DNS cache when using custom nameservers
     self.dns_resolver = dns.resolver.Resolver()
     self.dns_resolver.lifetime = 5.0
     self.dns_resolver.cache = dns.resolver.LRUCache()
-    if self.dns_nameservers:
-      self.dns_resolver.nameservers = self.dns_nameservers
-      self.logger.debug('Querying DNS using nameserver(s): %s',
-                        ', '.join(self.dns_nameservers))
+
+    if dns_nameserver:
+      nameserver_ips = []
+      nameserver_ports = {}
+      for entry in dns_nameserver.split(','):
+        parsed = urllib.parse.urlsplit('dns://' + entry.strip())
+        nameserver_ips.append(parsed.hostname)
+        if parsed.port:
+          nameserver_ports[parsed.hostname] = parsed.port
+      self.dns_nameservers = nameserver_ips
+      # nameserver_ports must be assigned before nameservers: the setter
+      # calls _enrich_nameservers(... self.nameserver_ports, self.port).
+      self.dns_resolver.nameserver_ports = nameserver_ports
+      self.dns_resolver.nameservers = nameserver_ips
+      self.logger.info('Using custom nameserver(s) for DNS validation: %s', dns_nameserver)
+    else:
+      self.dns_nameservers = None
 
   def _check_custom_domain(self, domain, token):
     """
