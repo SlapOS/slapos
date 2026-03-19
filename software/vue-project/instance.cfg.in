@@ -60,7 +60,10 @@ install =
   if os.path.exists(location):
     shutil.rmtree(location)
   os.makedirs(location)
+  print("*************************")
+  print(location)
   shutil.copytree(dist_src, dist_dst)
+  print(dist_dst)
 
   # Write down the revision numbder to a file, allow user to check it quickly
   with open(os.path.join(location, "REVISION"), "w", encoding="utf-8") as f:
