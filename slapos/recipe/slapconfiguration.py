@@ -317,8 +317,13 @@ class DefaultValidator(object):
         return f(value) if type(value) in self.strings else value
       except ValueError:
         return value
+    def type_checker_for(t, f):
+      # jsonschema.TypeChecker callback api: fn(type_checker, value)
+      def callback(_, value):
+        return original_is_type(unstringify(value, f), t)
+      return callback
     return original_type_checker.redefine_many({
-      t: lambda _, value: original_is_type(unstringify(value, f), t)
+      t: type_checker_for(t, f)
       for t, f in self.unstringify.items()
     })
 
@@ -573,6 +578,9 @@ class DefaultValidator(object):
               except ValueError:
                 pass
 
+def str_to_bool(s):
+  """Convert string to boolean"""
+  return bool(('False', 'True').index(s))
 
 class JsonSchema(Recipe):
   """
@@ -674,6 +682,7 @@ class JsonSchema(Recipe):
     report_error = self._parseOption(options, 'report-error', 'all')
     software_description = self._description(options)
     serialisation = software_description.getSerialisation(strict=True)
+    unstringify_types_dict = {'integer': int, 'boolean': str_to_bool}
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
       parameter_dict = unwrap(parameter_dict)
     if validate.main:
@@ -686,7 +695,7 @@ class JsonSchema(Recipe):
         )
       validator = DefaultValidator(
         set_defaults.main,
-        {'integer': int} if unstringify.main else None,
+        unstringify_types_dict if unstringify.main else None,
       )
       try:
         parameter_dict = self._validateMain(schema, validator, parameter_dict)
@@ -706,7 +715,7 @@ class JsonSchema(Recipe):
           )
         validator = DefaultValidator(
           set_defaults.shared,
-          {'integer': int} if unstringify.shared else None,
+          unstringify_types_dict if unstringify.shared else None,
         )
       else:
         schema = validator = None
