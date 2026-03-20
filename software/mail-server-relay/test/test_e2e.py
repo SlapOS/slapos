@@ -104,10 +104,10 @@ class E2E(SlapOSInstanceTestCase):
       external = json.loads(cls.requestExternalServerInstance(state=state).getConnectionParameterDict()['_'])
       rhost = external['imap-smtp-ipv6']
       rport = int(external['smtp-port'])
-      ruser = "testmail@example.com"  # we're using the test account's credentials to log in
+      ruser = "testmail@external.domain.lan"  # we're using the test account's credentials to log in
       rpass = "password123"
     else:
-      rhost, rport, ruser, rpass = "example.com", 2525, "user", "pass"
+      rhost, rport, ruser, rpass = "external.domain.lan", 2525, "user", "pass"
     return {
       "_": json.dumps(
         {
@@ -182,7 +182,7 @@ class E2E(SlapOSInstanceTestCase):
   def requestExternalServerInstance(cls, state: str = "started"):
     param_dict = {
       "mail-domains": [
-        "example.com"
+        "external.domain.lan"
       ],
       "no-relay": True,
       "test-account": True,
@@ -269,7 +269,7 @@ class E2E(SlapOSInstanceTestCase):
     # try sending a mail from external mail server to mail1 using smtp
     mail1, ext = self.mail_server_instances[0], self.ext_mail_server
     sender = "testmail@mail1.domain.lan"
-    recipient = "testmail@example.com"
+    recipient = "testmail@external.domain.lan"
     
     self._send_email_via_smtp(mail1, sender, recipient, "Test Email", "This is a test email to external server.")
     self._verify_email_received(ext, recipient, "This is a test email to external server.")
@@ -277,7 +277,7 @@ class E2E(SlapOSInstanceTestCase):
   def test_send_email_from_external_via_relay(self):
     # try sending a mail from external to mail1 via the relay
     mail1 = self.mail_server_instances[0]
-    sender = "testmail@example.com"
+    sender = "testmail@external.domain.lan"
     recipient = "testmail@mail1.domain.lan"
     
     # Get relay connection info from cluster's DNS entries
@@ -360,7 +360,7 @@ class E2E(SlapOSInstanceTestCase):
 
     legitimate_user = "testmail@mail1.domain.lan"
     spoofed_sender = "testmail@mail2.domain.lan"
-    recipient = "testmail@example.com"
+    recipient = "testmail@external.domain.lan"
 
     # Authenticate on mail1 as the real user but set MAIL FROM to mail2's domain
     self._send_email_via_smtp(
@@ -448,7 +448,7 @@ class E2E(SlapOSInstanceTestCase):
     self.assertTrue(password, "Could not retrieve mail4 SASL password")
 
     spoofed_sender = "testmail@mail1.domain.lan"
-    recipient = "testmail@example.com"
+    recipient = "testmail@external.domain.lan"
 
     msg = "Subject: Password Auth Impersonation\n\nThis should be rejected."
     with self.assertRaises((smtplib.SMTPSenderRefused, smtplib.SMTPRecipientsRefused)):
