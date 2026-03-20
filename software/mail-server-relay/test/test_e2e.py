@@ -130,6 +130,10 @@ class E2E(SlapOSInstanceTestCase):
               "relay-bar": {
                   "state": "started",
               }
+            },
+            "greylisting": {
+              "enable": True,
+              "delay": 5,
           }
         }
       )
@@ -300,8 +304,20 @@ class E2E(SlapOSInstanceTestCase):
     self.assertIsNotNone(relay_host, "Could not find relay host")
     
     msg = "Subject: Test Email from External\n\nThis is a test email from external via relay."
+    with self.assertRaises(smtplib.SMTPRecipientsRefused) as exc:
+      with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
+        smtp.sendmail(
+          from_addr=sender,
+          to_addrs=[recipient],
+          msg=msg
+        )
+
+    for _addr, (code, _msg) in exc.exception.recipients.items():
+      self.assertEqual(code, 450, f"Expected 450 greylisting, got {code}: {_msg}")
+
+    time.sleep(10)
+
     with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
-      # No authentication needed for incoming mail to relay
       smtp.sendmail(
         from_addr=sender,
         to_addrs=[recipient],
