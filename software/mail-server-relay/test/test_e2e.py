@@ -110,7 +110,11 @@ class E2E(SlapOSInstanceTestCase):
       'password123',
     )
     parameters = serialize({
-     "default-proxy-config": proxy_config,
+      "default-relay-config": {
+        **proxy_config,
+        "greylisting-enabled": True,
+        "greylisting-delay": 5,
+      },
       "outbound-domain-whitelist": cls.mail_server_domains + [
         cls.password_relay_domain,
         cls.ip_auth_relay_domain,
@@ -124,10 +128,6 @@ class E2E(SlapOSInstanceTestCase):
         "relay-two": {
           "state": "started"
         }
-      },
-      "greylisting": {
-        "enable": True,
-        "delay": 5,
       },
     })
     return cls.slap.request(
