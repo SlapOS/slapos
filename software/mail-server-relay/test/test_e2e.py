@@ -114,6 +114,9 @@ class E2E(SlapOSInstanceTestCase):
         **proxy_config,
         "greylisting-enabled": True,
         "greylisting-delay": 5,
+        "greylisting-whitelist-recipients": [
+          "testmail@mail2.domain.lan"
+        ],
       },
       "outbound-domain-whitelist": cls.mail_server_domains + [
         cls.password_relay_domain,
@@ -383,6 +386,21 @@ class E2E(SlapOSInstanceTestCase):
         )
 
     self.check_not_in_inbox(mail1, msg_body, wait_time=5)
+
+  def test_mock_spf_pass_via_whitelisted_recipient(self):
+    """Inbound mail to a whitelisted recipient bypasses greylisting and is
+    accepted on the first attempt, which lets us exercise the SPF-pass path."""
+    mail2 = self.mail_servers[1]
+
+    msg_body = "This inbound email should bypass greylisting on first delivery."
+    with smtplib.SMTP(*self.relay_inbound_addr, timeout=10) as smtp:
+      smtp.sendmail(
+        from_addr=self.external_mail_server.testmail,
+        to_addrs=[mail2.testmail],
+        msg=f"Subject: Mock SPF Pass\n\n{msg_body}",
+      )
+
+    self.check_inbox(mail2, msg_body)
 
   def check_not_in_inbox(self, mailserver, unexpected_content, wait_time=30):
     time.sleep(wait_time)
