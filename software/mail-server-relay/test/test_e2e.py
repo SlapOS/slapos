@@ -118,6 +118,9 @@ class E2E(SlapOSInstanceTestCase):
             "proxy-password": rpass,
             "greylisting-enable": True,
             "greylisting-delay": 5,
+            "greylisting-whitelist-recipients": [
+              "testmail@mail2.domain.lan"
+            ],
           },
           "outbound-domain-whitelist": [
             "mail1.domain.lan",
@@ -350,6 +353,27 @@ class E2E(SlapOSInstanceTestCase):
       body,
       wait_time=5,
     )
+
+  def test_mock_spf_pass_via_whitelisted_recipient(self):
+    """Inbound mail to a whitelisted recipient bypasses greylisting and is
+    accepted on the first attempt, which lets us exercise the SPF-pass path."""
+    mail2 = self.mail_server_instances[1]
+    relay_host, relay_port = self._get_relay_smtp_info('mail2.domain.lan')
+    self.assertIsNotNone(relay_host, "Could not find relay host")
+
+    sender = "testmail@external.domain.lan"
+    recipient = "testmail@mail2.domain.lan"
+    body = "This inbound email should bypass greylisting on first delivery."
+    msg = f"Subject: Mock SPF Pass\n\n{body}"
+
+    with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
+      smtp.sendmail(
+        from_addr=sender,
+        to_addrs=[recipient],
+        msg=msg,
+      )
+
+    self._verify_email_received(mail2, recipient, body)
 
   def _verify_email_not_received(self, imap_server_instance, recipient, unexpected_content, wait_time=30):
     """Helper method to verify an email was NOT received.
