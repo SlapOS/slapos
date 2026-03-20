@@ -2,88 +2,63 @@
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
-  "properties": {
-    "proxy-host": {
-      "title": "Proxy Host",
-      "description": "The host to proxy the emails to",
-      "type": "string"
+  "allOf": [
+    {
+      "$ref": "./instance-cluster-input-schema.json#/definitions/relay-config"
     },
-    "proxy-port": {
-      "title": "Proxy Port",
-      "description": "The port used by the proxy",
-      "type": "integer",
-      "default": 25
-    },
-    "proxy-user": {
-      "title": "Proxy User",
-      "description": "The user to authenticate with the proxy host",
-      "type": "string"
-    },
-    "proxy-password": {
-      "title": "Proxy Password",
-      "description": "The password to authenticate with the proxy host",
-      "type": "string"
-    },
-    "mail-domains": {
-      "title": "Mail Domains",
-      "description": "List of domains that this relay server will consider internal",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "The domain name"
+    {
+      "type": "object",
+      "properties": {
+        "mail-domains": {
+          "title": "Mail Domains",
+          "description": "List of domains that this relay server will consider internal",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The domain name"
+              },
+              "mail-server-host": {
+                "type": "string",
+                "description": "The mail server host (IPv6) for this domain",
+                "title": "Mail Server Host"
+              },
+              "mail-server-port": {
+                "type": "integer",
+                "description": "The mail server port for this domain",
+                "title": "Mail Server Port",
+                "default": 10025
+              },
+              "can-send": {
+                "type": "boolean",
+                "description": "Whether this domain can send (outbound) emails through the relay"
+              },
+              "authentication": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "password"
+                ],
+                "description": "Authentication method: 'none' for IP-based, 'password' for SASL",
+                "default": "none"
+              },
+              "password": {
+                "type": "string",
+                "description": "SASL password (only when authentication is 'password')"
+              }
+            }
           },
-          "mail-server-host": {
-            "type": "string",
-            "description": "The mail server host (IPv6) for this domain",
-            "title": "Mail Server Host"
-          },
-          "mail-server-port": {
-            "type": "integer",
-            "description": "The mail server port for this domain",
-            "title": "Mail Server Port",
-            "default": 10025
-          },
-          "can-send": {
-            "type": "boolean",
-            "description": "Whether this domain can send (outbound) emails through the relay"
-          },
-          "authentication": {
-            "type": "string",
-            "enum": [
-              "none",
-              "password"
-            ],
-            "description": "Authentication method: 'none' for IP-based, 'password' for SASL",
-            "default": "none"
-          },
-          "password": {
-            "type": "string",
-            "description": "SASL password (only when authentication is 'password')"
-          }
+          "default": []
         }
       },
-      "default": []
-    },
-    "greylisting-enable": {
-      "title": "Enable Greylisting",
-      "description": "Whether to enable greylisting on inbound mail",
-      "type": "boolean",
-      "default": true
-    },
-    "greylisting-delay": {
-      "title": "Greylist Delay",
-      "description": "Seconds a new sender triplet must wait before being accepted",
-      "type": "integer",
-      "default": 60
+      "required": [
+        "proxy-host",
+        "proxy-user",
+        "proxy-password",
+        "mail-domains"
+      ]
     }
-  },
-  "required": [
-    "proxy-host",
-    "proxy-user",
-    "proxy-password",
-    "mail-domains"
   ]
 }

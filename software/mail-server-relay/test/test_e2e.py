@@ -111,11 +111,13 @@ class E2E(SlapOSInstanceTestCase):
     return {
       "_": json.dumps(
         {
-          "default-proxy-config": {
+          "default-relay-config": {
             "proxy-host": rhost,
             "proxy-port": rport,
             "proxy-user": ruser,
             "proxy-password": rpass,
+            "greylisting-enable": True,
+            "greylisting-delay": 5,
           },
           "outbound-domain-whitelist": [
             "mail1.domain.lan",
@@ -130,10 +132,6 @@ class E2E(SlapOSInstanceTestCase):
               "relay-bar": {
                   "state": "started",
               }
-            },
-            "greylisting": {
-              "enable": True,
-              "delay": 5,
           }
         }
       )
