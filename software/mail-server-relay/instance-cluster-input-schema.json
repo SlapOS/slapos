@@ -3,7 +3,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Cluster Input Parameters",
   "definitions": {
-    "proxy-config": {
+    "relay-config": {
       "type": "object",
       "properties": {
         "proxy-host": {
@@ -26,14 +26,25 @@
           "title": "Proxy Password",
           "description": "The password to authenticate with the proxy host",
           "type": "string"
+        },
+        "greylisting-enable": {
+          "title": "Enable Greylisting",
+          "description": "Whether to enable greylisting on inbound mail",
+          "type": "boolean",
+          "default": true
+        },
+        "greylisting-delay": {
+          "title": "Greylist Delay",
+          "description": "Seconds a new sender triplet must wait before being accepted",
+          "type": "integer",
+          "default": 60
         }
-      },
-      "additionalProperties": false
+      }
     }
   },
   "properties": {
-    "default-proxy-config": {
-      "$ref": "#/definitions/proxy-config"
+    "default-relay-config": {
+      "$ref": "#/definitions/relay-config"
     },
     "outbound-domain-whitelist": {
       "title": "Outbound Domain Whitelist",
@@ -48,27 +59,6 @@
       "title": "Relay Domain",
       "description": "The domain that will point to all relay instances",
       "type": "string"
-    },
-    "greylisting": {
-      "title": "Greylisting",
-      "description": "Greylisting configuration for inbound mail via postgrey",
-      "type": "object",
-      "properties": {
-        "enable": {
-          "title": "Enable Greylisting",
-          "description": "Whether to enable greylisting on inbound mail",
-          "type": "boolean",
-          "default": true
-        },
-        "delay": {
-          "title": "Greylist Delay",
-          "description": "Seconds a new sender triplet must wait before being accepted",
-          "type": "integer",
-          "default": 60
-        }
-      },
-      "default": {},
-      "additionalProperties": false
     },
     "topology": {
       "title": "Topology",
@@ -112,7 +102,7 @@
               "default": "started"
             },
             "config": {
-              "$ref": "#/definitions/proxy-config"
+              "$ref": "#/definitions/relay-config"
             }
           }
         }
@@ -121,7 +111,7 @@
     }
   },
   "required": [
-    "default-proxy-config",
+    "default-relay-config",
     "outbound-domain-whitelist",
     "topology"
   ]
