@@ -39,6 +39,25 @@
   },
   {
     "_": {
+      "cluster-identification": "testing partition 0",
+      "monitor-httpd-port": 8403,
+      "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
+      "monitor-password": "@@monitor-password@@",
+      "monitor-username": "admin",
+      "slave-list": []
+    },
+    "full_address_list": [],
+    "instance_title": "error-page-manager",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-2",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "error-page-manager",
+    "slave_instance_list": [],
+    "timestamp": "@@TIMESTAMP@@"
+  },
+  {
+    "_": {
       "authenticate-to-backend": false,
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
       "backend-connect-retries": 3,
@@ -48,6 +67,9 @@
       "domain": "example.org",
       "enable-http2-by-default": true,
       "enable-http3": false,
+      "error-page-base-url": "https://[2001:67c:1254:e:d3:4057:4002:4]:24000/haproxy/3SYrHeO75a-wcj0cEssLtds1crpMphF-GdKizzFdzMM",
+      "error-page-certificate": "-----BEGIN CERTIFICATE-----\nMIIDCDCCAfCgAwIBAgIUC31jZFFCl6qcf8Tez++r6XdLS2kwDQYJKoZIhvcNAQEL\nBQAwHTEbMBkGA1UEAwwSRXJyb3IgUGFnZSBNYW5hZ2VyMCAXDTI2MDMyMDA5NDc0\nN1oYDzIxMjYwMjI0MDk0NzQ3WjAdMRswGQYDVQQDDBJFcnJvciBQYWdlIE1hbmFn\nZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDIZ2YH1ge+cgd3AFup\nfWK0MqOQTxgdEtG+ZSjuBxN2zCpbjz+xdhyMPd5B6oyovSXM31GN1nCkf/iDvQj0\n9TuD/GFXr7ybZDn3RdhJDtAsb/5b7Im+N89A2NoSPMt/2XyrvNMdKJd4PpE0PiqZ\n71NZDSmzFSW42VcISHzrMpC+guFoIQGSjSaWBwefi5E+pqS8TQIxVMke6MwB8Nd+\nkojqp2qvnaffo6A1mzrn3HVGrNLrRSTY2clEfap2bFOYVDDp4LZBGXlsLthyocjL\n5e6Dd5Ok2mPVCCckLFrJ+0hoB5WCRlS7rlp1Tm+LKXd3VcxVd4eoOSpqBn+g/vHr\nKdMzAgMBAAGjPjA8MBsGA1UdEQQUMBKHECABBnwSVAAOANNAV0ACAAQwHQYDVR0O\nBBYEFDHZTrBmHKZ6ntnbmAIOZjTjg0b4MA0GCSqGSIb3DQEBCwUAA4IBAQCG5T2K\nLLMqJnPDX4bvh01pwpb226NxcVE/Wyox8HhLk6dmIjVuwyP3dQkFM5KPgFhziRhZ\n/1FLsjybJyM1c7EqVUsWjL2xohRp7fib7sywf2X7pYH0WJqNJ+fizF847EkpofZU\nr2MeeF7raV21uq9FAQiZK3TRvWvYmwGcM/t42Px1qzcH88CsHXl6zPAiddQcoZ6H\nRJGVSC+dJrKrZ/Kk+/9sXJqfE7FP6DLvEwm2vuHjGxJ6vxrosVIVKKMBhzHZ4/Tb\nz3JeAMtbN6pj22wOiodxq69nypue9tOwtskAYRfpb/EbMX/lKrQtusq6bTAuch3X\n6LQbrcPKZIpq1i1T\n-----END CERTIFICATE-----\n",
+      "error-page-sync-url": "https://[2001:67c:1254:e:d3:4057:4002:4]:24000/sync/3SYrHeO75a-wcj0cEssLtds1crpMphF-GdKizzFdzMM",
       "expert-backend-allow-downgrade-ssl": false,
       "extra_slave_instance_list": "[]",
       "frontend-name": "caddy-frontend-1",
@@ -61,13 +83,14 @@
       "plain_http_port": 11080,
       "port": 11443,
       "request-timeout": 600,
+      "slave-error-page-information": "{}",
       "slave-kedifa-information": "{}"
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
-    "slap_computer_partition_id": "T-2",
+    "slap_computer_partition_id": "T-3",
     "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "single-custom-personal",
     "slave_instance_list": [],

@@ -51,6 +51,32 @@
   },
   {
     "_": {
+      "cluster-identification": "testing partition 0",
+      "monitor-httpd-port": 8403,
+      "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
+      "monitor-password": "@@monitor-password@@",
+      "monitor-username": "admin",
+      "slave-list": [
+        {
+          "slave_reference": "_deleted"
+        },
+        {
+          "slave_reference": "_first"
+        }
+      ]
+    },
+    "full_address_list": [],
+    "instance_title": "error-page-manager",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-2",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "error-page-manager",
+    "slave_instance_list": [],
+    "timestamp": "@@TIMESTAMP@@"
+  },
+  {
+    "_": {
       "authenticate-to-backend": false,
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
       "backend-connect-retries": 3,
@@ -60,6 +86,9 @@
       "domain": "example.org",
       "enable-http2-by-default": true,
       "enable-http3": false,
+      "error-page-base-url": "https://[2001:67c:1254:e:d3:4057:4002:4]:24000/haproxy/2cUeiuadh8PNZ8Kfb6QNohyvhzeeNupf3tzw9ONQ064",
+      "error-page-certificate": "-----BEGIN CERTIFICATE-----\nMIIDCDCCAfCgAwIBAgIUPIKgNEtLqzKTBHkUfThtTvV/gUkwDQYJKoZIhvcNAQEL\nBQAwHTEbMBkGA1UEAwwSRXJyb3IgUGFnZSBNYW5hZ2VyMCAXDTI2MDMyMDExMDk1\nMVoYDzIxMjYwMjI0MTEwOTUxWjAdMRswGQYDVQQDDBJFcnJvciBQYWdlIE1hbmFn\nZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDPX+4Jdo5Rf/vmHRop\n7IzrCRvEkvmXBAtyEpoX2U0MMZeN79/DsCG96Xl3BZ3LJRKMz38dHEzJgNJFRr6c\nca3myvE69T97dilQKFgWt7qNyeKnOXEhDtzDTmK6Jdqf0WqV4BLSGwBjvynhM+QE\nQTnrYApy9xQjOLqQiJJq/MaNW1onkUbyeoCn7x/HRZW89Ve20N1t5Roy8z57B/W4\n6JKJfk4GTPBqGeqJI99viQ2m6A4eB+5IDhIUZewLSfNC0du7XVeBJKOxBJ9kczXn\nRWAt7Xfe/T3aQu0MNgDbbDNdtRDI8jpMnnpguvL2VlJI/obdW+i9ZRoQsd/tAJR3\nk4HzAgMBAAGjPjA8MBsGA1UdEQQUMBKHECABBnwSVAAOANNAV0ACAAQwHQYDVR0O\nBBYEFOoqvmA17Fo7z924A+sR7sAVn5fHMA0GCSqGSIb3DQEBCwUAA4IBAQBkR5Ac\n3I4w4ISsw76p4gU6+n3mb5a6gs3K3H6TIcAb2bwj5x+EoWezR+45HiMvImTVmgmv\nBv4JHJT/M6+G+t8B8u1Kru3GvjQWZ0sFxqz7XFTYowZFlBxoRc3fNtvCKxwjUxLW\n2xpvSTOxn0zJQ1CkJnndXqIi27BNbv5T80I89JbuOL35fwIHa89lspty2o1QKXQc\nsoUJBEVAOG7L8kE+wZGmdePDDI4hyjxeM2DfT9s+bj2KSMgUZNpP58Y3+4AijhP5\nF8S+gw3ZV1NGo/U4KqH9c3/vXpxOCuRfxP44md6gFU2qouQYCXSlDhYR4VoHaZin\nR7JsNL1u1TLfB50l\n-----END CERTIFICATE-----\n",
+      "error-page-sync-url": "https://[2001:67c:1254:e:d3:4057:4002:4]:24000/sync/2cUeiuadh8PNZ8Kfb6QNohyvhzeeNupf3tzw9ONQ064",
       "expert-backend-allow-downgrade-ssl": false,
       "extra_slave_instance_list": "[{\"slave_reference\": \"_deleted\"}, {\"slave_reference\": \"_first\"}]",
       "frontend-name": "caddy-frontend-1",
@@ -73,13 +102,14 @@
       "plain_http_port": 8080,
       "port": 4443,
       "request-timeout": 600,
+      "slave-error-page-information": "{\"_deleted\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/dEHSGw9twHcnxBE1-bdkhVAZeJbBSHddCD0rJKryS5g/\"}, \"_first\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/7Gm5l61ZxLzPoBVuyyrUCg1--u8iz4u3wTEGrC1Pm44/\"}}",
       "slave-kedifa-information": "{\"_deleted\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@?auth=\"}, \"_first\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@?auth=\"}}"
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
-    "slap_computer_partition_id": "T-2",
+    "slap_computer_partition_id": "T-3",
     "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "single-custom-personal",
     "slave_instance_list": [],
