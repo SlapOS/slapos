@@ -144,6 +144,8 @@ context =
 {% set proxy_port = slapparameter_dict['proxy-port'] %}
 {% set greylisting_enable = slapparameter_dict.get('greylisting-enable', true) %}
 {% set greylisting_delay = slapparameter_dict.get('greylisting-delay', 60) %}
+{% set greylisting_whitelist_clients = slapparameter_dict.get('greylisting-whitelist-clients', []) %}
+{% set greylisting_whitelist_recipients = slapparameter_dict.get('greylisting-whitelist-recipients', []) %}
 
 [internal-postfix-transport]
 recipe = slapos.recipe.template:jinja2
@@ -249,6 +251,9 @@ output = $${inbound-postfix-directory:etc}/postgrey_whitelist_clients
 inline =
   # Postgrey client whitelist
   # Internal backend servers are already whitelisted by postfix (permit_mynetworks)
+{% for entry in greylisting_whitelist_clients %}
+  {{ entry }}
+{% endfor %}
 
 [postgrey-whitelist-recipients]
 recipe = slapos.recipe.template
@@ -257,6 +262,9 @@ inline =
   # Postgrey recipient whitelist
   # Add recipients that should never be greylisted, e.g.:
   # postmaster@
+{% for entry in greylisting_whitelist_recipients %}
+  {{ entry }}
+{% endfor %}
 {% endif %}
 
 [inbound-postfix-service]
