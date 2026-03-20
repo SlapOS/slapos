@@ -19,9 +19,9 @@ class SocketMock():
   bind = close = nothing_happen
 
 def useMock(function):
-  def withMock(function):
+  def withMock(self):
     with patch('slapos.recipe.free_port.socket.socket', new=SocketMock):
-      return function
+      return function(self)
   return withMock
 
 class FreePortTest(unittest.TestCase):
