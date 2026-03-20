@@ -274,31 +274,30 @@ class E2E(SlapOSInstanceTestCase):
     self._send_email_via_smtp(mail1, sender, recipient, "Test Email", "This is a test email to external server.")
     self._verify_email_received(ext, recipient, "This is a test email to external server.")
 
-  def test_send_email_from_external_via_relay(self):
-    # try sending a mail from external to mail1 via the relay
-    mail1 = self.mail_server_instances[0]
-    sender = "testmail@external.domain.lan"
-    recipient = "testmail@mail1.domain.lan"
-    
-    # Get relay connection info from cluster's DNS entries
+  def _get_relay_smtp_info(self, mail_domain):
+    """Return (relay_host, smtp_port) for the inbound relay MX of ``mail_domain``."""
     cluster_params = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     dns_entries = cluster_params.get('dns-entries', '')
-    
-    # Parse DNS entries to find the MX record for mail1.domain.lan
-    # Format should be: "mail1.domain.lan MX 10 [relay_host]"
     relay_host = None
-    relay_port = 10025  # Default SMTP port
-    
+
     for line in dns_entries.strip().split('\n'):
-      if 'mail1.domain.lan MX' in line:
+      if f'{mail_domain} MX' in line:
         parts = line.strip().split()
         if len(parts) >= 4:
           relay_host = parts[3]
           if relay_host.startswith('[') and relay_host.endswith(']'):
             relay_host = relay_host[1:-1]
           break
-    
-    self.assertIsNotNone(relay_host, f"Could not find relay host in DNS entries: {dns_entries}")
+
+    return relay_host, 10025
+
+  def test_send_email_from_external_via_relay(self):
+    # try sending a mail from external to mail1 via the relay
+    mail1 = self.mail_server_instances[0]
+    sender = "testmail@external.domain.lan"
+    recipient = "testmail@mail1.domain.lan"
+    relay_host, relay_port = self._get_relay_smtp_info('mail1.domain.lan')
+    self.assertIsNotNone(relay_host, "Could not find relay host")
     
     msg = "Subject: Test Email from External\n\nThis is a test email from external via relay."
     with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
@@ -311,6 +310,32 @@ class E2E(SlapOSInstanceTestCase):
     
     # Verify email was received at mail1
     self._verify_email_received(mail1, recipient, "This is a test email from external via relay.")
+
+  def test_spf_impersonation_from_example_dot_com_rejected(self):
+    """Inbound mail claiming to be from example.com must be rejected by SPF."""
+    mail1 = self.mail_server_instances[0]
+    relay_host, relay_port = self._get_relay_smtp_info('mail1.domain.lan')
+    self.assertIsNotNone(relay_host, "Could not find relay host")
+
+    sender = "testmail@example.com"
+    recipient = "testmail@mail1.domain.lan"
+    body = "This inbound impersonation should be rejected by SPF."
+    msg = f"Subject: SPF Impersonation\n\n{body}"
+
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
+        smtp.sendmail(
+          from_addr=sender,
+          to_addrs=[recipient],
+          msg=msg,
+        )
+
+    self._verify_email_not_received(
+      mail1,
+      recipient,
+      body,
+      wait_time=5,
+    )
 
   def _verify_email_not_received(self, imap_server_instance, recipient, unexpected_content, wait_time=30):
     """Helper method to verify an email was NOT received.
