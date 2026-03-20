@@ -124,7 +124,11 @@ class E2E(SlapOSInstanceTestCase):
         "relay-two": {
           "state": "started"
         }
-      }
+      },
+      "greylisting": {
+        "enable": True,
+        "delay": 5,
+      },
     })
     return cls.slap.request(
       software_release=RELAY_SR,
@@ -315,7 +319,7 @@ class E2E(SlapOSInstanceTestCase):
         if result != 'OK':
           return False
         email_body = data[0][1].decode('utf-8')
-        return expected in data[0][1].decode('utf-8')
+        return expected in email_body
     try_until(
       wrap_exception(check_email),
       timeout=60,
@@ -342,8 +346,21 @@ class E2E(SlapOSInstanceTestCase):
     # try sending a mail from external to mail1 via the relay
     mail1 = self.mail_servers[0]
     msg_body = "This is a test email from external via relay."
+    # first try, greylisted
+    with self.assertRaises(smtplib.SMTPRecipientsRefused) as exc:
+      with smtplib.SMTP(*self.relay_inbound_addr, timeout=10) as smtp:
+        smtp.sendmail(
+          from_addr=self.external_mail_server.testmail,
+          to_addrs=[mail1.testmail],
+          msg=f"Subject: Test Email from External\n\n{msg_body}"
+        )
+
+    for _addr, (code, _msg) in exc.exception.recipients.items():
+      self.assertEqual(code, 450, f"Expected 450 greylisting, got {code}: {_msg}")
+
+    time.sleep(10)
+
     with smtplib.SMTP(*self.relay_inbound_addr, timeout=10) as smtp:
-      # No authentication needed for incoming mail to relay
       smtp.sendmail(
         from_addr=self.external_mail_server.testmail,
         to_addrs=[mail1.testmail],
