@@ -216,6 +216,100 @@
   },
   {
     "_": {
+      "cluster-identification": "testing partition 0",
+      "monitor-httpd-port": 8403,
+      "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
+      "monitor-password": "@@monitor-password@@",
+      "monitor-username": "admin",
+      "slave-list": [
+        {
+          "custom_domain": "customdomainsslcrtsslkey.example.com",
+          "slave_reference": "_custom_domain_ssl_crt_ssl_key",
+          "ssl_crt": "@@customdomain_certificate_pem@@",
+          "ssl_key": "@@customdomain_key_pem@@",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "custom_domain": "customdomainsslcrtsslkeysslcacrt.example.com",
+          "slave_reference": "_custom_domain_ssl_crt_ssl_key_ssl_ca_crt",
+          "ssl_ca_crt": "@@ca.certificate_pem@@",
+          "ssl_crt": "@@customdomain_ca_certificate_pem@@",
+          "ssl_key": "@@customdomain_ca_key_pem@@",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_ssl_ca_crt_does_not_match",
+          "ssl_ca_crt": "@@ca.certificate_pem@@",
+          "ssl_crt": "@@certificate_pem@@",
+          "ssl_key": "@@key_pem@@",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_ssl_ca_crt_garbage",
+          "ssl_ca_crt": "some garbage",
+          "ssl_crt": "@@sslcacrtgarbage_ca_certificate_pem@@",
+          "ssl_key": "@@sslcacrtgarbage_ca_key_pem@@",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable_cache": true,
+          "slave_reference": "_ssl_from_master",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_ssl_from_master_kedifa_overrides",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_ssl_from_slave",
+          "ssl_crt": "@@ssl_from_slave_certificate_pem@@",
+          "ssl_key": "@@ssl_from_slave_key_pem@@",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_ssl_from_slave_kedifa_overrides",
+          "ssl_crt": "@@ssl_from_slave_kedifa_overrides_certificate_pem@@",
+          "ssl_key": "@@ssl_from_slave_kedifa_overrides_key_pem@@",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_type-notebook-ssl_from_master",
+          "type": "notebook",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_type-notebook-ssl_from_master_kedifa_overrides",
+          "type": "notebook",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_type-notebook-ssl_from_slave",
+          "ssl_crt": "@@type_notebook_ssl_from_slave_certificate_pem@@",
+          "ssl_key": "@@type_notebook_ssl_from_slave_key_pem@@",
+          "type": "notebook",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_type-notebook-ssl_from_slave_kedifa_overrides",
+          "ssl_crt": "@@type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem@@",
+          "ssl_key": "@@type_notebook_ssl_from_slave_kedifa_overrides_key_pem@@",
+          "type": "notebook",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        }
+      ]
+    },
+    "full_address_list": [],
+    "instance_title": "error-page-manager",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-2",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "error-page-manager",
+    "slave_instance_list": [],
+    "timestamp": "@@TIMESTAMP@@"
+  },
+  {
+    "_": {
       "apache-certificate": "@@certificate_pem@@",
       "apache-key": "@@key_pem@@",
       "authenticate-to-backend": false,
@@ -227,6 +321,9 @@
       "domain": "example.com",
       "enable-http2-by-default": true,
       "enable-http3": false,
+      "error-page-base-url": "https://[2001:67c:1254:e:d3:4057:4002:4]:24000/haproxy/7q71Rn-rEhFegtr8HF2rHKD0jyqMUMqldDl73hHLQpo",
+      "error-page-certificate": "-----BEGIN CERTIFICATE-----\nMIIDCDCCAfCgAwIBAgIUN+3X7jfEgCDu2MV+lhvXQ/cWNoUwDQYJKoZIhvcNAQEL\nBQAwHTEbMBkGA1UEAwwSRXJyb3IgUGFnZSBNYW5hZ2VyMCAXDTI2MDMyMDA5MjAw\nNFoYDzIxMjYwMjI0MDkyMDA0WjAdMRswGQYDVQQDDBJFcnJvciBQYWdlIE1hbmFn\nZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCR9u5wzwcqibF5PWo5\nkT+YRpf+taS4gvmwP4GiNJecCqHDnBom88YPBN1z3rGObpIb4Sa2nBuzEynxAeP/\naE0Vd2pCx6GraiEQ5IpKMajNACx+3LA5oAPjanmv8TkklYYmtfJWUzGfm+Ddhyza\nUQ9zqF+ZURpB6wJ+RlOxi7ICsFI5uclD8SnkbH/dOWkH9BngdDySCAtsmMs+DU9d\nsf01uB5kZZ9N2dkT3ZkhXGJrdAipFeNFaes6bEYKPUcIceiBJSr+JdoSm/b/ZreB\nKks0283AcTcHAgQ/LLOU8IyMnVCZSn77hOdzD/1ANNkMfXwuWzIYHOkUtlLK0FDh\n5VIjAgMBAAGjPjA8MBsGA1UdEQQUMBKHECABBnwSVAAOANNAV0ACAAQwHQYDVR0O\nBBYEFL7hoCul8xO1CHgmv79Iz1iOpocMMA0GCSqGSIb3DQEBCwUAA4IBAQCQSHSF\n+FYFmy9WWf+hc6Y5hJelkN7rmUq7ZNNM8KTyPALsxzJlqyD3NY6CHbBxfQpanwVY\nhOOSCpmg1KMAaw6t48xrlM9ZrykIdvmAkrjjA1psrQePXphRTtLtYP2bhwlK3c6g\n/NYjKg+72+LIIxu20OukfPSq8cSJzQ+KljTcST5nlrj16W+DViLrKi625gQYL9Ie\n3ZtYcn/ocNMtIwQbjsB5QppJI77n2XiSkOnRyHFshbNi1ilU+Y/yVfi0Lym6Fg9q\nhHw380pk/3ZpKsqohXMLSZr2wd+04vg4ix5NTOelUFKdyxhJafLnQ113iNb4ux8g\nyaE3eKy8z85ZNlVd\n-----END CERTIFICATE-----\n",
+      "error-page-sync-url": "https://[2001:67c:1254:e:d3:4057:4002:4]:24000/sync/7q71Rn-rEhFegtr8HF2rHKD0jyqMUMqldDl73hHLQpo",
       "expert-backend-allow-downgrade-ssl": false,
       "extra_slave_instance_list": "[{\"custom_domain\": \"customdomainsslcrtsslkey.example.com\", \"slave_reference\": \"_custom_domain_ssl_crt_ssl_key\", \"ssl_crt\": \"@@customdomain_certificate_pem_double@@\", \"ssl_key\": \"@@customdomain_key_pem_double@@\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomainsslcrtsslkeysslcacrt.example.com\", \"slave_reference\": \"_custom_domain_ssl_crt_ssl_key_ssl_ca_crt\", \"ssl_ca_crt\": \"@@ca.certificate_pem_double@@\", \"ssl_crt\": \"@@customdomain_ca_certificate_pem_double@@\", \"ssl_key\": \"@@customdomain_ca_key_pem_double@@\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_ssl_ca_crt_does_not_match\", \"ssl_ca_crt\": \"@@ca.certificate_pem_double@@\", \"ssl_crt\": \"@@certificate_pem_double@@\", \"ssl_key\": \"@@key_pem_double@@\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_ssl_ca_crt_garbage\", \"ssl_ca_crt\": \"some garbage\", \"ssl_crt\": \"@@sslcacrtgarbage_ca_certificate_pem_double@@\", \"ssl_key\": \"@@sslcacrtgarbage_ca_key_pem_double@@\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable_cache\": true, \"slave_reference\": \"_ssl_from_master\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_ssl_from_master_kedifa_overrides\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_ssl_from_slave\", \"ssl_crt\": \"@@ssl_from_slave_certificate_pem_double@@\", \"ssl_key\": \"@@ssl_from_slave_key_pem_double@@\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_ssl_from_slave_kedifa_overrides\", \"ssl_crt\": \"@@ssl_from_slave_kedifa_overrides_certificate_pem_double@@\", \"ssl_key\": \"@@ssl_from_slave_kedifa_overrides_key_pem_double@@\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_type-notebook-ssl_from_master\", \"type\": \"notebook\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_type-notebook-ssl_from_master_kedifa_overrides\", \"type\": \"notebook\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_type-notebook-ssl_from_slave\", \"ssl_crt\": \"@@type_notebook_ssl_from_slave_certificate_pem_double@@\", \"ssl_key\": \"@@type_notebook_ssl_from_slave_key_pem_double@@\", \"type\": \"notebook\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_type-notebook-ssl_from_slave_kedifa_overrides\", \"ssl_crt\": \"@@type_notebook_ssl_from_slave_kedifa_overrides_certificate_pem_double@@\", \"ssl_key\": \"@@type_notebook_ssl_from_slave_kedifa_overrides_key_pem_double@@\", \"type\": \"notebook\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
       "frontend-name": "caddy-frontend-1",
@@ -240,13 +337,14 @@
       "plain_http_port": 11080,
       "port": 11443,
       "request-timeout": 600,
+      "slave-error-page-information": "{\"_custom_domain_ssl_crt_ssl_key\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/0frFZIOQ3PMUcG6uo2fznWYgpYoigrBOfgpkWgSnKUQ/\"}, \"_custom_domain_ssl_crt_ssl_key_ssl_ca_crt\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/FjrVxh7AxpcUVOVSvcJkKD0faRId_sYrcEJhsL4G09A/\"}, \"_ssl_ca_crt_does_not_match\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/jfRzxy9VjJ-PX9M6C9UxGFg_DMOTk2CTCwdbPe270Bc/\"}, \"_ssl_ca_crt_garbage\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/8KWDC-TbklrzZas1i4fhWSnjFTNIeiJOgCFkeSbR4o8/\"}, \"_ssl_from_master\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/DpF2UtqcpdCAIcuOKTG6D4kwT5m9FJ_Gl6-cyIn9Oes/\"}, \"_ssl_from_master_kedifa_overrides\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/YnsTKO6MhqJ7qme2OIh9LMBim59t58ljno2QSpZ4eRk/\"}, \"_ssl_from_slave\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/quvH_2aaZ5WS8eqLyRmePOj1WAa4LSfGUnsLV34uRNM/\"}, \"_ssl_from_slave_kedifa_overrides\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/zpTpFCxVySkmmTi19J-4jInxCpGM4-LPKRabEYKYhr0/\"}, \"_type-notebook-ssl_from_master\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/jbG8BggG4lkMKtz9ojiHhD5d46UuCF_7mznVLHdFZTk/\"}, \"_type-notebook-ssl_from_master_kedifa_overrides\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/riRmWkS1OwgJrc7sJ-yp4zJTvDldjms_WMx1oSEFdtc/\"}, \"_type-notebook-ssl_from_slave\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/Uzk-HvYM4hIPSSvLV1rvsgyPUyVezbQCAaDiLntpfME/\"}, \"_type-notebook-ssl_from_slave_kedifa_overrides\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/HYgztie1g8KGp1YMAOt3z0_sbVkTxEvy4qYAyz2q4Cg/\"}}",
       "slave-kedifa-information": "{\"_custom_domain_ssl_crt_ssl_key\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_key-generate-auth-url@@?auth=\"}, \"_custom_domain_ssl_crt_ssl_key_ssl_ca_crt\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_ssl_ca_crt_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_ssl_ca_crt_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_ssl_ca_crt_key-generate-auth-url@@?auth=\"}, \"_ssl_ca_crt_does_not_match\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_does_not_match_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_does_not_match_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_does_not_match_key-generate-auth-url@@?auth=\"}, \"_ssl_ca_crt_garbage\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_garbage_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_garbage_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_garbage_key-generate-auth-url@@?auth=\"}, \"_ssl_from_master\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@?auth=\"}, \"_ssl_from_master_kedifa_overrides\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_kedifa_overrides_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_kedifa_overrides_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_kedifa_overrides_key-generate-auth-url@@?auth=\"}, \"_ssl_from_slave\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_slave_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_slave_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_slave_key-generate-auth-url@@?auth=\"}, \"_ssl_from_slave_kedifa_overrides\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_slave_kedifa_overrides_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_slave_kedifa_overrides_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_slave_kedifa_overrides_key-generate-auth-url@@?auth=\"}, \"_type-notebook-ssl_from_master\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_master_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_master_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_master_key-generate-auth-url@@?auth=\"}, \"_type-notebook-ssl_from_master_kedifa_overrides\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_master_kedifa_overrides_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_master_kedifa_overrides_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_master_kedifa_overrides_key-generate-auth-url@@?auth=\"}, \"_type-notebook-ssl_from_slave\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_slave_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_slave_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_slave_key-generate-auth-url@@?auth=\"}, \"_type-notebook-ssl_from_slave_kedifa_overrides\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_slave_kedifa_overrides_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_slave_kedifa_overrides_key-generate-auth-url@@/@@custom_domain_ssl_crt_ssl_key_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook-ssl_from_slave_kedifa_overrides_key-generate-auth-url@@?auth=\"}}"
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
-    "slap_computer_partition_id": "T-2",
+    "slap_computer_partition_id": "T-3",
     "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "single-custom-personal",
     "slave_instance_list": [],
