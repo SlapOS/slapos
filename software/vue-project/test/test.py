@@ -43,6 +43,8 @@ repo_path = os.path.abspath(
 
 if not os.path.isdir(os.path.join(repo_path, '.git')):
     subprocess.check_call(['git', 'init'], cwd=repo_path)
+    subprocess.check_call(['git', 'config', 'user.name', 'SlapOS Test'], cwd=repo_path)
+    subprocess.check_call(['git', 'config', 'user.email', 'slapos-test@example.invalid'], cwd=repo_path)
     subprocess.check_call(['git', 'add', '.'], cwd=repo_path)
     subprocess.check_call(['git', 'commit', '-m', 'initial commit'], cwd=repo_path)
 
