@@ -234,6 +234,7 @@ class E2E(SlapOSInstanceTestCase):
   def send_email(self, mailserver, mail_recipient, body, send_as=None):
     sender = send_as or mailserver.testmail
     with smtplib.SMTP(*self.smtpAddrOf(mailserver), timeout=10) as smtp:
+      smtp.starttls()
       smtp.login(mailserver.testmail, self.testmail_password)
       smtp.sendmail(
         from_addr=sender,
