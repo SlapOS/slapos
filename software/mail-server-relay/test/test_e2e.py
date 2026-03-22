@@ -194,6 +194,7 @@ class E2E(SlapOSInstanceTestCase):
     host, port = smtp_params['imap-smtp-ipv6'], smtp_params['smtp-port']
     sender = send_as or mail_server.testmail
     with smtplib.SMTP(host, port, timeout=10) as smtp:
+      smtp.starttls()
       smtp.login(mail_server.testmail, self.testmail_password)
       smtp.sendmail(
         from_addr=sender,

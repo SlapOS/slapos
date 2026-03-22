@@ -34,13 +34,19 @@ smtp_bind_address_enforce = yes
 import_environment =
   MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
 
-smtpd_tls_security_level = none
+smtp_tls_security_level = encrypt
+
+smtpd_tls_cert_file = {{ postfix_tls_cert }}
+smtpd_tls_key_file = {{ postfix_tls_key }}
+smtpd_tls_security_level = encrypt
+
 smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
 smtpd_sasl_auth_enable = yes
 
 smtpd_recipient_restrictions =
   permit_sasl_authenticated
+
 smtpd_relay_restrictions =
   permit_sasl_authenticated
   defer_unauth_destination
