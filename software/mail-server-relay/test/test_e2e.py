@@ -328,13 +328,13 @@ class E2E(SlapOSInstanceTestCase):
     # Verify email was received at mail1
     self._verify_email_received(mail1, recipient, "This is a test email from external via relay.")
 
-  def test_spf_impersonation_from_example_dot_com_rejected(self):
-    """Inbound mail claiming to be from example.com must be rejected by SPF."""
+  def test_spf_impersonation_rejected(self):
+    """Inbound mail claiming to be from spf-always-fail.messwithdns.test.rapid.space must be rejected by SPF."""
     mail1 = self.mail_server_instances[0]
     relay_host, relay_port = self._get_relay_smtp_info('mail1.domain.lan')
     self.assertIsNotNone(relay_host, "Could not find relay host")
 
-    sender = "testmail@example.com"
+    sender = "testmail@spf-always-fail.messwithdns.test.rapid.space"
     recipient = "testmail@mail1.domain.lan"
     body = "This inbound impersonation should be rejected by SPF."
     msg = f"Subject: SPF Impersonation\n\n{body}"
@@ -354,9 +354,9 @@ class E2E(SlapOSInstanceTestCase):
       wait_time=5,
     )
 
-  def test_mock_spf_pass_via_whitelisted_recipient(self):
+  def test_spf_whitelist_recipient(self):
     """Inbound mail to a whitelisted recipient bypasses greylisting and is
-    accepted on the first attempt, which lets us exercise the SPF-pass path."""
+    accepted on the first attempt,."""
     mail2 = self.mail_server_instances[1]
     relay_host, relay_port = self._get_relay_smtp_info('mail2.domain.lan')
     self.assertIsNotNone(relay_host, "Could not find relay host")
@@ -374,6 +374,27 @@ class E2E(SlapOSInstanceTestCase):
       )
 
     self._verify_email_received(mail2, recipient, body)
+    
+  def test_spf_pass(self):
+    """Inbound mail from an SPF-passing domain bypasses greylisting and is
+    accepted on the first attempt,."""
+    mail1 = self.mail_server_instances[0]
+    relay_host, relay_port = self._get_relay_smtp_info('mail1.domain.lan')
+    self.assertIsNotNone(relay_host, "Could not find relay host")
+
+    sender = "testmail@spf-always-pass.messwithdns.test.rapid.space"
+    recipient = "testmail@mail1.domain.lan"
+    body = "This inbound email should bypass greylisting on first delivery."
+    msg = f"Subject: SPF Pass\n\n{body}"
+
+    with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
+      smtp.sendmail(
+        from_addr=sender,
+        to_addrs=[recipient],
+        msg=msg,
+      )
+
+    self._verify_email_received(mail1, recipient, body)
 
   def _verify_email_not_received(self, imap_server_instance, recipient, unexpected_content, wait_time=30):
     """Helper method to verify an email was NOT received.
