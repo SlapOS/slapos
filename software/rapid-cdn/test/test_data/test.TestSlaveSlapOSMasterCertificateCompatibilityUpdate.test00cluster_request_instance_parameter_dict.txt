@@ -56,6 +56,31 @@
   },
   {
     "_": {
+      "cluster-identification": "testing partition 0",
+      "monitor-httpd-port": 8403,
+      "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
+      "monitor-password": "@@monitor-password@@",
+      "monitor-username": "admin",
+      "slave-list": [
+        {
+          "enable_cache": true,
+          "slave_reference": "_ssl_from_master",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        }
+      ]
+    },
+    "full_address_list": [],
+    "instance_title": "error-page-manager",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-2",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "error-page-manager",
+    "slave_instance_list": [],
+    "timestamp": "@@TIMESTAMP@@"
+  },
+  {
+    "_": {
       "apache-certificate": "@@certificate_pem@@",
       "apache-key": "@@key_pem@@",
       "authenticate-to-backend": false,
@@ -67,6 +92,9 @@
       "domain": "example.com",
       "enable-http2-by-default": true,
       "enable-http3": false,
+      "error-page-base-url": "https://[2001:67c:1254:e:d3:4057:4002:4]:24000/haproxy/ZBWn5L6rZXt92O-A2WY-GZQM2fAF9vjC0SnCsUz44sM",
+      "error-page-certificate": "-----BEGIN CERTIFICATE-----\nMIIDCDCCAfCgAwIBAgIUBBJXiaVA/uEGIeDFtG9UCITjOMcwDQYJKoZIhvcNAQEL\nBQAwHTEbMBkGA1UEAwwSRXJyb3IgUGFnZSBNYW5hZ2VyMCAXDTI2MDMyMDA5Mjc1\nNFoYDzIxMjYwMjI0MDkyNzU0WjAdMRswGQYDVQQDDBJFcnJvciBQYWdlIE1hbmFn\nZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCVwtw9aCjBt3Xu3e9j\n5DLE9YPnwVorWi7pEONTSgzelOiMzMAhjZlTGWyIIOFhuWJwztMqqfDvVIqGpksP\nBW51rX53BahKY+uqNvlooY+CjHtufJRC7we9kbtZx3DLcUpSkvWzDLT+v5duKaNf\nbfUT6gjgLfOiIqrIoLzBJH7kfLqOyQUEFZhLBOw3MpxEv1kuFzdKq+muc2J0nbvr\nCQ6qPwatFuFlQefKHWl/9MVX+EFi4qu78/DifydsgvZUkZtaqybd8pDrvIHdmfnY\nvte4xhJTaoIuctYFND7yCKnUEPayAtm/Vw3o66R/5tkcQ96VpHDYdqITttDik7aF\nePSpAgMBAAGjPjA8MBsGA1UdEQQUMBKHECABBnwSVAAOANNAV0ACAAQwHQYDVR0O\nBBYEFM0vViCaLdiA47PpenqS+VwbVoonMA0GCSqGSIb3DQEBCwUAA4IBAQAX0FlR\nSXEh/xrhQrVT+yNwkauQfSFtre9bQORtquAW55556S6+GDOTj7eOdHOEXHBRpEMH\nwyOAh+bHHR6YHNzi08nRgWp8q7RmeefhL/+1ovjEc1Yrr8UoqDCwB31wXZQgJywf\nSi/yi9d9ceKeF+kJYig7L4Ld/tkevYCj+yhfHqd6cRzX4bgsAkIVJubaXPiEMZdd\ng4a3OM80hgLkfBPZOajCGO6nN4+4dLMcq8jGOyq1GQnfzEfmYnSR7RPzvofSTlhn\n9/2lowGklBJJyuUBGsyXu3J8HfS3ohfYE4s2OCQOCFtOtSCM25FuYF5O7lWZ6tI8\nniHMe+NKQ9FltlbN\n-----END CERTIFICATE-----\n",
+      "error-page-sync-url": "https://[2001:67c:1254:e:d3:4057:4002:4]:24000/sync/ZBWn5L6rZXt92O-A2WY-GZQM2fAF9vjC0SnCsUz44sM",
       "expert-backend-allow-downgrade-ssl": false,
       "extra_slave_instance_list": "[{\"enable_cache\": true, \"slave_reference\": \"_ssl_from_master\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
       "frontend-name": "caddy-frontend-1",
@@ -80,13 +108,14 @@
       "plain_http_port": 11080,
       "port": 11443,
       "request-timeout": 600,
+      "slave-error-page-information": "{\"_ssl_from_master\": {\"upload-url\": \"https://[2001:67c:1254:e:d3:4057:4002:4]:24000/slave/yR4JBPA92p0PbvtYpAY1HCWxM13VvFj0M3TkH6U-5VM/\"}}",
       "slave-kedifa-information": "{\"_ssl_from_master\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@/@@ssl_from_master_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_from_master_key-generate-auth-url@@?auth=\"}}"
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
-    "slap_computer_partition_id": "T-2",
+    "slap_computer_partition_id": "T-3",
     "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "single-custom-personal",
     "slave_instance_list": [],

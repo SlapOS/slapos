@@ -488,6 +488,48 @@ inline =
 
 output = ${:file}
 
+##<Error page updater>
+{%- set error_page_sync_url = configuration.get('error-page-sync-url', '') %}
+{%- set error_page_base_url = configuration.get('error-page-base-url', '') %}
+{%- set error_page_certificate = configuration.get('error-page-certificate', '') %}
+{%- set error_pages_dir = frontend_haproxy_configuration['error-pages-dir'] %}
+
+[error-page-ca-cert]
+recipe = slapos.recipe.build
+certificate-content = {{ dumps(error_page_certificate) }}
+output = {{ directory['etc'] }}/error-page-ca.crt
+init =
+  import os
+  content = options['certificate-content']
+  if content:
+    os.makedirs(os.path.dirname(options['output']), exist_ok=True)
+    with open(options['output'], 'w') as f:
+      f.write(content)
+  elif not os.path.exists(options['output']):
+    open(options['output'], 'w').close()
+
+[error-page-updater-script]
+<= jinja2-template-base
+url = {{ software_parameter_dict['template_error_page_updater'] }}
+output = {{ directory['etc'] }}/error-page-updater.py
+extra-context =
+  raw sync_url {{ error_page_sync_url }}
+  raw base_url {{ error_page_base_url }}
+  raw ca_cert_file {{ directory['etc'] }}/error-page-ca.crt
+  raw log_file {{ directory['log'] }}/error-page-updater.log
+  raw error_pages_dir {{ error_pages_dir }}
+  raw builtin_dir {{ software_parameter_dict['error_pages_builtin_dir'] }}
+  raw state_file {{ directory['srv'] }}/error-page-updater-state.json
+  raw on_update {{ frontend_haproxy_configuration['frontend-graceful-command'] }}
+
+[error-page-updater]
+recipe = slapos.cookbook:wrapper
+command-line = {{ software_parameter_dict['bin_directory'] }}/python
+  {{ directory['etc'] }}/error-page-updater.py
+wrapper-path = {{ directory['service'] }}/error-page-updater
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+##</Error page updater>
+
 ##<Frontend haproxy>
 [frontend-haproxy-slave-list]
 dict = {{ dumps(frontend_slave_dict) }}
@@ -603,6 +645,9 @@ extends =
 parts +=
     kedifa-updater
     kedifa-updater-run
+    error-page-ca-cert
+    error-page-updater-script
+    error-page-updater
     frontend-haproxy-configuration
     backend-haproxy-configuration
     promise-key-download-url-ready
