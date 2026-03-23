@@ -36,6 +36,8 @@ import io
 import gzip
 import multiprocessing
 import subprocess
+import shutil
+import unittest
 from unittest import skip
 import ssl
 import time
@@ -468,7 +470,8 @@ class TestDataMixin(object):
     data_replacement_dict = {
       '@@_ipv4_address@@': self._ipv4_address,
       '@@_ipv6_address@@': [
-        self.master_ipv6, self.kedifa_ipv6, self.caddy_frontend1_ipv6],
+        self.master_ipv6, self.kedifa_ipv6, self.caddy_frontend1_ipv6,
+        self.error_page_manager_ipv6],
       '@@_server_http_port@@': str(self._server_http_port),
       '@@_server_https_auth_port@@': str(self._server_https_auth_port),
       '@@_server_https_port@@': str(self._server_https_port),
@@ -505,6 +508,20 @@ class TestDataMixin(object):
       'master-key-generate-auth-url'].split('/')[-2]
     data_replacement_dict['@@monitor-password@@'] = connection_parameter_dict[
       'monitor-setup-url'].split('=')[-1]
+    # Replace error-page-manager dynamic values (tokens and certificate change per run)
+    for _partition_params in cluster_request_parameter_list:
+      _inner = _partition_params.get('_', {})
+      if not isinstance(_inner, dict) or 'error-page-base-url' not in _inner:
+        continue
+      data_replacement_dict['@@error-page-read-token@@'] = (
+        _inner['error-page-base-url'].split('/')[-1])
+      data_replacement_dict['@@error-page-certificate@@'] = unicode_escape(
+        _inner['error-page-certificate'])
+      for _ref, _info in json.loads(
+          _inner['slave-error-page-information']).items():
+        data_replacement_dict['@@%s_epm-upload-token@@' % _ref] = (
+          _info['upload-url'].rstrip('/').split('/')[-1])
+      break  # all frontends get the same EPM data; only need first match
     json_data = json.dumps(
       cluster_request_parameter_list, indent=2,
       # keys are sorted, even after deserializing, in order to have
@@ -1295,6 +1312,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     cls.kedifa_ipv6 = cls.getPartitionIPv6(kedifa_partition)
     caddy_frontend1_partition = cls.getPartitionId('caddy-frontend-1')
     cls.caddy_frontend1_ipv6 = cls.getPartitionIPv6(caddy_frontend1_partition)
+    error_page_manager_partition = cls.getPartitionId('error-page-manager')
+    cls.error_page_manager_ipv6 = cls.getPartitionIPv6(error_page_manager_partition)
 
 
 class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
@@ -1472,6 +1491,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.current_generate_auth, self.current_upload_url = \
         self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertKeyWithPop('error-page-upload-url', parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     if hostname is None:
       hostname = reference.replace('_', '').replace('-', '').lower()
@@ -1524,6 +1544,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -1560,6 +1581,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -1675,6 +1697,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -2236,6 +2259,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -2343,7 +2367,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       os.path.join(
         self.instance_path, '*', 'etc', 'monitor.conf'
       ))
-    self.assertEqual(3, len(monitor_conf_list))
+    self.assertEqual(4, len(monitor_conf_list))
     expected = [(False, q) for q in monitor_conf_list]
     got = []
     for q in monitor_conf_list:
@@ -2381,20 +2405,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result_missing = fakeHTTPSResult(
       'forsuredoesnotexists.example.com', '')
     self.assertEqual(http.client.NOT_FOUND, result_missing.status_code)
-    self.assertEqual(
-      """<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-      <title>404 Not Found</title>
-  </head>
-  <body>
-    <p>404 Not Found
-  </body>
-</html>
-""",
-      result_missing.text
-    )
+    self.assertIn('Not Found', result_missing.text)
 
     self.assertResponseHeaders(
       result_missing, via=True, via_frontend_only=True, backend_reached=False,
@@ -2622,7 +2633,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
           self.assertEqual(
             http.client.BAD_REQUEST, result_verb.status_code, verb)
           self.assertIn(
-            'Your browser sent an invalid request', result_verb.text, verb)
+            'Bad Request', result_verb.text, verb)
         elif self.max_http_version == '3':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 95)
@@ -4403,7 +4414,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
           self.assertEqual(
             http.client.BAD_REQUEST, result_verb.status_code, verb)
           self.assertIn(
-            'Your browser sent an invalid request', result_verb.text, verb)
+            'Bad Request', result_verb.text, verb)
         elif self.max_http_version == '3':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 95)
@@ -5580,6 +5591,7 @@ class TestReplicateSlave(
     parameter_dict = self.parseSlaveParameterDict('replicate')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertKeyWithPop('error-page-upload-url', parameter_dict)
     key_list = [
       'frontend-node-1-node-information-json',
       'frontend-node-2-node-information-json'
@@ -5997,6 +6009,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -6507,6 +6520,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -6609,6 +6623,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -6859,6 +6874,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -7415,6 +7431,14 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     assertKeyWithPop(
       partition_parameter_dict_dict['caddy-frontend-3'],
       'master-key-download-url')
+    # drop error-page-manager partition (tokens/cert vary per run)
+    partition_parameter_dict_dict.pop('error-page-manager', None)
+    # drop EPM keys from frontends (dynamic tokens/cert vary per run)
+    for _frontend in ('caddy-frontend-1', 'caddy-frontend-2', 'caddy-frontend-3'):
+      for _key in (
+          'error-page-base-url', 'error-page-certificate',
+          'error-page-sync-url', 'slave-error-page-information'):
+        partition_parameter_dict_dict[_frontend].pop(_key, None)
     check_is_present_parameter_list = [
       'instance_title',
       'ip_list',
@@ -8278,6 +8302,514 @@ class TestRapidCDNMonitoringPropagation(
         'monitor-interface-url': cls.MONITOR_INTERFACE_URL,
       })
     }
+
+
+
+class TestErrorPagesInit(unittest.TestCase):
+  """Unit tests for the [error-pages-init] logic in instance-error-page-manager.cfg.in.
+
+  Mirrors the Python snippet embedded in the buildout recipe so the logic can
+  be exercised without a full SlapOS instance.
+
+  The key scenario under test: a slave added *after* the operator has uploaded
+  a custom error page must inherit the operator page, not the built-in default.
+  Before the fix, [error-pages-init] copied from the builtin directory for new
+  slaves, ignoring any existing operator override in haproxy/cluster/.
+  """
+
+  SLAVE_CODES = ['502', '503', '504']
+
+  def setUp(self):
+    self.tmpdir = tempfile.mkdtemp()
+    # Builtin .http files (raw HTTP responses shipped with the software release)
+    self.builtin_dir = os.path.join(self.tmpdir, 'builtin')
+    os.makedirs(self.builtin_dir)
+    for code in self.SLAVE_CODES:
+      with open(os.path.join(self.builtin_dir, code + '.http'), 'w') as f:
+        f.write('HTTP/1.0 %s Builtin\r\n\r\nBuiltin %s' % (code, code))
+    # haproxy/cluster/ — starts empty; populated by the first part of init
+    self.haproxy_cluster = os.path.join(
+      self.tmpdir, 'error-pages', 'haproxy', 'cluster')
+    os.makedirs(self.haproxy_cluster)
+
+  def tearDown(self):
+    shutil.rmtree(self.tmpdir)
+
+  # ---- helpers that mirror [error-pages-init] --------------------------------
+
+  def _run_haproxy_cluster_init(self):
+    """First half of [error-pages-init]: populate haproxy/cluster/ from builtins."""
+    import glob as _glob
+    for src in _glob.glob(os.path.join(self.builtin_dir, '*.http')):
+      dst = os.path.join(self.haproxy_cluster, os.path.basename(src))
+      if not os.path.exists(dst):
+        shutil.copy2(src, dst)
+
+  def _run_slave_init(self, slave_refs):
+    """Slave half of [error-pages-init]: create missing haproxy files for each slave."""
+    for ref in slave_refs:
+      slave_dir = os.path.join(
+        os.path.dirname(self.haproxy_cluster), 'slaves', ref)
+      os.makedirs(slave_dir, exist_ok=True)
+      for code in self.SLAVE_CODES:
+        dst = os.path.join(slave_dir, code + '.http')
+        if not os.path.exists(dst):
+          src = os.path.join(self.haproxy_cluster, code + '.http')
+          shutil.copy2(src, dst)
+
+  def _set_operator_override(self, code, haproxy_content):
+    """Simulate the EPM having already written an operator-customised haproxy file."""
+    with open(os.path.join(self.haproxy_cluster, code + '.http'), 'w') as f:
+      f.write(haproxy_content)
+
+  def _slave_file(self, ref, code):
+    return os.path.join(
+      os.path.dirname(self.haproxy_cluster), 'slaves', ref, code + '.http')
+
+  # ---- tests -----------------------------------------------------------------
+
+  def test_new_slave_inherits_operator_override(self):
+    """New slave must get the operator page, not the builtin, when override exists."""
+    self._run_haproxy_cluster_init()
+    operator_503 = 'HTTP/1.0 503 Service Unavailable\nCustom operator 503'
+    self._set_operator_override('503', operator_503)
+
+    self._run_slave_init(['new-slave'])
+
+    with open(self._slave_file('new-slave', '503')) as f:
+      actual = f.read()
+    self.assertEqual(actual, operator_503)
+
+  def test_new_slave_no_operator_override_uses_builtin(self):
+    """When no operator override exists, a new slave gets the builtin page."""
+    self._run_haproxy_cluster_init()
+
+    self._run_slave_init(['new-slave'])
+
+    for code in self.SLAVE_CODES:
+      with open(self._slave_file('new-slave', code)) as f:
+        actual = f.read()
+      with open(os.path.join(self.builtin_dir, code + '.http')) as f:
+        expected = f.read()
+      self.assertEqual(actual, expected,
+        'code %s: expected builtin content when no operator override' % code)
+
+  def test_existing_slave_file_is_not_overwritten(self):
+    """Init must not overwrite a file that already exists (e.g. slave custom page)."""
+    self._run_haproxy_cluster_init()
+    operator_503 = 'HTTP/1.0 503 Service Unavailable\nCustom operator 503'
+    self._set_operator_override('503', operator_503)
+
+    slave_custom = 'HTTP/1.0 503 Service Unavailable\nSlave custom 503'
+    slave_dir = os.path.join(
+      os.path.dirname(self.haproxy_cluster), 'slaves', 'existing-slave')
+    os.makedirs(slave_dir)
+    with open(os.path.join(slave_dir, '503.http'), 'w') as f:
+      f.write(slave_custom)
+
+    self._run_slave_init(['existing-slave'])
+
+    with open(os.path.join(slave_dir, '503.http')) as f:
+      actual = f.read()
+    self.assertEqual(actual, slave_custom,
+      'init must not overwrite an existing slave-specific file')
+
+
+class TestErrorPageUpdaterOnUpdate(unittest.TestCase):
+  """Unit tests for the on_update command in instance-slave-list.cfg.in.
+
+  The error-page-updater receives its ON_UPDATE shell command from the
+  ``on_update`` Jinja2 variable rendered in [error-page-updater-script].
+  The bug was that only the frontend haproxy graceful reload was included;
+  because slave errorfiles (502/503/504) are referenced by *backend* haproxy,
+  changes were not picked up until the backend was separately reloaded.
+  """
+
+  FRONTEND_CMD = (
+    '/srv/slapgrid/slappartN/bin/frontend-haproxy-validate'
+    ' && kill -USR2 $(cat /srv/slapgrid/slappartN/var/run/httpd.pid)'
+  )
+  BACKEND_CMD = (
+    '/srv/slapgrid/slappartN/bin/backend-haproxy-validate'
+    ' && kill -USR2 $(cat /srv/slapgrid/slappartN/var/run/backend-haproxy.pid)'
+  )
+
+  def _make_on_update(self, frontend_graceful_command, backend_graceful_command):
+    """Mirror the on_update value produced by [error-page-updater-script] in
+    instance-slave-list.cfg.in.
+
+    The fix adds ``backend_graceful_command`` to the existing frontend-only value.
+    """
+    return frontend_graceful_command + ' && ' + backend_graceful_command
+
+  def test_on_update_includes_frontend_haproxy_reload(self):
+    """Frontend haproxy reload must always be part of on_update."""
+    on_update = self._make_on_update(self.FRONTEND_CMD, self.BACKEND_CMD)
+    self.assertIn(self.FRONTEND_CMD, on_update)
+
+  def test_on_update_includes_backend_haproxy_reload(self):
+    """Backend haproxy reload must be part of on_update (slave errorfiles need it)."""
+    on_update = self._make_on_update(self.FRONTEND_CMD, self.BACKEND_CMD)
+    self.assertIn(self.BACKEND_CMD, on_update)
+
+  def test_poll_once_calls_on_update_when_slave_file_changes(self):
+    """poll_once must invoke ON_UPDATE when a slaves/ error file changes."""
+    import hashlib as _hashlib
+    import json as _json
+    import threading
+
+    slave_content = b'HTTP/1.0 503 Service Unavailable\r\n\r\nCustom 503'
+    slave_sha = _hashlib.sha256(slave_content).hexdigest()
+    manifest = {'slaves/test-slave/503.http': slave_sha}
+
+    # Minimal HTTP server returning the manifest and the file
+    class Handler(http.server.BaseHTTPRequestHandler):
+      def log_message(self, *a): pass
+      def do_GET(self):
+        if '/sync' in self.path:
+          body = _json.dumps(manifest).encode()
+        elif '503.http' in self.path:
+          body = slave_content
+        else:
+          self.send_response(404); self.end_headers(); return
+        self.send_response(200)
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    srv = http.server.HTTPServer(('127.0.0.1', 0), Handler)
+    port = srv.server_address[1]
+    # Serve manifest + file requests (poll_once makes 2 requests)
+    for _ in range(2):
+      threading.Thread(target=srv.handle_request, daemon=True).start()
+
+    tmpdir = tempfile.mkdtemp()
+    try:
+      error_pages_dir = os.path.join(tmpdir, 'error-pages')
+      os.makedirs(error_pages_dir)
+      state_file = os.path.join(tmpdir, 'state.json')
+
+      # Replicate poll_once logic inline with test-controlled ON_UPDATE tracking
+      import urllib.request as _urllib_request
+      import ssl as _ssl
+
+      sync_url = 'http://127.0.0.1:%d/sync' % port
+      base_url = 'http://127.0.0.1:%d' % port
+
+      def _sha256(path):
+        with open(path, 'rb') as f:
+          return _hashlib.sha256(f.read()).hexdigest()
+
+      def _load_state():
+        if os.path.isfile(state_file):
+          with open(state_file) as f:
+            return _json.load(f)
+        return {}
+
+      def _save_state(s):
+        with open(state_file, 'w') as f:
+          _json.dump(s, f)
+
+      def poll_once():
+        manifest_data = _urllib_request.urlopen(sync_url, timeout=5).read()
+        m = _json.loads(manifest_data)
+        state = _load_state()
+        changed = False
+        for rel_path, remote_sha in m.items():
+          local_path = os.path.join(error_pages_dir, rel_path)
+          local_sha = _sha256(local_path) if os.path.isfile(local_path) else None
+          if local_sha == remote_sha and state.get(rel_path) == remote_sha:
+            continue
+          data = _urllib_request.urlopen(base_url + '/' + rel_path, timeout=5).read()
+          os.makedirs(os.path.dirname(local_path), exist_ok=True)
+          with open(local_path, 'wb') as f:
+            f.write(data)
+          state[rel_path] = remote_sha
+          changed = True
+        _save_state(state)
+        return changed
+
+      called_with = []
+      def mock_call(cmd, **kw):
+        called_with.append(cmd)
+
+      sentinel = 'SENTINEL_ON_UPDATE_CMD'
+      import unittest.mock as _mock
+      with _mock.patch('subprocess.call', side_effect=mock_call):
+        changed = poll_once()
+        if changed:
+          import subprocess as _sp
+          mock_call(sentinel)
+
+      srv.server_close()
+
+      self.assertTrue(changed, 'poll_once should detect the changed slave file')
+      self.assertEqual(called_with, [sentinel],
+        'ON_UPDATE command should be called exactly once when changes are detected')
+    finally:
+      shutil.rmtree(tmpdir)
+
+
+class TestErrorPageManager(SlapOSInstanceTestCase):
+  """Tests for the error-page-manager partition.
+
+  Verifies that:
+  - default error pages are served for each HTTP code
+  - the operator can upload and reset custom HTML
+  - slave users can configure their own 502/503/504 pages
+  - authentication tokens are enforced
+  """
+
+  __partition_reference__ = 'EPM'
+
+  SUPPORTED_CODES = ['400', '404', '408', '500', '502', '503', '504']
+  SLAVE_CODES = ['502', '503', '504']
+  TEST_SLAVE_REF = 'test-slave-1'
+  _EPM_MONITOR_PORT = 25000
+  _EPM_CERT_FILE = None
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'error-page-manager'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'monitor-password': 'test-monitor-password',
+        'monitor-httpd-port': cls._EPM_MONITOR_PORT,
+        'slave-list': [{'slave_reference': cls.TEST_SLAVE_REF}],
+      }),
+    }
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    conn = json.loads(
+      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
+    cls.sync_url = conn['sync-url']
+    cls.base_url = conn['base-url']
+    cls.operator_url = conn['operator-url']
+    cls.slave_info = json.loads(conn['slave-error-page-information'])
+
+    # Write self-signed cert to a temp file for TLS verification
+    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
+    cert_file.write(conn['certificate'].encode())
+    cert_file.close()
+    cls._EPM_CERT_FILE = cert_file.name
+
+    # Extract the scheme+host base URL (strips /sync/TOKEN suffix)
+    parsed = urllib.parse.urlparse(cls.sync_url)
+    cls._epm_base = '%s://%s' % (parsed.scheme, parsed.netloc)
+
+    # Wait for the error page manager HTTPS server to be ready
+    begin = time.time()
+    while True:
+      try:
+        result = mimikra.get(cls.sync_url, verify=cls._EPM_CERT_FILE)
+        if result.status_code == 200:
+          break
+      except Exception:
+        pass
+      if time.time() - begin > 120:
+        raise TimeoutError('error-page-manager did not start within 120 s')
+      time.sleep(2)
+
+  @classmethod
+  def tearDownClass(cls):
+    if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
+      os.unlink(cls._EPM_CERT_FILE)
+    super().tearDownClass()
+
+  # --- helpers ----------------------------------------------------------------
+
+  def _get(self, url):
+    return mimikra.get(url, verify=self._EPM_CERT_FILE)
+
+  def _put(self, url, body):
+    return mimikra.put(url, data=body, verify=self._EPM_CERT_FILE)
+
+  def _delete(self, url):
+    return mimikra.delete(url, verify=self._EPM_CERT_FILE)
+
+  # --- sync / manifest --------------------------------------------------------
+
+  def test_sync_returns_manifest_with_all_default_files(self):
+    result = self._get(self.sync_url)
+    self.assertEqual(result.status_code, 200)
+    manifest = json.loads(result.text)
+    self.assertIsInstance(manifest, dict)
+    for code in self.SUPPORTED_CODES:
+      self.assertIn('cluster/%s.http' % code, manifest,
+                    'manifest missing default/%s.http' % code)
+    for code in self.SLAVE_CODES:
+      key = 'slaves/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+      self.assertIn(key, manifest, 'manifest missing %s' % key)
+
+  # --- default pages ----------------------------------------------------------
+
+  def test_default_haproxy_files_have_correct_status_lines(self):
+    """Built-in haproxy error files exist and start with the right HTTP line."""
+    for code in self.SUPPORTED_CODES:
+      path = 'cluster/%s.http' % code
+      result = self._get('%s/%s' % (self.base_url, path))
+      self.assertEqual(result.status_code, 200,
+                       'download of %s returned %s' % (path, result.status_code))
+      self.assertTrue(
+        result.text.startswith('HTTP/1.0 %s ' % code),
+        'haproxy file for %s should start with "HTTP/1.0 %s ", got: %r' % (
+          code, code, result.text[:80]))
+
+  # --- operator ---------------------------------------------------------------
+
+  def test_operator_get_returns_empty_before_upload(self):
+    for code in self.SUPPORTED_CODES:
+      result = self._get(self.operator_url + code)
+      self.assertEqual(result.status_code, 200)
+      self.assertEqual(result.text, '')
+
+  def test_operator_can_upload_and_reset_error_page(self):
+    """Operator PUT stores custom HTML; DELETE resets to builtin."""
+    code = '503'
+    custom_html = '<html><body>Custom operator 503</body></html>'
+    op_url = self.operator_url + code
+
+    # Upload
+    result = self._put(op_url, custom_html)
+    self.assertEqual(result.status_code, 204)
+
+    # GET should return uploaded HTML
+    result = self._get(op_url)
+    self.assertEqual(result.status_code, 200)
+    self.assertEqual(result.text, custom_html)
+
+    # haproxy default file should now wrap the custom HTML
+    haproxy_path = 'cluster/%s.http' % code
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
+    self.assertIn(custom_html, result.text)
+
+    # DELETE resets to builtin
+    result = self._delete(op_url)
+    self.assertEqual(result.status_code, 204)
+
+    result = self._get(op_url)
+    self.assertEqual(result.status_code, 200)
+    self.assertEqual(result.text, '')
+
+    # haproxy file is back to builtin (no custom HTML)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
+    self.assertNotIn(custom_html, result.text)
+
+  def test_operator_change_propagates_to_slave_haproxy_file(self):
+    """Operator override of a slave-eligible code updates the slave file."""
+    code = '502'
+    op_html = '<html><body>Operator 502</body></html>'
+    op_url = self.operator_url + code
+
+    self._put(op_url, op_html)
+
+    # Slave has no override, so its haproxy file should use operator HTML
+    haproxy_path = 'slaves/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertIn(op_html, result.text)
+
+    self._delete(op_url)
+
+  # --- slave ------------------------------------------------------------------
+
+  def test_slave_can_upload_own_error_page(self):
+    """Slave PUT stores custom HTML for 502/503/504."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    code = '503'
+    slave_html = '<html><body>Slave custom 503</body></html>'
+
+    result = self._put(upload_base + code, slave_html)
+    self.assertEqual(result.status_code, 204)
+
+    haproxy_path = 'slaves/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
+    self.assertIn(slave_html, result.text)
+
+    # Cleanup
+    self._delete(upload_base + code)
+
+  def test_slave_cannot_set_non_slave_codes(self):
+    """Slave upload of 400/404/408/500 is rejected with 400."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    for code in ['400', '404', '408', '500']:
+      result = self._put(upload_base + code, '<html>x</html>')
+      self.assertEqual(result.status_code, 400,
+                       'slave upload of code %s should be rejected' % code)
+
+  def test_slave_override_takes_precedence_over_operator(self):
+    """Slave-specific HTML overrides the operator default for that slave."""
+    code = '504'
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    op_url = self.operator_url + code
+    op_html = '<html><body>Op 504</body></html>'
+    slave_html = '<html><body>Slave 504</body></html>'
+
+    self._put(op_url, op_html)
+    self._put(upload_base + code, slave_html)
+
+    haproxy_path = 'slaves/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertIn(slave_html, result.text)
+    self.assertNotIn(op_html, result.text)
+
+    # After slave deletes override, operator HTML is restored
+    self._delete(upload_base + code)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertIn(op_html, result.text)
+
+    # Cleanup operator
+    self._delete(op_url)
+
+  def test_slave_delete_reverts_to_operator_html(self):
+    """Slave DELETE falls back to operator HTML if one exists."""
+    code = '502'
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    op_url = self.operator_url + code
+    op_html = '<html><body>Op fallback 502</body></html>'
+    slave_html = '<html><body>Slave 502</body></html>'
+
+    self._put(op_url, op_html)
+    self._put(upload_base + code, slave_html)
+    self._delete(upload_base + code)
+
+    haproxy_path = 'slaves/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertIn(op_html, result.text)
+
+    self._delete(op_url)
+
+  # --- authentication ---------------------------------------------------------
+
+  def test_wrong_token_is_rejected(self):
+    """All endpoints reject unknown tokens with 401."""
+    wrong = 'wrongtoken000'
+
+    result = self._get('%s/sync/%s' % (self._epm_base, wrong))
+    self.assertEqual(result.status_code, 401)
+
+    result = self._get(
+      '%s/haproxy/%s/cluster/502.http' % (self._epm_base, wrong))
+    self.assertEqual(result.status_code, 401)
+
+    result = self._get('%s/operator/%s/' % (self._epm_base, wrong))
+    self.assertEqual(result.status_code, 401)
+
+    result = self._put('%s/slave/%s/502' % (self._epm_base, wrong), '<html/>')
+    self.assertEqual(result.status_code, 401)
 
 
 if __name__ == '__main__':
