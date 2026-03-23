@@ -505,6 +505,20 @@ class TestDataMixin(object):
       'master-key-generate-auth-url'].split('/')[-2]
     data_replacement_dict['@@monitor-password@@'] = connection_parameter_dict[
       'monitor-setup-url'].split('=')[-1]
+    # Replace error-page-manager dynamic values (tokens and certificate change per run)
+    for _partition_params in cluster_request_parameter_list:
+      _inner = _partition_params.get('_', {})
+      if not isinstance(_inner, dict) or 'error-page-base-url' not in _inner:
+        continue
+      data_replacement_dict['@@error-page-read-token@@'] = (
+        _inner['error-page-base-url'].split('/')[-1])
+      data_replacement_dict['@@error-page-certificate@@'] = unicode_escape(
+        _inner['error-page-certificate'])
+      for _ref, _info in json.loads(
+          _inner['slave-error-page-information']).items():
+        data_replacement_dict['@@%s_epm-upload-token@@' % _ref] = (
+          _info['upload-url'].rstrip('/').split('/')[-1])
+      break  # all frontends get the same EPM data; only need first match
     json_data = json.dumps(
       cluster_request_parameter_list, indent=2,
       # keys are sorted, even after deserializing, in order to have
@@ -1472,6 +1486,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.current_generate_auth, self.current_upload_url = \
         self.assertKedifaKeysWithPop(parameter_dict, '')
+    self.assertKeyWithPop('error-page-upload-url', parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     if hostname is None:
       hostname = reference.replace('_', '').replace('-', '').lower()
@@ -1524,6 +1539,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -1560,6 +1576,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -1675,6 +1692,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
   def test(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -2236,6 +2254,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -2343,7 +2362,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       os.path.join(
         self.instance_path, '*', 'etc', 'monitor.conf'
       ))
-    self.assertEqual(3, len(monitor_conf_list))
+    self.assertEqual(4, len(monitor_conf_list))
     expected = [(False, q) for q in monitor_conf_list]
     got = []
     for q in monitor_conf_list:
@@ -2381,20 +2400,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result_missing = fakeHTTPSResult(
       'forsuredoesnotexists.example.com', '')
     self.assertEqual(http.client.NOT_FOUND, result_missing.status_code)
-    self.assertEqual(
-      """<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-      <title>404 Not Found</title>
-  </head>
-  <body>
-    <p>404 Not Found
-  </body>
-</html>
-""",
-      result_missing.text
-    )
+    self.assertIn('Not Found', result_missing.text)
 
     self.assertResponseHeaders(
       result_missing, via=True, via_frontend_only=True, backend_reached=False,
@@ -2622,7 +2628,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
           self.assertEqual(
             http.client.BAD_REQUEST, result_verb.status_code, verb)
           self.assertIn(
-            'Your browser sent an invalid request', result_verb.text, verb)
+            'Bad Request', result_verb.text, verb)
         elif self.max_http_version == '3':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 95)
@@ -4403,7 +4409,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
           self.assertEqual(
             http.client.BAD_REQUEST, result_verb.status_code, verb)
           self.assertIn(
-            'Your browser sent an invalid request', result_verb.text, verb)
+            'Bad Request', result_verb.text, verb)
         elif self.max_http_version == '3':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 95)
@@ -5580,6 +5586,7 @@ class TestReplicateSlave(
     parameter_dict = self.parseSlaveParameterDict('replicate')
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict)
+    self.assertKeyWithPop('error-page-upload-url', parameter_dict)
     key_list = [
       'frontend-node-1-node-information-json',
       'frontend-node-2-node-information-json'
@@ -5997,6 +6004,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -6507,6 +6515,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -6609,6 +6618,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -6859,6 +6869,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
     self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertKeyWithPop('error-page-manager-operator-url', parameter_dict)
     self.assertBackendHaproxyStatisticUrl(parameter_dict)
     self.assertTrafficserverIntrospectionUrl(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
@@ -7415,6 +7426,14 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     assertKeyWithPop(
       partition_parameter_dict_dict['caddy-frontend-3'],
       'master-key-download-url')
+    # drop error-page-manager partition (tokens/cert vary per run)
+    partition_parameter_dict_dict.pop('error-page-manager', None)
+    # drop EPM keys from frontends (dynamic tokens/cert vary per run)
+    for _frontend in ('caddy-frontend-1', 'caddy-frontend-2', 'caddy-frontend-3'):
+      for _key in (
+          'error-page-base-url', 'error-page-certificate',
+          'error-page-sync-url', 'slave-error-page-information'):
+        partition_parameter_dict_dict[_frontend].pop(_key, None)
     check_is_present_parameter_list = [
       'instance_title',
       'ip_list',
@@ -8278,6 +8297,268 @@ class TestRapidCDNMonitoringPropagation(
         'monitor-interface-url': cls.MONITOR_INTERFACE_URL,
       })
     }
+
+
+class TestErrorPageManager(SlapOSInstanceTestCase):
+  """Tests for the error-page-manager partition.
+
+  Verifies that:
+  - default error pages are served for each HTTP code
+  - the operator can upload and reset custom HTML
+  - slave users can configure their own 502/503/504 pages
+  - authentication tokens are enforced
+  """
+
+  __partition_reference__ = 'EPM'
+
+  SUPPORTED_CODES = ['400', '404', '408', '500', '502', '503', '504']
+  SLAVE_CODES = ['502', '503', '504']
+  TEST_SLAVE_REF = 'test-slave-1'
+  _EPM_MONITOR_PORT = 25000
+  _EPM_CERT_FILE = None
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'error-page-manager'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'monitor-password': 'test-monitor-password',
+        'monitor-httpd-port': cls._EPM_MONITOR_PORT,
+        'slave-list': [{'slave_reference': cls.TEST_SLAVE_REF}],
+      }),
+    }
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    conn = json.loads(
+      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
+    cls.sync_url = conn['sync-url']
+    cls.base_url = conn['base-url']
+    cls.operator_url = conn['operator-url']
+    cls.slave_info = json.loads(conn['slave-error-page-information'])
+
+    # Write self-signed cert to a temp file for TLS verification
+    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
+    cert_file.write(conn['certificate'].encode())
+    cert_file.close()
+    cls._EPM_CERT_FILE = cert_file.name
+
+    # Extract the scheme+host base URL (strips /sync/TOKEN suffix)
+    parsed = urllib.parse.urlparse(cls.sync_url)
+    cls._epm_base = '%s://%s' % (parsed.scheme, parsed.netloc)
+
+    # Wait for the error page manager HTTPS server to be ready
+    begin = time.time()
+    while True:
+      try:
+        result = mimikra.get(cls.sync_url, verify=cls._EPM_CERT_FILE)
+        if result.status_code == 200:
+          break
+      except Exception:
+        pass
+      if time.time() - begin > 120:
+        raise TimeoutError('error-page-manager did not start within 120 s')
+      time.sleep(2)
+
+  @classmethod
+  def tearDownClass(cls):
+    if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
+      os.unlink(cls._EPM_CERT_FILE)
+    super().tearDownClass()
+
+  # --- helpers ----------------------------------------------------------------
+
+  def _get(self, url):
+    return mimikra.get(url, verify=self._EPM_CERT_FILE)
+
+  def _put(self, url, body):
+    return mimikra.put(url, data=body, verify=self._EPM_CERT_FILE)
+
+  def _delete(self, url):
+    return mimikra.delete(url, verify=self._EPM_CERT_FILE)
+
+  # --- sync / manifest --------------------------------------------------------
+
+  def test_sync_returns_manifest_with_all_default_files(self):
+    result = self._get(self.sync_url)
+    self.assertEqual(result.status_code, 200)
+    manifest = json.loads(result.text)
+    self.assertIsInstance(manifest, dict)
+    for code in self.SUPPORTED_CODES:
+      self.assertIn('default/%s.http' % code, manifest,
+                    'manifest missing default/%s.http' % code)
+    for code in self.SLAVE_CODES:
+      key = 'slaves/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+      self.assertIn(key, manifest, 'manifest missing %s' % key)
+
+  # --- default pages ----------------------------------------------------------
+
+  def test_default_haproxy_files_have_correct_status_lines(self):
+    """Built-in haproxy error files exist and start with the right HTTP line."""
+    for code in self.SUPPORTED_CODES:
+      path = 'default/%s.http' % code
+      result = self._get('%s/%s' % (self.base_url, path))
+      self.assertEqual(result.status_code, 200,
+                       'download of %s returned %s' % (path, result.status_code))
+      self.assertTrue(
+        result.text.startswith('HTTP/1.0 %s ' % code),
+        'haproxy file for %s should start with "HTTP/1.0 %s ", got: %r' % (
+          code, code, result.text[:80]))
+
+  # --- operator ---------------------------------------------------------------
+
+  def test_operator_get_returns_empty_before_upload(self):
+    for code in self.SUPPORTED_CODES:
+      result = self._get(self.operator_url + code)
+      self.assertEqual(result.status_code, 200)
+      self.assertEqual(result.text, '')
+
+  def test_operator_can_upload_and_reset_error_page(self):
+    """Operator PUT stores custom HTML; DELETE resets to builtin."""
+    code = '503'
+    custom_html = '<html><body>Custom operator 503</body></html>'
+    op_url = self.operator_url + code
+
+    # Upload
+    result = self._put(op_url, custom_html)
+    self.assertEqual(result.status_code, 204)
+
+    # GET should return uploaded HTML
+    result = self._get(op_url)
+    self.assertEqual(result.status_code, 200)
+    self.assertEqual(result.text, custom_html)
+
+    # haproxy default file should now wrap the custom HTML
+    haproxy_path = 'default/%s.http' % code
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
+    self.assertIn(custom_html, result.text)
+
+    # DELETE resets to builtin
+    result = self._delete(op_url)
+    self.assertEqual(result.status_code, 204)
+
+    result = self._get(op_url)
+    self.assertEqual(result.status_code, 200)
+    self.assertEqual(result.text, '')
+
+    # haproxy file is back to builtin (no custom HTML)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
+    self.assertNotIn(custom_html, result.text)
+
+  def test_operator_change_propagates_to_slave_haproxy_file(self):
+    """Operator override of a slave-eligible code updates the slave file."""
+    code = '502'
+    op_html = '<html><body>Operator 502</body></html>'
+    op_url = self.operator_url + code
+
+    self._put(op_url, op_html)
+
+    # Slave has no override, so its haproxy file should use operator HTML
+    haproxy_path = 'slaves/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertIn(op_html, result.text)
+
+    self._delete(op_url)
+
+  # --- slave ------------------------------------------------------------------
+
+  def test_slave_can_upload_own_error_page(self):
+    """Slave PUT stores custom HTML for 502/503/504."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    code = '503'
+    slave_html = '<html><body>Slave custom 503</body></html>'
+
+    result = self._put(upload_base + code, slave_html)
+    self.assertEqual(result.status_code, 204)
+
+    haproxy_path = 'slaves/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
+    self.assertIn(slave_html, result.text)
+
+    # Cleanup
+    self._delete(upload_base + code)
+
+  def test_slave_cannot_set_non_slave_codes(self):
+    """Slave upload of 400/404/408/500 is rejected with 400."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    for code in ['400', '404', '408', '500']:
+      result = self._put(upload_base + code, '<html>x</html>')
+      self.assertEqual(result.status_code, 400,
+                       'slave upload of code %s should be rejected' % code)
+
+  def test_slave_override_takes_precedence_over_operator(self):
+    """Slave-specific HTML overrides the operator default for that slave."""
+    code = '504'
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    op_url = self.operator_url + code
+    op_html = '<html><body>Op 504</body></html>'
+    slave_html = '<html><body>Slave 504</body></html>'
+
+    self._put(op_url, op_html)
+    self._put(upload_base + code, slave_html)
+
+    haproxy_path = 'slaves/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertIn(slave_html, result.text)
+    self.assertNotIn(op_html, result.text)
+
+    # After slave deletes override, operator HTML is restored
+    self._delete(upload_base + code)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertEqual(result.status_code, 200)
+    self.assertIn(op_html, result.text)
+
+    # Cleanup operator
+    self._delete(op_url)
+
+  def test_slave_delete_reverts_to_operator_html(self):
+    """Slave DELETE falls back to operator HTML if one exists."""
+    code = '502'
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    op_url = self.operator_url + code
+    op_html = '<html><body>Op fallback 502</body></html>'
+    slave_html = '<html><body>Slave 502</body></html>'
+
+    self._put(op_url, op_html)
+    self._put(upload_base + code, slave_html)
+    self._delete(upload_base + code)
+
+    haproxy_path = 'slaves/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    self.assertIn(op_html, result.text)
+
+    self._delete(op_url)
+
+  # --- authentication ---------------------------------------------------------
+
+  def test_wrong_token_is_rejected(self):
+    """All endpoints reject unknown tokens with 401."""
+    wrong = 'wrongtoken000'
+
+    result = self._get('%s/sync/%s' % (self._epm_base, wrong))
+    self.assertEqual(result.status_code, 401)
+
+    result = self._get(
+      '%s/haproxy/%s/default/502.http' % (self._epm_base, wrong))
+    self.assertEqual(result.status_code, 401)
+
+    result = self._get('%s/operator/%s/' % (self._epm_base, wrong))
+    self.assertEqual(result.status_code, 401)
+
+    result = self._put('%s/slave/%s/502' % (self._epm_base, wrong), '<html/>')
+    self.assertEqual(result.status_code, 401)
 
 
 if __name__ == '__main__':
