@@ -106,6 +106,7 @@
 {#- Ports 8401, 8402 and 8410+1..N are reserved for monitor ports on various partitions #}
 {%- set master_partition_monitor_monitor_httpd_port = 8401 %}
 {%- set kedifa_partition_monitor_httpd_port = 8402 %}
+{%- set error_page_manager_partition_monitor_httpd_port = 8403 %}
 {%- set frontend_monitor_httpd_base_port = 8410 %}
 {%- set caucase_host = '[' ~ instance_parameter_dict['ipv6-random'] ~ ']' %}
 {%- set caucase_netloc = caucase_host ~ ':' ~ slapparameter_dict['caucase_backend_client_port'] %}
@@ -410,6 +411,10 @@ config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-infor
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 config-backend-client-caucase-url = {{ caucase_url }}
 config-master-key-download-url = ${request-kedifa:connection-master-key-download-url}
+config-error-page-sync-url = ${request-error-page-manager:connection-sync-url}
+config-error-page-base-url = ${request-error-page-manager:connection-base-url}
+config-error-page-certificate = ${request-error-page-manager:connection-certificate}
+config-slave-error-page-information = ${request-error-page-manager:connection-slave-error-page-information}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 {%-     set node_configuration_dict = {} %}
 {%-     do node_configuration_dict.update(frontend_request.get('config')) %}
@@ -454,6 +459,7 @@ backend-client-caucase-url = {{ caucase_url }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict, sort_keys=True)) }}
 rejected-slave-url = ${rejected-slave-publish:url}
 publish-failsafe-error-promise-url = ${publish-failsafe-error-promise:config-url}
+error-page-manager-operator-url = ${request-error-page-manager:connection-operator-url}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
 kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
@@ -545,6 +551,24 @@ sla-{{ key[sla_kedifa_key_length:] }} = {{ slapparameter_dict.pop(key) }}
 {%-   endif %}
 {%- endfor %}
 
+[request-error-page-manager]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional.serialised
+config-monitor-interface-url = {{ slapparameter_dict['monitor-interface-url'] }}
+config-monitor-username = ${monitor-instance-parameter:username}
+config-monitor-password = ${monitor-htpasswd:passwd}
+config-monitor-httpd-port = !py!{{ error_page_manager_partition_monitor_httpd_port }}
+{%- if 'error-page-manager-port' in slapparameter_dict %}
+config-error-page-manager-port = {{ dumps(slapparameter_dict['error-page-manager-port']) }}
+{%- endif %}
+config-slave-list = {{ dumps(authorized_slave_list) }}
+config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
+
+software-url = ${slap-connection:software-release-url}
+software-type = error-page-manager
+name = error-page-manager
+return = sync-url base-url operator-url certificate slave-error-page-information monitor-base-url
+
 [rejected-slave-information]
 rejected-slave-dict = {{ dumps(rejected_slave_dict) }}
 
@@ -584,6 +608,7 @@ extra-context =
     section active_slave_instance_dict active-slave-instance
     section warning_slave_information warning-slave-information
     key slave_kedifa_information request-kedifa:connection-slave-kedifa-information
+    key slave_error_page_information request-error-page-manager:connection-slave-error-page-information
     key publish_failsafe_error directory:publish-failsafe-error-var
 
 [monitor-base-url-dict]
@@ -1100,6 +1125,7 @@ parts =
   publish-failsafe-error-promise
   publish-information
   request-kedifa
+  request-error-page-manager
   master-introspection-server-ip-port
   caucased-backend-client
   caucased-backend-client-promise
