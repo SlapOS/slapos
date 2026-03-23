@@ -938,6 +938,403 @@
   },
   {
     "_": {
+      "cluster-identification": "testing partition 0",
+      "monitor-httpd-port": 8403,
+      "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
+      "monitor-password": "@@monitor-password@@",
+      "monitor-username": "admin",
+      "slave-list": [
+        {
+          "authenticate-to-backend": true,
+          "slave_reference": "_Url",
+          "url": " http://@@_ipv4_address@@:@@_server_http_port@@//?a=b&c= "
+        },
+        {
+          "authenticate-to-backend": true,
+          "slave_reference": "_auth-to-backend",
+          "url": "https://@@_ipv4_address@@:@@_server_https_auth_port@@/"
+        },
+        {
+          "authenticate-to-backend": true,
+          "slave_reference": "_auth-to-backend-backend-ignore",
+          "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
+        },
+        {
+          "slave_reference": "_auth-to-backend-not-configured",
+          "url": "https://@@_ipv4_address@@:@@_server_https_auth_port@@/"
+        },
+        {
+          "slave_reference": "_bad-backend",
+          "url": "http://bad.backend/"
+        },
+        {
+          "ciphers": "RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA",
+          "slave_reference": "_ciphers"
+        },
+        {
+          "ciphers": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-AES256-CBC-SHA ECDHE-RSA-AES128-CBC-SHA ECDHE-ECDSA-AES256-CBC-SHA ECDHE-ECDSA-AES128-CBC-SHA RSA-AES256-CBC-SHA RSA-AES128-CBC-SHA ECDHE-RSA-3DES-EDE-CBC-SHA RSA-3DES-EDE-CBC-SHA",
+          "slave_reference": "_ciphers-translation-all"
+        },
+        {
+          "custom_domain": "mycustomdomain.example.com",
+          "slave_reference": "_custom_domain",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "custom_domain": "mycustomdomainserveralias.example.com",
+          "server-alias": "mycustomdomainserveralias1.example.com",
+          "slave_reference": "_custom_domain_server_alias",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "custom_domain": "customdomainsslcrtsslkey.example.com",
+          "slave_reference": "_custom_domain_ssl_crt_ssl_key",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "custom_domain": "customdomainsslcrtsslkeysslcacrt.example.com",
+          "slave_reference": "_custom_domain_ssl_crt_ssl_key_ssl_ca_crt",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "custom_domain": "*.customdomain.example.com",
+          "slave_reference": "_custom_domain_wildcard",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "disabled-cookie-list": "Coconut Chocolate Vanilia",
+          "slave_reference": "_disabled-cookie-list",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "disabled-cookie-list": "Chocolate",
+          "slave_reference": "_disabled-cookie-list-simple",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_empty"
+        },
+        {
+          "slave_reference": "_enable-http2-default",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable-http2": false,
+          "slave_reference": "_enable-http2-false",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable-http2": true,
+          "slave_reference": "_enable-http2-true",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_enable-http3-default",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable-http2": false,
+          "slave_reference": "_enable-http3-default-enable-http2-false",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable-http3": false,
+          "slave_reference": "_enable-http3-false",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable-http3": true,
+          "slave_reference": "_enable-http3-true",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable-http2": false,
+          "enable-http3": true,
+          "slave_reference": "_enable-http3-true-enable-http2-false",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable_cache": true,
+          "slave_reference": "_enable_cache",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "disable-no-cache-request": true,
+          "enable_cache": true,
+          "slave_reference": "_enable_cache-disable-no-cache-request",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "disable-via-header": true,
+          "enable_cache": true,
+          "slave_reference": "_enable_cache-disable-via-header",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable_cache": true,
+          "https-only": false,
+          "slave_reference": "_enable_cache-https-only-false",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "custom_domain": "customdomainenablecache.example.com",
+          "enable_cache": true,
+          "slave_reference": "_enable_cache_custom_domain",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable_cache": true,
+          "server-alias": "enablecacheserveralias1.example.com",
+          "slave_reference": "_enable_cache_server_alias",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "https-only": false,
+          "slave_reference": "_https-only",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https",
+          "https-url-netloc-list": "@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@",
+          "slave_reference": "_https-url-netloc-list",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/http"
+        },
+        {
+          "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https-url",
+          "slave_reference": "_https-url-only"
+        },
+        {
+          "https-only": false,
+          "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https-url",
+          "slave_reference": "_https-url-only-https-only-false"
+        },
+        {
+          "prefer-gzip-encoding-to-backend": "true",
+          "slave_reference": "_prefer-gzip-encoding-to-backend",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "https-only": "false",
+          "prefer-gzip-encoding-to-backend": "true",
+          "slave_reference": "_prefer-gzip-encoding-to-backend-https-only",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "server-alias": "alias1.example.com alias2.example.com",
+          "slave_reference": "_server-alias",
+          "strict-transport-security": "200",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "server-alias": "alias3.example.com",
+          "slave_reference": "_server-alias-duplicated",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "server-alias": "",
+          "slave_reference": "_server-alias-empty",
+          "strict-transport-security": "200",
+          "strict-transport-security-sub-domains": true,
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "server-alias": "*.alias1.example.com",
+          "slave_reference": "_server-alias-wildcard",
+          "strict-transport-security": "200",
+          "strict-transport-security-preload": true,
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "custom_domain": "alias4.example.com",
+          "server-alias": "",
+          "slave_reference": "_server-alias_custom_domain-duplicated",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_ssl-proxy-verify-unverified",
+          "ssl-proxy-verify": true,
+          "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
+        },
+        {
+          "slave_reference": "_ssl-proxy-verify_ssl_proxy_ca_crt",
+          "ssl-proxy-verify": true,
+          "ssl_proxy_ca_crt": "@@test_server_ca.certificate_pem@@",
+          "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
+        },
+        {
+          "slave_reference": "_ssl-proxy-verify_ssl_proxy_ca_crt-unverified",
+          "ssl-proxy-verify": true,
+          "ssl_proxy_ca_crt": "@@another_server_ca.certificate_pem@@",
+          "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
+        },
+        {
+          "slave_reference": "_ssl_ca_crt_does_not_match",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_ssl_ca_crt_garbage",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_ssl_ca_crt_only",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_type-notebook",
+          "type": "notebook",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "https-only": false,
+          "https-url": "https://@@_ipv4_address@@:@@_server_https_port@@/",
+          "slave_reference": "_type-redirect",
+          "type": "redirect",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "custom_domain": "customdomaintyperedirect.example.com",
+          "slave_reference": "_type-redirect-custom_domain",
+          "type": "redirect",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "https-only": false,
+          "https-url": "https://example.com/",
+          "slave_reference": "_type-redirect-to-standard-port",
+          "type": "redirect",
+          "url": "http://example.com/"
+        },
+        {
+          "slave_reference": "_type-websocket",
+          "type": "websocket",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "slave_reference": "_type-websocket-websocket-path-list",
+          "type": "websocket",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+          "websocket-path-list": "////ws//// /with%20space/"
+        },
+        {
+          "slave_reference": "_type-websocket-websocket-path-list-empty",
+          "type": "websocket",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+          "websocket-path-list": ""
+        },
+        {
+          "slave_reference": "_type-websocket-websocket-path-list-none",
+          "type": "websocket",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+          "websocket-path-list": null
+        },
+        {
+          "slave_reference": "_type-websocket-websocket-path-list-websocket-transparent-false",
+          "type": "websocket",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+          "websocket-path-list": "////ws//// /with%20space/",
+          "websocket-transparent": "false"
+        },
+        {
+          "slave_reference": "_type-websocket-websocket-transparent-false",
+          "type": "websocket",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+          "websocket-transparent": "false"
+        },
+        {
+          "slave_reference": "_type-zope",
+          "type": "zope",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "default-path": "///default-path/to/some/resource///",
+          "slave_reference": "_type-zope-default-path",
+          "type": "zope",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "path": "///path/to/some/resource///",
+          "slave_reference": "_type-zope-path",
+          "type": "zope",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "prefer-gzip-encoding-to-backend": "true",
+          "slave_reference": "_type-zope-prefer-gzip-encoding-to-backend",
+          "type": "zope",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "https-only": "false",
+          "prefer-gzip-encoding-to-backend": "true",
+          "slave_reference": "_type-zope-prefer-gzip-encoding-to-backend-https-only",
+          "type": "zope",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "https-only": "false",
+          "slave_reference": "_type-zope-virtualhostroot-http-port",
+          "type": "zope",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+          "virtualhostroot-http-port": "12345"
+        },
+        {
+          "slave_reference": "_type-zope-virtualhostroot-https-port",
+          "type": "zope",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+          "virtualhostroot-https-port": "12345"
+        },
+        {
+          "slave_reference": "_url-netloc-list",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+          "url-netloc-list": "@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@"
+        },
+        {
+          "slave_reference": "_url-path-with-percent-encoded-whitespace",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/%20whitespace%20"
+        },
+        {
+          "slave_reference": "_url-trailing-slash-absent",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/index.html"
+        },
+        {
+          "slave_reference": "_url-trailing-slash-present",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/index.html/"
+        },
+        {
+          "backend-connect-retries": 5,
+          "backend-connect-timeout": 10,
+          "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https",
+          "request-timeout": 15,
+          "slave_reference": "_url_https-url",
+          "strict-transport-security": "200",
+          "strict-transport-security-preload": true,
+          "strict-transport-security-sub-domains": true,
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/http"
+        },
+        {
+          "https-only": false,
+          "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https",
+          "slave_reference": "_url_https-url-https-only-false",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/http"
+        },
+        {
+          "slave_reference": "_weak-ssl-backend",
+          "url": "https://@@_ipv4_address@@:@@_server_https_weak_port@@/"
+        }
+      ]
+    },
+    "full_address_list": [],
+    "instance_title": "error-page-manager",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-2",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "error-page-manager",
+    "slave_instance_list": [],
+    "timestamp": "@@TIMESTAMP@@"
+  },
+  {
+    "_": {
       "authenticate-to-backend": false,
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
       "backend-connect-retries": 3,
@@ -947,6 +1344,9 @@
       "domain": "example.com",
       "enable-http2-by-default": false,
       "enable-http3": false,
+      "error-page-base-url": "https://[@@_ipv6_address@@]:24000/haproxy/@@error-page-read-token@@",
+      "error-page-certificate": "@@error-page-certificate@@",
+      "error-page-sync-url": "https://[@@_ipv6_address@@]:24000/sync/@@error-page-read-token@@",
       "expert-backend-allow-downgrade-ssl": false,
       "extra_slave_instance_list": "[{\"authenticate-to-backend\": true, \"slave_reference\": \"_Url\", \"url\": \" http://@@_ipv4_address@@:@@_server_http_port@@//?a=b&c= \"}, {\"authenticate-to-backend\": true, \"slave_reference\": \"_auth-to-backend\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_auth_port@@/\"}, {\"authenticate-to-backend\": true, \"slave_reference\": \"_auth-to-backend-backend-ignore\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"_auth-to-backend-not-configured\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_auth_port@@/\"}, {\"slave_reference\": \"_bad-backend\", \"url\": \"http://bad.backend/\"}, {\"ciphers\": \"RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA\", \"slave_reference\": \"_ciphers\"}, {\"ciphers\": \"ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-AES256-CBC-SHA ECDHE-RSA-AES128-CBC-SHA ECDHE-ECDSA-AES256-CBC-SHA ECDHE-ECDSA-AES128-CBC-SHA RSA-AES256-CBC-SHA RSA-AES128-CBC-SHA ECDHE-RSA-3DES-EDE-CBC-SHA RSA-3DES-EDE-CBC-SHA\", \"slave_reference\": \"_ciphers-translation-all\"}, {\"custom_domain\": \"mycustomdomain.example.com\", \"slave_reference\": \"_custom_domain\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"mycustomdomainserveralias.example.com\", \"server-alias\": \"mycustomdomainserveralias1.example.com\", \"slave_reference\": \"_custom_domain_server_alias\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomainsslcrtsslkey.example.com\", \"slave_reference\": \"_custom_domain_ssl_crt_ssl_key\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomainsslcrtsslkeysslcacrt.example.com\", \"slave_reference\": \"_custom_domain_ssl_crt_ssl_key_ssl_ca_crt\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"*.customdomain.example.com\", \"slave_reference\": \"_custom_domain_wildcard\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disabled-cookie-list\": \"Coconut Chocolate Vanilia\", \"slave_reference\": \"_disabled-cookie-list\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disabled-cookie-list\": \"Chocolate\", \"slave_reference\": \"_disabled-cookie-list-simple\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_empty\"}, {\"slave_reference\": \"_enable-http2-default\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": false, \"slave_reference\": \"_enable-http2-false\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": true, \"slave_reference\": \"_enable-http2-true\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_enable-http3-default\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": false, \"slave_reference\": \"_enable-http3-default-enable-http2-false\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http3\": false, \"slave_reference\": \"_enable-http3-false\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http3\": true, \"slave_reference\": \"_enable-http3-true\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": false, \"enable-http3\": true, \"slave_reference\": \"_enable-http3-true-enable-http2-false\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable_cache\": true, \"slave_reference\": \"_enable_cache\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disable-no-cache-request\": true, \"enable_cache\": true, \"slave_reference\": \"_enable_cache-disable-no-cache-request\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disable-via-header\": true, \"enable_cache\": true, \"slave_reference\": \"_enable_cache-disable-via-header\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable_cache\": true, \"https-only\": false, \"slave_reference\": \"_enable_cache-https-only-false\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomainenablecache.example.com\", \"enable_cache\": true, \"slave_reference\": \"_enable_cache_custom_domain\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable_cache\": true, \"server-alias\": \"enablecacheserveralias1.example.com\", \"slave_reference\": \"_enable_cache_server_alias\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": false, \"slave_reference\": \"_https-only\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https\", \"https-url-netloc-list\": \"@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@\", \"slave_reference\": \"_https-url-netloc-list\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/http\"}, {\"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https-url\", \"slave_reference\": \"_https-url-only\"}, {\"https-only\": false, \"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https-url\", \"slave_reference\": \"_https-url-only-https-only-false\"}, {\"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"_prefer-gzip-encoding-to-backend\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": \"false\", \"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"_prefer-gzip-encoding-to-backend-https-only\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"alias1.example.com alias2.example.com\", \"slave_reference\": \"_server-alias\", \"strict-transport-security\": \"200\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"alias3.example.com\", \"slave_reference\": \"_server-alias-duplicated\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"\", \"slave_reference\": \"_server-alias-empty\", \"strict-transport-security\": \"200\", \"strict-transport-security-sub-domains\": true, \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"*.alias1.example.com\", \"slave_reference\": \"_server-alias-wildcard\", \"strict-transport-security\": \"200\", \"strict-transport-security-preload\": true, \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"alias4.example.com\", \"server-alias\": \"\", \"slave_reference\": \"_server-alias_custom_domain-duplicated\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_ssl-proxy-verify-unverified\", \"ssl-proxy-verify\": true, \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"_ssl-proxy-verify_ssl_proxy_ca_crt\", \"ssl-proxy-verify\": true, \"ssl_proxy_ca_crt\": \"@@test_server_ca.certificate_pem_double@@\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"_ssl-proxy-verify_ssl_proxy_ca_crt-unverified\", \"ssl-proxy-verify\": true, \"ssl_proxy_ca_crt\": \"@@another_server_ca.certificate_pem_double@@\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"_ssl_ca_crt_does_not_match\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_ssl_ca_crt_garbage\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_ssl_ca_crt_only\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_type-notebook\", \"type\": \"notebook\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": false, \"https-url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\", \"slave_reference\": \"_type-redirect\", \"type\": \"redirect\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomaintyperedirect.example.com\", \"slave_reference\": \"_type-redirect-custom_domain\", \"type\": \"redirect\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": false, \"https-url\": \"https://example.com/\", \"slave_reference\": \"_type-redirect-to-standard-port\", \"type\": \"redirect\", \"url\": \"http://example.com/\"}, {\"slave_reference\": \"_type-websocket\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"_type-websocket-websocket-path-list\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": \"////ws//// /with%20space/\"}, {\"slave_reference\": \"_type-websocket-websocket-path-list-empty\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": \"\"}, {\"slave_reference\": \"_type-websocket-websocket-path-list-none\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": null}, {\"slave_reference\": \"_type-websocket-websocket-path-list-websocket-transparent-false\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": \"////ws//// /with%20space/\", \"websocket-transparent\": \"false\"}, {\"slave_reference\": \"_type-websocket-websocket-transparent-false\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-transparent\": \"false\"}, {\"slave_reference\": \"_type-zope\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"default-path\": \"///default-path/to/some/resource///\", \"slave_reference\": \"_type-zope-default-path\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"path\": \"///path/to/some/resource///\", \"slave_reference\": \"_type-zope-path\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"_type-zope-prefer-gzip-encoding-to-backend\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": \"false\", \"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"_type-zope-prefer-gzip-encoding-to-backend-https-only\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": \"false\", \"slave_reference\": \"_type-zope-virtualhostroot-http-port\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"virtualhostroot-http-port\": \"12345\"}, {\"slave_reference\": \"_type-zope-virtualhostroot-https-port\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"virtualhostroot-https-port\": \"12345\"}, {\"slave_reference\": \"_url-netloc-list\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"url-netloc-list\": \"@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@\"}, {\"slave_reference\": \"_url-path-with-percent-encoded-whitespace\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/%20whitespace%20\"}, {\"slave_reference\": \"_url-trailing-slash-absent\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/index.html\"}, {\"slave_reference\": \"_url-trailing-slash-present\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/index.html/\"}, {\"backend-connect-retries\": 5, \"backend-connect-timeout\": 10, \"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https\", \"request-timeout\": 15, \"slave_reference\": \"_url_https-url\", \"strict-transport-security\": \"200\", \"strict-transport-security-preload\": true, \"strict-transport-security-sub-domains\": true, \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/http\"}, {\"https-only\": false, \"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https\", \"slave_reference\": \"_url_https-url-https-only-false\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/http\"}, {\"slave_reference\": \"_weak-ssl-backend\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_weak_port@@/\"}]",
       "frontend-name": "caddy-frontend-1",
@@ -960,13 +1360,14 @@
       "plain_http_port": 11080,
       "port": 11443,
       "request-timeout": 12,
+      "slave-error-page-information": "{\"_Url\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_Url_epm-upload-token@@/\"}, \"_auth-to-backend\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_auth-to-backend_epm-upload-token@@/\"}, \"_auth-to-backend-backend-ignore\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_auth-to-backend-backend-ignore_epm-upload-token@@/\"}, \"_auth-to-backend-not-configured\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_auth-to-backend-not-configured_epm-upload-token@@/\"}, \"_bad-backend\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_bad-backend_epm-upload-token@@/\"}, \"_ciphers\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_ciphers_epm-upload-token@@/\"}, \"_ciphers-translation-all\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_ciphers-translation-all_epm-upload-token@@/\"}, \"_custom_domain\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_custom_domain_epm-upload-token@@/\"}, \"_custom_domain_server_alias\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_custom_domain_server_alias_epm-upload-token@@/\"}, \"_custom_domain_ssl_crt_ssl_key\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_custom_domain_ssl_crt_ssl_key_epm-upload-token@@/\"}, \"_custom_domain_ssl_crt_ssl_key_ssl_ca_crt\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_custom_domain_ssl_crt_ssl_key_ssl_ca_crt_epm-upload-token@@/\"}, \"_custom_domain_wildcard\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_custom_domain_wildcard_epm-upload-token@@/\"}, \"_disabled-cookie-list\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_disabled-cookie-list_epm-upload-token@@/\"}, \"_disabled-cookie-list-simple\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_disabled-cookie-list-simple_epm-upload-token@@/\"}, \"_empty\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_empty_epm-upload-token@@/\"}, \"_enable-http2-default\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable-http2-default_epm-upload-token@@/\"}, \"_enable-http2-false\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable-http2-false_epm-upload-token@@/\"}, \"_enable-http2-true\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable-http2-true_epm-upload-token@@/\"}, \"_enable-http3-default\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable-http3-default_epm-upload-token@@/\"}, \"_enable-http3-default-enable-http2-false\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable-http3-default-enable-http2-false_epm-upload-token@@/\"}, \"_enable-http3-false\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable-http3-false_epm-upload-token@@/\"}, \"_enable-http3-true\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable-http3-true_epm-upload-token@@/\"}, \"_enable-http3-true-enable-http2-false\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable-http3-true-enable-http2-false_epm-upload-token@@/\"}, \"_enable_cache\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable_cache_epm-upload-token@@/\"}, \"_enable_cache-disable-no-cache-request\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable_cache-disable-no-cache-request_epm-upload-token@@/\"}, \"_enable_cache-disable-via-header\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable_cache-disable-via-header_epm-upload-token@@/\"}, \"_enable_cache-https-only-false\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable_cache-https-only-false_epm-upload-token@@/\"}, \"_enable_cache_custom_domain\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable_cache_custom_domain_epm-upload-token@@/\"}, \"_enable_cache_server_alias\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_enable_cache_server_alias_epm-upload-token@@/\"}, \"_https-only\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_https-only_epm-upload-token@@/\"}, \"_https-url-netloc-list\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_https-url-netloc-list_epm-upload-token@@/\"}, \"_https-url-only\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_https-url-only_epm-upload-token@@/\"}, \"_https-url-only-https-only-false\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_https-url-only-https-only-false_epm-upload-token@@/\"}, \"_prefer-gzip-encoding-to-backend\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_prefer-gzip-encoding-to-backend_epm-upload-token@@/\"}, \"_prefer-gzip-encoding-to-backend-https-only\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_prefer-gzip-encoding-to-backend-https-only_epm-upload-token@@/\"}, \"_server-alias\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_server-alias_epm-upload-token@@/\"}, \"_server-alias-duplicated\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_server-alias-duplicated_epm-upload-token@@/\"}, \"_server-alias-empty\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_server-alias-empty_epm-upload-token@@/\"}, \"_server-alias-wildcard\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_server-alias-wildcard_epm-upload-token@@/\"}, \"_server-alias_custom_domain-duplicated\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_server-alias_custom_domain-duplicated_epm-upload-token@@/\"}, \"_ssl-proxy-verify-unverified\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_ssl-proxy-verify-unverified_epm-upload-token@@/\"}, \"_ssl-proxy-verify_ssl_proxy_ca_crt\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_ssl-proxy-verify_ssl_proxy_ca_crt_epm-upload-token@@/\"}, \"_ssl-proxy-verify_ssl_proxy_ca_crt-unverified\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_ssl-proxy-verify_ssl_proxy_ca_crt-unverified_epm-upload-token@@/\"}, \"_ssl_ca_crt_does_not_match\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_ssl_ca_crt_does_not_match_epm-upload-token@@/\"}, \"_ssl_ca_crt_garbage\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_ssl_ca_crt_garbage_epm-upload-token@@/\"}, \"_ssl_ca_crt_only\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_ssl_ca_crt_only_epm-upload-token@@/\"}, \"_type-notebook\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-notebook_epm-upload-token@@/\"}, \"_type-redirect\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-redirect_epm-upload-token@@/\"}, \"_type-redirect-custom_domain\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-redirect-custom_domain_epm-upload-token@@/\"}, \"_type-redirect-to-standard-port\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-redirect-to-standard-port_epm-upload-token@@/\"}, \"_type-websocket\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-websocket_epm-upload-token@@/\"}, \"_type-websocket-websocket-path-list\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-websocket-websocket-path-list_epm-upload-token@@/\"}, \"_type-websocket-websocket-path-list-empty\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-websocket-websocket-path-list-empty_epm-upload-token@@/\"}, \"_type-websocket-websocket-path-list-none\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-websocket-websocket-path-list-none_epm-upload-token@@/\"}, \"_type-websocket-websocket-path-list-websocket-transparent-false\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-websocket-websocket-path-list-websocket-transparent-false_epm-upload-token@@/\"}, \"_type-websocket-websocket-transparent-false\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-websocket-websocket-transparent-false_epm-upload-token@@/\"}, \"_type-zope\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-zope_epm-upload-token@@/\"}, \"_type-zope-default-path\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-zope-default-path_epm-upload-token@@/\"}, \"_type-zope-path\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-zope-path_epm-upload-token@@/\"}, \"_type-zope-prefer-gzip-encoding-to-backend\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-zope-prefer-gzip-encoding-to-backend_epm-upload-token@@/\"}, \"_type-zope-prefer-gzip-encoding-to-backend-https-only\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-zope-prefer-gzip-encoding-to-backend-https-only_epm-upload-token@@/\"}, \"_type-zope-virtualhostroot-http-port\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-zope-virtualhostroot-http-port_epm-upload-token@@/\"}, \"_type-zope-virtualhostroot-https-port\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_type-zope-virtualhostroot-https-port_epm-upload-token@@/\"}, \"_url-netloc-list\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_url-netloc-list_epm-upload-token@@/\"}, \"_url-path-with-percent-encoded-whitespace\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_url-path-with-percent-encoded-whitespace_epm-upload-token@@/\"}, \"_url-trailing-slash-absent\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_url-trailing-slash-absent_epm-upload-token@@/\"}, \"_url-trailing-slash-present\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_url-trailing-slash-present_epm-upload-token@@/\"}, \"_url_https-url\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_url_https-url_epm-upload-token@@/\"}, \"_url_https-url-https-only-false\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_url_https-url-https-only-false_epm-upload-token@@/\"}, \"_weak-ssl-backend\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_weak-ssl-backend_epm-upload-token@@/\"}}",
       "slave-kedifa-information": "{\"_Url\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@Url_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@Url_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@Url_key-generate-auth-url@@?auth=\"}, \"_auth-to-backend\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@auth-to-backend_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@auth-to-backend_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@auth-to-backend_key-generate-auth-url@@?auth=\"}, \"_auth-to-backend-backend-ignore\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@auth-to-backend-backend-ignore_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@auth-to-backend-backend-ignore_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@auth-to-backend-backend-ignore_key-generate-auth-url@@?auth=\"}, \"_auth-to-backend-not-configured\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@auth-to-backend-not-configured_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@auth-to-backend-not-configured_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@auth-to-backend-not-configured_key-generate-auth-url@@?auth=\"}, \"_bad-backend\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@bad-backend_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@bad-backend_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@bad-backend_key-generate-auth-url@@?auth=\"}, \"_ciphers\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ciphers_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ciphers_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ciphers_key-generate-auth-url@@?auth=\"}, \"_ciphers-translation-all\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ciphers-translation-all_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ciphers-translation-all_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ciphers-translation-all_key-generate-auth-url@@?auth=\"}, \"_custom_domain\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_key-generate-auth-url@@?auth=\"}, \"_custom_domain_server_alias\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_server_alias_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_server_alias_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_server_alias_key-generate-auth-url@@?auth=\"}, \"_custom_domain_ssl_crt_ssl_key\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_key-generate-auth-url@@?auth=\"}, \"_custom_domain_ssl_crt_ssl_key_ssl_ca_crt\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_ssl_ca_crt_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_ssl_ca_crt_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_ssl_crt_ssl_key_ssl_ca_crt_key-generate-auth-url@@?auth=\"}, \"_custom_domain_wildcard\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_wildcard_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_wildcard_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@custom_domain_wildcard_key-generate-auth-url@@?auth=\"}, \"_disabled-cookie-list\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@disabled-cookie-list_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@disabled-cookie-list_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@disabled-cookie-list_key-generate-auth-url@@?auth=\"}, \"_disabled-cookie-list-simple\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@disabled-cookie-list-simple_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@disabled-cookie-list-simple_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@disabled-cookie-list-simple_key-generate-auth-url@@?auth=\"}, \"_empty\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@empty_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@empty_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@empty_key-generate-auth-url@@?auth=\"}, \"_enable-http2-default\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http2-default_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http2-default_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http2-default_key-generate-auth-url@@?auth=\"}, \"_enable-http2-false\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http2-false_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http2-false_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http2-false_key-generate-auth-url@@?auth=\"}, \"_enable-http2-true\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http2-true_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http2-true_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http2-true_key-generate-auth-url@@?auth=\"}, \"_enable-http3-default\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-default_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-default_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-default_key-generate-auth-url@@?auth=\"}, \"_enable-http3-default-enable-http2-false\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-default-enable-http2-false_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-default-enable-http2-false_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-default-enable-http2-false_key-generate-auth-url@@?auth=\"}, \"_enable-http3-false\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-false_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-false_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-false_key-generate-auth-url@@?auth=\"}, \"_enable-http3-true\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-true_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-true_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-true_key-generate-auth-url@@?auth=\"}, \"_enable-http3-true-enable-http2-false\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-true-enable-http2-false_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-true-enable-http2-false_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable-http3-true-enable-http2-false_key-generate-auth-url@@?auth=\"}, \"_enable_cache\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_key-generate-auth-url@@?auth=\"}, \"_enable_cache-disable-no-cache-request\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache-disable-no-cache-request_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache-disable-no-cache-request_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache-disable-no-cache-request_key-generate-auth-url@@?auth=\"}, \"_enable_cache-disable-via-header\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache-disable-via-header_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache-disable-via-header_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache-disable-via-header_key-generate-auth-url@@?auth=\"}, \"_enable_cache-https-only-false\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache-https-only-false_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache-https-only-false_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache-https-only-false_key-generate-auth-url@@?auth=\"}, \"_enable_cache_custom_domain\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_custom_domain_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_custom_domain_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_custom_domain_key-generate-auth-url@@?auth=\"}, \"_enable_cache_server_alias\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_server_alias_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_server_alias_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@enable_cache_server_alias_key-generate-auth-url@@?auth=\"}, \"_https-only\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@https-only_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@https-only_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@https-only_key-generate-auth-url@@?auth=\"}, \"_https-url-netloc-list\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@https-url-netloc-list_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@https-url-netloc-list_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@https-url-netloc-list_key-generate-auth-url@@?auth=\"}, \"_https-url-only\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@https-url-only_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@https-url-only_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@https-url-only_key-generate-auth-url@@?auth=\"}, \"_https-url-only-https-only-false\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@https-url-only-https-only-false_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@https-url-only-https-only-false_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@https-url-only-https-only-false_key-generate-auth-url@@?auth=\"}, \"_prefer-gzip-encoding-to-backend\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@prefer-gzip-encoding-to-backend_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@prefer-gzip-encoding-to-backend_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@prefer-gzip-encoding-to-backend_key-generate-auth-url@@?auth=\"}, \"_prefer-gzip-encoding-to-backend-https-only\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@prefer-gzip-encoding-to-backend-https-only_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@prefer-gzip-encoding-to-backend-https-only_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@prefer-gzip-encoding-to-backend-https-only_key-generate-auth-url@@?auth=\"}, \"_server-alias\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias_key-generate-auth-url@@?auth=\"}, \"_server-alias-duplicated\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias-duplicated_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias-duplicated_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias-duplicated_key-generate-auth-url@@?auth=\"}, \"_server-alias-empty\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias-empty_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias-empty_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias-empty_key-generate-auth-url@@?auth=\"}, \"_server-alias-wildcard\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias-wildcard_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias-wildcard_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias-wildcard_key-generate-auth-url@@?auth=\"}, \"_server-alias_custom_domain-duplicated\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias_custom_domain-duplicated_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias_custom_domain-duplicated_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@server-alias_custom_domain-duplicated_key-generate-auth-url@@?auth=\"}, \"_ssl-proxy-verify-unverified\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl-proxy-verify-unverified_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl-proxy-verify-unverified_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl-proxy-verify-unverified_key-generate-auth-url@@?auth=\"}, \"_ssl-proxy-verify_ssl_proxy_ca_crt\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl-proxy-verify_ssl_proxy_ca_crt_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl-proxy-verify_ssl_proxy_ca_crt_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl-proxy-verify_ssl_proxy_ca_crt_key-generate-auth-url@@?auth=\"}, \"_ssl-proxy-verify_ssl_proxy_ca_crt-unverified\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl-proxy-verify_ssl_proxy_ca_crt-unverified_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl-proxy-verify_ssl_proxy_ca_crt-unverified_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl-proxy-verify_ssl_proxy_ca_crt-unverified_key-generate-auth-url@@?auth=\"}, \"_ssl_ca_crt_does_not_match\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_does_not_match_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_does_not_match_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_does_not_match_key-generate-auth-url@@?auth=\"}, \"_ssl_ca_crt_garbage\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_garbage_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_garbage_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_garbage_key-generate-auth-url@@?auth=\"}, \"_ssl_ca_crt_only\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_only_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_only_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@ssl_ca_crt_only_key-generate-auth-url@@?auth=\"}, \"_type-notebook\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-notebook_key-generate-auth-url@@?auth=\"}, \"_type-redirect\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-redirect_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-redirect_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-redirect_key-generate-auth-url@@?auth=\"}, \"_type-redirect-custom_domain\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-redirect-custom_domain_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-redirect-custom_domain_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-redirect-custom_domain_key-generate-auth-url@@?auth=\"}, \"_type-redirect-to-standard-port\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-redirect-to-standard-port_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-redirect-to-standard-port_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-redirect-to-standard-port_key-generate-auth-url@@?auth=\"}, \"_type-websocket\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket_key-generate-auth-url@@?auth=\"}, \"_type-websocket-websocket-path-list\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list_key-generate-auth-url@@?auth=\"}, \"_type-websocket-websocket-path-list-empty\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list-empty_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list-empty_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list-empty_key-generate-auth-url@@?auth=\"}, \"_type-websocket-websocket-path-list-none\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list-none_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list-none_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list-none_key-generate-auth-url@@?auth=\"}, \"_type-websocket-websocket-path-list-websocket-transparent-false\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list-websocket-transparent-false_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list-websocket-transparent-false_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-path-list-websocket-transparent-false_key-generate-auth-url@@?auth=\"}, \"_type-websocket-websocket-transparent-false\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-transparent-false_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-transparent-false_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-websocket-websocket-transparent-false_key-generate-auth-url@@?auth=\"}, \"_type-zope\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope_key-generate-auth-url@@?auth=\"}, \"_type-zope-default-path\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-default-path_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-default-path_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-default-path_key-generate-auth-url@@?auth=\"}, \"_type-zope-path\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-path_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-path_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-path_key-generate-auth-url@@?auth=\"}, \"_type-zope-prefer-gzip-encoding-to-backend\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-prefer-gzip-encoding-to-backend_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-prefer-gzip-encoding-to-backend_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-prefer-gzip-encoding-to-backend_key-generate-auth-url@@?auth=\"}, \"_type-zope-prefer-gzip-encoding-to-backend-https-only\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-prefer-gzip-encoding-to-backend-https-only_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-prefer-gzip-encoding-to-backend-https-only_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-prefer-gzip-encoding-to-backend-https-only_key-generate-auth-url@@?auth=\"}, \"_type-zope-virtualhostroot-http-port\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-virtualhostroot-http-port_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-virtualhostroot-http-port_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-virtualhostroot-http-port_key-generate-auth-url@@?auth=\"}, \"_type-zope-virtualhostroot-https-port\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-virtualhostroot-https-port_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-virtualhostroot-https-port_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@type-zope-virtualhostroot-https-port_key-generate-auth-url@@?auth=\"}, \"_url-netloc-list\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@url-netloc-list_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@url-netloc-list_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@url-netloc-list_key-generate-auth-url@@?auth=\"}, \"_url-path-with-percent-encoded-whitespace\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@url-path-with-percent-encoded-whitespace_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@url-path-with-percent-encoded-whitespace_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@url-path-with-percent-encoded-whitespace_key-generate-auth-url@@?auth=\"}, \"_url-trailing-slash-absent\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@url-trailing-slash-absent_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@url-trailing-slash-absent_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@url-trailing-slash-absent_key-generate-auth-url@@?auth=\"}, \"_url-trailing-slash-present\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@url-trailing-slash-present_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@url-trailing-slash-present_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@url-trailing-slash-present_key-generate-auth-url@@?auth=\"}, \"_url_https-url\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@url_https-url_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@url_https-url_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@url_https-url_key-generate-auth-url@@?auth=\"}, \"_url_https-url-https-only-false\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@url_https-url-https-only-false_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@url_https-url-https-only-false_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@url_https-url-https-only-false_key-generate-auth-url@@?auth=\"}, \"_weak-ssl-backend\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@weak-ssl-backend_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@weak-ssl-backend_key-generate-auth-url@@/@@Url_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@weak-ssl-backend_key-generate-auth-url@@?auth=\"}}"
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
-    "slap_computer_partition_id": "T-2",
+    "slap_computer_partition_id": "T-3",
     "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "single-custom-personal",
     "slave_instance_list": [],
