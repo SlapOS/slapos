@@ -21,6 +21,7 @@ config-mail-domains = $${filter-shared-instances:accepted-domain-list}
 return =
   smtp-ipv6
   smtp-port
+  tls-fingerprints
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
@@ -46,10 +47,18 @@ sla-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 
 [request-all-relays]
-depends =
-{% for relay_name in slapparameter_dict['topology'].keys() %}
-  $${request-relay-{{ relay_name }}:recipe}
-{% endfor -%}
+recipe = slapos.recipe.build
+{# order is stable because Python3 dicts have stable order -#}
+relay-names = {{ dumps(list(slapparameter_dict['topology'].keys())) }}
+init =
+  fingerprints = []
+  hosts = []
+  for relay_name in options['relay-names']:
+    part = self.buildout['request-relay-' + relay_name]
+    fingerprints.extend(part['connection-tls-fingerprints'])
+    hosts.append(part['connection-smtp-ipv6'])
+  options['tls-fingerprints'] = fingerprints
+  options['hosts'] = hosts
 {% if "relay-domain" in slapparameter_dict %}
 relay-host = {{ slapparameter_dict['relay-domain'] }}
 {% else %}
@@ -147,11 +156,13 @@ install =
   with open(options['target'], 'w') as fp:
     json.dump(self.output, fp, sort_keys=True)
 
-
 [publish-shared]
 recipe = slapos.recipe.build
 published-domain-dict = $${filter-shared-instances:published-domain-dict}
+relay-tls-fingerprints = $${request-all-relays:tls-fingerprints}
+{% raw -%}
 init =
+  dollar = '$$'
   for slave_ref, info in options['published-domain-dict'].items():
     section = f"""
   [publish-shared-{slave_ref}]
@@ -166,6 +177,7 @@ init =
       section += f"""
   dns-entries =
     {info['addr']} MX 10 {self.buildout['request-all-relays']['relay-host']}
+  tls-fingerprints = {dollar}{{request-all-relays:tls-fingerprints}}
       """
       if info['can-send']:
         if info.get('authentication') == 'password' and info.get('password'):
@@ -187,3 +199,5 @@ init =
   outbound-smtp-port = 10587
         """
     self.buildout.parse(section)
+{%- endraw %}
+
