@@ -97,8 +97,7 @@ class TestServices(TurnServerTestCase):
     self.assertTrue(os.path.exists(self.partition_path))
     self.assertTrue(os.path.exists(secret_file))
     config = configparser.ConfigParser()
-    with open(secret_file) as f:
-      config.readfp(f)
+    config.read(secret_file)
     secret = config.get('turnserver', 'secret')
     self.assertTrue(secret)
 
@@ -152,8 +151,7 @@ class TestParameters(TurnServerTestCase):
     self.assertTrue(os.path.exists(self.partition_path))
     self.assertTrue(os.path.exists(secret_file))
     config = configparser.ConfigParser()
-    with open(secret_file) as f:
-      config.readfp(f)
+    config.read(secret_file)
     secret = config.get('turnserver', 'secret')
     self.assertTrue(secret)
 

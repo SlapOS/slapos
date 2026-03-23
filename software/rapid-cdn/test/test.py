@@ -622,14 +622,16 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       (cls._ipv4_address, cls._server_https_port),
       backend.TestHandler)
 
-    server_https.socket = ssl.wrap_socket(
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ssl_context.load_cert_chain(cls.test_server_certificate_file.name)
+    server_https.socket = ssl_context.wrap_socket(
       server_https.socket,
-      certfile=cls.test_server_certificate_file.name,
       server_side=True)
 
     cls.backend_url = 'http://%s:%s/' % server.server_address
     server_process = multiprocessing.Process(
-      target=server.serve_forever, name='HTTPServer', daemon=True)
+      target=server.serve_forever, name='HTTPServer')
+    server_process.daemon = True
     server_process.start()
     # from now on, socket is used by server subprocess, we can close it
     server.socket.close()
@@ -637,7 +639,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
     cls.backend_https_url = 'https://%s:%s/' % server_https.server_address
     server_https_process = multiprocessing.Process(
-      target=server_https.serve_forever, name='HTTPSServer', daemon=True)
+      target=server_https.serve_forever, name='HTTPSServer')
+    server_https_process.daemon = True
     server_https_process.start()
     server_https.socket.close()
     cls.logger.debug('Started process %s' % (server_https_process,))
@@ -668,15 +671,16 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       (cls._ipv4_address, cls._server_netloc_a_http_port),
       NetlocHandler)
     netloc_a_http_process = multiprocessing.Process(
-      target=netloc_a_http.serve_forever, name='netloc-a-http', daemon=True)
+      target=netloc_a_http.serve_forever, name='netloc-a-http')
+    netloc_a_http_process.daemon = True
     netloc_a_http_process.start()
-    netloc_a_http.socket.close()
 
     netloc_b_http = backend.ThreadedHTTPServer(
       (cls._ipv4_address, cls._server_netloc_b_http_port),
       NetlocHandler)
     netloc_b_http_process = multiprocessing.Process(
-      target=netloc_b_http.serve_forever, name='netloc-b-http', daemon=True)
+      target=netloc_b_http.serve_forever, name='netloc-b-http')
+    netloc_b_http_process.daemon = True
     netloc_b_http_process.start()
     netloc_b_http.socket.close()
 
@@ -724,19 +728,20 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       (self._ipv4_address, self._server_https_auth_port),
       OwnTestHandler)
 
-    server_https_auth.socket = ssl.wrap_socket(
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ssl_context.load_cert_chain(self.test_server_certificate_file.name)
+    ssl_context.verify_mode = ssl.CERT_REQUIRED
+    ssl_context.load_verify_locations(ca_certificate_file)
+    server_https_auth.socket = ssl_context.wrap_socket(
       server_https_auth.socket,
-      certfile=self.test_server_certificate_file.name,
-      cert_reqs=ssl.CERT_REQUIRED,
-      ca_certs=ca_certificate_file,
       server_side=True)
 
     self.backend_https_auth_url = 'https://%s:%s/' \
         % server_https_auth.server_address
 
     self.server_https_auth_process = multiprocessing.Process(
-      target=server_https_auth.serve_forever, name='HTTPSServerAuth',
-      daemon=True)
+      target=server_https_auth.serve_forever, name='HTTPSServerAuth')
+    self.server_https_auth_process.daemon = True
     self.server_https_auth_process.start()
     server_https_auth.socket.close()
     self.logger.debug('Started process %s' % (self.server_https_auth_process,))
@@ -8309,7 +8314,7 @@ if __name__ == '__main__':
 
   server = klass((ip, port), backend.TestHandler)
   if ssl_certificate is not None:
-    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(ssl_certificate)
     server.socket = context.wrap_socket(server.socket, server_side=True)
 
