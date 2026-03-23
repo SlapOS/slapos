@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Values returned by backupserver instanciation",
+  "properties": {
+    "monitor-base-url": {
+      "description": "Base URL used by monitor",
+      "type": "string"
+    },
+    "monitor-setup-url": {
+      "description": "One-click link to setup and monitor feeds",
+      "type": "string"
+    },
+    "rss": {
+      "description": "RSS giving the logs and the important events of the backup process",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
