@@ -6,6 +6,8 @@ import mock
 import os
 import pickle
 import shutil
+import re
+import six
 import unittest
 import tempfile
 from collections import defaultdict
@@ -825,6 +827,12 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
     "  $: 'number' is a required property"
   )
 
+  def assertErrorEqual(self, first, second):
+    """Assert error message equality, normalizing Python 2 unicode repr (u'...')."""
+    if six.PY2:
+      first = re.sub(r"\bu(['\"])", r"\1", first)
+    self.assertEqual(first, second)
+
   def test_report_error_main_default(self):
     """Main validation error is reported to master by default (report-error='all')."""
     self.writeJsonSchema()
@@ -836,7 +844,7 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
       )
       self.mock_computer_partition.error.assert_called_once()
       args, kwargs = self.mock_computer_partition.error.call_args
-      self.assertEqual(args[0], self.MAIN_MISSING_NUMBER_ERROR)
+      self.assertErrorEqual(args[0], self.MAIN_MISSING_NUMBER_ERROR)
 
   def test_report_error_main_only(self):
     """Main validation error is reported when report-error='main'."""
@@ -850,7 +858,7 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
       )
       self.mock_computer_partition.error.assert_called_once()
       args, kwargs = self.mock_computer_partition.error.call_args
-      self.assertEqual(args[0], self.MAIN_MISSING_NUMBER_ERROR)
+      self.assertErrorEqual(args[0], self.MAIN_MISSING_NUMBER_ERROR)
 
   def test_report_error_main_none(self):
     """Main validation error is NOT reported when report-error='none'."""
@@ -885,7 +893,7 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
         self.receiveParameters({'report-error': 'all'})
       self.mock_computer_partition.error.assert_called_once()
       args, kwargs = self.mock_computer_partition.error.call_args
-      self.assertEqual(args[0], self.MAIN_MISSING_NUMBER_ERROR)
+      self.assertErrorEqual(args[0], self.MAIN_MISSING_NUMBER_ERROR)
 
   SHARED_INVALID_KIND_ERROR = (
     "  $: {'kind': 0} is not valid under any of the given schemas"
@@ -902,7 +910,7 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
       self.mock_computer_partition.error.assert_called_once()
       args, kwargs = self.mock_computer_partition.error.call_args
       self.assertEqual(kwargs['slave_reference'], 'SHARED0')
-      self.assertEqual(args[0], self.SHARED_INVALID_KIND_ERROR)
+      self.assertErrorEqual(args[0], self.SHARED_INVALID_KIND_ERROR)
 
   def test_report_error_shared_only(self):
     """Shared validation errors are reported when report-error='shared'."""
@@ -915,7 +923,7 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
       self.assertEqual(len(invalid), 1)
       self.mock_computer_partition.error.assert_called_once()
       args, kwargs = self.mock_computer_partition.error.call_args
-      self.assertEqual(args[0], self.SHARED_INVALID_KIND_ERROR)
+      self.assertErrorEqual(args[0], self.SHARED_INVALID_KIND_ERROR)
 
   def test_report_error_shared_none(self):
     """Shared validation errors are NOT reported when report-error='none'."""
@@ -960,8 +968,15 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
       calls = self.mock_computer_partition.error.call_args_list
       self.assertEqual(calls[0][1]['slave_reference'], 'SHARED0')
       self.assertEqual(calls[1][1]['slave_reference'], 'SHARED1')
-      self.assertEqual(calls[0][0][0], self.SHARED_INVALID_KIND_ERROR)
-      self.assertEqual(calls[1][0][0], self.SHARED_INVALID_THING_ERROR)
+      self.assertErrorEqual(calls[0][0][0], self.SHARED_INVALID_KIND_ERROR)
+      if six.PY2:
+        # Python 2 dict repr key order is not guaranteed, check parts separately.
+        error = re.sub(r"\bu(['\"])", r"\1", calls[1][0][0])
+        self.assertIn("is not valid under any of the given schemas", error)
+        self.assertIn("'kind': 2", error)
+        self.assertIn("'thing': 'hello'", error)
+      else:
+        self.assertErrorEqual(calls[1][0][0], self.SHARED_INVALID_THING_ERROR)
 
   def test_report_error_main_no_json_path_notation(self):
     """Error messages use readable parameter names, not JSON path $ notation."""
@@ -971,14 +986,17 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
       with self.assertRaises(slapconfiguration.UserError) as cm:
         self.receiveParameters()
       error_msg = str(cm.exception)
-      # unevaluatedProperties fires because the allOf sub-schema fails
-      # (annotations from failing schemas are discarded per JSON Schema spec),
-      # followed by the type error on the path to the property.
-      self.assertEqual(
+      # The type error is always present.
+      self.assertErrorEqual(
         error_msg,
+        # unevaluatedProperties fires on jsonschema >= 4 (Python 3) because the
+        # allOf sub-schema fails (annotations from failing schemas are discarded
+        # per JSON Schema spec), followed by the type error on the property.
+        # jsonschema 3 (Python 2) only produces the type error.
         "Invalid parameters:\n"
-        "  $: Unevaluated properties are not allowed ('number' was unexpected)\n"
-        "  $.number: 'not_a_number' is not of type 'integer'",
+        + ("  $: Unevaluated properties are not allowed ('number' was unexpected)\n"
+           if not six.PY2 else "")
+        + "  $.number: 'not_a_number' is not of type 'integer'",
       )
 
   def test_report_error_shared_expands_context(self):
@@ -991,4 +1009,4 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
       self.assertEqual(len(invalid), 1)
       self.mock_computer_partition.error.assert_called_once()
       args, kwargs = self.mock_computer_partition.error.call_args
-      self.assertEqual(args[0], self.SHARED_INVALID_KIND_ERROR)
+      self.assertErrorEqual(args[0], self.SHARED_INVALID_KIND_ERROR)
