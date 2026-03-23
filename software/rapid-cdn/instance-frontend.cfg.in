@@ -182,6 +182,9 @@ slave-introspection-var = ${:var}/slave-introspection
 trafficserver-introspection-var = ${:var}/trafficserver-introspection
 trafficserver-introspection-srv = ${:srv}/trafficserver-introspection
 
+# error pages synced from error-page-manager
+error-pages = ${:srv}/error-pages
+
 [switch-frontend-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-custom-personal-profile-slave-list:output
@@ -489,6 +492,7 @@ version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
 http3-enable = {{ FRONTEND_HTTP3 }}
 http3-port = {{ HTTP3_PORT }}
+error-pages-dir = ${directory:error-pages}
 
 # BBB: SlapOS Master non-zero knowledge BEGIN
 [get-self-signed-fallback-access]
@@ -826,6 +830,7 @@ statistic-identification = {{ slapparameter_dict['frontend-name'] + ' @ ' + slap
 statistic-frontend-secure_access = ${backend-haproxy-statistic-frontend:connection-secure_access}
 version-hash = ${version-hash:value}
 node-id = ${frontend-node-id:value}
+error-pages-dir = ${directory:error-pages}
 
 [frontend-haproxy]
 recipe = slapos.cookbook:wrapper
