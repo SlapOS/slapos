@@ -207,7 +207,9 @@ def server_https_weak_method(ip, port):
   server_https_weak = ThreadedHTTPServer(
     (ip, port),
     TestHandler)
-  context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+  context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+  context.minimum_version = ssl.TLSVersion.TLSv1
+  context.maximum_version = ssl.TLSVersion.TLSv1
   context.load_cert_chain(
     os.path.join(
       os.path.dirname(
