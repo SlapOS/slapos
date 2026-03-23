@@ -54,6 +54,14 @@
       "response": "instance-kedifa-output-schema.json",
       "software-type": "kedifa",
       "title": "Kedifa"
+    },
+    "error-page-manager": {
+      "description": "Error Page Manager",
+      "index": 6,
+      "request": "instance-error-page-manager-input-schema.json",
+      "response": "instance-error-page-manager-output-schema.json",
+      "software-type": "error-page-manager",
+      "title": "Error Page Manager"
     }
   }
 }

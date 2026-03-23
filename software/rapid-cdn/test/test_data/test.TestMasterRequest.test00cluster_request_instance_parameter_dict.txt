@@ -39,6 +39,25 @@
   },
   {
     "_": {
+      "cluster-identification": "testing partition 0",
+      "monitor-httpd-port": 8403,
+      "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
+      "monitor-password": "@@monitor-password@@",
+      "monitor-username": "admin",
+      "slave-list": []
+    },
+    "full_address_list": [],
+    "instance_title": "error-page-manager",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-2",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "error-page-manager",
+    "slave_instance_list": [],
+    "timestamp": "@@TIMESTAMP@@"
+  },
+  {
+    "_": {
       "authenticate-to-backend": false,
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
       "backend-connect-retries": 3,
@@ -48,6 +67,9 @@
       "domain": "example.org",
       "enable-http2-by-default": true,
       "enable-http3": false,
+      "error-page-base-url": "https://[@@_ipv6_address@@]:24000/haproxy/@@error-page-read-token@@",
+      "error-page-certificate": "@@error-page-certificate@@",
+      "error-page-sync-url": "https://[@@_ipv6_address@@]:24000/sync/@@error-page-read-token@@",
       "expert-backend-allow-downgrade-ssl": false,
       "extra_slave_instance_list": "[]",
       "frontend-name": "caddy-frontend-1",
@@ -61,13 +83,14 @@
       "plain_http_port": 11080,
       "port": 11443,
       "request-timeout": 600,
+      "slave-error-page-information": "{}",
       "slave-kedifa-information": "{}"
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
-    "slap_computer_partition_id": "T-2",
+    "slap_computer_partition_id": "T-3",
     "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "single-custom-personal",
     "slave_instance_list": [],
