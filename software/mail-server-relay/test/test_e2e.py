@@ -372,24 +372,24 @@ class E2E(SlapOSInstanceTestCase):
     # Verify email was received at mail1
     self.check_inbox(mail1, msg_body)
 
-  def test_spf_impersonation_from_example_dot_com_rejected(self):
-    """Inbound mail claiming to be from example.com must be rejected by SPF."""
+  def test_spf_impersonation_rejected(self):
+    """Inbound mail claiming to be from spf-always-fail.messwithdns.test.rapid.space must be rejected by SPF."""
     mail1 = self.mail_servers[0]
 
     msg_body = "This inbound impersonation should be rejected by SPF."
     with self.assertRaises(smtplib.SMTPRecipientsRefused):
       with smtplib.SMTP(*self.relay_inbound_addr, timeout=10) as smtp:
         smtp.sendmail(
-          from_addr="testmail@example.com",
+          from_addr="testmail@spf-always-fail.messwithdns.test.rapid.space",
           to_addrs=[mail1.testmail],
           msg=f"Subject: SPF Impersonation\n\n{msg_body}",
         )
 
     self.check_not_in_inbox(mail1, msg_body, wait_time=5)
 
-  def test_mock_spf_pass_via_whitelisted_recipient(self):
+  def test_spf_whitelist_recipient(self):
     """Inbound mail to a whitelisted recipient bypasses greylisting and is
-    accepted on the first attempt, which lets us exercise the SPF-pass path."""
+    accepted on the first attempt."""
     mail2 = self.mail_servers[1]
 
     msg_body = "This inbound email should bypass greylisting on first delivery."
@@ -401,6 +401,21 @@ class E2E(SlapOSInstanceTestCase):
       )
 
     self.check_inbox(mail2, msg_body)
+
+  def test_spf_pass(self):
+    """Inbound mail from an SPF-passing domain bypasses greylisting and is
+    accepted on the first attempt."""
+    mail1 = self.mail_servers[0]
+
+    msg_body = "This inbound email should bypass greylisting on first delivery."
+    with smtplib.SMTP(*self.relay_inbound_addr, timeout=10) as smtp:
+      smtp.sendmail(
+        from_addr="testmail@spf-always-pass.messwithdns.test.rapid.space",
+        to_addrs=[mail1.testmail],
+        msg=f"Subject: SPF Pass\n\n{msg_body}",
+      )
+
+    self.check_inbox(mail1, msg_body)
 
   def check_not_in_inbox(self, mailserver, unexpected_content, wait_time=30):
     time.sleep(wait_time)
