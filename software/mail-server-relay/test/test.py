@@ -46,7 +46,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     return {
       "_": json.dumps(
         {
-          "default-proxy-config": {
+          "default-relay-config": {
             "proxy-host": "example.com",
             "proxy-port": 2525,
             "proxy-user": "user",
