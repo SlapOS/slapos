@@ -375,6 +375,10 @@ class E2E(SlapOSInstanceTestCase):
       params.get('outbound-user'), "User must be published")
     self.assertEqual(
       params.get('outbound-submission-port'), str(self.relay_outbound_port))
+    self.assertTrue(
+      params.get('tls-fingerprints'), "TLS fingerprints must be published")
+    self.assertIsInstance(
+      params['tls-fingerprints'], list, "TLS fingerprints should be a list")
 
   def test_relay_password_auth_legitimate(self):
     """Authenticate as <domain> on the relay's submission port
