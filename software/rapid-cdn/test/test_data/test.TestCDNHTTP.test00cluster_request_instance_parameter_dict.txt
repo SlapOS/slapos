@@ -135,6 +135,65 @@
   },
   {
     "_": {
+      "cluster-identification": "testing partition 0",
+      "monitor-httpd-port": 8403,
+      "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
+      "monitor-password": "@@monitor-password@@",
+      "monitor-username": "admin",
+      "slave-list": [
+        {
+          "enable-http2": false,
+          "enable-http3": false,
+          "https-only": false,
+          "slave_reference": "_backendhttp10cdhttp1",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable-http2": true,
+          "enable-http3": false,
+          "https-only": false,
+          "slave_reference": "_backendhttp10cdnhttp2",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable-http2": true,
+          "enable-http3": true,
+          "https-only": false,
+          "slave_reference": "_backendhttp10cdnhttp3",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable-http2": false,
+          "enable-http3": false,
+          "https-only": false,
+          "slave_reference": "_cdnhttp1"
+        },
+        {
+          "enable-http2": true,
+          "enable-http3": false,
+          "https-only": false,
+          "slave_reference": "_cdnhttp2"
+        },
+        {
+          "enable-http2": true,
+          "enable-http3": true,
+          "https-only": false,
+          "slave_reference": "_cdnhttp3"
+        }
+      ]
+    },
+    "full_address_list": [],
+    "instance_title": "error-page-manager",
+    "root_instance_title": "testing partition 0",
+    "slap_computer_id": "local",
+    "slap_computer_partition_id": "T-2",
+    "slap_software_release_url": "@@00getSoftwareURL@@",
+    "slap_software_type": "error-page-manager",
+    "slave_instance_list": [],
+    "timestamp": "@@TIMESTAMP@@"
+  },
+  {
+    "_": {
       "authenticate-to-backend": false,
       "backend-client-caucase-url": "http://[@@_ipv6_address@@]:8990",
       "backend-connect-retries": 3,
@@ -144,6 +203,9 @@
       "domain": "example.com",
       "enable-http2-by-default": true,
       "enable-http3": true,
+      "error-page-base-url": "https://[@@_ipv6_address@@]:24000/haproxy/@@error-page-read-token@@",
+      "error-page-certificate": "@@error-page-certificate@@",
+      "error-page-sync-url": "https://[@@_ipv6_address@@]:24000/sync/@@error-page-read-token@@",
       "expert-backend-allow-downgrade-ssl": false,
       "extra_slave_instance_list": "[{\"enable-http2\": false, \"enable-http3\": false, \"https-only\": false, \"slave_reference\": \"_backendhttp10cdhttp1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": true, \"enable-http3\": false, \"https-only\": false, \"slave_reference\": \"_backendhttp10cdnhttp2\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": true, \"enable-http3\": true, \"https-only\": false, \"slave_reference\": \"_backendhttp10cdnhttp3\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": false, \"enable-http3\": false, \"https-only\": false, \"slave_reference\": \"_cdnhttp1\"}, {\"enable-http2\": true, \"enable-http3\": false, \"https-only\": false, \"slave_reference\": \"_cdnhttp2\"}, {\"enable-http2\": true, \"enable-http3\": true, \"https-only\": false, \"slave_reference\": \"_cdnhttp3\"}]",
       "frontend-name": "caddy-frontend-1",
@@ -157,13 +219,14 @@
       "plain_http_port": 11080,
       "port": 11443,
       "request-timeout": 600,
+      "slave-error-page-information": "{\"_backendhttp10cdhttp1\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_backendhttp10cdhttp1_epm-upload-token@@/\"}, \"_backendhttp10cdnhttp2\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_backendhttp10cdnhttp2_epm-upload-token@@/\"}, \"_backendhttp10cdnhttp3\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_backendhttp10cdnhttp3_epm-upload-token@@/\"}, \"_cdnhttp1\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_cdnhttp1_epm-upload-token@@/\"}, \"_cdnhttp2\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_cdnhttp2_epm-upload-token@@/\"}, \"_cdnhttp3\": {\"upload-url\": \"https://[@@_ipv6_address@@]:24000/slave/@@_cdnhttp3_epm-upload-token@@/\"}}",
       "slave-kedifa-information": "{\"_backendhttp10cdhttp1\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@backendhttp10cdhttp1_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@backendhttp10cdhttp1_key-generate-auth-url@@/@@backendhttp10cdhttp1_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@backendhttp10cdhttp1_key-generate-auth-url@@?auth=\"}, \"_backendhttp10cdnhttp2\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@backendhttp10cdnhttp2_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@backendhttp10cdnhttp2_key-generate-auth-url@@/@@backendhttp10cdhttp1_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@backendhttp10cdnhttp2_key-generate-auth-url@@?auth=\"}, \"_backendhttp10cdnhttp3\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@backendhttp10cdnhttp3_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@backendhttp10cdnhttp3_key-generate-auth-url@@/@@backendhttp10cdhttp1_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@backendhttp10cdnhttp3_key-generate-auth-url@@?auth=\"}, \"_cdnhttp1\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@cdnhttp1_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@cdnhttp1_key-generate-auth-url@@/@@backendhttp10cdhttp1_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@cdnhttp1_key-generate-auth-url@@?auth=\"}, \"_cdnhttp2\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@cdnhttp2_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@cdnhttp2_key-generate-auth-url@@/@@backendhttp10cdhttp1_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@cdnhttp2_key-generate-auth-url@@?auth=\"}, \"_cdnhttp3\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@cdnhttp3_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@cdnhttp3_key-generate-auth-url@@/@@backendhttp10cdhttp1_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@cdnhttp3_key-generate-auth-url@@?auth=\"}}"
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
-    "slap_computer_partition_id": "T-2",
+    "slap_computer_partition_id": "T-3",
     "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "single-custom-personal",
     "slave_instance_list": [],
