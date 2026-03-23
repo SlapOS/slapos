@@ -380,6 +380,10 @@ class E2E(SlapOSInstanceTestCase):
     self.assertTrue(user, "User must be published")
     self.assertEqual(
       params.get('outbound-submission-port'), str(self.relay_outbound_port))
+    self.assertTrue(
+      params.get('tls-fingerprints'), "TLS fingerprints must be published")
+    self.assertIsInstance(
+      params['tls-fingerprints'], list, "TLS fingerprints should be a list")
     # Reprocess the cluster
     self.relay_cluster.bang("Reprocess to check password stability")
     self.waitForInstance()
