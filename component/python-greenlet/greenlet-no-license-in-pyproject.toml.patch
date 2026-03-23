@@ -1,0 +1,17 @@
+Remove "license" keys in pyproject.toml, this was incompatible with the old version of setuptools used in SlapOS
+
+$ diff -ur pyproject.toml.orig pyproject.toml
+--- pyproject.toml.orig	2026-08-03 14:26:05.331121301 +0200
++++ pyproject.toml	2026-08-03 14:26:14.822848674 +0200
+@@ -14,11 +14,6 @@
+ maintainers = [
+     { name = "Jason Madden", email = "jason@seecoresoftware.com" }
+ ]
+-license = "MIT AND PSF-2.0"
+-license-files = [
+-    'LICENSE',
+-    'LICENSE.PSF',
+-]
+ classifiers = [
+     "Development Status :: 5 - Production/Stable",
+     "Intended Audience :: Developers",
