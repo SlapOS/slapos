@@ -520,7 +520,7 @@ extra-context =
   raw error_pages_dir {{ error_pages_dir }}
   raw builtin_dir {{ software_parameter_dict['error_pages_builtin_dir'] }}
   raw state_file {{ directory['srv'] }}/error-page-updater-state.json
-  raw on_update {{ frontend_haproxy_configuration['frontend-graceful-command'] }}
+  raw on_update {{ frontend_haproxy_configuration['frontend-graceful-command'] }} && {{ backend_haproxy_configuration['graceful-command'] }}
 
 [error-page-updater]
 recipe = slapos.cookbook:wrapper

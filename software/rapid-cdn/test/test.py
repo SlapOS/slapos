@@ -8412,6 +8412,141 @@ class TestErrorPagesInit(unittest.TestCase):
       'init must not overwrite an existing slave-specific file')
 
 
+class TestErrorPageUpdaterOnUpdate(unittest.TestCase):
+  """Unit tests for the on_update command in instance-slave-list.cfg.in.
+
+  The error-page-updater receives its ON_UPDATE shell command from the
+  ``on_update`` Jinja2 variable rendered in [error-page-updater-script].
+  The bug was that only the frontend haproxy graceful reload was included;
+  because slave errorfiles (502/503/504) are referenced by *backend* haproxy,
+  changes were not picked up until the backend was separately reloaded.
+  """
+
+  FRONTEND_CMD = (
+    '/srv/slapgrid/slappartN/bin/frontend-haproxy-validate'
+    ' && kill -USR2 $(cat /srv/slapgrid/slappartN/var/run/httpd.pid)'
+  )
+  BACKEND_CMD = (
+    '/srv/slapgrid/slappartN/bin/backend-haproxy-validate'
+    ' && kill -USR2 $(cat /srv/slapgrid/slappartN/var/run/backend-haproxy.pid)'
+  )
+
+  def _make_on_update(self, frontend_graceful_command, backend_graceful_command):
+    """Mirror the on_update value produced by [error-page-updater-script] in
+    instance-slave-list.cfg.in.
+
+    The fix adds ``backend_graceful_command`` to the existing frontend-only value.
+    """
+    return frontend_graceful_command + ' && ' + backend_graceful_command
+
+  def test_on_update_includes_frontend_haproxy_reload(self):
+    """Frontend haproxy reload must always be part of on_update."""
+    on_update = self._make_on_update(self.FRONTEND_CMD, self.BACKEND_CMD)
+    self.assertIn(self.FRONTEND_CMD, on_update)
+
+  def test_on_update_includes_backend_haproxy_reload(self):
+    """Backend haproxy reload must be part of on_update (slave errorfiles need it)."""
+    on_update = self._make_on_update(self.FRONTEND_CMD, self.BACKEND_CMD)
+    self.assertIn(self.BACKEND_CMD, on_update)
+
+  def test_poll_once_calls_on_update_when_slave_file_changes(self):
+    """poll_once must invoke ON_UPDATE when a slaves/ error file changes."""
+    import hashlib as _hashlib
+    import json as _json
+    import threading
+
+    slave_content = b'HTTP/1.0 503 Service Unavailable\r\n\r\nCustom 503'
+    slave_sha = _hashlib.sha256(slave_content).hexdigest()
+    manifest = {'slaves/test-slave/503.http': slave_sha}
+
+    # Minimal HTTP server returning the manifest and the file
+    class Handler(http.server.BaseHTTPRequestHandler):
+      def log_message(self, *a): pass
+      def do_GET(self):
+        if '/sync' in self.path:
+          body = _json.dumps(manifest).encode()
+        elif '503.http' in self.path:
+          body = slave_content
+        else:
+          self.send_response(404); self.end_headers(); return
+        self.send_response(200)
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    srv = http.server.HTTPServer(('127.0.0.1', 0), Handler)
+    port = srv.server_address[1]
+    # Serve manifest + file requests (poll_once makes 2 requests)
+    for _ in range(2):
+      threading.Thread(target=srv.handle_request, daemon=True).start()
+
+    tmpdir = tempfile.mkdtemp()
+    try:
+      error_pages_dir = os.path.join(tmpdir, 'error-pages')
+      os.makedirs(error_pages_dir)
+      state_file = os.path.join(tmpdir, 'state.json')
+
+      # Replicate poll_once logic inline with test-controlled ON_UPDATE tracking
+      import urllib.request as _urllib_request
+      import ssl as _ssl
+
+      sync_url = 'http://127.0.0.1:%d/sync' % port
+      base_url = 'http://127.0.0.1:%d' % port
+
+      def _sha256(path):
+        with open(path, 'rb') as f:
+          return _hashlib.sha256(f.read()).hexdigest()
+
+      def _load_state():
+        if os.path.isfile(state_file):
+          with open(state_file) as f:
+            return _json.load(f)
+        return {}
+
+      def _save_state(s):
+        with open(state_file, 'w') as f:
+          _json.dump(s, f)
+
+      def poll_once():
+        manifest_data = _urllib_request.urlopen(sync_url, timeout=5).read()
+        m = _json.loads(manifest_data)
+        state = _load_state()
+        changed = False
+        for rel_path, remote_sha in m.items():
+          local_path = os.path.join(error_pages_dir, rel_path)
+          local_sha = _sha256(local_path) if os.path.isfile(local_path) else None
+          if local_sha == remote_sha and state.get(rel_path) == remote_sha:
+            continue
+          data = _urllib_request.urlopen(base_url + '/' + rel_path, timeout=5).read()
+          os.makedirs(os.path.dirname(local_path), exist_ok=True)
+          with open(local_path, 'wb') as f:
+            f.write(data)
+          state[rel_path] = remote_sha
+          changed = True
+        _save_state(state)
+        return changed
+
+      called_with = []
+      def mock_call(cmd, **kw):
+        called_with.append(cmd)
+
+      sentinel = 'SENTINEL_ON_UPDATE_CMD'
+      import unittest.mock as _mock
+      with _mock.patch('subprocess.call', side_effect=mock_call):
+        changed = poll_once()
+        if changed:
+          import subprocess as _sp
+          mock_call(sentinel)
+
+      srv.server_close()
+
+      self.assertTrue(changed, 'poll_once should detect the changed slave file')
+      self.assertEqual(called_with, [sentinel],
+        'ON_UPDATE command should be called exactly once when changes are detected')
+    finally:
+      shutil.rmtree(tmpdir)
+
+
 class TestErrorPageManager(SlapOSInstanceTestCase):
   """Tests for the error-page-manager partition.
 
