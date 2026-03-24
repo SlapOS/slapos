@@ -1,38 +1,48 @@
 /*jslint nomen: true, indent: 2, maxerr: 3, maxlen: 80 */
 {% if isADrone -%}
-/*global arm, console, close, dup2, exit, open, scriptArgs, setTimeout, start,
-  stop, stopPubsub, takeOffAndWait, Worker, SIGINT, SIGTERM*/
+/*global arm, console, dup2, err, exec, exit, kill, open, out, pipe, read,
+  scriptArgs, setLog, setReadHandler, setTimeout, signal, start, stop,
+  stopPubsub, waitpid, ArrayBuffer, Uint8Array, Worker, SIGINT, SIGTERM,
+  WNOHANG*/
 {% else -%}
-/*global console, close, dup2, exit, open, scriptArgs, setTimeout, stopPubsub,
-  Worker, SIGINT, SIGTERM*/
+/*global console, dup2, err, exec, exit, kill, open, out, pipe, read,
+  scriptArgs, setReadHandler, setTimeout, signal, stopPubsub, waitpid,
+  ArrayBuffer, Uint8Array, Worker, SIGINT, SIGTERM, WNOHANG*/
 {% endif -%}
 import {
 {% if isADrone -%}
   arm,
+  setLog,
   start,
   stop,
 {% endif -%}
   stopPubsub,
-{% if isADrone -%}
-  takeOffAndWait
-{% endif -%}
 } from "{{ qjs_wrapper }}";
 import {
   Worker,
   SIGINT,
   SIGTERM,
+  WNOHANG,
   dup2,
+  exec,
+  kill,
+  pipe,
+  read,
+  setReadHandler,
   setTimeout,
-  signal
+  signal,
+  waitpid
 } from "os";
 import { err, exit, open, out } from "std";
 
 {% if isADrone -%}
-(function (arm, console, dup2, err, exit, open, out, scriptArgs, setTimeout,
-           start, stop, stopPubsub, takeOffAndWait, Worker, SIGINT, SIGTERM) {
+(function (arm, console, dup2, err, exec, exit, kill, open, out, pipe, read,
+           scriptArgs, setLog, setReadHandler, setTimeout, signal, start, stop,
+           stopPubsub, waitpid, Worker, SIGINT, SIGTERM, WNOHANG) {
 {% else -%}
-(function (console, dup2, err, exit, open, out, scriptArgs, setTimeout,
-           stopPubsub, Worker, SIGINT, SIGTERM) {
+(function (console, dup2, err, exec, exit, kill, open, out, pipe, read,
+           scriptArgs, setReadHandler, setTimeout, signal, stopPubsub, waitpid,
+           Worker, SIGINT, SIGTERM, WNOHANG) {
 {% endif -%}
   "use strict";
 
@@ -42,13 +52,19 @@ import { err, exit, open, out } from "std";
     AUTOPILOT_CONNECTION_TIMEOUT = 5,
     MAVSDK_LOG_FILE_PATH =
       "{{ log_dir }}/mavsdk_" + new Date().toISOString() + ".log",
+    MAX_STR_SIZE = 1024,
     QUICKJS_LOG_FILE_PATH =
       "{{ log_dir }}/quickjs_" + new Date().toISOString() + ".log",
-    QUICKJS_LOG_FILE =
-      open(QUICKJS_LOG_FILE_PATH, "w"),
+    QUICKJS_LOG_FILE = open(QUICKJS_LOG_FILE_PATH, "w"),
+    log_r_pipe,
     pubsubWorker,
+    tail_pid,
     worker,
     user_script = scriptArgs[1],
+{% if not isADrone -%}
+    operator_script = scriptArgs[2],
+    map_json = scriptArgs[3],
+{% endif -%}
     LOOP_EXECUTION_PERIOD = configuration.loopPeriod,
     previous_timestamp,
     can_update = false;
@@ -58,6 +74,23 @@ import { err, exit, open, out } from "std";
   // redirect stdout and stderr
   dup2(QUICKJS_LOG_FILE.fileno(), out.fileno());
   dup2(QUICKJS_LOG_FILE.fileno(), err.fileno());
+  if (configuration.debug && configuration.isADrone) {
+    log_r_pipe = pipe();
+    tail_pid = exec([
+      "tail",
+      "-f",
+      QUICKJS_LOG_FILE_PATH
+    ], {
+      block: false,
+      stdout: log_r_pipe[1]
+    });
+    setReadHandler(log_r_pipe[0], function () {
+      var data = new ArrayBuffer(MAX_STR_SIZE);
+      if (read(log_r_pipe[0], data, 0, MAX_STR_SIZE) > 0) {
+        setLog(String.fromCharCode.apply(null, new Uint8Array(data)));
+      }
+    });
+  }
 
   // Use a Worker to ensure the user script
   // does not block the main script
@@ -74,6 +107,11 @@ import { err, exit, open, out } from "std";
     stop();
 {% endif -%}
     QUICKJS_LOG_FILE.close();
+    if (log_r_pipe) {
+      setReadHandler(log_r_pipe[0], null);
+      kill(tail_pid, SIGTERM);
+      waitpid(tail_pid, WNOHANG);
+    }
     exit(exit_code);
   }
 
@@ -103,9 +141,7 @@ import { err, exit, open, out } from "std";
         configuration.autopilotIp,
         configuration.autopilotPort,
         MAVSDK_LOG_FILE_PATH,
-        QUICKJS_LOG_FILE_PATH,
-        AUTOPILOT_CONNECTION_TIMEOUT,
-        configuration.debug
+        AUTOPILOT_CONNECTION_TIMEOUT
       ),
       "Failed to connect to " + address
     );
@@ -124,18 +160,9 @@ import { err, exit, open, out } from "std";
 
   worker.postMessage({type: "initPubsub"});
 
-{% if isADrone -%}
-  function takeOff() {
-    exitOnFail(arm(), "Failed to arm");
-    takeOffAndWait();
-  }
-{% endif -%}
-
   function load() {
 {% if isADrone -%}
-    if (configuration.isASimulation) {
-      takeOff();
-    }
+    exitOnFail(arm(), "Failed to arm");
 {% endif -%}
 
     // First argument must provide the user script path
@@ -146,7 +173,12 @@ import { err, exit, open, out } from "std";
 
     worker.postMessage({
       type: "load",
-      path: user_script
+{% if not isADrone -%}
+      operator_path: operator_script,
+      map_path: map_json,
+{% endif -%}
+      timestamp: Date.now(),
+      user_path: user_script
     });
   }
 
@@ -192,9 +224,9 @@ import { err, exit, open, out } from "std";
       // Start the update loop
       loop();
     } else if (type === 'updated') {
+      can_update = true;
       err.flush();
       out.flush();
-      can_update = true;
     } else if (type === 'exited') {
       worker.onmessage = null;
       quit(e.data.exit);
@@ -204,9 +236,11 @@ import { err, exit, open, out } from "std";
     }
   };
 {% if isADrone -%}
-}(arm, console, dup2, err, exit, open, out, scriptArgs, setTimeout, start, stop,
-  stopPubsub, takeOffAndWait, Worker, SIGINT, SIGTERM));
+}(arm, console, dup2, err, exec, exit, kill, open, out, pipe, read, scriptArgs,
+  setLog, setReadHandler, setTimeout, signal, start, stop, stopPubsub, waitpid,
+  Worker, SIGINT, SIGTERM, WNOHANG));
 {% else -%}
-}(console, dup2, err, exit, open, out, scriptArgs, setTimeout, stopPubsub,
-  Worker, SIGINT, SIGTERM));
+}(console, dup2, err, exec, exit, kill, open, out, pipe, read, scriptArgs,
+  setReadHandler, setTimeout, signal, stopPubsub, waitpid, Worker, SIGINT,
+  SIGTERM, WNOHANG));
 {% endif -%}
