@@ -39,6 +39,12 @@ smtp_tls_security_level = encrypt
 smtpd_tls_cert_file = {{ postfix_tls_cert }}
 smtpd_tls_key_file = {{ postfix_tls_key }}
 smtpd_tls_security_level = encrypt
+{% if not no_relay -%}
+smtpd_tls_ask_ccert = yes
+smtpd_tls_fingerprint_digest = sha256
+smtpd_tls_loglevel = 2
+relay_clientcerts = texthash:{{ relay_clientcerts }}
+{%- endif %}
 
 smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
@@ -48,9 +54,17 @@ smtpd_recipient_restrictions =
   permit_sasl_authenticated
 
 smtpd_relay_restrictions =
+  # if authenticated mail account, allow everything
   permit_sasl_authenticated
+  # otherwise only allow mails to local domains
   defer_unauth_destination
+{%- if not no_relay %}
+  # and only from authenticated relays
+  permit_tls_clientcerts
+  # or from local networks
   permit_mynetworks 
+  reject
+{%- endif %}
 
 allow_min_user = yes
 
@@ -64,3 +78,4 @@ sender_dependent_default_transport_maps = texthash:{{ relay_map }}
 
 myhostname = {{ server_fqdn }}
 mydestination = localhost.$mydomain, localhost, localhost.localdomain
+
