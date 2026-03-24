@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 24 Mar 2026 10:00:00 +0000
+Subject: [PATCH] Remove distutils usage for Python 3.13 compatibility
+
+distutils was removed in Python 3.13. Use sysconfig module instead.
+
+Reference: https://docs.python.org/3.13/whatsnew/3.13.html
+---
+ cmake/modules/Distutils.cmake | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/modules/Distutils.cmake b/cmake/modules/Distutils.cmake
+index 8eb9e42f402..12345678901 100644
+--- a/cmake/modules/Distutils.cmake
++++ b/cmake/modules/Distutils.cmake
+@@ -76,7 +76,7 @@ function(distutils_add_cython_module target name src)
+ 
+   set(suffix_var "EXT_SUFFIX")
+   execute_process(COMMAND "${Python3_EXECUTABLE}" -c
+-    "from distutils import sysconfig; print(sysconfig.get_config_var('${suffix_var}'))"
++    "from sysconfig import get_config_var; print(get_config_var('${suffix_var}'))"
+      RESULT_VARIABLE result
+      OUTPUT_VARIABLE ext_suffix
+      ERROR_VARIABLE error
+-- 
+2.30.2
