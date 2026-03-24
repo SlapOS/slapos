@@ -34,5 +34,12 @@
       "description": "Use Sudo (sudo needed to the target hostname)"
     }
   },
-  "required": ["hostname", "connection", "exclude", "include", "frequency" , "sudo"]
+  "required": [
+    "hostname",
+    "connection",
+    "exclude",
+    "include",
+    "frequency",
+    "sudo"
+  ]
 }
