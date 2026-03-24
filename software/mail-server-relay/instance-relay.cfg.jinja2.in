@@ -74,6 +74,7 @@ name = postfix
 key-file = $${directory:postfix-ssl}/$${:name}.key
 cert-file = $${directory:postfix-ssl}/$${:name}.crt
 fingerprint = $${directory:postfix-ssl}/$${:name}.digest
+bundle = $${directory:postfix-ssl}/$${:name}.bundle.pem
 openssl = ${openssl:location}/bin/openssl
 # Consider using public-key fingerprint instead of whole certificate fingerprint
 command =
@@ -82,6 +83,7 @@ command =
       -keyout $${:key-file} -out $${:cert-file}; \
     $${:openssl} x509 -noout -fingerprint -sha256 -in $${:cert-file} \
       > $${:fingerprint}; \
+    cat $${:key-file} $${:cert-file} > $${:bundle}; \
   }
 update-command = $${:command}
 
@@ -201,6 +203,7 @@ content =
 
   # Client TLS parameters
   smtp_tls_security_level = encrypt
+  smtp_tls_chain_files = $${postfix-certificate:bundle}
   smtp_tls_session_cache_database = btree:$${inbound-postfix-directory:var-lib}/smtp_scache
 
 [inbound-postfix-wrapper]
@@ -340,6 +343,7 @@ content =
   # Client TLS & SASL parameters
   smtp_tls_security_level = may
   smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
+  smtp_tls_chain_files = $${postfix-certificate:bundle}
   smtp_sasl_auth_enable = yes
   smtp_sasl_security_options = noanonymous
   smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
