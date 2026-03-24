@@ -5,7 +5,7 @@
   "properties": {
     "bind-ip": {
       "title": "IP where asterisk will bind",
-      "description": "This is the IPv6 or IPv4 that Asterisk will use to bind. By default it will use the local IPv4 of the partition.",
+      "description": "This is the IPv6 or IPv4 that Asterisk will use to bind. By default it will use the local IPv4 of the partition. Use the special value 'GLOBAL-IPV6' to bind to the global IPv6 of the partition.",
       "type": "string"
     },
     "sip-trunk-server": {
@@ -21,6 +21,11 @@
     "sip-trunk-password": {
       "title": "Password of the SIP trunk",
       "description": "This is the password of the SIP trunk.",
+      "type": "string"
+    },
+    "local-number": {
+      "title": "Local extension number",
+      "description": "This is the local extension number to call.",
       "type": "string"
     }
   }
