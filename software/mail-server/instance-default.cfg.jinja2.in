@@ -94,6 +94,7 @@ init =
               except:
                   options['ipv4'] = "0.0.0.0"
 
+
 # Dovecot IMAP server
 # -------------------
 
@@ -295,6 +296,7 @@ recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
 output = $${postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/postfix.log
+no-relay = {{ dumps(slapparameter_dict['no-relay']) }}
 context =
   raw postfix_log_path $${:log-file}
   key dovecot_passwd dovecot-passwords:target
@@ -317,6 +319,20 @@ context =
   raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
   key postfix_tls_cert postfix-certificate:cert-file
   key postfix_tls_key postfix-certificate:key-file
+  key relay_clientcerts postfix-relay-clientcerts:output
+  key no_relay :no-relay
+
+[postfix-relay-clientcerts]
+recipe = slapos.recipe.template:jinja2
+output = $${postfix-directory:etc}/relay_clientcerts
+context =
+  section relays request-relays
+{% raw -%}
+inline =
+  {% for fingerprint in relays['tls-fingerprints'] -%}
+  {{ fingerprint.strip() }} mail-relay
+  {% endfor %}
+{%- endraw %}
 
 [postfix-conf-master]
 recipe = slapos.recipe.template:jinja2
@@ -822,7 +838,6 @@ init =
 # Request relay
 # -------------
 
-
 {% set relay_requests = [] -%}
 {% for mail_domain in slapparameter_dict['mail-domains'] -%}
 {%   do relay_requests.append('request-relay-' ~ mail_domain) %}
@@ -844,6 +859,7 @@ return =
   outbound-submission-port
   outbound-user
   outbound-password
+  tls-fingerprints
 {% else -%}
 recipe = slapos.cookbook:requestoptional.serialised
 state = destroyed
@@ -852,12 +868,22 @@ state = destroyed
 
 [request-relays]
 recipe = slapos.recipe.build
+relay-requests = {{ dumps(relay_requests) }}
+{% if slapparameter_dict['no-relay'] -%}
 init =
-  ""
+  options['tls-fingerprints'] = []
 depends =
 {% for relay_request in relay_requests -%}
   {{ "  $${" + relay_request + ":recipe}" }}
-{% endfor -%}
+{%- endfor %}
+{% else -%}
+init =
+  fingerprints = {} # deterministic insertion-ordered dict in Python3
+  for section in options['relay-requests']:
+    part = self.buildout[section]
+    fingerprints.update((f, 0) for f in part['connection-tls-fingerprints'])
+  options['tls-fingerprints'] = list(fingerprints)
+{%- endif %}
 
 
 # Request local DNS entry
@@ -903,3 +929,4 @@ error-dict = $${dovecot-passwords:error-dict}
 {% if slapparameter_dict['request-dns']['enable'] %}
 domain = $${request-dns-entry:connection-domain}
 {% endif %}
+
