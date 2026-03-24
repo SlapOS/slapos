@@ -36,6 +36,8 @@ import io
 import gzip
 import multiprocessing
 import subprocess
+import shutil
+import unittest
 from unittest import skip
 import ssl
 import time
@@ -8297,6 +8299,117 @@ class TestRapidCDNMonitoringPropagation(
         'monitor-interface-url': cls.MONITOR_INTERFACE_URL,
       })
     }
+
+
+
+class TestErrorPagesInit(unittest.TestCase):
+  """Unit tests for the [error-pages-init] logic in instance-error-page-manager.cfg.in.
+
+  Mirrors the Python snippet embedded in the buildout recipe so the logic can
+  be exercised without a full SlapOS instance.
+
+  The key scenario under test: a slave added *after* the operator has uploaded
+  a custom error page must inherit the operator page, not the built-in default.
+  Before the fix, [error-pages-init] copied from the builtin directory for new
+  slaves, ignoring any existing operator override in haproxy/default/.
+  """
+
+  SLAVE_CODES = ['502', '503', '504']
+
+  def setUp(self):
+    self.tmpdir = tempfile.mkdtemp()
+    # Builtin .http files (raw HTTP responses shipped with the software release)
+    self.builtin_dir = os.path.join(self.tmpdir, 'builtin')
+    os.makedirs(self.builtin_dir)
+    for code in self.SLAVE_CODES:
+      with open(os.path.join(self.builtin_dir, code + '.http'), 'w') as f:
+        f.write('HTTP/1.0 %s Builtin\r\n\r\nBuiltin %s' % (code, code))
+    # haproxy/default/ — starts empty; populated by the first part of init
+    self.haproxy_default = os.path.join(
+      self.tmpdir, 'error-pages', 'haproxy', 'default')
+    os.makedirs(self.haproxy_default)
+
+  def tearDown(self):
+    shutil.rmtree(self.tmpdir)
+
+  # ---- helpers that mirror [error-pages-init] --------------------------------
+
+  def _run_haproxy_default_init(self):
+    """First half of [error-pages-init]: populate haproxy/default/ from builtins."""
+    import glob as _glob
+    for src in _glob.glob(os.path.join(self.builtin_dir, '*.http')):
+      dst = os.path.join(self.haproxy_default, os.path.basename(src))
+      if not os.path.exists(dst):
+        shutil.copy2(src, dst)
+
+  def _run_slave_init(self, slave_refs):
+    """Slave half of [error-pages-init]: create missing haproxy files for each slave."""
+    for ref in slave_refs:
+      slave_dir = os.path.join(
+        os.path.dirname(self.haproxy_default), 'slaves', ref)
+      os.makedirs(slave_dir, exist_ok=True)
+      for code in self.SLAVE_CODES:
+        dst = os.path.join(slave_dir, code + '.http')
+        if not os.path.exists(dst):
+          src = os.path.join(self.haproxy_default, code + '.http')
+          shutil.copy2(src, dst)
+
+  def _set_operator_override(self, code, haproxy_content):
+    """Simulate the EPM having already written an operator-customised haproxy file."""
+    with open(os.path.join(self.haproxy_default, code + '.http'), 'w') as f:
+      f.write(haproxy_content)
+
+  def _slave_file(self, ref, code):
+    return os.path.join(
+      os.path.dirname(self.haproxy_default), 'slaves', ref, code + '.http')
+
+  # ---- tests -----------------------------------------------------------------
+
+  def test_new_slave_inherits_operator_override(self):
+    """New slave must get the operator page, not the builtin, when override exists."""
+    self._run_haproxy_default_init()
+    operator_503 = 'HTTP/1.0 503 Service Unavailable\nCustom operator 503'
+    self._set_operator_override('503', operator_503)
+
+    self._run_slave_init(['new-slave'])
+
+    with open(self._slave_file('new-slave', '503')) as f:
+      actual = f.read()
+    self.assertEqual(actual, operator_503)
+
+  def test_new_slave_no_operator_override_uses_builtin(self):
+    """When no operator override exists, a new slave gets the builtin page."""
+    self._run_haproxy_default_init()
+
+    self._run_slave_init(['new-slave'])
+
+    for code in self.SLAVE_CODES:
+      with open(self._slave_file('new-slave', code)) as f:
+        actual = f.read()
+      with open(os.path.join(self.builtin_dir, code + '.http')) as f:
+        expected = f.read()
+      self.assertEqual(actual, expected,
+        'code %s: expected builtin content when no operator override' % code)
+
+  def test_existing_slave_file_is_not_overwritten(self):
+    """Init must not overwrite a file that already exists (e.g. slave custom page)."""
+    self._run_haproxy_default_init()
+    operator_503 = 'HTTP/1.0 503 Service Unavailable\nCustom operator 503'
+    self._set_operator_override('503', operator_503)
+
+    slave_custom = 'HTTP/1.0 503 Service Unavailable\nSlave custom 503'
+    slave_dir = os.path.join(
+      os.path.dirname(self.haproxy_default), 'slaves', 'existing-slave')
+    os.makedirs(slave_dir)
+    with open(os.path.join(slave_dir, '503.http'), 'w') as f:
+      f.write(slave_custom)
+
+    self._run_slave_init(['existing-slave'])
+
+    with open(os.path.join(slave_dir, '503.http')) as f:
+      actual = f.read()
+    self.assertEqual(actual, slave_custom,
+      'init must not overwrite an existing slave-specific file')
 
 
 class TestErrorPageManager(SlapOSInstanceTestCase):

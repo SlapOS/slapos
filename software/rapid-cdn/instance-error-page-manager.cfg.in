@@ -150,7 +150,7 @@ init =
   for code in ['502', '503', '504']:
     dst = os.path.join(slave_dir, code + '.http')
     if not os.path.exists(dst):
-      src = os.path.join(builtin, code + '.http')
+      src = os.path.join(haproxy_default, code + '.http')
       shutil.copy2(src, dst)
 {%- endfor %}
 
