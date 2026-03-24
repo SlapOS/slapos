@@ -8393,6 +8393,7 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.requestSlaveInstance('second', {})
     self.slap.waitForInstance(self.instance_max_retry)
     self.runCDNInstanceNode()
+    self.runKedifaUpdater()
     slapgrid_log_file = self.clean_frontend_log_file()
     self.slap.waitForInstance(self.instance_max_retry)
 
@@ -8411,6 +8412,7 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.requestSlaveInstance('deleted', {}, 'destroyed')
     self.slap.waitForInstance(self.instance_max_retry)
     self.runCDNInstanceNode()
+    self.runKedifaUpdater()
     slapgrid_log_file = self.clean_frontend_log_file()
     self.slap.waitForInstance(self.instance_max_retry)
 
