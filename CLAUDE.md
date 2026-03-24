@@ -57,6 +57,21 @@ Key constraints:
 - Before launching, check for active runners: `ps aux | grep '[p]ython_for_test.*unittest'`
 - If config files changed (`instance.cfg.in`, `buildout.hash.cfg`, etc.), run with `--rebuild` first
 - Slave test classes take ~4-15 min; master-only classes take ~4 min
+- `--rebuild` only rebuilds the software profile (buildout configs/templates), **not** the slapos.cookbook egg. If you changed Python recipe code (e.g., `slapos/recipe/*.py`), you must also copy the changed file into the installed egg:
+  ```bash
+  cp slapos/recipe/changed_file.py \
+    <software-path>/eggs/slapos.cookbook-*.egg/slapos/recipe/changed_file.py
+  ```
+  The software path is at `<slapos-sr-testing-environment-base>/tmp/soft/<hash>/`.
+
+## Publishing Cookbook Egg Changes
+
+After modifying recipe code, CI will fail until the published egg tarball is updated:
+```bash
+<python-binary> setup.py sdist
+cp dist/slapos.cookbook-<version>.tar.gz <public-dir>/
+```
+The version pin lives in `stack/slapos.cfg` under `[versions]`. If you keep the same dev version, just overwrite the tarball. If you bump the version, update the pin too.
 
 ## Commit Messages
 
@@ -79,6 +94,14 @@ Key constraints:
 - **NEVER** push to `nxd` (nexedi upstream) or `origin` (romain's fork) — these are read-only sources.
 - If the user asks to push, confirm the target remote and branch before executing.
 - **NEVER** use commands that reset a branch to another ref (e.g., `git checkout -B <branch> <ref>`, `git branch -f <branch> <ref>`, `git reset --hard <ref>`) — these silently overwrite the branch's upstream tracking config. To update a branch with latest upstream, use `git rebase nxd/master` (or `git fetch nxd && git rebase nxd/master`) which preserves the existing tracking.
+
+## Adding Instance Parameters
+
+When adding a new parameter to `instance-input-schema.json`:
+- Use `"type": "string"` with `"default": ""` for optional parameters that flow through buildout templates (`${slap-configuration:configuration.xxx}`). Buildout fails if a referenced option doesn't exist, so a default is required.
+- Integer/boolean values passed as strings work fine — recipes parse them with `int()` etc.
+- After changing schema or template files, update md5sums in `buildout.hash.cfg` (the linter may do this automatically).
+- Tests passing parameters must match the schema type (e.g., pass `str(port)` not `port` if schema says `"type": "string"`).
 
 ## Architecture
 
