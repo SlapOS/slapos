@@ -1,0 +1,41 @@
+--- a/cmake/modules/Distutils.cmake
++++ b/cmake/modules/Distutils.cmake
+@@ -76,7 +76,7 @@ macro(python_extension_compile)
+ 
+   set(suffix_var "EXT_SUFFIX")
+   execute_process(COMMAND "${Python3_EXECUTABLE}" -c
+-    "from distutils import sysconfig; print(sysconfig.get_config_var('${suffix_var}'))"
++    "import sysconfig; print(sysconfig.get_config_var('${suffix_var}'))"
+     RESULT_VARIABLE result
+     OUTPUT_VARIABLE ext_suffix
+     ERROR_VARIABLE error
+--- a/cmake/modules/FindPython/Support.cmake
++++ b/cmake/modules/FindPython/Support.cmake
+@@ -529,7 +529,7 @@ endfunction()
+   endif()
+ 
+   # retrieve various package installation directories
+-  execute_process (COMMAND "${${_PYTHON_PREFIX}_EXECUTABLE}" -c "import sys; from distutils import sysconfig;sys.stdout.write(';'.join([sysconfig.get_python_lib(plat_specific=False,standard_lib=True),sysconfig.get_python_lib(plat_specific=True,standard_lib=True),sysconfig.get_python_lib(plat_specific=False,standard_lib=False),sysconfig.get_python_lib(plat_specific=True,standard_lib=False)]))"
++  execute_process (COMMAND "${${_PYTHON_PREFIX}_EXECUTABLE}" -c "import sys; import sysconfig;sys.stdout.write(';'.join([sysconfig.get_path('stdlib'),sysconfig.get_path('platstdlib'),sysconfig.get_path('purelib'),sysconfig.get_path('platlib')]))"
+ 
+                    RESULT_VARIABLE _${_PYTHON_PREFIX}_RESULT
+                    OUTPUT_VARIABLE _${_PYTHON_PREFIX}_LIBPATHS
+@@ -691,7 +691,7 @@ endfunction()
+   unset (_${_PYTHON_PREFIX}_PREFIX)
+   if (${_PYTHON_PREFIX}_Interpreter_FOUND)
+     execute_process (COMMAND "${${_PYTHON_PREFIX}_EXECUTABLE}" -c
+-                             "import sys; from distutils import sysconfig; sys.stdout.write(sysconfig.PREFIX)"
++                             "import sys; sys.stdout.write(sys.prefix)"
+                      RESULT_VARIABLE _${_PYTHON_PREFIX}_RESULT
+                      OUTPUT_VARIABLE _${_PYTHON_PREFIX}_PREFIX
+                      ERROR_VARIABLE _${_PYTHON_PREFIX}_ERROR
+--- a/src/pybind/CMakeLists.txt
++++ b/src/pybind/CMakeLists.txt
+@@ -32,7 +32,7 @@ endif(CMAKE_INSTALL_PREFIX)
+ 
+ execute_process(
+   COMMAND
+-  ${Python3_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_lib(prefix='${PYTHON_INSTALL_TEMPLATE}'))"
++  ${Python3_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_path('purelib', vars={'base': '${PYTHON_INSTALL_TEMPLATE}'}))"
+   OUTPUT_VARIABLE "PYTHON3_INSTDIR"
+   OUTPUT_STRIP_TRAILING_WHITESPACE)
