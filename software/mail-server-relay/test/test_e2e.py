@@ -73,11 +73,12 @@ EMAIL_SR = os.path.join(SR_PARDIR, 'mail-server', 'software.cfg')
 
 _, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(RELAY_SR)
 
+DEBUG = bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0)))
 def setUpModule():
   installSoftwareUrlList(
     SlapOSInstanceTestCase,
     [RELAY_SR, EMAIL_SR],
-    debug=bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0))),
+    debug=DEBUG,
   )
 
 
@@ -186,6 +187,12 @@ class E2E(SlapOSInstanceTestCase):
       external = cls.requestExternalMailServer(state)
     cls.external_mail_server = external
     cls.relay_cluster = relay_cluster = cls.requestRelayCluster(external, state)
+    if DEBUG and not relay_cluster.getConnectionParameterDict():
+      # debug: run waitForInstance right after requesting the cluster
+      # to fail fast in case of error in the cluster instance buildout
+      # without having requested and needing to process more mail servers.
+      # This is purely a convenience for developping.
+      cls.waitForInstance()
     cls.mail_servers = [
       cls.requestMailServer(domain, state) for domain in cls.mail_server_domains
     ]
