@@ -59,6 +59,9 @@
     "prach_config_index": {
       "$ref": "cell/nr/input-schema.json#/properties/prach_config_index"
     },
+    "redcap_ue": {
+      "$ref": "cell/nr/input-schema.json#/properties/redcap_ue"
+    },
     "amarisoft_ssb_computation": {
       "title": "Expert: Enable Amarisoft SSB Computation",
       "description": "Export only. Enable this to let Amarisoft generate SSB NR ARFCN instead of Simpleran. Warning: enabling this will prevent SSB NR ARFCN to be correctely displayed in the connection parameters, you will need to check gNB log to know the value Amarisoft computed.",
