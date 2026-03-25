@@ -1,3 +1,7 @@
+[global]
+type=global
+debug=yes
+
 [transport-udp]
 type=transport
 protocol=udp
