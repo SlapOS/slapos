@@ -419,8 +419,8 @@ class E2E(SlapOSInstanceTestCase):
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
     ssl_context.load_cert_chain(cert_bundle)
-    host, port = self.smtpHostPortOf(mailserver)
-    source_ip = self.smtpHostPortOf(self.external_mail_server)[0]
+    host, port = self.smtpAddrOf(mailserver)
+    source_ip = self.smtpAddrOf(self.external_mail_server)[0]
     source = (source_ip, port + 10)
     with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
       smtp.starttls(context=ssl_context)
@@ -434,8 +434,8 @@ class E2E(SlapOSInstanceTestCase):
   def test_server_non_authenticated_rejected(self):
     msg = "Subject: Unauthenticated Connection\n\nThis should be rejected."
     mailserver = self.mail_servers[0]
-    host, port = self.smtpHostPortOf(mailserver)
-    source_ip = self.smtpHostPortOf(self.external_mail_server)[0]
+    host, port = self.smtpAddrOf(mailserver)
+    source_ip = self.smtpAddrOf(self.external_mail_server)[0]
     source = (source_ip, port + 10)
     with self.assertRaises(smtplib.SMTPRecipientsRefused):
       with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
