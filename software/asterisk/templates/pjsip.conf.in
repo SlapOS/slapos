@@ -1,0 +1,65 @@
+[transport-udp]
+type=transport
+protocol=udp
+bind={{bind_ip_with_port}}
+[transport-tcp]
+type=transport
+protocol=tcp
+bind={{bind_ip_with_port}}
+tcp_keepalive_enable=yes        ; Enable TCP keepalive (yes/no)
+tcp_keepalive_idle_time=30      ; Time in seconds the connection needs to remain idle before TCP starts sending keepalive probes
+tcp_keepalive_interval_time=10  ; The time in seconds between individual keepalive probes
+tcp_keepalive_probe_count=5     ; The maximum number of keepalive probes TCP should send before dropping the connection
+[amarisoft]
+type=endpoint
+context=call-ovh
+disallow=all
+allow=amrwb
+transport=transport-tcp
+aors=amarisoft
+force_rport=yes
+direct_media=no
+ice_support=yes
+[amarisoft]
+type=aor
+contact=sip:{{slapparameter_dict['local-number']}}@172.24.64.1
+[amarisoft]
+type=identify
+endpoint=amarisoft
+match={{slapparameter_dict.get('local-network-match', '172.24.0.0/16')}}
+[ovh-reg]
+type=registration
+transport=transport-udp
+outbound_auth=ovh_auth
+server_uri=sip:{{slapparameter_dict['sip-trunk-server']}}
+client_uri=sip:{{slapparameter_dict['sip-trunk-number']}}@{{slapparameter_dict['sip-trunk-server']}}
+contact_user={{slapparameter_dict['sip-trunk-number']}}
+retry_interval=60
+forbidden_retry_interval=600
+expiration=3600
+line=yes
+endpoint=ovh
+[ovh]
+type=endpoint
+context=call-amarisoft
+disallow=all
+allow=ulaw
+allow=alaw
+transport=transport-udp
+outbound_auth=ovh_auth
+aors={{slapparameter_dict['sip-trunk-number']}}
+from_user={{slapparameter_dict['sip-trunk-number']}}
+[ovh_auth]
+type=auth
+auth_type=userpass
+username={{slapparameter_dict['sip-trunk-number']}}
+password={{slapparameter_dict['sip-trunk-password']}}
+realm={{slapparameter_dict['sip-trunk-server']}}
+[ovh]
+type=identify
+endpoint=ovh
+match={{slapparameter_dict['sip-trunk-server']}}
+[{{slapparameter_dict['sip-trunk-number']}}]
+type=aor
+contact=sip:{{slapparameter_dict['sip-trunk-number']}}@{{slapparameter_dict['sip-trunk-server']}}
+max_contacts=1

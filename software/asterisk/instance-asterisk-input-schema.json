@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sip-trunk-server", "sip-trunk-number", "sip-trunk-password", "local-number"],
+  "properties": {
+    "bind-ip": {
+      "title": "IP where asterisk will bind",
+      "description": "This is the IPv6 or IPv4 that Asterisk will use to bind. By default it will use the local IPv4 of the partition. Use the special value 'GLOBAL-IPV6' to bind to the global IPv6 of the partition.",
+      "type": "string"
+    },
+    "sip-trunk-server": {
+      "title": "domain name or IP of the SIP trunk",
+      "description": "This is the domaine name or the IP of the SIP trunk server to use (e.g. sbc6.fr.sip.ovh).",
+      "type": "string"
+    },
+    "sip-trunk-number": {
+      "title": "Phone number of the SIP trunk",
+      "description": "This is the phone number of the SIP trunk.",
+      "type": "string"
+    },
+    "sip-trunk-password": {
+      "title": "Password of the SIP trunk",
+      "description": "This is the password of the SIP trunk.",
+      "type": "string"
+    },
+    "local-number": {
+      "title": "Local extension number",
+      "description": "This is the local extension number to call.",
+      "type": "string"
+    },
+    "log-level": {
+      "title": "Log level",
+      "description": "Asterisk log level. Each level includes all less verbose levels. Defaults to 'verbose'.",
+      "type": "string",
+      "enum": ["error", "warning", "notice", "verbose", "debug"],
+      "default": "verbose"
+    },
+    "local-network-match": {
+      "title": "Local network match for Amarisoft",
+      "description": "IP address or CIDR network used to identify Amarisoft in pjsip endpoint identification. Defaults to '172.24.0.0/16'.",
+      "type": "string",
+      "default": "172.24.0.0/16"
+    }
+  }
+}
