@@ -34,7 +34,13 @@ smtp_bind_address_enforce = yes
 import_environment =
   MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
 
-smtp_tls_security_level = encrypt
+smtp_tls_security_level = fingerprit
+smtp_tls_fingerprint_digest = sha256
+# maybe use smtp_tls_policy_maps instead?
+smtp_tls_fingerprint_cert_match =
+{%- for fingerprint in relay_tls_fingerprints %}
+  {{ fingerprint.strip() }}
+{%- endfor %}
 
 smtpd_tls_cert_file = {{ postfix_tls_cert }}
 smtpd_tls_key_file = {{ postfix_tls_key }}
