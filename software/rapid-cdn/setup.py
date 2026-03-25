@@ -17,7 +17,9 @@ setup(
     ],
     'console_scripts': [
       'smart-caucase-signer = software:smart_sign',
-      'caucase-csr-sign-check = software:caucase_csr_sign_check'
+      'caucase-csr-sign-check = software:caucase_csr_sign_check',
+      'rapid-cdn-error-page-manager = software:error_page_manager_main',
+      'rapid-cdn-error-page-updater = software:error_page_updater_main'
     ]
   }
 )
