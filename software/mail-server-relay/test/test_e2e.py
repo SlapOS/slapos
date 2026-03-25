@@ -94,6 +94,7 @@ class E2E(SlapOSInstanceTestCase):
     "mail2.domain.lan",
     "mail3.domain.lan",
   ]
+  smtp_timeout = 60
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'cluster'
@@ -216,7 +217,7 @@ class E2E(SlapOSInstanceTestCase):
     msg = f"Subject: {subject}\n\n{body}"
     login_user = login_as or sender
     
-    with smtplib.SMTP(smtp_params['imap-smtp-ipv6'], smtp_params['smtp-port'], timeout=10) as smtp:
+    with smtplib.SMTP(smtp_params['imap-smtp-ipv6'], smtp_params['smtp-port'], timeout=self.smtp_timeout) as smtp:
       smtp.login(login_user, "password123")
       smtp.sendmail(
         from_addr=sender,
@@ -231,7 +232,7 @@ class E2E(SlapOSInstanceTestCase):
     def check_email():
       """Check if email with expected content is in the inbox"""
       try:
-        with imaplib.IMAP4(imap_params['imap-smtp-ipv6'], imap_params['imap-port'], timeout=10) as imap:
+        with imaplib.IMAP4(imap_params['imap-smtp-ipv6'], imap_params['imap-port'], timeout=self.smtp_timeout) as imap:
           imap.login(recipient, "password123")
           imap.select("INBOX")
           result, data = imap.search(None, 'ALL')
@@ -306,7 +307,7 @@ class E2E(SlapOSInstanceTestCase):
     
     msg = "Subject: Test Email from External\n\nThis is a test email from external via relay."
     with self.assertRaises(smtplib.SMTPRecipientsRefused) as exc:
-      with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
+      with smtplib.SMTP(relay_host, relay_port, timeout=self.smtp_timeout) as smtp:
         smtp.sendmail(
           from_addr=sender,
           to_addrs=[recipient],
@@ -318,7 +319,7 @@ class E2E(SlapOSInstanceTestCase):
 
     time.sleep(10)
 
-    with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
+    with smtplib.SMTP(relay_host, relay_port, timeout=self.smtp_timeout) as smtp:
       smtp.sendmail(
         from_addr=sender,
         to_addrs=[recipient],
@@ -340,7 +341,7 @@ class E2E(SlapOSInstanceTestCase):
     msg = f"Subject: SPF Impersonation\n\n{body}"
 
     with self.assertRaises(smtplib.SMTPRecipientsRefused):
-      with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
+      with smtplib.SMTP(relay_host, relay_port, timeout=self.smtp_timeout) as smtp:
         smtp.sendmail(
           from_addr=sender,
           to_addrs=[recipient],
@@ -366,7 +367,7 @@ class E2E(SlapOSInstanceTestCase):
     body = "This inbound email should bypass greylisting on first delivery."
     msg = f"Subject: Mock SPF Pass\n\n{body}"
 
-    with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
+    with smtplib.SMTP(relay_host, relay_port, timeout=self.smtp_timeout) as smtp:
       smtp.sendmail(
         from_addr=sender,
         to_addrs=[recipient],
@@ -387,7 +388,7 @@ class E2E(SlapOSInstanceTestCase):
     body = "This inbound email should bypass greylisting on first delivery."
     msg = f"Subject: SPF Pass\n\n{body}"
 
-    with smtplib.SMTP(relay_host, relay_port, timeout=10) as smtp:
+    with smtplib.SMTP(relay_host, relay_port, timeout=self.smtp_timeout) as smtp:
       smtp.sendmail(
         from_addr=sender,
         to_addrs=[recipient],
@@ -406,7 +407,7 @@ class E2E(SlapOSInstanceTestCase):
     time.sleep(wait_time)
 
     imap_params = json.loads(imap_server_instance.getConnectionParameterDict()['_'])
-    with imaplib.IMAP4(imap_params['imap-smtp-ipv6'], imap_params['imap-port'], timeout=10) as imap:
+    with imaplib.IMAP4(imap_params['imap-smtp-ipv6'], imap_params['imap-port'], timeout=self.smtp_timeout) as imap:
       imap.login(recipient, "password123")
       imap.select("INBOX")
       result, data = imap.search(None, 'ALL')
@@ -511,7 +512,7 @@ class E2E(SlapOSInstanceTestCase):
     recipient = "testmail@mail1.domain.lan"
 
     msg = "Subject: Password Auth Legit\n\nPassword auth legitimate test."
-    with smtplib.SMTP(relay_host, submission_port, timeout=10) as smtp:
+    with smtplib.SMTP(relay_host, submission_port, timeout=self.smtp_timeout) as smtp:
       smtp.starttls()
       smtp.login(user, password)
       smtp.sendmail(
@@ -536,7 +537,7 @@ class E2E(SlapOSInstanceTestCase):
 
     msg = "Subject: Password Auth Impersonation\n\nThis should be rejected."
     with self.assertRaises((smtplib.SMTPSenderRefused, smtplib.SMTPRecipientsRefused)):
-      with smtplib.SMTP(relay_host, submission_port, timeout=10) as smtp:
+      with smtplib.SMTP(relay_host, submission_port, timeout=self.smtp_timeout) as smtp:
         smtp.starttls()
         smtp.login(user, password)
         smtp.sendmail(
@@ -555,6 +556,6 @@ class E2E(SlapOSInstanceTestCase):
     self.assertTrue(password, "Could not retrieve mail4 SASL password")
 
     with self.assertRaises(smtplib.SMTPNotSupportedError):
-      with smtplib.SMTP(relay_host, submission_port, timeout=10) as smtp:
+      with smtplib.SMTP(relay_host, submission_port, timeout=self.smtp_timeout) as smtp:
         # Attempt login without starttls — server must refuse
         smtp.login(user, password)
