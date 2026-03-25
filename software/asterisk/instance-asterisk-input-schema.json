@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["sip-trunk-server", "sip-trunk-number", "sip-trunk-password", "local-number"],
+  "required": ["sip-trunk-server", "sip-trunk-number", "sip-trunk-password", "local-number", "local-ims-ip"],
   "properties": {
     "bind-ip": {
       "title": "IP where asterisk will bind",
@@ -35,6 +35,11 @@
       "type": "string",
       "enum": ["error", "warning", "notice", "verbose", "debug"],
       "default": "verbose"
+    },
+    "local-ims-ip": {
+      "title": "Local IMS IP address",
+      "description": "IP address or CIDR network of the local IMS (Amarisoft). Used both for pjsip endpoint identification and as the contact address.",
+      "type": "string"
     }
   }
 }

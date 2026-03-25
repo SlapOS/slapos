@@ -22,11 +22,11 @@ direct_media=no
 ice_support=yes
 [amarisoft]
 type=aor
-contact=sip:{{slapparameter_dict['local-number']}}@172.24.64.1
+contact=sip:{{slapparameter_dict['local-number']}}@{{slapparameter_dict['local-ims-ip']}}
 [amarisoft]
 type=identify
 endpoint=amarisoft
-match=172.24.0.0/16
+match={{slapparameter_dict['local-ims-ip']}}
 [ovh-reg]
 type=registration
 transport=transport-udp

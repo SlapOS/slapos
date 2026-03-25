@@ -43,6 +43,7 @@ class AsteriskTestCase(SlapOSInstanceTestCase):
         'sip-trunk-number': '0033972100409',
         'sip-trunk-password': 'test-password',
         'local-number': '01271',
+        'local-ims-ip': '172.24.64.1',
     }
 
   def setUp(self):
