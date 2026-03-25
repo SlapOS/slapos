@@ -321,6 +321,7 @@ context =
   key postfix_tls_key postfix-certificate:key-file
   key relay_clientcerts postfix-relay-clientcerts:output
   key no_relay :no-relay
+  key relay_tls_fingerprints request-relays:tls-fingerprints
 
 [postfix-relay-clientcerts]
 recipe = slapos.recipe.template:jinja2
