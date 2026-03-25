@@ -234,13 +234,13 @@
               "default": false,
               "type": "boolean"
             },
-            "allow_1rx_eredcap": {
+            "allow_1rx_ue": {
               "title": "Allow eRedCap 1Rx UEs",
               "description": "Defines if eRedCap 1Rx UEs are allowed in the cell or not.",
               "default": true,
               "type": "boolean"
             },
-            "allow_2rx_eredcap": {
+            "allow_2rx_ue": {
               "title": "Allow eRedCap 2Rx UEs",
               "description": "Defines if eRedCap 2Rx UEs are allowed in the cell or not.",
               "default": true,
