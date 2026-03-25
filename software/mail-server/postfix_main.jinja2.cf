@@ -42,7 +42,6 @@ smtpd_tls_security_level = encrypt
 {% if not no_relay -%}
 smtpd_tls_ask_ccert = yes
 smtpd_tls_fingerprint_digest = sha256
-smtpd_tls_loglevel = 2
 relay_clientcerts = texthash:{{ relay_clientcerts }}
 {%- endif %}
 
