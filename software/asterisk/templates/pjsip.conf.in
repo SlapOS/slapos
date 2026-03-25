@@ -26,7 +26,7 @@ contact=sip:{{slapparameter_dict['local-number']}}@172.24.64.1
 [amarisoft]
 type=identify
 endpoint=amarisoft
-match=172.24.0.0/16
+match={{slapparameter_dict.get('local-network-match', '172.24.0.0/16')}}
 [ovh-reg]
 type=registration
 transport=transport-udp
