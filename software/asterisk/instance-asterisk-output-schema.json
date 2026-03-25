@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by instanciation",
+  "properties": {
+    "asterisk-ip": {
+      "description": "IP and port that asterisk uses to bind. It should be used in Amarisoft's IMS",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
