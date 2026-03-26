@@ -46,6 +46,7 @@ import requests
 
 from urllib.parse import urlparse, urljoin, parse_qsl
 
+import slapos.slap.exception
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, SlapOSNodeCommandError
 from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
 from slapos.proxy.db_version import DB_VERSION
@@ -610,9 +611,19 @@ class ResilientTheiaMixin(object):
   @classmethod
   def getPartitionId(cls, instance_type):
     software_url = cls.getSoftwareURL()
+    # Invalidate the cached partition list to get up-to-date partition states.
+    # This is necessary after events like a resilient takeover that change
+    # partition software types.
+    cls.slap.computer.invalidateCache()
     for computer_partition in cls.slap.computer.getComputerPartitionList():
-      partition_url = computer_partition.getSoftwareRelease()._software_release
-      partition_type = computer_partition.getType()
+      try:
+        partition_url = computer_partition.getSoftwareRelease()._software_release
+        partition_type = computer_partition.getType()
+      except (
+        slapos.slap.exception.NotFoundError,
+        slapos.slap.exception.ResourceNotReady,
+      ):
+        continue
       if partition_url == software_url and partition_type == instance_type:
         return computer_partition.getId()
     raise Exception("Theia %s partition not found" % instance_type)
