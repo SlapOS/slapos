@@ -169,7 +169,7 @@ output = $${inbound-postfix-directory:etc}/master.cf
 port = $${inbound-postfix-main.cf:smtp-port}
 content =
   policyd-spf  unix  -       n       n       -       0       spawn
-    user=slapsoft argv=${spf-engine:bin-directory}/policyd-spf $${policyd-spf-conf:output}
+    user=$${userinfo:pw-name} argv=${spf-engine:bin-directory}/policyd-spf $${policyd-spf-conf:output}
 
 [inbound-postfix-main.cf]
 <= macro.postfix-main.cf
