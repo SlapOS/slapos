@@ -611,8 +611,11 @@ class ResilientTheiaMixin(object):
   def getPartitionId(cls, instance_type):
     software_url = cls.getSoftwareURL()
     for computer_partition in cls.slap.computer.getComputerPartitionList():
-      partition_url = computer_partition.getSoftwareRelease()._software_release
-      partition_type = computer_partition.getType()
+      try:
+        partition_url = computer_partition.getSoftwareRelease()._software_release
+        partition_type = computer_partition.getType()
+      except slapos.slap.exception.NotFoundError:
+        continue
       if partition_url == software_url and partition_type == instance_type:
         return computer_partition.getId()
     raise Exception("Theia %s partition not found" % instance_type)
