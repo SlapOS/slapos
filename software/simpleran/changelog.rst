@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 1.0.464 (2026-02-02)
+Version 1.0.470 (2026-03-20)
 -------------
 
 * Support gNB + eNB mode on ORS Duo
@@ -17,6 +17,7 @@ Version 1.0.464 (2026-02-02)
 * Detect DHCP IP correctly if both DHCP and static IP is configured on the ORS
 * Fix typo on integ algos (EEAx -> EIAx, NEAx -> NIAx)
 * Add option to let Amarisoft compute SSB
+* Allow manually entering TDD configuration
 
 Version 1.0.457 (2025-12-17)
 -------------
