@@ -3,7 +3,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Cluster Input Parameters",
   "definitions": {
-    "proxy-config": {
+    "relay-config": {
       "type": "object",
       "properties": {
         "proxy-host": {
@@ -26,14 +26,43 @@
           "title": "Proxy Password",
           "description": "The password to authenticate with the proxy host",
           "type": "string"
+        },
+        "greylisting-enable": {
+          "title": "Enable Greylisting",
+          "description": "Whether to enable greylisting on inbound mail",
+          "type": "boolean",
+          "default": true
+        },
+        "greylisting-delay": {
+          "title": "Greylist Delay",
+          "description": "Seconds a new sender triplet must wait before being accepted",
+          "type": "integer",
+          "default": 60
+        },
+        "greylisting-whitelist-clients": {
+          "title": "Greylisting Whitelist Clients",
+          "description": "Additional client patterns to whitelist in postgrey, one entry per item.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "greylisting-whitelist-recipients": {
+          "title": "Greylisting Whitelist Recipients",
+          "description": "Additional recipient patterns to whitelist in postgrey, one entry per item.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
         }
-      },
-      "additionalProperties": false
+      }
     }
   },
   "properties": {
-    "default-proxy-config": {
-      "$ref": "#/definitions/proxy-config"
+    "default-relay-config": {
+      "$ref": "#/definitions/relay-config"
     },
     "outbound-domain-whitelist": {
       "title": "Outbound Domain Whitelist",
@@ -91,7 +120,7 @@
               "default": "started"
             },
             "config": {
-              "$ref": "#/definitions/proxy-config"
+              "$ref": "#/definitions/relay-config"
             }
           }
         }
@@ -100,7 +129,7 @@
     }
   },
   "required": [
-    "default-proxy-config",
+    "default-relay-config",
     "outbound-domain-whitelist",
     "topology"
   ]
