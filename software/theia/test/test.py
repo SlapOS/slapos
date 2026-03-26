@@ -614,7 +614,10 @@ class ResilientTheiaMixin(object):
       try:
         partition_url = computer_partition.getSoftwareRelease()._software_release
         partition_type = computer_partition.getType()
-      except slapos.slap.exception.NotFoundError:
+      except (
+        slapos.slap.exception.NotFoundError,
+        slapos.slap.exception.ResourceNotReady,
+      ):
         continue
       if partition_url == software_url and partition_type == instance_type:
         return computer_partition.getId()
