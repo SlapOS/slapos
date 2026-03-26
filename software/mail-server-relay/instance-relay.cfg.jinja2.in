@@ -319,23 +319,26 @@ content =
   smtpd_tls_key_file = $${postfix-certificate:key-file}
   smtpd_tls_security_level = encrypt
 
+  {% if has_password_auth -%}
   # Server SASL
   smtpd_sasl_auth_enable = yes
-  smtpd_sasl_path = smtpd
+  smtpd_sasl_path = $${outbound-postfix-smtpd-sasl-conf:config-name}
+  cyrus_sasl_config_path = $${outbound-postfix-smtpd-sasl-conf:config-path}
   smtpd_sasl_local_domain = relay
   smtpd_sasl_security_options = noanonymous
 
-  # Server SASL Logins
-  smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
+  # Server SASL Senders
+  smtpd_sender_login_maps = texthash:$${outbound-postfix-sender-login-map:output}
+  {%- endif %}
 
   # Server access restrictions
   smtpd_sender_restrictions =
     # reject login/domain mismatches
     reject_sender_login_mismatch
-  {% if sorted_sender_hosts %}
+  {%- if sorted_sender_hosts %}
     # reject ip/domain mismatches
-    check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
-  {% endif %}
+    check_client_access cidr:$${outbound-postfix-client-sender-access:output}
+  {%- endif %}
 
   smtpd_relay_restrictions =
     # Permit IP-authentified senders;
@@ -358,7 +361,7 @@ content =
 
   {% for host in sorted_sender_hosts -%}
   restrict_sender_{{ loop.index }} =
-    check_sender_access texthash:$${outbound-postfix-directory:etc}/sender_access_{{ loop.index }}
+    check_sender_access texthash:$${outbound-postfix-sender-access-{{ loop.index }}:output}
     reject
   {% endfor %}
   {% endif %}
@@ -410,7 +413,9 @@ context =
 [outbound-postfix-smtpd-sasl-conf]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_smtpd_sasl.jinja2.conf:target}
-output = $${outbound-postfix-directory:etc}/smtpd.conf
+config-path = $${outbound-postfix-directory:etc}
+config-name = smtpd
+output = $${:config-path}/$${:config-name}.conf
 context =
   raw sasldb_path $${outbound-postfix-directory:etc}/sasldb2
 
