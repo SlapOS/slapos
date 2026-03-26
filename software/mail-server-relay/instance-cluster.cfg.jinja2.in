@@ -95,12 +95,11 @@ init =
   slave_list = {{ (slap_configuration.get('valid-shared-instance-list', [])) }}
 
   def make_entry(slave):
-    authentication = slave['parameters'].get('authentication', 'none')
+    authentication = slave['parameters']['authentication']
     entry = {
       'can-send': slave['parameters']['name'] in whitelist,
       **slave['parameters'],
       'reference': slave['reference'],
-      'authentication': authentication,
     }
     # For password-auth domains, generate or reuse a password
     if authentication == 'password' and entry['can-send']:
@@ -118,7 +117,13 @@ init =
     if prev_entry := previous.get(domain):
       if prev_entry['reference'] == slave['reference']:
         entry = output[domain] = make_entry(slave)
-        pub_domain_dict[slave['reference']] = {'addr': domain, 'can-send': entry['can-send'], 'authentication': entry.get('authentication', 'none'), 'password': entry.get('password', '')}
+        pub_domain_dict[slave['reference']] = {
+          'addr': domain,
+          'can-send': entry['can-send'],
+          'authentication': entry['authentication'],
+          # 'password' field is specific to 'authentication' == 'password' case
+          'password': entry.get('password', '')
+        }
       else:
         # domain is already used by another slave, 2nd pass will handle it
         pass
@@ -138,7 +143,13 @@ init =
     else:
       # address not yet claimed
       entry = output[domain] = make_entry(slave)
-      pub_domain_dict[slave['reference']] = {'addr': domain, 'can-send': entry['can-send'], 'authentication': entry.get('authentication', 'none'), 'password': entry.get('password', '')}
+      pub_domain_dict[slave['reference']] = {
+        'addr': domain,
+        'can-send': entry['can-send'],
+        'authentication': entry['authentication'],
+        # 'password' field is specific to 'authentication' == 'password' case
+        'password': entry.get('password', '')
+      }
 
   options['published-domain-dict'] = pub_domain_dict
   options['accepted-domain-list'] = list(output.values())
