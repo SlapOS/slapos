@@ -1,0 +1,113 @@
+Origin: https://github.com/arskom/spyne/pull/713
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <thomas.weissschuh@linutronix.de>
+Date: Wed, 9 Oct 2024 09:03:23 +0200
+Subject: Replace cgi.parse_header() with custom function for Python 3.13 compat
+
+The cgi module has been deprecated since Python 3.11 and got removed in
+Python 3.13. Replace the cgi.parse_header() function with a custom one,
+as recommended by the Python documentation.
+
+Closes #712
+---
+ spyne/protocol/soap/mime.py   | 2 +-
+ spyne/protocol/soap/soap11.py | 5 ++---
+ spyne/server/wsgi.py          | 6 +++---
+ spyne/util/http.py            | 6 ++++++
+ 4 files changed, 12 insertions(+), 7 deletions(-)
+
+diff --git a/spyne/protocol/soap/mime.py b/spyne/protocol/soap/mime.py
+index d4aaa1de4..90b536020 100644
+--- a/spyne/protocol/soap/mime.py
++++ b/spyne/protocol/soap/mime.py
+@@ -115,7 +115,7 @@ def collapse_swa(ctx, content_type, ns_soap_env):
+             http://www.w3.org/Submission/soap11mtom10/
+ 
+     :param  content_type: value of the Content-Type header field, parsed by
+-                          cgi.parse_header() function
++                          spyne.util.http.parse_content_type_header() function
+     :param  ctx:          request context
+     """
+ 
+diff --git a/spyne/protocol/soap/soap11.py b/spyne/protocol/soap/soap11.py
+index 75e1add71..21a02b890 100644
+--- a/spyne/protocol/soap/soap11.py
++++ b/spyne/protocol/soap/soap11.py
+@@ -38,8 +38,6 @@
+ logger = logging.getLogger(__name__)
+ logger_invalid = logging.getLogger(__name__ + ".invalid")
+ 
+-import cgi
+-
+ from itertools import chain
+ 
+ import spyne.const.xml as ns
+@@ -50,6 +48,7 @@
+ 
+ from spyne import BODY_STYLE_WRAPPED
+ from spyne.util import six
++from spyne.util.http import parse_content_type_header
+ from spyne.const.xml import DEFAULT_NS
+ from spyne.const.http import HTTP_405, HTTP_500
+ from spyne.error import RequestNotAllowed
+@@ -197,7 +196,7 @@ def create_in_document(self, ctx, charset=None):
+                         "You must issue a POST request with the Content-Type "
+                         "header properly set.")
+ 
+-            content_type = cgi.parse_header(content_type)
++            content_type = parse_content_type_header(content_type)
+             ctx.in_string = collapse_swa(ctx, content_type, self.ns_soap_env)
+ 
+         ctx.in_document = _parse_xml_string(ctx.in_string,
+diff --git a/spyne/server/wsgi.py b/spyne/server/wsgi.py
+index 4c5e6ef60..6275ae404 100644
+--- a/spyne/server/wsgi.py
++++ b/spyne/server/wsgi.py
+@@ -27,7 +27,6 @@
+ import logging
+ logger = logging.getLogger(__name__)
+ 
+-import cgi
+ import threading
+ 
+ from inspect import isgenerator
+@@ -44,6 +43,7 @@
+ from spyne.server.http import HttpBase, HttpMethodContext, HttpTransportContext
+ from spyne.util.odict import odict
+ from spyne.util.address import address_parser
++from spyne.util.http import parse_content_type_header
+ 
+ from spyne.const.ansi_color import LIGHT_GREEN
+ from spyne.const.ansi_color import END_COLOR
+@@ -527,9 +527,9 @@ def __reconstruct_wsgi_request(self, http_env):
+         charset = None
+         if content_type is not None:
+             # fyi, here's what the parse_header function returns:
+-            # >>> import cgi; cgi.parse_header("text/xml; charset=utf-8")
++            # >>> parse_content_type_header("text/xml; charset=utf-8")
+             # ('text/xml', {'charset': 'utf-8'})
+-            content_type = cgi.parse_header(content_type)
++            content_type = parse_content_type_header(content_type)
+             charset = content_type[1].get('charset', None)
+ 
+         return self.__wsgi_input_to_iterable(http_env), charset
+diff --git a/spyne/util/http.py b/spyne/util/http.py
+index f066e028d..0330f5fdb 100644
+--- a/spyne/util/http.py
++++ b/spyne/util/http.py
+@@ -23,6 +23,7 @@
+ import sys
+ import time
+ 
++from email.message import EmailMessage
+ from time import strftime
+ from time import gmtime
+ from collections import deque
+@@ -72,3 +73,8 @@ def generate_cookie(k, v, max_age=None, domain=None, path=None,
+         retval.append("Secure")
+ 
+     return '; '.join(retval)
++
++def parse_content_type_header(h):
++    msg = EmailMessage()
++    msg['content-type'] = h
++    return msg.get_content_type(), msg['content-type'].params
