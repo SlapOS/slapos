@@ -1,3 +1,8 @@
+2026-03-20
+''''''''''
+
+- auto-upgrade Ungoogled Chromium (unattended-upgrades)
+
 2026-03-16
 ''''''''''
 
