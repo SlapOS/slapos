@@ -325,28 +325,27 @@ content =
   smtpd_sasl_local_domain = relay
   smtpd_sasl_security_options = noanonymous
 
-  # Server access restrictions
-  smtpd_relay_restrictions =
-    permit_mynetworks
-    permit_sasl_authenticated
-    reject
-  smtpd_sender_restrictions =
-    reject_sender_login_mismatch
+  # Server SASL Logins
   smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
 
-  # Use system CAs to authenticate proxy; do not use permit_tls_all_clientcerts
-  # Currently useless, because we only set may, not verify or better
-  # We probably want to check backend certificates differently than proxy's,
-  # assuming we keep allowing shortcut backend -> relay -> backend transport.
-  tls_append_default_CA = yes
+  # Server access restrictions
+  smtpd_sender_restrictions =
+    # reject login/domain mismatches
+    reject_sender_login_mismatch
+  {% if sorted_sender_hosts %}
+    # reject ip/domain mismatches
+    check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
+  {% endif %}
 
-  # Client TLS & SASL parameters
-  smtp_tls_security_level = may
-  smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
-  smtp_tls_chain_files = $${postfix-certificate:bundle}
-  smtp_sasl_auth_enable = yes
-  smtp_sasl_security_options = noanonymous
-  smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
+  smtpd_relay_restrictions =
+    # Permit IP-authentified senders;
+    # ip/domain mismatches are already rejected by the sender restrictions
+    permit_mynetworks
+    # Permit SASL-authentified senders;
+    # login/domain mismatches are already rejected by the sender restrictions
+    permit_sasl_authenticated
+    # Reject all others
+    reject
 
   # Per-host sender domain restrictions
   # Each sending backend is only allowed to use MAIL FROM with its own domains.
@@ -362,9 +361,21 @@ content =
     check_sender_access texthash:$${outbound-postfix-directory:etc}/sender_access_{{ loop.index }}
     reject
   {% endfor %}
-  smtpd_sender_restrictions =
-    check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
   {% endif %}
+
+  # Use system CAs to authenticate proxy; do not use permit_tls_all_clientcerts
+  # Currently useless, because we only set may, not verify or better
+  # We probably want to check backend certificates differently than proxy's,
+  # assuming we keep allowing shortcut backend -> relay -> backend transport.
+  tls_append_default_CA = yes
+
+  # Client TLS & SASL parameters
+  smtp_tls_security_level = may
+  smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
+  smtp_tls_chain_files = $${postfix-certificate:bundle}
+  smtp_sasl_auth_enable = yes
+  smtp_sasl_security_options = noanonymous
+  smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
 
 [outbound-postfix-proxy-passwd]
 recipe = slapos.recipe.template:jinja2
