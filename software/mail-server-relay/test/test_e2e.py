@@ -94,13 +94,15 @@ class E2E(SlapOSInstanceTestCase):
     "mail2.domain.lan",
     "mail3.domain.lan",
   ]
+  # Additional domain for testing multi-proxy routing
+  mail5_domain = "mail5.domain.lan"
   smtp_timeout = 60
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'cluster'
 
   @classmethod
-  def getInstanceParameterDict(cls, ext=False, state: str = "started"):
+  def getInstanceParameterDict(cls, ext=False, ext2=False, state: str = "started"):
     if ext:
       external = json.loads(cls.requestExternalServerInstance(state=state).getConnectionParameterDict()['_'])
       rhost = external['imap-smtp-ipv6']
@@ -109,24 +111,45 @@ class E2E(SlapOSInstanceTestCase):
       rpass = "password123"
     else:
       rhost, rport, ruser, rpass = "external.domain.lan", 2525, "user", "pass"
+    
+    if ext2:
+      external2 = json.loads(cls.requestExternalServer2Instance(state=state).getConnectionParameterDict()['_'])
+      rhost2 = external2['imap-smtp-ipv6']
+      rport2 = int(external2['smtp-port'])
+      ruser2 = "testmail@external2.domain.lan"
+      rpass2 = "password123"
+    else:
+      rhost2, rport2, ruser2, rpass2 = "external2.domain.lan", 2525, "user2", "pass2"
+    
+    proxy_map = {
+      "external-proxy": {
+        "host": rhost,
+        "port": rport,
+        "user": ruser,
+        "password": rpass,
+        "domains": [
+          "mail1.domain.lan",
+          "mail2.domain.lan",
+          "mail3.domain.lan",
+          "mail4.domain.lan"
+        ]
+      },
+      "external2-proxy": {
+        "host": rhost2,
+        "port": rport2,
+        "user": ruser2,
+        "password": rpass2,
+        "domains": [
+          "mail5.domain.lan"
+        ]
+      }
+    }
+    
     return {
       "_": json.dumps(
         {
           "default-relay-config": {
-            "proxy-map": {
-              "external-proxy": {
-                "host": rhost,
-                "port": rport,
-                "user": ruser,
-                "password": rpass,
-                "domains": [
-                  "mail1.domain.lan",
-                  "mail2.domain.lan",
-                  "mail3.domain.lan",
-                  "mail4.domain.lan"
-                ]
-              }
-            },
+            "proxy-map": proxy_map,
             "greylisting-enable": True,
             "greylisting-delay": 5,
             "greylisting-whitelist-recipients": [
@@ -137,7 +160,9 @@ class E2E(SlapOSInstanceTestCase):
             "mail1.domain.lan",
             "mail2.domain.lan",
             "mail3.domain.lan",
-            "mail4.domain.lan"
+            "mail4.domain.lan",
+            "mail5.domain.lan",
+            "no-proxy.domain.lan"
           ],
           "topology": {
               "relay-foo": {
@@ -154,12 +179,15 @@ class E2E(SlapOSInstanceTestCase):
   @classmethod
   def requestDefaultInstance(cls, state: str = "started"):
     cls.ext_mail_server = cls.requestExternalServerInstance(state)
+    cls.ext_mail_server2 = cls.requestExternalServer2Instance(state)
     cls.waitForInstance()
-    cls._instance_parameter_dict = cls.getInstanceParameterDict(ext=True, state=state)
+    cls._instance_parameter_dict = cls.getInstanceParameterDict(ext=True, ext2=True, state=state)
     default_instance = super(E2E, cls).requestDefaultInstance(state)
     cls.mail_server_instances = [
       cls.requestMailServerForDomain(domain, state) for domain in cls.domain_list
     ]
+    # Add mail server for mail5.domain.lan to test multi-proxy routing
+    cls.mail5_server = cls.requestMailServerForDomain(cls.mail5_domain, state)
     # Request a direct relay slave for mail4 with password authentication.
     # Uses a different domain than mail1-3 (which are IP-based via mail-server)
     # to avoid the cluster's duplicate-domain-name rejection.
@@ -171,6 +199,21 @@ class E2E(SlapOSInstanceTestCase):
         "mail-server-host": "::1",
         "mail-server-port": 10025,
         "authentication": "password",
+      })},
+      shared=True,
+      software_type='cluster',
+      state=state,
+    )
+    # Note: mail5 relay slave is created by the mail5_server's relay request
+    # Request a direct relay slave for no-proxy domain (no proxy configured for it)
+    cls.no_proxy_slave = cls.slap.request(
+      software_release=software_urls[0],
+      partition_reference="no-proxy-slave",
+      partition_parameter_kw={'_': json.dumps({
+        "name": "no-proxy.domain.lan",
+        "mail-server-host": "::1",
+        "mail-server-port": 10025,
+        "authentication": "none",
       })},
       shared=True,
       software_type='cluster',
@@ -206,6 +249,23 @@ class E2E(SlapOSInstanceTestCase):
     return cls.slap.request(
       software_release=software_urls[1],
       partition_reference="external-mail-server",
+      partition_parameter_kw={'_': json.dumps(param_dict)},
+      software_type='default',
+      state=state,
+    )
+  
+  @classmethod
+  def requestExternalServer2Instance(cls, state: str = "started"):
+    param_dict = {
+      "mail-domains": [
+        "external2.domain.lan"
+      ],
+      "no-relay": True,
+      "test-account": True,
+    }
+    return cls.slap.request(
+      software_release=software_urls[1],
+      partition_reference="external2-mail-server",
       partition_parameter_kw={'_': json.dumps(param_dict)},
       software_type='default',
       state=state,
@@ -569,3 +629,48 @@ class E2E(SlapOSInstanceTestCase):
       with smtplib.SMTP(relay_host, submission_port, timeout=self.smtp_timeout) as smtp:
         # Attempt login without starttls — server must refuse
         smtp.login(user, password)
+
+  def test_no_proxy_domain_rejected(self):
+    """Mail from a domain without proxy configuration to an external address
+    must be rejected directly by the relay."""
+    relay_host, submission_port = self._get_relay_submission_info()
+    self.assertIsNotNone(relay_host, "Could not find relay host")
+    
+    # Send directly to relay's submission port from no-proxy.domain.lan
+    sender = "test@no-proxy.domain.lan"
+    recipient = "testmail@external.domain.lan"
+    
+    msg = "Subject: No Proxy Test\n\nThis should be rejected - no proxy for sender domain."
+    
+    # Connect directly to the relay without authentication (IP-based)
+    # The relay should reject because no-proxy.domain.lan has no proxy configured
+    with self.assertRaises((smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused, smtplib.SMTPDataError)):
+      with smtplib.SMTP(relay_host, submission_port, timeout=self.smtp_timeout) as smtp:
+        smtp.sendmail(
+          from_addr=sender,
+          to_addrs=[recipient],
+          msg=msg,
+        )
+
+  def test_multiple_proxies_routing(self):
+    """Verify that mail from mail5.domain.lan routes to external2-proxy
+    while mail from other domains routes to external-proxy."""
+    mail5 = self.mail5_server
+    ext2 = self.ext_mail_server2  # external2.domain.lan
+    
+    # Send email from mail5.domain.lan to external2.domain.lan
+    # This should route through external2-proxy (because sender is mail5.domain.lan)
+    # and deliver to external2 server (which external2-proxy points to)
+    sender = "testmail@mail5.domain.lan"
+    recipient = "testmail@external2.domain.lan"
+    
+    self._send_email_via_smtp(
+      mail5, sender, recipient,
+      "Multi-Proxy Test",
+      "This email from mail5 should route via external2-proxy."
+    )
+    
+    # Verify email was received at external2 server
+    # The key point is that it routed via external2-proxy based on sender domain
+    self._verify_email_received(ext2, recipient, "This email from mail5 should route via external2-proxy.")
+

@@ -389,6 +389,9 @@ content =
     reject
   smtpd_sender_restrictions =
     reject_sender_login_mismatch
+  {%- if sender_host_domains %}
+    check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
+  {%- endif %}
   smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
 
   # Use system CAs to authenticate proxy; do not use permit_tls_all_clientcerts
@@ -419,8 +422,6 @@ content =
     check_sender_access texthash:$${outbound-postfix-directory:etc}/sender_access_{{ loop.index }}
     reject
   {% endfor %}
-  smtpd_sender_restrictions =
-    check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
   {% endif %}
 
 [outbound-postfix-sender-transport]
