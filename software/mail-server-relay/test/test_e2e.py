@@ -149,11 +149,12 @@ class E2E(SlapOSInstanceTestCase):
     return cls.requestMailServer(cls.external_domain, state, {'no-relay': True})
 
   @classmethod
-  def requestRelayShared(cls, domain, extra_parameters, state):
+  def requestRelayShared(cls, domain, address, extra_parameters, state):
+    ipv6, port = address
     parameters = {
       "name": domain,
-      "mail-server-host": "::1",
-      "mail-server-port": 10025,
+      "mail-server-host": ipv6,
+      "mail-server-port": port,
     }
     parameters.update(extra_parameters)
     relay_shared = cls.slap.request(
@@ -166,6 +167,7 @@ class E2E(SlapOSInstanceTestCase):
     )
     relay_shared.domain = domain
     relay_shared.examplemail = 'example@' + domain
+    relay_shared.backend_address = address
     return relay_shared
 
   @classmethod
@@ -187,8 +189,18 @@ class E2E(SlapOSInstanceTestCase):
     cls.mail_servers = [
       cls.requestMailServer(domain, state) for domain in cls.mail_server_domains
     ]
+    # Ensure every instance & sub-instance is allocated into a partition
+    # so that the remaining partition's IPv6 can be used.
+    cls.waitForInstance()
+    available_ipv6 = (
+      cls.getPartitionIPv6(cp.getId())
+      for cp in cls.slap.computer.getComputerPartitionList()
+      if cp.getState() != 'started'
+    )
+    cls.free_ipv6 = next(available_ipv6)
     cls.password_relay_shared = cls.requestRelayShared(
       cls.password_relay_domain,
+      (next(available_ipv6), 10025),
       {"authentication": "password"},
       state,
     )
