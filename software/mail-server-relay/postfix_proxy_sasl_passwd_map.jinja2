@@ -1,0 +1,5 @@
+{% for proxy_id, proxy in json_module.loads(proxy_map).items() -%}
+{%   if proxy.get('user') and proxy.get('password') -%}
+[{{ proxy['host'] }}]:{{ proxy.get('port', 25) }} {{ proxy['user'] }}:{{ proxy['password'] }}
+{%   endif -%}
+{% endfor -%}
