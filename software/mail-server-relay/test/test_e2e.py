@@ -387,18 +387,25 @@ class E2E(SlapOSInstanceTestCase):
     # Verify the email never arrives at the external server.
     self.check_not_in_inbox(self.external_mail_server, msg, wait_time=30)
 
-  def test_relay_shared_output(self):
+  def test_relay_password_shared_output_stable(self):
     params = self.getConnectionDict(self.password_relay_shared)
-    self.assertTrue(
-      params.get('outbound-password'), "Password must be published")
-    self.assertTrue(
-      params.get('outbound-user'), "User must be published")
+    password = params.get('outbound-password')
+    user = params.get('outbound-user')
+    self.assertTrue(password, "Password must be published")
+    self.assertTrue(user, "User must be published")
     self.assertEqual(
       params.get('outbound-submission-port'), str(self.relay_outbound_port))
     self.assertTrue(
       params.get('tls-fingerprints'), "TLS fingerprints must be published")
     self.assertIsInstance(
       params['tls-fingerprints'], list, "TLS fingerprints should be a list")
+    # Reprocess the cluster
+    self.relay_cluster.bang("Reprocess to check password stability")
+    self.waitForInstance()
+    # Assert password remain stable
+    params = self.getConnectionDict(self.password_relay_shared)
+    self.assertEqual(password, params.get('outbound-password'))
+    self.assertEqual(user, params.get('outbound-user'))
 
   def test_relay_password_auth_legitimate(self):
     """Authenticate as <domain> on the relay's submission port
