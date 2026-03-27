@@ -77,6 +77,7 @@ recipe = slapos.recipe.build
 # Error only if a different reference claims an already assigned domain
 target = $${directory:etc}/relay-domains.json
 init =
+  import json
   import secrets
   whitelist = {{ set(slapparameter_dict['outbound-domain-whitelist']) }}
   target = options['target']
@@ -84,7 +85,8 @@ init =
   try:
     with open(target, 'r') as fp:
       previous = json.load(fp)
-  except Exception:
+  except FileNotFoundError:
+    print("No previous shared instances found")
     previous = {}
 
   pub_domain_dict = {}
