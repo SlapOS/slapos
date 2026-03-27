@@ -46,11 +46,16 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     return {
       "_": json.dumps(
         {
-          "default-proxy-config": {
-            "proxy-host": "example.com",
-            "proxy-port": 2525,
-            "proxy-user": "user",
-            "proxy-password": "pass",
+          "default-relay-config": {
+            "proxy-map": {
+              "example-proxy": {
+                "host": "example.com",
+                "port": 2525,
+                "user": "user",
+                "password": "pass",
+                "domains": ["mail1.domain.lan", "mail2.domain.lan"]
+              }
+            }
           },
           "outbound-domain-whitelist": [
             "mail1.domain.lan",
@@ -64,7 +69,15 @@ class PostfixTestCase(SlapOSInstanceTestCase):
               "relay-bar": {
                   "state": "started",
                   "config": {
-                    "proxy-host": "bar.example.com"
+                    "proxy-map": {
+                      "bar-proxy": {
+                        "host": "bar.example.com",
+                        "port": 2525,
+                        "user": "user",
+                        "password": "pass",
+                        "domains": ["mail1.domain.lan", "mail2.domain.lan"]
+                      }
+                    }
                   }
               }
           }
