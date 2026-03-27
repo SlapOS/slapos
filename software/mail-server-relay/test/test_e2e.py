@@ -447,6 +447,22 @@ class E2E(SlapOSInstanceTestCase):
           msg=msg,
         )
 
+  def test_relay_password_auth_login_required(self):
+    """Attempting to authenticate on the submission port with the backend IP
+    but no password login must be rejected"""
+    mail1 = self.mail_servers[0]
+    body = "Password auth login required test."
+    host, port = self.relay_outbound_addr
+    source = self.password_relay_shared.backend_address
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+        smtp.starttls()
+        smtp.sendmail(
+          from_addr=self.password_relay_shared.examplemail,
+          to_addrs=[mail1.testmail],
+          msg="Subject: Password auth login required\n\n" + body,
+        )
+
   def test_relay_password_auth_rejected_without_tls(self):
     """Attempting to authenticate on the submission port without STARTTLS
     must be rejected — credentials must never be sent in cleartext."""
