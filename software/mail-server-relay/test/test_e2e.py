@@ -85,10 +85,14 @@ def setUpModule():
 
 class E2E(SlapOSInstanceTestCase):
   instance_max_retry = 4
+  # use the ipv6 of excess empty partiions as known-to-be-otherwise-unused ipv6
+  partition_count = 15
   mail_server_domains = ["mail%d.domain.lan" % i for i in range(1, 4)]
+  mail_server_domain2 = 'mail4.domain.lan'
   password_relay_domain = "mail.relay.password.domain.lan"
   ip_auth_relay_domain = "mail.relay.ip-auth.domain.lan"
   external_domain = 'external.domain.lan'
+  external_domain2 = 'external2.domain.lan'
   testmail_password = 'password123'
   relay_inbound_port = 10025
   relay_outbound_port = 10587
@@ -99,8 +103,9 @@ class E2E(SlapOSInstanceTestCase):
     return unwrap(instance.getConnectionParameterDict())
 
   @classmethod
-  def requestRelayCluster(cls, external_server, state="started"):
+  def requestRelayCluster(cls, external_server, external_server2, state="started"):
     external = cls.getConnectionDict(external_server)
+    external2 = cls.getConnectionDict(external_server2)
     parameters = serialize({
       "default-relay-config": {
         "proxy-map": {
@@ -113,9 +118,17 @@ class E2E(SlapOSInstanceTestCase):
               "mail1.domain.lan",
               "mail2.domain.lan",
               "mail3.domain.lan",
-              "mail4.domain.lan"
             ]
-          }
+          },
+          "external-proxy-2": {
+            "host": external2['imap-smtp-ipv6'],
+            "port": int(external2['smtp-port']),
+            "user": 'testmail@' + cls.external_domain2,
+            "password": 'password123',
+            "domains": [
+              cls.mail_server_domain2,
+            ]
+          },
         },
         "greylisting-enabled": True,
         "greylisting-delay": 5,
@@ -126,6 +139,8 @@ class E2E(SlapOSInstanceTestCase):
       "outbound-domain-whitelist": cls.mail_server_domains + [
         cls.password_relay_domain,
         cls.ip_auth_relay_domain,
+        cls.mail_server_domain2,
+        "no-proxy.domain.lan"
       ],
       # Test with two relay nodes to detect edge cases
       # that could arise when there are multiple relays.
@@ -170,6 +185,10 @@ class E2E(SlapOSInstanceTestCase):
     return cls.requestMailServer(cls.external_domain, state, {'no-relay': True})
 
   @classmethod
+  def requestExternalMailServer2(cls, state):
+    return cls.requestMailServer(cls.external_domain2, state, {'no-relay': True})
+
+  @classmethod
   def requestRelayShared(cls, domain, address, extra_parameters, state):
     ipv6, port = address
     parameters = {
@@ -196,6 +215,7 @@ class E2E(SlapOSInstanceTestCase):
   @classmethod
   def requestDefaultInstance(cls, state="started"):
     external = cls.requestExternalMailServer(state)
+    external2 = cls.requestExternalMailServer2(state)
     if not external.getConnectionParameterDict():
       # requestDefaultInstance is called twice by the framework:
       # the first time to make the initial requests, and the second
@@ -207,8 +227,10 @@ class E2E(SlapOSInstanceTestCase):
       # already has an up to date non-empty connection dict.
       cls.waitForInstance()
       external = cls.requestExternalMailServer(state)
+      external2 = cls.requestExternalMailServer2(state)
     cls.external_mail_server = external
-    cls.relay_cluster = relay_cluster = cls.requestRelayCluster(external, state)
+    cls.external_mail_server2 = external2
+    cls.relay_cluster = relay_cluster = cls.requestRelayCluster(external, external2, state)
     if DEBUG and not relay_cluster.getConnectionParameterDict():
       # debug: run waitForInstance right after requesting the cluster
       # to fail fast in case of error in the cluster instance buildout
@@ -218,6 +240,7 @@ class E2E(SlapOSInstanceTestCase):
     cls.mail_servers = [
       cls.requestMailServer(domain, state) for domain in cls.mail_server_domains
     ]
+    cls.mail_server2 = cls.requestMailServer(cls.mail_server_domain2, state)
     # Ensure every instance & sub-instance is allocated into a partition
     # so that the remaining partition's IPv6 can be used.
     cls.waitForInstance()
@@ -252,7 +275,7 @@ class E2E(SlapOSInstanceTestCase):
     cls.relay_inbound_addr = (relay_host, cls.relay_inbound_port)
     cls.relay_outbound_addr = (relay_host, cls.relay_outbound_port)
     cls.password_relay_shared.login = cls.getRelaySharedLogin()
-    for server in cls.mail_servers + [cls.external_mail_server]:
+    for server in cls.mail_servers + [cls.mail_server2, cls.external_mail_server, cls.external_mail_server2]:
       server.smtp_addr = cls.smtpAddrOf(server)
       server.imap_addr = cls.imapAddrOf(server)
     cls.relay_servers = [
@@ -348,6 +371,15 @@ class E2E(SlapOSInstanceTestCase):
     self.check_mail_e2e(
       self.mail_servers[0], self.external_mail_server,
       "This is a test email to external server."
+    )
+
+  def test_send_email_via_proxy2(self):
+    """Mail from a domain whitelisted in the second proxy entry is routed
+    through the second external relay and arrives at the second external
+    mail server."""
+    self.check_mail_e2e(
+      self.mail_server2, self.external_mail_server2,
+      "This is a test email routed via the second proxy."
     )
 
   def test_send_email_from_external_via_relay(self):
@@ -620,3 +652,16 @@ class E2E(SlapOSInstanceTestCase):
           msg=msg,
         )
 
+  def test_no_proxy_domain_rejected(self):
+    """Mail from a domain without proxy configuration to an external address
+    must be rejected directly by the relay."""
+    msg = "Subject: No Proxy Test\n\nThis should be rejected - no proxy for sender domain."    
+    # Connect directly to the relay without authentication (IP-based)
+    # The relay should reject because no-proxy.domain.lan has no proxy configured
+    with self.assertRaises((smtplib.SMTPRecipientsRefused, smtplib.SMTPSenderRefused, smtplib.SMTPDataError)):
+      with smtplib.SMTP(*self.relay_outbound_addr, timeout=self.smtp_timeout) as smtp:
+        smtp.sendmail(
+          from_addr="test@no-proxy.domain.lan",
+          to_addrs=[self.external_mail_server.testmail],
+          msg=msg,
+        )
