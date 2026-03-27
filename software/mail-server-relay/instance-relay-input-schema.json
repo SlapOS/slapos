@@ -54,9 +54,7 @@
         }
       },
       "required": [
-        "proxy-host",
-        "proxy-user",
-        "proxy-password",
+        "proxy-map",
         "mail-domains"
       ]
     }

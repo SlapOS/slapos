@@ -100,19 +100,23 @@ class E2E(SlapOSInstanceTestCase):
 
   @classmethod
   def requestRelayCluster(cls, external_server, state="started"):
-    def make_proxy_config(*values):
-      keys = ('proxy-' + o for o in ('host', 'port', 'user', 'password'))
-      return dict(zip(keys, values))
     external = cls.getConnectionDict(external_server)
-    proxy_config = make_proxy_config(
-      external['imap-smtp-ipv6'],
-      int(external['smtp-port']),
-      'testmail@' + cls.external_domain,
-      'password123',
-    )
     parameters = serialize({
       "default-relay-config": {
-        **proxy_config,
+        "proxy-map": {
+          "external-proxy": {
+            "host": external['imap-smtp-ipv6'],
+            "port": int(external['smtp-port']),
+            "user": 'testmail@' + cls.external_domain,
+            "password": 'password123',
+            "domains": [
+              "mail1.domain.lan",
+              "mail2.domain.lan",
+              "mail3.domain.lan",
+              "mail4.domain.lan"
+            ]
+          }
+        },
         "greylisting-enabled": True,
         "greylisting-delay": 5,
         "greylisting-whitelist-recipients": [
