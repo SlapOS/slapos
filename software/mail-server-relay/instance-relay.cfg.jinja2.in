@@ -50,6 +50,10 @@ postfix-etc = $${:etc}/postfix
 postfix-ca-private = $${:postfix-etc}/private
 postfix-ca-certs = $${:postfix-etc}/certs
 
+[postgrey-directory]
+recipe = slapos.cookbook:mkdirectory
+data = $${directory:var-lib}/postgrey
+
 [userinfo]
 recipe = slapos.cookbook:userinfo
 
@@ -106,7 +110,9 @@ init =
 [macro.postfix-master.cf]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_master.jinja2.cf:target}
+content =
 context =
+  key content :content
   key port :port
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
@@ -134,8 +140,11 @@ context =
 # -----------------------------
 
 {% set mail_domains = slapparameter_dict['mail-domains'] %}
-{% set proxy_host = slapparameter_dict['proxy-host'] %}
-{% set proxy_port = slapparameter_dict['proxy-port'] %}
+{% set proxy_map = slapparameter_dict.get('proxy-map', {}) %}
+{% set greylisting_enable = slapparameter_dict.get('greylisting-enable', true) %}
+{% set greylisting_delay = slapparameter_dict.get('greylisting-delay', 60) %}
+{% set greylisting_whitelist_clients = slapparameter_dict.get('greylisting-whitelist-clients', []) %}
+{% set greylisting_whitelist_recipients = slapparameter_dict.get('greylisting-whitelist-recipients', []) %}
 
 [internal-postfix-transport]
 recipe = slapos.recipe.template:jinja2
@@ -157,6 +166,9 @@ role = inbound
 <= macro.postfix-master.cf
 output = $${inbound-postfix-directory:etc}/master.cf
 port = $${inbound-postfix-main.cf:smtp-port}
+content =
+  policyd-spf  unix  -       n       n       -       0       spawn
+    user=$${userinfo:pw-name} argv=${spf-engine:bin-directory}/policyd-spf $${policyd-spf-conf:output}
 
 [inbound-postfix-main.cf]
 <= macro.postfix-main.cf
@@ -167,6 +179,23 @@ smtp-port = 10025
 content =
   smtpd_relay_restrictions =
     reject_unauth_destination
+
+  mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8
+
+  smtpd_restriction_classes =
+    spf_passed
+
+  smtpd_recipient_restrictions =
+    permit_mynetworks
+    check_policy_service unix:private/policyd-spf
+{% if greylisting_enable %}
+    check_policy_service inet:127.0.0.1:$${postgrey-service:port}
+{% endif %}
+
+  spf_passed =
+    permit
+
+  policyd-spf_time_limit = 3600
 
   virtual_transport = relay
   relay_recipient_maps =
@@ -190,6 +219,53 @@ inline =
   rm -f $${inbound-postfix-directory:spool-pid}/*.pid
   ${postfix:location}/usr/libexec/postfix/master -c $${inbound-postfix-directory:etc}
 
+[policyd-spf-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${policyd_spf.jinja2.conf:target}
+output = $${inbound-postfix-directory:etc}/policyd-spf.conf
+context =
+
+{% if greylisting_enable %}
+[postgrey-service]
+recipe = slapos.cookbook:wrapper
+port = 10023
+command-line =
+  ${postgrey-perl:perl-bin} ${postgrey:location}/postgrey
+    --inet=$${:port}
+    --dbdir=$${postgrey-directory:data}
+    --delay={{ greylisting_delay }}
+    --max-age=30
+    --user=$${userinfo:pw-name}
+    --group=$${userinfo:gr-name}
+    --whitelist-clients=$${postgrey-whitelist-clients:output}
+    --whitelist-recipients=$${postgrey-whitelist-recipients:output}
+wrapper-path = $${directory:service}/postgrey
+depends =
+  $${postgrey-whitelist-clients:recipe}
+  $${postgrey-whitelist-recipients:recipe}
+
+[postgrey-whitelist-clients]
+recipe = slapos.recipe.template
+output = $${inbound-postfix-directory:etc}/postgrey_whitelist_clients
+inline =
+  # Postgrey client whitelist
+  # Internal backend servers are already whitelisted by postfix (permit_mynetworks)
+{% for entry in greylisting_whitelist_clients %}
+  {{ entry }}
+{% endfor %}
+
+[postgrey-whitelist-recipients]
+recipe = slapos.recipe.template
+output = $${inbound-postfix-directory:etc}/postgrey_whitelist_recipients
+inline =
+  # Postgrey recipient whitelist
+  # Add recipients that should never be greylisted, e.g.:
+  # postmaster@
+{% for entry in greylisting_whitelist_recipients %}
+  {{ entry }}
+{% endfor %}
+{% endif %}
+
 [inbound-postfix-service]
 recipe = slapos.cookbook:wrapper
 command-line = $${inbound-postfix-wrapper:output}
@@ -203,7 +279,12 @@ hash-files =
   $${inbound-postfix-main.cf:output}
   $${inbound-postfix-master.cf:output}
   $${inbound-postfix-wrapper:output}
+  $${policyd-spf-conf:output}
 depends =
+  $${policyd-spf-conf:recipe}
+{% if greylisting_enable %}
+  $${postgrey-service:recipe}
+{% endif %}
   $${inbound-logrotate-entry-postfix:recipe}
 
 [inbound-postfix-smtp-promise]
@@ -286,9 +367,9 @@ content =
   virtual_transport = relay
   relay_recipient_maps =
   relay_domains = {{ (mail_domains) | map(attribute='name') | join(',') }}
-  relayhost = [{{ proxy_host }}]:{{ proxy_port }}
 
   transport_maps = texthash:$${internal-postfix-transport:output}
+  sender_dependent_default_transport_maps = texthash:$${outbound-postfix-sender-transport:output}
 
   # Server TLS parameters
   smtpd_tls_cert_file = $${postfix-certificate:cert-file}
@@ -308,6 +389,9 @@ content =
     reject
   smtpd_sender_restrictions =
     reject_sender_login_mismatch
+  {%- if sender_host_domains %}
+    check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
+  {%- endif %}
   smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
 
   # Use system CAs to authenticate proxy; do not use permit_tls_all_clientcerts
@@ -322,6 +406,7 @@ content =
   smtp_sasl_auth_enable = yes
   smtp_sasl_security_options = noanonymous
   smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
+  smtp_sender_dependent_authentication = yes
 
   # Per-host sender domain restrictions
   # Each sending backend is only allowed to use MAIL FROM with its own domains.
@@ -337,19 +422,23 @@ content =
     check_sender_access texthash:$${outbound-postfix-directory:etc}/sender_access_{{ loop.index }}
     reject
   {% endfor %}
-  smtpd_sender_restrictions =
-    check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
   {% endif %}
+
+[outbound-postfix-sender-transport]
+recipe = slapos.recipe.template:jinja2
+url = ${postfix_sender_dependent_transport.jinja2:target}
+output = $${outbound-postfix-directory:etc}/sender_dependent_transport
+context =
+  import json_module json
+  raw proxy_map {{ json_module.dumps(proxy_map) }}
 
 [outbound-postfix-proxy-passwd]
 recipe = slapos.recipe.template:jinja2
-url = ${postfix_proxy_sasl_passwd.in:target}
+url = ${postfix_proxy_sasl_passwd_map.jinja2:target}
 output = $${outbound-postfix-directory:etc}/proxy_sasl_passwd
 context =
-  raw proxy_host {{ slapparameter_dict['proxy-host'] }}
-  raw proxy_port {{ slapparameter_dict['proxy-port'] }}
-  raw proxy_user {{ slapparameter_dict['proxy-user'] }}
-  raw proxy_pass {{ slapparameter_dict['proxy-password'] }}
+  import json_module json
+  raw proxy_map {{ json_module.dumps(proxy_map) }}
 
 {% for host in sorted_sender_hosts %}
 [outbound-postfix-sender-access-{{ loop.index }}]
