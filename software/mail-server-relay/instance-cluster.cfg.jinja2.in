@@ -2,6 +2,7 @@
 extends =
   ${monitor2-template:output}
 parts =
+  validate-proxy-map
   monitor-base
   publish-connection-information
   publish-shared
@@ -9,6 +10,28 @@ parts =
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
+
+[validate-proxy-map]
+recipe = slapos.recipe.build
+init =
+  # Validate that domains are unique across all proxies in proxy-map
+  proxy_map = {{ slapparameter_dict.get('default-relay-config', {}).get('proxy-map', {}) }}
+  domain_to_proxy = {}
+  errors = []
+  
+  for proxy_id, proxy_config in proxy_map.items():
+    for domain in proxy_config.get('domains', []):
+      if domain in domain_to_proxy:
+        errors.append(
+          f"Domain '{domain}' appears in multiple proxies: "
+          f"'{domain_to_proxy[domain]}' and '{proxy_id}'. "
+          f"Each domain must appear in only one proxy's domains list."
+        )
+      else:
+        domain_to_proxy[domain] = proxy_id
+  
+  options['validated-domains'] = str(len(domain_to_proxy))
+  options['errors'] = errors
 
 [request-relay-base]
 <= slap-connection
@@ -26,6 +49,7 @@ return =
 recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 dns-entries = $${filter-shared-instances:dns-entries}
+errors = $${validate-proxy-map:errors}
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
 [request-relay-{{ relay_name }}]

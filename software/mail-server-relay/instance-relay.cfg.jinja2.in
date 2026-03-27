@@ -140,8 +140,7 @@ context =
 # -----------------------------
 
 {% set mail_domains = slapparameter_dict['mail-domains'] %}
-{% set proxy_host = slapparameter_dict['proxy-host'] %}
-{% set proxy_port = slapparameter_dict['proxy-port'] %}
+{% set proxy_map = slapparameter_dict.get('proxy-map', {}) %}
 {% set greylisting_enable = slapparameter_dict.get('greylisting-enable', true) %}
 {% set greylisting_delay = slapparameter_dict.get('greylisting-delay', 60) %}
 {% set greylisting_whitelist_clients = slapparameter_dict.get('greylisting-whitelist-clients', []) %}
@@ -368,9 +367,9 @@ content =
   virtual_transport = relay
   relay_recipient_maps =
   relay_domains = {{ (mail_domains) | map(attribute='name') | join(',') }}
-  relayhost = [{{ proxy_host }}]:{{ proxy_port }}
 
   transport_maps = texthash:$${internal-postfix-transport:output}
+  sender_dependent_default_transport_maps = texthash:$${outbound-postfix-sender-transport:output}
 
   # Server TLS parameters
   smtpd_tls_cert_file = $${postfix-certificate:cert-file}
@@ -404,6 +403,7 @@ content =
   smtp_sasl_auth_enable = yes
   smtp_sasl_security_options = noanonymous
   smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
+  smtp_sender_dependent_authentication = yes
 
   # Per-host sender domain restrictions
   # Each sending backend is only allowed to use MAIL FROM with its own domains.
@@ -423,15 +423,21 @@ content =
     check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
   {% endif %}
 
+[outbound-postfix-sender-transport]
+recipe = slapos.recipe.template:jinja2
+url = ${postfix_sender_dependent_transport.jinja2:target}
+output = $${outbound-postfix-directory:etc}/sender_dependent_transport
+context =
+  import json_module json
+  raw proxy_map {{ json_module.dumps(proxy_map) }}
+
 [outbound-postfix-proxy-passwd]
 recipe = slapos.recipe.template:jinja2
-url = ${postfix_proxy_sasl_passwd.in:target}
+url = ${postfix_proxy_sasl_passwd_map.jinja2:target}
 output = $${outbound-postfix-directory:etc}/proxy_sasl_passwd
 context =
-  raw proxy_host {{ slapparameter_dict['proxy-host'] }}
-  raw proxy_port {{ slapparameter_dict['proxy-port'] }}
-  raw proxy_user {{ slapparameter_dict['proxy-user'] }}
-  raw proxy_pass {{ slapparameter_dict['proxy-password'] }}
+  import json_module json
+  raw proxy_map {{ json_module.dumps(proxy_map) }}
 
 {% for host in sorted_sender_hosts %}
 [outbound-postfix-sender-access-{{ loop.index }}]
