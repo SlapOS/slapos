@@ -23,6 +23,17 @@ dns-entries =
   {% for domain in slapparameter_dict['mail-domains'] -%}
   {{ domain['name'] }} MX 10 {{ ipv4 }}
   {% endfor %}
+-depends = $${publish-certificate-fingerprints:recipe}
+
+[publish-certificate-fingerprints]
+recipe = slapos.recipe.build
+fingerprint = $${postfix-certificate:fingerprint}
+update =
+  # Hack: update publish dict once fingerprint has been generated
+  publish = self.buildout['publish-connection-information']
+  with open(options['fingerprint']) as f:
+    # publish a list to allow for future fingerprint rotation
+    publish['tls-fingerprints'] = [f.read().split('=', 1)[1].strip()]
 
 [monitor-instance-parameter]
 password = {{ slapparameter_dict['monitor-password'] }}
@@ -47,21 +58,33 @@ vhosts = $${:home}/vhosts
 srv = $${buildout:directory}/srv
 postfix-usr = $${:usr}/postfix
 postfix-etc = $${:etc}/postfix
-postfix-ca-private = $${:postfix-etc}/private
-postfix-ca-certs = $${:postfix-etc}/certs
+postfix-ssl = $${:postfix-etc}/ssl
 
 [userinfo]
 recipe = slapos.cookbook:userinfo
 
+
+# Postfix Relay Certificates
+# --------------------------
+
 [postfix-certificate]
-recipe  = plone.recipe.command
+recipe = plone.recipe.command
 stop-on-error = true
-key-file = $${directory:postfix-ca-private}/postfix.key
-cert-file = $${directory:postfix-ca-certs}/postfix.crt
+name = postfix
+key-file = $${directory:postfix-ssl}/$${:name}.key
+cert-file = $${directory:postfix-ssl}/$${:name}.crt
+fingerprint = $${directory:postfix-ssl}/$${:name}.digest
+bundle = $${directory:postfix-ssl}/$${:name}.bundle.pem
+openssl = ${openssl:location}/bin/openssl
+# Consider using public-key fingerprint instead of whole certificate fingerprint
 command =
-    test -e $${:key-file} || \
-        ${openssl:location}/bin/openssl req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
-        -keyout $${:key-file} -out $${:cert-file}
+  test -e $${:key-file} || { \
+    $${:openssl} req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
+      -keyout $${:key-file} -out $${:cert-file}; \
+    $${:openssl} x509 -noout -fingerprint -sha256 -in $${:cert-file} \
+      > $${:fingerprint}; \
+    cat $${:key-file} $${:cert-file} > $${:bundle}; \
+  }
 update-command = $${:command}
 
 
@@ -179,7 +202,8 @@ content =
   smtpd_tls_security_level = may
 
   # Client TLS parameters
-  smtp_tls_security_level = may
+  smtp_tls_security_level = encrypt
+  smtp_tls_chain_files = $${postfix-certificate:bundle}
   smtp_tls_session_cache_database = btree:$${inbound-postfix-directory:var-lib}/smtp_scache
 
 [inbound-postfix-wrapper]
@@ -295,33 +319,36 @@ content =
   smtpd_tls_key_file = $${postfix-certificate:key-file}
   smtpd_tls_security_level = encrypt
 
+  {% if has_password_auth -%}
   # Server SASL
   smtpd_sasl_auth_enable = yes
-  smtpd_sasl_path = smtpd
+  smtpd_sasl_path = $${outbound-postfix-smtpd-sasl-conf:config-name}
+  cyrus_sasl_config_path = $${outbound-postfix-smtpd-sasl-conf:config-path}
   smtpd_sasl_local_domain = relay
   smtpd_sasl_security_options = noanonymous
 
+  # Server SASL Senders
+  smtpd_sender_login_maps = texthash:$${outbound-postfix-sender-login-map:output}
+  {%- endif %}
+
   # Server access restrictions
-  smtpd_relay_restrictions =
-    permit_mynetworks
-    permit_sasl_authenticated
-    reject
   smtpd_sender_restrictions =
+    # reject login/domain mismatches
     reject_sender_login_mismatch
-  smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
+  {%- if sorted_sender_hosts %}
+    # reject ip/domain mismatches
+    check_client_access cidr:$${outbound-postfix-client-sender-access:output}
+  {%- endif %}
 
-  # Use system CAs to authenticate proxy; do not use permit_tls_all_clientcerts
-  # Currently useless, because we only set may, not verify or better
-  # We probably want to check backend certificates differently than proxy's,
-  # assuming we keep allowing shortcut backend -> relay -> backend transport.
-  tls_append_default_CA = yes
-
-  # Client TLS & SASL parameters
-  smtp_tls_security_level = may
-  smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
-  smtp_sasl_auth_enable = yes
-  smtp_sasl_security_options = noanonymous
-  smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
+  smtpd_relay_restrictions =
+    # Permit IP-authentified senders;
+    # ip/domain mismatches are already rejected by the sender restrictions
+    permit_mynetworks
+    # Permit SASL-authentified senders;
+    # login/domain mismatches are already rejected by the sender restrictions
+    permit_sasl_authenticated
+    # Reject all others
+    reject
 
   # Per-host sender domain restrictions
   # Each sending backend is only allowed to use MAIL FROM with its own domains.
@@ -334,12 +361,24 @@ content =
 
   {% for host in sorted_sender_hosts -%}
   restrict_sender_{{ loop.index }} =
-    check_sender_access texthash:$${outbound-postfix-directory:etc}/sender_access_{{ loop.index }}
+    check_sender_access texthash:$${outbound-postfix-sender-access-{{ loop.index }}:output}
     reject
   {% endfor %}
-  smtpd_sender_restrictions =
-    check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
   {% endif %}
+
+  # Use system CAs to authenticate proxy; do not use permit_tls_all_clientcerts
+  # Currently useless, because we only set may, not verify or better
+  # We probably want to check backend certificates differently than proxy's,
+  # assuming we keep allowing shortcut backend -> relay -> backend transport.
+  tls_append_default_CA = yes
+
+  # Client TLS & SASL parameters
+  smtp_tls_security_level = may
+  smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
+  smtp_tls_chain_files = $${postfix-certificate:bundle}
+  smtp_sasl_auth_enable = yes
+  smtp_sasl_security_options = noanonymous
+  smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
 
 [outbound-postfix-proxy-passwd]
 recipe = slapos.recipe.template:jinja2
@@ -374,7 +413,9 @@ context =
 [outbound-postfix-smtpd-sasl-conf]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_smtpd_sasl.jinja2.conf:target}
-output = $${outbound-postfix-directory:etc}/smtpd.conf
+config-path = $${outbound-postfix-directory:etc}
+config-name = smtpd
+output = $${:config-path}/$${:config-name}.conf
 context =
   raw sasldb_path $${outbound-postfix-directory:etc}/sasldb2
 
