@@ -39,7 +39,8 @@
                 "type": "string",
                 "enum": [
                   "none",
-                  "password"
+                  "password",
+                  "fingerprint"
                 ],
                 "description": "Authentication method: 'none' for IP-based, 'password' for SASL",
                 "default": "none"
@@ -47,6 +48,16 @@
               "password": {
                 "type": "string",
                 "description": "SASL password (only when authentication is 'password')"
+              },
+              "fingerprints": {
+                "title": "Backend TLS certificate(s) fingerprint(s)",
+                "description:": "List of fingerprints of the backend's certificates to authentify the backend to the relay",
+                "type": "array",
+                "items": {
+                  "title": "TLS certificate fingerprint",
+                  "type": "string"
+                },
+                "minItems": 1
               }
             }
           },
