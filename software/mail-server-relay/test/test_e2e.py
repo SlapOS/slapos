@@ -88,7 +88,7 @@ class E2E(SlapOSInstanceTestCase):
   mail_server_domains = ["mail%d.domain.lan" % i for i in range(1, 4)]
   password_relay_domain = "mail.relay.password.domain.lan"
   ip_auth_relay_domain = "mail.relay.ip-auth.domain.lan"
-  external_domain = 'example.com'
+  external_domain = 'external.domain.lan'
   testmail_password = 'password123'
   relay_inbound_port = 10025
   relay_outbound_port = 10587
@@ -341,12 +341,11 @@ class E2E(SlapOSInstanceTestCase):
   def test_send_email_from_external_via_relay(self):
     # try sending a mail from external to mail1 via the relay
     mail1 = self.mail_servers[0]
-    sender = "testmail@example.com"
     msg_body = "This is a test email from external via relay."
     with smtplib.SMTP(*self.relay_inbound_addr, timeout=10) as smtp:
       # No authentication needed for incoming mail to relay
       smtp.sendmail(
-        from_addr=sender,
+        from_addr=self.external_mail_server.testmail,
         to_addrs=[mail1.testmail],
         msg="Subject: Test Email from External\n\n" + msg_body
       )

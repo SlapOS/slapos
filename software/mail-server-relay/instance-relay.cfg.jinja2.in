@@ -129,7 +129,9 @@ init =
 [macro.postfix-master.cf]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_master.jinja2.cf:target}
+content =
 context =
+  key content :content
   key port :port
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
@@ -180,6 +182,9 @@ role = inbound
 <= macro.postfix-master.cf
 output = $${inbound-postfix-directory:etc}/master.cf
 port = $${inbound-postfix-main.cf:smtp-port}
+content =
+  policyd-spf  unix  -       n       n       -       0       spawn
+    user=slapsoft argv=${spf-engine:bin-directory}/policyd-spf $${policyd-spf-conf:output}
 
 [inbound-postfix-main.cf]
 <= macro.postfix-main.cf
@@ -190,6 +195,14 @@ smtp-port = 10025
 content =
   smtpd_relay_restrictions =
     reject_unauth_destination
+
+  mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8
+
+  smtpd_recipient_restrictions =
+    permit_mynetworks
+    check_policy_service unix:private/policyd-spf
+
+  policyd-spf_time_limit = 3600
 
   virtual_transport = relay
   relay_recipient_maps =
@@ -214,6 +227,12 @@ inline =
   rm -f $${inbound-postfix-directory:spool-pid}/*.pid
   ${postfix:location}/usr/libexec/postfix/master -c $${inbound-postfix-directory:etc}
 
+[policyd-spf-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${policyd_spf.jinja2.conf:target}
+output = $${inbound-postfix-directory:etc}/policyd-spf.conf
+context =
+
 [inbound-postfix-service]
 recipe = slapos.cookbook:wrapper
 command-line = $${inbound-postfix-wrapper:output}
@@ -227,7 +246,9 @@ hash-files =
   $${inbound-postfix-main.cf:output}
   $${inbound-postfix-master.cf:output}
   $${inbound-postfix-wrapper:output}
+  $${policyd-spf-conf:output}
 depends =
+  $${policyd-spf-conf:recipe}
   $${inbound-logrotate-entry-postfix:recipe}
 
 [inbound-postfix-smtp-promise]
