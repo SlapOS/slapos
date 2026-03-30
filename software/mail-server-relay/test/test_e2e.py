@@ -29,6 +29,7 @@ import os
 import json
 import imaplib
 import smtplib
+import ssl
 import time
 
 from slapos.testing.testcase import (
@@ -86,6 +87,7 @@ class E2E(SlapOSInstanceTestCase):
   instance_max_retry = 4
   mail_server_domains = ["mail%d.domain.lan" % i for i in range(1, 4)]
   password_relay_domain = "mail.relay.password.domain.lan"
+  ip_auth_relay_domain = "mail.relay.ip-auth.domain.lan"
   external_domain = 'example.com'
   testmail_password = 'password123'
   relay_inbound_port = 10025
@@ -111,6 +113,7 @@ class E2E(SlapOSInstanceTestCase):
      "default-proxy-config": proxy_config,
       "outbound-domain-whitelist": cls.mail_server_domains + [
         cls.password_relay_domain,
+        cls.ip_auth_relay_domain,
       ],
       "topology": {
           "relay-foo": {
@@ -213,6 +216,14 @@ class E2E(SlapOSInstanceTestCase):
       {"authentication": "password"},
       state,
     )
+    cls.ip_auth_relay_shared = cls.requestRelayShared(
+      cls.ip_auth_relay_domain,
+      (next(available_ipv6), 10025),
+      {
+        "authentication": "none",
+      },
+      state,
+    )
     # We need to return an instance here because the framework expects it.
     return relay_cluster
 
@@ -227,6 +238,11 @@ class E2E(SlapOSInstanceTestCase):
     for server in cls.mail_servers + [cls.external_mail_server]:
       server.smtp_addr = cls.smtpAddrOf(server)
       server.imap_addr = cls.imapAddrOf(server)
+    cls.relay_server = next((
+      cp for cp in cls.slap.computer.getComputerPartitionList()
+      if cp.getState() == 'started' and cp.getType() == 'relay'
+    ))
+    cls.free_port = 10011
 
   @classmethod
   def getRelaySharedLogin(cls):
@@ -258,6 +274,10 @@ class E2E(SlapOSInstanceTestCase):
     smtp_params = self.getConnectionDict(server)
     return smtp_params['imap-smtp-ipv6'], int(smtp_params['imap-port'])
 
+  @classmethod
+  def partitionPath(cls, cp, *paths):
+    return os.path.join(cls.slap.instance_directory, cp.getId(), *paths)
+
   def test_servers(self):
     for server in self.mail_servers:
       params = self.getConnectionDict(server)
@@ -266,6 +286,7 @@ class E2E(SlapOSInstanceTestCase):
   def send_email(self, mailserver, mail_recipient, body, send_as=None):
     sender = send_as or mailserver.testmail
     with smtplib.SMTP(*mailserver.smtp_addr, timeout=10) as smtp:
+      smtp.starttls()
       smtp.login(mailserver.testmail, self.testmail_password)
       smtp.sendmail(
         from_addr=sender,
@@ -379,6 +400,10 @@ class E2E(SlapOSInstanceTestCase):
     self.assertTrue(user, "User must be published")
     self.assertEqual(
       params.get('outbound-submission-port'), str(self.relay_outbound_port))
+    self.assertTrue(
+      params.get('tls-fingerprints'), "TLS fingerprints must be published")
+    self.assertIsInstance(
+      params['tls-fingerprints'], list, "TLS fingerprints should be a list")
     # Reprocess the cluster
     self.relay_cluster.bang("Reprocess to check password stability")
     self.waitForInstance()
@@ -417,6 +442,22 @@ class E2E(SlapOSInstanceTestCase):
           msg=msg,
         )
 
+  def test_relay_password_auth_login_required(self):
+    """Attempting to authenticate on the submission port with the backend IP
+    but no password login must be rejected"""
+    mail1 = self.mail_servers[0]
+    body = "Password auth login required test."
+    host, port = self.relay_outbound_addr
+    source = self.password_relay_shared.backend_address
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+        smtp.starttls()
+        smtp.sendmail(
+          from_addr=self.password_relay_shared.examplemail,
+          to_addrs=[mail1.testmail],
+          msg="Subject: Password auth login required\n\n" + body,
+        )
+
   def test_relay_password_auth_rejected_without_tls(self):
     """Attempting to authenticate on the submission port without STARTTLS
     must be rejected — credentials must never be sent in cleartext."""
@@ -424,4 +465,84 @@ class E2E(SlapOSInstanceTestCase):
       with smtplib.SMTP(*self.relay_outbound_addr, timeout=10) as smtp:
         # Attempt login without starttls — server must refuse
         smtp.login(*self.password_relay_shared.login)
+
+  def test_relay_ip_auth_legitimate(self):
+    mail1 = self.mail_servers[0]
+    body = "IP auth legitimate test."
+    host, port = self.relay_outbound_addr
+    source = self.ip_auth_relay_shared.backend_address
+    with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+      smtp.starttls()
+      smtp.sendmail(
+        from_addr=self.ip_auth_relay_shared.examplemail,
+        to_addrs=[mail1.testmail],
+        msg="Subject: IP Auth Legit\n\n" + body,
+      )
+    self.check_inbox(mail1, body)
+
+  def test_relay_ip_auth_impersonation_blocked(self):
+    mail1 = self.mail_servers[0]
+    body = "IP auth impersonation test."
+    host, port = self.relay_outbound_addr
+    source = self.ip_auth_relay_shared.backend_address
+    spoofed_sender = self.password_relay_shared.examplemail
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+        smtp.starttls()
+        smtp.sendmail(
+          from_addr=spoofed_sender,
+          to_addrs=[mail1.testmail],
+          msg="Subject: IP Auth Impersonation\n\n" + body,
+        )
+
+  def test_relay_ip_auth_unknown_ip_blocked(self):
+    mail1 = self.mail_servers[0]
+    body = "IP auth impersonation test."
+    host, port = self.relay_outbound_addr
+    source = (self.free_ipv6, self.free_port)
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+        smtp.starttls()
+        smtp.sendmail(
+          from_addr=self.ip_auth_relay_shared.examplemail,
+          to_addrs=[mail1.testmail],
+          msg="Subject: IP Auth Impersonation\n\n" + body,
+        )
+
+  def test_server_auth_as_relay_with_client_tls(self):
+    body = "Authenticate to relay using TLS client certiticates"
+    mailserver = self.mail_servers[0]
+    cert_bundle = self.partitionPath(
+      self.relay_server,
+      'etc', 'postfix', 'ssl', 'postfix.bundle.pem'
+    )
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    # do not verify the backend's certificate
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+    ssl_context.load_cert_chain(cert_bundle)
+    host, port = mailserver.smtp_addr
+    source = (self.free_ipv6, self.free_port)
+    with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+      smtp.starttls(context=ssl_context)
+      smtp.sendmail(
+        from_addr=self.password_relay_shared.examplemail,
+        to_addrs=[mailserver.testmail],
+        msg="Subject: auth as relay\n\n" + body,
+      )
+    self.check_inbox(mailserver, body)
+
+  def test_server_non_authenticated_rejected(self):
+    msg = "Subject: Unauthenticated Connection\n\nThis should be rejected."
+    mailserver = self.mail_servers[0]
+    host, port = mailserver.smtp_addr
+    source = (self.free_ipv6, self.free_port)
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+        smtp.starttls()
+        smtp.sendmail(
+          from_addr=self.password_relay_shared.examplemail,
+          to_addrs=[mailserver.testmail],
+          msg=msg,
+        )
 

@@ -23,6 +23,17 @@ dns-entries =
   {% for domain in slapparameter_dict['mail-domains'] -%}
   {{ domain['name'] }} MX 10 {{ ipv4 }}
   {% endfor %}
+-depends = $${publish-certificate-fingerprints:recipe}
+
+[publish-certificate-fingerprints]
+recipe = slapos.recipe.build
+fingerprint = $${postfix-certificate:fingerprint}
+update =
+  # Hack: update publish dict once fingerprint has been generated
+  publish = self.buildout['publish-connection-information']
+  with open(options['fingerprint']) as f:
+    # publish a list to allow for future fingerprint rotation
+    publish['tls-fingerprints'] = [f.read().split('=', 1)[1].strip()]
 
 [monitor-instance-parameter]
 password = {{ slapparameter_dict['monitor-password'] }}
@@ -47,21 +58,33 @@ vhosts = $${:home}/vhosts
 srv = $${buildout:directory}/srv
 postfix-usr = $${:usr}/postfix
 postfix-etc = $${:etc}/postfix
-postfix-ca-private = $${:postfix-etc}/private
-postfix-ca-certs = $${:postfix-etc}/certs
+postfix-ssl = $${:postfix-etc}/ssl
 
 [userinfo]
 recipe = slapos.cookbook:userinfo
 
+
+# Postfix Relay Certificates
+# --------------------------
+
 [postfix-certificate]
-recipe  = plone.recipe.command
+recipe = plone.recipe.command
 stop-on-error = true
-key-file = $${directory:postfix-ca-private}/postfix.key
-cert-file = $${directory:postfix-ca-certs}/postfix.crt
+name = postfix
+key-file = $${directory:postfix-ssl}/$${:name}.key
+cert-file = $${directory:postfix-ssl}/$${:name}.crt
+fingerprint = $${directory:postfix-ssl}/$${:name}.digest
+bundle = $${directory:postfix-ssl}/$${:name}.bundle.pem
+openssl = ${openssl:location}/bin/openssl
+# Consider using public-key fingerprint instead of whole certificate fingerprint
 command =
-    test -e $${:key-file} || \
-        ${openssl:location}/bin/openssl req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
-        -keyout $${:key-file} -out $${:cert-file}
+  test -e $${:key-file} || { \
+    $${:openssl} req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
+      -keyout $${:key-file} -out $${:cert-file}; \
+    $${:openssl} x509 -noout -fingerprint -sha256 -in $${:cert-file} \
+      > $${:fingerprint}; \
+    cat $${:key-file} $${:cert-file} > $${:bundle}; \
+  }
 update-command = $${:command}
 
 
@@ -179,7 +202,8 @@ content =
   smtpd_tls_security_level = may
 
   # Client TLS parameters
-  smtp_tls_security_level = may
+  smtp_tls_security_level = encrypt
+  smtp_tls_chain_files = $${postfix-certificate:bundle}
   smtp_tls_session_cache_database = btree:$${inbound-postfix-directory:var-lib}/smtp_scache
 
 [inbound-postfix-wrapper]
@@ -229,37 +253,95 @@ log = $${inbound-postfix-main.cf:log-file}
 copytruncate = true
 
 
-# Postfix Internal Sender Authentication
-# --------------------------------------
+# Postfix Backend Authentication
+# ------------------------------
 
-{% set source_host_list = [] %}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
-{%   if domain.get('authentication', 'none') == 'none' %}
-{%     do source_host_list.append("[" + domain['mail-server-host'] + "]") %}
-{%   endif %}
-{% endfor %}
+{% set source_host_list = [] -%}
+{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) -%}
+{%   if domain['authentication'] == 'none' -%}
+{%     do source_host_list.append("[" + domain['mail-server-host'] + "]") -%}
+{%   endif -%}
+{% endfor -%}
 
-{# Group IP-based sending domains by mail-server-host for per-host sender restrictions #}
-{% set sender_host_domains = {} %}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
-{%   if domain.get('authentication', 'none') == 'none' %}
-{%     set host = domain['mail-server-host'] %}
-{%     if host not in sender_host_domains %}
-{%       do sender_host_domains.update({host: []}) %}
-{%     endif %}
-{%     do sender_host_domains[host].append(domain['name']) %}
-{%   endif %}
-{% endfor %}
-{% set sorted_sender_hosts = sender_host_domains.keys() | sort %}
+{# Group IP-based sending domains by mail-server-host for per-host sender restrictions -#}
+{% set sender_host_domains = {} -%}
+{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) -%}
+{%   if domain['authentication'] == 'none' -%}
+{%     set host = domain['mail-server-host'] -%}
+{%     if host not in sender_host_domains -%}
+{%       do sender_host_domains.update({host: []}) -%}
+{%     endif -%}
+{%     do sender_host_domains[host].append(domain['name']) -%}
+{%   endif -%}
+{% endfor -%}
+{% set sorted_sender_hosts = sender_host_domains.keys() | sort -%}
 
-{# Collect password-authenticated sending domains #}
-{% set password_auth_domains = {} %}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) %}
-{%   if domain.get('authentication', 'none') == 'password' and domain.get('password') %}
-{%     do password_auth_domains.update({domain['name']: domain['password']}) %}
-{%   endif %}
-{% endfor %}
-{% set has_password_auth = password_auth_domains | length > 0 %}
+{# Collect password-authenticated sending domains -#}
+{% set password_auth_domains = {} -%}
+{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) -%}
+{%   if domain['authentication'] == 'password' -%}
+{%     do password_auth_domains.update({domain['name']: domain['password']}) -%}
+{%   endif -%}
+{% endfor -%}
+
+
+{#- Configuration files for IP authentication #}
+{#- ----------------------------------------- #}
+
+{% for host in sorted_sender_hosts %}
+[outbound-postfix-sender-access-{{ loop.index }}]
+recipe = slapos.recipe.template:jinja2
+url = ${postfix_sender_access.jinja2:target}
+output = $${outbound-postfix-directory:etc}/sender_access_{{ loop.index }}
+context =
+  import json_module json
+  raw domains {{ json_module.dumps(sender_host_domains[host]) }}
+{%- endfor %}
+
+{% if sorted_sender_hosts -%}
+[outbound-postfix-client-sender-access]
+recipe = slapos.recipe.template:jinja2
+url = ${postfix_client_sender_access.jinja2:target}
+output = $${outbound-postfix-directory:etc}/client_sender_access
+context =
+  import json_module json
+  raw sender_host_domains {{ json_module.dumps(sender_host_domains) }}
+{%- endif %}
+
+
+{#- Configuration files for password authentication #}
+{#- ----------------------------------------------- #}
+
+{% if password_auth_domains -%}
+[outbound-postfix-smtpd-sasl-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${postfix_smtpd_sasl.jinja2.conf:target}
+config-path = $${outbound-postfix-directory:etc}
+config-name = smtpd
+output = $${:config-path}/$${:config-name}.conf
+context =
+  raw sasldb_path $${outbound-postfix-directory:etc}/sasldb2
+
+[outbound-postfix-sender-login-map]
+recipe = slapos.recipe.template:jinja2
+url = ${postfix_sender_login_map.jinja2:target}
+output = $${outbound-postfix-directory:etc}/sender_login_map
+context =
+  import json_module json
+  raw password_auth_domains {{ json_module.dumps(list(password_auth_domains.keys())) }}
+
+[outbound-postfix-sasldb]
+recipe = plone.recipe.command
+stop-on-error = true
+sasldb-path = $${outbound-postfix-directory:etc}/sasldb2
+command =
+  rm -f $${:sasldb-path} &&
+{%- for domain, password in password_auth_domains.items() %}
+  echo '{{ password }}' | ${cyrus-sasl:location}/sbin/saslpasswd2 -f $${:sasldb-path} -p -c -u relay {{ domain }} &&
+{%- endfor %}
+  echo "sasldb populated"
+update-command = $${:command}
+{%- endif %}
 
 
 # Postfix Outbound SMTP server
@@ -295,33 +377,36 @@ content =
   smtpd_tls_key_file = $${postfix-certificate:key-file}
   smtpd_tls_security_level = encrypt
 
+  {% if password_auth_domains -%}
   # Server SASL
   smtpd_sasl_auth_enable = yes
-  smtpd_sasl_path = smtpd
+  smtpd_sasl_path = $${outbound-postfix-smtpd-sasl-conf:config-name}
+  cyrus_sasl_config_path = $${outbound-postfix-smtpd-sasl-conf:config-path}
   smtpd_sasl_local_domain = relay
   smtpd_sasl_security_options = noanonymous
 
+  # Server SASL Senders
+  smtpd_sender_login_maps = texthash:$${outbound-postfix-sender-login-map:output}
+  {%- endif %}
+
   # Server access restrictions
-  smtpd_relay_restrictions =
-    permit_mynetworks
-    permit_sasl_authenticated
-    reject
   smtpd_sender_restrictions =
+    # reject login/domain mismatches
     reject_sender_login_mismatch
-  smtpd_sender_login_maps=texthash:$${outbound-postfix-directory:etc}/sender_login_map
+  {%- if sorted_sender_hosts %}
+    # reject ip/domain mismatches
+    check_client_access cidr:$${outbound-postfix-client-sender-access:output}
+  {%- endif %}
 
-  # Use system CAs to authenticate proxy; do not use permit_tls_all_clientcerts
-  # Currently useless, because we only set may, not verify or better
-  # We probably want to check backend certificates differently than proxy's,
-  # assuming we keep allowing shortcut backend -> relay -> backend transport.
-  tls_append_default_CA = yes
-
-  # Client TLS & SASL parameters
-  smtp_tls_security_level = may
-  smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
-  smtp_sasl_auth_enable = yes
-  smtp_sasl_security_options = noanonymous
-  smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
+  smtpd_relay_restrictions =
+    # Permit IP-authentified senders;
+    # ip/domain mismatches are already rejected by the sender restrictions
+    permit_mynetworks
+    # Permit SASL-authentified senders;
+    # login/domain mismatches are already rejected by the sender restrictions
+    permit_sasl_authenticated
+    # Reject all others
+    reject
 
   # Per-host sender domain restrictions
   # Each sending backend is only allowed to use MAIL FROM with its own domains.
@@ -334,12 +419,24 @@ content =
 
   {% for host in sorted_sender_hosts -%}
   restrict_sender_{{ loop.index }} =
-    check_sender_access texthash:$${outbound-postfix-directory:etc}/sender_access_{{ loop.index }}
+    check_sender_access texthash:$${outbound-postfix-sender-access-{{ loop.index }}:output}
     reject
   {% endfor %}
-  smtpd_sender_restrictions =
-    check_client_access cidr:$${outbound-postfix-directory:etc}/client_sender_access
   {% endif %}
+
+  # Use system CAs to authenticate proxy; do not use permit_tls_all_clientcerts
+  # Currently useless, because we only set may, not verify or better
+  # We probably want to check backend certificates differently than proxy's,
+  # assuming we keep allowing shortcut backend -> relay -> backend transport.
+  tls_append_default_CA = yes
+
+  # Client TLS & SASL parameters
+  smtp_tls_security_level = may
+  smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
+  smtp_tls_chain_files = $${postfix-certificate:bundle}
+  smtp_sasl_auth_enable = yes
+  smtp_sasl_security_options = noanonymous
+  smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
 
 [outbound-postfix-proxy-passwd]
 recipe = slapos.recipe.template:jinja2
@@ -350,54 +447,6 @@ context =
   raw proxy_port {{ slapparameter_dict['proxy-port'] }}
   raw proxy_user {{ slapparameter_dict['proxy-user'] }}
   raw proxy_pass {{ slapparameter_dict['proxy-password'] }}
-
-{% for host in sorted_sender_hosts %}
-[outbound-postfix-sender-access-{{ loop.index }}]
-recipe = slapos.recipe.template:jinja2
-url = ${postfix_sender_access.jinja2:target}
-output = $${outbound-postfix-directory:etc}/sender_access_{{ loop.index }}
-context =
-  import json_module json
-  raw domains {{ json_module.dumps(sender_host_domains[host]) }}
-{% endfor %}
-{% if sorted_sender_hosts %}
-[outbound-postfix-client-sender-access]
-recipe = slapos.recipe.template:jinja2
-url = ${postfix_client_sender_access.jinja2:target}
-output = $${outbound-postfix-directory:etc}/client_sender_access
-context =
-  import json_module json
-  raw sender_host_domains {{ json_module.dumps(sender_host_domains) }}
-{% endif %}
-
-{% if has_password_auth %}
-[outbound-postfix-smtpd-sasl-conf]
-recipe = slapos.recipe.template:jinja2
-url = ${postfix_smtpd_sasl.jinja2.conf:target}
-output = $${outbound-postfix-directory:etc}/smtpd.conf
-context =
-  raw sasldb_path $${outbound-postfix-directory:etc}/sasldb2
-
-[outbound-postfix-sender-login-map]
-recipe = slapos.recipe.template:jinja2
-url = ${postfix_sender_login_map.jinja2:target}
-output = $${outbound-postfix-directory:etc}/sender_login_map
-context =
-  import json_module json
-  raw password_auth_domains {{ json_module.dumps(list(password_auth_domains.keys())) }}
-
-[outbound-postfix-sasldb]
-recipe = plone.recipe.command
-stop-on-error = true
-sasldb-path = $${outbound-postfix-directory:etc}/sasldb2
-command =
-  rm -f $${:sasldb-path} &&
-{%   for domain, password in password_auth_domains.items() %}
-  echo '{{ password }}' | ${cyrus-sasl:location}/sbin/saslpasswd2 -f $${:sasldb-path} -p -c -u relay {{ domain }} &&
-{%   endfor %}
-  echo "sasldb populated"
-update-command = $${:command}
-{% endif %}
 
 [outbound-postfix-wrapper]
 recipe = slapos.recipe.template
@@ -426,7 +475,7 @@ hash-files =
 {%- if sorted_sender_hosts %}
   $${outbound-postfix-client-sender-access:output}
 {%- endif %}
-{%- if has_password_auth %}
+{%- if password_auth_domains %}
   $${outbound-postfix-smtpd-sasl-conf:output}
   $${outbound-postfix-sender-login-map:output}
   $${outbound-postfix-sasldb:sasldb-path}
