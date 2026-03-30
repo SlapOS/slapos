@@ -347,10 +347,25 @@ class E2E(SlapOSInstanceTestCase):
       smtp.sendmail(
         from_addr=self.external_mail_server.testmail,
         to_addrs=[mail1.testmail],
-        msg="Subject: Test Email from External\n\n" + msg_body
+        msg=f"Subject: Test Email from External\n\n{msg_body}"
       )
     # Verify email was received at mail1
     self.check_inbox(mail1, msg_body)
+
+  def test_spf_impersonation_from_example_dot_com_rejected(self):
+    """Inbound mail claiming to be from example.com must be rejected by SPF."""
+    mail1 = self.mail_servers[0]
+
+    msg_body = "This inbound impersonation should be rejected by SPF."
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(*self.relay_inbound_addr, timeout=10) as smtp:
+        smtp.sendmail(
+          from_addr="testmail@example.com",
+          to_addrs=[mail1.testmail],
+          msg=f"Subject: SPF Impersonation\n\n{msg_body}",
+        )
+
+    self.check_not_in_inbox(mail1, msg_body, wait_time=5)
 
   def check_not_in_inbox(self, mailserver, unexpected_content, wait_time=30):
     time.sleep(wait_time)
