@@ -24,9 +24,13 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import functools
+import lzma
 import os
 import socket
+import time
 
+from slapos.testing.utils import CrontabMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
@@ -34,7 +38,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class AsteriskTestCase(SlapOSInstanceTestCase):
+class AsteriskTestCase(SlapOSInstanceTestCase, CrontabMixin):
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -151,6 +155,51 @@ class AsteriskTestCase(SlapOSInstanceTestCase):
     self.assertNotEqual(old_pid, new_pid, "Asterisk did not restart after log-level change")
 
 
+  def test_log_rotation(self):
+    log_file_path = functools.partial(
+        os.path.join,
+        self.computer_partition_root_path,
+        'var', 'log', 'asterisk',
+    )
+    rotated_file_path = functools.partial(
+        os.path.join,
+        self.computer_partition_root_path,
+        'srv', 'backup', 'logrotate',
+    )
+
+    # Wait for asterisk to be fully ready (it may have just restarted)
+    host, port = self._get_asterisk_address()
+    for _ in range(30):
+      sock = socket.socket(
+          socket.AF_INET6 if ':' in host else socket.AF_INET,
+          socket.SOCK_STREAM)
+      if sock.connect_ex((host, port)) == 0:
+        sock.close()
+        break
+      sock.close()
+      time.sleep(1)
+
+    # Asterisk should have written startup messages
+    self.assertTrue(
+        os.path.exists(log_file_path('full.log')),
+        "Asterisk log file not found")
+    with open(log_file_path('full.log')) as f:
+      self.assertIn('Asterisk', f.read())
+
+    # First rotation initializes logrotate state but does not actually rotate
+    self._executeCrontabAtDate('logrotate', '2050-01-01')
+    # Second rotation moves the file; not compressed yet (delaycompress)
+    self._executeCrontabAtDate('logrotate', '2050-01-02')
+
+    with open(rotated_file_path('full.log-20500102')) as f:
+      self.assertIn('Asterisk', f.read())
+
+    # Third rotation compresses the previous rotated file
+    self._executeCrontabAtDate('logrotate', '2050-01-03')
+    with lzma.open(rotated_file_path('full.log-20500102.xz'), 'rt') as f:
+      self.assertIn('Asterisk', f.read())
+
+
 class AsteriskIPv6TestCase(AsteriskTestCase):
   """Run test_sip_options with Asterisk bound to the global IPv6 address."""
 
@@ -163,3 +212,4 @@ class AsteriskIPv6TestCase(AsteriskTestCase):
   # Only run test_sip_options — IPv6-specific connectivity check.
   test_asterisk_listening = None
   test_log_level = None
+  test_log_rotation = None
