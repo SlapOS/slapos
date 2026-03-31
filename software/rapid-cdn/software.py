@@ -187,9 +187,3 @@ def check_cdn_node_activity_check(log_file, max_age_seconds=300):
              age_seconds / 60.0))
 
 
-def check_cdn_node_activity():
-  log_file = sys.argv[1]
-  max_age = int(sys.argv[2]) if len(sys.argv) > 2 else 300
-  status, message = check_cdn_node_activity_check(log_file, max_age)
-  print(message)
-  sys.exit(0 if status in ('ok', 'warning') else 1)
