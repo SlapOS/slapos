@@ -95,6 +95,7 @@ class E2E(SlapOSInstanceTestCase):
   fingerprint_relay_domain = "mail.relay.fingerprint.domain.lan"
   external_domain = 'external.domain.lan'
   external_domain2 = 'external2.domain.lan'
+  unknown_domain = "unknown.domain.lan"
   testmail_password = 'password123'
 
   relay_inbound_port = 10025
@@ -520,6 +521,20 @@ class E2E(SlapOSInstanceTestCase):
     # the relay should reject it when the backend tries to forward it.
     # Verify the email never arrives at the external server.
     self.check_not_in_inbox(self.external_mail_server, msg, wait_time=30)
+
+  def test_relay_unknown_sender_rejected(self):
+    mail1 = self.mail_servers[0]
+    body = "Send to relay from unknown sender address"
+    host, port = self.relay_outbound_addr
+    source = (self.free_ipv6, self.free_port)
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+        smtp.starttls()
+        smtp.sendmail(
+          from_addr='unknown@' + self.unknown_domain,
+          to_addrs=[mail1.testmail],
+          msg="Subject: Unknown sender should be rejected\n\n" + body,
+       )
 
   def test_relay_password_shared_output_stable(self):
     params = self.getConnectionDict(self.password_relay_shared)
