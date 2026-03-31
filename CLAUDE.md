@@ -141,6 +141,47 @@ All recipes are registered as `zc.buildout` entry points in `setup.py`. A recipe
 - **`stack/`** — Reusable buildout stack configurations (monitor, resilient, haproxy, etc.)
 - **`component/`** — ~420 component build definitions (low-level compilation profiles for libraries and tools)
 
+## rapid-cdn Promise Patterns
+
+When adding promises to rapid-cdn instance profiles:
+
+- **Prefer `slapos.cookbook:promise.plugin`** over `check_command_execute` for Python logic. Plugin promises run in a shared Python process per partition (efficient), while `check_command_execute` spawns a new process per check (wasteful). Plugins also support `anomaly`/`test` methods and bang-on-failure thresholds.
+- **Put testable logic in `software/rapid-cdn/software.py`** as pure functions, then use a thin inline promise template that imports and calls them. This allows unit testing of the logic without the promise infrastructure.
+- The `software` develop egg is made importable by adding `software` to the promise's `eggs` list:
+  ```ini
+  [my-promise-sense]
+  recipe = slapos.recipe.template
+  output = ${directory:bin}/${:_buildout_section_name_}
+  inline =
+    import software
+    from zope.interface import implementer
+    from slapos.grid.promise import interface
+    from slapos.grid.promise.generic import GenericPromise
+    @implementer(interface.IPromise)
+    class RunPromise(GenericPromise):
+      def sense(self):
+        status, msg = software.my_check_function('${section:path}')
+        ...
+
+  [my-promise]
+  recipe = slapos.cookbook:promise.plugin
+  eggs =
+    slapos.core
+    software
+  file = ${my-promise-sense:output}
+  output = ${directory:plugins}/my_promise.py
+  ```
+- **Unit tests for `software.py`** go in `software/rapid-cdn/test/test_software.py`. Add `from test_software import *` in `test/test.py` to ensure CI discovery (CI uses `test_suite='test'` which only loads `test.py` directly).
+
+## Deploying and Testing Configuration Changes
+
+When testing changes to buildout configs, templates, or `software.py`:
+
+1. Remove the `.completed` file: `rm <software-path>/.completed`
+2. Rebuild: `slapos node software --only=<hash>`
+3. Reprocess instances: `slapos node instance --only=<partition>`
+4. Do **not** manually modify files under `srv/runner/` (except removing `.completed`). Always use `slapos node software` / `slapos node instance` to apply changes — this validates the full deployment pipeline.
+
 ## Environment Note
 
 If the Bash tool hangs, set `export SHELL=/bin/bash` before launching Claude Code (the default shell on this system is interactive-only and blocks non-interactive use).
