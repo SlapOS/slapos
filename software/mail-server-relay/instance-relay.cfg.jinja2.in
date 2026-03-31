@@ -448,6 +448,18 @@ inline =
   {%- endfor %}
   {%- endfor %}
 
+[outbound-postfix-backend-tls-policy-map]
+recipe = slapos.recipe.template:jinja2
+output = $${outbound-postfix-directory:etc}/backend_tls_policy_map
+inline =
+  {% raw %}{#- NOTHING -#}{% endraw -%}
+  {%- for b in fingerprint_auth_backends %}
+  [{{ b['mail-server-host'] }}]:{{ b['mail-server-port'] }} fingerprint
+  {%- for fingerprint in b['fingerprints'] %}
+    match={{ fingerprint.strip() }}
+  {%- endfor %}
+  {%- endfor %}
+
 
 # Postfix Outbound SMTP server
 # ----------------------------
@@ -548,10 +560,13 @@ content =
   # assuming we keep allowing shortcut backend -> relay -> backend transport.
   tls_append_default_CA = yes
 
-  # Client TLS & SASL parameters
+  # Client TLS parameters
   smtp_tls_security_level = may
   smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
   smtp_tls_chain_files = $${postfix-certificate:bundle}
+  smtp_tls_policy_maps = texthash:$${outbound-postfix-backend-tls-policy-map:output}
+
+  # Client SASL parameters
   smtp_sasl_auth_enable = yes
   smtp_sasl_security_options = noanonymous
   smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
