@@ -30,6 +30,7 @@ import glob
 import os
 from recurls import Recurls, CurlException
 from recurls import dict2HTTPMessage as d2h
+from test_software import *  # noqa: unit tests for software.py
 import http.client
 import json
 import io
