@@ -1122,17 +1122,34 @@ command = {{ software_parameter_dict['cdninstancenode-bin'] }} --cfg ${cdn-insta
 name = cdn-instance-node
 log = ${cdn-requester-configuration:cdn-requester-log}
 
-[cdn-instance-node-activity-wrapper]
-recipe = slapos.cookbook:wrapper
-command-line = {{ software_parameter_dict['check_cdn_node_activity'] }}
-  ${cdn-requester-configuration:cdn-requester-log}
-wrapper-path = ${directory:bin}/check-cdn-node-activity
+[cdn-instance-node-activity-sense]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  import software
+  from zope.interface import implementer
+  from slapos.grid.promise import interface
+  from slapos.grid.promise.generic import GenericPromise
+
+  @implementer(interface.IPromise)
+  class RunPromise(GenericPromise):
+    def sense(self):
+      status, message = software.check_cdn_node_activity_check(
+        '${cdn-requester-configuration:cdn-requester-log}')
+      if status == 'error':
+        self.logger.error(message)
+      elif status == 'warning':
+        self.logger.warning(message)
+      else:
+        self.logger.info(message)
 
 [cdn-instance-node-activity-promise]
-<= monitor-promise-base
-promise = check_command_execute
-name = ${:_buildout_section_name_}.py
-config-command = ${cdn-instance-node-activity-wrapper:wrapper-path}
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.core
+  software
+file = ${cdn-instance-node-activity-sense:output}
+output = ${directory:plugins}/cdn_instance_node_activity.py
 config-bang-on-failure = false
 
 [check-publish-failsafe-error]
