@@ -176,6 +176,18 @@
       "type": "integer",
       "default": 0
     },
+    "gitaly_concurrency_find_commit_max_queue_size": {
+      "title": "Gitaly FindCommit max queue size",
+      "description": "Gitaly FindCommit process max queue size",
+      "type": "integer",
+      "default": 50
+    },
+    "gitaly_concurrency_find_commit_max_queue_wait": {
+      "title": "Gitaly FindCommit max queue wait",
+      "description": "Gitaly FindCommit max time in seconds to wait in a queue before rejected",
+      "type": "integer",
+      "default": 5
+    },
     "gitaly_daily_maintenance": {
       "title": "Gitaly dailly maintenance time slots",
       "description": "Daily maintenance designates time slots to run daily to optimize and maintain enabled storages. Default: 22h 45min duration 60min",
