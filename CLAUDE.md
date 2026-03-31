@@ -147,6 +147,19 @@ All recipes are registered as `zc.buildout` entry points in `setup.py`. A recipe
 - **`stack/`** — Reusable buildout stack configurations (monitor, resilient, haproxy, etc.)
 - **`component/`** — ~420 component build definitions (low-level compilation profiles for libraries and tools)
 
+## Adding Promises
+
+Use the `/add-promise` skill for guidance on adding SlapOS promises to instance profiles. Key rule: **never use `check_command_execute` for Python logic** — use `slapos.cookbook:promise.plugin` instead (shared process per partition vs new process per check).
+
+## Deploying and Testing Configuration Changes
+
+When testing changes to buildout configs, templates, or `software.py`:
+
+1. Remove the `.completed` file: `rm <software-path>/.completed`
+2. Rebuild: `slapos node software --only=<hash>`
+3. Reprocess instances: `slapos node instance --only=<partition>`
+4. Do **not** manually modify files under `srv/runner/` (except removing `.completed`). Always use `slapos node software` / `slapos node instance` to apply changes — this validates the full deployment pipeline.
+
 ## Building Software Releases
 
 ### Environment setup
