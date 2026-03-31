@@ -46,11 +46,16 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     return {
       "_": json.dumps(
         {
-          "default-proxy-config": {
-            "proxy-host": "example.com",
-            "proxy-port": 2525,
-            "proxy-user": "user",
-            "proxy-password": "pass",
+          "default-relay-config": {
+            "proxy-map": {
+              "example-proxy": {
+                "host": "example.com",
+                "port": 2525,
+                "user": "user",
+                "password": "pass",
+                "domains": ["mail1.domain.lan", "mail2.domain.lan"]
+              }
+            }
           },
           "outbound-domain-whitelist": [
             "mail1.domain.lan",
@@ -64,7 +69,15 @@ class PostfixTestCase(SlapOSInstanceTestCase):
               "relay-bar": {
                   "state": "started",
                   "config": {
-                    "proxy-host": "bar.example.com"
+                    "proxy-map": {
+                      "bar-proxy": {
+                        "host": "bar.example.com",
+                        "port": 2525,
+                        "user": "user",
+                        "password": "pass",
+                        "domains": ["mail1.domain.lan", "mail2.domain.lan"]
+                      }
+                    }
                   }
               }
           }
@@ -128,4 +141,69 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       connection_dict = json.loads(slave_dup_instance.getConnectionParameterDict().get("_", "{}"))
       error = connection_dict.get("error", "<missing>")
       self.assertIn("address_already_used", error, f"Expected duplicate error for {domain}, got {error}")
+
+
+class ProxyMapDuplicateDomainTestCase(SlapOSInstanceTestCase):
+  """Test case for proxy-map with duplicate domains across proxies.
+  
+  This verifies that when the same domain appears in multiple proxies,
+  the validation error is published in the cluster's connection parameters.
+  """
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "_": json.dumps(
+        {
+          "default-relay-config": {
+            "proxy-map": {
+              "smtp2go-proxy": {
+                "host": "smtp2go.example.com",
+                "port": 2525,
+                "user": "user1",
+                "password": "pass1",
+                "domains": ["duplicate.domain.lan", "unique1.domain.lan"]
+              },
+              "sendgrid-proxy": {
+                "host": "sendgrid.example.com",
+                "port": 587,
+                "user": "user2",
+                "password": "pass2",
+                "domains": ["duplicate.domain.lan", "unique2.domain.lan"]
+              }
+            }
+          },
+          "outbound-domain-whitelist": [
+            "duplicate.domain.lan",
+            "unique1.domain.lan",
+            "unique2.domain.lan"
+          ],
+          "relay-domain": "relay.test.lan",
+          "topology": {
+              "relay-test": {
+                  "state": "started"
+              }
+          }
+        }
+      )
+    }
+
+  def test_duplicate_domain_error_published(self):
+    """Verify that duplicate domain errors are published in connection parameters."""
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    errors = parameter_dict.get("errors", [])
+    
+    # Should have at least one error about duplicate domains
+    self.assertIsInstance(errors, list, "Errors should be a list")
+    self.assertTrue(len(errors) > 0, "Should have at least one error for duplicate domains")
+    
+    # Check that the error mentions the duplicate domain
+    error_text = " ".join(errors)
+    self.assertIn("duplicate.domain.lan", error_text.lower(), 
+                  "Error should mention the duplicate domain")
+    self.assertIn("appears in multiple proxies", error_text.lower(),
+                  "Error should indicate domain appears in multiple proxies")
 
