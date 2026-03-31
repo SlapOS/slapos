@@ -122,6 +122,8 @@ max_queue_size = 10
 [[concurrency]]
 rpc = "/gitaly.CommitService/FindCommit"
 max_per_repo = {{ gitaly.concurrency_find_commit }}
+max_queue_wait = "{{ gitaly.concurrency_find_commit_max_queue_wait }}s"
+max_queue_size = {{ gitaly.concurrency_find_commit_max_queue_size }}
 {%- endif %}
 
 {%- if int(gitaly.rate_limiting) > 0 %}
