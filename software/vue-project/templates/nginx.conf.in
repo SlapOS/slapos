@@ -1,4 +1,6 @@
 pid {{ parameter_dict['pid-file'] }};
+access_log {{ parameter_dict['access-log'] }};
+error_log {{ parameter_dict['error-log'] }};
 
 daemon off;
 
@@ -7,9 +9,6 @@ events {
 }
 
 http {
-  access_log {{ parameter_dict['access-log'] }};
-  error_log {{ parameter_dict['error-log'] }};
-
   include {{ parameter_dict['nginx-mime-types'] }};
   default_type application/octet-stream;
 
