@@ -30,6 +30,7 @@ import json
 import os
 import pathlib
 import subprocess
+import re
 import requests
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
