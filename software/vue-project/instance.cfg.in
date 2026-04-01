@@ -21,8 +21,9 @@ srv = ${:home}/srv
 bin = ${:home}/bin
 log = ${:var}/log
 run = ${:var}/run
+varnginx = $${:var}/nginx
+node-cache = ${:var}/cache/node
 services = ${:etc}/service
-httpd-log = ${:var}/log/apache
 ssl = ${:etc}/ssl
 
 [slap-configuration]
@@ -47,7 +48,10 @@ install =
 
   src = r"${vue-project-src:location}"
   env = os.environ.copy()
+
   env["PATH"] = r"""{{ nodejs_location }}/bin""" + ":" + env.get("PATH", "")
+  env["NODE_COMPILE_CACHE"] = r"${directory:node-cache}"
+  env["NPM_CONFIG_CACHE"] = r"${directory:node-cache}/npm"
 
   # Install dependencies from lockfile, then build
   subprocess.check_call(["npm", "ci", "--no-audit", "--fund=false"], cwd=src, env=env)
@@ -89,7 +93,7 @@ nginx-mime-types = {{ nginx_location }}/conf/mime.types
 backend-url = http://${:ipv4}:${:port}
 ssl-certificate = ${directory:etc}/ssl/nginx.crt
 ssl-key = ${directory:etc}/ssl/nginx.key
-
+varnginx = ${directory:var}/nginx
 web-root = ${vue-project-build:dist}
 
 [nginx-certificate]
