@@ -67,7 +67,6 @@ install =
   print("######################")
   print(r"${vue-project-src:repository}")
   print(location)
-  shutil.copytree(dist_src, dist_dst)
   print(dist_dst)
 
   # Write down the revision numbder to a file, allow user to check it quickly
