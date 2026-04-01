@@ -299,6 +299,18 @@ command =
   }
 update-command = $${:command}
 
+[postfix-certificate-fingerprints]
+recipe = slapos.recipe.build
+fingerprint = $${postfix-certificate:fingerprint}
+init =
+  try:
+    with open(options['fingerprint']) as f:
+      # publish a list to allow for future fingerprint rotation
+      options['tls-fingerprints'] = [f.read().split('=', 1)[1].strip()]
+  except FileNotFoundError:
+    # set invalid value to defer error and get as much work done now as possible
+    options['tls-fingerprints'] = None
+
 [postfix-conf-main]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
@@ -325,8 +337,7 @@ context =
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
   raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
-  key postfix_tls_cert postfix-certificate:cert-file
-  key postfix_tls_key postfix-certificate:key-file
+  section postfix_certificate postfix-certificate
   key relay_clientcerts postfix-relay-clientcerts:output
   key no_relay :no-relay
   key relay_tls_fingerprints request-relays:tls-fingerprints
@@ -359,19 +370,13 @@ context =
 {% if slapparameter_dict['outbound-relay']['host'] -%}
 outbound-host-{{ domain }} = {{ slapparameter_dict['outbound-relay']['host'] }}
 outbound-port-{{ domain }} = {{ slapparameter_dict['outbound-relay']['port'] }}
-outbound-user-{{ domain }} = {{ slapparameter_dict['outbound-relay'].get('user', '') }}
-outbound-password-{{ domain }} = {{ slapparameter_dict['outbound-relay'].get('password', '') }}
 {% elif not slapparameter_dict['no-relay'] %}
-# else we use the result of request if it exists (password auth)
+# else we use the result of request if it exists (fingerprint auth)
 outbound-host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
-outbound-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-submission-port}
-outbound-user-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-user}
-outbound-password-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-password}
+outbound-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
 {% else -%}
 outbound-host-{{ domain }} =
 outbound-port-{{ domain }} =
-outbound-user-{{ domain }} =
-outbound-password-{{ domain }} =
 {% endif -%}
 {% endfor -%}
 
@@ -859,15 +864,13 @@ name = mail-server-relay-{{ mail_domain }}
 config-name = {{ mail_domain }}
 config-mail-server-host = {{ ipv6 }}
 config-mail-server-port = {{ dumps(smtp_port) }}
-config-authentication = password
+config-authentication = fingerprint
+config-fingerprints = $${postfix-certificate-fingerprints:tls-fingerprints}
 {% if not slapparameter_dict['no-relay'] %}
 recipe = slapos.cookbook:request.serialised
 return =
   outbound-host
   outbound-smtp-port
-  outbound-submission-port
-  outbound-user
-  outbound-password
   tls-fingerprints
 {% else -%}
 recipe = slapos.cookbook:requestoptional.serialised
