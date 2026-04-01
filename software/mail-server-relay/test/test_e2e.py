@@ -88,10 +88,11 @@ class E2E(SlapOSInstanceTestCase):
   mail_server_domains = ["mail%d.domain.lan" % i for i in range(1, 4)]
   password_relay_domain = "mail.relay.password.domain.lan"
   ip_auth_relay_domain = "mail.relay.ip-auth.domain.lan"
-  external_domain = 'example.com'
+  external_domain = 'external.domain.lan'
   testmail_password = 'password123'
   relay_inbound_port = 10025
   relay_outbound_port = 10587
+  smtp_timeout = 60
 
   @classmethod
   def getConnectionDict(cls, instance):
@@ -110,7 +111,14 @@ class E2E(SlapOSInstanceTestCase):
       'password123',
     )
     parameters = serialize({
-     "default-proxy-config": proxy_config,
+      "default-relay-config": {
+        **proxy_config,
+        "greylisting-enabled": True,
+        "greylisting-delay": 5,
+        "greylisting-whitelist-recipients": [
+          "testmail@mail2.domain.lan"
+        ],
+      },
       "outbound-domain-whitelist": cls.mail_server_domains + [
         cls.password_relay_domain,
         cls.ip_auth_relay_domain,
@@ -124,7 +132,7 @@ class E2E(SlapOSInstanceTestCase):
         "relay-two": {
           "state": "started"
         }
-      }
+      },
     })
     return cls.slap.request(
       software_release=RELAY_SR,
@@ -290,7 +298,7 @@ class E2E(SlapOSInstanceTestCase):
 
   def send_email(self, mailserver, mail_recipient, body, send_as=None):
     sender = send_as or mailserver.testmail
-    with smtplib.SMTP(*mailserver.smtp_addr, timeout=10) as smtp:
+    with smtplib.SMTP(*mailserver.smtp_addr, timeout=self.smtp_timeout) as smtp:
       smtp.starttls()
       smtp.login(mailserver.testmail, self.testmail_password)
       smtp.sendmail(
@@ -301,7 +309,7 @@ class E2E(SlapOSInstanceTestCase):
 
   def check_inbox(self, mailserver, expected):
     def check_email():
-      with imaplib.IMAP4(*mailserver.imap_addr, timeout=10) as imap:
+      with imaplib.IMAP4(*mailserver.imap_addr, timeout=self.smtp_timeout) as imap:
         imap.login(mailserver.testmail, self.testmail_password)
         imap.select("INBOX")
         result, data = imap.search(None, 'ALL')
@@ -315,7 +323,7 @@ class E2E(SlapOSInstanceTestCase):
         if result != 'OK':
           return False
         email_body = data[0][1].decode('utf-8')
-        return expected in data[0][1].decode('utf-8')
+        return expected in email_body
     try_until(
       wrap_exception(check_email),
       timeout=60,
@@ -341,23 +349,80 @@ class E2E(SlapOSInstanceTestCase):
   def test_send_email_from_external_via_relay(self):
     # try sending a mail from external to mail1 via the relay
     mail1 = self.mail_servers[0]
-    sender = "testmail@example.com"
     msg_body = "This is a test email from external via relay."
-    with smtplib.SMTP(*self.relay_inbound_addr, timeout=10) as smtp:
-      # No authentication needed for incoming mail to relay
+    # first try, greylisted
+    with self.assertRaises(smtplib.SMTPRecipientsRefused) as exc:
+      with smtplib.SMTP(*self.relay_inbound_addr, timeout=self.smtp_timeout) as smtp:
+        smtp.sendmail(
+          from_addr=self.external_mail_server.testmail,
+          to_addrs=[mail1.testmail],
+          msg=f"Subject: Test Email from External\n\n{msg_body}"
+        )
+
+    for _addr, (code, _msg) in exc.exception.recipients.items():
+      self.assertEqual(code, 450, f"Expected 450 greylisting, got {code}: {_msg}")
+
+    time.sleep(10)
+
+    with smtplib.SMTP(*self.relay_inbound_addr, timeout=self.smtp_timeout) as smtp:
       smtp.sendmail(
-        from_addr=sender,
+        from_addr=self.external_mail_server.testmail,
         to_addrs=[mail1.testmail],
-        msg="Subject: Test Email from External\n\n" + msg_body
+        msg=f"Subject: Test Email from External\n\n{msg_body}"
       )
     # Verify email was received at mail1
+    self.check_inbox(mail1, msg_body)
+
+  def test_spf_impersonation_rejected(self):
+    """Inbound mail claiming to be from spf-always-fail.messwithdns.test.rapid.space must be rejected by SPF."""
+    mail1 = self.mail_servers[0]
+
+    msg_body = "This inbound impersonation should be rejected by SPF."
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(*self.relay_inbound_addr, timeout=self.smtp_timeout) as smtp:
+        smtp.sendmail(
+          from_addr="testmail@spf-always-fail.messwithdns.test.rapid.space",
+          to_addrs=[mail1.testmail],
+          msg=f"Subject: SPF Impersonation\n\n{msg_body}",
+        )
+
+    self.check_not_in_inbox(mail1, msg_body, wait_time=5)
+
+  def test_spf_whitelist_recipient(self):
+    """Inbound mail to a whitelisted recipient bypasses greylisting and is
+    accepted on the first attempt."""
+    mail2 = self.mail_servers[1]
+
+    msg_body = "This inbound email should bypass greylisting on first delivery."
+    with smtplib.SMTP(*self.relay_inbound_addr, timeout=self.smtp_timeout) as smtp:
+      smtp.sendmail(
+        from_addr=self.external_mail_server.testmail,
+        to_addrs=[mail2.testmail],
+        msg=f"Subject: Mock SPF Pass\n\n{msg_body}",
+      )
+
+    self.check_inbox(mail2, msg_body)
+
+  def test_spf_pass(self):
+    """Inbound mail from an SPF-passing domain bypasses greylisting and is
+    accepted on the first attempt."""
+    mail1 = self.mail_servers[0]
+
+    msg_body = "This inbound email should bypass greylisting on first delivery."
+    with smtplib.SMTP(*self.relay_inbound_addr, timeout=self.smtp_timeout) as smtp:
+      smtp.sendmail(
+        from_addr="testmail@spf-always-pass.messwithdns.test.rapid.space",
+        to_addrs=[mail1.testmail],
+        msg=f"Subject: SPF Pass\n\n{msg_body}",
+      )
+
     self.check_inbox(mail1, msg_body)
 
   def check_not_in_inbox(self, mailserver, unexpected_content, wait_time=30):
     time.sleep(wait_time)
     imap_params = self.getConnectionDict(mailserver)
     host, port = imap_params['imap-smtp-ipv6'], imap_params['imap-port']
-    with imaplib.IMAP4(*mailserver.imap_addr, timeout=10) as imap:
+    with imaplib.IMAP4(*mailserver.imap_addr, timeout=self.smtp_timeout) as imap:
       imap.login(mailserver.testmail, self.testmail_password)
       imap.select("INBOX")
       result, data = imap.search(None, 'ALL')
@@ -422,7 +487,7 @@ class E2E(SlapOSInstanceTestCase):
     and send as @<domain> — must be accepted."""
     mail1 = self.mail_servers[0]
     body = "Password auth legitimate test."
-    with smtplib.SMTP(*self.relay_outbound_addr, timeout=10) as smtp:
+    with smtplib.SMTP(*self.relay_outbound_addr, timeout=self.smtp_timeout) as smtp:
       smtp.starttls()
       smtp.login(*self.password_relay_shared.login)
       smtp.sendmail(
@@ -438,7 +503,7 @@ class E2E(SlapOSInstanceTestCase):
     spoofed_sender = self.mail_servers[0].testmail
     msg = "Subject: Password Auth Impersonation\n\nThis should be rejected."
     with self.assertRaises(smtplib.SMTPRecipientsRefused):
-      with smtplib.SMTP(*self.relay_outbound_addr, timeout=10) as smtp:
+      with smtplib.SMTP(*self.relay_outbound_addr, timeout=self.smtp_timeout) as smtp:
         smtp.starttls()
         smtp.login(*self.password_relay_shared.login)
         smtp.sendmail(
@@ -467,7 +532,7 @@ class E2E(SlapOSInstanceTestCase):
     """Attempting to authenticate on the submission port without STARTTLS
     must be rejected — credentials must never be sent in cleartext."""
     with self.assertRaises(smtplib.SMTPNotSupportedError):
-      with smtplib.SMTP(*self.relay_outbound_addr, timeout=10) as smtp:
+      with smtplib.SMTP(*self.relay_outbound_addr, timeout=self.smtp_timeout) as smtp:
         # Attempt login without starttls — server must refuse
         smtp.login(*self.password_relay_shared.login)
 
