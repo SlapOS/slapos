@@ -57,9 +57,10 @@ install =
   dist_src = os.path.join(src, "dist")
   dist_dst = os.path.join(location, "dist")
 
-  if os.path.exists(location):
-    shutil.rmtree(location)
-  os.makedirs(location)
+  if os.path.exists(dist_dst):
+    shutil.rmtree(dist_dst)
+  shutil.copytree(dist_src, dist_dst)
+  
   print("*************************")
   print(r"${vue-project-src:repository}")
   print(location)
