@@ -83,8 +83,8 @@ port = 4443
 
 pid-file = ${directory:run}/nginx.pid
 config-file = ${directory:etc}/nginx.conf
-access-log = ${directory:httpd-log}/nginx-access.log
-error-log = ${directory:httpd-log}/nginx-error.log
+access-log = ${directory:log}/nginx-access.log
+error-log = ${directory:log}/nginx-error.log
 nginx-mime-types = {{ nginx_location }}/conf/mime.types
 backend-url = http://${:ipv4}:${:port}
 ssl-certificate = ${directory:etc}/ssl/nginx.crt
