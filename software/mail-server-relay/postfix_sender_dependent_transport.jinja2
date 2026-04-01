@@ -1,0 +1,5 @@
+{% for proxy_id, proxy in json_module.loads(proxy_map).items() -%}
+{%   for domain in proxy.get('domains', []) -%}
+@{{ domain }} smtp:[{{ proxy['host'] }}]:{{ proxy.get('port', 25) }}
+{%   endfor -%}
+{% endfor -%}
