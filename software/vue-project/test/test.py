@@ -32,6 +32,7 @@ import pathlib
 import subprocess
 import re
 import requests
+from urllib.parse import urljoin
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
