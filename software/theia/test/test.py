@@ -610,10 +610,10 @@ class ResilientTheiaMixin(object):
   @classmethod
   def getPartitionId(cls, instance_type):
     software_url = cls.getSoftwareURL()
-    # Reset the cached partition list to get up-to-date partition states,
-    # which is necessary after events like a resilient takeover that change
+    # Invalidate the cached partition list to get up-to-date partition states.
+    # This is necessary after events like a resilient takeover that change
     # partition software types.
-    cls.slap.computer._computer_partition_list = None
+    cls.slap.computer.invalidateCache()
     for computer_partition in cls.slap.computer.getComputerPartitionList():
       try:
         partition_url = computer_partition.getSoftwareRelease()._software_release
