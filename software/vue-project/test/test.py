@@ -81,7 +81,7 @@ class TestVueProject(SlapOSInstanceTestCase):
     )
     self.assertIsNotNone(script_match, html)
 
-    js_url = urljoin(base_url, script_match.group(1))
+    js_url = urljoin(self.connection_parameters['backend-url'], script_match.group(1))
     js_resp = requests.get(js_url, verify=False)
     self.assertEqual(requests.codes.ok, js_resp.status_code)
 
