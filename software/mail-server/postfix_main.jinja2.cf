@@ -43,9 +43,10 @@ smtp_tls_fingerprint_cert_match =
   {{ fingerprint.strip() }}
 {%- endfor %}
 {%- endif %}
+smtp_tls_chain_files = {{ postfix_certificate['bundle'] }}
 
-smtpd_tls_cert_file = {{ postfix_tls_cert }}
-smtpd_tls_key_file = {{ postfix_tls_key }}
+smtpd_tls_cert_file = {{ postfix_certificate['cert-file'] }}
+smtpd_tls_key_file = {{ postfix_certificate['key-file'] }}
 smtpd_tls_security_level = encrypt
 {% if not no_relay -%}
 smtpd_tls_ask_ccert = yes

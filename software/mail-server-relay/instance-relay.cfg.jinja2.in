@@ -175,7 +175,7 @@ url = ${postfix_transport.in:target}
 output = $${directory:postfix-etc}/transport
 context =
   import json_module json
-  raw mail_domains {{ json_module.dumps(slapparameter_dict['mail-domains']) }}
+  raw mail_domains {{ json_module.dumps(mail_domains) }}
 
 
 # Postfix Inbound SMTP server
@@ -338,7 +338,7 @@ copytruncate = true
 # ------------------------------
 
 {% set source_host_list = [] -%}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) -%}
+{% for domain in mail_domains | selectattr('can-send', 'equalto', true) -%}
 {%   if domain['authentication'] == 'none' -%}
 {%     do source_host_list.append("[" + domain['mail-server-host'] + "]") -%}
 {%   endif -%}
@@ -346,7 +346,7 @@ copytruncate = true
 
 {# Group IP-based sending domains by mail-server-host for per-host sender restrictions -#}
 {% set sender_host_domains = {} -%}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) -%}
+{% for domain in mail_domains | selectattr('can-send', 'equalto', true) -%}
 {%   if domain['authentication'] == 'none' -%}
 {%     set host = domain['mail-server-host'] -%}
 {%     if host not in sender_host_domains -%}
@@ -359,9 +359,17 @@ copytruncate = true
 
 {# Collect password-authenticated sending domains -#}
 {% set password_auth_domains = {} -%}
-{% for domain in slapparameter_dict['mail-domains'] | selectattr('can-send', 'equalto', true) -%}
+{% for domain in mail_domains | selectattr('can-send', 'equalto', true) -%}
 {%   if domain['authentication'] == 'password' -%}
 {%     do password_auth_domains.update({domain['name']: domain['password']}) -%}
+{%   endif -%}
+{% endfor -%}
+
+{# Collect tls-fingerprint-authenticated sending domains -#}
+{% set fingerprint_auth_backends = [] -%}
+{% for backend in mail_domains | selectattr('can-send', 'equalto', true) -%}
+{%   if backend['authentication'] == 'fingerprint' -%}
+{%     do fingerprint_auth_backends.append(backend) -%}
 {%   endif -%}
 {% endfor -%}
 
@@ -425,6 +433,34 @@ update-command = $${:command}
 {%- endif %}
 
 
+{#- Configuration files for fingerprint authentication #}
+{#- -------------------------------------------------- #}
+
+[outbound-postfix-backend-clientcerts]
+recipe = slapos.recipe.template:jinja2
+output = $${outbound-postfix-directory:etc}/backend_clientcerts
+prefix = restrict_fingerprint_sender_
+inline =
+  {% raw %}{#- NOTHING -#}{% endraw -%}
+  {%- for index, backend in enumerate(fingerprint_auth_backends) -%}
+  {%- for fingerprint in backend['fingerprints'] %}
+  {{ fingerprint.strip() }} $${:prefix}{{ index }}
+  {%- endfor %}
+  {%- endfor %}
+
+[outbound-postfix-backend-tls-policy-map]
+recipe = slapos.recipe.template:jinja2
+output = $${outbound-postfix-directory:etc}/backend_tls_policy_map
+inline =
+  {% raw %}{#- NOTHING -#}{% endraw -%}
+  {%- for b in fingerprint_auth_backends %}
+  [{{ b['mail-server-host'] }}]:{{ b['mail-server-port'] }} fingerprint
+  {%- for fingerprint in b['fingerprints'] %}
+    match={{ fingerprint.strip() }}
+  {%- endfor %}
+  {%- endfor %}
+
+
 # Postfix Outbound SMTP server
 # ----------------------------
 
@@ -457,6 +493,8 @@ content =
   smtpd_tls_cert_file = $${postfix-certificate:cert-file}
   smtpd_tls_key_file = $${postfix-certificate:key-file}
   smtpd_tls_security_level = encrypt
+  # Ask for client certificate but do not require it
+  smtpd_tls_ask_ccert = yes
 
   {% if password_auth_domains -%}
   # Server SASL
@@ -486,15 +524,21 @@ content =
     # Permit SASL-authentified senders;
     # login/domain mismatches are already rejected by the sender restrictions
     permit_sasl_authenticated
+    # Permit TLS-fingerprint authentified senders
+    # fingerprint/domain mismatches are rejected here
+    check_ccert_access texthash:$${outbound-postfix-backend-clientcerts:output}
     # Reject all others
     reject
 
   # Per-host sender domain restrictions
   # Each sending backend is only allowed to use MAIL FROM with its own domains.
-  {% if sorted_sender_hosts %}
+  {% if sorted_sender_hosts or fingerprint_auth_backends %}
   smtpd_restriction_classes =
   {%- for host in sorted_sender_hosts %}
     restrict_sender_{{ loop.index }}
+  {%- endfor %}
+  {%- for index, backend in enumerate(fingerprint_auth_backends) %}
+    $${outbound-postfix-backend-clientcerts:prefix}{{ index }}
   {%- endfor %}
 
   {% for host in sorted_sender_hosts -%}
@@ -502,7 +546,13 @@ content =
     check_sender_access texthash:$${outbound-postfix-sender-access-{{ loop.index }}:output}
     reject
   {% endfor %}
-  {% endif %}
+
+  {% for index, backend in enumerate(fingerprint_auth_backends) -%}
+  $${outbound-postfix-backend-clientcerts:prefix}{{ index }} =
+    check_sender_access inline:{{ '{{ %s = OK }}' % backend['name'] }}
+    reject
+  {% endfor %}
+  {%- endif %}
 
   # Use system CAs to authenticate proxy; do not use permit_tls_all_clientcerts
   # Currently useless, because we only set may, not verify or better
@@ -510,10 +560,13 @@ content =
   # assuming we keep allowing shortcut backend -> relay -> backend transport.
   tls_append_default_CA = yes
 
-  # Client TLS & SASL parameters
+  # Client TLS parameters
   smtp_tls_security_level = may
   smtp_tls_session_cache_database = btree:$${outbound-postfix-directory:var-lib}/smtp_scache
   smtp_tls_chain_files = $${postfix-certificate:bundle}
+  smtp_tls_policy_maps = texthash:$${outbound-postfix-backend-tls-policy-map:output}
+
+  # Client SASL parameters
   smtp_sasl_auth_enable = yes
   smtp_sasl_security_options = noanonymous
   smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
