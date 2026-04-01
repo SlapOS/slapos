@@ -85,5 +85,6 @@ class TestVueProject(SlapOSInstanceTestCase):
     js_resp = requests.get(js_url, verify=False)
     self.assertEqual(requests.codes.ok, js_resp.status_code)
 
-    # 3. The default Vue HelloWorld page contains it.
-    self.assertIn('Vite + Vue', js_resp.text)
+    # 3. createApp is the entry point of Vue 3, the JS file should contains it.
+    self.assertIn('createApp', js_resp.text)
+    self.assertIn('HelloWorld', js_resp.text)
