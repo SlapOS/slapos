@@ -14,7 +14,7 @@ offline = true
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
 config-monitor-password = $${monitor-instance-parameter:password}
-{% for key, value in slapparameter_dict['default-proxy-config'].items() -%}
+{% for key, value in slapparameter_dict['default-relay-config'].items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-mail-domains = $${filter-shared-instances:accepted-domain-list}
