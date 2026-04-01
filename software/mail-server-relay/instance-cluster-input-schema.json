@@ -6,26 +6,46 @@
     "relay-config": {
       "type": "object",
       "properties": {
-        "proxy-host": {
-          "title": "Proxy Host",
-          "description": "The host to proxy the emails to",
-          "type": "string"
-        },
-        "proxy-port": {
-          "title": "Proxy Port",
-          "description": "The port used by the proxy",
-          "type": "integer",
-          "default": 25
-        },
-        "proxy-user": {
-          "title": "Proxy User",
-          "description": "The user to authenticate with the proxy host",
-          "type": "string"
-        },
-        "proxy-password": {
-          "title": "Proxy Password",
-          "description": "The password to authenticate with the proxy host",
-          "type": "string"
+        "proxy-map": {
+          "title": "Proxy Map",
+          "description": "Map containing proxy accounts useable by this cluster. Keys are arbitrary identifiers, and values are objects with the following properties: 'host' (string), 'port' (integer), 'user' (string), 'password' (string), and 'domains' (array of strings).",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "host": {
+                "type": "string",
+                "description": "The host to proxy the emails to"
+              },
+              "port": {
+                "type": "integer",
+                "description": "The port used by the proxy",
+                "default": 25
+              },
+              "user": {
+                "type": "string",
+                "description": "The user to authenticate with the proxy host"
+              },
+              "password": {
+                "type": "string",
+                "description": "The password to authenticate with the proxy host"
+              },
+              "domains": {
+                "type": "array",
+                "description": "List of domains that should be proxied to this host, one entry per item.",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              }
+            },
+            "required": [
+              "host",
+              "port"
+            ],
+            "additionalProperties": false
+          },
+          "default": {}
         },
         "greylisting-enable": {
           "title": "Enable Greylisting",
