@@ -57,10 +57,6 @@ class PostfixTestCase(SlapOSInstanceTestCase):
               }
             }
           },
-          "outbound-domain-whitelist": [
-            "mail1.domain.lan",
-            "mail2.domain.lan"
-          ],
           "relay-domain": "foobaz.lan",
           "topology": {
               "relay-foo": {
@@ -122,7 +118,8 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     expected_entries = set([
       "mail1.domain.lan MX 10 foobaz.lan",
-      "mail2.domain.lan MX 10 foobaz.lan"
+      "mail2.domain.lan MX 10 foobaz.lan",
+      "mail3.domain.lan MX 10 foobaz.lan",
     ])
     actual_entries = set(
       filter(None, (line.strip() for line in parameter_dict["dns-entries"].splitlines()))

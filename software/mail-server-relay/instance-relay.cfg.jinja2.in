@@ -534,6 +534,16 @@ content =
     # Reject all others
     reject
 
+  smtpd_recipient_restrictions =
+    # Senders are previously authentified by smtpd_relay_restrictions;
+    # unauthenfied or unknown senders are already rejected there.
+    # Permit senders that additionally have access to an external proxy
+    # regardless of the recipient.
+    check_sender_access texthash:$${outbound-postfix-proxy-senders:output}
+    # Otherwise for senders that do not have access to an external proxy,
+    # permit only recipients that are known backends.
+    reject_unauth_destination
+
   # Per-host sender domain restrictions
   # Each sending backend is only allowed to use MAIL FROM with its own domains.
   {% if sorted_sender_hosts or fingerprint_auth_backends %}
@@ -585,6 +595,17 @@ output = $${outbound-postfix-directory:etc}/sender_dependent_transport
 context =
   import json_module json
   raw proxy_map {{ json_module.dumps(proxy_map) }}
+
+[outbound-postfix-proxy-senders]
+recipe = slapos.recipe.template:jinja2
+output = $${outbound-postfix-directory:etc}/proxy_access_senders
+inline =
+  {% raw %}{#- NOTHING -#}{% endraw -%}
+  {%- for proxy_id, proxy in proxy_map.items() -%}
+  {%- for domain in proxy.get('domains', []) %}
+  {{ domain }} OK
+  {%- endfor %}
+  {%- endfor %}
 
 [outbound-postfix-proxy-passwd]
 recipe = slapos.recipe.template:jinja2
