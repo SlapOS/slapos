@@ -1,0 +1,30 @@
+pid {{ parameter_dict['pid-file'] }};
+
+daemon off;
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  access_log {{ parameter_dict['access-log'] }};
+  error_log {{ parameter_dict['error-log'] }};
+
+  include {{ parameter_dict['nginx-mime-types'] }};
+  default_type application/octet-stream;
+
+  server {
+    listen [{{ parameter_dict['ipv6'] }}]:{{ parameter_dict['port'] }} ssl;
+    listen {{ parameter_dict['ipv4'] }}:{{ parameter_dict['port'] }} ssl;
+
+    ssl_certificate     {{ parameter_dict['ssl-certificate'] }};
+    ssl_certificate_key {{ parameter_dict['ssl-key'] }};
+
+    root {{ parameter_dict['web-root'] }};
+    index index.html;
+
+    location / {
+      try_files $uri $uri/ /index.html;
+    }
+  }
+}
