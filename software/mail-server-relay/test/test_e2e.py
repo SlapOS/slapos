@@ -140,13 +140,6 @@ class E2E(SlapOSInstanceTestCase):
           "testmail@mail2.domain.lan"
         ],
       },
-      "outbound-domain-whitelist": cls.mail_server_domains + [
-        cls.password_relay_domain,
-        cls.ip_auth_relay_domain,
-        cls.fingerprint_relay_domain,
-        cls.mail_server_domain2,
-        "no-proxy.domain.lan",
-      ],
       # Test with two relay nodes to detect edge cases
       # that could arise when there are multiple relays.
       "topology": {

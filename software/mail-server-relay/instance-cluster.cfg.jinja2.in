@@ -103,7 +103,6 @@ target = $${directory:etc}/relay-domains.json
 init =
   import json
   import secrets
-  whitelist = {{ set(slapparameter_dict['outbound-domain-whitelist']) }}
   target = options['target']
 
   try:
@@ -121,7 +120,8 @@ init =
   def make_entry(slave):
     authentication = slave['parameters']['authentication']
     entry = {
-      'can-send': slave['parameters']['name'] in whitelist,
+      # todo: phase-out deprecated 'can-send', for now always pinned to True
+      'can-send': True,
       **slave['parameters'],
       'reference': slave['reference'],
     }
