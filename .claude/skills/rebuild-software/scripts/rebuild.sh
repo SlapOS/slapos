@@ -16,7 +16,7 @@ if [ -z "$ENV_JSON" ] || [ ! -f "$ENV_JSON" ]; then
 fi
 
 # Extract slapos-sr-testing-environment path from JSON
-SR_ENV=$(python3 -c "import json; print(json.load(open('$ENV_JSON'))['slapos-sr-testing-environment'])")
+SR_ENV=$(grep '"slapos-sr-testing-environment"' "$ENV_JSON" | sed 's/.*: *"\(.*\)".*/\1/')
 if [ ! -f "$SR_ENV" ]; then
   echo "ERROR: slapos environment script not found: $SR_ENV"
   exit 1
@@ -69,10 +69,23 @@ SR_URL=$(echo "$SR_LINE" | awk '{print $1}')
 SR_NAME=$(basename $(dirname "$SR_URL"))
 echo "=== Rebuilding: $SR_NAME (hash: $SR_HASH) ==="
 
-# Find software directory
-SOFT_DIR="$SLAPOS_BASE/tmp/soft/$SR_HASH"
-if [ ! -d "$SOFT_DIR" ]; then
-  echo "ERROR: Software directory not found: $SOFT_DIR"
+# Find software directory from slapos config
+# SLAPOS_CONFIGURATION is set by the sourced environment
+SOFT_ROOT=$(grep 'software_root' "${SLAPOS_CONFIGURATION:-$SLAPOS_BASE/etc/slapos.cfg}" 2>/dev/null | head -1 | sed 's/.*= *//')
+SOFT_DIR=""
+if [ -n "$SOFT_ROOT" ] && [ -d "$SOFT_ROOT/$SR_HASH" ]; then
+  SOFT_DIR="$SOFT_ROOT/$SR_HASH"
+else
+  # Fallback: search common locations
+  for d in "$SLAPOS_BASE/tmp/soft/$SR_HASH" "$(dirname "$SLAPOS_BASE")/software/$SR_HASH" "$(dirname $(dirname "$SLAPOS_BASE"))/software/$SR_HASH"; do
+    if [ -d "$d" ]; then
+      SOFT_DIR="$d"
+      break
+    fi
+  done
+fi
+if [ -z "$SOFT_DIR" ] || [ ! -d "$SOFT_DIR" ]; then
+  echo "ERROR: Software directory not found for hash: $SR_HASH"
   exit 1
 fi
 

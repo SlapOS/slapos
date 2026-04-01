@@ -16,7 +16,7 @@ if [ -z "$ENV_JSON" ] || [ ! -f "$ENV_JSON" ]; then
 fi
 
 # Extract slapos-sr-testing-environment path from JSON
-SR_ENV=$(python3 -c "import json; print(json.load(open('$ENV_JSON'))['slapos-sr-testing-environment'])")
+SR_ENV=$(grep '"slapos-sr-testing-environment"' "$ENV_JSON" | sed 's/.*: *"\(.*\)".*/\1/')
 if [ ! -f "$SR_ENV" ]; then
   echo "ERROR: slapos environment script not found: $SR_ENV"
   exit 1
