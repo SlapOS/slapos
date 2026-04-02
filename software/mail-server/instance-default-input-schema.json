@@ -87,6 +87,20 @@
         }
       },
       "default": {}
+    },
+    "bogofilter": {
+      "title": "Bogofilter",
+      "description": "Bogofilter spam filter configuration",
+      "type": "object",
+      "properties": {
+        "enable": {
+          "title": "Enable",
+          "description": "Enable bogofilter spam filtering on incoming mail. Adds X-Bogosity headers to all messages.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "default": {}
     }
   },
   "required": [
