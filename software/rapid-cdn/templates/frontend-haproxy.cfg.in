@@ -22,6 +22,11 @@ defaults
   retries 3
   timeout tunnel 1h
   default-server init-addr last,libc,none
+{%- if configuration.get('error-pages-dir') %}
+{%-   for code in ['400', '408', '500', '502', '503', '504'] %}
+  errorfile {{ code }} {{ configuration['error-pages-dir'] }}/cluster/{{ code }}.http
+{%-   endfor %}
+{%- endif %}
 
 {%- set SCHEME_PREFIX_MAPPING = { 'http': 'backend-http-info', 'https': 'backend-https-info'} %}
 
@@ -190,7 +195,7 @@ backend BACKEND_NOT_FOUND
   http-after-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
   # setup Via
   http-after-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
-  errorfile 503 {{ configuration['not-found-file'] }}
+  errorfile 503 {{ configuration['error-pages-dir'] }}/cluster/404.http
 {%- if HTTP3  %}
   http-after-response set-header alt-svc "h3=\":{{ configuration['http3-port'] }}\"; ma=3600"
   {#- Ask Chromium to use HTTP3 #}
