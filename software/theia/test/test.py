@@ -46,6 +46,7 @@ import requests
 
 from urllib.parse import urlparse, urljoin, parse_qsl
 
+import slapos.slap.exception
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass, SlapOSNodeCommandError
 from slapos.grid.svcbackend import getSupervisorRPC, _getSupervisordSocketPath
 from slapos.proxy.db_version import DB_VERSION
