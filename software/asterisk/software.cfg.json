@@ -1,0 +1,15 @@
+{
+  "name": "Asterisk",
+  "description": "Asterisk instance to forward SIP calls from/to a SIP trunk",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-asterisk-input-schema.json",
+      "response": "instance-asterisk-output-schema.json",
+      "index": 1
+    }
+  }
+}
