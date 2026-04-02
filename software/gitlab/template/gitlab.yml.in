@@ -94,6 +94,8 @@ production: &base
     user: {{ backend_info.user }}
 
     ## Date & Time settings
+    # Uncomment and customize if you want to change the default time zone of GitLab application.
+    # To see all available zones, run `bundle exec rake time:zones:all RAILS_ENV=production
     time_zone: '{{ cfg("time_zone") }}'
 
     ## Email settings
@@ -110,13 +112,18 @@ production: &base
     ## User settings
     default_can_create_group: {{ cfg('default_can_create_group') }}  # default: true
     username_changing_enabled: {{ cfg('username_changing_enabled') }} # default: true - User can change her username/namespace
-    ## Default theme
-    ##   1 - Graphite
-    ##   2 - Charcoal
-    ##   3 - Green
-    ##   4 - Gray
-    ##   5 - Violet
-    ##   6 - Blue
+    ## Default theme ID
+    ##   1 - Indigo
+    ##   2 - Gray
+    ##   3 - Light Gray
+    ##   4 - Blue
+    ##   5 - Green
+    ##   6 - Light Indigo
+    ##   7 - Light Blue
+    ##   8 - Light Green
+    ##   9 - Red
+    ##   10 - Light Red
+    ##   11 - Dark Mode (alpha)
     default_theme: {{ cfg('default_theme') }} # default: 2
 
     {# for now we are ok with default issue-closing pattern
@@ -273,6 +280,11 @@ production: &base
   ## Sidekiq
   sidekiq:
     log_format: json # (default is the original format)
+    # desirable queue before scheduling. For example:
+    # routing_rules:
+    #   - ["resource_boundary=cpu", "cpu_boundary"]
+    #   - ["feature_category=pages", null]
+    #   - ["*", "default"]
 
   {# XXX cron jobs are disabled for now - we do not support CI and EE features or we are ok with defaults
   ## Auxiliary jobs
@@ -471,7 +483,7 @@ production: &base
     # real path not the symlink.
     storages: # You must have at least a `default` storage path.
       default:
-        path: {{ gitlab.repositories }}
+        # path: {{ gitlab.repositories }}
         gitaly_address: unix:{{ gitaly.socket }} # TCP connections are supported too (e.g. tcp://host:port). TLS connections are also supported using the system certificate pool (eg: tls://host:port).
         # gitaly_token: 'special token' # Optional: override global gitaly.token for this storage.
 
@@ -479,6 +491,7 @@ production: &base
   ## Backup settings
   backup:
     path: "{{ gitlab.backup }}"   # Relative paths are relative to Rails.root (default: tmp/backups/)
+    gitaly_backup_path: {{ gitaly.location }}/bin/gitaly-backup
     {# default permission is ok
     archive_permissions: <%= @backup_archive_permissions %> # Permissions for the resulting backup.tar file (default: 0600)
     #}
@@ -505,7 +518,7 @@ production: &base
     # Default is '.gitlab_shell_secret' relative to Rails.root (i.e. root of the GitLab app).
     secret_file: {{ gitlab_shell.secret }}
     # Repo path needed for gitlab-backup
-    repos_path: "{{ gitlab.repositories }}"
+    # repos_path: "{{ gitlab.repositories }}"
 
 
     # Git over HTTP
