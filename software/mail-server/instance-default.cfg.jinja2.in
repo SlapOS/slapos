@@ -405,10 +405,16 @@ link-binary =
 [postfix-wrapper]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
+etc = $${postfix-directory:etc}
+spool-pid = $${postfix-directory:spool-pid}
 inline =
   #!/bin/sh
-  rm -f var/spool/postfix/pid/*.pid
-  $${postfix-directory:usr}/libexec/postfix/master -c $${postfix-directory:etc}
+  # use postconf to produce a log in case of broken configuration
+  ${postfix:location}/usr/sbin/postconf -c $${:etc} > /dev/null
+  # remove old pidfiles
+  rm -f $${:spool-pid}/*.pid
+  # launch postfix
+  ${postfix:location}/usr/libexec/postfix/master -c $${:etc}
 
 [postfix-service]
 recipe = slapos.cookbook:wrapper

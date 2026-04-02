@@ -158,6 +158,20 @@ context =
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
 
+[macro.postfix-wrapper]
+recipe = slapos.recipe.template
+output = $${directory:bin}/$${:_buildout_section_name_}
+etc = $${missing_option_etc:error}
+spool-pid = $${missing_option_spool-pid:error}
+inline =
+  #!/bin/sh
+  # use postconf to produce a log in case of broken configuration
+  ${postfix:location}/usr/sbin/postconf -c $${:etc} > /dev/null
+  # remove old pidfiles
+  rm -f $${:spool-pid}/*.pid
+  # launch postfix
+  ${postfix:location}/usr/libexec/postfix/master -c $${:etc}
+
 
 # Postfix Transport Information
 # -----------------------------
@@ -236,12 +250,9 @@ content =
   smtp_tls_session_cache_database = btree:$${inbound-postfix-directory:var-lib}/smtp_scache
 
 [inbound-postfix-wrapper]
-recipe = slapos.recipe.template
-output = $${directory:bin}/$${:_buildout_section_name_}
-inline =
-  #!/bin/sh
-  rm -f $${inbound-postfix-directory:spool-pid}/*.pid
-  ${postfix:location}/usr/libexec/postfix/master -c $${inbound-postfix-directory:etc}
+<= macro.postfix-wrapper
+etc = $${inbound-postfix-directory:etc}
+spool-pid = $${inbound-postfix-directory:spool-pid}
 
 [policyd-spf-conf]
 recipe = slapos.recipe.template:jinja2
@@ -616,12 +627,9 @@ context =
   raw proxy_map {{ json_module.dumps(proxy_map) }}
 
 [outbound-postfix-wrapper]
-recipe = slapos.recipe.template
-output = $${directory:bin}/$${:_buildout_section_name_}
-inline =
-  #!/bin/sh
-  rm -f $${outbound-postfix-directory:spool-pid}/*.pid
-  ${postfix:location}/usr/libexec/postfix/master -c $${outbound-postfix-directory:etc}
+<= macro.postfix-wrapper
+etc = $${outbound-postfix-directory:etc}
+spool-pid = $${outbound-postfix-directory:spool-pid}
 
 [outbound-postfix-service]
 recipe = slapos.cookbook:wrapper
