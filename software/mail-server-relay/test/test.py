@@ -146,6 +146,8 @@ class ProxyMapDuplicateDomainTestCase(SlapOSInstanceTestCase):
   This verifies that when the same domain appears in multiple proxies,
   the validation error is published in the cluster's connection parameters.
   """
+  __partition_reference__ = 'P'
+  
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'cluster'
