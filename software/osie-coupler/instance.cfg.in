@@ -18,7 +18,7 @@ extends = {{ template_monitor }}
 [coupler-opc-ua]
 recipe = slapos.cookbook:wrapper
 command-line =
-    {{ coupler_location }}server -d ${instance-parameter:configuration.coupler_block_device} -s ${instance-parameter:configuration.coupler_i2c_slave_list} -p ${instance-parameter:configuration.opc_ua_port} -u ${instance-parameter:configuration.username} -w ${instance-parameter:configuration.password} -b ${instance-parameter:configuration.heart_beat} -t ${instance-parameter:configuration.heart_beat_interval} -l ${instance-parameter:configuration.heart_beat_id_list} -n ${instance-parameter:configuration.network_address_url_data_type} -o ${instance-parameter:configuration.heart_beat_timeout_interval} -i ${instance-parameter:configuration.id} -m ${instance-parameter:configuration.mode} -j ${instance-parameter:configuration.network_interface} -x ${instance-parameter:configuration.max_connections}
+    {{ coupler_location }}server -d ${instance-parameter:configuration.coupler_block_device} -s ${instance-parameter:configuration.coupler_i2c_slave_list} -p ${instance-parameter:configuration.opc_ua_port} -u ${instance-parameter:configuration.username} -w ${instance-parameter:configuration.password} -b ${instance-parameter:configuration.heart_beat} -t ${instance-parameter:configuration.heart_beat_interval} -l ${instance-parameter:configuration.heart_beat_id_list} -n ${instance-parameter:configuration.network_address_url_data_type} -o ${instance-parameter:configuration.heart_beat_timeout_interval} -i ${instance-parameter:configuration.id} -m ${instance-parameter:configuration.mode} -j ${instance-parameter:configuration.network_interface} -x ${instance-parameter:configuration.max_connections} -q ${instance-parameter:configuration.mqtt_broker} -e ${instance-parameter:configuration.mqtt_port} -f ${instance-parameter:configuration.mqtt_topic} -g ${instance-parameter:configuration.mqtt_interval} -r ${instance-parameter:configuration.mqtt_username} -y ${instance-parameter:configuration.mqtt_password}
 wrapper-path = ${directory:service}/coupler-opc-ua
 
 [instance-parameter]
@@ -43,6 +43,12 @@ configuration.network_address_url_data_type = opc.udp://224.0.0.22:4840/
 configuration.heart_beat_timeout_interval = 100
 configuration.network_interface = ""
 configuration.max_connections = 1
+configuration.mqtt_broker = ""
+configuration.mqtt_port = 1883
+configuration.mqtt_topic = coupler/status
+configuration.mqtt_interval = 1000
+configuration.mqtt_username = ""
+configuration.mqtt_password = ""
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
