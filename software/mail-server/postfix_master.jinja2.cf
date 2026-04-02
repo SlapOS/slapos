@@ -34,3 +34,8 @@ lmtp      unix  -       -       n       -       -       lmtp
 anvil     unix  -       -       n       -       1       anvil
 scache    unix  -       -       n       -       1       scache
 postlog   unix-dgram n  -       n       -       1       postlogd
+{% if bogofilter_enable %}
+bogofilter unix  -       n       n       -       10      pipe
+  flags=Rq user={{ mail_owner }} null_sender=
+  argv={{ bogofilter_scan }} {{ bogofilter_spool }}/${recipient} ${sender} ${recipient}
+{% endif %}
