@@ -61,20 +61,10 @@ install =
   dist_src = os.path.join(src, "dist")
   dist_dst = os.path.join(location, "dist")
 
-  if os.path.islink(dist_dst):
-    os.unlink(dist_dst)
-  elif os.path.isdir(dist_dst):
-    shutil.rmtree(dist_dst)
-  elif os.path.exists(dist_dst):
+  if os.path.exists(dist_dst):
     os.remove(dist_dst)
   shutil.copytree(dist_src, dist_dst, dirs_exist_ok=True)
-  print("######################")
-  print(r"${vue-project-src:repository}")
-  print(location)
-  print(dist_dst)
-  for root, dirs, files in os.walk(dist_dst):
-    for f in files:
-      print(os.path.join(root, f))
+
 
   # Write down the revision numbder to a file, allow user to check it quickly
   with open(os.path.join(location, "REVISION"), "w", encoding="utf-8") as f:
