@@ -92,6 +92,16 @@
       "description": "MQTT publish interval in milliseconds.",
       "type": "integer",
       "default": 1000
+    },
+    "mqtt_username": {
+      "description": "MQTT broker username. If empty, authentication is disabled.",
+      "type": "string",
+      "default": ""
+    },
+    "mqtt_password": {
+      "description": "MQTT broker password.",
+      "type": "string",
+      "default": ""
     }
   }
 }
