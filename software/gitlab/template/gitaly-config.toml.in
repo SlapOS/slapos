@@ -1,5 +1,5 @@
 # Example Gitaly configuration file
-# Documentation lives at https://docs.gitlab.com/ee/administration/gitaly/ and
+## signing_key = "" Documentation lives at https://docs.gitlab.com/ee/administration/gitaly/ and
 # https://docs.gitlab.com/ee//administration/gitaly/reference
 
 socket_path = "{{ gitaly.socket }}"
@@ -24,10 +24,16 @@ prometheus_listen_addr = "{{ prometheus['host'] }}:{{ prometheus['gitaly-port'] 
 # # Non Gitaly clients should never connect to these sockets.
 internal_socket_dir = "{{ gitaly.internal_socket }}"
 
-# # Optional: authenticate Gitaly requests using a shared secret
+# # Optional. Authenticate Gitaly requests using a shared secret.
+# # Gitaly rejects requests that do not contain the authentication token in their headers.
+# # Authentication is disabled when the token setting is absent or an empty string.
 # [auth]
 # token = 'abc123secret'
-# transitioning = false # Set `transitioning` to true to temporarily allow unauthenticated while rolling out authentication.
+# # Set `transitioning` to true to temporarily allow unauthenticated while rolling out authentication. This allows you
+# # to monitor if all clients are authenticating correctly without causing a service outage for clients that are still
+# # to be configured correctly.
+# # Remember to disable transitioning when you are done changing your token settings.
+# transitioning = false
 
 # [tls]
 # certificate_path = '/home/git/cert.cert'
@@ -35,15 +41,14 @@ internal_socket_dir = "{{ gitaly.internal_socket }}"
 
 # # Git settings
 [git]
+# # Path to Git binary. If not set, is resolved using PATH.
 bin_path = "{{ git }}"
+# # Maximum number of cached 'cat-file' processes, which constitute a pair of 'git cat-file --batch' and
+# # 'git cat-file --batch-check' processes. Defaults to '100'.
 catfile_cache_size = {{ gitaly.catfile_cache_size }}
+# # Path to GPG signing key. If not set, Gitaly doesn’t sign commits made using the UI.
+# signing_key = ""
 
-# # Set this setting to `true` to start ignoring gitconfig files installed in
-# # the system. This includes both system-level (e.g. '/etc/gitconffig') and
-# # global-level (e.g. `$HOME/.gitconfig`) files. This setting will become the
-# # default with v16.0. If you intend to override Git configuration you can do
-# # so via `[[git.config]]`. The default value is `false`.
-# ignore_gitconfig = false
 
 {%- if gitaly.pack_objects_cache == 'True' %}
 # Enable pack-objects cache
@@ -155,3 +160,15 @@ disabled = false
 # memory_bytes = 12884901888 # 12gb
 # cpu_shares = 512
 # cpu_quota_us = 200000
+
+# # Server-side backups
+# [backup]
+# # The destination object-storage URL.
+# go_cloud_url = "gs://gitaly-backups"
+# # Optional: defaults to pointer
+# # layout = "pointer"
+
+# # Negotiation timeouts for remote Git operations
+# [timeout]
+# upload_pack_negotiation = "10m"
+# upload_archive_negotiation = "1m"

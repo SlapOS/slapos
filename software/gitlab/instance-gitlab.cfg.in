@@ -152,12 +152,17 @@ stop-on-error = yes
 repositories = ${gitlab-repo-dir:repositories}
 command = chmod 02770 ${:repositories}
 
+[gitlab-upload-dir]
+recipe  = slapos.cookbook:mkdirectory
+uploads = ${gitlab-dir:var}/uploads
+mode    = 0700
+
 [gitlab]
 etc     = ${gitlab-dir:etc}
 log     = ${gitlab-dir:log}
 var     = ${gitlab-dir:var}
 tmp     = ${gitlab-dir:tmp}
-uploads = ${gitlab-dir:uploads}
+uploads = ${gitlab-upload-dir:uploads}
 shared  = ${gitlab-dir:shared}
 artifacts = ${gitlab-dir:artifacts}
 lfs-objects = ${gitlab-dir:lfs-objects}
@@ -617,6 +622,14 @@ socket  = ${directory:srv}/gitlab-workhorse.socket
 log     = ${directory:log}/gitlab-workhorse.log
 secret  = ${secrets:secrets}/gitlab_workhorse_secret
 
+[workhorse-config.toml]
+<= etc-template
+url = {{ workhorse_config_toml_in }}
+output= ${directory:etc}/${:_buildout_section_name_}
+context-extra =
+    raw redis_socket ${service-redis:unixsocket}
+    raw document_root ${gitlab-work:location}/public/assets
+
 [service-gitlab-workhorse]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/gitlab-workhorse
@@ -628,8 +641,7 @@ command-line    = {{ gitlab_workhorse }}
     -secretPath ${gitlab-workhorse:secret}
     -logFile ${gitlab-workhorse:log}
     -prometheusListenAddr "${prometheus:host}:${prometheus:workhorse-port}"
-# repoPath is for patched gitlab-workhorse
-#    -repoPath ${gitlab-repo-dir:repositories}
+    -config ${workhorse-config.toml:output}
 # NOTE for profiling
 #   -pprofListenAddr ...
 
@@ -638,7 +650,7 @@ command-line    = {{ gitlab_workhorse }}
 #   - ruby to be available on path  (gitlab-workhorse -> gitlab-shell -> hooks  on push)
 #   - gitconfig be found from ~/.gitconfig
 environment =
-    PATH={{ git_location }}/bin:{{ ruby_location }}/bin:{{ gzip_location }}/bin:{{ bzip2_location}}/bin
+    PATH={{ git_location }}/bin:{{ gzip_location }}/bin:{{ bzip2_location}}/bin
     HOME=${directory:home}
 
 depend  =
