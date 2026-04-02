@@ -283,13 +283,33 @@ spool-trace = $${:var-spool}/trace
 [postfix-certificate]
 recipe = plone.recipe.command
 stop-on-error = true
-key-file = $${postfix-directory:ssl}/postfix.key
-cert-file = $${postfix-directory:ssl}/postfix.crt
+name = postfix-backend
+key-file = $${postfix-directory:ssl}/$${:name}.key
+cert-file = $${postfix-directory:ssl}/$${:name}.crt
+fingerprint = $${postfix-directory:ssl}/$${:name}.digest
+bundle = $${postfix-directory:ssl}/$${:name}.bundle.pem
+openssl = ${openssl:location}/bin/openssl
 command =
-  test -e $${:key-file} || \
-    ${openssl:location}/bin/openssl req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
-    -keyout $${:key-file} -out $${:cert-file}
+  test -e $${:key-file} || { \
+    $${:openssl} req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
+      -keyout $${:key-file} -out $${:cert-file}; \
+    $${:openssl} x509 -noout -fingerprint -sha256 -in $${:cert-file} \
+      > $${:fingerprint}; \
+    cat $${:key-file} $${:cert-file} > $${:bundle}; \
+  }
 update-command = $${:command}
+
+[postfix-certificate-fingerprints]
+recipe = slapos.recipe.build
+fingerprint = $${postfix-certificate:fingerprint}
+init =
+  try:
+    with open(options['fingerprint']) as f:
+      # publish a list to allow for future fingerprint rotation
+      options['tls-fingerprints'] = [f.read().split('=', 1)[1].strip()]
+  except FileNotFoundError:
+    # set invalid value to defer error and get as much work done now as possible
+    options['tls-fingerprints'] = None
 
 [postfix-conf-main]
 recipe = slapos.recipe.template:jinja2
@@ -317,8 +337,7 @@ context =
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
   raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
-  key postfix_tls_cert postfix-certificate:cert-file
-  key postfix_tls_key postfix-certificate:key-file
+  section postfix_certificate postfix-certificate
   key relay_clientcerts postfix-relay-clientcerts:output
   key no_relay :no-relay
   key relay_tls_fingerprints request-relays:tls-fingerprints
@@ -351,19 +370,13 @@ context =
 {% if slapparameter_dict['outbound-relay']['host'] -%}
 outbound-host-{{ domain }} = {{ slapparameter_dict['outbound-relay']['host'] }}
 outbound-port-{{ domain }} = {{ slapparameter_dict['outbound-relay']['port'] }}
-outbound-user-{{ domain }} = {{ slapparameter_dict['outbound-relay'].get('user', '') }}
-outbound-password-{{ domain }} = {{ slapparameter_dict['outbound-relay'].get('password', '') }}
 {% elif not slapparameter_dict['no-relay'] %}
-# else we use the result of request if it exists (password auth)
+# else we use the result of request if it exists (fingerprint auth)
 outbound-host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
-outbound-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-submission-port}
-outbound-user-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-user}
-outbound-password-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-password}
+outbound-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
 {% else -%}
 outbound-host-{{ domain }} =
 outbound-port-{{ domain }} =
-outbound-user-{{ domain }} =
-outbound-password-{{ domain }} =
 {% endif -%}
 {% endfor -%}
 
@@ -392,10 +405,16 @@ link-binary =
 [postfix-wrapper]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
+etc = $${postfix-directory:etc}
+spool-pid = $${postfix-directory:spool-pid}
 inline =
   #!/bin/sh
-  rm -f var/spool/postfix/pid/*.pid
-  $${postfix-directory:usr}/libexec/postfix/master -c $${postfix-directory:etc}
+  # use postconf to produce a log in case of broken configuration
+  ${postfix:location}/usr/sbin/postconf -c $${:etc} > /dev/null
+  # remove old pidfiles
+  rm -f $${:spool-pid}/*.pid
+  # launch postfix
+  ${postfix:location}/usr/libexec/postfix/master -c $${:etc}
 
 [postfix-service]
 recipe = slapos.cookbook:wrapper
@@ -851,15 +870,13 @@ name = mail-server-relay-{{ mail_domain }}
 config-name = {{ mail_domain }}
 config-mail-server-host = {{ ipv6 }}
 config-mail-server-port = {{ dumps(smtp_port) }}
-config-authentication = password
+config-authentication = fingerprint
+config-fingerprints = $${postfix-certificate-fingerprints:tls-fingerprints}
 {% if not slapparameter_dict['no-relay'] %}
 recipe = slapos.cookbook:request.serialised
 return =
   outbound-host
   outbound-smtp-port
-  outbound-submission-port
-  outbound-user
-  outbound-password
   tls-fingerprints
 {% else -%}
 recipe = slapos.cookbook:requestoptional.serialised

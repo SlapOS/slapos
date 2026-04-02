@@ -84,15 +84,6 @@
     "default-relay-config": {
       "$ref": "#/definitions/relay-config"
     },
-    "outbound-domain-whitelist": {
-      "title": "Outbound Domain Whitelist",
-      "description": "List of domains allowed for outbound proxy",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "default": []
-    },
     "relay-domain": {
       "title": "Relay Domain",
       "description": "The domain that will point to all relay instances",
@@ -150,7 +141,6 @@
   },
   "required": [
     "default-relay-config",
-    "outbound-domain-whitelist",
     "topology"
   ]
 }
