@@ -72,6 +72,36 @@
       "description": "Maximum number of TCP/IP connections the OPC UA server supports.",
       "type": "integer",
       "default": 1
+    },
+    "mqtt_broker": {
+      "description": "MQTT broker hostname. If empty, MQTT publishing is disabled.",
+      "type": "string",
+      "default": ""
+    },
+    "mqtt_port": {
+      "description": "MQTT broker port.",
+      "type": "integer",
+      "default": 1883
+    },
+    "mqtt_topic": {
+      "description": "MQTT topic to publish status messages to.",
+      "type": "string",
+      "default": "coupler/status"
+    },
+    "mqtt_interval": {
+      "description": "MQTT publish interval in milliseconds.",
+      "type": "integer",
+      "default": 1000
+    },
+    "mqtt_username": {
+      "description": "MQTT broker username. If empty, authentication is disabled.",
+      "type": "string",
+      "default": ""
+    },
+    "mqtt_password": {
+      "description": "MQTT broker password.",
+      "type": "string",
+      "default": ""
     }
   }
 }
