@@ -94,6 +94,7 @@ init =
               except:
                   options['ipv4'] = "0.0.0.0"
 
+
 # Dovecot IMAP server
 # -------------------
 
@@ -260,6 +261,7 @@ copytruncate = true
 recipe = slapos.cookbook:mkdirectory
 usr = $${directory:usr}/postfix
 etc = $${directory:etc}/postfix
+ssl = $${:etc}/ssl
 var-lib = $${directory:var-lib}/postfix
 var-spool = $${directory:var-spool}/postfix
 # Not used at buildout level, presence needed by postfix.
@@ -278,11 +280,43 @@ spool-public = $${:var-spool}/public
 spool-saved = $${:var-spool}/saved
 spool-trace = $${:var-spool}/trace
 
+[postfix-certificate]
+recipe = plone.recipe.command
+stop-on-error = true
+name = postfix-backend
+key-file = $${postfix-directory:ssl}/$${:name}.key
+cert-file = $${postfix-directory:ssl}/$${:name}.crt
+fingerprint = $${postfix-directory:ssl}/$${:name}.digest
+bundle = $${postfix-directory:ssl}/$${:name}.bundle.pem
+openssl = ${openssl:location}/bin/openssl
+command =
+  test -e $${:key-file} || { \
+    $${:openssl} req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
+      -keyout $${:key-file} -out $${:cert-file}; \
+    $${:openssl} x509 -noout -fingerprint -sha256 -in $${:cert-file} \
+      > $${:fingerprint}; \
+    cat $${:key-file} $${:cert-file} > $${:bundle}; \
+  }
+update-command = $${:command}
+
+[postfix-certificate-fingerprints]
+recipe = slapos.recipe.build
+fingerprint = $${postfix-certificate:fingerprint}
+init =
+  try:
+    with open(options['fingerprint']) as f:
+      # publish a list to allow for future fingerprint rotation
+      options['tls-fingerprints'] = [f.read().split('=', 1)[1].strip()]
+  except FileNotFoundError:
+    # set invalid value to defer error and get as much work done now as possible
+    options['tls-fingerprints'] = None
+
 [postfix-conf-main]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
 output = $${postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/postfix.log
+no-relay = {{ dumps(slapparameter_dict['no-relay']) }}
 context =
   raw postfix_log_path $${:log-file}
   key dovecot_passwd dovecot-passwords:target
@@ -303,6 +337,22 @@ context =
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
   raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
+  section postfix_certificate postfix-certificate
+  key relay_clientcerts postfix-relay-clientcerts:output
+  key no_relay :no-relay
+  key relay_tls_fingerprints request-relays:tls-fingerprints
+
+[postfix-relay-clientcerts]
+recipe = slapos.recipe.template:jinja2
+output = $${postfix-directory:etc}/relay_clientcerts
+context =
+  section relays request-relays
+{% raw -%}
+inline =
+  {% for fingerprint in relays['tls-fingerprints'] -%}
+  {{ fingerprint.strip() }} mail-relay
+  {% endfor %}
+{%- endraw %}
 
 [postfix-conf-master]
 recipe = slapos.recipe.template:jinja2
@@ -320,19 +370,13 @@ context =
 {% if slapparameter_dict['outbound-relay']['host'] -%}
 outbound-host-{{ domain }} = {{ slapparameter_dict['outbound-relay']['host'] }}
 outbound-port-{{ domain }} = {{ slapparameter_dict['outbound-relay']['port'] }}
-outbound-user-{{ domain }} = {{ slapparameter_dict['outbound-relay'].get('user', '') }}
-outbound-password-{{ domain }} = {{ slapparameter_dict['outbound-relay'].get('password', '') }}
 {% elif not slapparameter_dict['no-relay'] %}
-# else we use the result of request if it exists (password auth)
+# else we use the result of request if it exists (fingerprint auth)
 outbound-host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
-outbound-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-submission-port}
-outbound-user-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-user}
-outbound-password-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-password}
+outbound-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
 {% else -%}
 outbound-host-{{ domain }} =
 outbound-port-{{ domain }} =
-outbound-user-{{ domain }} =
-outbound-password-{{ domain }} =
 {% endif -%}
 {% endfor -%}
 
@@ -361,10 +405,16 @@ link-binary =
 [postfix-wrapper]
 recipe = slapos.recipe.template
 output = $${directory:bin}/$${:_buildout_section_name_}
+etc = $${postfix-directory:etc}
+spool-pid = $${postfix-directory:spool-pid}
 inline =
   #!/bin/sh
-  rm -f var/spool/postfix/pid/*.pid
-  $${postfix-directory:usr}/libexec/postfix/master -c $${postfix-directory:etc}
+  # use postconf to produce a log in case of broken configuration
+  ${postfix:location}/usr/sbin/postconf -c $${:etc} > /dev/null
+  # remove old pidfiles
+  rm -f $${:spool-pid}/*.pid
+  # launch postfix
+  ${postfix:location}/usr/libexec/postfix/master -c $${:etc}
 
 [postfix-service]
 recipe = slapos.cookbook:wrapper
@@ -808,7 +858,6 @@ init =
 # Request relay
 # -------------
 
-
 {% set relay_requests = [] -%}
 {% for mail_domain in slapparameter_dict['mail-domains'] -%}
 {%   do relay_requests.append('request-relay-' ~ mail_domain) %}
@@ -821,15 +870,14 @@ name = mail-server-relay-{{ mail_domain }}
 config-name = {{ mail_domain }}
 config-mail-server-host = {{ ipv6 }}
 config-mail-server-port = {{ dumps(smtp_port) }}
-config-authentication = password
+config-authentication = fingerprint
+config-fingerprints = $${postfix-certificate-fingerprints:tls-fingerprints}
 {% if not slapparameter_dict['no-relay'] %}
 recipe = slapos.cookbook:request.serialised
 return =
   outbound-host
   outbound-smtp-port
-  outbound-submission-port
-  outbound-user
-  outbound-password
+  tls-fingerprints
 {% else -%}
 recipe = slapos.cookbook:requestoptional.serialised
 state = destroyed
@@ -838,12 +886,22 @@ state = destroyed
 
 [request-relays]
 recipe = slapos.recipe.build
+relay-requests = {{ dumps(relay_requests) }}
+{% if slapparameter_dict['no-relay'] -%}
 init =
-  ""
+  options['tls-fingerprints'] = []
 depends =
 {% for relay_request in relay_requests -%}
   {{ "  $${" + relay_request + ":recipe}" }}
-{% endfor -%}
+{%- endfor %}
+{% else -%}
+init =
+  fingerprints = {} # deterministic insertion-ordered dict in Python3
+  for section in options['relay-requests']:
+    part = self.buildout[section]
+    fingerprints.update((f, 0) for f in part['connection-tls-fingerprints'])
+  options['tls-fingerprints'] = list(fingerprints)
+{%- endif %}
 
 
 # Request local DNS entry
@@ -889,3 +947,4 @@ error-dict = $${dovecot-passwords:error-dict}
 {% if slapparameter_dict['request-dns']['enable'] %}
 domain = $${request-dns-entry:connection-domain}
 {% endif %}
+

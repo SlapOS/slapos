@@ -34,17 +34,45 @@ smtp_bind_address_enforce = yes
 import_environment =
   MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
 
-smtpd_tls_security_level = none
+{% if not no_relay -%}
+smtp_tls_security_level = fingerprint
+smtp_tls_fingerprint_digest = sha256
+# maybe use smtp_tls_policy_maps instead?
+smtp_tls_fingerprint_cert_match =
+{%- for fingerprint in relay_tls_fingerprints %}
+  {{ fingerprint.strip() }}
+{%- endfor %}
+{%- endif %}
+smtp_tls_chain_files = {{ postfix_certificate['bundle'] }}
+
+smtpd_tls_cert_file = {{ postfix_certificate['cert-file'] }}
+smtpd_tls_key_file = {{ postfix_certificate['key-file'] }}
+smtpd_tls_security_level = encrypt
+{% if not no_relay -%}
+smtpd_tls_ask_ccert = yes
+smtpd_tls_fingerprint_digest = sha256
+relay_clientcerts = texthash:{{ relay_clientcerts }}
+{%- endif %}
+
 smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
 smtpd_sasl_auth_enable = yes
 
 smtpd_recipient_restrictions =
   permit_sasl_authenticated
+
 smtpd_relay_restrictions =
+  # if authenticated mail account, allow everything
   permit_sasl_authenticated
+  # otherwise only allow mails to local domains
   defer_unauth_destination
+{%- if not no_relay %}
+  # and only from authenticated relays
+  permit_tls_clientcerts
+  # or from local networks
   permit_mynetworks 
+  reject
+{%- endif %}
 
 allow_min_user = yes
 
@@ -58,3 +86,4 @@ sender_dependent_default_transport_maps = texthash:{{ relay_map }}
 
 myhostname = {{ server_fqdn }}
 mydestination = localhost.$mydomain, localhost, localhost.localdomain
+

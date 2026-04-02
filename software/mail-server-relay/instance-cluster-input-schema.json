@@ -3,46 +3,86 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Cluster Input Parameters",
   "definitions": {
-    "proxy-config": {
+    "relay-config": {
       "type": "object",
       "properties": {
-        "proxy-host": {
-          "title": "Proxy Host",
-          "description": "The host to proxy the emails to",
-          "type": "string"
+        "proxy-map": {
+          "title": "Proxy Map",
+          "description": "Map containing proxy accounts useable by this cluster. Keys are arbitrary identifiers, and values are objects with the following properties: 'host' (string), 'port' (integer), 'user' (string), 'password' (string), and 'domains' (array of strings).",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "host": {
+                "type": "string",
+                "description": "The host to proxy the emails to"
+              },
+              "port": {
+                "type": "integer",
+                "description": "The port used by the proxy",
+                "default": 25
+              },
+              "user": {
+                "type": "string",
+                "description": "The user to authenticate with the proxy host"
+              },
+              "password": {
+                "type": "string",
+                "description": "The password to authenticate with the proxy host"
+              },
+              "domains": {
+                "type": "array",
+                "description": "List of domains that should be proxied to this host, one entry per item.",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              }
+            },
+            "required": [
+              "host",
+              "port"
+            ],
+            "additionalProperties": false
+          },
+          "default": {}
         },
-        "proxy-port": {
-          "title": "Proxy Port",
-          "description": "The port used by the proxy",
+        "greylisting-enable": {
+          "title": "Enable Greylisting",
+          "description": "Whether to enable greylisting on inbound mail",
+          "type": "boolean",
+          "default": true
+        },
+        "greylisting-delay": {
+          "title": "Greylist Delay",
+          "description": "Seconds a new sender triplet must wait before being accepted",
           "type": "integer",
-          "default": 25
+          "default": 60
         },
-        "proxy-user": {
-          "title": "Proxy User",
-          "description": "The user to authenticate with the proxy host",
-          "type": "string"
+        "greylisting-whitelist-clients": {
+          "title": "Greylisting Whitelist Clients",
+          "description": "Additional client patterns to whitelist in postgrey, one entry per item.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
         },
-        "proxy-password": {
-          "title": "Proxy Password",
-          "description": "The password to authenticate with the proxy host",
-          "type": "string"
+        "greylisting-whitelist-recipients": {
+          "title": "Greylisting Whitelist Recipients",
+          "description": "Additional recipient patterns to whitelist in postgrey, one entry per item.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
         }
-      },
-      "additionalProperties": false
+      }
     }
   },
   "properties": {
-    "default-proxy-config": {
-      "$ref": "#/definitions/proxy-config"
-    },
-    "outbound-domain-whitelist": {
-      "title": "Outbound Domain Whitelist",
-      "description": "List of domains allowed for outbound proxy",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "default": []
+    "default-relay-config": {
+      "$ref": "#/definitions/relay-config"
     },
     "relay-domain": {
       "title": "Relay Domain",
@@ -91,7 +131,7 @@
               "default": "started"
             },
             "config": {
-              "$ref": "#/definitions/proxy-config"
+              "$ref": "#/definitions/relay-config"
             }
           }
         }
@@ -100,8 +140,7 @@
     }
   },
   "required": [
-    "default-proxy-config",
-    "outbound-domain-whitelist",
+    "default-relay-config",
     "topology"
   ]
 }

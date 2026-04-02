@@ -2,6 +2,7 @@
 extends =
   ${monitor2-template:output}
 parts =
+  validate-proxy-map
   monitor-base
   publish-connection-information
   publish-shared
@@ -10,22 +11,46 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
+[validate-proxy-map]
+recipe = slapos.recipe.build
+init =
+  # Validate that domains are unique across all proxies in proxy-map
+  proxy_map = {{ slapparameter_dict.get('default-relay-config', {}).get('proxy-map', {}) }}
+  domain_to_proxy = {}
+  errors = []
+  
+  for proxy_id, proxy_config in proxy_map.items():
+    for domain in proxy_config.get('domains', []):
+      if domain in domain_to_proxy:
+        errors.append(
+          f"Domain '{domain}' appears in multiple proxies: "
+          f"'{domain_to_proxy[domain]}' and '{proxy_id}'. "
+          f"Each domain must appear in only one proxy's domains list."
+        )
+      else:
+        domain_to_proxy[domain] = proxy_id
+  
+  options['validated-domains'] = str(len(domain_to_proxy))
+  options['errors'] = errors
+
 [request-relay-base]
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
 config-monitor-password = $${monitor-instance-parameter:password}
-{% for key, value in slapparameter_dict['default-proxy-config'].items() -%}
+{% for key, value in slapparameter_dict['default-relay-config'].items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-mail-domains = $${filter-shared-instances:accepted-domain-list}
 return =
   smtp-ipv6
   smtp-port
+  tls-fingerprints
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 dns-entries = $${filter-shared-instances:dns-entries}
+errors = $${validate-proxy-map:errors}
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
 [request-relay-{{ relay_name }}]
@@ -46,10 +71,18 @@ sla-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 
 [request-all-relays]
-depends =
-{% for relay_name in slapparameter_dict['topology'].keys() %}
-  $${request-relay-{{ relay_name }}:recipe}
-{% endfor -%}
+recipe = slapos.recipe.build
+{# order is stable because Python3 dicts have stable order -#}
+relay-names = {{ dumps(list(slapparameter_dict['topology'].keys())) }}
+init =
+  fingerprints = []
+  hosts = []
+  for relay_name in options['relay-names']:
+    part = self.buildout['request-relay-' + relay_name]
+    fingerprints.extend(part['connection-tls-fingerprints'])
+    hosts.append(part['connection-smtp-ipv6'])
+  options['tls-fingerprints'] = fingerprints
+  options['hosts'] = hosts
 {% if "relay-domain" in slapparameter_dict %}
 relay-host = {{ slapparameter_dict['relay-domain'] }}
 {% else %}
@@ -68,14 +101,15 @@ recipe = slapos.recipe.build
 # Error only if a different reference claims an already assigned domain
 target = $${directory:etc}/relay-domains.json
 init =
+  import json
   import secrets
-  whitelist = {{ set(slapparameter_dict['outbound-domain-whitelist']) }}
   target = options['target']
 
   try:
     with open(target, 'r') as fp:
       previous = json.load(fp)
-  except Exception:
+  except FileNotFoundError:
+    print("No previous shared instances found")
     previous = {}
 
   pub_domain_dict = {}
@@ -84,12 +118,12 @@ init =
   slave_list = {{ (slap_configuration.get('valid-shared-instance-list', [])) }}
 
   def make_entry(slave):
-    authentication = slave['parameters'].get('authentication', 'none')
+    authentication = slave['parameters']['authentication']
     entry = {
-      'can-send': slave['parameters']['name'] in whitelist,
+      # todo: phase-out deprecated 'can-send', for now always pinned to True
+      'can-send': True,
       **slave['parameters'],
       'reference': slave['reference'],
-      'authentication': authentication,
     }
     # For password-auth domains, generate or reuse a password
     if authentication == 'password' and entry['can-send']:
@@ -107,7 +141,13 @@ init =
     if prev_entry := previous.get(domain):
       if prev_entry['reference'] == slave['reference']:
         entry = output[domain] = make_entry(slave)
-        pub_domain_dict[slave['reference']] = {'addr': domain, 'can-send': entry['can-send'], 'authentication': entry.get('authentication', 'none'), 'password': entry.get('password', '')}
+        pub_domain_dict[slave['reference']] = {
+          'addr': domain,
+          'can-send': entry['can-send'],
+          'authentication': entry['authentication'],
+          # 'password' field is specific to 'authentication' == 'password' case
+          'password': entry.get('password', '')
+        }
       else:
         # domain is already used by another slave, 2nd pass will handle it
         pass
@@ -127,7 +167,13 @@ init =
     else:
       # address not yet claimed
       entry = output[domain] = make_entry(slave)
-      pub_domain_dict[slave['reference']] = {'addr': domain, 'can-send': entry['can-send'], 'authentication': entry.get('authentication', 'none'), 'password': entry.get('password', '')}
+      pub_domain_dict[slave['reference']] = {
+        'addr': domain,
+        'can-send': entry['can-send'],
+        'authentication': entry['authentication'],
+        # 'password' field is specific to 'authentication' == 'password' case
+        'password': entry.get('password', '')
+      }
 
   options['published-domain-dict'] = pub_domain_dict
   options['accepted-domain-list'] = list(output.values())
@@ -145,11 +191,13 @@ install =
   with open(options['target'], 'w') as fp:
     json.dump(self.output, fp, sort_keys=True)
 
-
 [publish-shared]
 recipe = slapos.recipe.build
 published-domain-dict = $${filter-shared-instances:published-domain-dict}
+relay-tls-fingerprints = $${request-all-relays:tls-fingerprints}
+{% raw -%}
 init =
+  dollar = '$$'
   for slave_ref, info in options['published-domain-dict'].items():
     section = f"""
   [publish-shared-{slave_ref}]
@@ -164,6 +212,7 @@ init =
       section += f"""
   dns-entries =
     {info['addr']} MX 10 {self.buildout['request-all-relays']['relay-host']}
+  tls-fingerprints = {dollar}{{request-all-relays:tls-fingerprints}}
       """
       if info['can-send']:
         if info.get('authentication') == 'password' and info.get('password'):
@@ -185,3 +234,5 @@ init =
   outbound-smtp-port = 10587
         """
     self.buildout.parse(section)
+{%- endraw %}
+
