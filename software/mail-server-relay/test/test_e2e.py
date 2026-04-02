@@ -85,15 +85,19 @@ def setUpModule():
 
 class E2E(SlapOSInstanceTestCase):
   instance_max_retry = 4
-  # use the ipv6 of excess empty partiions as known-to-be-otherwise-unused ipv6
+  # use the ipv6 of excess empty partitions as known-to-be-otherwise-unused ipv6
   partition_count = 15
+
   mail_server_domains = ["mail%d.domain.lan" % i for i in range(1, 4)]
   mail_server_domain2 = 'mail4.domain.lan'
   password_relay_domain = "mail.relay.password.domain.lan"
   ip_auth_relay_domain = "mail.relay.ip-auth.domain.lan"
+  fingerprint_relay_domain = "mail.relay.fingerprint.domain.lan"
   external_domain = 'external.domain.lan'
   external_domain2 = 'external2.domain.lan'
+  unknown_domain = "unknown.domain.lan"
   testmail_password = 'password123'
+
   relay_inbound_port = 10025
   relay_outbound_port = 10587
   smtp_timeout = 60
@@ -136,12 +140,6 @@ class E2E(SlapOSInstanceTestCase):
           "testmail@mail2.domain.lan"
         ],
       },
-      "outbound-domain-whitelist": cls.mail_server_domains + [
-        cls.password_relay_domain,
-        cls.ip_auth_relay_domain,
-        cls.mail_server_domain2,
-        "no-proxy.domain.lan"
-      ],
       # Test with two relay nodes to detect edge cases
       # that could arise when there are multiple relays.
       "topology": {
@@ -263,6 +261,25 @@ class E2E(SlapOSInstanceTestCase):
         "authentication": "none",
       },
       state,
+    )
+    fingerprint_path = cls.partitionPath(
+      cls.external_mail_server,
+      'etc', 'postfix', 'ssl', 'postfix-backend.digest'
+    )
+    with open(fingerprint_path) as f:
+      fingerprint = f.read().split('=', 1)[1].strip()
+    cls.fingerprint_relay_shared = cls.requestRelayShared(
+      cls.fingerprint_relay_domain,
+      (next(available_ipv6), 10025),
+      {
+        "authentication": "fingerprint",
+        "fingerprints": [fingerprint],
+      },
+      state,
+    )
+    cls.fingerprint_relay_shared.cert_bundle = cls.partitionPath(
+      cls.external_mail_server,
+      'etc', 'postfix', 'ssl', 'postfix-backend.bundle.pem'
     )
     # We need to return an instance here because the framework expects it.
     return relay_cluster
@@ -498,6 +515,20 @@ class E2E(SlapOSInstanceTestCase):
     # Verify the email never arrives at the external server.
     self.check_not_in_inbox(self.external_mail_server, msg, wait_time=30)
 
+  def test_relay_unknown_sender_rejected(self):
+    mail1 = self.mail_servers[0]
+    body = "Send to relay from unknown sender address"
+    host, port = self.relay_outbound_addr
+    source = (self.free_ipv6, self.free_port)
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+        smtp.starttls()
+        smtp.sendmail(
+          from_addr='unknown@' + self.unknown_domain,
+          to_addrs=[mail1.testmail],
+          msg="Subject: Unknown sender should be rejected\n\n" + body,
+       )
+
   def test_relay_password_shared_output_stable(self):
     params = self.getConnectionDict(self.password_relay_shared)
     password = params.get('outbound-password')
@@ -614,6 +645,58 @@ class E2E(SlapOSInstanceTestCase):
           to_addrs=[mail1.testmail],
           msg="Subject: IP Auth Impersonation\n\n" + body,
         )
+
+  def test_relay_fingerprint_auth_legitimate(self):
+    mail1 = self.mail_servers[0]
+    body = "Authenticate to relay with backend client certificate"
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    # do not verify the relay's certificate
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+    ssl_context.load_cert_chain(self.fingerprint_relay_shared.cert_bundle)
+    host, port = self.relay_outbound_addr
+    source = self.fingerprint_relay_shared.backend_address
+    with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+      smtp.starttls(context=ssl_context)
+      smtp.sendmail(
+        from_addr=self.fingerprint_relay_shared.examplemail,
+        to_addrs=[mail1.testmail],
+        msg="Subject: TLS fingerprint auth to relay\n\n" + body,
+     )
+    self.check_inbox(mail1, body)
+
+  def test_relay_fingerprint_auth_impersonation_blocked(self):
+    mail1 = self.mail_servers[0]
+    body = "Impersonate to relay with backend client certificate"
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    # do not verify the relay's certificate
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+    ssl_context.load_cert_chain(self.fingerprint_relay_shared.cert_bundle)
+    host, port = self.relay_outbound_addr
+    source = self.fingerprint_relay_shared.backend_address
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+        smtp.starttls(context=ssl_context)
+        smtp.sendmail(
+          from_addr=self.password_relay_shared.examplemail,
+          to_addrs=[mail1.testmail],
+          msg="Subject: TLS fingerprint impersonate to relay\n\n" + body,
+       )
+
+  def test_relay_fingerprint_auth_required(self):
+    mail1 = self.mail_servers[0]
+    body = "Send to relay without backend client certificate"
+    host, port = self.relay_outbound_addr
+    source = self.fingerprint_relay_shared.backend_address
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+        smtp.starttls()
+        smtp.sendmail(
+          from_addr=self.password_relay_shared.examplemail,
+          to_addrs=[mail1.testmail],
+          msg="Subject: Send to relay without client certificate\n\n" + body,
+       )
 
   def test_server_auth_as_relay_with_client_tls(self):
     mailserver = self.mail_servers[0]

@@ -22,13 +22,25 @@
     },
     "authentication": {
       "title": "Authentication Method",
-      "description": "How this domain authenticates to the relay for outbound mail. 'none' uses IP-based host verification, 'password' uses SASL username/password.",
+      "description": "How this domain authenticates to the relay for outbound mail",
       "type": "string",
       "enum": [
         "none",
-        "password"
+        "password",
+        "fingerprint"
       ],
       "default": "none"
+    },
+    "fingerprints": {
+      "title": "Backend TLS certificate(s) fingerprint(s)",
+      "description:": "List of fingerprints of the backend's certificates to authentify the backend to the relay",
+      "type": "array",
+      "items": {
+        "title": "TLS certificate fingerprint",
+        "type": "string"
+      },
+      "minItems": 1,
+      "maxItems": 5
     }
   },
   "required": [
