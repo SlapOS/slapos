@@ -1,0 +1,20 @@
+--- a/src/pipe/pipe.c
++++ b/src/pipe/pipe.c
+@@ -1010,17 +1010,8 @@
+ 	msg_fatal("missing argv= command-line attribute");
+     if (attr->uid == 0)
+ 	msg_fatal("user= command-line attribute specifies root privileges");
+-    if (attr->uid == var_owner_uid)
+-	msg_fatal("user= command-line attribute specifies mail system owner %s",
+-		  var_mail_owner);
+     if (attr->gid == 0)
+ 	msg_fatal("user= command-line attribute specifies privileged group id 0");
+-    if (attr->gid == var_owner_gid)
+-	msg_fatal("user= command-line attribute specifies mail system owner %s group id %ld",
+-		  var_mail_owner, (long) attr->gid);
+-    if (attr->gid == var_sgid_gid)
+-	msg_fatal("user= command-line attribute specifies mail system %s group id %ld",
+-		  var_sgid_group, (long) attr->gid);
+ 
+     /*
+      * Give the poor tester a clue of what is going on.
