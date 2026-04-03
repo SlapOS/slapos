@@ -58,9 +58,6 @@ smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
 smtpd_sasl_auth_enable = yes
 
-smtpd_recipient_restrictions =
-  permit_sasl_authenticated
-
 smtpd_relay_restrictions =
   # if authenticated mail account, allow everything
   permit_sasl_authenticated
