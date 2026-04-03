@@ -98,6 +98,13 @@ class E2E(SlapOSInstanceTestCase):
   relay_outbound_port = 10587
   smtp_timeout = 60
 
+  @staticmethod
+  def _get_ssl_context():
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
   @classmethod
   def getConnectionDict(cls, instance):
     return unwrap(instance.getConnectionParameterDict())
@@ -337,6 +344,7 @@ class E2E(SlapOSInstanceTestCase):
   def check_inbox(self, mailserver, expected):
     def check_email():
       with imaplib.IMAP4(*mailserver.imap_addr, timeout=self.smtp_timeout) as imap:
+        imap.starttls(ssl_context=self._get_ssl_context())
         imap.login(mailserver.testmail, self.testmail_password)
         imap.select("INBOX")
         result, data = imap.search(None, 'ALL')
@@ -459,6 +467,7 @@ class E2E(SlapOSInstanceTestCase):
     imap_params = self.getConnectionDict(mailserver)
     host, port = imap_params['imap-smtp-ipv6'], imap_params['imap-port']
     with imaplib.IMAP4(*mailserver.imap_addr, timeout=self.smtp_timeout) as imap:
+      imap.starttls(ssl_context=self._get_ssl_context())
       imap.login(mailserver.testmail, self.testmail_password)
       imap.select("INBOX")
       result, data = imap.search(None, 'ALL')

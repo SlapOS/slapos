@@ -54,13 +54,20 @@ def time_limit(seconds):
 
 class PostfixTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'p'
+  def _get_ssl_context(self):
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
   def check_imap(self, address, password):
-    """Test IMAP login with given address and password"""
+    """Test IMAP login with STARTTLS and given address and password"""
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     host = parameter_dict["imap-smtp-ipv6"]
     imap = None
     try:
       imap = imaplib.IMAP4(host, int(parameter_dict["imap-port"]), timeout=10)
+      imap.starttls(ssl_context=self._get_ssl_context())
       imap.login(address, password)
       imap.select("INBOX")
       result, data = imap.search(None, "ALL")
@@ -122,6 +129,43 @@ class PostfixTestCase(SlapOSInstanceTestCase):
 
   def test_dovecot(self):
     self.check_imap("testmail@example.com", "password123")
+
+  def test_imap_plaintext_rejected(self):
+    """IMAP login without STARTTLS must be rejected."""
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    host = parameter_dict["imap-smtp-ipv6"]
+    imap = None
+    try:
+      imap = imaplib.IMAP4(host, int(parameter_dict["imap-port"]), timeout=10)
+      with self.assertRaises(imaplib.IMAP4.error):
+        imap.login("testmail@example.com", "password123")
+    finally:
+      if imap:
+        try:
+          imap.logout()
+        except Exception:
+          pass
+
+  def test_imaps(self):
+    """IMAP over implicit TLS (port 10993) must work."""
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    host = parameter_dict["imap-smtp-ipv6"]
+    imap = None
+    try:
+      imap = imaplib.IMAP4_SSL(host, int(parameter_dict["imaps-port"]), timeout=10,
+                                ssl_context=self._get_ssl_context())
+      imap.login("testmail@example.com", "password123")
+      imap.select("INBOX")
+      result, data = imap.search(None, "ALL")
+      self.assertEqual(result, "OK")
+    except Exception as e:
+      self.fail(f"IMAPS login failed: {e}")
+    finally:
+      if imap:
+        try:
+          imap.logout()
+        except Exception:
+          pass
 
   def test_webmail(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
@@ -303,6 +347,7 @@ class PostfixBogofilterTestCase(SlapOSInstanceTestCase):
     imap = None
     try:
       imap = imaplib.IMAP4(host, imap_port, timeout=10)
+      imap.starttls(ssl_context=self._get_ssl_context())
       imap.login(address, password)
       imap.select("INBOX")
       result, msg_ids = imap.search(None, "ALL")
