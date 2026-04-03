@@ -89,6 +89,43 @@ command = ${logrotate:wrapper-path}
 name = crond
 log = ${cron-simplelogger:log}
 
+[cron-command-wrapper-base]
+recipe = slapos.recipe.template:jinja2
+output = ${logrotate-directory:bin}/${:_buildout_section_name_}
+{%- raw %}
+inline =
+  #!/bin/sh
+  tmpfile=$(mktemp)
+  {{ command }} > $tmpfile 2>&1
+  STATUS=$?
+  cat $tmpfile
+  if [ $STATUS -eq "0" ]
+  then
+    : > {{ repr(errorfile) }}
+    trap 'rm -f "$tmpfile"' EXIT
+  else
+    mv $tmpfile {{ repr(errorfile) }}
+  fi
+  exit $STATUS
+{%- endraw %}
+
+[cron-promise-script-base]
+recipe = slapos.recipe.template:jinja2
+output = ${logrotate-directory:bin}/${:_buildout_section_name_}
+{%- raw %}
+inline =
+  #!/bin/sh -e
+  if [ ! -s {{ errorfile }} ]
+  then
+    echo "OK ${:_buildout_section_name_} last ran on " $(date -r {{ repr(errorfile) }})
+    exit 0
+  else
+    echo "ERROR ${:_buildout_section_name_} failed on " $(date -r {{ repr(errorfile) }})
+    cat {{ repr(errorfile) }}
+    exit 1
+  fi
+{%- endraw %}
+
 [logrotate-directory]
 recipe = slapos.cookbook:mkdirectory
 cron-entries = ${:etc}/cron.d
