@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Parameters to instantiate a Vue frontend project",
+  "additionalProperties": false,
+  "required": [],
+  "properties": {
+    "repo-url": {
+      "title": "Repository URL",
+      "description": "Vue project repository URL",
+      "type": "string",
+      "default": ""
+    },
+    "branch": {
+      "title": "Branch",
+      "description": "Vue project repository branch",
+      "type": "string",
+      "default": ""
+    }
+  }
+}
