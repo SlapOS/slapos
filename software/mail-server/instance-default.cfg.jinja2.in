@@ -121,6 +121,7 @@ recipe = slapos.recipe.template:jinja2
 url = ${dovecot.jinja2.conf:target}
 output = $${directory:etc}/dovecot.conf
 imap-port = 10143
+imaps-port = 10993
 log-file = $${directory:var-log}/dovecot.log
 bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
@@ -130,9 +131,12 @@ context =
   raw user_name {{ user_name }}
   raw ipv6 {{ ipv6 }}
   raw imap_port $${:imap-port}
+  raw imaps_port $${:imaps-port}
   raw postfix_auth $${postfix-directory:spool-private}/auth
   raw postfix_dovecot_lmtp $${postfix-directory:spool-private}/dovecot-lmtp
   raw dovecot_log_path $${:log-file}
+  key ssl_cert postfix-certificate:cert-file
+  key ssl_key postfix-certificate:key-file
   key bogofilter_enable :bogofilter-enable
 {% if slapparameter_dict['bogofilter']['enable'] %}
   raw dovecot_plugin_dir ${dovecot-pigeonhole:location}/lib/dovecot
@@ -1075,6 +1079,7 @@ config-ip = {{ ipv6 }}
 recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 imap-port = $${dovecot-conf:imap-port}
+imaps-port = $${dovecot-conf:imaps-port}
 smtp-port = {{ smtp_port }}
 imap-smtp-ipv6 = {{ ipv6 }}
 webmail-url = $${lamp-frontend-promise:url}
