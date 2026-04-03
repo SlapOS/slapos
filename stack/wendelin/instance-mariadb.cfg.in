@@ -357,6 +357,7 @@ recipe = slapos.recipe.template:jinja2
 url = {{ parameter_dict['mariabackup-script'] }}
 output = ${directory:bin}/${:_buildout_section_name_}
 logical-backup-enabled = logical_backup['enable']
+error-file = ${directory:mariabackup}/mariabackup-errormessage-file
 context =
   key dash dash:dash
   key bin_directory directory:bin
@@ -384,11 +385,12 @@ depends = ${binary-wrap-mariadb-backup:command}
 
 {% if physical_backup['enable'] -%}
 [{{ section('cron-entry-mariabackup') }}]
-recipe = slapos.cookbook:cron.d
+<= macro.cron-with-promise
 cron-entries = ${cron:cron-entries}
 name = mariabackup
 time = {{ dumps(physical_backup['periodicity']) }}
 command = ${mariabackup-script:output}
+macro-error-file = ${mariabackup-script:error-file}
 {%- endif %}
 
 [my-cnf-parameters]
