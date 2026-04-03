@@ -164,18 +164,18 @@ When testing changes to buildout configs, templates, or `software.py`:
 
 ### Environment setup
 
-Source the slapos environment before running any slapos command:
+Source `~/bin/slapos-standalone-activate` before running any slapos command:
 ```bash
-export PATH=/opt/slapgrid/cfaa2217e0f9ea9ef9e05b634f6dbecb/bin:/usr/bin:/bin:$PATH
-export SLAPOS_CONFIGURATION=/srv/slapgrid/slappart76/srv/runner/etc/slapos.cfg
-export SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION
+source ~/bin/slapos-standalone-activate
 ```
+
+This sets `PATH`, `SLAPOS_CONFIGURATION`, and `SLAPOS_CLIENT_CONFIGURATION`. The skill scripts (`/rebuild-software`, `/reprocess-instance`, `/slapos-status`) source it automatically.
 
 ### Build a single software release
 
 Only one `slapos node software` process can run at a time. Kill any existing one first:
 ```bash
-kill $(cat /srv/slapgrid/slappart76/srv/runner/var/run/slapos-node-software.pid 2>/dev/null) 2>/dev/null
+kill $(cat ~/srv/runner/var/run/slapos-node-software.pid 2>/dev/null) 2>/dev/null
 MAKEFLAGS=-j20 slapos node software --only <path-to-software.cfg>
 ```
 

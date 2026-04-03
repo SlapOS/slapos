@@ -1,39 +1,45 @@
 #!/bin/bash
 # Rebuild a SlapOS software release.
-# Usage: rebuild.sh <env-local-json> [software-path-or-name]
+# Usage: rebuild.sh [env-local-json] [software-path-or-name]
 #
-# Reads env.local.json to find the slapos environment, identifies the
-# software release hash, removes .completed, and runs slapos node software.
+# Environment setup:
+# - Default: sources ~/bin/slapos-standalone-activate
+# - For testing: pass env.local.json path to source slapos-sr-testing-environment
 
 set -e
 
 ENV_JSON="$1"
 SR_FILTER="$2"
 
-if [ -z "$ENV_JSON" ] || [ ! -f "$ENV_JSON" ]; then
-  echo "ERROR: env.local.json not found at: $ENV_JSON"
-  exit 1
+# --- Environment setup ---
+if [ -n "$ENV_JSON" ] && [ -f "$ENV_JSON" ]; then
+  # Testing mode: use env.local.json
+  SR_ENV=$(grep '"slapos-sr-testing-environment"' "$ENV_JSON" | sed 's/.*: *"\(.*\)".*/\1/')
+  if [ ! -f "$SR_ENV" ]; then
+    echo "ERROR: slapos environment script not found: $SR_ENV"
+    exit 1
+  fi
+  source "$SR_ENV" 2>/dev/null
+  SLAPOS_BASE=$(dirname $(dirname "$SR_ENV"))
+else
+  # Default mode: source slapos-standalone-activate
+  ACTIVATE="$HOME/bin/slapos-standalone-activate"
+  if [ ! -f "$ACTIVATE" ]; then
+    echo "ERROR: $ACTIVATE not found and no env.local.json provided."
+    exit 1
+  fi
+  source "$ACTIVATE" 2>/dev/null
+  SLAPOS_BASE="$HOME/srv/runner"
+  # When no env.local.json, first arg is the SR filter
+  SR_FILTER="$1"
 fi
-
-# Extract slapos-sr-testing-environment path from JSON
-SR_ENV=$(grep '"slapos-sr-testing-environment"' "$ENV_JSON" | sed 's/.*: *"\(.*\)".*/\1/')
-if [ ! -f "$SR_ENV" ]; then
-  echo "ERROR: slapos environment script not found: $SR_ENV"
-  exit 1
-fi
-
-# Source the environment (suppress verbose output)
-source "$SR_ENV" 2>/dev/null
-
-# Get the slapos base directory
-SLAPOS_BASE=$(dirname $(dirname "$SR_ENV"))
 
 # Find software releases from proxy
 echo "=== Software releases in proxy ==="
 PROXY_OUTPUT=$(slapos proxy show 2>&1)
 
 # Extract software table lines (URL + hash)
-echo "$PROXY_OUTPUT" | grep -E '^\s+/' | while read -r line; do
+echo "$PROXY_OUTPUT" | grep -E '^\s+(https?://|/)' | while read -r line; do
   url=$(echo "$line" | awk '{print $1}')
   state=$(echo "$line" | awk '{print $(NF-1)}')
   hash=$(echo "$line" | awk '{print $NF}')
@@ -45,11 +51,11 @@ echo ""
 
 if [ -n "$SR_FILTER" ]; then
   # Find matching software release
-  SR_LINE=$(echo "$PROXY_OUTPUT" | grep -E '^\s+/' | grep -i "$SR_FILTER" | grep 'available' | head -1)
+  SR_LINE=$(echo "$PROXY_OUTPUT" | grep -E '^\s+(https?://|/)' | grep -i "$SR_FILTER" | grep 'available' | head -1)
 else
   # Try to detect from current directory
   CWD=$(pwd)
-  SR_LINE=$(echo "$PROXY_OUTPUT" | grep -E '^\s+/' | grep 'available' | while read -r line; do
+  SR_LINE=$(echo "$PROXY_OUTPUT" | grep -E '^\s+(https?://|/)' | grep 'available' | while read -r line; do
     url=$(echo "$line" | awk '{print $1}')
     if echo "$CWD" | grep -q "$(dirname "$url")" 2>/dev/null; then
       echo "$line"

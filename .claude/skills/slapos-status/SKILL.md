@@ -11,20 +11,27 @@ TRIGGER when: the user asks about deployed instances, partition state, what's ru
 
 **$ARGUMENTS** — optional filter (software name, partition reference, or keyword). If omitted, show everything.
 
-## Current environment
+## Environment
 
-- env.local.json: !`cat .claude/env.local.json 2>/dev/null || echo "NOT FOUND"`
+The script supports two modes:
+- **Default**: sources `~/bin/slapos-standalone-activate` (standard SlapOS standalone environment)
+- **Testing**: pass `env.local.json` path to source `slapos-sr-testing-environment` instead
 
 ## Execution
 
 Run the bundled status script:
 
 ```bash
+bash ${CLAUDE_SKILL_DIR}/scripts/status.sh $ARGUMENTS
+```
+
+If a testing environment is needed (env.local.json exists), pass it as first arg:
+```bash
 bash ${CLAUDE_SKILL_DIR}/scripts/status.sh .claude/env.local.json $ARGUMENTS
 ```
 
 The script will:
-1. Source the SlapOS environment
+1. Source the SlapOS environment (standalone or testing)
 2. Run `slapos proxy show`
 3. Optionally filter output by the given keyword
 

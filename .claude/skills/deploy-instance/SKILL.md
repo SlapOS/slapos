@@ -33,7 +33,7 @@ If any required parameters are missing from the user's `param=value` args, ask b
 
 Run:
 ```bash
-~/bin/theia-shell -c "export PATH=/opt/slapgrid/cfaa2217e0f9ea9ef9e05b634f6dbecb/bin:\$PATH && export SLAPOS_CONFIGURATION=\$HOME/srv/runner/etc/slapos.cfg && export SLAPOS_CLIENT_CONFIGURATION=\$SLAPOS_CONFIGURATION && slapos proxy show" 2>&1
+source ~/bin/slapos-standalone-activate 2>/dev/null && slapos proxy show 2>&1
 ```
 
 Show existing instances using the same software release. Warn if ports or names would conflict. Identify which ports are already in use so the new instance uses a different one.
@@ -137,7 +137,7 @@ Write the script using the Write tool to `~/srv/project/<instance-name>-request.
 
 Run the script via `slapos console`:
 ```bash
-~/bin/theia-shell -c "slapos console ~/srv/project/<instance-name>-request.py" 2>&1
+source ~/bin/slapos-standalone-activate 2>/dev/null && slapos console ~/srv/project/<instance-name>-request.py 2>&1
 ```
 
 This registers the request in the SlapOS proxy database. The cron-spawned `slapos node instance` will deploy it on its next run.
@@ -145,7 +145,7 @@ This registers the request in the SlapOS proxy database. The cron-spawned `slapo
 If the connection parameters are empty (instance not yet deployed), inform the user:
 - The instance request has been registered
 - `slapos node instance` runs periodically via cron and will deploy it automatically
-- To trigger deployment immediately: `~/bin/theia-shell -c "slapos node instance"`
+- To trigger deployment immediately: `source ~/bin/slapos-standalone-activate 2>/dev/null && slapos node instance`
 - The request script can be re-run anytime to check updated connection parameters
 
 ## Step 6: Verify deployment
@@ -154,12 +154,12 @@ Run these checks:
 
 1. **Supervisor status**: check that the new process is RUNNING:
    ```bash
-   ~/bin/theia-shell -c "export PATH=/opt/slapgrid/cfaa2217e0f9ea9ef9e05b634f6dbecb/bin:\$PATH && export SLAPOS_CONFIGURATION=\$HOME/srv/runner/etc/slapos.cfg && export SLAPOS_CLIENT_CONFIGURATION=\$SLAPOS_CONFIGURATION && slapos node supervisorctl status" 2>&1 | grep <software-name-pattern>
+   source ~/bin/slapos-standalone-activate 2>/dev/null && slapos node supervisorctl status 2>&1 | grep <software-name-pattern>
    ```
 
 2. **Connection parameters**: re-run the request script to retrieve published connection parameters:
    ```bash
-   ~/bin/theia-shell -c "slapos console ~/srv/project/<instance-name>-request.py" 2>&1
+   source ~/bin/slapos-standalone-activate 2>/dev/null && slapos console ~/srv/project/<instance-name>-request.py 2>&1
    ```
 
 3. **Endpoint test**: if the connection parameters include a URL, curl it to verify it responds:
