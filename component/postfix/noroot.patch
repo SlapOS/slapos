@@ -1,3 +1,8 @@
+Allow Postfix daemons to run as non-root
+
+This is necessary for SlapOS design where each partition only has
+access to a non-root user.
+
 diff --git a/src/global/mail_params.c b/src/global/mail_params.c
 index 2d91977..0f06298 100644
 --- a/src/global/mail_params.c
