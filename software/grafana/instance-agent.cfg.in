@@ -670,6 +670,14 @@ init =
       partition,
       "{partition_root_directory}/var/log/apache-error.log",
     )
+    _add_tail_input(
+      f"logs.erp5.balancer.cron.{application['name']}-{partition['name']}",
+      "erp5.balancer.cron",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/cron.log",
+      multiline_parser="multiline_parser.cron.log",
+    )
 
   def add_erp5_zope(application, partition):
     timezone = partition.get('timezone', 'UTC')
@@ -725,6 +733,14 @@ init =
       "{partition_root_directory}/var/log/zope-*-event.log",
       multiline_parser="multiline_parser.erp5.zope.event_log",
       buffer_max_size="512k",
+    )
+    _add_tail_input(
+      f"logs.erp5.zope.cron.{application['name']}-{partition['name']}",
+      "erp5.zope.cron",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/cron.log",
+      multiline_parser="multiline_parser.cron.log",
     )
 
   def add_erp5_zope_front(application, partition):
@@ -877,6 +893,14 @@ init =
       "{partition_root_directory}/var/log/zeo-*.log",
       multiline_parser="multiline_parser.erp5.zeo.event_log",
     )
+    _add_tail_input(
+      f"logs.erp5.zeo.cron.{application['name']}-{partition['name']}",
+      "erp5.zeo.cron",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/cron.log",
+      multiline_parser="multiline_parser.cron.log",
+    )
 
   def add_mariadb(application, partition):
     _add_parser(
@@ -972,6 +996,14 @@ init =
       partition,
       "{partition_root_directory}/var/log/mariadb_error.log",
     )
+    _add_tail_input(
+      f"logs.mariadb.cron.{application['name']}-{partition['name']}",
+      "erp5.mariadb.cron",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/cron.log",
+      multiline_parser="multiline_parser.cron.log",
+    )
 
   def _add_default_filters():
     filters.append(
@@ -1008,6 +1040,51 @@ init =
           """,
         }
       )
+
+  def _add_default_parsers():
+    _add_multiline_parser(
+      {
+        "name": "multiline_parser.cron.log",
+        "type": "regex",
+        "flush_timeout": 5000,
+        "rules": [
+          {
+            "state": "start_state",
+            "regex": "^\d{4}-\d{2}-\d{2}\.\d{2}:\d{2}\.\d{10}: (?!-{24}$)",
+            "next_state": "continuation"
+          },
+          {
+            "state": "continuation",
+            "regex": "^\d{4}-\d{2}-\d{2}\.\d{2}:\d{2}\.\d{10}: (?!-{24}$)",
+            "next_state": "continuation"
+          },
+          {
+            "state": "continuation",
+            "regex": "^\d{4}-\d{2}-\d{2}\.\d{2}:\d{2}\.\d{10}: -{24}$",
+            "next_state": "start_state"
+          }
+        ]
+      }
+    )
+    _add_parser(
+      {
+        "name": "parser.cron.log",
+        "format": "regex",
+        "regex": r"^(?<time>\d{4}-\d{2}-\d{2}\.\d{2}:\d{2}\.\d{10}): (?<message>.*)",
+        "time_key": "time",
+        "time_format": "%Y-%m-%d.%H:%M.%s",
+      }
+    )
+    _add_filter(
+      {
+        "name": "parser",
+        "match": "logs.*.cron",
+        "parser": "parser.cron.log",
+        "key_name": "log",
+        "preserve_key": True,
+        "reserve_data": True,
+      },
+    )
 
   def _add_outputs():
     outputs.append(
@@ -1060,6 +1137,7 @@ init =
         )
 
   _add_default_filters()
+  _add_default_parsers()
   _add_outputs()
 
   self._config_files[options['location']] = json.dumps(cfg, indent=2)
