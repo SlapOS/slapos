@@ -67,11 +67,9 @@ class TestPortRedirection(Re6stnetTestCase):
     with open(portredir_config_path) as f:
       portredir_config = json.load(f)
 
-    self.assertDictContainsSubset(
-        {
-            'srcPort': 9201,
-            'destPort': 9201,
-        }, portredir_config[0])
+    self.assertGreaterEqual(
+      portredir_config[0].items(),
+      {'srcPort': 9201, 'destPort': 9201}.items())
 
 
 class TestTokens(Re6stnetTestCase, CrontabMixin):
