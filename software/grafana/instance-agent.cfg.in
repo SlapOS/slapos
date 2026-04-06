@@ -676,6 +676,7 @@ init =
       application,
       partition,
       "{partition_root_directory}/var/log/cron.log",
+      multiline_parser="multiline_parser.cron.log",
     )
 
   def add_erp5_zope(application, partition):
@@ -739,6 +740,7 @@ init =
       application,
       partition,
       "{partition_root_directory}/var/log/cron.log",
+      multiline_parser="multiline_parser.cron.log",
     )
 
   def add_erp5_zope_front(application, partition):
@@ -897,6 +899,7 @@ init =
       application,
       partition,
       "{partition_root_directory}/var/log/cron.log",
+      multiline_parser="multiline_parser.cron.log",
     )
 
   def add_mariadb(application, partition):
@@ -999,6 +1002,7 @@ init =
       application,
       partition,
       "{partition_root_directory}/var/log/cron.log",
+      multiline_parser="multiline_parser.cron.log",
     )
 
   def _add_default_filters():
@@ -1036,6 +1040,51 @@ init =
           """,
         }
       )
+
+  def _add_default_parsers():
+    _add_multiline_parser(
+      {
+        "name": "multiline_parser.cron.log",
+        "type": "regex",
+        "flush_timeout": 5000,
+        "rules": [
+          {
+            "state": "start_state",
+            "regex": "^\d{4}-\d{2}-\d{2}\.\d{2}:\d{2}\.\d{10}: (?!-{24}$)",
+            "next_state": "continuation"
+          },
+          {
+            "state": "continuation",
+            "regex": "^\d{4}-\d{2}-\d{2}\.\d{2}:\d{2}\.\d{10}: (?!-{24}$)",
+            "next_state": "continuation"
+          },
+          {
+            "state": "continuation",
+            "regex": "^\d{4}-\d{2}-\d{2}\.\d{2}:\d{2}\.\d{10}: -{24}$",
+            "next_state": "start_state"
+          }
+        ]
+      }
+    )
+    _add_parser(
+      {
+        "name": "parser.cron.log",
+        "format": "regex",
+        "regex": r"^(?<time>\d{4}-\d{2}-\d{2}\.\d{2}:\d{2}\.\d{10}): (?<message>.*)",
+        "time_key": "time",
+        "time_format": "%Y-%m-%d.%H:%M.%s",
+      }
+    )
+    _add_filter(
+      {
+        "name": "parser",
+        "match": "logs.*.cron",
+        "parser": "parser.cron.log",
+        "key_name": "log",
+        "preserve_key": True,
+        "reserve_data": True,
+      },
+    )
 
   def _add_outputs():
     outputs.append(
@@ -1088,6 +1137,7 @@ init =
         )
 
   _add_default_filters()
+  _add_default_parsers()
   _add_outputs()
 
   self._config_files[options['location']] = json.dumps(cfg, indent=2)
