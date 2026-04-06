@@ -1,3 +1,5 @@
+import shutil
+import tempfile
 import contextlib
 import subprocess
 import json
@@ -93,3 +95,22 @@ class TestRepozo(ZEOTestCase, CrontabMixin):
       supervisor.stopAllProcesses()
     restore_output = subprocess.check_output(restore_script)
     check_state()
+
+
+class TestBackupDirectory(ZEOTestCase, CrontabMixin):
+  @classmethod
+  def _getInstanceParameterDict(cls) -> dict:
+    cls._zeo_backup_dir = cls.enterClassContext(tempfile.TemporaryDirectory())
+    parameter_dict = super(TestBackupDirectory, cls)._getInstanceParameterDict()
+    parameter_dict['zodb-dict']['root'] = {
+      "family": "1",
+      "backup": f"{cls._zeo_backup_dir}/%(name)s",
+    }
+    return parameter_dict
+
+  def test_backup_directory(self):
+    self._executeCrontabAtDate("tidstorage", "2000-01-01 UTC")
+    breakpoint()
+    self.assertFalse(
+      self.computer_partition_root_path / "srv" / "backup" / "zodb" / "root"
+    ).glob("*")
