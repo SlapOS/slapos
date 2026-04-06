@@ -29,6 +29,9 @@ import os
 import json
 import imaplib
 import smtplib
+import ssl
+import time
+from email.mime.text import MIMEText
 import signal
 from contextlib import contextmanager
 
@@ -51,13 +54,20 @@ def time_limit(seconds):
 
 class PostfixTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'p'
+  def _get_ssl_context(self):
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
   def check_imap(self, address, password):
-    """Test IMAP login with given address and password"""
+    """Test IMAP login with STARTTLS and given address and password"""
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     host = parameter_dict["imap-smtp-ipv6"]
     imap = None
     try:
       imap = imaplib.IMAP4(host, int(parameter_dict["imap-port"]), timeout=10)
+      imap.starttls(ssl_context=self._get_ssl_context())
       imap.login(address, password)
       imap.select("INBOX")
       result, data = imap.search(None, "ALL")
@@ -119,6 +129,43 @@ class PostfixTestCase(SlapOSInstanceTestCase):
 
   def test_dovecot(self):
     self.check_imap("testmail@example.com", "password123")
+
+  def test_imap_plaintext_rejected(self):
+    """IMAP login without STARTTLS must be rejected."""
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    host = parameter_dict["imap-smtp-ipv6"]
+    imap = None
+    try:
+      imap = imaplib.IMAP4(host, int(parameter_dict["imap-port"]), timeout=10)
+      with self.assertRaises(imaplib.IMAP4.error):
+        imap.login("testmail@example.com", "password123")
+    finally:
+      if imap:
+        try:
+          imap.logout()
+        except Exception:
+          pass
+
+  def test_imaps(self):
+    """IMAP over implicit TLS (port 10993) must work."""
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    host = parameter_dict["imap-smtp-ipv6"]
+    imap = None
+    try:
+      imap = imaplib.IMAP4_SSL(host, int(parameter_dict["imaps-port"]), timeout=10,
+                                ssl_context=self._get_ssl_context())
+      imap.login("testmail@example.com", "password123")
+      imap.select("INBOX")
+      result, data = imap.search(None, "ALL")
+      self.assertEqual(result, "OK")
+    except Exception as e:
+      self.fail(f"IMAPS login failed: {e}")
+    finally:
+      if imap:
+        try:
+          imap.logout()
+        except Exception:
+          pass
 
   def test_webmail(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
@@ -225,3 +272,102 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     reset_password("bob@example.com", reset_tok, new_password)
     time.sleep(2)
     self.check_imap("bob@example.com", new_password)
+
+
+class PostfixBogofilterTestCase(SlapOSInstanceTestCase):
+  """Test that bogofilter spam filtering integrates correctly with postfix."""
+  __partition_reference__ = 'bf'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "_": json.dumps(
+        {
+          "mail-domains": ["example.com"],
+          "no-relay": True,
+          "test-account": True,
+          "bogofilter": {"enable": True},
+        }
+      )
+    }
+
+  def _get_ssl_context(self):
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+  def test_smtp_works_with_bogofilter(self):
+    """SMTP service is still reachable when bogofilter is enabled."""
+    parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()["_"]
+    )
+    host = parameter_dict["imap-smtp-ipv6"]
+    try:
+      server = smtplib.SMTP(host, int(parameter_dict["smtp-port"]), timeout=10)
+      server.quit()
+    except Exception as e:
+      self.fail(f"SMTP connection failed with bogofilter enabled: {e}")
+
+  def test_bogofilter_adds_bogosity_header(self):
+    """Bogofilter adds an X-Bogosity header to incoming (unauthenticated) mail.
+
+    Since smtpd_client_restrictions uses permit_sasl_authenticated first,
+    authenticated users bypass bogofilter filtering. Only incoming mail from
+    external sources (unauthenticated) is filtered. We simulate this by
+    sending without SASL authentication.
+    """
+    parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()["_"]
+    )
+    host = parameter_dict["imap-smtp-ipv6"]
+    smtp_port = int(parameter_dict["smtp-port"])
+    imap_port = int(parameter_dict["imap-port"])
+    address = "testmail@example.com"
+    password = "password123"
+
+    msg = MIMEText("Bogofilter integration test")
+    msg['Subject'] = "Bogofilter header test"
+    msg['From'] = address
+    msg['To'] = address
+
+    try:
+      server = smtplib.SMTP(host, smtp_port, timeout=10)
+      server.starttls(context=self._get_ssl_context())
+      # Send without authentication to trigger bogofilter filtering
+      server.sendmail(address, [address], msg.as_string())
+      server.quit()
+    except Exception as e:
+      self.fail(f"SMTP send failed: {e}")
+
+    # Allow time for bogofilter processing and LMTP delivery
+    time.sleep(10)
+
+    imap = None
+    try:
+      imap = imaplib.IMAP4(host, imap_port, timeout=10)
+      imap.starttls(ssl_context=self._get_ssl_context())
+      imap.login(address, password)
+      imap.select("INBOX")
+      result, msg_ids = imap.search(None, "ALL")
+      self.assertEqual(result, "OK")
+      ids = msg_ids[0].split()
+      self.assertGreater(len(ids), 0, "No messages in INBOX after send")
+      result, msg_data = imap.fetch(ids[-1], "(BODY.PEEK[HEADER])")
+      self.assertEqual(result, "OK")
+      headers = msg_data[0][1].decode("utf-8", errors="replace")
+      self.assertIn(
+        "X-Bogosity",
+        headers,
+        "X-Bogosity header missing, bogofilter did not process the message",
+      )
+    except AssertionError:
+      raise
+    except Exception as e:
+      self.fail(f"IMAP header check failed: {e}")
+    finally:
+      if imap:
+        try:
+          imap.logout()
+        except Exception:
+          pass

@@ -20,6 +20,16 @@ parts =
   request-dns-entry-autoconfig
   mail-config
 {% endif %}
+{% if slapparameter_dict['bogofilter']['enable'] %}
+  bogofilter-directory
+  bogofilter-scan-script
+  bogofilter-learn-spam-script
+  bogofilter-learn-ham-script
+  bogofilter-access-map
+  bogofilter-sieve-spam-filter
+  bogofilter-sieve-report-spam
+  bogofilter-sieve-report-ham
+{% endif %}
   request-relays
 
 
@@ -111,7 +121,9 @@ recipe = slapos.recipe.template:jinja2
 url = ${dovecot.jinja2.conf:target}
 output = $${directory:etc}/dovecot.conf
 imap-port = 10143
+imaps-port = 10993
 log-file = $${directory:var-log}/dovecot.log
+bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
   section directory directory
   section dovecot_directory dovecot-directory
@@ -119,9 +131,20 @@ context =
   raw user_name {{ user_name }}
   raw ipv6 {{ ipv6 }}
   raw imap_port $${:imap-port}
+  raw imaps_port $${:imaps-port}
   raw postfix_auth $${postfix-directory:spool-private}/auth
   raw postfix_dovecot_lmtp $${postfix-directory:spool-private}/dovecot-lmtp
   raw dovecot_log_path $${:log-file}
+  key ssl_cert postfix-certificate:cert-file
+  key ssl_key postfix-certificate:key-file
+  key bogofilter_enable :bogofilter-enable
+{% if slapparameter_dict['bogofilter']['enable'] %}
+  raw dovecot_plugin_dir ${dovecot-pigeonhole:location}/lib/dovecot
+  key sieve_before bogofilter-directory:sieve-before
+  key sieve_pipe_bin_dir bogofilter-directory:sieve-pipe
+  key sieve_report_spam bogofilter-sieve-report-spam:output
+  key sieve_report_ham bogofilter-sieve-report-ham:output
+{% endif %}
 
 [dovecot-passwords]
 recipe = slapos.recipe.build
@@ -223,7 +246,7 @@ inline =
   # dovecot will refuse to run. Only the pidfile provided
   # by wrapper recipe should be used
   rm -f var/run/dovecot/master.pid
-  ${dovecot:location}/sbin/dovecot -F -c $${dovecot-conf:output}
+  ${dovecot-pigeonhole:location}/sbin/dovecot -F -c $${dovecot-conf:output}
 
 [dovecot-service]
 recipe = slapos.cookbook:wrapper
@@ -317,6 +340,7 @@ url = ${postfix_main.jinja2.cf:target}
 output = $${postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/postfix.log
 no-relay = {{ dumps(slapparameter_dict['no-relay']) }}
+bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
   raw postfix_log_path $${:log-file}
   key dovecot_passwd dovecot-passwords:target
@@ -341,6 +365,10 @@ context =
   key relay_clientcerts postfix-relay-clientcerts:output
   key no_relay :no-relay
   key relay_tls_fingerprints request-relays:tls-fingerprints
+  key bogofilter_enable :bogofilter-enable
+{% if slapparameter_dict['bogofilter']['enable'] %}
+  key bogofilter_access_map bogofilter-access-map:output
+{% endif %}
 
 [postfix-relay-clientcerts]
 recipe = slapos.recipe.template:jinja2
@@ -358,11 +386,18 @@ inline =
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_master.jinja2.cf:target}
 output = $${postfix-directory:etc}/master.cf
+bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
   raw smtp_port {{ smtp_port}}
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
   key sasl_passwd postfix-sasl-passwd:output
+  key bogofilter_enable :bogofilter-enable
+  raw mail_owner {{ user_name }}
+{% if slapparameter_dict['bogofilter']['enable'] %}
+  key bogofilter_scan bogofilter-scan-script:output
+  key bogofilter_spool bogofilter-directory:spool
+{% endif %}
 
 [outbound-relay-info]
 {% for domain in slapparameter_dict['mail-domains'] -%}
@@ -514,6 +549,113 @@ name = postfix
 log = $${postfix-conf-main:log-file}
 copytruncate = true
 
+{% if slapparameter_dict['bogofilter']['enable'] %}
+# Bogofilter spam filter (per-user, with sieve + imapsieve retraining)
+# Based on: https://www.owlfish.com/thoughts/dovecot-bogofilter-antispam-2017-01-28.html
+# ----------------------------------------------------------------------------
+#
+# Architecture:
+#   1. Postfix pipes incoming (non-authenticated) mail through bogofilter
+#      via smtpd_client_restrictions + FILTER action. Per-user bogofilter
+#      databases (auto-created on first message).
+#   2. Dovecot sieve filter (sieve_before) checks X-Bogosity header and
+#      files spam into the Junk folder, marking it as read.
+#   3. Dovecot imapsieve triggers retraining when users move messages
+#      to/from Junk via IMAP.
+
+[bogofilter-directory]
+recipe = slapos.cookbook:mkdirectory
+spool = $${directory:home}/bogofilter
+sieve = $${directory:etc}/sieve
+sieve-before = $${:sieve}/before
+sieve-pipe = $${:sieve}/pipe
+
+[bogofilter-scan-script]
+recipe = slapos.recipe.template
+output = $${directory:bin}/bogofilter-scan.sh
+mode = 755
+inline =
+  #!/bin/sh
+  # Per-user bogofilter scanning script for Postfix pipe transport.
+  # Arg 1: per-user bogofilter DB directory
+  # Arg 2: sender address
+  # Arg 3: recipient address
+  BOGODIR="$$1"
+  SENDER="$$2"
+  RECIPIENT="$$3"
+  MAIL_CONFIG=$${postfix-directory:etc} ; export MAIL_CONFIG
+  mkdir -p "$$BOGODIR"
+  ${bogofilter:location}/bin/bogofilter -e -u -p -l -d "$$BOGODIR" \
+    | ${postfix:location}/usr/sbin/sendmail -G -i -f "$$SENDER" "$$RECIPIENT"
+  exit $$?
+
+[bogofilter-learn-spam-script]
+recipe = slapos.recipe.template
+output = $${bogofilter-directory:sieve-pipe}/bogofilter-learn-spam.sh
+mode = 755
+inline =
+  #!/bin/sh
+  # Called by imapsieve when a message is moved TO the Junk folder.
+  USER="$$1"
+  BOGODIR="$${bogofilter-directory:spool}/$$USER"
+  [ -d "$$BOGODIR" ] || exit 0
+  ${bogofilter:location}/bin/bogofilter -e -Ns -d "$$BOGODIR"
+
+[bogofilter-learn-ham-script]
+recipe = slapos.recipe.template
+output = $${bogofilter-directory:sieve-pipe}/bogofilter-learn-ham.sh
+mode = 755
+inline =
+  #!/bin/sh
+  # Called by imapsieve when a message is moved FROM the Junk folder.
+  USER="$$1"
+  BOGODIR="$${bogofilter-directory:spool}/$$USER"
+  [ -d "$$BOGODIR" ] || exit 0
+  ${bogofilter:location}/bin/bogofilter -e -Sn -d "$$BOGODIR"
+
+[bogofilter-access-map]
+recipe = slapos.recipe.template
+output = $${postfix-directory:etc}/bogofilter_access
+mode = 644
+inline =
+  /./   FILTER bogofilter:bogofilter
+
+[bogofilter-sieve-spam-filter]
+recipe = slapos.recipe.template
+output = $${bogofilter-directory:sieve-before}/spam-folder.sieve
+mode = 644
+inline =
+  require ["regex", "fileinto", "imap4flags"];
+  if header :regex "X-Bogosity" "^(Spam)" {
+    setflag "\\Seen";
+    fileinto "Junk";
+    stop;
+  }
+
+[bogofilter-sieve-report-spam]
+recipe = slapos.recipe.template
+output = $${bogofilter-directory:sieve}/report-spam.sieve
+mode = 644
+inline =
+  require ["vnd.dovecot.pipe", "copy", "imapsieve", "environment", "variables"];
+  if environment :matches "imap.user" "*" {
+    set "user" "{{ '$' }}{{ '$' }}{1}";
+  }
+  pipe :copy "bogofilter-learn-spam.sh" ["{{ '$' }}{{ '$' }}{user}"];
+
+[bogofilter-sieve-report-ham]
+recipe = slapos.recipe.template
+output = $${bogofilter-directory:sieve}/report-ham.sieve
+mode = 644
+inline =
+  require ["vnd.dovecot.pipe", "copy", "imapsieve", "environment", "variables"];
+  if environment :matches "imap.user" "*" {
+    set "user" "{{ '$' }}{{ '$' }}{1}";
+  }
+  pipe :copy "bogofilter-learn-ham.sh" ["{{ '$' }}{{ '$' }}{user}"];
+
+{% endif %}
+
 # SnappyMail Webmail
 # -------------------
 
@@ -538,10 +680,10 @@ context =
   key admin_password snappymail-admin-pw:passwd-sha256-crypt
 
 [snappymail-pw-conf]
-recipe = collective.recipe.template
+recipe = slapos.recipe.template
 output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-change-password.json
 mode = 600
-input = inline:
+inline =
   {
       "plugin": {
           "pass_min_length": 10,
@@ -559,10 +701,10 @@ context =
   raw dovecot_passwd_file $${dovecot-passwords:target}
 
 [snappymail-mailbox-conf]
-recipe = collective.recipe.template
+recipe = slapos.recipe.template
 output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-mailbox-detect.json
 mode = 600
-input = inline:
+inline =
   {
       "plugin": {
           "autocreate_system_folders": true
@@ -570,9 +712,9 @@ input = inline:
   }
 
 [snappymail-links-conf]
-recipe = collective.recipe.template
+recipe = slapos.recipe.template
 output = $${snappymail-files:target}/data/_data_/_default_/plugins/login-register/LoginRegister.js
-input = inline:
+inline =
   (rl => {
     if (rl) {
       const showInfoDialog = (title, message) => {
@@ -717,10 +859,10 @@ depends =
   $${php.ini-conf:recipe}
 
 [apache-graceful]
-recipe = collective.recipe.template
+recipe = slapos.recipe.template
 output = $${directory:script}/apache-httpd-graceful
 mode = 700
-input = inline:
+inline =
   #!/bin/sh
   {{ bin_directory }}/slapos-kill -s USR1 --pidfile '$${apache-php-configuration:pid-file}'
 
@@ -937,6 +1079,7 @@ config-ip = {{ ipv6 }}
 recipe = slapos.cookbook:publish.serialised
 <= monitor-publish
 imap-port = $${dovecot-conf:imap-port}
+imaps-port = $${dovecot-conf:imaps-port}
 smtp-port = {{ smtp_port }}
 imap-smtp-ipv6 = {{ ipv6 }}
 webmail-url = $${lamp-frontend-promise:url}
