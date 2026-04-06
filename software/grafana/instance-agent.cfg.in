@@ -670,6 +670,13 @@ init =
       partition,
       "{partition_root_directory}/var/log/apache-error.log",
     )
+    _add_tail_input(
+      f"logs.erp5.balancer.cron.{application['name']}-{partition['name']}",
+      "erp5.balancer.cron",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/cron.log",
+    )
 
   def add_erp5_zope(application, partition):
     timezone = partition.get('timezone', 'UTC')
@@ -725,6 +732,13 @@ init =
       "{partition_root_directory}/var/log/zope-*-event.log",
       multiline_parser="multiline_parser.erp5.zope.event_log",
       buffer_max_size="512k",
+    )
+    _add_tail_input(
+      f"logs.erp5.zope.cron.{application['name']}-{partition['name']}",
+      "erp5.zope.cron",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/cron.log",
     )
 
   def add_erp5_zope_front(application, partition):
@@ -877,6 +891,13 @@ init =
       "{partition_root_directory}/var/log/zeo-*.log",
       multiline_parser="multiline_parser.erp5.zeo.event_log",
     )
+    _add_tail_input(
+      f"logs.erp5.zeo.cron.{application['name']}-{partition['name']}",
+      "erp5.zeo.cron",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/cron.log",
+    )
 
   def add_mariadb(application, partition):
     _add_parser(
@@ -971,6 +992,13 @@ init =
       application,
       partition,
       "{partition_root_directory}/var/log/mariadb_error.log",
+    )
+    _add_tail_input(
+      f"logs.mariadb.cron.{application['name']}-{partition['name']}",
+      "erp5.mariadb.cron",
+      application,
+      partition,
+      "{partition_root_directory}/var/log/cron.log",
     )
 
   def _add_default_filters():
