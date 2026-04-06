@@ -1,0 +1,50 @@
+From d5dee5fc771aaf7ae3e2a3f25b24ad813e0492ac Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Mon, 6 Apr 2026 10:23:03 +0900
+Subject: [PATCH] Allow logging to file in foreground mode when -L is specified
+
+---
+ main.c | 10 ++++++++++
+ subs.c |  4 ++--
+ 2 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/main.c b/main.c
+index 3eb6332..6380af8 100644
+--- a/main.c
++++ b/main.c
+@@ -202,6 +202,16 @@ main(int ac, char **av)
+ 	fclose(stdin);
+ 	fclose(stdout);
+ 
++	if (!SyslogOpt && ForegroundOpt) {
++		int fd;
++		if ((fd = open(LogFile, O_WRONLY|O_CREAT|O_APPEND, 0600)) < 0) {
++			perror("failed to open logfile");
++			exit(1);
++		}
++		dup2(fd, 2);
++		close(fd);
++	}
++
+ 	i = open("/dev/null", O_RDWR);
+ 	if (i < 0) {
+ 		perror("open: /dev/null");
+diff --git a/subs.c b/subs.c
+index 6c94b4b..cbdbe60 100644
+--- a/subs.c
++++ b/subs.c
+@@ -62,9 +62,9 @@ vlog(int level, int fd, const char *ctl, va_list va)
+ 	static short suppressHeader = 0;
+ 
+ 	if (level <= LogLevel) {
+-		if (ForegroundOpt) {
++		if (ForegroundOpt && LogFile == NULL) {
+ 			/*
+-			 * when -d or -f, we always (and only) log to stderr
++			 * when -d or -f (foreground mode) with no -L, we always (and only) log to stderr
+ 			 * fd will be 2 except when 2 is bound to a execing subprocess, then it will be 8
+ 			 * [v]snprintf write at most size including \0; they'll null-terminate, even when they truncate
+ 			 * we don't care here whether it truncates
+-- 
+2.52.0
+
