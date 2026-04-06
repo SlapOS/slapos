@@ -3,7 +3,11 @@
   "description": "Values returned by mail server",
   "properties": {
     "imap-port": {
-      "description": "IMAP port of the dovecot instance",
+      "description": "IMAP (STARTTLS) port of the dovecot instance",
+      "type": "integer"
+    },
+    "imaps-port": {
+      "description": "IMAPS (implicit TLS) port of the dovecot instance",
       "type": "integer"
     },
     "smtp-port": {
