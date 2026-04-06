@@ -43,7 +43,8 @@ class Recipe(GenericBaseRecipe):
                                     '-c', options['crontabs'],
                                     '-t', options['cronstamps'],
                                     '-f', '-l', '5',
-                                    '-M', options['catcher']
+                                    '-M', options['catcher'],
+                                    '-L', options['log-file'],
                                     ))
 
     self.logger.debug('Main cron executable created at : %r', script)
