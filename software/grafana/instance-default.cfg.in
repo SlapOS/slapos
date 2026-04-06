@@ -68,6 +68,7 @@ cron-entries = ${directory:etc-cron.d}
 crontabs = ${directory:var-crontabs}
 cronstamps = ${directory:var-cronstamps}
 catcher = ${cron-simplelogger:wrapper}
+log-file = ${directory:var-log}/cron.log
 binary = ${directory:bin}/crond
 
 [cron-service]
@@ -79,7 +80,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 [cron-simplelogger]
 recipe = slapos.cookbook:simplelogger
 wrapper = ${directory:bin}/cron_simplelogger
-log = ${directory:var-log}/cron.log
+log = ${cron:log}
 
 # macros
 [generate-insecure-self-signed-certificate]
