@@ -42,8 +42,6 @@ class TestSimpleLogger(unittest.TestCase):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
-    self.addCleanup(proc.terminate)
-    self.addCleanup(proc.wait)
     out, _ = proc.communicate(input=b'test message line1\ntest message line2\n')
     self.assertFalse(out)
 
