@@ -82,7 +82,8 @@
   },
   "properties": {
     "default-relay-config": {
-      "$ref": "#/definitions/relay-config"
+      "$ref": "#/definitions/relay-config",
+      "default": {}
     },
     "relay-domain": {
       "title": "Relay Domain",
@@ -140,7 +141,6 @@
     }
   },
   "required": [
-    "default-relay-config",
     "topology"
   ]
 }
