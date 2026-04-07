@@ -145,13 +145,13 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "ipv6_remote_addr_prefix": {
-            "title": "IPv6 remote address prefix",
+          "ipv4_remote_addr": {
+            "title": "IPv4 remote address",
             "type": "string"
           },
-          "prefix_len": {
-            "title": "Prefix length",
-            "type": "number"
+          "mask": {
+            "title": "Mask",
+            "type": "string"
           }
         }
       },
