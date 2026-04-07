@@ -8,8 +8,23 @@
       "description": "Physical Cell ID. Range 0 to 1007. Equal to ORS Serial number modulo 1008 by default"
     },
     "nr_bandwidth": {
-      "$ref": "cell/common.json#/$defs/bandwidth",
-      "default": 50
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth",
+      "enum": [
+        "3 MHz",
+        "5 MHz",
+        "7 MHz",
+        "10 MHz",
+        "15 MHz",
+        "20 MHz",
+        "25 MHz",
+        "30 MHz",
+        "35 MHz",
+        "40 MHz",
+        "45 MHz",
+        "50 MHz"
+      ],
+      "type": "string"
     },
     "nr_band": {
       "$ref": "cell/nr/input-schema.json#/properties/nr_band",
