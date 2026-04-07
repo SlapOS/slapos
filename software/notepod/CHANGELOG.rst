@@ -1,3 +1,9 @@
+2026-04-10
+''''''''''
+
+- New package with NotePOD changes to standard Ubuntu.
+  It is automatically upgraded, to bring new changes to existing setups.
+
 2026-03-20
 ''''''''''
 
