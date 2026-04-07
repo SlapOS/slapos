@@ -18,7 +18,6 @@
         "15 MHz",
         "20 MHz"
       ],
-      "default": "20 MHz",
       "type": "string"
     },
     "lte_band": {
