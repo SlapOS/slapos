@@ -212,7 +212,7 @@ class TestJupyterCustomFrontend(SelectMixin, InstanceTestCase):
       'frontend-software-url': self.frontend_software_url,
       'frontend-software-type': self.frontend_software_type,
       'frontend-instance-name': self.frontend_instance_name,
-      'frontend-instance-guid': r._partition_id,
+      'frontend-instance-guid': r._instance_guid,
     })
     self.requestDefaultInstance()
 
@@ -254,7 +254,7 @@ class TestJupyterCustomAdditional(SelectMixin, InstanceTestCase):
       'frontend-additional-software-url': self.frontend_additional_software_url,
       'frontend-additional-software-type': self.frontend_additional_software_type,
       'frontend-additional-instance-name': self.frontend_additional_instance_name,
-      'frontend-additional-instance-guid': r._partition_id,
+      'frontend-additional-instance-guid': r._instance_guid,
     })
     self.requestDefaultInstance()
 
