@@ -16,6 +16,13 @@
       "request": "instance-expert-input-schema.json",
       "response": "instance-expert-output-schema.json",
       "index": 1
+    },
+    "mqtt": {
+      "title": "MQTT Input",
+      "description": "Fluentd configuration for subscribing to an MQTT topic and forwarding data to a Wendelin instance",
+      "request": "instance-mqtt-input-schema.json",
+      "response": "instance-mqtt-output-schema.json",
+      "index": 2
     }
   }
 }
