@@ -89,22 +89,23 @@ recipe = slapos.recipe.template
 inline =
   #!/bin/sh
   zodb_directory="${directory:zodb}"
-  zodb_backup_directory="{{ default_backup_path }}"
   repozo="${tidstorage:repozo-binary}"
   EXIT_CODE=0
 
   {% for family, zodb in six.iteritems(zodb_dict) -%}
   {%   for name, zodb in zodb -%}
   storage_name="{{ name }}"
+  zodb_backup_directory="{{ zodb.get('backup', '%(backup)s/%(name)s') % {'backup': default_backup_path, 'name': name} }}"
   zodb_path="$storage_name.fs"
-  [ ! -d "$zodb_backup_directory/$storage_name" ]] && mkdir "$zodb_backup_directory/$storage_name"
+  [ ! -d "$zodb_backup_directory" ]] && mkdir "$zodb_backup_directory"
   echo "Backing up $storage_name ..."
   $repozo \
     --backup \
     --kill-old-on-full \
+    --keep-only-latest-index \
     --gzip \
     --quick \
-    --repository="$zodb_backup_directory/$storage_name" \
+    --repository="$zodb_backup_directory" \
     --file="$zodb_directory/$zodb_path"
 
   CURRENT_EXIT_CODE=$?
