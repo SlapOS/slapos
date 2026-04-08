@@ -52,7 +52,10 @@
           },
           "authentication": {
             "type": "string",
-            "enum": ["none", "password"],
+            "enum": [
+              "none",
+              "password"
+            ],
             "description": "Authentication method: 'none' for IP-based, 'password' for SASL",
             "default": "none"
           },

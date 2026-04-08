@@ -24,7 +24,10 @@
       "title": "Authentication Method",
       "description": "How this domain authenticates to the relay for outbound mail. 'none' uses IP-based host verification, 'password' uses SASL username/password.",
       "type": "string",
-      "enum": ["none", "password"],
+      "enum": [
+        "none",
+        "password"
+      ],
       "default": "none"
     }
   },
