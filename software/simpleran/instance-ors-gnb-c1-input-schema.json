@@ -27,14 +27,13 @@
               "description": "Downlink Bandwidth in MHz",
               "enum": [
                 20,
-                40
+                40,
+                50
               ],
               "type": "number"
             },
             "dl_frequency": {
-              "title": "DL Frequency",
-              "description": "Downlink center frequency of the cell. (Range: 4610.01 MHz - 4989.99 MHz with 20 MHz bandwidth, or 4620 MHz - 4979.985 MHz with 40 MHz bandwidth)",
-              "type": "number"
+              "$ref": "ors-gnb-cell.json#/properties/dl_frequency"
             },
             "tdd_ul_dl_config": {
               "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
