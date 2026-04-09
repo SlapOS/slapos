@@ -17,7 +17,7 @@
       "description": "eNodeB / gNodeB Configuration",
       "request": "instance-ors-duo-enb-gnb-c1-input-schema.json",
       "response": "instance-ors-gnb-schema.json",
-      "index": 1
+      "index": 2
     },
     "enb": {
       "title": "eNB / gNB",
@@ -25,7 +25,7 @@
       "description": "eNodeB / eNodeB Configuration",
       "request": "instance-ors-duo-enb-gnb-c1-input-schema.json",
       "response": "instance-ors-enb-schema.json",
-      "index": 2
+      "index": 3
     },
     "core-network": {
       "title": "Core Network",
@@ -33,7 +33,7 @@
       "description": "Core Network Configuration",
       "request": "instance-core-network-input-schema.json",
       "response": "instance-core-network-schema.json",
-      "index": 2
+      "index": 4
     },
     "core-network-slave": {
       "title": "Core Network Sim Card or Local DNS Entry",
@@ -42,7 +42,7 @@
       "request": "core-network-shared-input-schema.json",
       "response": "sim/schema.json",
       "shared": true,
-      "index": 3
+      "index": 5
     }
   }
 }
