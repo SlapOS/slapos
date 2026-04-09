@@ -734,9 +734,10 @@ class E2E(SlapOSInstanceTestCase):
         relay_server, 'etc', 'postfix', 'ssl', 'postfix.bundle.pem'
       )
       ssl_context = self.client_ssl_context(cert_bundle)
-      host, port = mailserver.smtp_addr
+      addr = mailserver.smtp_addr
+      timeout = self.smtp_timeout
       source = (self.free_ipv6, self.free_port)
-      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+      with smtplib.SMTP(*addr, timeout=timeout, source_address=source) as smtp:
         smtp.starttls(context=ssl_context)
         smtp.sendmail(
           from_addr=self.password_relay_shared.examplemail,
@@ -748,10 +749,11 @@ class E2E(SlapOSInstanceTestCase):
   def test_server_non_authenticated_rejected(self):
     msg = "Subject: Unauthenticated Connection\n\nThis should be rejected."
     mailserver = self.mail_servers[0]
-    host, port = mailserver.smtp_addr
+    addr = mailserver.smtp_addr
+    timeout = self.smtp_timeout
     source = (self.free_ipv6, self.free_port)
     with self.assertRaises(smtplib.SMTPRecipientsRefused):
-      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+      with smtplib.SMTP(*addr, timeout=timeout, source_address=source) as smtp:
         smtp.starttls()
         smtp.sendmail(
           from_addr=self.password_relay_shared.examplemail,
