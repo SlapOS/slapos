@@ -66,7 +66,7 @@ class TestRepozo(ZEOTestCase, CrontabMixin):
 
     check_state()
     self._executeCrontabAtDate("tidstorage", "2000-01-01 UTC")
-    dat, fsz, index = sorted(
+    dat, fsz, index, index_latest = sorted(
       [
         p.name
         for p in (
@@ -77,6 +77,7 @@ class TestRepozo(ZEOTestCase, CrontabMixin):
     self.assertRegex(dat, r'2000-01-01-00-\d\d-\d\d.dat')
     self.assertRegex(fsz, r'2000-01-01-00-\d\d-\d\d.fsz')
     self.assertRegex(index, r'2000-01-01-00-\d\d-\d\d.index')
+    self.assertEqual(index_latest, 'index.latest')
 
     if ERP5PY3:
       with self.db() as db:
@@ -93,3 +94,23 @@ class TestRepozo(ZEOTestCase, CrontabMixin):
       supervisor.stopAllProcesses()
     restore_output = subprocess.check_output(restore_script)
     check_state()
+
+    if ERP5PY3:
+      with self.db() as db:
+        with db.transaction() as cnx:
+          cnx.root.state = "make a change to force a new backup"
+
+      self._executeCrontabAtDate("tidstorage", "2000-01-02 UTC")
+      dat, fsz, deltafsz, index, index_latest = sorted(
+        [
+          p.name
+          for p in (
+            self.computer_partition_root_path / "srv" / "backup" / "zodb" / "root"
+          ).glob("*")
+        ]
+      )
+      self.assertRegex(dat, r'2000-01-01-00-\d\d-\d\d.dat')
+      self.assertRegex(fsz, r'2000-01-01-00-\d\d-\d\d.fsz')
+      self.assertRegex(deltafsz, r'2000-01-02-00-\d\d-\d\d.deltafsz')
+      self.assertRegex(index, r'2000-01-02-00-\d\d-\d\d.index')
+      self.assertEqual(index_latest, 'index.latest')
