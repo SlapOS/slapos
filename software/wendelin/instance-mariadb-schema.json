@@ -50,7 +50,7 @@
       "oneOf": [
         {
           "required": [
-            "primary-url"
+            "upstream-mariadb-url"
           ]
         },
         {
