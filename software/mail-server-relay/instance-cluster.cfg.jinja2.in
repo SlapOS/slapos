@@ -213,7 +213,6 @@ init =
         section += f"""
   outbound-host = {self.buildout['request-all-relays']['relay-host']}
   outbound-smtp-port = 10587
-  outbound-submission-port = 10587
   outbound-user = {info['addr']}
   outbound-password = {info['password']}
         """

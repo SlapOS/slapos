@@ -556,7 +556,7 @@ class E2E(SlapOSInstanceTestCase):
     self.assertTrue(password, "Password must be published")
     self.assertTrue(user, "User must be published")
     self.assertEqual(
-      params.get('outbound-submission-port'), str(self.relay_outbound_port))
+      params.get('outbound-smtp-port'), str(self.relay_outbound_port))
     self.assertTrue(
       params.get('tls-fingerprints'), "TLS fingerprints must be published")
     self.assertIsInstance(
