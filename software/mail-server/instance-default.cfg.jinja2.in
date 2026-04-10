@@ -347,7 +347,7 @@ no-relay = {{ dumps(slapparameter_dict['no-relay']) }}
 bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
   raw postfix_log_path $${:log-file}
-  key dovecot_passwd dovecot-passwords:target
+  key sender_login_map postfix-sender-login-map:location
   key bin_directory directory:bin
   key usr_directory postfix-directory:usr
   key queue_directory postfix-directory:var-spool
