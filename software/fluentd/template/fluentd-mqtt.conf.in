@@ -1,0 +1,38 @@
+<source>
+  @type mqtt
+  host {{ mqtt_host }}
+  port {{ mqtt_port }}
+  topic {{ mqtt_topic }}
+{%- if mqtt_tag %}
+  tag {{ mqtt_tag }}
+{%- endif %}
+{%- if mqtt_username %}
+  username {{ mqtt_username }}
+  password {{ mqtt_password }}
+{%- endif %}
+{%- if mqtt_ssl_enabled %}
+  ssl true
+{%- endif %}
+</source>
+
+{%- if mqtt_tag %}
+<match {{ mqtt_tag }}>
+{%- else %}
+<match **>
+{%- endif %}
+  @type wendelin
+  streamtool_uri {{ wendelin_ingestion_url }}
+  user {{ username }}
+  password {{ password }}
+  <buffer tag,time>
+    timekey 1m
+    flush_mode interval
+    flush_interval {{ flush_interval }}
+    flush_thread_count 4
+    @type file
+    path {{ buffer_file_dir }}/
+  {%- if buffer_file_chunk_limit_size %}
+    chunk_limit_size {{ buffer_file_chunk_limit_size }}
+  {%- endif %}
+  </buffer>
+</match>
