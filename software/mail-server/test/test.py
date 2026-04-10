@@ -323,19 +323,20 @@ class PostfixBogofilterTestCase(SlapOSInstanceTestCase):
     host = parameter_dict["imap-smtp-ipv6"]
     smtp_port = int(parameter_dict["smtp-port"])
     imap_port = int(parameter_dict["imap-port"])
-    address = "testmail@example.com"
+    to_addr = "testmail@example.com"
+    from_addr = "unknown@unknown.domain"
     password = "password123"
 
     msg = MIMEText("Bogofilter integration test")
     msg['Subject'] = "Bogofilter header test"
-    msg['From'] = address
-    msg['To'] = address
+    msg['From'] = from_addr
+    msg['To'] = to_addr
 
     try:
       server = smtplib.SMTP(host, smtp_port, timeout=10)
       server.starttls(context=self._get_ssl_context())
       # Send without authentication to trigger bogofilter filtering
-      server.sendmail(address, [address], msg.as_string())
+      server.sendmail(from_addr, [to_addr], msg.as_string())
       server.quit()
     except Exception as e:
       self.fail(f"SMTP send failed: {e}")
@@ -347,7 +348,7 @@ class PostfixBogofilterTestCase(SlapOSInstanceTestCase):
     try:
       imap = imaplib.IMAP4(host, imap_port, timeout=10)
       imap.starttls(ssl_context=self._get_ssl_context())
-      imap.login(address, password)
+      imap.login(to_addr, password)
       imap.select("INBOX")
       result, msg_ids = imap.search(None, "ALL")
       self.assertEqual(result, "OK")
