@@ -83,13 +83,13 @@ sender_dependent_default_transport_maps = texthash:{{ relay_map }}
 
 myhostname = {{ server_fqdn }}
 mydestination = localhost.$mydomain, localhost, localhost.localdomain
-{% if bogofilter_enable %}
 
+{% if bogofilter_enable -%}
 # Bogofilter content filtering: authenticated users skip filtering,
 # all other connections are routed through the bogofilter pipe transport.
 bogofilter_destination_recipient_limit = 1
 smtpd_client_restrictions =
   permit_sasl_authenticated
-  check_client_access pcre:{{ bogofilter_access_map }}
-{% endif %}
+  check_client_access static:{ FILTER bogofilter:bogofilter }
+{%- endif %}
 
