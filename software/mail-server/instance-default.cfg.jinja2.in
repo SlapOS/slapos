@@ -359,7 +359,7 @@ log-file = $${directory:var-log}/postfix.log
 bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
   raw postfix_log_path $${:log-file}
-  key dovecot_passwd dovecot-passwords:target
+  key sender_login_map postfix-sender-login-map:location
   key bin_directory directory:bin
   key usr_directory postfix-directory:usr
   key queue_directory postfix-directory:var-spool
@@ -413,6 +413,16 @@ context =
   key bogofilter_scan bogofilter-scan-script:output
   key bogofilter_spool bogofilter-directory:spool
 {% endif %}
+
+[postfix-sender-login-map]
+recipe = slapos.recipe.template:jinja2
+recipe = slapos.recipe.build
+location = $${postfix-directory:etc}/sender_login_map
+account-entries = $${dovecot-passwords:account-entries}
+install =
+  with open(location, 'w') as f:
+    for address in options['account-entries']:
+      f.write('%(address)s %(address)s\n' % {'address': address})
 
 [outbound-relay-info]
 <= instance-parameters
