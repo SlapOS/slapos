@@ -25,7 +25,6 @@ parts =
   bogofilter-scan-script
   bogofilter-learn-spam-script
   bogofilter-learn-ham-script
-  bogofilter-access-map
   bogofilter-sieve-spam-filter
   bogofilter-sieve-report-spam
   bogofilter-sieve-report-ham
@@ -371,9 +370,6 @@ context =
   key no_relay :no-relay
   key relay_tls_fingerprints request-relays:tls-fingerprints
   key bogofilter_enable :bogofilter-enable
-{% if slapparameter_dict['bogofilter']['enable'] %}
-  key bogofilter_access_map bogofilter-access-map:output
-{% endif %}
 
 [postfix-relay-clientcerts]
 recipe = slapos.recipe.template:jinja2
@@ -620,13 +616,6 @@ inline =
   BOGODIR="$${bogofilter-directory:spool}/$$USER"
   [ -d "$$BOGODIR" ] || exit 0
   ${bogofilter:location}/bin/bogofilter -e -Sn -d "$$BOGODIR"
-
-[bogofilter-access-map]
-recipe = slapos.recipe.template
-output = $${postfix-directory:etc}/bogofilter_access
-mode = 644
-inline =
-  /./   FILTER bogofilter:bogofilter
 
 [bogofilter-sieve-spam-filter]
 recipe = slapos.recipe.template
