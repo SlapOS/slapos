@@ -32,6 +32,7 @@ init =
   
   options['validated-domains'] = str(len(domain_to_proxy))
   options['errors'] = errors
+  options['domain-to-proxy'] = domain_to_proxy
 
 [request-relay-base]
 <= slap-connection
@@ -190,37 +191,39 @@ install =
 recipe = slapos.recipe.build
 published-domain-dict = $${filter-shared-instances:published-domain-dict}
 relay-tls-fingerprints = $${request-all-relays:tls-fingerprints}
+domain-to-proxy-map = $${validate-proxy-map:domain-to-proxy}
 {% raw -%}
 init =
+  import textwrap
+  from zc.buildout.buildout import dumps
   dollar = '$$'
   for slave_ref, info in options['published-domain-dict'].items():
-    section = f"""
-  [publish-shared-{slave_ref}]
-  recipe = slapos.cookbook:publish.serialised
-  -slave-reference = {slave_ref}"""
+    section = textwrap.dedent(f"""
+      [publish-shared-{slave_ref}]
+      recipe = slapos.cookbook:publish.serialised
+      -slave-reference = {slave_ref}""")
     if 'error' in info:
-      section += f"""
-  domain = {info['addr']}
-  error = {info['error']}
-      """
+      section += textwrap.dedent(f"""
+        domain = {info['addr']}
+        error = {info['error']}""")
     else:
-      section += f"""
-  dns-entries =
-    {info['addr']} MX 10 {self.buildout['request-all-relays']['relay-host']}
-  tls-fingerprints = {dollar}{{request-all-relays:tls-fingerprints}}
-      """
+      section += textwrap.dedent(f"""
+        dns-entries =
+          {info['addr']} MX 10 {self.buildout['request-all-relays']['relay-host']}
+        tls-fingerprints = {dollar}{{request-all-relays:tls-fingerprints}}""")
       if info.get('authentication') == 'password' and info.get('password'):
-        section += f"""
-  outbound-host = {self.buildout['request-all-relays']['relay-host']}
-  outbound-smtp-port = 10587
-  outbound-user = {info['addr']}
-  outbound-password = {info['password']}
-        """
+        section += textwrap.dedent(f"""
+          outbound-host = {self.buildout['request-all-relays']['relay-host']}
+          outbound-smtp-port = 10587
+          outbound-user = {info['addr']}
+          outbound-password = {info['password']}""")
       else:
-        section += f"""
-  outbound-host = {self.buildout['request-all-relays']['relay-host']}
-  outbound-smtp-port = 10587
-        """
+        section += textwrap.dedent(f"""
+          outbound-host = {self.buildout['request-all-relays']['relay-host']}
+          outbound-smtp-port = 10587""")
+      has_proxy = dumps(info['addr'] in options['domain-to-proxy-map'])
+      section += textwrap.dedent(f"""
+        outbound-has-proxy = {has_proxy}""")
     self.buildout.parse(section)
 {%- endraw %}
 
