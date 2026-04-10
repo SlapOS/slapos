@@ -659,6 +659,7 @@ dcrond-binary = {{ dcron_executable_location }}
 cron-entries = ${directory:cron-entries}
 crontabs = ${directory:crontabs}
 cronstamps = ${directory:cronstamps}
+log-file = ${directory:log}/crond.log
 catcher = ${cron-simplelogger:wrapper}
 
 [cron-service]
@@ -670,7 +671,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 [cron-simplelogger]
 recipe = slapos.cookbook:simplelogger
 wrapper = ${directory:bin}/cron_simplelogger
-log = ${directory:log}/crond.log
+log = ${cron:log-file}
 
 #-----------------------
 #--

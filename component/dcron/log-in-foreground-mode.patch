@@ -1,0 +1,28 @@
+From cd2454306bb40685fef0d673d73162d26d0ae3ed Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Mon, 6 Apr 2026 10:23:03 +0900
+Subject: [PATCH] Allow logging to file in foreground mode when -L is specified
+
+---
+ subs.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/subs.c b/subs.c
+index 6c94b4b..cbdbe60 100644
+--- a/subs.c
++++ b/subs.c
+@@ -62,9 +62,9 @@ vlog(int level, int fd, const char *ctl, va_list va)
+ 	static short suppressHeader = 0;
+ 
+ 	if (level <= LogLevel) {
+-		if (ForegroundOpt) {
++		if (ForegroundOpt && LogFile == NULL) {
+ 			/*
+-			 * when -d or -f, we always (and only) log to stderr
++			 * when -d or -f (foreground mode) with no -L, we always (and only) log to stderr
+ 			 * fd will be 2 except when 2 is bound to a execing subprocess, then it will be 8
+ 			 * [v]snprintf write at most size including \0; they'll null-terminate, even when they truncate
+ 			 * we don't care here whether it truncates
+-- 
+2.52.0
+
