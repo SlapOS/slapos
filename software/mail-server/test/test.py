@@ -86,7 +86,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
           "mail-domains": [
             "example.com"
           ],
-          "no-relay": True,
+          "inbound-relay": {"enable": False},
           "test-account": True,  # Enable test account creation
         }
       )
@@ -284,7 +284,7 @@ class PostfixBogofilterTestCase(SlapOSInstanceTestCase):
       "_": json.dumps(
         {
           "mail-domains": ["example.com"],
-          "no-relay": True,
+          "inbound-relay": {"enable": False},
           "test-account": True,
           "bogofilter": {"enable": True},
         }

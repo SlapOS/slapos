@@ -164,11 +164,14 @@ class E2E(SlapOSInstanceTestCase):
   def requestMailServer(cls, domain, state, extra=None):
     param_dict = {
       "mail-domains": [domain],
-      "relay-sr-url": RELAY_SR,
+      "inbound-relay": {"relay-sr-url": RELAY_SR },
       "test-account": True,
     }
     if extra:
-      param_dict.update(extra)
+      for k, v in extra.items():
+        w = param_dict.setdefault(k, v)
+        if w is not v and all(isinstance(x, dict) for x in (w, v)):
+          w.update(v)
     mailserver = cls.slap.request(
       software_release=EMAIL_SR,
       partition_reference=domain,
@@ -181,7 +184,11 @@ class E2E(SlapOSInstanceTestCase):
 
   @classmethod
   def requestExternalMailServer(cls, domain, state):
-    return cls.requestMailServer(domain, state, {'no-relay': True})
+    return cls.requestMailServer(
+      domain,
+      state,
+      {'inbound-relay': {'enable': False}},
+    )
 
   @classmethod
   def requestRelayShared(cls, domain, address, extra_parameters, state):
