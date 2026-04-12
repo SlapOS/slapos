@@ -59,6 +59,42 @@
       "type": "integer",
       "default": 999
     },
+    "dry-multiplier": {
+      "title": "DRY sampling multiplier",
+      "description": "set DRY sampling multiplier",
+      "type": "number",
+      "default": 0.0
+    },
+    "temp": {
+      "title": "temperature",
+      "description": "Temperature scales logits, sharpening or flattening probabilities to control randomness.",
+      "type": "number",
+      "default": 0.8
+    },
+    "top-k": {
+      "title": "top-k sampling ",
+      "description": "Top-k samples only from the K highest-probability tokens each step",
+      "type": "integer",
+      "default": 40
+    },
+    "top-p": {
+      "title": "top-p sampling ",
+      "description": "Top-p samples from the smallest set whose cumulative probability reaches p.",
+      "type": "number",
+      "default": 0.9
+    },
+    "min-p": {
+      "title": "min-p sampling ",
+      "description": "Min_p drops tokens below a fraction of the most likely token.",
+      "type": "number",
+      "default": 0.1
+    },
+    "reasoning-budget": {
+      "title": "Reasoning budget",
+      "description": "Limits model “thinking” tokens; 0 disables, -1 unlimited.",
+      "type": "integer",
+      "default": 0
+    },
     "embedding": {
       "title": "Is embedding model",
       "description": "This service runs embedding model",
