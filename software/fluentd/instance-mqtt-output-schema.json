@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Values returned by Fluentd MQTT instantiation",
+  "additionalProperties": false,
+  "properties": {
+    "mqtt-host": {
+      "title": "MQTT broker host",
+      "description": "MQTT broker host to which Fluentd is subscribed",
+      "type": "string"
+    },
+    "mqtt-port": {
+      "title": "MQTT broker port",
+      "description": "MQTT broker port to which Fluentd is subscribed",
+      "type": "integer"
+    },
+    "mqtt-topic": {
+      "title": "MQTT topic",
+      "description": "MQTT topic to which Fluentd is subscribed",
+      "type": "string"
+    }
+  }
+}
