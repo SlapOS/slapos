@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Parameters to instantiate Fluentd with MQTT input",
+  "additionalProperties": false,
+  "required": [
+    "mqtt-host",
+    "mqtt-topic",
+    "wendelin-ingestion-url",
+    "username",
+    "password"
+  ],
+  "properties": {
+    "mqtt-host": {
+      "title": "MQTT broker host",
+      "description": "Hostname or IP address of the MQTT broker to subscribe to",
+      "type": "string"
+    },
+    "mqtt-port": {
+      "title": "MQTT broker port",
+      "description": "Port of the MQTT broker",
+      "type": "integer",
+      "default": 1883
+    },
+    "mqtt-topic": {
+      "title": "MQTT topic",
+      "description": "MQTT topic to subscribe to. Wildcards '#' (multi-level) and '+' (single-level) are supported.",
+      "type": "string"
+    },
+    "mqtt-tag": {
+      "title": "Fluentd tag",
+      "description": "Fluentd tag to assign to received MQTT messages. Defaults to the MQTT topic with '/' replaced by '.'.",
+      "type": "string"
+    },
+    "mqtt-username": {
+      "title": "MQTT username",
+      "description": "Username for MQTT broker authentication",
+      "type": "string"
+    },
+    "mqtt-password": {
+      "title": "MQTT password",
+      "description": "Password for MQTT broker authentication",
+      "type": "string"
+    },
+    "mqtt-ssl-enabled": {
+      "title": "Enable SSL/TLS",
+      "description": "Enable SSL/TLS for the MQTT broker connection",
+      "type": "boolean",
+      "default": false
+    },
+    "wendelin-ingestion-url": {
+      "title": "Wendelin ingestion URL",
+      "description": "Ingestion endpoint URL of the Wendelin Telecom instance to which the data is to be forwarded",
+      "type": "string"
+    },
+    "username": {
+      "title": "Wendelin account username",
+      "description": "The username of a valid account to authenticate with on the Wendelin instance",
+      "type": "string"
+    },
+    "password": {
+      "title": "Wendelin account password",
+      "description": "The password of the account to authenticate with on the Wendelin instance",
+      "type": "string"
+    },
+    "flush-interval": {
+      "title": "Buffer flushing interval",
+      "description": "Delay after which the data buffer is flushed to the output",
+      "type": "string",
+      "default": "1m"
+    },
+    "buffer-file-chunk-limit-size": {
+      "title": "Buffer file chunk limit size",
+      "description": "Maximum size of each individual buffer chunk.",
+      "type": "string"
+    }
+  }
+}
