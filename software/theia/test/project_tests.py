@@ -207,7 +207,7 @@ class TestTheiaResilienceERP5(ERP5Mixin, test_resiliency.TestTheiaResilience):
 
     # Check that zodb backup has started
     zodb_backup = self._getERP5PartitionPath('export', 'zeo', 'srv', 'backup', 'zodb', 'root')
-    self.assertEqual(len(os.listdir(zodb_backup)), 3)
+    self.assertEqual(len(os.listdir(zodb_backup)), 4)
 
     # Check that mariadb catalog backup contains expected changes
     with gzip.open(mariadb_backup_dump) as f:

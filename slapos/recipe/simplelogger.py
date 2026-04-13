@@ -30,11 +30,12 @@ import time
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 def log(filename):
+  lines = sys.stdin.readlines()
   prefix = time.strftime('%Y-%m-%d.%H:%M.%s:')
+  output = ''.join(prefix + ' ' + line for line in lines)
+  output += prefix + ' ' + '------------------------\n'
   with open(filename, 'a') as logfile:
-    for line in sys.stdin:
-      print >> logfile, prefix, line,
-    print >> logfile, prefix, '------------------------'
+    logfile.write(output)
 
 class Recipe(GenericBaseRecipe):
 
