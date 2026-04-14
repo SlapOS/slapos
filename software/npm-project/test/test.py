@@ -59,6 +59,7 @@ class TestNpmeProject(SlapOSInstanceTestCase):
   def getInstanceParameterDict(cls):
     return {
       'repo-url': default_npm_project_url,
+      'branch': "master",
     }
 
   def setUp(self):
