@@ -376,6 +376,8 @@ class TestLoki(GrafanaTestCase):
 
 
 class TestListenInPartition(GrafanaTestCase):
+  process_dict: dict[str, psutil.Process]
+
   def setUp(self):
     with self.slap.instance_supervisor_rpc as supervisor:
       all_process_info = supervisor.getAllProcessInfo()
@@ -437,9 +439,11 @@ class TestListenInPartition(GrafanaTestCase):
     )
 
   def test_fluent_bit_listen(self):
+    # fluent-bit service is a wrapper, we inspect connections of the child process
+    fluent_bit, = self.process_dict['fluent-bit'].children()
     self.assertEqual(
         sorted([
-            c.laddr for c in self.process_dict['fluent-bit'].connections()
+            c.laddr for c in fluent_bit.connections()
             if c.status == 'LISTEN'
         ]),
         [
