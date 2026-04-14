@@ -462,12 +462,13 @@ caucase.updater(
     openssl=openssl_bin,
 )}}
 
-[fluent-bit]
-recipe = slapos.cookbook:wrapper
-command-line = ${:nice} {{ fluent_bit_bin }} --config ${fluent-bit-config-file:location}
-wrapper-path = ${directory:service}/fluent-bit
-hash-files =
-  ${fluent-bit-config-file:location}
+[fluent-bit-wrapper]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
+  ulimit -n $(ulimit -Hn)
+  ${:nice} {{ fluent_bit_bin }} --config ${fluent-bit-config-file:location}
+output = ${directory:bin}/${:_buildout_section_name_}
 # TODO: control nice of the agent ?
 {% if 0 %}
 nice = nice -19 chrt --idle 0 ionice -c3
@@ -475,6 +476,12 @@ nice = nice -19 chrt --idle 0 ionice -c3
 nice =
 {% endif %}
 
+[fluent-bit]
+recipe = slapos.cookbook:wrapper
+command-line = ${fluent-bit-wrapper:output}
+wrapper-path = ${directory:service}/fluent-bit
+hash-files =
+  ${fluent-bit-config-file:location}
 http-port = 19080
 ip = ${instance-parameter:ipv4-random}
 url = http://${:ip}:${:http-port}
