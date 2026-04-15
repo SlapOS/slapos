@@ -1,0 +1,111 @@
+From b39d74aa00bcd97b3401598e7bb9d016f90aad06 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 14 Apr 2026 14:44:17 +0900
+Subject: [PATCH] Support TMPDIR and clean up temp files on exit
+
+- Support TMPDIR environment variable for temp file location
+- Add cleanup function to remove temp directory on exit
+- Add SIGTERM/SIGINT handler to clean up even when killed (foreground and background modes)
+---
+ crontab.c |  5 ++++-
+ main.c    | 45 ++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 48 insertions(+), 2 deletions(-)
+
+diff --git a/crontab.c b/crontab.c
+index 06df70f..eb9cc06 100644
+--- a/crontab.c
++++ b/crontab.c
+@@ -161,9 +161,12 @@ main(int ac, char **av)
+ 				FILE *fi;
+ 				int fd;
+ 				int n;
+-				char tmp[] = TMPDIR "/crontab.XXXXXX";
++				char *tmpdir = getenv("TMPDIR");
++				char tmp[256];
+ 				char buf[RW_BUFFER];
+ 
++				snprintf(tmp, sizeof(tmp), "%s/crontab.XXXXXX", tmpdir ? tmpdir : TMPDIR);
++
+ 				/*
+ 				 * Create temp file with perm 0600 and O_EXCL flag, ensuring that this call creates the file
+ 				 * Read from fi for "$CDir/$USER", write to fd for temp file
+diff --git a/main.c b/main.c
+index 6380af8..866a5bf 100644
+--- a/main.c
++++ b/main.c
+@@ -47,6 +47,33 @@ char *TempFileFmt;
+ uid_t DaemonUid;
+ pid_t DaemonPid;
+ 
++static void
++cleanup(void)
++{
++	if (TempDir) {
++		 DIR *d = opendir(TempDir);
++		if (d) {
++			struct dirent *entry;
++			while ((entry = readdir(d))) {
++				if (entry->d_name[0] != '.') {
++					char path[PATH_MAX];
++					snprintf(path, sizeof(path), "%s/%s", TempDir, entry->d_name);
++					remove(path);
++				}
++			}
++			closedir(d);
++		}
++		remove(TempDir);
++	}
++}
++
++static void
++sigterm_handler(int sig)
++{
++	cleanup();
++	_exit(0);
++}
++
+ int
+ main(int ac, char **av)
+ {
+@@ -221,7 +248,8 @@ main(int ac, char **av)
+ 	dup2(i, 1);
+ 
+ 	/* create tempdir with permissions 0755 for cron output */
+-	TempDir = strdup(TMPDIR "/cron.XXXXXX");
++	char *tmpdir = getenv("TMPDIR");
++	TempDir = strdup(tmpdir ? concat(tmpdir, "/cron.XXXXXX", NULL) : TMPDIR "/cron.XXXXXX");
+ 	if (mkdtemp(TempDir) == NULL) {
+ 		perror("mkdtemp");
+ 		exit(1);
+@@ -309,6 +337,14 @@ main(int ac, char **av)
+ 			if ((fd = open(LogFile, O_WRONLY|O_CREAT|O_APPEND, 0600)) >= 0) {
+ 				/* start SIGHUP ignoring, SIGCHLD handling while stderr still open */
+ 				initsignals();
++
++				struct sigaction sa;
++				sa.sa_flags = 0;
++				sa.sa_handler = sigterm_handler;
++				sigemptyset(&sa.sa_mask);
++				sigaction(SIGTERM, &sa, NULL);
++				sigaction(SIGINT, &sa, NULL);
++
+ 				/* 2> LogFile */
+ 				fclose(stderr);
+ 				dup2(fd, 2);
+@@ -334,6 +370,13 @@ main(int ac, char **av)
+ 
+ 		/* stderr stays open, start SIGHUP ignoring, SIGCHLD handling */
+ 		initsignals();
++
++		struct sigaction sa;
++		sa.sa_flags = 0;
++		sa.sa_handler = sigterm_handler;
++		sigemptyset(&sa.sa_mask);
++		sigaction(SIGTERM, &sa, NULL);
++		sigaction(SIGINT, &sa, NULL);
+ 	}
+ 
+ 	/* close all other fds, including the ones we opened as /dev/null and LogFile */
+-- 
+2.52.0
+
