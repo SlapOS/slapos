@@ -117,9 +117,11 @@ init =
       buildout_options["eggs-directory"]])
 
   import collections
+  import hashlib
+  import json
   import pathlib
-  import urllib.parse
   import toml
+  import urllib.parse
 
   slapparameter_dict = self.options["slapparameter-dict"]
   slap_connection = self.buildout["slap-connection"]
@@ -372,6 +374,12 @@ init =
 
   options['access-path-dict'] = access_path_dict
   self._config_files[options['output']] = toml.dumps(config)
+  # save files hashes to reinstall the part if content changes.
+  file_hashes = {
+    file_path: hashlib.md5(file_content.encode()).hexdigest()
+    for file_path, file_content in self._config_files.items()
+  }
+  options['files-hashes'] = json.dumps(file_hashes, sort_keys=True)
 
 install =
   import os
@@ -494,6 +502,7 @@ init =
       buildout_options["eggs-directory"]])
 
   import datetime
+  import hashlib
   import itertools
   import json
   import pathlib
@@ -1142,6 +1151,12 @@ init =
 
   self._config_files[options['location']] = json.dumps(cfg, indent=2)
   options['access-path-dict'] = access_path_dict
+  # save files hashes to reinstall the part if content changes.
+  file_hashes = {
+    file_path: hashlib.md5(file_content.encode()).hexdigest()
+    for file_path, file_content in self._config_files.items()
+  }
+  options['files-hashes'] = json.dumps(file_hashes, sort_keys=True)
 
 install =
   for fname, content in self._config_files.items():
