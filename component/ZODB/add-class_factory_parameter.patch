@@ -1,0 +1,251 @@
+From c80e96bd465c40f55bf51206451affa2f56d7df2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 14 Apr 2026 15:03:25 +0900
+Subject: [PATCH] Add class_factory parameter to DB and ZConfig class-factory
+ option (#421)
+
+DB.__init__() opens a connection to verify the root object exists,
+and that connection is returned to the pool for future reuse.
+Connections capture the classFactory reference at creation time
+(in Connection.__init__ via ObjectReader), so setting db.classFactory
+after DB.__init__() does not apply to connections already in the pool.
+
+This is a problem for Zope, which overrides DB.classFactory after
+construction to provide graceful handling of broken/uninstalled objects.
+The first connection handed out after startup may silently use the
+wrong class factory.
+
+Add a class_factory parameter to DB.__init__() that is set before any
+connection is opened, and a corresponding class-factory option to the
+ZConfig database configuration schema. This allows frameworks like
+Zope to pass the class factory at construction time.
+---
+ CHANGES.rst                  |  4 +++
+ src/ZODB/DB.py               | 12 ++++++++-
+ src/ZODB/component.xml       | 10 ++++++++
+ src/ZODB/config.py           | 26 +++++++++++++++++++
+ src/ZODB/tests/testConfig.py | 50 ++++++++++++++++++++++++++++++++++++
+ src/ZODB/tests/testDB.py     | 32 +++++++++++++++++++++++
+ 6 files changed, 133 insertions(+), 1 deletion(-)
+
+ ================
+diff --git a/src/ZODB/DB.py b/src/ZODB/DB.py
+index 7d4a4254857b33853a351492bd561a725842a7b5..0188d11843d6291438ae75054c39755b021f5474 100644
+--- a/src/ZODB/DB.py
++++ b/src/ZODB/DB.py
+@@ -360,6 +360,7 @@ def __init__(self,
+                  databases=None,
+                  xrefs=True,
+                  large_record_size=1 << 24,
++                 class_factory=None,
+                  **storage_args):
+         """Create an object database.
+ 
+@@ -407,6 +408,13 @@ def __init__(self,
+         :param int large_record_size: When object records are saved
+              that are larger than this, a warning is issued,
+              suggesting that blobs should be used instead.
++        :param callable class_factory: A callable
++             ``class_factory(connection, module_name, global_name)``
++             used to resolve persistent object classes during
++             deserialization. If not provided, the default
++            ``DB.classFactory`` method is used; it wraps
++             :func:`ZODB.broken.find_global` to provide this
++             three-argument interface.
+         :param storage_args: Extra keywork arguments passed to a
+              storage constructor if a path name or None is passed as
+              the storage argument.
+@@ -465,6 +473,9 @@ def __init__(self,
+ 
+         self.large_record_size = large_record_size
+ 
++        if class_factory is not None:
++            self.classFactory = class_factory
++
+         # Make sure we have a root:
+         with self.transaction('initial database creation') as conn:
+             try:
+@@ -847,7 +858,6 @@ def setActivityMonitor(self, am):
+         self._activity_monitor = am
+ 
+     def classFactory(self, connection, modulename, globalname):
+-        # Zope will rebind this method to arbitrary user code at runtime.
+         return find_global(modulename, globalname)
+ 
+     def setCacheSize(self, size):
+diff --git a/src/ZODB/component.xml b/src/ZODB/component.xml
+index 0227ac99e91764cc968fa3a223566a4f260559a8..33a7eaaddabc1327e8b9e72c7d48be83dccf91a1 100644
+--- a/src/ZODB/component.xml
++++ b/src/ZODB/component.xml
+@@ -324,6 +324,16 @@
+         currently possible) are disallowed.
+       </description>
+     </key>
++    <key name="class-factory" datatype=".importable_name">
++      <description>
++        A callable used to resolve persistent object classes during
++        deserialization. The database-level class factory is called as
++        ``class_factory(connection, module_name, global_name)``.
++        Specify a Python dotted-path name.
++        If not provided, the database uses its default class factory,
++        which delegates to ``ZODB.broken.find_global``.
++      </description>
++    </key>
+ 
+   </sectiontype>
+ 
+diff --git a/src/ZODB/config.py b/src/ZODB/config.py
+index 453c2e86149d9a63bf0ce4afe917912a861315ef..dc085443de26bed1b821c2d9c756e72d4f4f61b1 100644
+--- a/src/ZODB/config.py
++++ b/src/ZODB/config.py
+@@ -13,6 +13,7 @@
+ ##############################################################################
+ """Open database and storage from a configuration."""
+ import os
++import traceback
+ from io import StringIO
+ 
+ import ZConfig
+@@ -20,6 +21,30 @@
+ import ZODB
+ 
+ 
++def importable_name(name):
++    # A datatype that converts a Python dotted-path-name to an object
++    try:
++        components = name.split('.')
++        start = components[0]
++        g = globals()
++        package = __import__(start, g, g)
++        modulenames = [start]
++        for component in components[1:]:
++            modulenames.append(component)
++            try:
++                package = getattr(package, component)
++            except AttributeError:
++                n = '.'.join(modulenames)
++                package = __import__(n, g, g, component)
++        return package
++    except ImportError:
++        IO = StringIO()
++        traceback.print_exc(file=IO)
++        raise ValueError(
++            f'The object named by {name!r} could not be imported\n'
++            f'{IO.getvalue()}')
++
++
+ db_schema_path = os.path.join(ZODB.__path__[0], "config.xml")
+ _db_schema = None
+ 
+@@ -150,6 +175,7 @@ def _option(name, oname=None):
+         _option('pool_timeout')
+         _option('allow_implicit_cross_references', 'xrefs')
+         _option('large_record_size')
++        _option('class_factory')
+ 
+         try:
+             return ZODB.DB(
+diff --git a/src/ZODB/tests/testConfig.py b/src/ZODB/tests/testConfig.py
+index fb88282b2b5e3c39f23a1a411899b0b94fff6354..ab054e3bf4052ddd069266d837aa7b3dd5dd9790 100644
+--- a/src/ZODB/tests/testConfig.py
++++ b/src/ZODB/tests/testConfig.py
+@@ -128,6 +128,56 @@ def database_xrefs_config():
+     """
+ 
+ 
++def dummy_class_factory(connection, module_name, global_name):
++    """Helper function for database_class_factory_config
++    """
++
++
++def database_class_factory_config():
++    r"""The class-factory option sets the class factory used for
++    deserializing persistent objects.
++
++    Without it, the default DB.classFactory method is used:
++
++    >>> db = ZODB.config.databaseFromString(
++    ...    "<zodb>\n<mappingstorage>\n</mappingstorage>\n</zodb>\n")
++    >>> import types
++    >>> isinstance(db.classFactory, types.MethodType)
++    True
++    >>> db.close()
++
++    With a dotted name, the specified callable is used:
++
++    >>> db = ZODB.config.databaseFromString(
++    ...    "<zodb>\nclass-factory ZODB.tests.testConfig.dummy_class_factory\n"
++    ...    "<mappingstorage>\n</mappingstorage>\n</zodb>\n")
++    >>> db.classFactory is dummy_class_factory
++    True
++
++    The factory is available to connections, including the one
++    pooled during __init__:
++
++    >>> conn = db.open()
++    >>> conn._reader._factory is dummy_class_factory
++    True
++    >>> conn.close()
++    >>> db.close()
++
++    When the class factory is set to a non-existent callable, a detailed
++    error is raised:
++    >>> db = ZODB.config.databaseFromString(
++    ...    "<zodb>\n"
++    ...     "class-factory ZODB.tests.testConfig.non_existent_class_factory\n"
++    ...    "<mappingstorage>\n</mappingstorage>\n</zodb>\n"
++    ... )  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
++    Traceback (most recent call last):
++    ...
++    ZConfig.DataConversionError: The object named by 'ZODB.tests.testConfig.non_existent_class_factory' could not be imported
++    Traceback (most recent call last):
++    ...
++    """  # noqa: E501
++
++
+ def multi_atabases():
+     r"""If there are multiple codb sections -> multidatabase
+ 
+diff --git a/src/ZODB/tests/testDB.py b/src/ZODB/tests/testDB.py
+index 96fc21221b8baee84135ad93d1f980a2f7c20710..8fe6f772c0cbd3c7b319ff2540e97e1d84626209 100644
+--- a/src/ZODB/tests/testDB.py
++++ b/src/ZODB/tests/testDB.py
+@@ -324,6 +324,38 @@ def passing_None_to_DB():
+     """
+ 
+ 
++def class_factory_parameter():
++    """The class_factory parameter lets you set a custom class resolver
++    at construction time, before any connection is created.
++
++    >>> from ZODB.broken import find_global
++    >>> calls = []
++    >>> def my_factory(conn, module, name):
++    ...     calls.append((module, name))
++    ...     return find_global(module, name)
++
++    >>> db = ZODB.DB(None, class_factory=my_factory)
++    >>> db.classFactory is my_factory
++    True
++
++    The connection pooled during __init__ has the custom factory:
++
++    >>> conn = db.open()
++    >>> conn._reader._factory is my_factory
++    True
++    >>> conn.close()
++
++    Reused connections also have the custom factory:
++
++    >>> conn2 = db.open()
++    >>> conn2._reader._factory is my_factory
++    True
++    >>> conn2.close()
++
++    >>> db.close()
++    """
++
++
+ def open_convenience():
+     """Often, we just want to open a single connection.
+ 
