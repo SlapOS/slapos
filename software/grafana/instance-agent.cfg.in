@@ -645,6 +645,46 @@ init =
     inputs.append(inpt)
     _add_input_filter_tags(tag, "systemd", application, partition)
 
+  def add_slapos_partition(application, partition):
+    # promises from .slapgrid/promise/log/*.log
+    _add_parser(
+      {
+        "name": "parser.slapos.promise_log",
+        "format": "regex",
+        "regex": r"^(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - (?<level>[A-Z]+) - (?<message>.*)$",
+        "time_key": "time",
+        "time_format": "%d/%b/%Y:%H:%M:%S %z",
+        "time_system_timezone": True,
+      }
+    )
+    _add_tail_input(
+      f"logs.slapos.promise.{application['name']}-{partition['name']}",
+      "slapos.promise",
+      application,
+      partition,
+      "{partition_root_directory}/.slapgrid/promise/log/*.log",
+      parser="parser.slapos.promise_log",
+    )
+    # slapos node instance .slapgrid/log/instance.log
+    _add_parser(
+      {
+        "name": "parser.slapos.instance_log",
+        "format": "regex",
+        "regex": r"^\[(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (?<level>[A-Z]+): (?<message>.*)$",
+        "time_key": "time",
+        "time_format": "%d/%b/%Y:%H:%M:%S %z",
+        "time_system_timezone": True,
+      }
+    )
+    _add_tail_input(
+      f"logs.slapos.instance.{application['name']}-{partition['name']}",
+      "slapos.instance",
+      application,
+      partition,
+      "{partition_root_directory}/.slapgrid/log/instance.log",
+      parser="parser.slapos.instance_log",
+    )
+
   def add_erp5_balancer(application, partition):
     _add_parser(
       {
@@ -1124,6 +1164,8 @@ init =
 
   for application in slapparameter_dict.get('applications', []):
     for partition in application.get('partitions', []):
+      if application['type'] == 'SlapOS':
+        add_slapos_partition(application, partition)
       partition.setdefault("type", "default")
       if partition['type'] == 'erp5/balancer':
         add_erp5_balancer(application, partition)
