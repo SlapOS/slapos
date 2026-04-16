@@ -11,9 +11,12 @@ class ChangePasswordDriverDovecot
 	 */
 	private $oLogger = null;
 
+	private $oPasswdFile = null;
+
 	function __construct(\RainLoop\Config\Plugin $oConfig, \MailSo\Log\Logger $oLogger)
 	{
 		$this->oLogger = $oLogger;
+                $this->passwdFile = \trim($oConfig->Get('plugin', 'driver_dovecot_passwd_file', ''));
 	}
 
 	public static function isSupported() : bool
@@ -21,14 +24,18 @@ class ChangePasswordDriverDovecot
 		return true;
 	}
 
-	public static function configMapping() : array
+        public static function configMapping() : array
 	{
-		return array();
+		return array(
+			\RainLoop\Plugins\Property::NewInstance('driver_dovecot_passwd_file')
+                                ->SetLabel('Password File')
+				->SetDescription('Path to password file')
+		);
 	}
 
 	public function ChangePassword(\RainLoop\Model\Account $oAccount, string $sPrevPassword, string $sNewPassword) : bool
 	{
-		$filePath = "{{ dovecot_passwd_file }}";
+		$filePath = $this->passwdFile;
 		$email = $oAccount->Email();
 		
 		try {
