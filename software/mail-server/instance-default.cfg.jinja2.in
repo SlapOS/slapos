@@ -6,8 +6,9 @@ parts =
   cron-entry-logrotate
   directory
   lamp-frontend-promise
-  snappymail
+  snappymail-all
   password-php
+  mailimport-php
   monitor-base
   publish-connection-information
   certificate-authority
@@ -61,6 +62,8 @@ php-ini-dir = $${:etc}/php
 tmp-php = $${:tmp}/php
 tmp-upload = $${:tmp}/upload
 www = $${:srv}/www/
+import-state = $${:var}/import-state
+import-log = $${:log}/import
 
 [ca-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -663,7 +666,6 @@ inline =
 recipe = plone.recipe.command
 target = $${directory:www}
 command = cp -ax ${snappymail:location}/. $${:target} && mkdir -p $${:target}/data/_data_/_default_/plugins/ && cp -ax ${snappymail-plugins:location}/plugins/* $${:target}/data/_data_/_default_/plugins/
-update-command = $${:command}
 stop-on-error = true
 
 [snappymail-admin-pw]
@@ -714,6 +716,7 @@ inline =
 [snappymail-links-conf]
 recipe = slapos.recipe.template
 output = $${snappymail-files:target}/data/_data_/_default_/plugins/login-register/LoginRegister.js
+mode = 600
 inline =
   (rl => {
     if (rl) {
@@ -751,7 +754,8 @@ inline =
         if (e.detail && 'Login' === e.detail.viewModelTemplateID) {
           const container = e.detail.viewModelDom.querySelector('#plugin-Login-BottomControlGroup'),
             forgot = 'LOGIN/LABEL_FORGOT_PASSWORD',
-            register = 'LOGIN/LABEL_REGISTRATION';
+            register = 'LOGIN/LABEL_REGISTRATION',
+            import_mail = 'LOGIN/LABEL_IMPORT_MAIL';
           if (container) {
             let html = '';
             html = html + '<p class="forgot-link">'
@@ -759,6 +763,9 @@ inline =
               + '</p>';
             html = html + '<p class="registration-link">'
               + '<a href="#" class="g-ui-link" data-i18n="'+register+'">'+rl.i18n(register)+'</a>'
+              + '</p>';
+            html = html + '<p class="import-link">'
+              + '<a href="mailimport.php" class="g-ui-link">Import from existing mail account</a>'
               + '</p>';
             container.append(Element.fromHTML('<div class="controls clearfix">' + html + '</div>'));
 
@@ -795,7 +802,7 @@ context =
   raw smtp_port {{ smtp_port }}
   key imap_port dovecot-conf:imap-port
 
-[snappymail]
+[snappymail-all]
 recipe = slapos.recipe.build
 init =
   ""
@@ -817,6 +824,22 @@ url = ${password.php.in:target}
 output = $${directory:www}/password.php
 context =
   key dovecot_passwd dovecot-passwords:target
+
+
+# Mail Import page
+# ----------------
+
+[mailimport-php]
+recipe = slapos.recipe.template:jinja2
+url = ${mailimport.php.in:target}
+output = $${directory:www}/mailimport.php
+context =
+  key dovecot_passwd dovecot-passwords:target
+  raw imapsync_bin ${imapsync:output}
+  key import_state_dir directory:import-state
+  key import_log_dir directory:import-log
+  raw dovecot_host {{ ipv6 }}
+  key dovecot_port dovecot-conf:imaps-port
 
 {% if slapparameter_dict['request-dns']['enable'] %}
 # Mail Autoconfig
