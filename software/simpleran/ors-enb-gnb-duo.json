@@ -10,6 +10,7 @@
         2,
         4
       ],
+      "description": "Number of Antennas for each of the cells configured. Examples: enable both cells and set to 2 to do MIMO 2x2 with Carrier Aggregation, enable one cell and set to 4 to do MIMO 4x4.",
       "default": 2
     },
     "n_antenna_ul": {
@@ -19,6 +20,7 @@
         2,
         4
       ],
+      "description": "Number of Antennas for each of the cells configured. Examples: enable both cells and set to 2 to do MIMO 2x2 with Carrier Aggregation, enable one cell and set to 4 to do MIMO 4x4.",
       "default": 2
     },
     "plmn_list_5g": {
