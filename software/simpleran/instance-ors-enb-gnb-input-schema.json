@@ -1,0 +1,140 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "cell1": {
+      "title": "Cell Parameters",
+      "description": "Radio parameters related to the cell",
+      "$ref": "#/$defs/ors_cell"
+    },
+    "nodeb": {
+      "title": "eNB Parameters",
+      "description": "Parameters not related to a single cell but to the eNB",
+      "allOf": [
+        {
+          "$ref": "ors-enb-gnb-classic.json"
+        },
+        {
+          "$ref": "ors-gnb.json"
+        },
+        {
+          "$ref": "ors-enb.json"
+        },
+        {
+          "$ref": "ors-enb-gnb.json"
+        },
+        {
+          "$ref": "ors-enb-secondary.json"
+        },
+        {
+          "$ref": "ors-gnb-secondary.json"
+        },
+        {
+          "$ref": "ors-enb-gnb-secondary.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
+    },
+    "management": {
+      "title": "ORS Management Parameters",
+      "description": "Parameters which are not related to radio, such as promise thresholds, statistical collection, log verbosity etc...",
+      "allOf": [
+        {
+          "$ref": "ors-params.json"
+        }
+      ],
+      "type": "object",
+      "default": {}
+    },
+    "monitor-interface-url": {
+      "$ref": "instance-ors-gnb-input-schema.json#/properties/monitor-interface-url"
+    },
+    "rf-info": {
+      "$ref": "instance-ors-gnb-input-schema.json#/properties/rf-info"
+    }
+  },
+  "$defs": {
+    "ors_cell": {
+      "oneOf": [
+        {
+          "title": "gNB Cell",
+          "required": [
+            "enable_cell"
+          ],
+          "allOf": [
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "Cell Type",
+              "type": "object",
+              "properties": {
+                "enable_cell": {
+                  "title": "Enable Cell: You must select this parameter to enable the cell",
+                  "type": "string",
+                  "enum": [
+                    "Enable gNB",
+                    "Disable gNB"
+                  ],
+                  "default": "Enable gNB"
+                }
+              }
+            },
+            {
+              "$ref": "ors-cell.json"
+            },
+            {
+              "$ref": "ors-gnb-cell.json"
+            },
+            {
+              "$ref": "ors-gnb-cell-secondary.json"
+            },
+            {
+              "$ref": "ors-cell-secondary.json"
+            }
+          ],
+          "type": "object"
+        },
+        {
+          "title": "eNB Cell",
+          "required": [
+            "enable_cell"
+          ],
+          "allOf": [
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "Cell Type",
+              "type": "object",
+              "properties": {
+                "enable_cell": {
+                  "title": "Enable Cell: You must select this parameter to enable the cell",
+                  "type": "string",
+                  "enum": [
+                    "Enable eNB",
+                    "Disable eNB"
+                  ],
+                  "default": "Enable eNB"
+                }
+              }
+            },
+            {
+              "$ref": "ors-cell.json"
+            },
+            {
+              "$ref": "ors-enb-cell.json"
+            },
+            {
+              "$ref": "ors-enb-cell-secondary.json"
+            },
+            {
+              "$ref": "ors-cell-secondary.json"
+            }
+          ],
+          "type": "object"
+        }
+      ],
+      "type": "object",
+      "default": {}
+    }
+  }
+}

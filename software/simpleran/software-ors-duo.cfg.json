@@ -11,29 +11,13 @@
       "response": "instance-ors-enb-schema.json",
       "index": 1
     },
-    "gnb": {
-      "title": "eNB / gNB",
-      "software-type": "gnb",
-      "description": "eNodeB / gNodeB Configuration",
-      "request": "instance-ors-duo-enb-gnb-input-schema.json",
-      "response": "instance-ors-gnb-schema.json",
-      "index": 2
-    },
-    "enb": {
-      "title": "eNB / gNB",
-      "software-type": "enb",
-      "description": "eNodeB / eNodeB Configuration",
-      "request": "instance-ors-duo-enb-gnb-input-schema.json",
-      "response": "instance-ors-enb-schema.json",
-      "index": 3
-    },
     "ue": {
       "title": "UE",
       "software-type": "ue",
       "description": "User Equipment Configuration",
       "request": "instance-ors-duo-ue-input-schema.json",
       "response": "instance-ors-ue-schema.json",
-      "index": 4
+      "index": 2
     },
     "core-network": {
       "title": "Core Network",
@@ -41,7 +25,7 @@
       "description": "Core Network Configuration",
       "request": "instance-core-network-input-schema.json",
       "response": "instance-core-network-schema.json",
-      "index": 5
+      "index": 3
     },
     "core-network-slave": {
       "title": "SIM Card",
@@ -50,7 +34,7 @@
       "request": "core-network-shared-input-schema.json",
       "response": "sim/schema.json",
       "shared": true,
-      "index": 6
+      "index": 4
     },
     "test-model": {
       "title": "Test Model",
@@ -58,6 +42,22 @@
       "description": "Play 3GPP Test Models, allows to measure power or radio quality",
       "request": "instance-ors-duo-test-model-input-schema.json",
       "response": "instance-test-model-schema.json",
+      "index": 5
+    },
+    "gnb": {
+      "title": "eNB / gNB (obsolete)",
+      "software-type": "gnb",
+      "description": "eNodeB / gNodeB Configuration",
+      "request": "instance-ors-duo-enb-gnb-input-schema.json",
+      "response": "instance-ors-gnb-schema.json",
+      "index": 6
+    },
+    "enb": {
+      "title": "eNB / gNB (obsolete)",
+      "software-type": "enb",
+      "description": "eNodeB / eNodeB Configuration",
+      "request": "instance-ors-duo-enb-gnb-input-schema.json",
+      "response": "instance-ors-enb-schema.json",
       "index": 7
     }
   }

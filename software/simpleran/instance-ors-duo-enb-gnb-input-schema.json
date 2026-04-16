@@ -6,12 +6,12 @@
     "cell1": {
       "title": "First Cell",
       "description": "Radio parameters of the first cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
-      "$ref": "#/$defs/ors_duo_cell"
+      "$ref": "instance-ors-enb-gnb-input-schema.json#/$defs/ors_cell"
     },
     "cell2": {
       "title": "Second Cell",
       "description": "Radio parameters of the second cell of ORS Duo (Please check connection parameters to see which band it corresponds to)",
-      "$ref": "#/$defs/ors_duo_cell"
+      "$ref": "instance-ors-enb-gnb-input-schema.json#/$defs/ors_cell"
     },
     "nodeb": {
       "title": "eNB Parameters",
@@ -58,83 +58,6 @@
     },
     "rf-info": {
       "$ref": "instance-ors-gnb-input-schema.json#/properties/rf-info"
-    }
-  },
-  "$defs": {
-    "ors_duo_cell": {
-      "required": [
-        "cell_type"
-      ],
-      "oneOf": [
-        {
-          "title": "gNB Cell",
-          "required": [
-            "cell_type"
-          ],
-          "allOf": [
-            {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "title": "Cell Type",
-              "type": "object",
-              "properties": {
-                "cell_type": {
-                  "title": "Cell Type: you must select this parameter to enable the cell",
-                  "type": "string",
-                  "const": "gNB"
-                }
-              }
-            },
-            {
-              "$ref": "ors-cell.json"
-            },
-            {
-              "$ref": "ors-gnb-cell.json"
-            },
-            {
-              "$ref": "ors-gnb-cell-secondary.json"
-            },
-            {
-              "$ref": "ors-cell-secondary.json"
-            }
-          ],
-          "type": "object"
-        },
-        {
-          "title": "eNB Cell",
-          "required": [
-            "cell_type"
-          ],
-          "allOf": [
-            {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "title": "Cell Type",
-              "type": "object",
-              "properties": {
-                "cell_type": {
-                  "title": "Cell Type: you must select this parameter to enable the cell",
-                  "type": "string",
-                  "const": "eNB"
-                }
-              }
-            },
-            {
-              "$ref": "ors-cell.json"
-            },
-            {
-              "$ref": "ors-enb-cell.json"
-            },
-            {
-              "$ref": "ors-enb-cell-secondary.json"
-            },
-            {
-              "$ref": "ors-cell-secondary.json"
-            }
-          ],
-          "type": "object"
-        }
-      ],
-      "type": "object",
-      "default": {}
     }
   }
 }
