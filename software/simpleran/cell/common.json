@@ -50,6 +50,16 @@
       "description": "If set to true, no GBR congestion check is performed.",
       "type": "boolean",
       "default": false
+    },
+    "rrc_configuration": {
+      "title": "RRC Configuration",
+      "description": "RRC Configuration",
+      "type": "string",
+      "enum": [
+        "measurement",
+        "initial"
+      ],
+      "default": "initial"
     }
   },
   "$defs": {
