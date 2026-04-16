@@ -20,15 +20,6 @@
           "amf_addr": "127.0.1.100"
         }
       ]
-    },
-    "nssai": {
-      "$ref": "instance-enb-input-schema.json#/properties/nssai"
-    },
-    "nr_nr_handover": {
-      "$ref": "instance-enb-input-schema.json#/properties/nr_nr_handover"
-    },
-    "nr_eutra_handover": {
-      "$ref": "instance-enb-input-schema.json#/properties/nr_eutra_handover"
     }
   }
 }

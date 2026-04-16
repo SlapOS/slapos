@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ORS eNB Secondary",
+  "properties": {
+    "eutra_eutra_handover": {
+      "$ref": "instance-enb-input-schema.json#/properties/eutra_eutra_handover"
+    },
+    "eutra_nr_handover": {
+      "$ref": "instance-enb-input-schema.json#/properties/eutra_nr_handover"
+    }
+  }
+}

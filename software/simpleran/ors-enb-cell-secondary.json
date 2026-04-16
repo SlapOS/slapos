@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ORS LTE Cell",
+  "type": "object",
+  "properties": {
+    "dl_earfcn": {
+      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn",
+      "title": "Expert: DL EARFCN",
+      "description": "Can be used instead of DL Frequency to directly set the Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL EARFCN)"
+    },
+    "tti_bundling": {
+      "$ref": "cell/lte/input-schema.json#/properties/tti_bundling"
+    },
+    "cipher_algo_pref": {
+      "$ref": "cell/lte/input-schema.json#/properties/cipher_algo_pref"
+    },
+    "integ_algo_pref": {
+      "$ref": "cell/lte/input-schema.json#/properties/integ_algo_pref"
+    }
+  }
+}

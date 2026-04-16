@@ -21,13 +21,22 @@
           "$ref": "ors-enb-gnb-duo.json"
         },
         {
-          "$ref": "ors-enb-gnb.json"
+          "$ref": "ors-gnb.json"
         },
         {
           "$ref": "ors-enb.json"
         },
         {
-          "$ref": "ors-gnb.json"
+          "$ref": "ors-enb-gnb.json"
+        },
+        {
+          "$ref": "ors-enb-secondary.json"
+        },
+        {
+          "$ref": "ors-gnb-secondary.json"
+        },
+        {
+          "$ref": "ors-enb-gnb-secondary.json"
         }
       ],
       "type": "object",
@@ -80,6 +89,12 @@
             },
             {
               "$ref": "ors-gnb-cell.json"
+            },
+            {
+              "$ref": "ors-gnb-cell-secondary.json"
+            },
+            {
+              "$ref": "ors-cell-secondary.json"
             }
           ],
           "type": "object"
@@ -107,6 +122,12 @@
             },
             {
               "$ref": "ors-enb-cell.json"
+            },
+            {
+              "$ref": "ors-enb-cell-secondary.json"
+            },
+            {
+              "$ref": "ors-cell-secondary.json"
             }
           ],
           "type": "object"

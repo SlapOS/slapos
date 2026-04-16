@@ -30,16 +30,8 @@
       "description": "Downlink center frequency of the cell. Default depends on your ORS model, please refer to the connection parameters. Make sure to not set a value outside the range of your ORS",
       "type": "number"
     },
-    "dl_earfcn": {
-      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn",
-      "title": "Expert: DL EARFCN",
-      "description": "Can be used instead of DL Frequency to directly set the Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL EARFCN)"
-    },
     "tdd_ul_dl_config": {
       "$ref": "cell/lte/input-schema.json#/properties/tdd_ul_dl_config"
-    },
-    "tti_bundling": {
-      "$ref": "cell/lte/input-schema.json#/properties/tti_bundling"
     },
     "root_sequence_index": {
       "$ref": "cell/common.json#/$defs/root_sequence_index",
@@ -48,12 +40,6 @@
     "tac": {
       "$ref": "cell/lte/input-schema.json#/properties/tac",
       "default": "0x0001"
-    },
-    "cipher_algo_pref": {
-      "$ref": "cell/lte/input-schema.json#/properties/cipher_algo_pref"
-    },
-    "integ_algo_pref": {
-      "$ref": "cell/lte/input-schema.json#/properties/integ_algo_pref"
     }
   }
 }
