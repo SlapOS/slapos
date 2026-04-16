@@ -80,6 +80,12 @@
             },
             {
               "$ref": "ors-gnb-cell.json"
+            },
+            {
+              "$ref": "ors-gnb-cell-secondary.json"
+            },
+            {
+              "$ref": "ors-cell-secondary.json"
             }
           ],
           "type": "object"
