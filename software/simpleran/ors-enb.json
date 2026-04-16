@@ -25,12 +25,6 @@
           "plmn": "00101"
         }
       ]
-    },
-    "eutra_eutra_handover": {
-      "$ref": "instance-enb-input-schema.json#/properties/eutra_eutra_handover"
-    },
-    "eutra_nr_handover": {
-      "$ref": "instance-enb-input-schema.json#/properties/eutra_nr_handover"
     }
   }
 }
