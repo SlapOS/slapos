@@ -24,10 +24,10 @@
           "$ref": "ors-enb-gnb.json"
         },
         {
-          "$ref": "ors-enb.json"
+          "$ref": "ors-gnb.json"
         },
         {
-          "$ref": "ors-gnb.json"
+          "$ref": "ors-enb.json"
         },
         {
           "$ref": "ors-enb-secondary.json"
