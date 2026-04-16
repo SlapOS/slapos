@@ -28,6 +28,15 @@
         },
         {
           "$ref": "ors-gnb.json"
+        },
+        {
+          "$ref": "ors-enb-secondary.json"
+        },
+        {
+          "$ref": "ors-gnb-secondary.json"
+        },
+        {
+          "$ref": "ors-enb-gnb-secondary.json"
         }
       ],
       "type": "object",
@@ -113,6 +122,12 @@
             },
             {
               "$ref": "ors-enb-cell.json"
+            },
+            {
+              "$ref": "ors-enb-cell-secondary.json"
+            },
+            {
+              "$ref": "ors-cell-secondary.json"
             }
           ],
           "type": "object"
