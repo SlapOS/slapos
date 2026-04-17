@@ -137,9 +137,9 @@ context =
   raw dovecot_log_path $${:log-file}
   key ssl_cert postfix-certificate:cert-file
   key ssl_key postfix-certificate:key-file
+  raw dovecot_plugin_dir ${dovecot-pigeonhole:location}/lib/dovecot
   key bogofilter_enable :bogofilter-enable
 {% if slapparameter_dict['bogofilter']['enable'] %}
-  raw dovecot_plugin_dir ${dovecot-pigeonhole:location}/lib/dovecot
   key sieve_before bogofilter-directory:sieve-before
   key sieve_pipe_bin_dir bogofilter-directory:sieve-pipe
   key sieve_report_spam bogofilter-sieve-report-spam:output
