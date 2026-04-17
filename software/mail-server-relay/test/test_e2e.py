@@ -120,15 +120,11 @@ class E2E(SlapOSInstanceTestCase):
           "external-proxy-1": {
             "host": external[0]['imap-smtp-ipv6'],
             "port": int(external[0]['smtp-port']),
-            "user": 'testmail@' + cls.external_domains[0],
-            "password": 'password123',
             "domains": cls.mail_server_domains[:-1]
           },
           "external-proxy-2": {
             "host": external[1]['imap-smtp-ipv6'],
             "port": int(external[1]['smtp-port']),
-            "user": 'testmail@' + cls.external_domains[1],
-            "password": 'password123',
             "domains": cls.mail_server_domains[-1:]
           },
         },
@@ -173,6 +169,7 @@ class E2E(SlapOSInstanceTestCase):
       software_type='default',
       state=state,
     )
+    mailserver.domain = domain
     mailserver.testmail = 'testmail@' + domain
     return mailserver
 
@@ -521,21 +518,6 @@ class E2E(SlapOSInstanceTestCase):
       "This is a legitimate sender domain test."
     )
 
-  def test_sender_restriction_impersonation_blocked(self):
-    """mail1 backend tries to send with From: @mail2.domain.lan (a domain
-    belonging to another backend). The relay must reject this."""
-    spoofed_sender = "testmail@mail2.domain.lan"
-    msg = "This impersonated email should be blocked by the relay."
-    # Authenticate on mail1 as the real user but set MAIL FROM to mail2's domain
-    self.send_email(
-      self.mail_servers[0], self.external_mail_server, msg,
-      send_as=spoofed_sender,
-    )
-    # The backend accepted the mail (user is authenticated locally), but
-    # the relay should reject it when the backend tries to forward it.
-    # Verify the email never arrives at the external server.
-    self.check_not_in_inbox(self.external_mail_server, msg, wait_time=30)
-
   def test_relay_unknown_sender_rejected(self):
     mail1 = self.mail_servers[0]
     body = "Send to relay from unknown sender address"
@@ -556,7 +538,7 @@ class E2E(SlapOSInstanceTestCase):
     self.assertTrue(password, "Password must be published")
     self.assertTrue(user, "User must be published")
     self.assertEqual(
-      params.get('outbound-submission-port'), str(self.relay_outbound_port))
+      params.get('outbound-smtp-port'), str(self.relay_outbound_port))
     self.assertTrue(
       params.get('tls-fingerprints'), "TLS fingerprints must be published")
     self.assertIsInstance(
@@ -726,7 +708,7 @@ class E2E(SlapOSInstanceTestCase):
           msg=msg,
         )
 
-  def test_server_auth_as_relay_with_client_tls(self):
+  def test_server_authenticated_relay_with_client_tls(self):
     mailserver = self.mail_servers[0]
     for i, relay_server in enumerate(self.relay_servers):
       body = "Authenticate to backend with relay %d's client certificates" % i
@@ -734,9 +716,10 @@ class E2E(SlapOSInstanceTestCase):
         relay_server, 'etc', 'postfix', 'ssl', 'postfix.bundle.pem'
       )
       ssl_context = self.client_ssl_context(cert_bundle)
-      host, port = mailserver.smtp_addr
+      addr = mailserver.smtp_addr
+      timeout = self.smtp_timeout
       source = (self.free_ipv6, self.free_port)
-      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+      with smtplib.SMTP(*addr, timeout=timeout, source_address=source) as smtp:
         smtp.starttls(context=ssl_context)
         smtp.sendmail(
           from_addr=self.password_relay_shared.examplemail,
@@ -745,16 +728,49 @@ class E2E(SlapOSInstanceTestCase):
         )
       self.check_inbox(mailserver, body)
 
-  def test_server_non_authenticated_rejected(self):
+  def test_server_non_authenticated_relay_rejected(self):
     msg = "Subject: Unauthenticated Connection\n\nThis should be rejected."
     mailserver = self.mail_servers[0]
-    host, port = mailserver.smtp_addr
+    addr = mailserver.smtp_addr
+    timeout = self.smtp_timeout
     source = (self.free_ipv6, self.free_port)
     with self.assertRaises(smtplib.SMTPRecipientsRefused):
-      with smtplib.SMTP(host, port, timeout=10, source_address=source) as smtp:
+      with smtplib.SMTP(*addr, timeout=timeout, source_address=source) as smtp:
         smtp.starttls()
         smtp.sendmail(
           from_addr=self.password_relay_shared.examplemail,
+          to_addrs=[mailserver.testmail],
+          msg=msg,
+        )
+
+  def test_server_authenticated_sender_impersonation_blocked(self):
+    msg = "Subject: Authenticated Connection with spoofed sender\n\nReject it."
+    mailserver = self.mail_servers[0]
+    addr = mailserver.smtp_addr
+    timeout = self.smtp_timeout
+    source = (self.free_ipv6, self.free_port)
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(*addr, timeout=timeout, source_address=source) as smtp:
+        smtp.starttls()
+        smtp.login(mailserver.testmail, self.testmail_password)
+        smtp.sendmail(
+          from_addr='unknown@' + mailserver.domain,
+          to_addrs=[mailserver.testmail],
+          msg=msg,
+        )
+
+  def test_server_authenticated_sender_unknown_domain_blocked(self):
+    msg = "Subject: Authenticated Connection with spoofed sender\n\nReject it."
+    mailserver = self.mail_servers[0]
+    addr = mailserver.smtp_addr
+    timeout = self.smtp_timeout
+    source = (self.free_ipv6, self.free_port)
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(*addr, timeout=timeout, source_address=source) as smtp:
+        smtp.starttls()
+        smtp.login(mailserver.testmail, self.testmail_password)
+        smtp.sendmail(
+          from_addr='unknown@' + self.unknown_domain,
           to_addrs=[mailserver.testmail],
           msg=msg,
         )

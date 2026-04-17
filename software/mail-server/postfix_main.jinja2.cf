@@ -58,6 +58,12 @@ smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
 smtpd_sasl_auth_enable = yes
 
+smtpd_sender_login_maps = texthash:{{ sender_login_map }}
+smtpd_sender_restrictions =
+  # ensure only authenticated senders may use their sender address,
+  # and authenticated senders may only the sender address they own.
+  reject_sender_login_mismatch
+
 smtpd_relay_restrictions =
   # if authenticated mail account, allow everything
   permit_sasl_authenticated
@@ -83,13 +89,13 @@ sender_dependent_default_transport_maps = texthash:{{ relay_map }}
 
 myhostname = {{ server_fqdn }}
 mydestination = localhost.$mydomain, localhost, localhost.localdomain
-{% if bogofilter_enable %}
 
+{% if bogofilter_enable -%}
 # Bogofilter content filtering: authenticated users skip filtering,
 # all other connections are routed through the bogofilter pipe transport.
 bogofilter_destination_recipient_limit = 1
 smtpd_client_restrictions =
   permit_sasl_authenticated
-  check_client_access pcre:{{ bogofilter_access_map }}
-{% endif %}
+  check_client_access static:{ FILTER bogofilter:bogofilter }
+{%- endif %}
 
