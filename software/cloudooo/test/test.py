@@ -30,6 +30,7 @@ import csv
 import io
 import json
 import multiprocessing
+import os
 import ssl
 import textwrap
 import urllib.parse as urllib_parse
@@ -473,6 +474,35 @@ class TestDefaultInstance(CloudOooTestCase, ImageComparisonTestCase):
     """Test that the basic script raises when scripting is disabled."""
     with self.assertRaisesRegex(Exception, "ooo: scripting is disabled"):
       self.script_test_basic()
+
+  def haproxy_expected_conf(self, partition_path):
+    run_directory = os.path.join(partition_path, 'var', 'run')
+    return f'''\
+global
+  maxconn 4096
+  stats socket {run_directory}/haproxy.sock level admin
+  master-worker
+  pidfile {run_directory}/haproxy.pid
+
+defaults
+  mode http
+  retries 1
+  option redispatch
+  maxconn 2000
+  timeout server 610s
+  timeout queue 60s
+  timeout connect 5s
+  timeout client 610s
+  option httpclose'''
+
+  def test_haproxy_conf(self):
+    """Test haproxy generated configuration."""
+    haproxy_conf = os.path.join(self.computer_partition_root_path, 'etc', 'haproxy.cfg')
+    with open(haproxy_conf, 'r') as file:
+      haproxy_conf_content = file.read()
+    self.assertIn(
+      self.haproxy_expected_conf(self.computer_partition_root_path),
+      haproxy_conf_content)
 
 
 def _convert_html_to_text(
