@@ -177,10 +177,14 @@ When adding promises to rapid-cdn instance profiles:
 
 When testing changes to buildout configs, templates, or `software.py`:
 
-1. Remove the `.completed` file: `rm <software-path>/.completed`
-2. Rebuild: `slapos node software --only=<hash>`
-3. Reprocess instances: `slapos node instance --only=<partition>`
-4. Do **not** manually modify files under `srv/runner/` (except removing `.completed`). Always use `slapos node software` / `slapos node instance` to apply changes — this validates the full deployment pipeline.
+1. Rebuild: `slapos node software --force --only=<hash>`
+2. Reprocess instances: `slapos node instance --force --only=<partition>`
+3. Do **not** manually modify files under `srv/runner/`. Always use `slapos node software` / `slapos node instance` to apply changes — this validates the full deployment pipeline.
+
+Notes on the CLI flags:
+- `--all` is deprecated in favor of `--force` (for both `slapos node software` and `slapos node instance`).
+- `--only` does **not** imply `--force`. Use `--force` together with `--only` to force reprocessing of a specific SR or partition.
+- `slapos node software` uses an extends-cache located in the SR compilation directory; buildout caches the files it reads. Simply removing the `.completed` file re-runs buildout with the same extends-cache (usually not what you want). Use `--force` to ignore the extends-cache.
 
 ## Environment Note
 
