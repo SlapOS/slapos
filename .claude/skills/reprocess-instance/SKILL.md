@@ -1,5 +1,5 @@
 ---
-description: Reprocess SlapOS instances (kill existing process, run slapos node instance)
+description: Reprocess SlapOS instances (kill existing process, run slapos node instance --force)
 allowed-tools: Bash(*), Read
 ---
 
@@ -33,7 +33,7 @@ bash ${CLAUDE_SKILL_DIR}/scripts/reprocess.sh .claude/env.local.json $ARGUMENTS
 The script will:
 1. Source the SlapOS environment (standalone or testing)
 2. Kill any running `slapos node instance` process
-3. Run `slapos node instance --only=<partition>` (or `--all`)
+3. Run `slapos node instance --force --only=<partition>` (or `--force` for all)
 4. Show the last 30 lines of output
 
 ## After reprocessing

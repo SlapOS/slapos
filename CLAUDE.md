@@ -56,6 +56,21 @@ Key constraints:
 - Tests **cannot run in parallel** — they share a SlapOS proxy on port 21584
 - Before launching, check for active runners: `ps aux | grep '[p]ython_for_test.*unittest'`
 - Slave test classes take ~4-15 min; master-only classes take ~4 min
+- `--rebuild` only rebuilds the software profile (buildout configs/templates), **not** the slapos.cookbook egg. If you changed Python recipe code (e.g., `slapos/recipe/*.py`), you must also copy the changed file into the installed egg:
+  ```bash
+  cp slapos/recipe/changed_file.py \
+    <software-path>/eggs/slapos.cookbook-*.egg/slapos/recipe/changed_file.py
+  ```
+  The software path is at `<slapos-sr-testing-environment-base>/tmp/soft/<hash>/`.
+
+## Publishing Cookbook Egg Changes
+
+After modifying recipe code, CI will fail until the published egg tarball is updated:
+```bash
+<python-binary> setup.py sdist
+cp dist/slapos.cookbook-<version>.tar.gz <public-dir>/
+```
+The version pin lives in `stack/slapos.cfg` under `[versions]`. If you keep the same dev version, just overwrite the tarball. If you bump the version, update the pin too.
 
 ## Running Software Release Deployment Tests (slapos-sr-testing)
 
@@ -109,6 +124,14 @@ Each test directory contains:
 - If the user asks to push, confirm the target remote and branch before executing.
 - **NEVER** use commands that reset a branch to another ref (e.g., `git checkout -B <branch> <ref>`, `git branch -f <branch> <ref>`, `git reset --hard <ref>`) — these silently overwrite the branch's upstream tracking config. To update a branch with latest upstream, use `git rebase <upstream-remote>/master` which preserves the existing tracking.
 
+## Adding Instance Parameters
+
+When adding a new parameter to `instance-input-schema.json`:
+- Use `"type": "string"` with `"default": ""` for optional parameters that flow through buildout templates (`${slap-configuration:configuration.xxx}`). Buildout fails if a referenced option doesn't exist, so a default is required.
+- Integer/boolean values passed as strings work fine — recipes parse them with `int()` etc.
+- After changing schema or template files, update md5sums in `buildout.hash.cfg` (the linter may do this automatically).
+- Tests passing parameters must match the schema type (e.g., pass `str(port)` not `port` if schema says `"type": "string"`).
+
 ## Architecture
 
 ### Recipe Structure
@@ -155,10 +178,14 @@ Use the `/add-promise` skill for guidance on adding SlapOS promises to instance 
 
 When testing changes to buildout configs, templates, or `software.py`:
 
-1. Remove the `.completed` file: `rm <software-path>/.completed`
-2. Rebuild: `slapos node software --only=<hash>`
-3. Reprocess instances: `slapos node instance --only=<partition>`
-4. Do **not** manually modify files under `srv/runner/` (except removing `.completed`). Always use `slapos node software` / `slapos node instance` to apply changes — this validates the full deployment pipeline.
+1. Rebuild: `slapos node software --force --only=<hash>`
+2. Reprocess instances: `slapos node instance --force --only=<partition>`
+3. Do **not** manually modify files under `srv/runner/`. Always use `slapos node software` / `slapos node instance` to apply changes — this validates the full deployment pipeline.
+
+Notes on the CLI flags:
+- `--all` is deprecated in favor of `--force` (for both `slapos node software` and `slapos node instance`).
+- `--only` does **not** imply `--force`. Use `--force` together with `--only` to force reprocessing of a specific SR or partition.
+- `slapos node software` uses an extends-cache located in the SR compilation directory; buildout caches the files it reads. Simply removing the `.completed` file re-runs buildout with the same extends-cache (usually not what you want). Use `--force` to ignore the extends-cache.
 
 ## Building Software Releases
 

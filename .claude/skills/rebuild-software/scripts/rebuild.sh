@@ -5,6 +5,9 @@
 # Environment setup:
 # - Default: sources ~/bin/slapos-standalone-activate
 # - For testing: pass env.local.json path to source slapos-sr-testing-environment
+#
+# Runs `slapos node software --force` (which ignores the extends-cache;
+# removing .completed alone is not equivalent).
 
 set -e
 
@@ -106,18 +109,10 @@ if [ -f "$PID_FILE" ]; then
   fi
 fi
 
-# Remove .completed
-if [ -f "$SOFT_DIR/.completed" ]; then
-  rm "$SOFT_DIR/.completed"
-  echo "Removed $SOFT_DIR/.completed"
-else
-  echo ".completed already absent"
-fi
-
 # Rebuild
 echo ""
-echo "=== Running slapos node software --only=$SR_HASH ==="
-slapos node software --only="$SR_HASH" 2>&1 | tail -20
+echo "=== Running slapos node software --force --only=$SR_HASH ==="
+slapos node software --force --only="$SR_HASH" 2>&1 | tail -20
 
 echo ""
 if [ -f "$SOFT_DIR/.completed" ]; then

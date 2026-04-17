@@ -1,5 +1,5 @@
 ---
-description: Rebuild a SlapOS software release (kill existing process, remove .completed, run slapos node software)
+description: Rebuild a SlapOS software release (kill existing process, run slapos node software --force)
 allowed-tools: Bash(*), Read
 ---
 
@@ -35,9 +35,8 @@ The script will:
 2. List available software releases from the proxy
 3. Match the requested SR (or auto-detect from cwd)
 4. Kill any running `slapos node software` process
-5. Remove the `.completed` marker
-6. Run `slapos node software --only=<hash>`
-7. Report success or failure
+5. Run `slapos node software --force --only=<hash>` (the `--force` flag ignores the extends-cache; removing `.completed` alone is not equivalent)
+6. Report success or failure
 
 ## After rebuild
 

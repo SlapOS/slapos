@@ -48,10 +48,10 @@ fi
 # Run slapos node instance
 if [ -n "$PARTITION" ]; then
   echo "=== Reprocessing partition: $PARTITION ==="
-  slapos node instance --only="$PARTITION" 2>&1 | tail -30
+  slapos node instance --force --only="$PARTITION" 2>&1 | tail -30
 else
   echo "=== Reprocessing all instances ==="
-  slapos node instance --all 2>&1 | tail -30
+  slapos node instance --force 2>&1 | tail -30
 fi
 
 echo ""
