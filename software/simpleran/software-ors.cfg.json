@@ -4,7 +4,7 @@
   "serialisation": "json-in-xml",
   "software-type": {
     "enb-gnb": {
-      "title": "eNB / gNB (obsolete)",
+      "title": "eNB / gNB",
       "software-type": "enb-gnb",
       "description": "eNodeB / gNodeB Configuration",
       "request": "instance-ors-enb-gnb-input-schema.json",
