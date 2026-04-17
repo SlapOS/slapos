@@ -467,7 +467,7 @@ recipe = slapos.recipe.template
 inline =
   #!/bin/sh
   ulimit -n $(ulimit -Hn)
-  ${:nice} {{ fluent_bit_bin }} --config ${fluent-bit-config-file:location}
+  exec ${:nice} {{ fluent_bit_bin }} --config ${fluent-bit-config-file:location}
 output = ${directory:bin}/${:_buildout_section_name_}
 # TODO: control nice of the agent ?
 {% if 0 %}
