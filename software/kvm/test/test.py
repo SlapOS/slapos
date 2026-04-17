@@ -49,7 +49,7 @@ import sys
 
 from slapos.proxy.db_version import DB_VERSION
 from slapos.recipe.librecipe import generateHashFromFiles
-from slapos.test.monitoring_mixin import MonitoringPropagationTestMixin
+from slapos.testing.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.slap.standalone import SlapOSNodeCommandError
 from slapos.testing.utils import findFreeTCPPort

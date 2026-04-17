@@ -35,7 +35,7 @@ import unittest
 import urllib
 
 from slapos.recipe.librecipe import generateHashFromFiles
-from slapos.test.monitoring_mixin import MonitoringPropagationTestMixin
+from slapos.testing.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 skip = unittest.skip('port conflit between powerdns instances')

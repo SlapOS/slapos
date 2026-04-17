@@ -32,7 +32,7 @@ import glob
 import re
 
 from six.moves.urllib.parse import urlparse
-from slapos.test.monitoring_mixin import MonitoringPropagationTestMixin
+from slapos.testing.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 
