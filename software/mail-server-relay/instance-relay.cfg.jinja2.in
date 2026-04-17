@@ -349,7 +349,7 @@ copytruncate = true
 # ------------------------------
 
 {% set source_host_list = [] -%}
-{% for domain in mail_domains | selectattr('can-send', 'equalto', true) -%}
+{% for domain in mail_domains -%}
 {%   if domain['authentication'] == 'none' -%}
 {%     do source_host_list.append("[" + domain['mail-server-host'] + "]") -%}
 {%   endif -%}
@@ -357,7 +357,7 @@ copytruncate = true
 
 {# Group IP-based sending domains by mail-server-host for per-host sender restrictions -#}
 {% set sender_host_domains = {} -%}
-{% for domain in mail_domains | selectattr('can-send', 'equalto', true) -%}
+{% for domain in mail_domains -%}
 {%   if domain['authentication'] == 'none' -%}
 {%     set host = domain['mail-server-host'] -%}
 {%     if host not in sender_host_domains -%}
@@ -370,7 +370,7 @@ copytruncate = true
 
 {# Collect password-authenticated sending domains -#}
 {% set password_auth_domains = {} -%}
-{% for domain in mail_domains | selectattr('can-send', 'equalto', true) -%}
+{% for domain in mail_domains -%}
 {%   if domain['authentication'] == 'password' -%}
 {%     do password_auth_domains.update({domain['name']: domain['password']}) -%}
 {%   endif -%}
@@ -378,7 +378,7 @@ copytruncate = true
 
 {# Collect tls-fingerprint-authenticated sending domains -#}
 {% set fingerprint_auth_backends = [] -%}
-{% for backend in mail_domains | selectattr('can-send', 'equalto', true) -%}
+{% for backend in mail_domains -%}
 {%   if backend['authentication'] == 'fingerprint' -%}
 {%     do fingerprint_auth_backends.append(backend) -%}
 {%   endif -%}
