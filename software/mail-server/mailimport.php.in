@@ -1,0 +1,660 @@
+<?php
+/**
+ * IMAP Mail Import Tool
+ * 
+ * Allows users to import mail from an existing IMAP server to their new mailbox.
+ * Uses a two-step process: preview folders, then perform sync.
+ */
+
+session_start();
+
+// Configuration
+$DOVECOT_PASSWD_FILE = "{{ dovecot_passwd }}";
+$IMAPSYNC_BIN = "{{ imapsync_bin }}";
+$IMPORT_STATE_DIR = "{{ import_state_dir }}";
+$IMPORT_LOG_DIR = "{{ import_log_dir }}";
+$DOVECOT_HOST = "{{ dovecot_host }}";
+$DOVECOT_PORT = "{{ dovecot_port }}";
+
+// Ensure directories exist
+if (!is_dir($IMPORT_STATE_DIR)) mkdir($IMPORT_STATE_DIR, 0755, true);
+if (!is_dir($IMPORT_LOG_DIR)) mkdir($IMPORT_LOG_DIR, 0755, true);
+
+// Helper functions
+function authenticateUser($email, $password) {
+    global $DOVECOT_PASSWD_FILE;
+    
+    $handle = fopen($DOVECOT_PASSWD_FILE, 'r');
+    if (!$handle) {
+        return false;
+    }
+    
+    while (($line = fgets($handle)) !== false) {
+        $parts = explode(':', trim($line));
+        if (count($parts) < 8) continue;
+        
+        list($name, $passwd_hash, $uid, $gid, $gecos, $dir, $shell, $extra) = array_pad($parts, 8, '');
+        
+        if ($name === $email && $extra !== 'fail') {
+            fclose($handle);
+            // Verify password
+            if (strpos($passwd_hash, '{BLF-CRYPT}') === 0) {
+                $hash = substr($passwd_hash, strlen('{BLF-CRYPT}'));
+                return password_verify($password, $hash);
+            } elseif (strpos($passwd_hash, '{PLAIN}') === 0) {
+                $plain = substr($passwd_hash, strlen('{PLAIN}'));
+                return hash_equals($plain, $password);
+            } else {
+                // Plain password (for test accounts, etc.)
+                return hash_equals($passwd_hash, $password);
+            }
+        }
+    }
+    fclose($handle);
+    return false;
+}
+
+function getImportLockFile($email) {
+    global $IMPORT_STATE_DIR;
+    return $IMPORT_STATE_DIR . '/' . md5($email) . '.lock';
+}
+
+function getImportStateFile($email) {
+    global $IMPORT_STATE_DIR;
+    return $IMPORT_STATE_DIR . '/' . md5($email) . '.state';
+}
+
+function getImportLogFile($email) {
+    global $IMPORT_LOG_DIR;
+    return $IMPORT_LOG_DIR . '/' . md5($email) . '.log';
+}
+
+function getImportExitFile($email) {
+    global $IMPORT_STATE_DIR;
+    return $IMPORT_STATE_DIR . '/' . md5($email) . '.exit';
+}
+
+function isImportRunning($email) {
+    $lockFile = getImportLockFile($email);
+    if (!file_exists($lockFile)) {
+        return false;
+    }
+    
+    $pid = (int)file_get_contents($lockFile);
+    // Check if process is running
+    if (posix_kill($pid, 0)) {
+        return true;
+    }
+    
+    // Process not running, remove stale lock
+    unlink($lockFile);
+    return false;
+}
+
+function saveImportState($email, $state) {
+    file_put_contents(getImportStateFile($email), json_encode($state));
+}
+
+function loadImportState($email) {
+    $file = getImportStateFile($email);
+    if (!file_exists($file)) {
+        return null;
+    }
+    return json_decode(file_get_contents($file), true);
+}
+
+function clearImportState($email) {
+    $files = [
+        getImportStateFile($email),
+        getImportLockFile($email),
+        getImportLogFile($email),
+        getImportExitFile($email)
+    ];
+    foreach ($files as $file) {
+        if (file_exists($file)) {
+            unlink($file);
+        }
+    }
+}
+
+function startImapsync($email, $password, $sourceHost, $sourcePort, $sourceUser, $sourcePassword, $sslMode, $dryRun = true) {
+    global $IMAPSYNC_BIN, $DOVECOT_HOST, $DOVECOT_PORT;
+    
+    $logFile = getImportLogFile($email);
+    $lockFile = getImportLockFile($email);
+    
+    $cmd = escapeshellarg($IMAPSYNC_BIN);
+    $cmd .= ' --host1 ' . escapeshellarg($sourceHost);
+    if ($sourcePort !== '') {
+        $cmd .= ' --port1 ' . escapeshellarg($sourcePort);
+    }
+    $cmd .= ' --user1 ' . escapeshellarg($sourceUser);
+    $cmd .= ' --password1 ' . escapeshellarg($sourcePassword);
+    $cmd .= ' --host2 ' . escapeshellarg($DOVECOT_HOST);
+    $cmd .= ' --port2 ' . escapeshellarg($DOVECOT_PORT);
+    $cmd .= ' --user2 ' . escapeshellarg($email);
+    $cmd .= ' --password2 ' . escapeshellarg($password);
+    
+    // SSL/TLS settings
+    if ($sslMode === 'manual-ssl1') {
+        $cmd .= ' --ssl1';
+    } elseif ($sslMode === 'manual-tls1') {
+        $cmd .= ' --tls1';
+    }
+    // Default (auto) lets imapsync decide
+    
+    // Always use SSL for destination
+    $cmd .= ' --ssl2';
+    
+    if ($dryRun) {
+        $cmd .= ' --automap --justfolders --dry';
+    } else {
+        $cmd .= ' --automap';
+    }
+    
+    $exitFile = getImportExitFile($email);
+    $cmd .= ' > ' . escapeshellarg($logFile) . ' 2>&1; echo $? > ' . escapeshellarg($exitFile) . ') & echo $!';
+    $cmd = '(' . $cmd;
+    
+    $pid = (int)shell_exec($cmd);
+    if ($pid > 0) {
+        file_put_contents($lockFile, $pid);
+    }
+    
+    return $pid;
+}
+
+// Handle actions
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
+
+// Logout
+if ($action === 'logout') {
+    session_destroy();
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
+
+// Login
+if ($action === 'login') {
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
+    
+    if (authenticateUser($email, $password)) {
+        $_SESSION['authenticated'] = true;
+        $_SESSION['email'] = $email;
+        $_SESSION['password'] = $password;
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    } else {
+        $error = 'Invalid email or password.';
+    }
+}
+
+// Check if user is authenticated
+$isAuthenticated = isset($_SESSION['authenticated']) && $_SESSION['authenticated'] === true;
+$userEmail = $_SESSION['email'] ?? '';
+$userPassword = $_SESSION['password'] ?? '';
+
+// Handle authenticated actions
+if ($isAuthenticated) {
+    if ($action === 'start_preview') {
+        if (isImportRunning($userEmail)) {
+            $error = 'An import is already running for this mailbox.';
+        } else {
+            $sourceHost = $_POST['source_host'] ?? '';
+            $sourcePort = $_POST['source_port'] ?? '';
+            $sourceUser = $_POST['source_user'] ?? '';
+            $sourcePassword = $_POST['source_password'] ?? '';
+            $sslMode = $_POST['ssl_mode'] ?? 'auto';
+            
+            if (empty($sourceHost) || empty($sourceUser) || empty($sourcePassword)) {
+                $error = 'All source mailbox fields are required.';
+            } else {
+                // Clear any previous state
+                clearImportState($userEmail);
+                
+                // Save import parameters
+                $state = [
+                    'phase' => 'preview',
+                    'source_host' => $sourceHost,
+                    'source_port' => $sourcePort,
+                    'source_user' => $sourceUser,
+                    'source_password' => $sourcePassword,
+                    'ssl_mode' => $sslMode,
+                    'started_at' => time()
+                ];
+                saveImportState($userEmail, $state);
+                
+                // Start dry run
+                $pid = startImapsync($userEmail, $userPassword, $sourceHost, $sourcePort, $sourceUser, $sourcePassword, $sslMode, true);
+                if ($pid <= 0) {
+                    $error = 'Failed to start imapsync process.';
+                    clearImportState($userEmail);
+                } else {
+                    header('Location: ' . $_SERVER['PHP_SELF'] . '?action=view_progress');
+                    exit;
+                }
+            }
+        }
+    } elseif ($action === 'start_sync') {
+        $state = loadImportState($userEmail);
+        if (!$state || $state['phase'] !== 'preview_complete') {
+            $error = 'No preview available. Please start a new import.';
+        } elseif (isImportRunning($userEmail)) {
+            $error = 'An import is already running.';
+        } else {
+            // Start actual sync
+            $state['phase'] = 'syncing';
+            saveImportState($userEmail, $state);
+            
+            $pid = startImapsync(
+                $userEmail,
+                $userPassword,
+                $state['source_host'],
+                $state['source_port'] ?? '',
+                $state['source_user'],
+                $state['source_password'],
+                $state['ssl_mode'],
+                false
+            );
+            if ($pid <= 0) {
+                $error = 'Failed to start imapsync process.';
+                clearImportState($userEmail);
+            } else {
+                header('Location: ' . $_SERVER['PHP_SELF'] . '?action=view_progress');
+                exit;
+            }
+        }
+    } elseif ($action === 'cancel') {
+        clearImportState($userEmail);
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    } elseif ($action === 'view_progress') {
+        // Display progress page (handled below)
+    } elseif ($action === 'get_log') {
+        // AJAX endpoint to fetch log
+        header('Content-Type: text/plain');
+        $logFile = getImportLogFile($userEmail);
+        if (file_exists($logFile)) {
+            readfile($logFile);
+        }
+        exit;
+    } elseif ($action === 'check_status') {
+        // AJAX endpoint to check if import is still running
+        header('Content-Type: application/json');
+        $running = isImportRunning($userEmail);
+        $state = loadImportState($userEmail);
+        
+        if (!$running && $state) {
+            // Import finished, check exit code
+            $exitFile = getImportExitFile($userEmail);
+            $exitCode = file_exists($exitFile) ? (int)trim(file_get_contents($exitFile)) : -1;
+            
+            if ($state['phase'] === 'preview') {
+                $state['phase'] = ($exitCode === 0) ? 'preview_complete' : 'preview_error';
+            } elseif ($state['phase'] === 'syncing') {
+                $state['phase'] = ($exitCode === 0) ? 'sync_complete' : 'sync_error';
+            }
+            $state['exit_code'] = $exitCode;
+            saveImportState($userEmail, $state);
+        }
+        
+        echo json_encode([
+            'running' => $running,
+            'phase' => $state['phase'] ?? 'none'
+        ]);
+        exit;
+    }
+}
+
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail Import Tool</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        button, .button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        button:hover, .button:hover {
+            background-color: #0056b3;
+        }
+        .button-secondary {
+            background-color: #6c757d;
+        }
+        .button-secondary:hover {
+            background-color: #545b62;
+        }
+        .button-danger {
+            background-color: #dc3545;
+        }
+        .button-danger:hover {
+            background-color: #c82333;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .info {
+            color: #004085;
+            background-color: #cce5ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .log-output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .button-group {
+            margin-top: 20px;
+        }
+        .button-group button,
+        .button-group .button {
+            margin-right: 10px;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <?php if (!$isAuthenticated): ?>
+            <h1>Mail Import Tool</h1>
+            <?php if (isset($error)): ?>
+                <div class="error"><?php echo htmlspecialchars($error); ?></div>
+            <?php endif; ?>
+            <p>Please login with your mailbox credentials to import mail from your existing account.</p>
+            <form method="POST" action="">
+                <input type="hidden" name="action" value="login">
+                <div class="form-group">
+                    <label for="email">Email Address:</label>
+                    <input type="email" id="email" name="email" required autofocus autocomplete="email" autocorrect="off" autocapitalize="none">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                <button type="submit">Login</button>
+            </form>
+        <?php else: ?>
+            <?php
+            $state = loadImportState($userEmail);
+            $currentPhase = $state['phase'] ?? 'none';
+            ?>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>Mail Import Tool</h1>
+                <form method="POST" action="" style="margin: 0;">
+                    <input type="hidden" name="action" value="logout">
+                    <button type="submit" class="button-secondary">Logout</button>
+                </form>
+            </div>
+            
+            <p>Logged in as: <strong><?php echo htmlspecialchars($userEmail); ?></strong></p>
+            
+            <?php if (isset($error)): ?>
+                <div class="error"><?php echo htmlspecialchars($error); ?></div>
+            <?php endif; ?>
+            
+            <?php if ($action === 'view_progress'): ?>
+                <?php
+                $running = isImportRunning($userEmail);
+                ?>
+                
+                <h2>Import Progress</h2>
+                
+                <?php if ($currentPhase === 'preview'): ?>
+                    <div class="info">
+                        <div class="spinner"></div>
+                        Running preview scan to detect folders...
+                    </div>
+                <?php elseif ($currentPhase === 'preview_complete'): ?>
+                    <div class="success">
+                        Preview scan complete! Review the folders below and confirm to proceed with the import.
+                    </div>
+                <?php elseif ($currentPhase === 'preview_error'): ?>
+                    <div class="error">
+                        Preview scan failed (exit code <?php echo htmlspecialchars($state['exit_code'] ?? '?'); ?>). Check the log below for details.
+                    </div>
+                <?php elseif ($currentPhase === 'syncing'): ?>
+                    <div class="info">
+                        <div class="spinner"></div>
+                        Importing mail... This may take a while depending on the size of your mailbox.
+                    </div>
+                <?php elseif ($currentPhase === 'sync_complete'): ?>
+                    <div class="success">
+                        Import complete! Your mail has been successfully imported.
+                    </div>
+                <?php elseif ($currentPhase === 'sync_error'): ?>
+                    <div class="error">
+                        Import failed (exit code <?php echo htmlspecialchars($state['exit_code'] ?? '?'); ?>). Check the log below for details.
+                    </div>
+                <?php endif; ?>
+                
+                <div class="log-output" id="log-output">Loading...</div>
+                
+                <div class="button-group">
+                    <?php if ($currentPhase === 'preview_complete'): ?>
+                        <form method="POST" action="" style="display: inline;">
+                            <input type="hidden" name="action" value="start_sync">
+                            <button type="submit" class="button">Confirm and Start Import</button>
+                        </form>
+                    <?php endif; ?>
+                    
+                    <?php if ($currentPhase === 'sync_complete'): ?>
+                        <a href="./" class="button">Go to Webmail</a>
+                    <?php endif; ?>
+                    
+                    <?php if (in_array($currentPhase, ['sync_error', 'preview_error'])): ?>
+                        <form method="POST" action="" style="display: inline;">
+                            <input type="hidden" name="action" value="cancel">
+                            <button type="submit" class="button">Start New Import</button>
+                        </form>
+                    <?php endif; ?>
+                    
+                    <?php if (in_array($currentPhase, ['preview', 'preview_complete', 'syncing'])): ?>
+                        <form method="POST" action="" style="display: inline;">
+                            <input type="hidden" name="action" value="cancel">
+                            <button type="submit" class="button-danger">Cancel</button>
+                        </form>
+                    <?php endif; ?>
+                    
+                    <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" class="button button-secondary">Back</a>
+                </div>
+                
+                <script>
+                    var logOutput = document.getElementById('log-output');
+                    var currentPhase = <?php echo json_encode($currentPhase); ?>;
+                    var refreshInterval;
+
+                    function updateLog() {
+                        fetch('?action=get_log')
+                            .then(response => response.text())
+                            .then(data => {
+                                logOutput.textContent = data || 'No output yet...';
+                                logOutput.scrollTop = logOutput.scrollHeight;
+                            });
+                    }
+
+                    function checkStatus() {
+                        fetch('?action=check_status')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (!data.running && data.phase !== currentPhase) {
+                                    // State changed (complete or error), reload once to show new UI
+                                    clearInterval(refreshInterval);
+                                    location.reload();
+                                }
+                            });
+                    }
+
+                    // Initial log load
+                    updateLog();
+
+                    // Only poll while a process is still running
+                    if (currentPhase === 'preview' || currentPhase === 'syncing') {
+                        refreshInterval = setInterval(function() {
+                            updateLog();
+                            checkStatus();
+                        }, 2000);
+                    }
+                </script>
+            <?php else: ?>
+                <h2>Import from Existing Mailbox</h2>
+                
+                <?php if (isImportRunning($userEmail)): ?>
+                    <div class="info">
+                        An import is currently running for your mailbox.
+                        <a href="?action=view_progress">View progress</a>
+                    </div>
+                <?php elseif ($state && in_array($currentPhase, ['preview_complete', 'sync_complete', 'preview_error', 'sync_error'])): ?>
+                    <div class="info">
+                        You have a pending import.
+                        <a href="?action=view_progress">View status</a>
+                    </div>
+                <?php endif; ?>
+                
+                <div class="info">
+                    <strong>How it works:</strong>
+                    <ol style="margin: 10px 0; padding-left: 20px;">
+                        <li>Enter your existing mailbox details below</li>
+                        <li>We'll scan your folders and show you what will be imported</li>
+                        <li>You confirm and we import all your mail to your new mailbox</li>
+                    </ol>
+                </div>
+                
+                <p>Enter your existing IMAP mailbox information:</p>
+                
+                <form method="POST" action="">
+                    <input type="hidden" name="action" value="start_preview">
+                    
+                    <div class="form-group">
+                        <label for="source_host">IMAP Server:</label>
+                        <input type="text" id="source_host" name="source_host" placeholder="imap.example.com" required>
+                        <div class="help-text">Your existing mail server hostname</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="source_port">Port (optional):</label>
+                        <input type="text" id="source_port" name="source_port" placeholder="e.g. 993, 143">
+                        <div class="help-text">Leave empty to let imapsync auto-detect</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="source_user">Username/Email:</label>
+                        <input type="text" id="source_user" name="source_user" placeholder="user@example.com" required>
+                        <div class="help-text">Your username or email address on the source server</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="source_password">Password:</label>
+                        <input type="password" id="source_password" name="source_password" required>
+                        <div class="help-text">Your password for the source mailbox</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ssl_mode">SSL/TLS Mode:</label>
+                        <select id="ssl_mode" name="ssl_mode">
+                            <option value="auto">Auto (Recommended)</option>
+                            <option value="manual-ssl1">Force SSL</option>
+                            <option value="manual-tls1">Force STARTTLS</option>
+                            <option value="none">No encryption (not recommended)</option>
+                        </select>
+                        <div class="help-text">Let imapsync auto-detect SSL/TLS settings or specify manually</div>
+                    </div>
+                    
+                    <button type="submit">Start Import Preview</button>
+                </form>
+                
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;">
+                    <a href="./" class="button button-secondary">Back to Webmail</a>
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
+    </div>
+</body>
+</html>
