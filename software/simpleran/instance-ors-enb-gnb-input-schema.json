@@ -64,7 +64,7 @@
         {
           "title": "gNB Cell",
           "required": [
-            "cell_type"
+            "enable_cell"
           ],
           "allOf": [
             {
@@ -72,10 +72,14 @@
               "title": "Cell Type",
               "type": "object",
               "properties": {
-                "cell_type": {
-                  "title": "Cell Type: you must select this parameter to enable the cell",
+                "enable_cell": {
+                  "title": "Enable Cell: You must select this parameter to enable the cell",
                   "type": "string",
-                  "const": "gNB"
+                  "enum": [
+                    "Enable gNB",
+                    "Disable gNB"
+                  ],
+                  "default": "Enable gNB"
                 }
               }
             },
@@ -97,7 +101,7 @@
         {
           "title": "eNB Cell",
           "required": [
-            "cell_type"
+            "enable_cell"
           ],
           "allOf": [
             {
@@ -105,10 +109,14 @@
               "title": "Cell Type",
               "type": "object",
               "properties": {
-                "cell_type": {
-                  "title": "Cell Type: you must select this parameter to enable the cell",
+                "enable_cell": {
+                  "title": "Enable Cell: You must select this parameter to enable the cell",
                   "type": "string",
-                  "const": "eNB"
+                  "enum": [
+                    "Enable eNB",
+                    "Disable eNB"
+                  ],
+                  "default": "Enable eNB"
                 }
               }
             },
