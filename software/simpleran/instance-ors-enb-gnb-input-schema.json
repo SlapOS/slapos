@@ -57,9 +57,6 @@
   },
   "$defs": {
     "ors_cell": {
-      "required": [
-        "cell_type"
-      ],
       "oneOf": [
         {
           "title": "gNB Cell",
