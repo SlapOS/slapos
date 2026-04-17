@@ -15,6 +15,7 @@
             "properties": {
               "host": {
                 "type": "string",
+                "pattern": "^.+$",
                 "description": "The host to proxy the emails to"
               },
               "port": {
@@ -24,17 +25,20 @@
               },
               "user": {
                 "type": "string",
+                "pattern": "^.+$",
                 "description": "The user to authenticate with the proxy host"
               },
               "password": {
                 "type": "string",
+                "pattern": "^.+$",
                 "description": "The password to authenticate with the proxy host"
               },
               "domains": {
                 "type": "array",
                 "description": "List of domains that should be proxied to this host, one entry per item.",
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^.+$"
                 },
                 "default": []
               }
@@ -64,7 +68,8 @@
           "description": "Additional client patterns to whitelist in postgrey, one entry per item.",
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^.+$"
           },
           "default": []
         },
@@ -73,7 +78,8 @@
           "description": "Additional recipient patterns to whitelist in postgrey, one entry per item.",
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^.+$"
           },
           "default": []
         }
