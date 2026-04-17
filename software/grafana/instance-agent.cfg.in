@@ -117,9 +117,11 @@ init =
       buildout_options["eggs-directory"]])
 
   import collections
+  import hashlib
+  import json
   import pathlib
-  import urllib.parse
   import toml
+  import urllib.parse
 
   slapparameter_dict = self.options["slapparameter-dict"]
   slap_connection = self.buildout["slap-connection"]
@@ -372,6 +374,12 @@ init =
 
   options['access-path-dict'] = access_path_dict
   self._config_files[options['output']] = toml.dumps(config)
+  # save files hashes to reinstall the part if content changes.
+  file_hashes = {
+    file_path: hashlib.md5(file_content.encode()).hexdigest()
+    for file_path, file_content in self._config_files.items()
+  }
+  options['files-hashes'] = json.dumps(file_hashes, sort_keys=True)
 
 install =
   import os
@@ -454,12 +462,13 @@ caucase.updater(
     openssl=openssl_bin,
 )}}
 
-[fluent-bit]
-recipe = slapos.cookbook:wrapper
-command-line = ${:nice} {{ fluent_bit_bin }} --config ${fluent-bit-config-file:location}
-wrapper-path = ${directory:service}/fluent-bit
-hash-files =
-  ${fluent-bit-config-file:location}
+[fluent-bit-wrapper]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
+  ulimit -n $(ulimit -Hn)
+  ${:nice} {{ fluent_bit_bin }} --config ${fluent-bit-config-file:location}
+output = ${directory:bin}/${:_buildout_section_name_}
 # TODO: control nice of the agent ?
 {% if 0 %}
 nice = nice -19 chrt --idle 0 ionice -c3
@@ -467,6 +476,12 @@ nice = nice -19 chrt --idle 0 ionice -c3
 nice =
 {% endif %}
 
+[fluent-bit]
+recipe = slapos.cookbook:wrapper
+command-line = ${fluent-bit-wrapper:output}
+wrapper-path = ${directory:service}/fluent-bit
+hash-files =
+  ${fluent-bit-config-file:location}
 http-port = 19080
 ip = ${instance-parameter:ipv4-random}
 url = http://${:ip}:${:http-port}
@@ -494,6 +509,7 @@ init =
       buildout_options["eggs-directory"]])
 
   import datetime
+  import hashlib
   import itertools
   import json
   import pathlib
@@ -628,6 +644,46 @@ init =
     access_path_dict["/var/log/journal/*/*"] = "r"
     inputs.append(inpt)
     _add_input_filter_tags(tag, "systemd", application, partition)
+
+  def add_slapos_partition(application, partition):
+    # promises from .slapgrid/promise/log/*.log
+    _add_parser(
+      {
+        "name": "parser.slapos.promise_log",
+        "format": "regex",
+        "regex": r"^(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - (?<level>[A-Z]+) - (?<message>.*)$",
+        "time_key": "time",
+        "time_format": "%d/%b/%Y:%H:%M:%S %z",
+        "time_system_timezone": True,
+      }
+    )
+    _add_tail_input(
+      f"logs.slapos.promise.{application['name']}-{partition['name']}",
+      "slapos.promise",
+      application,
+      partition,
+      "{partition_root_directory}/.slapgrid/promise/log/*.log",
+      parser="parser.slapos.promise_log",
+    )
+    # slapos node instance .slapgrid/log/instance.log
+    _add_parser(
+      {
+        "name": "parser.slapos.instance_log",
+        "format": "regex",
+        "regex": r"^\[(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (?<level>[A-Z]+): (?<message>.*)$",
+        "time_key": "time",
+        "time_format": "%d/%b/%Y:%H:%M:%S %z",
+        "time_system_timezone": True,
+      }
+    )
+    _add_tail_input(
+      f"logs.slapos.instance.{application['name']}-{partition['name']}",
+      "slapos.instance",
+      application,
+      partition,
+      "{partition_root_directory}/.slapgrid/log/instance.log",
+      parser="parser.slapos.instance_log",
+    )
 
   def add_erp5_balancer(application, partition):
     _add_parser(
@@ -1108,6 +1164,8 @@ init =
 
   for application in slapparameter_dict.get('applications', []):
     for partition in application.get('partitions', []):
+      if application['type'] == 'SlapOS':
+        add_slapos_partition(application, partition)
       partition.setdefault("type", "default")
       if partition['type'] == 'erp5/balancer':
         add_erp5_balancer(application, partition)
@@ -1142,6 +1200,12 @@ init =
 
   self._config_files[options['location']] = json.dumps(cfg, indent=2)
   options['access-path-dict'] = access_path_dict
+  # save files hashes to reinstall the part if content changes.
+  file_hashes = {
+    file_path: hashlib.md5(file_content.encode()).hexdigest()
+    for file_path, file_content in self._config_files.items()
+  }
+  options['files-hashes'] = json.dumps(file_hashes, sort_keys=True)
 
 install =
   for fname, content in self._config_files.items():

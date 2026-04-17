@@ -1,6 +1,9 @@
 import contextlib
-import subprocess
 import json
+import pathlib
+import shutil
+import subprocess
+import tempfile
 
 import zodburi
 from ZODB.DB import DB
@@ -114,3 +117,23 @@ class TestRepozo(ZEOTestCase, CrontabMixin):
       self.assertRegex(deltafsz, r'2000-01-02-00-\d\d-\d\d.deltafsz')
       self.assertRegex(index, r'2000-01-02-00-\d\d-\d\d.index')
       self.assertEqual(index_latest, 'index.latest')
+
+
+class TestBackupDirectory(ZEOTestCase, CrontabMixin):
+  @classmethod
+  def _getInstanceParameterDict(cls) -> dict:
+    cls._zeo_backup_dir = pathlib.Path(cls.enterClassContext(tempfile.TemporaryDirectory()))
+    parameter_dict = super(TestBackupDirectory, cls)._getInstanceParameterDict()
+    parameter_dict['zodb-dict']['root'] = {
+      "family": "1",
+      "backup": f"{cls._zeo_backup_dir}/%(name)s",
+    }
+    return parameter_dict
+
+  def test_backup_directory(self):
+    self._executeCrontabAtDate("tidstorage", "2000-01-01 UTC")
+    self.assertRegex(
+      sorted([f.name for f in (self._zeo_backup_dir / "root").glob("*")])[-2],
+      r'2000-01-01-00-\d\d-\d\d.index',
+    )
+    self.assertFalse(list((self.computer_partition_root_path / "srv" / "backup" / "zodb" / "root").glob("*")))

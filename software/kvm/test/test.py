@@ -886,7 +886,7 @@ def awaitBackup(equeue_file):
       equeue_log = fh.read()
       if 'finished successfully' in equeue_log:
         break
-    time.sleep(1)
+    time.sleep(min(f, 5))
   else:
     raise ValueError('Backup not finished: %s' % (equeue_log))
   return equeue_log
