@@ -8408,6 +8408,64 @@ class TestSlaveManagementDomainReuse(
     finally:
       conn.close()
 
+  def _get_requestinstance_db_path(self):
+    """
+    Return the validated-instance DB written by the cdninstancenode recipe.
+    Every partition that uses `cdn-requester-configuration` has a local
+    copy, so scope the glob to the partition that owns `etc/instancenode.cfg`
+    — the one the recipe actually runs on.
+    """
+    cfg_list = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'instancenode.cfg'))
+    self.assertEqual(1, len(cfg_list), cfg_list)
+    partition_dir = os.path.dirname(os.path.dirname(cfg_list[0]))
+    db_path = os.path.join(partition_dir, 'validated-shared-instance.sqlite')
+    self.assertTrue(os.path.exists(db_path), db_path)
+    return db_path
+
+  def _get_requestinstance_row(self, slave_reference):
+    """Read the requestinstance DB row for the given slave reference."""
+    import sqlite3
+    db_path = self._get_requestinstance_db_path()
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+      cursor = conn.execute(
+        "SELECT * FROM instance WHERE reference LIKE ?",
+        ('%%%s%%' % slave_reference,))
+      row = cursor.fetchone()
+      self.assertIsNotNone(
+        row, 'No requestinstance row found for %s' % slave_reference)
+      return dict(row)
+    finally:
+      conn.close()
+
+  def test_no_bang_loop_for_unchanged_invalid_custom_domain(self):
+    """
+    An invalid slave (custom_domain with no DNS TXT record) must not cause
+    CDNInstanceNode to re-bang the root partition every cycle. Observable:
+    the requestinstance-db row for the unchanged invalid slave keeps the
+    same timestamp and json_error across repeated runs.
+    """
+    # reuse-orig is seeded invalid by getSlaveParameterDictDict; setUpClass
+    # already ran CDNInstanceNode at least once.
+    row1 = self._get_requestinstance_row('reuse-orig')
+    self.assertNotEqual(row1['valid_parameter'], 'valid')
+
+    # Sleep past the integer-second boundary so a new str(int(time.time()))
+    # would differ from row1['timestamp'] if the bug were present.
+    time.sleep(1.1)
+    self.runCDNInstanceNode()
+    row2 = self._get_requestinstance_row('reuse-orig')
+    self.assertEqual(row2['timestamp'], row1['timestamp'])
+    self.assertEqual(row2['json_error'], row1['json_error'])
+
+    time.sleep(1.1)
+    self.runCDNInstanceNode()
+    row3 = self._get_requestinstance_row('reuse-orig')
+    self.assertEqual(row3['timestamp'], row1['timestamp'])
+    self.assertEqual(row3['json_error'], row1['json_error'])
+
   def test_domain_reuse_after_destruction(self):
     domain = 'reuse.example.com'
     challenge = '_slapos-challenge.%s' % domain

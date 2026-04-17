@@ -459,6 +459,210 @@ class TestCDNRequestFullScenario(unittest.TestCase):
           self.assertEqual(dns_fail_error_calls[0]['txt_record'], '_slapos-challenge.dnsfail.example.com')
 
 
+class TestBangStability(unittest.TestCase):
+  """
+  Regression tests for the bang() loop that happens when an unchanged
+  invalid instance has its DB timestamp bumped on every processing cycle.
+  instanceNodePostProcessing's timestamp-fallback query then fires bang()
+  on every run, causing slapgrid to reprocess the root partition in a loop.
+  """
+
+  def setUp(self):
+    self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
+    self.instance_db_fd, self.instance_db_path = tempfile.mkstemp()
+    self.requestinstance_db_fd, self.requestinstance_db_path = tempfile.mkstemp()
+    self.timestamp_file_fd, self.timestamp_file_path = tempfile.mkstemp()
+
+    self.buildout = {
+      "buildout": {},
+      "slap-connection": {
+        "computer-id": "test-computer",
+        "partition-id": "test-partition",
+        "server-url": "http://test.example.com",
+        "requested": "started",
+      },
+    }
+    self.options = {
+      'domainvalidation-db-path': self.domainvalidation_db_path,
+      'instance-db-path': self.instance_db_path,
+      'requestinstance-db-path': self.requestinstance_db_path,
+      'timestamp-path': self.timestamp_file_path,
+      'server-url': 'http://test.example.com',
+      'computer-id': 'test-computer',
+      'partition-id': 'test-partition',
+      'software-url': 'http://test.example.com/software',
+      'software-type': 'default',
+      'verification-secret': 'test-secret',
+      'openssl-binary': 'openssl',
+      'instance-retention-delay': '0',
+    }
+
+  def tearDown(self):
+    for fd, path in (
+      (self.domainvalidation_db_fd, self.domainvalidation_db_path),
+      (self.instance_db_fd, self.instance_db_path),
+      (self.requestinstance_db_fd, self.requestinstance_db_path),
+      (self.timestamp_file_fd, self.timestamp_file_path),
+    ):
+      os.close(fd)
+      if os.path.exists(path):
+        os.unlink(path)
+
+  def _seedInstance(self, instance_db, reference, params, valid='valid'):
+    instance_hash = hashlib.sha256(
+      json.dumps(params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      reference,
+      json.dumps(params, sort_keys=True),
+      '{}',
+      instance_hash,
+      str(int(time.time())),
+      valid,
+    )])
+    return instance_hash
+
+  def _runInstall(self, dns_returns_valid_token):
+    """
+    Run one CDNInstanceNodeRecipe.install() cycle with mocked slap and DNS.
+    Returns the computer_partition mock so the caller can inspect bang calls.
+    """
+    from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
+    CONNECTION_CACHE.clear()
+
+    domainvalidation_db_path = self.domainvalidation_db_path
+
+    with mock.patch('slapos.recipe.instancenode.slap') as mock_slap, \
+         mock.patch('dns.resolver.Resolver') as MockResolver:
+      slap_instance = mock.MagicMock()
+      computer_partition = mock.MagicMock()
+      slap_instance.registerComputerPartition.return_value = computer_partition
+      mock_slap.slap.return_value = slap_instance
+
+      mock_resolver_instance = MockResolver.return_value
+      mock_answer = mock.MagicMock()
+      mock_rdata = mock.MagicMock()
+
+      def get_dns_response(challenge_domain, *args, **kwargs):
+        if challenge_domain.startswith('_slapos-challenge.'):
+          domain = challenge_domain[len('_slapos-challenge.'):]
+        else:
+          parts = challenge_domain.split('.', 1)
+          domain = parts[1] if len(parts) > 1 else challenge_domain
+        if dns_returns_valid_token:
+          db = cdninstancenode.DomainValidationDB(domainvalidation_db_path)
+          entries = db.fetchAll(
+            "SELECT token FROM domain_validation WHERE domain=?", (domain,))
+          if entries:
+            mock_rdata.strings = [entries[0]['token'].encode('utf-8')]
+          else:
+            mock_rdata.strings = [b'placeholder']
+        else:
+          mock_rdata.strings = [b'wrong-token']
+        mock_answer.__iter__.return_value = iter([mock_rdata])
+        return mock_answer
+
+      mock_resolver_instance.resolve.side_effect = get_dns_response
+
+      recipe = cdninstancenode.CDNInstanceNodeRecipe(
+        self.buildout, 'test', self.options)
+      recipe.install()
+      return computer_partition
+
+  def _refreshTimestampFile(self, prev_write_ts):
+    """
+    Simulate slapgrid touching `timestamp-path` after handling a bang():
+    set mtime to the same integer second as `prev_write_ts`, then sleep
+    until the wall clock is strictly in a later integer second. This
+    guarantees the next run's `str(int(time.time()))` is > `self.timestamp`
+    (which uses integer-second comparison in the fallback query).
+    """
+    prev_int = int(prev_write_ts)
+    os.utime(self.timestamp_file_path, (float(prev_int), float(prev_int)))
+    to_sleep = (prev_int + 1) - time.time() + 0.05
+    if to_sleep > 0:
+      time.sleep(to_sleep)
+
+  def test_bang_not_called_for_unchanged_invalid_instance(self):
+    """
+    Repeated runs against an unchanged invalid instance must not trigger bang().
+    Reproduces the loop where every cycle bumped the DB timestamp past
+    `self.timestamp` and retriggered instanceNodePostProcessing's fallback.
+    """
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    self._seedInstance(
+      instance_db, 'inst1',
+      {'custom_domain': 'dnsfail.example.com', 'url': 'http://dnsfail.example.com'})
+
+    # T_file well in the past so run 1 writes a newer row timestamp
+    old_ts = time.time() - 100
+    os.utime(self.timestamp_file_path, (old_ts, old_ts))
+
+    cp1 = self._runInstall(dns_returns_valid_token=False)
+    self.assertEqual(cp1.bang.call_count, 1)
+
+    row1 = requestinstance_db.getInstance('inst1')
+    self.assertIsNotNone(row1)
+    self.assertNotEqual(row1['valid_parameter'], 'valid')
+    ts_after_run1 = row1['timestamp']
+    err_after_run1 = row1['json_error']
+
+    self._refreshTimestampFile(ts_after_run1)
+
+    # Run 2: same unchanged invalid instance → no bang, no timestamp bump
+    cp2 = self._runInstall(dns_returns_valid_token=False)
+    self.assertEqual(cp2.bang.call_count, 0)
+    row2 = requestinstance_db.getInstance('inst1')
+    self.assertEqual(row2['timestamp'], ts_after_run1)
+    self.assertEqual(row2['json_error'], err_after_run1)
+
+    self._refreshTimestampFile(ts_after_run1)
+
+    # Run 3: still unchanged → still no bang, still no timestamp bump
+    cp3 = self._runInstall(dns_returns_valid_token=False)
+    self.assertEqual(cp3.bang.call_count, 0)
+    row3 = requestinstance_db.getInstance('inst1')
+    self.assertEqual(row3['timestamp'], ts_after_run1)
+    self.assertEqual(row3['json_error'], err_after_run1)
+
+  def test_bang_called_when_invalid_instance_becomes_valid(self):
+    """
+    The fallback in instanceNodePostProcessing exists to catch validity
+    flips for instances whose parameters didn't change (hash unchanged).
+    When an unchanged invalid instance becomes valid (e.g. the DNS TXT
+    record was finally published), bang() must fire so the master
+    reprocesses `valided-instance-db-path` and picks up the new valid row.
+    Regression guard that the no-op detection in updateInstanceInDB does
+    not mask real state transitions.
+    """
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+
+    self._seedInstance(
+      instance_db, 'inst1',
+      {'custom_domain': 'flip.example.com', 'url': 'http://flip.example.com'})
+
+    old_ts = time.time() - 100
+    os.utime(self.timestamp_file_path, (old_ts, old_ts))
+
+    # Run 1: DNS fails → invalid.
+    cp1 = self._runInstall(dns_returns_valid_token=False)
+    self.assertEqual(cp1.bang.call_count, 1)
+    row1 = requestinstance_db.getInstance('inst1')
+    self.assertNotEqual(row1['valid_parameter'], 'valid')
+
+    self._refreshTimestampFile(row1['timestamp'])
+
+    # Run 2: DNS now succeeds → invalid→valid. Hash unchanged, so only
+    # the timestamp fallback can detect this. bang must fire.
+    cp2 = self._runInstall(dns_returns_valid_token=True)
+    row2 = requestinstance_db.getInstance('inst1')
+    self.assertEqual(row2['valid_parameter'], 'valid')
+    self.assertEqual(cp2.bang.call_count, 1)
+
+
 class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def setUp(self):
