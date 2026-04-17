@@ -455,6 +455,18 @@ class Recipe(object):
     error_json = json.dumps(publish_information, sort_keys=True) if publish_information else "{}"
     is_valid = 'valid' if not instance_needs_reprocessing else 'invalid'
     if not is_new:
+      # Preserve the existing timestamp when the row is observably
+      # identical. Without this, every reprocessed-invalid instance
+      # bumps its timestamp to now() every cycle, which trips the
+      # timestamp-based bang fallback in cdninstancenode's
+      # instanceNodePostProcessing and causes a bang loop.
+      existing = self.requestinstance_db.getInstance(instance_reference)
+      if (existing is not None
+          and existing['json_parameters'] == params_json
+          and existing['json_error'] == error_json
+          and existing['hash'] == instance_hash
+          and existing['valid_parameter'] == is_valid):
+        timestamp = existing['timestamp']
       update_instance_list = [(
         params_json,
         error_json,
