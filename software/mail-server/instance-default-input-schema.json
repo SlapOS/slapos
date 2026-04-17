@@ -12,20 +12,46 @@
       },
       "default": []
     },
+    "inbound-relay": {
+      "title": "Inbound Relay",
+      "description": "Automatically requested inbound mail relay",
+      "type": "object",
+      "properties": {
+        "enable": {
+          "title": "Enable Inbound Relay",
+          "description": "Whether to automatically request a mail relay instance",
+          "type": "boolean",
+          "default": true
+        },
+        "relay-sr-url": {
+          "title": "Relay SR URL",
+          "description": "A custom URL to use for the relay SR instead of the latest stable version",
+          "type": "string",
+          "default": "urn:slapos:mail-relay"
+        }
+      },
+      "default": {}
+    },
     "outbound-relay": {
       "title": "Outbound Relay",
       "description": "The relay server configuration for outbound mail",
       "type": "object",
       "properties": {
+        "enable": {
+          "title": "Enable Outbound Relay",
+          "description": "Whether to send mail via an outbound relay",
+          "type": "boolean",
+          "default": true
+        },
         "host": {
           "title": "Host",
-          "description": "The host name of the relay server. If empty, the requested relay will be used.",
+          "description": "The host name of a custom relay server. If empty, the requested relay will be used.",
           "type": "string",
           "default": ""
         },
         "port": {
           "title": "Port",
-          "description": "The port of the relay server",
+          "description": "The port of the custom relay server",
           "type": "integer",
           "default": 25
         },
@@ -43,18 +69,6 @@
         }
       },
       "default": {}
-    },
-    "relay-sr-url": {
-      "title": "Relay SR URL",
-      "description": "A custom URL to use for the relay SR instead of the latest stable version",
-      "type": "string",
-      "default": "urn:slapos:mail-relay"
-    },
-    "no-relay": {
-      "title": "Do not request a relay at all",
-      "description": "If set to true, no relay will be requested at all. The mail server will only receive and send mail directly.",
-      "type": "boolean",
-      "default": false
     },
     "test-account": {
       "title": "Builtin Test Account",
