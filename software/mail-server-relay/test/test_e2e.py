@@ -25,10 +25,12 @@
 #
 ##############################################################################
 
+import base64
 import os
 import json
 import imaplib
 import smtplib
+import socket
 import ssl
 import time
 
@@ -399,6 +401,61 @@ class E2E(SlapOSInstanceTestCase):
     self.send_email(mailserver, mail_recipient, body, send_as)
     self.check_inbox(mail_recipient, body)
 
+  def _managesieve(self, mailserver, script_name, script_content):
+    """Upload and activate (or deactivate) a sieve script via ManageSieve,
+    the same protocol SnappyMail uses."""
+    host = self.getConnectionDict(mailserver)['imap-smtp-ipv6']
+    sock = socket.create_connection((host, 4190), timeout=30)
+
+    def recv_response():
+      lines = []
+      while True:
+        line = b''
+        while not line.endswith(b'\r\n'):
+          c = sock.recv(1)
+          if not c:
+            raise ConnectionError("ManageSieve: connection closed")
+          line += c
+        line = line.decode('utf-8').strip()
+        lines.append(line)
+        if line.startswith(('OK', 'NO', 'BYE')):
+          return lines
+
+    def send(cmd):
+      sock.sendall((cmd + '\r\n').encode('utf-8'))
+
+    recv_response()  # greeting
+
+    send('STARTTLS')
+    resp = recv_response()
+    self.assertTrue(resp[-1].startswith('OK'), f"STARTTLS: {resp}")
+
+    sock = self._get_ssl_context().wrap_socket(sock)
+    recv_response()  # post-TLS capabilities
+
+    creds = base64.b64encode(
+      b'\0' + mailserver.testmail.encode()
+      + b'\0' + self.testmail_password.encode()
+    ).decode()
+    send(f'AUTHENTICATE "PLAIN" "{creds}"')
+    resp = recv_response()
+    self.assertTrue(resp[-1].startswith('OK'), f"AUTH: {resp}")
+
+    if script_content is not None:
+      data = script_content.encode('utf-8')
+      send(f'PUTSCRIPT "{script_name}" {{{len(data)}+}}')
+      sock.sendall(data + b'\r\n')
+      resp = recv_response()
+      self.assertTrue(resp[-1].startswith('OK'), f"PUTSCRIPT: {resp}")
+      send(f'SETACTIVE "{script_name}"')
+    else:
+      send('SETACTIVE ""')
+    resp = recv_response()
+    self.assertTrue(resp[-1].startswith('OK'), f"SETACTIVE: {resp}")
+
+    send('LOGOUT')
+    sock.close()
+
   def test_send_email(self):
     # each mail server has testmail@{{domain}}:password123::
     from_mail, to_mail = self.mail_servers[:2]
@@ -758,4 +815,41 @@ class E2E(SlapOSInstanceTestCase):
           to_addrs=[mailserver.testmail],
           msg=msg,
         )
+
+  def test_sieve_redirect(self):
+    """Upload a sieve redirect script via ManageSieve on mail2,
+    send from mail1, and verify the mail arrives at mail3."""
+    mail1, mail2, mail3 = self.mail_servers
+
+    sieve_script = (
+      'require ["editheader", "variables", "envelope"];\n'
+      '\n'
+      '# Capture original sender and envelope recipient (forwarder)\n'
+      'if header :matches "From" "*" { set "original_from" "${1}"; }\n'
+      'if envelope :matches "to" "*" { set "forward_to" "${1}"; }\n'
+      '\n'
+      '# Add forwarding trace headers\n'
+      'addheader "X-Forwarded-For" "${forward_to}";\n'
+      'addheader "X-Forwarded-To" "%s";\n'
+      '\n'
+      '# If no Reply-To, set it to the original sender\n'
+      'if not header :matches "Reply-To" "*" {\n'
+      '  addheader "Reply-To" "${original_from}";\n'
+      '}\n'
+      '\n'
+      '# Remove spam classification header\n'
+      'deleteheader "X-Bogosity";\n'
+      '\n'
+      '# Rewrite From to the forwarding user\n'
+      'deleteheader "From";\n'
+      'addheader "From" "${forward_to}";\n'
+      '\n'
+      'redirect "%s";\n'
+    ) % (mail3.testmail, mail3.testmail)
+    self._managesieve(mail2, 'redirect', sieve_script)
+    self.addCleanup(self._managesieve, mail2, None, None)
+
+    body = "Sieve redirect via ManageSieve test"
+    self.send_email(mail1, mail2, body)
+    self.check_inbox(mail3, body)
 
