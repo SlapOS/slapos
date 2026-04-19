@@ -1,4 +1,4 @@
-From a171157cbad96dfcabbe1d72068619207e1090b8 Mon Sep 17 00:00:00 2001
+From cecf918566e51168ca71ab20d882b6751cbc9167 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
 Date: Sat, 18 Apr 2026 08:12:09 +0900
 Subject: [PATCH] repozo: allow --verify to check backup against source Data.fs
@@ -18,7 +18,7 @@ With --quick, only sizes are compared.
  2 files changed, 167 insertions(+), 7 deletions(-)
 
 diff --git a/src/ZODB/scripts/repozo.py b/src/ZODB/scripts/repozo.py
-index 69e03827..c8a91364 100755
+index 69e03827..1972224a 100755
 --- a/src/ZODB/scripts/repozo.py
 +++ b/src/ZODB/scripts/repozo.py
 @@ -100,6 +100,12 @@ Options for -R/--recover:
@@ -57,7 +57,7 @@ index 69e03827..c8a91364 100755
 +                if actual_sum != sum:
 +                    raise VerificationFail(
 +                        f"source {options.file} between {startpos} and {endpos}"
-+                        f" has checksum {actual_sum} instead of {sum}.")
++                        f" has checksum {actual_sum} instead of {sum}")
 +
 +    if options.file and options.quick:
 +        _, _, endpos, _ = scandat(repofiles)
