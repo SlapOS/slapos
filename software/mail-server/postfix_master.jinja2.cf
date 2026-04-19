@@ -18,12 +18,6 @@ flush     unix  n       -       n       1000?   0       flush
 proxymap  unix  -       -       n       -       -       proxymap
 proxywrite unix -       -       n       -       1       proxymap
 smtp      unix  -       -       n       -       -       smtp
-relay     unix  -       -       n       -       -       smtp
-relay-auth unix -       -       n       -       -       smtp
-  -o smtp_sasl_auth_enable=yes
-  -o smtp_sasl_password_maps=texthash:{{ sasl_passwd }}
-  -o smtp_sasl_security_options=noanonymous
-  -o smtp_tls_security_level=encrypt
 showq     unix  n       -       n       -       -       showq
 error     unix  -       -       n       -       -       error
 retry     unix  -       -       n       -       -       error
