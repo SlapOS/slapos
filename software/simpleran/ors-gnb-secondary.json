@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ORS gNB",
+  "properties": {
+    "nssai": {
+      "$ref": "instance-enb-input-schema.json#/properties/nssai"
+    },
+    "nr_nr_handover": {
+      "$ref": "instance-enb-input-schema.json#/properties/nr_nr_handover"
+    },
+    "nr_eutra_handover": {
+      "$ref": "instance-enb-input-schema.json#/properties/nr_eutra_handover"
+    }
+  }
+}
