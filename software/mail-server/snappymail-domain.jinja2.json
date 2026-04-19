@@ -68,9 +68,9 @@
       "authPlainLine": false
   },
   "Sieve": {
-      "host": "",
+      "host": "{{ mail_host }}",
       "port": 4190,
-      "type": 0,
+      "type": 2,
       "timeout": 10,
       "shortLogin": false,
       "lowerLogin": true,
@@ -91,7 +91,7 @@
           "disable_compression": true,
           "security_level": 1
       },
-      "enabled": false,
+      "enabled": true,
       "authLiteral": true
   },
   "whiteList": ""
