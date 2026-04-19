@@ -25,7 +25,6 @@ parts =
   bogofilter-scan-script
   bogofilter-learn-spam-script
   bogofilter-learn-ham-script
-  bogofilter-access-map
   bogofilter-sieve-spam-filter
   bogofilter-sieve-report-spam
   bogofilter-sieve-report-ham
@@ -104,6 +103,22 @@ init =
               except:
                   options['ipv4'] = "0.0.0.0"
 
+{% set mail_domains = slapparameter_dict['mail-domains'] -%}
+{% set inbound_relay = slapparameter_dict['inbound-relay'] -%}
+{% set outbound_relay = slapparameter_dict['outbound-relay'] -%}
+{% set inbound = inbound_relay['enable'] -%}
+{% set outbound = outbound_relay['enable'] -%}
+{% set auto_outbound = outbound and inbound and not outbound_relay['host'] -%}
+{% set custom_outbound = outbound and outbound_relay['host'] -%}
+{% set custom_outbound_sasl = custom_outbound and outbound_relay['user'] -%}
+[instance-parameters]
+mail-domains = {{ dumps(mail_domains) }}
+inbound-relay = {{ dumps(inbound_relay) }}
+outbound-relay = {{ dumps(outbound_relay) }}
+custom-outbound-relay = {{ dumps(custom_outbound) }}
+custom-outbound-relay-sasl = {{ dumps(custom_outbound_sasl) }}
+automatic-outbound-relay = {{ dumps(auto_outbound) }}
+
 
 # Dovecot IMAP server
 # -------------------
@@ -151,6 +166,7 @@ context =
 recipe = slapos.recipe.build
 # not using location to avoid Buildout ever deleting it
 target = $${directory:etc}/dovecot-passwd
+account-requests = {{ dumps(slave_instance_list) }}
 init =
   # gecos and shell are unused by Dovecot so we can reuse them
   PASSWD_COLS = ['name', 'passwd', 'uid', 'gid', 'gecos', 'dir', 'shell', 'extra_fields']
@@ -171,7 +187,7 @@ init =
   error_dict = {}
   output = {}
 
-  slave_list = {{ json_module.dumps(slave_instance_list) }}
+  slave_list = options['account-requests']
 
   def make_entry(slave, previous={}):
     reset_token = slave['parameters'].get('reset-token')
@@ -231,6 +247,7 @@ init =
           'passwd': 'password123'
         }
 
+  options['account-entries'] = output
   self.output = [":".join(row.get(col, '') for col in PASSWD_COLS) for row in output.values()]
 
   options['location'] = ''  # we don't care about the part folder existing
@@ -340,11 +357,10 @@ recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
 output = $${postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/postfix.log
-no-relay = {{ dumps(slapparameter_dict['no-relay']) }}
 bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
   raw postfix_log_path $${:log-file}
-  key dovecot_passwd dovecot-passwords:target
+  key sender_login_map postfix-sender-login-map:location
   key bin_directory directory:bin
   key usr_directory postfix-directory:usr
   key queue_directory postfix-directory:var-spool
@@ -364,12 +380,12 @@ context =
   raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
   section postfix_certificate postfix-certificate
   key relay_clientcerts postfix-relay-clientcerts:output
-  key no_relay :no-relay
+  section instance instance-parameters
+{%- if custom_outbound_sasl %}
+  key outbound_sasl_passwd postfix-custom-outbound-sasl:output
+{%- endif %}
   key relay_tls_fingerprints request-relays:tls-fingerprints
   key bogofilter_enable :bogofilter-enable
-{% if slapparameter_dict['bogofilter']['enable'] %}
-  key bogofilter_access_map bogofilter-access-map:output
-{% endif %}
 
 [postfix-relay-clientcerts]
 recipe = slapos.recipe.template:jinja2
@@ -392,7 +408,6 @@ context =
   raw smtp_port {{ smtp_port}}
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
-  key sasl_passwd postfix-sasl-passwd:output
   key bogofilter_enable :bogofilter-enable
   raw mail_owner {{ user_name }}
 {% if slapparameter_dict['bogofilter']['enable'] %}
@@ -400,37 +415,48 @@ context =
   key bogofilter_spool bogofilter-directory:spool
 {% endif %}
 
+[postfix-sender-login-map]
+recipe = slapos.recipe.template:jinja2
+recipe = slapos.recipe.build
+location = $${postfix-directory:etc}/sender_login_map
+account-entries = $${dovecot-passwords:account-entries}
+install =
+  with open(location, 'w') as f:
+    for address in options['account-entries']:
+      f.write('%(address)s %(address)s\n' % {'address': address})
+
 [outbound-relay-info]
-{% for domain in slapparameter_dict['mail-domains'] -%}
-# if there's an outbound override, it's used in priority
-{% if slapparameter_dict['outbound-relay']['host'] -%}
-outbound-host-{{ domain }} = {{ slapparameter_dict['outbound-relay']['host'] }}
-outbound-port-{{ domain }} = {{ slapparameter_dict['outbound-relay']['port'] }}
-{% elif not slapparameter_dict['no-relay'] %}
-# else we use the result of request if it exists (fingerprint auth)
-outbound-host-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-host}
-outbound-port-{{ domain }} = $${request-relay-{{ domain }}:connection-outbound-smtp-port}
-{% else -%}
-outbound-host-{{ domain }} =
-outbound-port-{{ domain }} =
-{% endif -%}
-{% endfor -%}
+<= instance-parameters
+recipe = slapos.recipe.build
+init =
+  outbound_relay = options['outbound-relay']
+  outbound_map = {}
+  if options['custom-outbound-relay']:
+    for domain in options['mail-domains']:
+      outbound_map[domain] = outbound_relay
+  elif options['automatic-outbound-relay']:
+    prefix = 'connection-outbound-'
+    for domain in options['mail-domains']:
+      req_part = self.buildout['request-relay-' + domain]
+      host, port = req_part[prefix + 'host'], req_part[prefix + 'smtp-port']
+      outbound_map[domain] = {'host': host, 'port': port}
+  options['outbound-map'] = outbound_map
 
 [postfix-relays]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_relays.in:target}
 output = $${postfix-directory:etc}/relay_by_sender
 context =
-  section outbound_relay_info outbound-relay-info
-  raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
+  key outbound_map outbound-relay-info:outbound-map
 
-[postfix-sasl-passwd]
+{% if custom_outbound_sasl -%}
+[postfix-custom-outbound-sasl]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_sasl_passwd.in:target}
-output = $${postfix-directory:etc}/sasl_passwd
+output = $${postfix-directory:etc}/outbound_sasl_passwd
 context =
-  section outbound_relay_info outbound-relay-info
-  raw mail_domains {{ slapparameter_dict['mail-domains'] | join(',') }}
+  key out instance-parameters:outbound-relay
+{%- endif %}
 
 [postfix-symlinks-libexec]
 recipe = slapos.cookbook:symbolic.link
@@ -464,7 +490,9 @@ hash-files =
   $${postfix-conf-main:output}
   $${postfix-conf-master:output}
   $${postfix-wrapper:output}
-  $${postfix-sasl-passwd:output}
+{% if custom_outbound_sasl -%}
+  $${postfix-custom-outbound-sasl:output}
+{%- endif %}
 depends =
   $${postfix-symlinks-libexec:recipe}
   $${logrotate-entry-postfix:recipe}
@@ -613,13 +641,6 @@ inline =
   BOGODIR="$${bogofilter-directory:spool}/$$USER"
   [ -d "$$BOGODIR" ] || exit 0
   ${bogofilter:location}/bin/bogofilter -e -Sn -d "$$BOGODIR"
-
-[bogofilter-access-map]
-recipe = slapos.recipe.template
-output = $${postfix-directory:etc}/bogofilter_access
-mode = 644
-inline =
-  /./   FILTER bogofilter:bogofilter
 
 [bogofilter-sieve-spam-filter]
 recipe = slapos.recipe.template
@@ -939,7 +960,7 @@ init =
 {%   do relay_requests.append('request-relay-' ~ mail_domain) %}
 [request-relay-{{ mail_domain }}]
 <= slap-connection
-software-url = {{ slapparameter_dict['relay-sr-url'] }}
+software-url = {{ inbound_relay['relay-sr-url'] }}
 software-type = cluster
 shared = true
 name = mail-server-relay-{{ mail_domain }}
@@ -948,7 +969,7 @@ config-mail-server-host = {{ ipv6 }}
 config-mail-server-port = {{ dumps(smtp_port) }}
 config-authentication = fingerprint
 config-fingerprints = $${postfix-certificate-fingerprints:tls-fingerprints}
-{% if not slapparameter_dict['no-relay'] %}
+{% if inbound_relay['enable'] %}
 recipe = slapos.cookbook:request.serialised
 return =
   outbound-host
@@ -963,7 +984,7 @@ state = destroyed
 [request-relays]
 recipe = slapos.recipe.build
 relay-requests = {{ dumps(relay_requests) }}
-{% if slapparameter_dict['no-relay'] -%}
+{% if not inbound_relay['enable'] -%}
 init =
   options['tls-fingerprints'] = []
 depends =
