@@ -199,6 +199,69 @@
         ]
       },
       "default": ["NIA2 (128 bit AES)","NIA1 (Snow 3G)"]
+    },
+    "redcap_ue": {
+      "title": "Reduced Capability parameters",
+      "description": "Configure the cell to allow the connection of Reduced Capability UEs (RedCap) and enhanced Reduced Capability UEs (eRedCap).",
+      "type": "object",
+      "properties": {
+        "allow": {
+          "title": "Allow RedCap UEs",
+          "description": "Defines if RedCap UEs are allowed in the cell or not.",
+          "default": false,
+          "type": "boolean"
+        },
+        "allow_1rx_ue": {
+          "title": "Allow RedCap 1Rx UEs",
+          "description": "Defines if RedCap 1Rx UEs are allowed in the cell or not.",
+          "default": true,
+          "type": "boolean"
+        },
+        "allow_2rx_ue": {
+          "title": "Allow RedCap 2Rx UEs",
+          "description": "Defines if RedCap 2Rx UEs are allowed in the cell or not.",
+          "default": true,
+          "type": "boolean"
+        },
+        "eredcap_ue": {
+          "title": "eRedCap UE Parameters",
+          "description": "eRedCap UE Parameters",
+          "type": "object",
+          "properties": {
+            "allow": {
+              "title": "Allow eRedCap UEs",
+              "description": "Defines if eRedCap UEs are allowed in the cell or not.",
+              "default": false,
+              "type": "boolean"
+            },
+            "allow_1rx_ue": {
+              "title": "Allow eRedCap 1Rx UEs",
+              "description": "Defines if eRedCap 1Rx UEs are allowed in the cell or not.",
+              "default": true,
+              "type": "boolean"
+            },
+            "allow_2rx_ue": {
+              "title": "Allow eRedCap 2Rx UEs",
+              "description": "Defines if eRedCap 2Rx UEs are allowed in the cell or not.",
+              "default": true,
+              "type": "boolean"
+            }
+	  }
+        },
+        "half_duplex": {
+          "title": "Half Duplex",
+          "description": "Half Duplex Parameters",
+          "type": "object",
+          "properties": {
+            "enable": {
+              "title": "Enable Half Duplex",
+              "description": "Defines if half duplex support is activated in the cell. For each BWPs where half duplex is enabled, the DCI format 0_1/1_1 will be larger.",
+              "default": false,
+              "type": "boolean"
+            }
+	  }
+        }
+      }
     }
   },
   "$defs": {
