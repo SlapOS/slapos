@@ -298,6 +298,10 @@ class TestGNBParameters1(ORSTestCase):
 
     conf = load_yaml_conf(self.slap, 'enb')
 
+    # Check parameters required for ORS hardware were applied
+    self.assertEqual(conf['rf_driver']['rx_antenna'], "tx_rx")
+    self.assertEqual(conf['rf_driver']['tdd_tx_mod'], 1)
+
     self.assertEqual(conf['tx_gain'], [gnb_param_dict1['cell1']['tx_gain']] * gnb_param_dict1['nodeb']['n_antenna_dl'])
     self.assertEqual(conf['rx_gain'], [gnb_param_dict1['cell1']['rx_gain']] * gnb_param_dict1['nodeb']['n_antenna_ul'])
     self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['nodeb']['inactivity_timer'])

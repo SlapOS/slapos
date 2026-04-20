@@ -12,7 +12,7 @@
       "index": 1
     },
     "gnb": {
-      "title": "eNB / gNB",
+      "title": "eNB / gNB (obsolete)",
       "software-type": "gnb",
       "description": "eNodeB / gNodeB Configuration",
       "request": "instance-ors-duo-enb-gnb-input-schema.json",
@@ -20,7 +20,7 @@
       "index": 2
     },
     "enb": {
-      "title": "eNB / gNB",
+      "title": "eNB / gNB (obsolete)",
       "software-type": "enb",
       "description": "eNodeB / eNodeB Configuration",
       "request": "instance-ors-duo-enb-gnb-input-schema.json",
@@ -44,8 +44,8 @@
       "index": 5
     },
     "core-network-slave": {
-      "title": "Core Network Sim Card or Local DNS Entry",
-      "description": "Core Network Sim Card or Local DNS Entry Configuration",
+      "title": "SIM Card",
+      "description": "SIM Card",
       "software-type": "core-network",
       "request": "core-network-shared-input-schema.json",
       "response": "sim/schema.json",
