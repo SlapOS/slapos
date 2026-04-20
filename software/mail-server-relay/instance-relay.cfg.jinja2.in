@@ -180,10 +180,9 @@ inline =
 {% set mail_domains = slapparameter_dict['mail-domains'] %}
 {% set cluster_fqdns = slapparameter_dict['cluster-fqdns'] %}
 {% set proxy_map = slapparameter_dict['proxy-map'] %}
-{% set greylisting_enable = slapparameter_dict.get('greylisting-enable', true) %}
-{% set greylisting_delay = slapparameter_dict.get('greylisting-delay', 60) %}
-{% set greylisting_whitelist_clients = slapparameter_dict.get('greylisting-whitelist-clients', []) %}
-{% set greylisting_whitelist_recipients = slapparameter_dict.get('greylisting-whitelist-recipients', []) %}
+{% set greylisting = slapparameter_dict['greylisting'] %}
+{% set greylisting_enable = greylisting['enable'] %}
+{% set greylisting_delay = greylisting['greylisting-delay'] %}
 
 [internal-postfix-transport]
 recipe = slapos.recipe.template:jinja2
@@ -286,9 +285,8 @@ recipe = slapos.recipe.template
 output = $${inbound-postfix-directory:etc}/postgrey_whitelist_clients
 inline =
   # Postgrey client whitelist
-  # Internal backend servers are already whitelisted by postfix (permit_mynetworks)
-{% for entry in greylisting_whitelist_clients %}
-  {{ entry }}
+{% for entry in greylisting['whitelist-clients'] %}
+  {{ entry }}{# single-line enforced by JSON schema #}
 {% endfor %}
 
 [postgrey-whitelist-recipients]
@@ -298,8 +296,8 @@ inline =
   # Postgrey recipient whitelist
   # Add recipients that should never be greylisted, e.g.:
   # postmaster@
-{% for entry in greylisting_whitelist_recipients %}
-  {{ entry }}
+{% for entry in greylisting['whitelist-recipients'] %}
+  {{ entry }}{# single-line enforced by JSON schema #}
 {% endfor %}
 {% endif %}
 
