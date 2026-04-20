@@ -50,8 +50,7 @@
               }
             },
             "required": [
-              "host",
-              "port"
+              "host"
             ],
             "additionalProperties": false
           },
