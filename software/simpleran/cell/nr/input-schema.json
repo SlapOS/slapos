@@ -228,7 +228,7 @@
           "description": "eRedCap UE Parameters",
           "type": "object",
           "properties": {
-            "allow_eredcap": {
+            "allow": {
               "title": "Allow eRedCap UEs",
               "description": "Defines if eRedCap UEs are allowed in the cell or not.",
               "default": false,
