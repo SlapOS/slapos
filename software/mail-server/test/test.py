@@ -273,30 +273,6 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     time.sleep(2)
     self.check_imap("bob@example.com", new_password)
 
-
-class PostfixBogofilterTestCase(SlapOSInstanceTestCase):
-  """Test that bogofilter spam filtering integrates correctly with postfix."""
-  __partition_reference__ = 'bf'
-
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      "_": json.dumps(
-        {
-          "mail-domains": ["example.com"],
-          "inbound-relay": {"enable": False},
-          "test-account": True,
-          "bogofilter": {"enable": True},
-        }
-      )
-    }
-
-  def _get_ssl_context(self):
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    return ctx
-
   def test_smtp_works_with_bogofilter(self):
     """SMTP service is still reachable when bogofilter is enabled."""
     parameter_dict = json.loads(
@@ -372,3 +348,4 @@ class PostfixBogofilterTestCase(SlapOSInstanceTestCase):
           imap.logout()
         except Exception:
           pass
+

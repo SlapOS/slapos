@@ -103,7 +103,7 @@
       "default": {}
     },
     "bogofilter": {
-      "title": "Bogofilter",
+      "title": "Bogofilter Spam Filter",
       "description": "Bogofilter spam filter configuration",
       "type": "object",
       "properties": {
@@ -111,7 +111,7 @@
           "title": "Enable",
           "description": "Enable bogofilter spam filtering on incoming mail. Adds X-Bogosity headers to all messages.",
           "type": "boolean",
-          "default": false
+          "default": true
         }
       },
       "default": {}
