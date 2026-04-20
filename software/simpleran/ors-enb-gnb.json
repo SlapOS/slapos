@@ -32,7 +32,7 @@
               "raw_json"
             ],
             "properties": {
-              "handover_hash": {
+              "raw_json": {
                 "title": "Raw JSON",
                 "description": "Copy & Paste here the handover-raw-json connection parameter from another other cell on the Panel to quickly add it as a neighbour cell",
                 "type": "string"
