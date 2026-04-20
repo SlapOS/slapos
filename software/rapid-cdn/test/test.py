@@ -8344,7 +8344,10 @@ class TestSlaveManagementDomainReuse(
     return {
       'reuse-orig': {
         'custom_domain': 'reuse.example.com',
-      }
+      },
+      'bang-loop-invalid': {
+        'custom_domain': 'bang-loop.example.com',
+      },
     }
 
   def _updateDataReplacementDict(self, data_replacement_dict):
@@ -8447,22 +8450,24 @@ class TestSlaveManagementDomainReuse(
     the requestinstance-db row for the unchanged invalid slave keeps the
     same timestamp and json_error across repeated runs.
     """
-    # reuse-orig is seeded invalid by getSlaveParameterDictDict; setUpClass
-    # already ran CDNInstanceNode at least once.
-    row1 = self._get_requestinstance_row('reuse-orig')
+    # bang-loop-invalid is a dedicated slave (separate from reuse-orig, which
+    # is mutated by test_domain_reuse_after_destruction) seeded invalid by
+    # getSlaveParameterDictDict; setUpClass already ran CDNInstanceNode at
+    # least once.
+    row1 = self._get_requestinstance_row('bang-loop-invalid')
     self.assertNotEqual(row1['valid_parameter'], 'valid')
 
     # Sleep past the integer-second boundary so a new str(int(time.time()))
     # would differ from row1['timestamp'] if the bug were present.
     time.sleep(1.1)
     self.runCDNInstanceNode()
-    row2 = self._get_requestinstance_row('reuse-orig')
+    row2 = self._get_requestinstance_row('bang-loop-invalid')
     self.assertEqual(row2['timestamp'], row1['timestamp'])
     self.assertEqual(row2['json_error'], row1['json_error'])
 
     time.sleep(1.1)
     self.runCDNInstanceNode()
-    row3 = self._get_requestinstance_row('reuse-orig')
+    row3 = self._get_requestinstance_row('bang-loop-invalid')
     self.assertEqual(row3['timestamp'], row1['timestamp'])
     self.assertEqual(row3['json_error'], row1['json_error'])
 
