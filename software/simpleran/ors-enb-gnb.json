@@ -26,14 +26,15 @@
           },
           {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Handover Hash",
+            "title": "Raw JSON",
             "type": "object",
             "required": [
-              "handover_hash"
+              "raw_json"
             ],
             "properties": {
               "handover_hash": {
-                "title": "Handover Hash",
+                "title": "Raw JSON",
+                "description": "Copy & Paste here the handover-raw-json connection parameter from another other cell on the Panel to quickly add it as a neighbour cell",
                 "type": "string"
               }
             }
