@@ -10,8 +10,8 @@
       "$ref": "instance-enb-input-schema.json#/properties/gtp_addr"
     },
     "ncell_list": {
-      "title": "Neighbour Cell Info",
-      "description": "Neighbour Cell Info",
+      "title": "Neighbour Cell List",
+      "description": "List of neighbour EUTRA or NR cells, handover will be configured for all neighbour cells. Tip: Copy Paste the handover-json-export connection parameter (on the Panel) from another ORS in the RAW XML to quickly fill in all parameters",
       "type": "array",
       "items": {
         "title": "Neighbour Cell",
@@ -23,21 +23,6 @@
           },
           {
             "$ref": "peer/cell/nr/input-schema.json"
-          },
-          {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Raw JSON",
-            "type": "object",
-            "required": [
-              "raw_json"
-            ],
-            "properties": {
-              "raw_json": {
-                "title": "Raw JSON",
-                "description": "Copy & Paste here the handover-raw-json connection parameter from another other cell on the Panel to quickly add it as a neighbour cell",
-                "type": "string"
-              }
-            }
           }
         ]
       },
