@@ -39,7 +39,7 @@
       "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
     },
     "root_sequence_index": {
-      "title": "Expert: Root Sequence Index",
+      "title": "Expert only: Root Sequence Index",
       "$ref": "cell/common.json#/$defs/root_sequence_index",
       "description": "Range: 0 to 137. Equal to ORS serial number modulo 138 by default. Sets prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
     }

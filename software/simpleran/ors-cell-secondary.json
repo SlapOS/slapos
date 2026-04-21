@@ -7,7 +7,7 @@
       "$ref": "cell/common.json#/properties/ignore_gbr_congestion"
     },
     "tx_power_offset": {
-      "title": "Expert: TX Power Offset",
+      "title": "Expert only: TX Power Offset",
       "description": "Expert only. Offset between Amarisoft SDR50 board power and ORS power. For fine tuning the reference signal power value. Default depends on ORS frequency, please refer to the connection parameters",
       "type": "number"
     }

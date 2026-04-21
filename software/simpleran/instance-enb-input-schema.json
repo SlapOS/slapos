@@ -642,7 +642,7 @@
     },
     "amarisoft_version": {
       "title": "Amarisoft Version",
-      "description": "Expert: force amarisoft version",
+      "description": "Expert only: force amarisoft version",
       "type": "string"
     },
     "websocket_url_ipv6": {

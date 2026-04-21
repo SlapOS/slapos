@@ -46,7 +46,7 @@
       "$ref": "instance-enb-input-schema.json#/properties/websocket_url_ipv6"
     },
     "lock": {
-      "title": "Force reprocess",
+      "title": "Expert only: Force reprocess",
       "description": "Expert only: change this parameter value to force reprocess of partition",
       "type": "string"
     }
