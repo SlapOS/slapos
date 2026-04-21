@@ -173,8 +173,7 @@
             }
           }
         }
-      ],
-      "default": "Disabled"
+      ]
     },
     "ecc_params": {
       "title": "ECC Parameters",
