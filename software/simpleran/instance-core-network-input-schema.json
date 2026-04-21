@@ -147,6 +147,12 @@
       "description": "If set, IMS will accept incoming calls from a SIP trunk and will forward unknown calls to SIP trunk. SIP trunk must accept non authenticated requests.",
       "anyOf": [
         {
+          "title": "Disable External SIP Trunk",
+          "type": "object",
+          "properties": {
+          }
+        },
+        {
           "title": "Enable External SIP Trunk",
           "type": "object",
           "required": [
@@ -164,22 +170,6 @@
               "title": "SIP Trunk Account User Name",
               "description": "SIP Trunk Account User Name",
               "type": "string"
-            }
-          }
-        },
-        {
-          "title": "Disable External SIP Trunk",
-          "type": "object",
-          "required": [
-            "disable"
-          ],
-          "properties": {
-            "disable": {
-              "title": "Disabled",
-              "type": "string",
-              "enum": [
-                "Disabled"
-              ]
             }
           }
         }
