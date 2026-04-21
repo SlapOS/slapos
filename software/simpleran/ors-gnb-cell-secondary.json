@@ -5,15 +5,15 @@
   "properties": {
     "dl_nr_arfcn": {
       "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn",
-      "title": "Expert: DL NR ARFCN",
+      "title": "Expert only: DL NR ARFCN",
       "description": "Can be used instead of DL Frequency to directly set the Downlink NR Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL NR ARFCN)"
     },
     "ssb_nr_arfcn": {
-      "title": "Expert: SSB NR ARFCN",
+      "title": "Expert only: SSB NR ARFCN",
       "$ref": "cell/nr/input-schema.json#/properties/ssb_nr_arfcn"
     },
     "ssb_pos_bitmap": {
-      "title": "Expert: SSB Position Bitmap",
+      "title": "Expert only: SSB Position Bitmap",
       "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap"
     },
     "cipher_algo_pref": {
@@ -38,7 +38,7 @@
       "$ref": "cell/nr/input-schema.json#/properties/redcap_ue"
     },
     "amarisoft_ssb_computation": {
-      "title": "Expert: Enable Amarisoft SSB Computation",
+      "title": "Expert only: Enable Amarisoft SSB Computation",
       "description": "Export only. Enable this to let Amarisoft generate SSB NR ARFCN instead of Simpleran. Warning: enabling this will prevent SSB NR ARFCN to be correctely displayed in the connection parameters, you will need to check gNB log to know the value Amarisoft computed.",
       "type": "boolean",
       "default": false
