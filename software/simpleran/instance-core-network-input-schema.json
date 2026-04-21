@@ -169,10 +169,19 @@
         },
         {
           "title": "Disable External SIP Trunk",
-          "type": "string",
-          "enum": [
-            "Disabled"
-          ]
+          "type": "object",
+          "required": [
+            "disable"
+          ],
+          "properties": {
+            "disable": {
+              "title": "Disabled",
+              "type": "string",
+              "enum": [
+                "Disabled"
+              ]
+            }
+          }
         }
       ],
       "default": "Disabled"
