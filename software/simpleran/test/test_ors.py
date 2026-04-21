@@ -127,6 +127,7 @@ param_dict = {
 enb_param_dict = {
     'cell1': {
         # ors_version for tests is B39, so earfcn needs to be within B39
+        'enable_cell': 'Enable eNB',
         'tac': '0x1717',
         'dl_earfcn': 38450,
         'bandwidth': "10 MHz",
@@ -151,6 +152,7 @@ enb_param_dict = {
 gnb_param_dict = {
     'cell1': {
         # ors_version for tests is B39, so dl_nr_arfcn needs to be within N39
+        'enable_cell': 'Enable gNB',
         'dl_nr_arfcn': 378000,
         'nr_band': 39,
         'nr_bandwidth': 40,
