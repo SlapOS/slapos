@@ -172,7 +172,7 @@
           "type": "string",
           "enum": [
             "Disabled"
-          }
+          ]
         }
       ],
       "default": "Disabled"
