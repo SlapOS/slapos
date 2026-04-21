@@ -1,4 +1,3 @@
 {% for domain, relay in outbound_map.items() -%}
-{% set smtp = 'relay-auth' if relay.get('user') else 'smtp' -%}
-@{{ domain }} {{ smtp }}:[{{ relay['host'] }}]:{{ relay['port'] }}
+@{{ domain }} smtp:[{{ relay['host'] }}]:{{ relay['port'] }}
 {% endfor -%}
