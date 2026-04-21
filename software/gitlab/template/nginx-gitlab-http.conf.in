@@ -42,6 +42,39 @@ map $http_upgrade $connection_upgrade_gitlab_ssl {
     ''      close;
 }
 
+# cache zone
+proxy_cache_path {{ nginx.gitlab_cache }} levels=1:2 keys_zone=gitlab_cache:200m max_size=20g inactive=7d use_temp_path=off;
+
+map $request_uri $gitlab_raw_cacheable_ref {
+    default 0;
+
+    # commit SHA
+    ~^/.+/-/raw/[0-9a-f]\{8,40\}/ 1;
+
+    # exclude /-/raw/1.0/
+    ~^/.+/-/raw/1\.0/ 0;
+
+    # tags v1.0, 1.2, 1.0.483
+    ~^/.+/-/raw/(v?[0-9]+(\.[0-9]+)+)/ 1;
+}
+
+map $http_authorization $has_auth {
+    default 0;
+    "~." 1;
+}
+
+map $cookie__gitlab_session $has_session {
+    default 0;
+    "~." 1;
+}
+
+map "$gitlab_raw_cacheable_ref:$has_auth:$has_session" $skip_cache {
+    default 1;
+
+    # Only enable if public, immuable and not private
+    "1:0:0" 0;
+}
+
 limit_req_zone $trusted_remote_addr zone=downloadarchive:10m rate={{ cfg('nginx_download_archive_rate_limit') }}r/m;
 
 
@@ -182,6 +215,43 @@ server {
     proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
     proxy_set_header    Upgrade             $http_upgrade;
     proxy_set_header    Connection          $connection_upgrade_gitlab_ssl;
+
+    proxy_pass http://gitlab-workhorse;
+  }
+
+  location ~ /-/raw/ {
+    proxy_cache gitlab_cache;
+
+    proxy_cache_bypass $skip_cache;
+    proxy_no_cache $skip_cache;
+
+    proxy_cache_methods GET HEAD;
+    proxy_cache_key "$scheme$host$request_uri";
+
+    proxy_cache_valid 200 301 302 7d;
+    proxy_cache_valid any 1m;
+
+    proxy_ignore_headers Cache-Control Expires Set-Cookie X-Accel-Buffering;
+    proxy_hide_header Set-Cookie;
+    proxy_hide_header Cache-Control;
+
+    add_header Cache-Control "public, max-age=604800, immutable" always;
+
+    # cache engine
+    proxy_cache_lock on;
+    proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+
+    proxy_buffering on;
+    proxy_request_buffering on;
+    proxy_set_header X-Accel-Buffering yes;
+
+    proxy_set_header    Host                $http_host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    {% if cfg_https %}
+    proxy_set_header    X-Forwarded-Ssl     on;
+    {% endif %}
+    proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
+    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
 
     proxy_pass http://gitlab-workhorse;
   }

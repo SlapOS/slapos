@@ -877,6 +877,8 @@ recipe  = slapos.cookbook:mkdirectory
 srv     = ${directory:srv}/nginx
 etc     = ${directory:etc}/nginx
 log     = ${directory:log}/nginx
+var     = ${directory:var}/nginx
+cache   = ${nginx-dir:var}/cache
 
 [nginx-ssl-dir]
 recipe  = slapos.cookbook:mkdirectory
@@ -912,6 +914,7 @@ key_file    = ${nginx-generate-certificate:key_file}
 
 client_ca_file = ${frontend-caucase-ssl:ca}
 client_crl_file = ${frontend-caucase-ssl:crl}
+gitlab_cache   = ${nginx-dir:cache}/gitlab
 
 
 [nginx-symlinks]
