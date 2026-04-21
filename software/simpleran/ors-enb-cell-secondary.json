@@ -5,8 +5,8 @@
   "properties": {
     "dl_earfcn": {
       "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn",
-      "title": "Expert: DL EARFCN",
-      "description": "Can be used instead of DL Frequency to directly set the Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL EARFCN)"
+      "title": "Expert only: DL EARFCN",
+      "description": "Expert only: Can be used instead of DL Frequency to directly set the Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL EARFCN)"
     },
     "tti_bundling": {
       "$ref": "cell/lte/input-schema.json#/properties/tti_bundling"
