@@ -26,14 +26,15 @@
 ##############################################################################
 
 import os
-import json
 import imaplib
+import json
 import smtplib
 import ssl
 import time
-from email.mime.text import MIMEText
-import signal
+import urllib.request
+
 from contextlib import contextmanager
+from email.mime.text import MIMEText
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -41,19 +42,9 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
   os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
 )
 
-@contextmanager
-def time_limit(seconds):
-    def signal_handler(signum, frame):
-        raise TimeoutError
-    signal.signal(signal.SIGALRM, signal_handler)
-    signal.alarm(seconds)
-    try:
-        yield
-    finally:
-        signal.alarm(0)
-
 class PostfixTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'p'
+
   def _get_ssl_context(self):
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
@@ -175,9 +166,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     import urllib.request
     import ssl
 
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+    ctx = self._get_ssl_context()
 
     try:
       with urllib.request.urlopen(webmail_url, timeout=10, context=ctx) as response:
