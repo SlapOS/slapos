@@ -490,7 +490,7 @@ hash-files =
   $${postfix-conf-main:output}
   $${postfix-conf-master:output}
   $${postfix-wrapper:output}
-{% if custom_outbound_sasl -%}
+{%- if custom_outbound_sasl %}
   $${postfix-custom-outbound-sasl:output}
 {%- endif %}
 depends =
@@ -568,9 +568,9 @@ basename = {{ basename }}
 
 [postfix-wrappers]
 depends =
-{% for postfix_wrapper in postfix_wrappers -%}
-  {{ "  $${" + postfix_wrapper + ":recipe" }}
-{% endfor -%}
+{%- for postfix_wrapper in postfix_wrappers %}
+  {{ "$${" + postfix_wrapper + ":recipe" }}
+{%- endfor %}
 
 [logrotate-entry-postfix]
 <= logrotate-entry-base
@@ -988,8 +988,8 @@ relay-requests = {{ dumps(relay_requests) }}
 init =
   options['tls-fingerprints'] = []
 depends =
-{% for relay_request in relay_requests -%}
-  {{ "  $${" + relay_request + ":recipe}" }}
+{%- for relay_request in relay_requests %}
+  {{ "$${" + relay_request + ":recipe}" }}
 {%- endfor %}
 {% else -%}
 init =
