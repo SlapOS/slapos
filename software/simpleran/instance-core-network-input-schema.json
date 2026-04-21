@@ -145,7 +145,7 @@
     "trunk": {
       "title": "External SIP Trunk",
       "description": "If set, IMS will accept incoming calls from a SIP trunk and will forward unknown calls to SIP trunk. SIP trunk must accept non authenticated requests.",
-      "anyOf": [
+      "oneOf": [
         {
           "title": "Disable External SIP Trunk",
           "type": "object",
