@@ -7377,13 +7377,12 @@ class TestPassedRequestParameter(HttpFrontendTestCase):
     check_is_present_parameter_list = [
       'instance_title',
       'ip_list',
-      'full_address_list',
+      'full_ip_list',
       'root_instance_title',
       'slap_computer_id',
       'slap_computer_partition_id',
       'slap_software_release_url',
       'slap_software_type',
-      'slave_instance_list',
       'timestamp',
     ]
     for partition_title in (
