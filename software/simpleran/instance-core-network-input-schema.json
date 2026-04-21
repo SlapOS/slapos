@@ -142,6 +142,39 @@
       "description": "Defines the string sent in the Origin-Host AVP for S6 messages. Default is set to epc.mnc<MNC>.mcc<MCC>.3gppnetwork.org.",
       "type": "string"
     },
+    "trunk": {
+      "title": "External SIP Trunk",
+      "description": "If set, IMS will accept incoming calls from a SIP trunk and will forward unknown calls to SIP trunk. SIP trunk must accept non authenticated requests.",
+      "oneOf": [
+        {
+          "title": "Disable External SIP Trunk",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {}
+        },
+        {
+          "title": "Enable External SIP Trunk",
+          "type": "object",
+          "required": [
+            "addr",
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "addr": {
+              "title": "SIP Trunk Address",
+              "description": "SIP Trunk Address",
+              "type": "string"
+            },
+            "name": {
+              "title": "SIP Trunk Account User Name",
+              "description": "SIP Trunk Account User Name",
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
     "ecc_params": {
       "title": "ECC Parameters",
       "description": "Set the ECC network configuration for the SUPI protection and de-concealment of the SUCI. Applicable to 5GC only",
