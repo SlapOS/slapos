@@ -7,14 +7,13 @@
       "plain_http_port": 11080,
       "port": 11443
     },
-    "full_address_list": [],
+    "full_ip_list": [],
     "instance_title": "testing partition 0",
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
     "slap_computer_partition_id": "T-0",
     "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "default",
-    "slave_instance_list": [],
     "timestamp": "@@TIMESTAMP@@"
   },
   {
@@ -28,14 +27,13 @@
       "monitor-username": "admin",
       "slave-list": []
     },
-    "full_address_list": [],
+    "full_ip_list": [],
     "instance_title": "kedifa",
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
     "slap_computer_partition_id": "T-1",
     "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "kedifa",
-    "slave_instance_list": [],
     "timestamp": "@@TIMESTAMP@@"
   },
   {
@@ -64,14 +62,13 @@
       "request-timeout": 600,
       "slave-kedifa-information": "{}"
     },
-    "full_address_list": [],
+    "full_ip_list": [],
     "instance_title": "caddy-frontend-1",
     "root_instance_title": "testing partition 0",
     "slap_computer_id": "local",
     "slap_computer_partition_id": "T-2",
     "slap_software_release_url": "@@00getSoftwareURL@@",
     "slap_software_type": "single-custom-personal",
-    "slave_instance_list": [],
     "timestamp": "@@TIMESTAMP@@"
   }
 ]
