@@ -6612,7 +6612,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       ))[0]
     with open(configuration_file) as fh:
       self.assertIn(
-        '_default_ciphers.pem [ciphers '
+        'default_ciphers______1.pem [ciphers '
         'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384 ',
         fh.read())
 
@@ -6638,7 +6638,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       ))[0]
     with open(configuration_file) as fh:
       self.assertIn(
-        '_own_ciphers.pem [ciphers '
+        'own_ciphers______1.pem [ciphers '
         'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256 ',
         fh.read())
 
@@ -8085,13 +8085,13 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # to check how slapos node reacted to the change
     with open(slapgrid_log_file) as fh:
       slapgrid_log = fh.read()
-    self.assertNotIn('Installing _first-', slapgrid_log)
-    self.assertNotIn('Uninstalling _first-', slapgrid_log)
-    self.assertIn('Updating _first-', slapgrid_log)
+    self.assertNotIn('Installing first______1-', slapgrid_log)
+    self.assertNotIn('Uninstalling first______1-', slapgrid_log)
+    self.assertIn('Updating first______1-', slapgrid_log)
 
-    self.assertIn('Installing _second-', slapgrid_log)
-    self.assertNotIn('Uninstalling _second-', slapgrid_log)
-    self.assertNotIn('Updating _second-', slapgrid_log)
+    self.assertIn('Installing second______1-', slapgrid_log)
+    self.assertNotIn('Uninstalling second______1-', slapgrid_log)
+    self.assertNotIn('Updating second______1-', slapgrid_log)
 
   def test_destroyed_slave(self):
     self.requestSlaveInstance('deleted', {}, 'destroyed')
@@ -8103,13 +8103,13 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     with open(slapgrid_log_file) as fh:
       slapgrid_log = fh.read()
 
-    self.assertNotIn('Installing _first-', slapgrid_log)
-    self.assertNotIn('Uninstalling _first-', slapgrid_log)
-    self.assertIn('Updating _first-', slapgrid_log)
+    self.assertNotIn('Installing first______1-', slapgrid_log)
+    self.assertNotIn('Uninstalling first______1-', slapgrid_log)
+    self.assertIn('Updating first______1-', slapgrid_log)
 
-    self.assertNotIn('Installing _deleted-', slapgrid_log)
-    self.assertIn('Uninstalling _deleted-', slapgrid_log)
-    self.assertNotIn('Updating _deleted-', slapgrid_log)
+    self.assertNotIn('Installing deleted______1-', slapgrid_log)
+    self.assertIn('Uninstalling deleted______1-', slapgrid_log)
+    self.assertNotIn('Updating deleted______1-', slapgrid_log)
 
 
 class TestCDNHTTP(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):

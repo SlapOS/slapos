@@ -20,10 +20,10 @@
       "monitor-username": "admin",
       "slave-list": [
         {
-          "slave_reference": "_deleted"
+          "slave_reference": "deleted______1"
         },
         {
-          "slave_reference": "_first"
+          "slave_reference": "first______1"
         }
       ]
     },
@@ -48,7 +48,7 @@
       "enable-http2-by-default": true,
       "enable-http3": false,
       "expert-backend-allow-downgrade-ssl": false,
-      "extra_slave_instance_list": "[{\"slave_reference\": \"_deleted\"}, {\"slave_reference\": \"_first\"}]",
+      "extra_slave_instance_list": "[{\"slave_reference\": \"deleted______1\"}, {\"slave_reference\": \"first______1\"}]",
       "frontend-name": "caddy-frontend-1",
       "http3-port": 443,
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:8890",
@@ -60,7 +60,7 @@
       "plain_http_port": 8080,
       "port": 4443,
       "request-timeout": 600,
-      "slave-kedifa-information": "{\"_deleted\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@?auth=\"}, \"_first\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@?auth=\"}}"
+      "slave-kedifa-information": "{\"deleted______1\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@deleted_key-generate-auth-url@@?auth=\"}, \"first______1\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:8890\", \"key-download-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@/@@deleted_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:7879/@@first_key-generate-auth-url@@?auth=\"}}"
     },
     "full_ip_list": [],
     "instance_title": "caddy-frontend-1",

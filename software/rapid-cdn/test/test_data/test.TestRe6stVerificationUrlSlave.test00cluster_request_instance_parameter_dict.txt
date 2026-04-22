@@ -29,7 +29,7 @@
       "slave-list": [
         {
           "enable_cache": true,
-          "slave_reference": "_default",
+          "slave_reference": "default______1",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         }
       ]
@@ -55,7 +55,7 @@
       "enable-http2-by-default": true,
       "enable-http3": false,
       "expert-backend-allow-downgrade-ssl": false,
-      "extra_slave_instance_list": "[{\"enable_cache\": true, \"slave_reference\": \"_default\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
+      "extra_slave_instance_list": "[{\"enable_cache\": true, \"slave_reference\": \"default______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}]",
       "frontend-name": "caddy-frontend-1",
       "http3-port": 443,
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:15090",
@@ -68,7 +68,7 @@
       "port": 11443,
       "re6st-verification-url": "http://@@_ipv4_address@@:@@_server_http_port@@/re6st.html",
       "request-timeout": 600,
-      "slave-kedifa-information": "{\"_default\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@default_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@default_key-generate-auth-url@@/@@default_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@default_key-generate-auth-url@@?auth=\"}}"
+      "slave-kedifa-information": "{\"default______1\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@default_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@default_key-generate-auth-url@@/@@default_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@default_key-generate-auth-url@@?auth=\"}}"
     },
     "full_ip_list": [],
     "instance_title": "caddy-frontend-1",
