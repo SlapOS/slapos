@@ -1389,15 +1389,15 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       raise
 
   ignore_status_code_slave_list = [
-    'authtobackend.example.com',
-    'authtobackendnotconfigured.example.com',
-    'badbackend.example.com',
-    'ciphers.example.com',
-    'cipherstranslationall.example.com',
-    'empty.example.com',
-    'sslproxyverifysslproxycacrtunverified.example.com',
-    'sslproxyverifyunverified.example.com',
-    'weaksslbackend.example.com',
+    'authtobackend1.example.com',
+    'authtobackendnotconfigured1.example.com',
+    'badbackend1.example.com',
+    'ciphers1.example.com',
+    'cipherstranslationall1.example.com',
+    'empty1.example.com',
+    'sslproxyverifysslproxycacrtunverified1.example.com',
+    'sslproxyverifyunverified1.example.com',
+    'weaksslbackend1.example.com',
   ]
 
   @classmethod
@@ -1465,7 +1465,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
         self.assertKedifaKeysWithPop(parameter_dict, '')
     self.assertNodeInformationWithPop(parameter_dict)
     if hostname is None:
-      hostname = reference.replace('_', '').replace('-', '').lower()
+      hostname = reference.replace('_', '').replace('-', '').lower() + '1'
     expected_parameter_dict.update(**{
       'domain': '%s.example.com' % (hostname,),
       'replication_number': '1',
@@ -2241,13 +2241,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
-        '_Url': [
+        'Url______1': [
           "slave url ' %(backend)s/?a=b&c= ' has been converted to "
           "'%(backend)s/?a=b&c='" % {'backend': self.backend_url}],
-        '_ciphers': [
+        'ciphers______1': [
           "Cipher 'RSA-3DES-EDE-CBC-SHA' translated to 'DES-CBC3-SHA'",
           "Cipher 'RSA-AES128-CBC-SHA' translated to 'AES128-SHA'"],
-        '_ciphers-translation-all': [
+        'ciphers-translation-all______1': [
           "Cipher 'ECDHE-ECDSA-AES128-CBC-SHA' translated to "
           "'ECDHE-ECDSA-AES128-SHA'",
           "Cipher 'ECDHE-ECDSA-AES256-CBC-SHA' translated to "
@@ -2361,7 +2361,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://empty.example.com:%s/test-path' % (HTTP_PORT,),
+      'https://empty1.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -2495,7 +2495,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertLastLogLineRegexp(
-      '_Url_access_log',
+      'Url______1_access_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - - '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2} \+\d{4}\] '
       r'"GET \/(\/test-path\/deep\/..\/.\/deeper){250} '
@@ -2505,20 +2505,20 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertLastLogLineRegexp(
-      '_Url_frontend_log',
+      'Url______1_frontend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'https-frontend~ _Url-https\/_Url-backend-https '
+      r'https-frontend~ Url______1-https\/Url______1-backend-https '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+'
     )
 
     self.assertLastLogLineRegexp(
-      '_Url_backend_log',
+      'Url______1_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _Url-http\/_Url-backend-http '
+      r'http-backend Url______1-http\/Url______1-backend-http '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
@@ -2538,7 +2538,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result_http, via=False, backend_reached=False)
 
     self.assertEqual(
-      'https://url.example.com:%s/test-path/deeper' % (HTTP_PORT,),
+      'https://url1.example.com:%s/test-path/deeper' % (HTTP_PORT,),
       headers['Location']
     )
 
@@ -2547,7 +2547,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
     with open(backend_configuration_file) as fh:
       content = fh.read()
-    self.assertIn("""backend _Url-http
+    self.assertIn("""backend Url______1-http
   timeout server 12s
   timeout connect 5s
   retries 3""", content)
@@ -2557,8 +2557,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   timeout connect 5s
   retries 3""", content)
     # check that no needless entries are generated
-    self.assertIn("backend _Url-http\n", content)
-    self.assertNotIn("backend _Url-https\n", content)
+    self.assertIn("backend Url______1-http\n", content)
+    self.assertNotIn("backend Url______1-https\n", content)
 
     # check out access via IPv6
     out_ipv6, err_ipv6 = self._curl(
@@ -2869,7 +2869,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://authtobackendbackendignore.example.com:%s/test-path/deeper' % (
+      'https://authtobackendbackendignore1.example.com:%s/test-path/deeper' % (
         HTTP_PORT,),
       result_http.headers['Location']
     )
@@ -2971,7 +2971,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/'
-      'https/typezopepath.example.com:443/path/to/some/resource'
+      'https/typezopepath1.example.com:443/path/to/some/resource'
       '/VirtualHostRoot/'
       'test-path/deeper'
     )
@@ -2992,7 +2992,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://typezopedefaultpath.example.com:%s/'
+      'https://typezopedefaultpath1.example.com:%s/'
       'default-path/to/some/resource' % (
         HTTPS_PORT,),
       result.headers['Location']
@@ -3127,7 +3127,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_ssl_ca_crt(self):
     parameter_dict = self.assertSlaveBase(
-      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt',
+      hostname='customdomainsslcrtsslkeysslcacrt')
 
     # as now the place to put the key is known put the key there
     auth = mimikra.get(
@@ -3157,7 +3158,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'autocert',
-      '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt.pem'))
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt______1.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file, 'rb') as out:
@@ -3214,7 +3215,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'autocert',
-      '_ssl_ca_crt_garbage.pem'))
+      'ssl_ca_crt_garbage______1.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file, 'rb') as out:
@@ -3249,7 +3250,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'autocert',
-      '_ssl_ca_crt_does_not_match.pem'))
+      'ssl_ca_crt_does_not_match______1.pem'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file, 'rb') as out:
@@ -3325,7 +3326,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_custom_domain_ssl_crt_ssl_key(self):
-    parameter_dict = self.assertSlaveBase('custom_domain_ssl_crt_ssl_key')
+    parameter_dict = self.assertSlaveBase(
+      'custom_domain_ssl_crt_ssl_key', hostname='customdomainsslcrtsslkey')
 
     # as now the place to put the key is known put the key there
     auth = mimikra.get(
@@ -3370,7 +3372,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https/typezope.example.com:443'
+      '/VirtualHostBase/https/typezope1.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -3384,7 +3386,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://typezope.example.com:%s/test-path/deeper' % (
+      'https://typezope1.example.com:%s/test-path/deeper' % (
         HTTP_PORT,),
       result.headers['Location']
     )
@@ -3411,7 +3413,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
+      'typezopeprefergzipencodingtobackendhttpsonly1.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -3423,7 +3425,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/http/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
+      'typezopeprefergzipencodingtobackendhttpsonly1.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -3446,7 +3448,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
+      'typezopeprefergzipencodingtobackendhttpsonly1.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -3461,7 +3463,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/http/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
+      'typezopeprefergzipencodingtobackendhttpsonly1.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -3489,7 +3491,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackend.example.com:443'
+      'typezopeprefergzipencodingtobackend1.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -3527,7 +3529,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackend.example.com:443'
+      'typezopeprefergzipencodingtobackend1.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -3559,7 +3561,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/http/typezopevirtualhostroothttpport'
+      '/VirtualHostBase/http/typezopevirtualhostroothttpport1'
       '.example.com:12345/VirtualHostRoot/test-path'
     )
 
@@ -3577,7 +3579,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https/typezopevirtualhostroothttpsport'
+      '/VirtualHostBase/https/typezopevirtualhostroothttpsport1'
       '.example.com:12345/VirtualHostRoot/test-path'
     )
 
@@ -3955,7 +3957,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://sslproxyverifysslproxycacrtunverified.example.com:%s/'
+      'https://sslproxyverifysslproxycacrtunverified1.example.com:%s/'
       'test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
@@ -3994,7 +3996,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://sslproxyverifysslproxycacrt.example.com:%s/test-path' % (
+      'https://sslproxyverifysslproxycacrt1.example.com:%s/test-path' % (
         HTTP_PORT,),
       result_http.headers['Location']
     )
@@ -4039,7 +4041,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://ciphers.example.com:%s/test-path' % (HTTP_PORT,),
+      'https://ciphers1.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -4049,7 +4051,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       ))[0]
     with open(configuration_file) as fh:
       self.assertTrue(
-        '/_ciphers.pem [ciphers DES-CBC3-SHA:AES128-SHA '
+        'ciphers______1.pem [ciphers DES-CBC3-SHA:AES128-SHA '
         in fh.read()
       )
 
@@ -4093,7 +4095,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://cipherstranslationall.example.com:%s/test-path' % (HTTP_PORT,),
+      'https://cipherstranslationall1.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -4103,7 +4105,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       ))[0]
     with open(configuration_file) as fh:
       self.assertTrue(
-        '/_ciphers.translation.all.pem [ciphers '
+        'ciphers.translation.all______1.pem [ciphers '
         'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:'
         'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:'
         'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:'
@@ -4306,7 +4308,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     # BEGIN: Check that squid.log is correctly filled in
     direct_pattern = re.compile(
-      r'.*TCP_MISS/200 .*cached.*enablecache.example.com'
+      r'.*TCP_MISS/200 .*cached.*enablecache1.example.com'
       '.* - DIRECT*')
     # ATS needs some time to flush logs
     timeout = 10
@@ -4680,7 +4682,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     matching_line_amount = 0
     pattern = re.compile(
-      r'.* _enable_cache-http.backend .* 504 .*'
+      r'.* enable_cache______1-http.backend .* 504 .*'
       '"GET .test_enable_cache_ats_timeout HTTP.1.1"$')
     with open(backend_haproxy_log_file) as fh:
       for line in fh.readlines():
@@ -5314,7 +5316,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNotIn('Strict-Transport-Security', result_http.headers)
 
     self.assertEqual(
-      'https://urlhttpsurl.example.com:%s/test-path/deeper' % (HTTP_PORT,),
+      'https://urlhttpsurl1.example.com:%s/test-path/deeper' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -5323,7 +5325,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.instance_path, '*', 'etc', 'backend-haproxy.cfg'))[0]
     with open(backend_configuration_file) as fh:
       content = fh.read()
-      self.assertTrue("""backend _url_https-url-http
+      self.assertTrue("""backend url_https-url______1-http
   timeout server 15s
   timeout connect 10s
   retries 5""" in content)
@@ -5380,7 +5382,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result_http.status_code
     )
     self.assertEqual(
-      'https://httpsurlonly.example.com:%s/test-path' % (HTTP_PORT,),
+      'https://httpsurlonly1.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -5559,11 +5561,11 @@ class TestReplicateSlave(
     self.node_information_dict = node_information_dict
     self.assertEqual(
       {
-        'domain': 'replicate.example.com',
+        'domain': 'replicate1.example.com',
         'replication_number': '2',
-        'url': 'http://replicate.example.com',
-        'site_url': 'http://replicate.example.com',
-        'secure_access': 'https://replicate.example.com',
+        'url': 'http://replicate1.example.com',
+        'site_url': 'http://replicate1.example.com',
+        'secure_access': 'https://replicate1.example.com',
         'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       },
       parameter_dict
@@ -5578,14 +5580,14 @@ class TestReplicateSlave(
     self.assertEqual(2, len(frontend_haproxy_cfg_list))
     for frontend_haproxy_cfg in frontend_haproxy_cfg_list:
       with open(frontend_haproxy_cfg) as fh:
-        self.assertIn('backend _replicate-http', fh.read())
+        self.assertIn('backend replicate______1-http', fh.read())
     self.assertEqual(
       2,
       len(
         glob.glob(
           os.path.join(
             self.instance_path, '*', 'etc', 'frontend-haproxy.d',
-            '._replicate.htpasswd')))
+            '.replicate______1.htpasswd')))
     )
 
 
@@ -5977,21 +5979,21 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         'apache-key is obsolete, please use master-key-upload-url',
       ],
       'warning-slave-dict': {
-        '_custom_domain_ssl_crt_ssl_key': [
+        'custom_domain_ssl_crt_ssl_key______1': [
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url'
         ],
-        '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt': [
+        'custom_domain_ssl_crt_ssl_key_ssl_ca_crt______1': [
           'ssl_ca_crt is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url'
         ],
-        '_ssl_ca_crt_does_not_match': [
+        'ssl_ca_crt_does_not_match______1': [
           'ssl_ca_crt is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url',
         ],
-        '_ssl_ca_crt_garbage': [
+        'ssl_ca_crt_garbage______1': [
           'ssl_ca_crt is obsolete, please use key-upload-url',
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url',
@@ -5999,11 +6001,11 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         # u'_ssl_ca_crt_only': [
         #   u'ssl_ca_crt is obsolete, please use key-upload-url',
         # ],
-        '_ssl_from_slave': [
+        'ssl_from_slave______1': [
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url',
         ],
-        '_ssl_from_slave_kedifa_overrides': [
+        'ssl_from_slave_kedifa_overrides______1': [
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url',
         ],
@@ -6011,11 +6013,11 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
         #   u'ssl_key is obsolete, please use key-upload-url',
         #   u'ssl_crt is obsolete, please use key-upload-url',
         # ],
-        '_type-notebook-ssl_from_slave': [
+        'type-notebook-ssl_from_slave______1': [
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url',
         ],
-        '_type-notebook-ssl_from_slave_kedifa_overrides': [
+        'type-notebook-ssl_from_slave_kedifa_overrides______1': [
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url',
         ],
@@ -6286,6 +6288,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
   def test_ssl_ca_crt(self):
     parameter_dict = self.assertSlaveBase(
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt',
+      hostname='customdomainsslcrtsslkeysslcacrt',
       expected_parameter_dict={
         'warning-list': [
           'ssl_ca_crt is obsolete, please use key-upload-url',
@@ -6305,7 +6308,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'bbb-ssl',
-      '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt.crt'))
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt______1.crt'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
@@ -6351,7 +6354,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'bbb-ssl',
-      '_custom_domain_ssl_crt_ssl_key_ssl_ca_crt.crt'))
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt______1.crt'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
@@ -6403,7 +6406,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
 
     certificate_file_list = glob.glob(os.path.join(
       self.instance_path, '*', 'srv', 'bbb-ssl',
-      '_ssl_ca_crt_does_not_match.crt'))
+      'ssl_ca_crt_does_not_match______1.crt'))
     self.assertEqual(1, len(certificate_file_list))
     certificate_file = certificate_file_list[0]
     with open(certificate_file) as out:
@@ -6612,7 +6615,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       ))[0]
     with open(configuration_file) as fh:
       self.assertIn(
-        '_default_ciphers.pem [ciphers '
+        'default_ciphers______1.pem [ciphers '
         'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384 ',
         fh.read())
 
@@ -6638,7 +6641,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
       ))[0]
     with open(configuration_file) as fh:
       self.assertIn(
-        '_own_ciphers.pem [ciphers '
+        'own_ciphers______1.pem [ciphers '
         'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256 ',
         fh.read())
 
@@ -6801,12 +6804,12 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
         result_json = result.json()
       self.assertEqual(
         {
-          '_SITE_4': ["custom_domain 'duplicate.example.com' clashes"
-                      ", others: ['_SITE_1']"],
-          '_SITE_2': ["custom_domain 'duplicate.example.com' clashes"
-                      ", others: ['_SITE_1']"],
-          '_SITE_3': ["server-alias 'duplicate.example.com' clashes"
-                      ", others: ['_SITE_1']"]
+          'SITE_4______1': ["custom_domain 'duplicate.example.com' clashes"
+                      ", others: ['SITE_1______1']"],
+          'SITE_2______1': ["custom_domain 'duplicate.example.com' clashes"
+                      ", others: ['SITE_1______1']"],
+          'SITE_3______1': ["server-alias 'duplicate.example.com' clashes"
+                      ", others: ['SITE_1______1']"]
         },
         result_json
       )
@@ -6833,72 +6836,72 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'rejected-slave-amount': '27',
       'slave-amount': '30',
       'rejected-slave-dict': {
-        '_HTTPS-URL': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
+        'HTTPS-URL______1': ['slave https-url "https://[fd46::c2ae]:!py!u\'123123\'"'
                        ' invalid'],
-        '_URL': ['slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid'],
-        '_SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED': [
+        'URL______1': ['slave url "https://[fd46::c2ae]:!py!u\'123123\'" invalid'],
+        'SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED______1': [
           'ssl_proxy_ca_crt is invalid'
         ],
-        '_SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_EMPTY': [
+        'SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_EMPTY______1': [
           'ssl_proxy_ca_crt is invalid'
         ],
-        '_BAD-CIPHERS': [
+        'BAD-CIPHERS______1': [
           "Cipher 'again' is not supported.",
           "Cipher 'bad' is not supported."
         ],
-        '_CUSTOM_DOMAIN-UNSAFE': [
+        'CUSTOM_DOMAIN-UNSAFE______1': [
           "custom_domain '${section:option} afterspace\\nafternewline' invalid"
         ],
-        '_SERVER-ALIAS-UNSAFE': [
+        'SERVER-ALIAS-UNSAFE______1': [
           "server-alias '${section:option}' not valid",
           "server-alias 'afterspace' not valid"
         ],
-        '_SITE_2': ["custom_domain 'duplicate.example.com' clashes"],
-        '_SITE_3': ["server-alias 'duplicate.example.com' clashes"],
-        '_SITE_4': ["custom_domain 'duplicate.example.com' clashes"],
-        '_SSL_CA_CRT_ONLY': [
+        'SITE_2______1': ["custom_domain 'duplicate.example.com' clashes"],
+        'SITE_3______1': ["server-alias 'duplicate.example.com' clashes"],
+        'SITE_4______1': ["custom_domain 'duplicate.example.com' clashes"],
+        'SSL_CA_CRT_ONLY______1': [
           "ssl_ca_crt is present, so ssl_crt and ssl_key are required"],
-        '_SSL_KEY-SSL_CRT-UNSAFE': [
+        'SSL_KEY-SSL_CRT-UNSAFE______1': [
           "slave ssl_key and ssl_crt does not match"],
-        '_BAD-BACKEND': [
+        'BAD-BACKEND______1': [
           "slave https-url 'http://host.domain:badport' invalid",
           "slave url 'http://1:2:3:4' invalid"],
-        '_VIRTUALHOSTROOT-HTTP-PORT-UNSAFE': [
+        'VIRTUALHOSTROOT-HTTP-PORT-UNSAFE______1': [
           "Wrong virtualhostroot-http-port '${section:option}'"],
-        '_VIRTUALHOSTROOT-HTTPS-PORT-UNSAFE': [
+        'VIRTUALHOSTROOT-HTTPS-PORT-UNSAFE______1': [
           "Wrong virtualhostroot-https-port '${section:option}'"],
-        '_EMPTY-BACKEND': [
+        'EMPTY-BACKEND______1': [
           "slave https-url '' invalid",
           "slave url '' invalid"],
-        '_health-check-failover-SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED': [
+        'health-check-failover-SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED______1': [
           'health-check-failover-ssl-proxy-ca-crt is invalid'
         ],
-        '_health-check-failover-SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_EMPTY': [
+        'health-check-failover-SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_EMPTY______1': [
           'health-check-failover-ssl-proxy-ca-crt is invalid'
         ],
-        '_health-check-fall': [
+        'health-check-fall______1': [
           'Wrong health-check-fall WRONG'],
-        '_health-check-fall-negative': [
+        'health-check-fall-negative______1': [
           'Wrong health-check-fall -2'],
-        '_health-check-http-method': [
+        'health-check-http-method______1': [
           'Wrong health-check-http-method WRONG'],
-        '_health-check-interval': [
+        'health-check-interval______1': [
           'Wrong health-check-interval WRONG'],
-        '_health-check-interval-negative': [
+        'health-check-interval-negative______1': [
           'Wrong health-check-interval -2'],
-        '_health-check-rise': [
+        'health-check-rise______1': [
           'Wrong health-check-rise WRONG'],
-        '_health-check-rise-negative': [
+        'health-check-rise-negative______1': [
           'Wrong health-check-rise -2'],
-        '_health-check-timeout': [
+        'health-check-timeout______1': [
           'Wrong health-check-timeout WRONG'],
-        '_health-check-timeout-negative': [
+        'health-check-timeout-negative______1': [
           'Wrong health-check-timeout -2'],
       },
       'warning-slave-dict': {
-        '_SSL_CA_CRT_ONLY': [
+        'SSL_CA_CRT_ONLY______1': [
           'ssl_ca_crt is obsolete, please use key-upload-url'],
-        '_SSL_KEY-SSL_CRT-UNSAFE': [
+        'SSL_KEY-SSL_CRT-UNSAFE______1': [
           'ssl_crt is obsolete, please use key-upload-url',
           'ssl_key is obsolete, please use key-upload-url']}
     }
@@ -7669,34 +7672,34 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     backend = urllib.parse.urlparse(cls.backend_url).netloc
     cls.assertion_dict = {
       'health-check-disabled': """\
-backend _health-check-disabled-http
+backend health-check-disabled______1-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-disabled-backend-http %s""" % (backend,),
+  server health-check-disabled______1-backend-http %s""" % (backend,),
       'health-check-connect': """\
-backend _health-check-connect-http
+backend health-check-connect______1-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-connect-backend-http %s   check inter 5s"""
+  server health-check-connect______1-backend-http %s   check inter 5s"""
       """ rise 1 fall 2
   timeout check 2s""" % (backend,),
       'health-check-custom': """\
-backend _health-check-custom-http
+backend health-check-custom______1-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-custom-backend-http %s   check inter 15s"""
+  server health-check-custom______1-backend-http %s   check inter 15s"""
       """ rise 3 fall 7
   option httpchk POST /POST-path%%%%20to%%%%20be%%%%20encoded
   timeout check 7s""" % (backend,),
       'health-check-default': """\
-backend _health-check-default-http
+backend health-check-default______1-http
   timeout server 12s
   timeout connect 5s
   retries 3
-  server _health-check-default-backend-http %s   check inter 5s"""
+  server health-check-default______1-backend-http %s   check inter 5s"""
       """ rise 1 fall 2
   option httpchk GET /
   timeout check 2s""" % (backend, )
@@ -7817,11 +7820,11 @@ backend _health-check-default-http
     self.assertEqual(result.text, body_failover)
 
     self.assertLastLogLineRegexp(
-      '_health-check-failover-url_backend_log',
+      'health-check-failover-url______1_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'https-backend _health-check-failover-url-https-failover'
-      r'\/_health-check-failover-url-backend-https '
+      r'https-backend health-check-failover-url______1-https-failover'
+      r'\/health-check-failover-url______1-backend-https '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'503 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
@@ -7832,11 +7835,11 @@ backend _health-check-default-http
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
     self.assertEqual(result.text, body_failover)
     self.assertLastLogLineRegexp(
-      '_health-check-failover-url_backend_log',
+      'health-check-failover-url______1_backend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'http-backend _health-check-failover-url-http-failover'
-      r'\/_health-check-failover-url-backend-http '
+      r'http-backend health-check-failover-url______1-http-failover'
+      r'\/health-check-failover-url______1-backend-http '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'503 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
@@ -8085,13 +8088,13 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # to check how slapos node reacted to the change
     with open(slapgrid_log_file) as fh:
       slapgrid_log = fh.read()
-    self.assertNotIn('Installing _first-', slapgrid_log)
-    self.assertNotIn('Uninstalling _first-', slapgrid_log)
-    self.assertIn('Updating _first-', slapgrid_log)
+    self.assertNotIn('Installing first______1-', slapgrid_log)
+    self.assertNotIn('Uninstalling first______1-', slapgrid_log)
+    self.assertIn('Updating first______1-', slapgrid_log)
 
-    self.assertIn('Installing _second-', slapgrid_log)
-    self.assertNotIn('Uninstalling _second-', slapgrid_log)
-    self.assertNotIn('Updating _second-', slapgrid_log)
+    self.assertIn('Installing second______1-', slapgrid_log)
+    self.assertNotIn('Uninstalling second______1-', slapgrid_log)
+    self.assertNotIn('Updating second______1-', slapgrid_log)
 
   def test_destroyed_slave(self):
     self.requestSlaveInstance('deleted', {}, 'destroyed')
@@ -8103,13 +8106,13 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     with open(slapgrid_log_file) as fh:
       slapgrid_log = fh.read()
 
-    self.assertNotIn('Installing _first-', slapgrid_log)
-    self.assertNotIn('Uninstalling _first-', slapgrid_log)
-    self.assertIn('Updating _first-', slapgrid_log)
+    self.assertNotIn('Installing first______1-', slapgrid_log)
+    self.assertNotIn('Uninstalling first______1-', slapgrid_log)
+    self.assertIn('Updating first______1-', slapgrid_log)
 
-    self.assertNotIn('Installing _deleted-', slapgrid_log)
-    self.assertIn('Uninstalling _deleted-', slapgrid_log)
-    self.assertNotIn('Updating _deleted-', slapgrid_log)
+    self.assertNotIn('Installing deleted______1-', slapgrid_log)
+    self.assertIn('Uninstalling deleted______1-', slapgrid_log)
+    self.assertNotIn('Updating deleted______1-', slapgrid_log)
 
 
 class TestCDNHTTP(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
@@ -8129,9 +8132,9 @@ class TestCDNHTTP(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     }
 
   ignore_status_code_slave_list = [
-    'cdnhttp1.example.com',
-    'cdnhttp2.example.com',
-    'cdnhttp3.example.com',
+    'cdnhttp11.example.com',
+    'cdnhttp21.example.com',
+    'cdnhttp31.example.com',
   ]
 
   @classmethod
