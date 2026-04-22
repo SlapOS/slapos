@@ -206,6 +206,9 @@ socket-path = ${directory:run}/haproxy.sock
 pidfile =  ${directory:run}/haproxy.pid
 ip = {{ ipv4 }}
 port = {{ haproxy_port }}
+# Add a 10 seconds margin in order to raise the timeout from the backend
+# rather than the proxy
+timeout = {{ timeout + 10 }}s
 backend-list =
 {%- for section_name in cloudooo_section_list %}
   {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
