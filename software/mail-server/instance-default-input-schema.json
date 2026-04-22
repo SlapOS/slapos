@@ -122,6 +122,13 @@
       "type": "boolean",
       "default": false
     },
+    "email-size-limit": {
+      "title": "E-mail size limit",
+      "description": "Maximum size of incoming and outgoing e-mails in MiB. You may also want to set the maximum attachment size in the webmail admin panel.",
+      "type": "integer",
+      "minimum": 1,
+      "default": 50
+    },
     "request-dns": {
       "title": "Request Local DNS",
       "description": "Local DNS request configuration (specific to Open Radio Station use-case)",
