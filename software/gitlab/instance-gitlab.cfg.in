@@ -201,7 +201,14 @@ location = {{ gitaly_location }}
 pid     = ${directory:run}/gitaly.pid
 internal_socket = ${gitaly-dir:internal}
 basedir = ${gitaly-dir:gitaly}
-num_workers = 2
+concurrency_find_commit = ${instance-parameter:configuration.gitaly_concurrency_find_commit}
+concurrency_find_commit_max_queue_size = ${instance-parameter:configuration.gitaly_concurrency_find_commit_max_queue_size}
+concurrency_find_commit_max_queue_wait = ${instance-parameter:configuration.gitaly_concurrency_find_commit_max_queue_wait}
+catfile_cache_size = ${instance-parameter:configuration.gitaly_catfile_cache_size}
+daily_maintenance = ${instance-parameter:configuration.gitaly_daily_maintenance}
+rate_limiting = ${instance-parameter:configuration.gitaly_rate_limiting}
+pack_objects_cache = ${instance-parameter:configuration.gitaly_pack_objects_cache}
+pack_objects_cache_max_age = ${instance-parameter:configuration.gitaly_pack_objects_cache_max_age}
 
 [prometheus-dir]
 recipe = slapos.cookbook:mkdirectory
