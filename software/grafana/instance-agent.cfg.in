@@ -467,7 +467,7 @@ recipe = slapos.recipe.template
 inline =
   #!/bin/sh
   ulimit -n $(ulimit -Hn)
-  ${:nice} {{ fluent_bit_bin }} --config ${fluent-bit-config-file:location}
+  exec ${:nice} {{ fluent_bit_bin }} --config ${fluent-bit-config-file:location}
 output = ${directory:bin}/${:_buildout_section_name_}
 # TODO: control nice of the agent ?
 {% if 0 %}
@@ -558,7 +558,8 @@ init =
       multiline_parsers.append(parser)
 
   def _add_filter(filter_):
-    if (filter_['name'], filter_['match']) not in {(f['name'], f['match']) for f in filters}:
+    if (filter_['name'], filter_.get('match'), filter_.get('match_regex')) \
+        not in {(f['name'], f.get('match'), f.get('match_regex')) for f in filters}:
       filters.append(filter_)
 
   def _safe_filename(name):
@@ -653,7 +654,7 @@ init =
         "format": "regex",
         "regex": r"^(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - (?<level>[A-Z]+) - (?<message>.*)$",
         "time_key": "time",
-        "time_format": "%d/%b/%Y:%H:%M:%S %z",
+        "time_format": "%Y-%m-%d %H:%M:%S",
         "time_system_timezone": True,
       }
     )
@@ -672,7 +673,7 @@ init =
         "format": "regex",
         "regex": r"^\[(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (?<level>[A-Z]+): (?<message>.*)$",
         "time_key": "time",
-        "time_format": "%d/%b/%Y:%H:%M:%S %z",
+        "time_format": "%Y-%m-%d %H:%M:%S",
         "time_system_timezone": True,
       }
     )
@@ -1064,6 +1065,20 @@ init =
   def _add_default_filters():
     filters.append(
       {
+        "name": "lua",
+        "match": "logs.slapos.promise.*",
+        "code": """
+          function extract_promise_name(tag, timestamp, record)
+            local filename = record['filename']:match('[^/]+$')
+            record['field_promise_name'] = filename:gsub('%.log$', '')
+            return 1, timestamp, record
+          end
+        """,
+        "call": "extract_promise_name"
+      }
+    )
+    filters.append(
+      {
         "name": "nest",
         "match": "logs.*",
         "operation": "nest",
@@ -1140,6 +1155,28 @@ init =
         "preserve_key": True,
         "reserve_data": True,
       },
+    )
+    _add_filter(
+      {
+        "name": "lua",
+        "match_regex": r"logs\..*\.cron",
+        "code": """
+          function drop_simple_logger_prefix(tag, timestamp, record)
+            local log = record['log']
+              if not log then return 1, timestamp, record end
+              local lines = {}
+              for line in log:gmatch('[^\\n]+') do
+                local cleaned = line:gsub('^%d%d%d%d%-%d%d%-%d%d%.%d%d:%d%d%.%d+: ', '')
+                if not cleaned:match('^%-+$') then
+                  table.insert(lines, cleaned)
+                end
+              end
+              record['log'] = table.concat(lines, '\\n')
+              return 1, timestamp, record
+          end
+        """,
+        "call": "drop_simple_logger_prefix"
+      }
     )
 
   def _add_outputs():

@@ -1,0 +1,105 @@
+From 57cedf666d55e5378cc2c26d330db468a3efdeed Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Wed, 15 Apr 2026 00:21:10 +0900
+Subject: [PATCH] Use ZODB new ``class_factory`` parameter to register class
+ factory (#1290)
+
+---
+ CHANGES.rst                             |  4 ++++
+ constraints.txt                         |  2 +-
+ docs/locale/ja/LC_MESSAGES/operation.po | 13 -------------
+ requirements-full.txt                   |  2 +-
+ src/Zope2/App/startup.py                |  8 ++++----
+ src/Zope2/Startup/datatypes.py          | 12 +++---------
+ src/Zope2/Startup/wsgischema.xml        |  9 ---------
+ versions-prod.cfg                       |  2 +-
+ 8 files changed, 14 insertions(+), 38 deletions(-)
+
+diff --git a/src/Zope2/App/startup.py b/src/Zope2/App/startup.py
+index bcf11d1b1aef31ae0ab63199d9e596c02450bb00..918abfedfff2906e743b840ff0eece08639c1099 100644
+--- a/src/Zope2/App/startup.py
++++ b/src/Zope2/App/startup.py
+@@ -79,6 +79,7 @@ def startup():
+         getattr(configuration, 'testinghome', None),
+         configuration.instancehome,
+     ]
++    from .ClassFactory import ClassFactory
+     for location in custom_locations:
+         if not location:
+             continue
+@@ -91,8 +92,10 @@ def startup():
+                 DB = module.DB
+                 databases.update(getattr(DB, 'databases', {}))
+                 DB.databases = databases
++                DB.classFactory = ClassFactory
+             else:
+-                DB = ZODB.DB(module.Storage, databases=databases)
++                DB = ZODB.DB(module.Storage, databases=databases,
++                             class_factory=ClassFactory)
+ 
+             break
+     else:
+@@ -116,9 +119,6 @@ def startup():
+     Zope2.DB = DB
+     Zope2.opened.append(DB)
+ 
+-    from . import ClassFactory
+-    DB.classFactory = ClassFactory.ClassFactory
+-
+     # "Log on" as system user
+     newSecurityManager(None, AccessControl.users.system)
+ 
+diff --git a/src/Zope2/Startup/datatypes.py b/src/Zope2/Startup/datatypes.py
+index fb3635f464eee00c1e382a7d9338b9786c24146d..059f237bcf47768fc7f75b53800f3cf1c0953900 100644
+--- a/src/Zope2/Startup/datatypes.py
++++ b/src/Zope2/Startup/datatypes.py
+@@ -135,6 +135,9 @@ class ZopeDatabase(ZODBDatabase):
+ 
+     def createDB(self, database_name, databases):
+         self.config.database_name = database_name
++        if self.config.class_factory is None:
++            from Zope2.App.ClassFactory import ClassFactory
++            self.config.class_factory = ClassFactory
+         return ZODBDatabase.open(self, databases)
+ 
+     def open(self, database_name, databases):
+@@ -142,8 +145,6 @@ def open(self, database_name, databases):
+         if self.config.connection_class:
+             # set the connection class
+             DB.klass = self.config.connection_class
+-        if self.config.class_factory is not None:
+-            DB.classFactory = self.config.class_factory
+         return DB
+ 
+     def getName(self):
+@@ -257,10 +258,3 @@ def getName(self, mount_path):
+         if name is None:
+             self._mountPathError(mount_path)
+         return name
+-
+-
+-def simpleClassFactory(jar, module, name, _silly=('__doc__',), _globals={}):
+-    """Class factory.
+-    """
+-    m = __import__(module, _globals, _globals, _silly)
+-    return getattr(m, name)
+diff --git a/src/Zope2/Startup/wsgischema.xml b/src/Zope2/Startup/wsgischema.xml
+index 550205fd67e0b4509008e4dd7fbf7c2270e1e17c..8cb019b6451c7690c0037b78f9f0422f27457ca8 100644
+--- a/src/Zope2/Startup/wsgischema.xml
++++ b/src/Zope2/Startup/wsgischema.xml
+@@ -61,15 +61,6 @@
+       </description>
+     </key>
+ 
+-   <key name="class-factory" datatype=".importable_name"
+-        default="Zope2.Startup.datatypes.simpleClassFactory">
+-      <description>
+-       Change the class factory function a database uses on a
+-       per-database basis to support different class factory policy.
+-       Use a Python dotted-path name to specify the class factory function.
+-      </description>
+-    </key>
+-
+     <key name="container-class" datatype="string">
+       <description>
+        Change the container class a (mounted) database uses on a
