@@ -359,6 +359,7 @@ output = $${postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/postfix.log
 bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
+  raw attachment_size_limit {{ slapparameter_dict['max-attachment-size'] * 1024 * 1024 }}
   raw postfix_log_path $${:log-file}
   key sender_login_map postfix-sender-login-map:location
   key bin_directory directory:bin
@@ -698,6 +699,7 @@ depends = $${snappymail-files:recipe}
 url = ${template-snappymail.jinja2.ini:target}
 output = $${snappymail-files:target}/data/_data_/_default_/configs/application.ini
 context =
+  raw attachment_size_limit_mb {{ slapparameter_dict['max-attachment-size'] }}
   raw mail_domain {{ slapparameter_dict['mail-domains'][0] }}
   key admin_password snappymail-admin-pw:passwd-sha256-crypt
 
