@@ -1,3 +1,5 @@
+import gzip
+from importlib.resources import path
 import contextlib
 import json
 import pathlib
@@ -137,3 +139,39 @@ class TestBackupDirectory(ZEOTestCase, CrontabMixin):
       r'2000-01-01-00-\d\d-\d\d.index',
     )
     self.assertFalse(list((self.computer_partition_root_path / "srv" / "backup" / "zodb" / "root").glob("*")))
+
+
+class TestCheckBackup(ZEOTestCase, CrontabMixin):
+  def test_check_backup(self):
+    self._executeCrontabAtDate("tidstorage", "2000-01-01 UTC")
+    self._executeCrontabAtDate("check-backup", "2000-01-01 UTC")  # no error
+    if ERP5PY3:
+      # simulate a ZODB different from repozo's dat file (only supported by recent repozo)
+      file_storage= self.computer_partition_root_path / "srv" / "zodb" / "root.fs"
+      file_storage.with_suffix(".save").write_bytes(file_storage.read_bytes())
+      file_storage.write_bytes(b"corrupted")
+      try:
+        self._executeCrontabAtDate("check-backup", "2000-01-01 UTC")
+      except subprocess.CalledProcessError as e:
+        self.assertRegex(
+          e.output.decode(),
+          r"Checking backup for root ...\n"
+          r"backup checksum [0-9a-f]{32} does not match "
+          r"source checksum [0-9a-f]{32} \(first 4 bytes\)\n"
+          r"root Backup check failed\.")
+      # restore the original file, to not break next assertions
+      file_storage.with_suffix(".save").rename(file_storage)
+
+    # simulate a corrupted backup fsz
+    fsz, = list((self.computer_partition_root_path / "srv" / "backup" / "zodb" / "root").glob("*.fsz"))
+    with gzip.open(fsz, "wb") as f:
+      f.write(b"crpt")
+    try:
+      self._executeCrontabAtDate("check-backup", "2000-01-01 UTC")
+    except subprocess.CalledProcessError as e:
+      self.assertRegex(
+        e.output.decode(),
+        r"Checking backup for root ...\n"
+        r".*/srv/backup/zodb/root/2000-01-01-00-\d{2}-\d{2}\.fsz has checksum [0-9a-f]{32} \(when uncompressed\) "
+        r"instead of [0-9a-f]{32}\n"
+        r"root Backup check failed\.")
