@@ -76,6 +76,13 @@
       "type": "boolean",
       "default": false
     },
+    "max-attachment-size": {
+      "title": "Max Attachment Size",
+      "description": "Maximum attachment size in MiB for SMTP and webmail uploads. Note: effective limit will be lower since attachments are converted to base64 which adds ~33% overhead.",
+      "type": "integer",
+      "minimum": 1,
+      "default": 50
+    },
     "request-dns": {
       "title": "Request DNS",
       "description": "DNS request configuration",
