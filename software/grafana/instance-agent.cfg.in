@@ -1064,6 +1064,20 @@ init =
   def _add_default_filters():
     filters.append(
       {
+        "name": "lua",
+        "match": "logs.slapos.promise.*",
+        "code": """
+          function extract_promise_name(tag, timestamp, record)
+            local filename = record['filename']:match('[^/]+$')
+            record['field_promise_name'] = filename:gsub('%.log$', '')
+            return 1, timestamp, record
+          end
+        """,
+        "call": "extract_promise_name"
+      }
+    )
+    filters.append(
+      {
         "name": "nest",
         "match": "logs.*",
         "operation": "nest",
