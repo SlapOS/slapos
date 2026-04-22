@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sip-trunk-server",
+    "sip-trunk-number",
+    "sip-trunk-password",
+    "local-number",
+    "local-ims-ip"
+  ],
+  "properties": {
+    "bind-ip": {
+      "title": "IP where asterisk will bind",
+      "description": "This is the IPv6 or IPv4 that Asterisk will use to bind. By default it will use the local IPv4 of the partition.",
+      "type": "string",
+      "anyOf": [
+        {
+          "title": "Automatic address",
+          "description": "IPv4 local: IPv4 of the partition (only use when the IMS is running on the same machine). Ipv6 Re6st address: acquired through the Re6st VPN software (in this case the sip trunk must be accessible in IPv6). (default: IPV4 local address)",
+          "type": "string",
+          "enum": [
+            "IPv4 local address",
+            "IPv6 Re6st address"
+          ]
+        },
+        {
+          "title": "Expert only: manual address",
+          "description": "Format: 'ip_address', 'ipv4_address:port' or '[ipv6_address]:port",
+          "type": "string"
+        }
+      ],
+      "default": "IPv4 local address"
+    },
+    "sip-trunk-server": {
+      "title": "Domain name or IP of the SIP trunk",
+      "description": "This is the domaine name or the IP of the SIP trunk server to use (e.g. sbc6.fr.sip.ovh).",
+      "type": "string"
+    },
+    "sip-trunk-number": {
+      "title": "Phone number of the SIP trunk",
+      "description": "This is the phone number of the SIP trunk.",
+      "type": "string"
+    },
+    "sip-trunk-password": {
+      "title": "Password of the SIP trunk",
+      "description": "This is the password of the SIP trunk.",
+      "type": "string"
+    },
+    "local-number": {
+      "title": "Local extension number",
+      "description": "This is the local extension number to call.",
+      "type": "string"
+    },
+    "log-level": {
+      "title": "Log level",
+      "description": "Asterisk log level. Each level includes all less verbose levels. Defaults to 'verbose'.",
+      "type": "string",
+      "enum": [
+        "error",
+        "warning",
+        "notice",
+        "verbose",
+        "debug"
+      ],
+      "default": "verbose"
+    },
+    "local-ims-ip": {
+      "title": "Local IMS IP address",
+      "description": "IP address or CIDR network of the local IMS (Amarisoft). Used both for pjsip endpoint identification and as the contact address.",
+      "type": "string"
+    }
+  }
+}
