@@ -653,7 +653,7 @@ init =
         "format": "regex",
         "regex": r"^(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - (?<level>[A-Z]+) - (?<message>.*)$",
         "time_key": "time",
-        "time_format": "%d/%b/%Y:%H:%M:%S %z",
+        "time_format": "%Y-%m-%d %H:%M:%S",
         "time_system_timezone": True,
       }
     )
@@ -672,7 +672,7 @@ init =
         "format": "regex",
         "regex": r"^\[(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (?<level>[A-Z]+): (?<message>.*)$",
         "time_key": "time",
-        "time_format": "%d/%b/%Y:%H:%M:%S %z",
+        "time_format": "%Y-%m-%d %H:%M:%S",
         "time_system_timezone": True,
       }
     )
