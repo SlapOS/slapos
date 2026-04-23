@@ -127,6 +127,7 @@ param_dict = {
 enb_param_dict = {
     'cell1': {
         # ors_version for tests is B39, so earfcn needs to be within B39
+        'enable_cell': 'Enable eNB',
         'tac': '0x1717',
         'dl_earfcn': 38450,
         'bandwidth': "10 MHz",
@@ -151,9 +152,10 @@ enb_param_dict = {
 gnb_param_dict = {
     'cell1': {
         # ors_version for tests is B39, so dl_nr_arfcn needs to be within N39
+        'enable_cell': 'Enable gNB',
         'dl_nr_arfcn': 378000,
         'nr_band': 39,
-        'nr_bandwidth': 40,
+        'nr_bandwidth': "40 MHz",
         'ssb_nr_arfcn': 378030,
         'ssb_pos_bitmap': '10',
     },
@@ -185,7 +187,7 @@ gnb_param_dict1 = {
         'tdd_ul_dl_config': 'DDDSU      (2.5ms, 3DL/1UL), S-slot=10DL:2GP:2UL, reduced latency',
     },
     'nodeb': {
-        'plmn_list': [
+        'plmn_list_5g': [
             {'plmn': '00101', 'ranac': 1, 'reserved': True, 'tac': '0x01'},
             {'plmn': '00102', 'ranac': 2, 'reserved': False, 'tac': '0x02'},
         ],
@@ -298,6 +300,10 @@ class TestGNBParameters1(ORSTestCase):
 
     conf = load_yaml_conf(self.slap, 'enb')
 
+    # Check parameters required for ORS hardware were applied
+    self.assertEqual(conf['rf_driver']['rx_antenna'], "tx_rx")
+    self.assertEqual(conf['rf_driver']['tdd_tx_mod'], 1)
+
     self.assertEqual(conf['tx_gain'], [gnb_param_dict1['cell1']['tx_gain']] * gnb_param_dict1['nodeb']['n_antenna_dl'])
     self.assertEqual(conf['rx_gain'], [gnb_param_dict1['cell1']['rx_gain']] * gnb_param_dict1['nodeb']['n_antenna_ul'])
     self.assertEqual(conf['nr_cell_list'][0]['inactivity_timer'], gnb_param_dict1['nodeb']['inactivity_timer'])
@@ -305,12 +311,12 @@ class TestGNBParameters1(ORSTestCase):
     self.assertEqual(conf['nr_cell_list'][0]['ssb_nr_arfcn'], gnb_param_dict1['cell1']['ssb_nr_arfcn'])
     self.assertEqual(conf['nr_cell_list'][0]['band'], gnb_param_dict1['cell1']['nr_band'])
     self.assertEqual(conf['nr_cell_list'][0]['ssb_pos_bitmap'], gnb_param_dict1['cell1']['ssb_pos_bitmap'])
-    self.assertEqual(conf['nr_cell_list'][0]['bandwidth'], gnb_param_dict1['cell1']['nr_bandwidth'])
+    self.assertEqual(conf['nr_cell_list'][0]['bandwidth'], float(gnb_param_dict1['cell1']['nr_bandwidth'].removesuffix(' MHz')))
     self.assertEqual(conf['nr_cell_list'][0]['n_id_cell'], gnb_param_dict1['cell1']['pci'])
     self.assertEqual(conf['gnb_id'], int(gnb_param_dict1['nodeb']['gnb_id'], 16))
     self.assertEqual(conf['gnb_id_bits'], gnb_param_dict1['nodeb']['gnb_id_bits'])
     for p in conf['nr_cell_default']['plmn_list']:
-      for plmn in gnb_param_dict1['nodeb']['plmn_list']:
+      for plmn in gnb_param_dict1['nodeb']['plmn_list_5g']:
           if plmn['plmn'] == p['plmn']:
               break
       for n in "plmn ranac reserved".split():
