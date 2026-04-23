@@ -515,7 +515,8 @@
                 "b1_rsrp": {
                   "title": "Handover B1 event RSRP threshold",
                   "description": "Integer, range from -156 to -30. RSRP threshold value in dBm.",
-                  "type": "number"
+                  "type": "number",
+                  "default": -80
                 }
               }
             },
@@ -544,12 +545,14 @@
         "hysteresis": {
           "title": "EUTRA Handover hysteresis",
           "description": "Integer, range from 0 to 30. EUTRA B1 or B2 hysteresis in 0.5dB steps.",
-          "type": "number"
+          "type": "number",
+          "default": 0
         },
         "time_to_trigger": {
           "$ref": "#/$defs/time_to_trigger",
           "title": "EUTRA Handover time to trigger",
-          "description": "Time in ms during which the EUTRA B1 or B2 event condition must be met before triggering the measurement report."
+          "description": "Time in ms during which the EUTRA B1 or B2 event condition must be met before triggering the measurement report.",
+          "default": 100
         }
       }
     },
