@@ -543,8 +543,10 @@ content =
     # Reject ip/domain mismatches for IP-authenticated senders
     check_client_access cidr:$${outbound-postfix-client-sender-access:output}
   {%- endif %}
+  {%- if password_auth_domains %}
     # Reject login/domain mismatches for SASL-authenticated senders
     reject_sender_login_mismatch
+  {%- endif %}
     # Permit IP-authenticated senders;
     # ip/domain mismatches are already rejected above
     permit_mynetworks
