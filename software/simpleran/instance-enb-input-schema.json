@@ -269,6 +269,9 @@
       "title": "EUTRA Handover",
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "hysteresis"
+      ],
       "default": {
         "event": {
           "a3_rsrp": 6
@@ -348,6 +351,9 @@
       "title": "NR Handover",
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "hysteresis"
+      ],
       "default": {
         "event": {
           "b1_rsrp": -80
@@ -413,6 +419,9 @@
       "title": "NR Handover",
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "hysteresis"
+      ],
       "default": {
         "event": {
           "a3_rsrp": 6
@@ -492,6 +501,9 @@
       "title": "EUTRA Handover",
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "hysteresis"
+      ],
       "default": {
         "event": {
           "b1_rsrp": -80
@@ -545,14 +557,12 @@
         "hysteresis": {
           "title": "EUTRA Handover hysteresis",
           "description": "Integer, range from 0 to 30. EUTRA B1 or B2 hysteresis in 0.5dB steps.",
-          "type": "number",
-          "default": 0
+          "type": "number"
         },
         "time_to_trigger": {
           "$ref": "#/$defs/time_to_trigger",
           "title": "EUTRA Handover time to trigger",
-          "description": "Time in ms during which the EUTRA B1 or B2 event condition must be met before triggering the measurement report.",
-          "default": 100
+          "description": "Time in ms during which the EUTRA B1 or B2 event condition must be met before triggering the measurement report."
         }
       }
     },
