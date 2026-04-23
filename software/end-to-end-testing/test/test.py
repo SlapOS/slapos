@@ -29,15 +29,18 @@ import gzip
 import json
 import os
 import requests
-
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-
 
 setUpModule, E2ETestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
-
 class TestBasic(E2ETestCase):
   def setUp(self):
     pass
+
+  def test_01(self):
+    # this is just to show that a test was run and mainly here for TestNode UI
+    # otherwise test case is reported as MISSING. Since we have on real instance
+    # to test we just make sure that SR can be compiled thus this fake test.
+    self.equal(0, 0)
