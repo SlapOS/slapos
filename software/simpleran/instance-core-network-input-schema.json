@@ -45,7 +45,7 @@
       "default": 1500
     },
     "iperf3": {
-      "default": 0,
+      "default": 1,
       "title": "iperf3 UDP server count",
       "description": "Activate one or multiple iperf3 UDP server",
       "type": "number"
