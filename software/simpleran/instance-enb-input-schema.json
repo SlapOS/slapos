@@ -269,6 +269,9 @@
       "title": "EUTRA Handover",
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "hysteresis"
+      ],
       "default": {
         "event": {
           "a3_rsrp": 6
@@ -348,6 +351,9 @@
       "title": "NR Handover",
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "hysteresis"
+      ],
       "default": {
         "event": {
           "b1_rsrp": -80
@@ -413,6 +419,9 @@
       "title": "NR Handover",
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "hysteresis"
+      ],
       "default": {
         "event": {
           "a3_rsrp": 6
@@ -492,6 +501,9 @@
       "title": "EUTRA Handover",
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "hysteresis"
+      ],
       "default": {
         "event": {
           "b1_rsrp": -80
@@ -515,7 +527,8 @@
                 "b1_rsrp": {
                   "title": "Handover B1 event RSRP threshold",
                   "description": "Integer, range from -156 to -30. RSRP threshold value in dBm.",
-                  "type": "number"
+                  "type": "number",
+                  "default": -80
                 }
               }
             },
