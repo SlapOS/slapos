@@ -698,14 +698,16 @@ recipe = slapos.recipe.template:jinja2
 depends = $${snappymail-files:recipe}
 url = ${template-snappymail.jinja2.ini:target}
 output = $${snappymail-files:target}/data/_data_/_default_/configs/application.ini
+once = $${:output}
 context =
   raw mail_domain {{ slapparameter_dict['mail-domains'][0] }}
   key admin_password snappymail-admin-pw:passwd-sha256-crypt
 
 [snappymail-pw-conf]
-recipe = slapos.recipe.template
+recipe = slapos.recipe.template:jinja2
 output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-change-password.json
 mode = 600
+once = $${:output}
 inline =
   {
       "plugin": {
@@ -718,9 +720,10 @@ inline =
   }
 
 [snappymail-import-dovecot-conf]
-recipe = slapos.recipe.template
+recipe = slapos.recipe.template:jinja2
 output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-import-dovecot.json
 mode = 600
+once = $${:output}
 inline =
   {
       "plugin": {
