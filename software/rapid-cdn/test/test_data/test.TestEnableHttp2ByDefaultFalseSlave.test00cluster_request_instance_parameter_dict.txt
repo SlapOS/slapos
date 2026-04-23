@@ -35,11 +35,6 @@
         },
         {
           "authenticate-to-backend": true,
-          "slave_reference": "auth-to-backend______1",
-          "url": "https://@@_ipv4_address@@:@@_server_https_auth_port@@/"
-        },
-        {
-          "authenticate-to-backend": true,
           "slave_reference": "auth-to-backend-backend-ignore______1",
           "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
         },
@@ -48,16 +43,21 @@
           "url": "https://@@_ipv4_address@@:@@_server_https_auth_port@@/"
         },
         {
+          "authenticate-to-backend": true,
+          "slave_reference": "auth-to-backend______1",
+          "url": "https://@@_ipv4_address@@:@@_server_https_auth_port@@/"
+        },
+        {
           "slave_reference": "bad-backend______1",
           "url": "http://bad.backend/"
         },
         {
-          "ciphers": "RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA",
-          "slave_reference": "ciphers______1"
-        },
-        {
           "ciphers": "ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-AES256-CBC-SHA ECDHE-RSA-AES128-CBC-SHA ECDHE-ECDSA-AES256-CBC-SHA ECDHE-ECDSA-AES128-CBC-SHA RSA-AES256-CBC-SHA RSA-AES128-CBC-SHA ECDHE-RSA-3DES-EDE-CBC-SHA RSA-3DES-EDE-CBC-SHA",
           "slave_reference": "ciphers-translation-all______1"
+        },
+        {
+          "ciphers": "RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA",
+          "slave_reference": "ciphers______1"
         },
         {
           "custom_domain": "mycustomdomain.example.com",
@@ -86,13 +86,13 @@
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
-          "disabled-cookie-list": "Coconut Chocolate Vanilia",
-          "slave_reference": "disabled-cookie-list______1",
+          "disabled-cookie-list": "Chocolate",
+          "slave_reference": "disabled-cookie-list-simple______1",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
-          "disabled-cookie-list": "Chocolate",
-          "slave_reference": "disabled-cookie-list-simple______1",
+          "disabled-cookie-list": "Coconut Chocolate Vanilia",
+          "slave_reference": "disabled-cookie-list______1",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
@@ -113,22 +113,17 @@
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
-          "slave_reference": "enable-http3-default______1",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-        },
-        {
           "enable-http2": false,
           "slave_reference": "enable-http3-default-enable-http2-false______1",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
-          "enable-http3": false,
-          "slave_reference": "enable-http3-false______1",
+          "slave_reference": "enable-http3-default______1",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
-          "enable-http3": true,
-          "slave_reference": "enable-http3-true______1",
+          "enable-http3": false,
+          "slave_reference": "enable-http3-false______1",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
@@ -138,8 +133,8 @@
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
-          "enable_cache": true,
-          "slave_reference": "enable_cache______1",
+          "enable-http3": true,
+          "slave_reference": "enable-http3-true______1",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
@@ -158,6 +153,11 @@
           "enable_cache": true,
           "https-only": false,
           "slave_reference": "enable_cache-https-only-false______1",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
+          "enable_cache": true,
+          "slave_reference": "enable_cache______1",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
@@ -184,18 +184,13 @@
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/http"
         },
         {
-          "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https-url",
-          "slave_reference": "https-url-only______1"
-        },
-        {
           "https-only": false,
           "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https-url",
           "slave_reference": "https-url-only-https-only-false______1"
         },
         {
-          "prefer-gzip-encoding-to-backend": "true",
-          "slave_reference": "prefer-gzip-encoding-to-backend______1",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+          "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https-url",
+          "slave_reference": "https-url-only______1"
         },
         {
           "https-only": "false",
@@ -204,9 +199,8 @@
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
-          "server-alias": "alias1.example.com alias2.example.com",
-          "slave_reference": "server-alias______1",
-          "strict-transport-security": "200",
+          "prefer-gzip-encoding-to-backend": "true",
+          "slave_reference": "prefer-gzip-encoding-to-backend______1",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
@@ -229,6 +223,12 @@
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
+          "server-alias": "alias1.example.com alias2.example.com",
+          "slave_reference": "server-alias______1",
+          "strict-transport-security": "200",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
           "custom_domain": "alias4.example.com",
           "server-alias": "",
           "slave_reference": "server-alias_custom_domain-duplicated______1",
@@ -240,15 +240,15 @@
           "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
         },
         {
-          "slave_reference": "ssl-proxy-verify_ssl_proxy_ca_crt______1",
-          "ssl-proxy-verify": true,
-          "ssl_proxy_ca_crt": "@@test_server_ca.certificate_pem@@",
-          "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
-        },
-        {
           "slave_reference": "ssl-proxy-verify_ssl_proxy_ca_crt-unverified______1",
           "ssl-proxy-verify": true,
           "ssl_proxy_ca_crt": "@@another_server_ca.certificate_pem@@",
+          "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
+        },
+        {
+          "slave_reference": "ssl-proxy-verify_ssl_proxy_ca_crt______1",
+          "ssl-proxy-verify": true,
+          "ssl_proxy_ca_crt": "@@test_server_ca.certificate_pem@@",
           "url": "https://@@_ipv4_address@@:@@_server_https_port@@/"
         },
         {
@@ -269,13 +269,6 @@
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
-          "https-only": false,
-          "https-url": "https://@@_ipv4_address@@:@@_server_https_port@@/",
-          "slave_reference": "type-redirect______1",
-          "type": "redirect",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-        },
-        {
           "custom_domain": "customdomaintyperedirect.example.com",
           "slave_reference": "type-redirect-custom_domain______1",
           "type": "redirect",
@@ -289,15 +282,11 @@
           "url": "http://example.com/"
         },
         {
-          "slave_reference": "type-websocket______1",
-          "type": "websocket",
+          "https-only": false,
+          "https-url": "https://@@_ipv4_address@@:@@_server_https_port@@/",
+          "slave_reference": "type-redirect______1",
+          "type": "redirect",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-        },
-        {
-          "slave_reference": "type-websocket-websocket-path-list______1",
-          "type": "websocket",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
-          "websocket-path-list": "////ws//// /with%20space/"
         },
         {
           "slave_reference": "type-websocket-websocket-path-list-empty______1",
@@ -319,14 +308,20 @@
           "websocket-transparent": "false"
         },
         {
+          "slave_reference": "type-websocket-websocket-path-list______1",
+          "type": "websocket",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
+          "websocket-path-list": "////ws//// /with%20space/"
+        },
+        {
           "slave_reference": "type-websocket-websocket-transparent-false______1",
           "type": "websocket",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
           "websocket-transparent": "false"
         },
         {
-          "slave_reference": "type-zope______1",
-          "type": "zope",
+          "slave_reference": "type-websocket______1",
+          "type": "websocket",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
@@ -342,15 +337,15 @@
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
+          "https-only": "false",
           "prefer-gzip-encoding-to-backend": "true",
-          "slave_reference": "type-zope-prefer-gzip-encoding-to-backend______1",
+          "slave_reference": "type-zope-prefer-gzip-encoding-to-backend-https-only______1",
           "type": "zope",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
         {
-          "https-only": "false",
           "prefer-gzip-encoding-to-backend": "true",
-          "slave_reference": "type-zope-prefer-gzip-encoding-to-backend-https-only______1",
+          "slave_reference": "type-zope-prefer-gzip-encoding-to-backend______1",
           "type": "zope",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
         },
@@ -368,6 +363,11 @@
           "virtualhostroot-https-port": "12345"
         },
         {
+          "slave_reference": "type-zope______1",
+          "type": "zope",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
+        },
+        {
           "slave_reference": "url-netloc-list______1",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/",
           "url-netloc-list": "@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@"
@@ -381,6 +381,12 @@
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/index.html/"
         },
         {
+          "https-only": false,
+          "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https",
+          "slave_reference": "url_https-url-https-only-false______1",
+          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/http"
+        },
+        {
           "backend-connect-retries": 5,
           "backend-connect-timeout": 10,
           "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https",
@@ -389,12 +395,6 @@
           "strict-transport-security": "200",
           "strict-transport-security-preload": true,
           "strict-transport-security-sub-domains": true,
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/http"
-        },
-        {
-          "https-only": false,
-          "https-url": "http://@@_ipv4_address@@:@@_server_http_port@@/https",
-          "slave_reference": "url_https-url-https-only-false______1",
           "url": "http://@@_ipv4_address@@:@@_server_http_port@@/http"
         },
         {
@@ -424,7 +424,7 @@
       "enable-http2-by-default": false,
       "enable-http3": false,
       "expert-backend-allow-downgrade-ssl": false,
-      "extra_slave_instance_list": "[{\"authenticate-to-backend\": true, \"slave_reference\": \"Url______1\", \"url\": \" http://@@_ipv4_address@@:@@_server_http_port@@//?a=b&c= \"}, {\"authenticate-to-backend\": true, \"slave_reference\": \"auth-to-backend______1\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_auth_port@@/\"}, {\"authenticate-to-backend\": true, \"slave_reference\": \"auth-to-backend-backend-ignore______1\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"auth-to-backend-not-configured______1\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_auth_port@@/\"}, {\"slave_reference\": \"bad-backend______1\", \"url\": \"http://bad.backend/\"}, {\"ciphers\": \"RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA\", \"slave_reference\": \"ciphers______1\"}, {\"ciphers\": \"ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-AES256-CBC-SHA ECDHE-RSA-AES128-CBC-SHA ECDHE-ECDSA-AES256-CBC-SHA ECDHE-ECDSA-AES128-CBC-SHA RSA-AES256-CBC-SHA RSA-AES128-CBC-SHA ECDHE-RSA-3DES-EDE-CBC-SHA RSA-3DES-EDE-CBC-SHA\", \"slave_reference\": \"ciphers-translation-all______1\"}, {\"custom_domain\": \"mycustomdomain.example.com\", \"slave_reference\": \"custom_domain______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"mycustomdomainserveralias.example.com\", \"server-alias\": \"mycustomdomainserveralias1.example.com\", \"slave_reference\": \"custom_domain_server_alias______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomainsslcrtsslkey.example.com\", \"slave_reference\": \"custom_domain_ssl_crt_ssl_key______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomainsslcrtsslkeysslcacrt.example.com\", \"slave_reference\": \"custom_domain_ssl_crt_ssl_key_ssl_ca_crt______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"*.customdomain.example.com\", \"slave_reference\": \"custom_domain_wildcard______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disabled-cookie-list\": \"Coconut Chocolate Vanilia\", \"slave_reference\": \"disabled-cookie-list______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disabled-cookie-list\": \"Chocolate\", \"slave_reference\": \"disabled-cookie-list-simple______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"empty______1\"}, {\"slave_reference\": \"enable-http2-default______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": false, \"slave_reference\": \"enable-http2-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": true, \"slave_reference\": \"enable-http2-true______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"enable-http3-default______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": false, \"slave_reference\": \"enable-http3-default-enable-http2-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http3\": false, \"slave_reference\": \"enable-http3-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http3\": true, \"slave_reference\": \"enable-http3-true______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": false, \"enable-http3\": true, \"slave_reference\": \"enable-http3-true-enable-http2-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable_cache\": true, \"slave_reference\": \"enable_cache______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disable-no-cache-request\": true, \"enable_cache\": true, \"slave_reference\": \"enable_cache-disable-no-cache-request______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disable-via-header\": true, \"enable_cache\": true, \"slave_reference\": \"enable_cache-disable-via-header______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable_cache\": true, \"https-only\": false, \"slave_reference\": \"enable_cache-https-only-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomainenablecache.example.com\", \"enable_cache\": true, \"slave_reference\": \"enable_cache_custom_domain______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable_cache\": true, \"server-alias\": \"enablecacheserveralias1.example.com\", \"slave_reference\": \"enable_cache_server_alias______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": false, \"slave_reference\": \"https-only______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https\", \"https-url-netloc-list\": \"@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@\", \"slave_reference\": \"https-url-netloc-list______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/http\"}, {\"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https-url\", \"slave_reference\": \"https-url-only______1\"}, {\"https-only\": false, \"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https-url\", \"slave_reference\": \"https-url-only-https-only-false______1\"}, {\"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"prefer-gzip-encoding-to-backend______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": \"false\", \"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"prefer-gzip-encoding-to-backend-https-only______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"alias1.example.com alias2.example.com\", \"slave_reference\": \"server-alias______1\", \"strict-transport-security\": \"200\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"alias3.example.com\", \"slave_reference\": \"server-alias-duplicated______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"\", \"slave_reference\": \"server-alias-empty______1\", \"strict-transport-security\": \"200\", \"strict-transport-security-sub-domains\": true, \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"*.alias1.example.com\", \"slave_reference\": \"server-alias-wildcard______1\", \"strict-transport-security\": \"200\", \"strict-transport-security-preload\": true, \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"alias4.example.com\", \"server-alias\": \"\", \"slave_reference\": \"server-alias_custom_domain-duplicated______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"ssl-proxy-verify-unverified______1\", \"ssl-proxy-verify\": true, \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"ssl-proxy-verify_ssl_proxy_ca_crt______1\", \"ssl-proxy-verify\": true, \"ssl_proxy_ca_crt\": \"@@test_server_ca.certificate_pem_double@@\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"ssl-proxy-verify_ssl_proxy_ca_crt-unverified______1\", \"ssl-proxy-verify\": true, \"ssl_proxy_ca_crt\": \"@@another_server_ca.certificate_pem_double@@\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"ssl_ca_crt_does_not_match______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"ssl_ca_crt_garbage______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"ssl_ca_crt_only______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"type-notebook______1\", \"type\": \"notebook\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": false, \"https-url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\", \"slave_reference\": \"type-redirect______1\", \"type\": \"redirect\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomaintyperedirect.example.com\", \"slave_reference\": \"type-redirect-custom_domain______1\", \"type\": \"redirect\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": false, \"https-url\": \"https://example.com/\", \"slave_reference\": \"type-redirect-to-standard-port______1\", \"type\": \"redirect\", \"url\": \"http://example.com/\"}, {\"slave_reference\": \"type-websocket______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"type-websocket-websocket-path-list______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": \"////ws//// /with%20space/\"}, {\"slave_reference\": \"type-websocket-websocket-path-list-empty______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": \"\"}, {\"slave_reference\": \"type-websocket-websocket-path-list-none______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": null}, {\"slave_reference\": \"type-websocket-websocket-path-list-websocket-transparent-false______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": \"////ws//// /with%20space/\", \"websocket-transparent\": \"false\"}, {\"slave_reference\": \"type-websocket-websocket-transparent-false______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-transparent\": \"false\"}, {\"slave_reference\": \"type-zope______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"default-path\": \"///default-path/to/some/resource///\", \"slave_reference\": \"type-zope-default-path______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"path\": \"///path/to/some/resource///\", \"slave_reference\": \"type-zope-path______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"type-zope-prefer-gzip-encoding-to-backend______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": \"false\", \"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"type-zope-prefer-gzip-encoding-to-backend-https-only______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": \"false\", \"slave_reference\": \"type-zope-virtualhostroot-http-port______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"virtualhostroot-http-port\": \"12345\"}, {\"slave_reference\": \"type-zope-virtualhostroot-https-port______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"virtualhostroot-https-port\": \"12345\"}, {\"slave_reference\": \"url-netloc-list______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"url-netloc-list\": \"@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@\"}, {\"slave_reference\": \"url-trailing-slash-absent______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/index.html\"}, {\"slave_reference\": \"url-trailing-slash-present______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/index.html/\"}, {\"backend-connect-retries\": 5, \"backend-connect-timeout\": 10, \"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https\", \"request-timeout\": 15, \"slave_reference\": \"url_https-url______1\", \"strict-transport-security\": \"200\", \"strict-transport-security-preload\": true, \"strict-transport-security-sub-domains\": true, \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/http\"}, {\"https-only\": false, \"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https\", \"slave_reference\": \"url_https-url-https-only-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/http\"}, {\"slave_reference\": \"weak-ssl-backend______1\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_weak_port@@/\"}]",
+      "extra_slave_instance_list": "[{\"authenticate-to-backend\": true, \"slave_reference\": \"Url______1\", \"url\": \" http://@@_ipv4_address@@:@@_server_http_port@@//?a=b&c= \"}, {\"authenticate-to-backend\": true, \"slave_reference\": \"auth-to-backend-backend-ignore______1\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"auth-to-backend-not-configured______1\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_auth_port@@/\"}, {\"authenticate-to-backend\": true, \"slave_reference\": \"auth-to-backend______1\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_auth_port@@/\"}, {\"slave_reference\": \"bad-backend______1\", \"url\": \"http://bad.backend/\"}, {\"ciphers\": \"ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-WITH-CHACHA20-POLY1305 ECDHE-RSA-AES256-CBC-SHA ECDHE-RSA-AES128-CBC-SHA ECDHE-ECDSA-AES256-CBC-SHA ECDHE-ECDSA-AES128-CBC-SHA RSA-AES256-CBC-SHA RSA-AES128-CBC-SHA ECDHE-RSA-3DES-EDE-CBC-SHA RSA-3DES-EDE-CBC-SHA\", \"slave_reference\": \"ciphers-translation-all______1\"}, {\"ciphers\": \"RSA-3DES-EDE-CBC-SHA RSA-AES128-CBC-SHA\", \"slave_reference\": \"ciphers______1\"}, {\"custom_domain\": \"mycustomdomain.example.com\", \"slave_reference\": \"custom_domain______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"mycustomdomainserveralias.example.com\", \"server-alias\": \"mycustomdomainserveralias1.example.com\", \"slave_reference\": \"custom_domain_server_alias______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomainsslcrtsslkey.example.com\", \"slave_reference\": \"custom_domain_ssl_crt_ssl_key______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomainsslcrtsslkeysslcacrt.example.com\", \"slave_reference\": \"custom_domain_ssl_crt_ssl_key_ssl_ca_crt______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"*.customdomain.example.com\", \"slave_reference\": \"custom_domain_wildcard______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disabled-cookie-list\": \"Chocolate\", \"slave_reference\": \"disabled-cookie-list-simple______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disabled-cookie-list\": \"Coconut Chocolate Vanilia\", \"slave_reference\": \"disabled-cookie-list______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"empty______1\"}, {\"slave_reference\": \"enable-http2-default______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": false, \"slave_reference\": \"enable-http2-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": true, \"slave_reference\": \"enable-http2-true______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": false, \"slave_reference\": \"enable-http3-default-enable-http2-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"enable-http3-default______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http3\": false, \"slave_reference\": \"enable-http3-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http2\": false, \"enable-http3\": true, \"slave_reference\": \"enable-http3-true-enable-http2-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable-http3\": true, \"slave_reference\": \"enable-http3-true______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disable-no-cache-request\": true, \"enable_cache\": true, \"slave_reference\": \"enable_cache-disable-no-cache-request______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"disable-via-header\": true, \"enable_cache\": true, \"slave_reference\": \"enable_cache-disable-via-header______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable_cache\": true, \"https-only\": false, \"slave_reference\": \"enable_cache-https-only-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable_cache\": true, \"slave_reference\": \"enable_cache______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomainenablecache.example.com\", \"enable_cache\": true, \"slave_reference\": \"enable_cache_custom_domain______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"enable_cache\": true, \"server-alias\": \"enablecacheserveralias1.example.com\", \"slave_reference\": \"enable_cache_server_alias______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": false, \"slave_reference\": \"https-only______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https\", \"https-url-netloc-list\": \"@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@\", \"slave_reference\": \"https-url-netloc-list______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/http\"}, {\"https-only\": false, \"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https-url\", \"slave_reference\": \"https-url-only-https-only-false______1\"}, {\"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https-url\", \"slave_reference\": \"https-url-only______1\"}, {\"https-only\": \"false\", \"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"prefer-gzip-encoding-to-backend-https-only______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"prefer-gzip-encoding-to-backend______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"alias3.example.com\", \"slave_reference\": \"server-alias-duplicated______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"\", \"slave_reference\": \"server-alias-empty______1\", \"strict-transport-security\": \"200\", \"strict-transport-security-sub-domains\": true, \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"*.alias1.example.com\", \"slave_reference\": \"server-alias-wildcard______1\", \"strict-transport-security\": \"200\", \"strict-transport-security-preload\": true, \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"server-alias\": \"alias1.example.com alias2.example.com\", \"slave_reference\": \"server-alias______1\", \"strict-transport-security\": \"200\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"alias4.example.com\", \"server-alias\": \"\", \"slave_reference\": \"server-alias_custom_domain-duplicated______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"ssl-proxy-verify-unverified______1\", \"ssl-proxy-verify\": true, \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"ssl-proxy-verify_ssl_proxy_ca_crt-unverified______1\", \"ssl-proxy-verify\": true, \"ssl_proxy_ca_crt\": \"@@another_server_ca.certificate_pem_double@@\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"ssl-proxy-verify_ssl_proxy_ca_crt______1\", \"ssl-proxy-verify\": true, \"ssl_proxy_ca_crt\": \"@@test_server_ca.certificate_pem_double@@\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\"}, {\"slave_reference\": \"ssl_ca_crt_does_not_match______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"ssl_ca_crt_garbage______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"ssl_ca_crt_only______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"type-notebook______1\", \"type\": \"notebook\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"custom_domain\": \"customdomaintyperedirect.example.com\", \"slave_reference\": \"type-redirect-custom_domain______1\", \"type\": \"redirect\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": false, \"https-url\": \"https://example.com/\", \"slave_reference\": \"type-redirect-to-standard-port______1\", \"type\": \"redirect\", \"url\": \"http://example.com/\"}, {\"https-only\": false, \"https-url\": \"https://@@_ipv4_address@@:@@_server_https_port@@/\", \"slave_reference\": \"type-redirect______1\", \"type\": \"redirect\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"type-websocket-websocket-path-list-empty______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": \"\"}, {\"slave_reference\": \"type-websocket-websocket-path-list-none______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": null}, {\"slave_reference\": \"type-websocket-websocket-path-list-websocket-transparent-false______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": \"////ws//// /with%20space/\", \"websocket-transparent\": \"false\"}, {\"slave_reference\": \"type-websocket-websocket-path-list______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-path-list\": \"////ws//// /with%20space/\"}, {\"slave_reference\": \"type-websocket-websocket-transparent-false______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"websocket-transparent\": \"false\"}, {\"slave_reference\": \"type-websocket______1\", \"type\": \"websocket\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"default-path\": \"///default-path/to/some/resource///\", \"slave_reference\": \"type-zope-default-path______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"path\": \"///path/to/some/resource///\", \"slave_reference\": \"type-zope-path______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": \"false\", \"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"type-zope-prefer-gzip-encoding-to-backend-https-only______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"prefer-gzip-encoding-to-backend\": \"true\", \"slave_reference\": \"type-zope-prefer-gzip-encoding-to-backend______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"https-only\": \"false\", \"slave_reference\": \"type-zope-virtualhostroot-http-port______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"virtualhostroot-http-port\": \"12345\"}, {\"slave_reference\": \"type-zope-virtualhostroot-https-port______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"virtualhostroot-https-port\": \"12345\"}, {\"slave_reference\": \"type-zope______1\", \"type\": \"zope\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\"}, {\"slave_reference\": \"url-netloc-list______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/\", \"url-netloc-list\": \"@@_ipv4_address@@:@@_server_netloc_a_http_port@@ @@_ipv4_address@@:@@_server_netloc_b_http_port@@\"}, {\"slave_reference\": \"url-trailing-slash-absent______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/index.html\"}, {\"slave_reference\": \"url-trailing-slash-present______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/index.html/\"}, {\"https-only\": false, \"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https\", \"slave_reference\": \"url_https-url-https-only-false______1\", \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/http\"}, {\"backend-connect-retries\": 5, \"backend-connect-timeout\": 10, \"https-url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/https\", \"request-timeout\": 15, \"slave_reference\": \"url_https-url______1\", \"strict-transport-security\": \"200\", \"strict-transport-security-preload\": true, \"strict-transport-security-sub-domains\": true, \"url\": \"http://@@_ipv4_address@@:@@_server_http_port@@/http\"}, {\"slave_reference\": \"weak-ssl-backend______1\", \"url\": \"https://@@_ipv4_address@@:@@_server_https_weak_port@@/\"}]",
       "frontend-name": "caddy-frontend-1",
       "http3-port": 443,
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:15090",
