@@ -76,9 +76,9 @@
       "type": "boolean",
       "default": false
     },
-    "max-attachment-size": {
-      "title": "Max Attachment Size",
-      "description": "Maximum attachment size in MiB for SMTP and webmail uploads. Note: effective limit will be lower since attachments are converted to base64 which adds ~33% overhead.",
+    "email-size-limit": {
+      "title": "E-mail size limit",
+      "description": "Maximum size of incoming and outgoing e-mails in MiB. You may also want to set the maximum attachment size in the webmail admin panel.",
       "type": "integer",
       "minimum": 1,
       "default": 50
