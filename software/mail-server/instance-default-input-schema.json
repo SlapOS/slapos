@@ -63,6 +63,7 @@
           "title": "Customized Outbound Relay",
           "description": "Send mail through the specified outbound relay",
           "properties": {
+            "enable": {},
             "host": {
               "title": "Host",
               "description": "The host name of a relay server",
