@@ -58,7 +58,7 @@
       "default": "https://monitor.app.officejs.com/#page=ojsm_landing"
     },
     "rf-info": {
-      "title": "Expert: RF Info",
+      "title": "Expert only: RF Info",
       "description": "Expert only: override RF Info from parameters",
       "type": "string",
       "textarea": true

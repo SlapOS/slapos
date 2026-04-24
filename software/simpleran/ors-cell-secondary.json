@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ORS Cell",
+  "type": "object",
+  "properties": {
+    "ignore_gbr_congestion": {
+      "$ref": "cell/common.json#/properties/ignore_gbr_congestion"
+    },
+    "tx_power_offset": {
+      "title": "Expert only: TX Power Offset",
+      "description": "Expert only. Offset between Amarisoft SDR50 board power and ORS power. For fine tuning the reference signal power value. Default depends on ORS frequency, please refer to the connection parameters",
+      "type": "number"
+    }
+  }
+}
