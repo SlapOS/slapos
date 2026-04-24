@@ -44,7 +44,7 @@ smtp_tls_fingerprint_cert_match =
 {%- endfor %}
 {%- elif instance['custom-outbound-relay-sasl'] %}
 smtp_sasl_auth_enable = yes
-smtp_sasl_password_maps = texthash:{{ outound_sasl_passwd }}
+smtp_sasl_password_maps = texthash:{{ outbound_sasl_passwd }}
 smtp_sasl_security_options = noanonymous
 smtp_tls_security_level = encrypt
 {%- endif %}
