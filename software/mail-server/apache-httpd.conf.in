@@ -35,6 +35,16 @@
   Header always set Access-Control-Allow-Headers "Overwrite, Destination, Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization" env=ORIGIN_DOMAIN
   Header always set Strict-Transport-Security "max-age=15552000; includeSubDomains"
 
+  <filesMatch "\.(html|xml|json)$">
+      Header always set Cache-Control "no-cache"
+  </filesMatch>
+  <filesMatch "\.(css|js)$">
+      Header always set Cache-Control "max-age=3600, public"
+  </filesMatch>
+  <filesMatch "\.(gif|jpeg|jpg|png|ico|otf|eot|svg|ttf|woff|woff2)$">
+      Header always set Cache-Control "max-age=86400, public"
+  </filesMatch>
+
   <Directory {{ parameter_dict['document-root'] }}>
       Options +FollowSymlinks
       AllowOverride All
