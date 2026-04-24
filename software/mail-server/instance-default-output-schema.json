@@ -29,6 +29,14 @@
     "webmail-url": {
       "title": "Webmail URL",
       "type": "string"
+    },
+    "webmail-admin-password": {
+      "description": "Password for the webmail admin user",
+      "type": "string"
+    },
+    "webmail-admin-url": {
+      "description": "URL for the webmail admin interface",
+      "type": "string"
     }
   },
   "type": "object"
