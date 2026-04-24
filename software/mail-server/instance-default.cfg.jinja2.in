@@ -108,9 +108,10 @@ init =
 {% set outbound_relay = slapparameter_dict['outbound-relay'] -%}
 {% set inbound = inbound_relay['enable'] -%}
 {% set outbound = outbound_relay['enable'] -%}
-{% set auto_outbound = outbound and inbound and not outbound_relay['host'] -%}
-{% set custom_outbound = outbound and outbound_relay['host'] -%}
-{% set custom_outbound_sasl = custom_outbound and outbound_relay['user'] -%}
+{% set custom_outbound_host = outbound_relay.get('host') -%}
+{% set auto_outbound = outbound and inbound and not custom_outbound_host -%}
+{% set custom_outbound = outbound and custom_outbound_host -%}
+{% set custom_outbound_sasl = custom_outbound and outbound_relay.get('user') -%}
 [instance-parameters]
 mail-domains = {{ dumps(mail_domains) }}
 inbound-relay = {{ dumps(inbound_relay) }}
