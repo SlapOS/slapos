@@ -1042,6 +1042,7 @@ imaps-port = $${dovecot-conf:imaps-port}
 smtp-port = {{ smtp_port }}
 imap-smtp-ipv6 = {{ ipv6 }}
 webmail-url = $${lamp-frontend-promise:url}
+webmail-admin-url = $${:webmail-url}/?admin
 webmail-admin-password = $${snappymail-admin-pw:passwd}
 password-url = $${:webmail-url}/password.php
 slaves = $${dovecot-passwords:new-account-dict}
