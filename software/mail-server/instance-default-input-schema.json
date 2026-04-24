@@ -34,7 +34,6 @@
     },
     "outbound-relay": {
       "title": "Outbound Relay",
-      "description": "The relay server configuration for outbound mail",
       "type": "object",
       "properties": {
         "enable": {
@@ -42,30 +41,77 @@
           "description": "Whether to send mail via an outbound relay",
           "type": "boolean",
           "default": true
+        }
+      },
+      "oneOf": [
+        {
+          "title": "Automatic Outbound Relay",
+          "description": "Send mail through an automatically requested outbound relay",
+          "properties": {
+            "enable": {
+              "description": "Requires enabling the automatic inbound relay"
+            }
+          },
+          "not": {
+            "required": [
+              "host"
+            ]
+          },
+          "additionalProperties": false
         },
-        "host": {
-          "title": "Host",
-          "description": "The host name of a custom relay server. If empty, the requested relay will be used.",
-          "type": "string",
-          "default": ""
-        },
-        "port": {
-          "title": "Port",
-          "description": "The port of the custom relay server",
-          "type": "integer",
-          "default": 25
-        },
-        "user": {
-          "title": "SMTP User",
-          "description": "Username for SMTP authentication on the custom relay. If non-empty, SASL auth is used.",
-          "type": "string",
-          "default": ""
-        },
-        "password": {
-          "title": "SMTP Password",
-          "description": "Password for SMTP authentication on the custom relay.",
-          "type": "string",
-          "default": ""
+        {
+          "title": "Customized Outbound Relay",
+          "description": "Send mail through the specified outbound relay",
+          "properties": {
+            "enable": {},
+            "host": {
+              "title": "Host",
+              "description": "The host name of a relay server",
+              "type": "string",
+              "pattern": "^.+$"
+            },
+            "port": {
+              "title": "Port",
+              "description": "The port of the relay server",
+              "type": "integer",
+              "default": 25
+            },
+            "user": {
+              "title": "SMTP User",
+              "description": "Username for SMTP authentication on the custom relay. If set SASL auth is used.",
+              "type": "string",
+              "pattern": "^.+$"
+            },
+            "password": {
+              "title": "SMTP Password",
+              "description": "Password for SMTP authentication on the custom relay.",
+              "type": "string",
+              "pattern": "^.+$"
+            }
+          },
+          "required": [
+            "host"
+          ],
+          "dependentRequired": {
+            "user": [
+              "password"
+            ]
+          },
+          "additionalProperties": false
+        }
+      ],
+      "default": {}
+    },
+    "bogofilter": {
+      "title": "Bogofilter Spam Filter",
+      "description": "Bogofilter spam filter configuration",
+      "type": "object",
+      "properties": {
+        "enable": {
+          "title": "Enable",
+          "description": "Enable bogofilter spam filtering on incoming mail. Adds X-Bogosity headers to all messages.",
+          "type": "boolean",
+          "default": true
         }
       },
       "default": {}
