@@ -1,6 +1,24 @@
 Changelog
 =========
 
+Version 1.0.482 (2026-04-24)
+-------------
+
+* Merge eNB and gNB software types
+* Add Redcap support
+* Add option to disable SIM Card in parameters
+* Support external SIP Trunk
+* Update Amarisoft to 2026-03-13 version
+* Better report errors for SIM Cards:
+  - when duplicate IMSI exist
+  - when PLMN or MSIN has wrong length
+* Minor fixes for handover event parameter form
+* Improve connection parameters:
+  - publish GPT Address list
+  - publish Handover JSON Export allowing to quickly copy / paste neighbour cells
+  - publish SBC model and SDR Serial Number
+* Improve parameter description
+
 Version 1.0.470 (2026-03-20)
 -------------
 
