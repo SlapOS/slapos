@@ -360,6 +360,7 @@ output = $${postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/postfix.log
 bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
+  raw email_size_limit_bytes {{ slapparameter_dict['email-size-limit'] * 1024 * 1024 }}
   raw postfix_log_path $${:log-file}
   key sender_login_map postfix-sender-login-map:location
   key bin_directory directory:bin
@@ -698,14 +699,17 @@ recipe = slapos.recipe.template:jinja2
 depends = $${snappymail-files:recipe}
 url = ${template-snappymail.jinja2.ini:target}
 output = $${snappymail-files:target}/data/_data_/_default_/configs/application.ini
+once = $${:output}
 context =
+  raw attachment_size_limit_mb 50
   raw mail_domain {{ slapparameter_dict['mail-domains'][0] }}
   key admin_password snappymail-admin-pw:passwd-sha256-crypt
 
 [snappymail-pw-conf]
-recipe = slapos.recipe.template
+recipe = slapos.recipe.template:jinja2
 output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-change-password.json
 mode = 600
+once = $${:output}
 inline =
   {
       "plugin": {
@@ -718,9 +722,10 @@ inline =
   }
 
 [snappymail-import-dovecot-conf]
-recipe = slapos.recipe.template
+recipe = slapos.recipe.template:jinja2
 output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-import-dovecot.json
 mode = 600
+once = $${:output}
 inline =
   {
       "plugin": {
@@ -1039,6 +1044,7 @@ imaps-port = $${dovecot-conf:imaps-port}
 smtp-port = {{ smtp_port }}
 imap-smtp-ipv6 = {{ ipv6 }}
 webmail-url = $${lamp-frontend-promise:url}
+webmail-admin-url = $${:webmail-url}/?admin
 webmail-admin-password = $${snappymail-admin-pw:passwd}
 password-url = $${:webmail-url}/password.php
 slaves = $${dovecot-passwords:new-account-dict}
