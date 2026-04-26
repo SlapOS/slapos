@@ -108,9 +108,10 @@ init =
 {% set outbound_relay = slapparameter_dict['outbound-relay'] -%}
 {% set inbound = inbound_relay['enable'] -%}
 {% set outbound = outbound_relay['enable'] -%}
-{% set auto_outbound = outbound and inbound and not outbound_relay['host'] -%}
-{% set custom_outbound = outbound and outbound_relay['host'] -%}
-{% set custom_outbound_sasl = custom_outbound and outbound_relay['user'] -%}
+{% set custom_outbound_host = outbound_relay.get('host') -%}
+{% set auto_outbound = outbound and inbound and not custom_outbound_host -%}
+{% set custom_outbound = outbound and custom_outbound_host -%}
+{% set custom_outbound_sasl = custom_outbound and outbound_relay.get('user') -%}
 [instance-parameters]
 mail-domains = {{ dumps(mail_domains) }}
 inbound-relay = {{ dumps(inbound_relay) }}
@@ -359,6 +360,7 @@ output = $${postfix-directory:etc}/main.cf
 log-file = $${directory:var-log}/postfix.log
 bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
+  raw email_size_limit_bytes {{ slapparameter_dict['email-size-limit'] * 1024 * 1024 }}
   raw postfix_log_path $${:log-file}
   key sender_login_map postfix-sender-login-map:location
   key bin_directory directory:bin
@@ -490,7 +492,7 @@ hash-files =
   $${postfix-conf-main:output}
   $${postfix-conf-master:output}
   $${postfix-wrapper:output}
-{% if custom_outbound_sasl -%}
+{%- if custom_outbound_sasl %}
   $${postfix-custom-outbound-sasl:output}
 {%- endif %}
 depends =
@@ -568,9 +570,9 @@ basename = {{ basename }}
 
 [postfix-wrappers]
 depends =
-{% for postfix_wrapper in postfix_wrappers -%}
-  {{ "  $${" + postfix_wrapper + ":recipe" }}
-{% endfor -%}
+{%- for postfix_wrapper in postfix_wrappers %}
+  {{ "$${" + postfix_wrapper + ":recipe" }}
+{%- endfor %}
 
 [logrotate-entry-postfix]
 <= logrotate-entry-base
@@ -697,14 +699,17 @@ recipe = slapos.recipe.template:jinja2
 depends = $${snappymail-files:recipe}
 url = ${template-snappymail.jinja2.ini:target}
 output = $${snappymail-files:target}/data/_data_/_default_/configs/application.ini
+once = $${:output}
 context =
+  raw attachment_size_limit_mb 50
   raw mail_domain {{ slapparameter_dict['mail-domains'][0] }}
   key admin_password snappymail-admin-pw:passwd-sha256-crypt
 
 [snappymail-pw-conf]
-recipe = slapos.recipe.template
+recipe = slapos.recipe.template:jinja2
 output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-change-password.json
 mode = 600
+once = $${:output}
 inline =
   {
       "plugin": {
@@ -717,9 +722,10 @@ inline =
   }
 
 [snappymail-import-dovecot-conf]
-recipe = slapos.recipe.template
+recipe = slapos.recipe.template:jinja2
 output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-import-dovecot.json
 mode = 600
+once = $${:output}
 inline =
   {
       "plugin": {
@@ -988,8 +994,8 @@ relay-requests = {{ dumps(relay_requests) }}
 init =
   options['tls-fingerprints'] = []
 depends =
-{% for relay_request in relay_requests -%}
-  {{ "  $${" + relay_request + ":recipe}" }}
+{%- for relay_request in relay_requests %}
+  {{ "$${" + relay_request + ":recipe}" }}
 {%- endfor %}
 {% else -%}
 init =
@@ -1038,6 +1044,7 @@ imaps-port = $${dovecot-conf:imaps-port}
 smtp-port = {{ smtp_port }}
 imap-smtp-ipv6 = {{ ipv6 }}
 webmail-url = $${lamp-frontend-promise:url}
+webmail-admin-url = $${:webmail-url}/?admin
 webmail-admin-password = $${snappymail-admin-pw:passwd}
 password-url = $${:webmail-url}/password.php
 slaves = $${dovecot-passwords:new-account-dict}
