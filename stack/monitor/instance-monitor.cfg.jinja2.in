@@ -226,10 +226,10 @@ input = inline:#!/bin/sh
 output = ${directory:bin}/xnice
 mode = 700
 
-[monitor-globalstate-wrapper]
+[monitor-state-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = ${xnice-bin:output} {{ monitor_genstatus }} '${monitor-conf:output}'
-wrapper-path = ${directory:bin}/monitor-globalstate
+command-line = ${xnice-bin:output} {{ monitor_genstate }} '${monitor-conf:output}'
+wrapper-path = ${directory:bin}/monitor-state
 
 [monitor-configurator-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -249,16 +249,16 @@ command-line = ${xnice-bin:output} {{ monitor_collect }}
                --pid_file ${monitor-directory:pids}/monitor-collect.pid
 wrapper-path = ${directory:bin}/monitor-collect
 
-[monitor-globalstate-cron-entry]
+[monitor-state-cron-entry]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
-name = monitor-globalstate
+name = monitor-state
 frequency = */2 * * * *
-command = {{ randomsleep }} 20 && ${monitor-globalstate-wrapper:wrapper-path}
+command = {{ randomsleep }} 20 && ${monitor-state-wrapper:wrapper-path}
 
-[monitor-globalstate-first-run]
+[monitor-state-first-run]
 recipe = plone.recipe.command
-command = ${monitor-globalstate-wrapper:wrapper-path}
+command = ${monitor-state-wrapper:wrapper-path}
 stop-on-error = true
 
 [monitor-configurator-cron-entry]
@@ -290,6 +290,23 @@ input = inline:${:log} {
     dateext
     dateformat -%Y-%m-%d
     notifempty
+  }
+output = ${logrotate-directory:logrotate-entries}/${:name}
+
+[logrotate-entry-promise.log]
+recipe = collective.recipe.template
+name = monitor.promise
+log =  ${monitor-directory:promise-log}/*.log
+input = inline:${:log} {
+    compress
+    dateext
+    olddir ${monitor-directory:promise-log}
+    dateformat -%Y-%m-%d
+    daily
+    rotate 50
+    missingok
+    notifempty
+    sharedscripts
   }
 output = ${logrotate-directory:logrotate-entries}/${:name}
 
@@ -412,8 +429,8 @@ command = true
 update-command =
 base-url = ${monitor-conf-parameters:base-url}
 depends =
-  ${monitor-globalstate-cron-entry:name}
-  ${monitor-globalstate-first-run:recipe}
+  ${monitor-state-cron-entry:name}
+  ${monitor-state-first-run:recipe}
   ${monitor-configurator-cron-entry:name}
   ${monitor-collect-cron-entry:name}
   ${cron-entry-logrotate:name}
@@ -430,6 +447,7 @@ depends =
   ${logrotate-entry-monitor-httpd:name}
   ${logrotate-entry-monitor-data:name}
   ${logrotate-entry-monitor-promise-history:name}
+  ${logrotate-entry-promise.log:name}
 
 [expand-monitor-uri-template]
 recipe = slapos.recipe.build
