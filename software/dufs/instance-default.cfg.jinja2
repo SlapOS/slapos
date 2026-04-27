@@ -7,18 +7,21 @@ parts =
 extends =
   {{ template_monitor }}
 
-eggs-directory = {{ buildout['eggs-directory'] }}
-develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
-
 [instance-parameter]
-recipe = slapos.cookbook:slapconfiguration
+recipe = slapos.cookbook:slapconfiguration.jsonschema
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
+jsonschema = {{ software_json }}
+set-default = main
+validate-parameters = main
+unstringify = none
 
 [slap-configuration]
 # frontend reads from from a part named [slap-configuration]
@@ -78,7 +81,7 @@ crl-file = ${directory:etc}/${:_buildout_section_name_}.crl
 {{
 caucase.updater(
     prefix='dufs-certificate',
-    buildout_bin_directory=buildout['bin-directory'],
+    buildout_bin_directory=buildout_bin,
     updater_path='${directory:service}/dufs-certificate-updater',
     url='${caucased:url}',
     data_dir='${directory:srv}/caucase-updater',
@@ -133,7 +136,7 @@ url = http://${:netloc}/
 {{
 caucase.caucased(
     prefix='caucased',
-    buildout_bin_directory=buildout['bin-directory'],
+    buildout_bin_directory=buildout_bin,
     caucased_path='${directory:service}/caucased',
     backup_dir='${directory:backup-caucased}',
     data_dir='${directory:srv}/caucased',
