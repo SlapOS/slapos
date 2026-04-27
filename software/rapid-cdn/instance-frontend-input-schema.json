@@ -195,6 +195,26 @@
       "description": "JSON string containing KeDiFa configuration information for each slave instance.",
       "type": "string"
     },
+    "error-page-sync-url": {
+      "title": "Error Page Sync URL",
+      "description": "URL for polling the error page manifest (token embedded in path).",
+      "type": "string"
+    },
+    "error-page-base-url": {
+      "title": "Error Page Base URL",
+      "description": "Base URL for downloading haproxy error page files (token embedded in path).",
+      "type": "string"
+    },
+    "error-page-certificate": {
+      "title": "Error Page Manager TLS Certificate",
+      "description": "PEM certificate of the error page manager for SSL verification.",
+      "type": "string"
+    },
+    "slave-error-page-information": {
+      "title": "Slave Error Page Information",
+      "description": "JSON dict mapping slave references to their error page upload URLs.",
+      "type": "string"
+    },
     "trafficserver-introspection-port": {
       "title": "Trafficserver Introspection Port",
       "description": "Port number for the trafficserver introspection server.",
