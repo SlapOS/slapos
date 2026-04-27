@@ -21,13 +21,12 @@ key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
 
 [slap-configuration]
-# frontend reads from from a part named [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = ${slap-connection:computer-id}
-partition = ${slap-connection:partition-id}
-url = ${slap-connection:server-url}
-key = ${slap-connection:key-file}
-cert = ${slap-connection:cert-file}
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = {{ software_json }}
+set-default = main
+validate-parameters = main
+unstringify = none
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
