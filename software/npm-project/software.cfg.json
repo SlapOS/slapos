@@ -1,0 +1,14 @@
+{
+  "name": "NPM project configuration",
+  "description": "This SR is for deploy npm project that need to install npm dependencies and build the project.",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Default npm project configuration",
+      "request": "instance-input-schema.json",
+      "response": "",
+      "index": 0
+    }
+  }
+}
