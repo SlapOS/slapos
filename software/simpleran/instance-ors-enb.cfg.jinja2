@@ -5,7 +5,7 @@
 {%- do assert(enb_mode in ('enb-gnb', 'enb', 'gnb'), enb_mode) %}
 
 # code of generic enb
-{%  include 'instance-enb-base.jinja2.cfg' %}
+{%  include 'instance-enb-base.cfg.jinja2' %}
 
 # let all templates know we are running in ORS mode
 [config-base]

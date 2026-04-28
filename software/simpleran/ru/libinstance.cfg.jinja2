@@ -52,8 +52,8 @@ config-stats-period = {{ slapparameter_dict.get("enb_stats_fetch_period", 60) }}
 {%-   set jref_of_shared = slaplte.jref_of_shared %}
 {%-   set jcell_ru_ref   = slaplte.jcell_ru_ref   %}
 {%-   set ierror         = slaplte.ierror         %}
-{%-   import 'ru_sdr_libinstance.jinja2.cfg'      as rudrv_sdr      with context %}
-{%-   import 'ru_sunwave_libinstance.jinja2.cfg'  as rudrv_sunwave  with context %}
+{%-   import 'ru_sdr_libinstance.cfg.jinja2'      as rudrv_sdr      with context %}
+{%-   import 'ru_sunwave_libinstance.cfg.jinja2'  as rudrv_sunwave  with context %}
 {%-   set rudrv_dict = namespace(sdr=rudrv_sdr,
                                  sunwave=rudrv_sunwave) %}
 {%-   set rudrv_init = {} %}

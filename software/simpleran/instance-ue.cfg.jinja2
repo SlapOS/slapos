@@ -35,7 +35,7 @@ offline = true
 
 {%- set icell_kind='ue'                                         %}
 {%- import 'slaplte.jinja2'            as slaplte with context  %}
-{%- import 'ru_libinstance.jinja2.cfg' as rulib   with context  %}
+{%- import 'ru_libinstance.cfg.jinja2' as rulib   with context  %}
 {%- set iue_dict = {}                                           %}
 {%- do slaplte.load_iue(iue_dict)                               %}
 {%- do slaplte.check_loaded_everything()                        %}
@@ -43,7 +43,7 @@ offline = true
 {{ rulib.buildout() }}
 
 [myslap]
-# see instance-enb.jinja2.cfg about myslap
+# see instance-enb.cfg.jinja2 about myslap
 parameter_dict = {{ dumps(slapparameter_dict) }}
 configuration = {{ dumps(slap_configuration) }}
 
