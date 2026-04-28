@@ -4,21 +4,27 @@
 parts =
   promises
   publish-connection-parameter
+{%- if 'backup-repository' in slapparameter_dict %}
+  cron-entry-dufs-backup
+{%- endif %}
 extends =
   {{ template_monitor }}
 
-eggs-directory = {{ buildout['eggs-directory'] }}
-develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
-
 [instance-parameter]
-recipe = slapos.cookbook:slapconfiguration
+recipe = slapos.cookbook:slapconfiguration.jsonschema
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
+jsonschema = {{ software_json }}
+set-default = main
+validate-parameters = main
+unstringify = none
 
 [slap-configuration]
 # frontend reads from from a part named [slap-configuration]
@@ -41,6 +47,7 @@ service = ${:etc}/service
 promise = ${:etc}/promise
 dufs-data-dir = ${:srv}/www
 dufs-data-dir-pub = ${:dufs-data-dir}/pub
+backup-dufs = ${:srv}/backup/dufs/
 backup-caucased = ${:srv}/backup/caucased/
 
 # Macros
@@ -53,6 +60,13 @@ recipe = slapos.cookbook:check_url_available
 path = ${directory:promise}/${:_buildout_section_name_}
 dash_path = {{ dash_bin }}
 curl_path = {{ curl_bin }}
+
+[cron-entry-dufs-backup]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = dufs-backup
+time = {{ slapparameter_dict['backup-frequency'] }}
+command = {{ dufs_backup }} ${directory:backup-dufs}/dufs ${directory:dufs-data-dir} ${instance-parameter:configuration.backup-repository}
 
 # Caucase
 [dufs-certificate-init-certificate]
@@ -78,7 +92,7 @@ crl-file = ${directory:etc}/${:_buildout_section_name_}.crl
 {{
 caucase.updater(
     prefix='dufs-certificate',
-    buildout_bin_directory=buildout['bin-directory'],
+    buildout_bin_directory=buildout_bin,
     updater_path='${directory:service}/dufs-certificate-updater',
     url='${caucased:url}',
     data_dir='${directory:srv}/caucase-updater',
@@ -133,7 +147,7 @@ url = http://${:netloc}/
 {{
 caucase.caucased(
     prefix='caucased',
-    buildout_bin_directory=buildout['bin-directory'],
+    buildout_bin_directory=buildout_bin,
     caucased_path='${directory:service}/caucased',
     backup_dir='${directory:backup-caucased}',
     data_dir='${directory:srv}/caucased',
@@ -221,6 +235,8 @@ init =
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 upload-url = ${frontend-url:upload-url}
+user = ${admin-password:user}
+password = ${admin-password:passwd}
 public-url = ${frontend-url:public-url}
 caucase-url = ${caucased:url}
 backend-url = ${dufs-server:url}
