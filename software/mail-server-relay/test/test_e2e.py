@@ -312,9 +312,11 @@ class Relay(E2ETestCase):
       },
       proxy_map = {},
       extra = {
-        "greylisting-enabled": True,
-        "greylisting-delay": 5,
-        "greylisting-whitelist-recipients": [cls.mail_server_domains[1]],
+        "greylisting": {
+          "enable": True,
+          "delay": 5,
+          "whitelist-recipients": [cls.mail_server_domains[1]],
+        },
       },
       state = state
     )
@@ -750,8 +752,10 @@ class E2E(E2ETestCase):
         },
       },
       extra = {
-        "greylisting-enabled": True,
-        "greylisting-delay": 5,
+        "greylisting": {
+          "enable": True,
+          "delay": 5,
+        },
       },
       state = state
     )
