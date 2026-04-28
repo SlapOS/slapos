@@ -97,7 +97,7 @@ relay-host = $${request-relay-{{ next(iter(slapparameter_dict['topology'].keys()
 
 [filter-shared-instances]
 recipe = slapos.recipe.build
-# JSON store for mapping domain -> slave reference
+# JSON store for mapping domain -> shared reference
 # Requesting same (reference, domain) again is a no-op, this happens normally
 # Error only if a different reference claims an already assigned domain
 target = $${directory:etc}/relay-domains.json
@@ -116,56 +116,56 @@ init =
   pub_domain_dict = {}
   output = {}
 
-  slave_list = {{ (slap_configuration.get('valid-shared-instance-list', [])) }}
+  shared_list = {{ (slap_configuration.get('valid-shared-instance-list', [])) }}
 
-  def make_entry(slave):
-    authentication = slave['parameters']['authentication']
+  def make_entry(shared):
+    authentication = shared['parameters']['authentication']
     entry = {
-      **slave['parameters'],
-      'reference': slave['reference'],
+      **shared['parameters'],
+      'reference': shared['reference'],
     }
     # For password-auth domains, generate or reuse a password
     if authentication == 'password':
-      prev = previous.get(slave['parameters']['name'], {})
-      if prev.get('authentication') == 'password' and prev.get('reference') == slave['reference'] and prev.get('password'):
+      prev = previous.get(shared['parameters']['name'], {})
+      if prev.get('authentication') == 'password' and prev.get('reference') == shared['reference'] and prev.get('password'):
         entry['password'] = prev['password']
       else:
         entry['password'] = secrets.token_urlsafe(24)
     return entry
 
-  # 1st pass: keep only slaves matching both domain and reference ( = previously accepted slaves)
-  for slave in slave_list:
-    domain = slave['parameters']['name']
+  # 1st pass: keep only shareds matching both domain and reference ( = previously accepted shareds)
+  for shared in shared_list:
+    domain = shared['parameters']['name']
     
     if prev_entry := previous.get(domain):
-      if prev_entry['reference'] == slave['reference']:
-        entry = output[domain] = make_entry(slave)
-        pub_domain_dict[slave['reference']] = {
+      if prev_entry['reference'] == shared['reference']:
+        entry = output[domain] = make_entry(shared)
+        pub_domain_dict[shared['reference']] = {
           'addr': domain,
           'authentication': entry['authentication'],
           # 'password' field is specific to 'authentication' == 'password' case
           'password': entry.get('password', '')
         }
       else:
-        # domain is already used by another slave, 2nd pass will handle it
+        # domain is already used by another shared, 2nd pass will handle it
         pass
     else:
       # new domain, 2nd pass will handle it
       pass
 
   # 2nd pass: claim unclaimed domains, error on duplicates
-  for slave in slave_list:
-    domain = slave['parameters']['name']
+  for shared in shared_list:
+    domain = shared['parameters']['name']
     
     # If address was already processed in 1st pass
     if existing := output.get(domain):
-      if existing['reference'] != slave['reference']:
-        pub_domain_dict[slave['reference']] = {'addr': domain, 'error': 'address_already_used'}
+      if existing['reference'] != shared['reference']:
+        pub_domain_dict[shared['reference']] = {'addr': domain, 'error': 'address_already_used'}
       # (if it matches, nothing to do)
     else:
       # address not yet claimed
-      entry = output[domain] = make_entry(slave)
-      pub_domain_dict[slave['reference']] = {
+      entry = output[domain] = make_entry(shared)
+      pub_domain_dict[shared['reference']] = {
         'addr': domain,
         'authentication': entry['authentication'],
         # 'password' field is specific to 'authentication' == 'password' case
@@ -197,11 +197,11 @@ init =
   import textwrap
   from zc.buildout.buildout import dumps
   dollar = '$$'
-  for slave_ref, info in options['published-domain-dict'].items():
+  for shared_ref, info in options['published-domain-dict'].items():
     section = textwrap.dedent(f"""
-      [publish-shared-{slave_ref}]
+      [publish-shared-{shared_ref}]
       recipe = slapos.cookbook:publish.serialised
-      -slave-reference = {slave_ref}""")
+      -slave-reference = {shared_ref}""")
     if 'error' in info:
       section += textwrap.dedent(f"""
         domain = {info['addr']}
