@@ -221,6 +221,8 @@ init =
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 upload-url = ${frontend-url:upload-url}
+user = ${admin-password:user}
+password = ${admin-password:passwd}
 public-url = ${frontend-url:public-url}
 caucase-url = ${caucased:url}
 backend-url = ${dufs-server:url}
