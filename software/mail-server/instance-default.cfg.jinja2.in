@@ -150,6 +150,7 @@ context =
   raw imaps_port $${:imaps-port}
   raw postfix_auth $${postfix-directory:spool-private}/auth
   raw postfix_dovecot_lmtp $${postfix-directory:spool-private}/dovecot-lmtp
+  raw postfix_dovecot_quota $${postfix-directory:spool-private}/dovecot-quota
   raw dovecot_log_path $${:log-file}
   key ssl_cert postfix-certificate:cert-file
   key ssl_key postfix-certificate:key-file
@@ -162,6 +163,7 @@ context =
   key sieve_report_spam bogofilter-sieve-report-spam:output
   key sieve_report_ham bogofilter-sieve-report-ham:output
 {% endif %}
+  raw user_mailbox_size_limit_mib {{ slapparameter_dict['mailbox-size-limit'] }}
 
 [dovecot-passwords]
 recipe = slapos.recipe.build
@@ -374,6 +376,7 @@ context =
   key setgid_group userinfo:gr-name
   raw server_fqdn {{ instance_title.replace(' ', '_') }}
   raw postfix_dovecot_lmtp $${postfix-directory:spool-private}/dovecot-lmtp
+  raw postfix_dovecot_quota $${postfix-directory:spool-private}/dovecot-quota
   key relay_map postfix-relays:output
   raw xz_utils_location ${xz-utils:location}
   raw postfix_location ${postfix:location}
