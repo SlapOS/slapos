@@ -126,16 +126,16 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     )
     self.assertEqual(actual_entries, expected_entries)
 
-  def test_slave_output_schema_and_dns(self):
+  def test_shared_output_schema_and_dns(self):
     for domain in ["mail1.domain.lan", "mail2.domain.lan"]:
-      slave_instance = self.requestSlaveInstanceForDomain(domain)
-      connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
+      shared_instance = self.requestSlaveInstanceForDomain(domain)
+      connection_dict = json.loads(shared_instance.getConnectionParameterDict().get("_", "{}"))
       self.assertEqual(connection_dict.get("outbound-host", "<missing>"), "foobaz.lan")
       self.assertEqual(connection_dict.get("outbound-smtp-port", "<missing>"), "10587")
       self.assertEqual(connection_dict.get("dns-entries", "<missing>"), f"{domain} MX 10 foobaz.lan")
       
-      slave_dup_instance = self.requestSlaveInstanceForDomain(domain, suffix="-test")
-      connection_dict = json.loads(slave_dup_instance.getConnectionParameterDict().get("_", "{}"))
+      shared_dup_instance = self.requestSlaveInstanceForDomain(domain, suffix="-test")
+      connection_dict = json.loads(shared_dup_instance.getConnectionParameterDict().get("_", "{}"))
       error = connection_dict.get("error", "<missing>")
       self.assertIn("address_already_used", error, f"Expected duplicate error for {domain}, got {error}")
 
