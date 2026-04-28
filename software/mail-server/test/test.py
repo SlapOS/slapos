@@ -291,6 +291,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     to_addr = "testmail@example.com"
     from_addr = "unknown@unknown.domain"
     password = "password123"
+    breakpoint()
 
     msg = MIMEText("Bogofilter integration test")
     msg['Subject'] = "Bogofilter header test"
