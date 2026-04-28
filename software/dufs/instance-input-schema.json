@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "backup-repository": {
+      "title": "Git backup repository",
+      "description": "URL of Git repository where backups are pushed. Nothing is pushed if empty.",
+      "type": "string"
+    }
+  }
+}
