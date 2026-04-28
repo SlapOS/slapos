@@ -372,7 +372,7 @@ def iRU2_PROSE_fLTE2(ienb):
             }
         })
 
-# ORS_eNB and ORS_gNB mimic what instance-ors-enb.jinja2.cfg does.
+# ORS_eNB and ORS_gNB mimic what instance-ors-enb.cfg.jinja2 does.
 ORS_ru = {
     'ru_type':      'sdr',
     'ru_link_type': 'sdr',
@@ -549,7 +549,7 @@ def _do_enb_with(iru_icell_func):
         "websocket_password": "passwd"
     }""" % locals()
 
-    j2render('enb.jinja2.cfg', '%s/enb.cfg' % out, json_params)
+    j2render('enb.cfg.jinja2', '%s/enb.cfg' % out, json_params)
 
     # drb.cfg + sib.asn for all cells
     iru_dict       = {}
@@ -590,7 +590,7 @@ def _do_enb_with(iru_icell_func):
                     'ru_ref':   ru_ref,
                     'ru':       ru,
                })
-        j2render('drb_%s.jinja2.cfg' % cell['cell_type'],
+        j2render('drb_%s.cfg.jinja2' % cell['cell_type'],
                  '%s/%s-drb.cfg' % (out, B(cell_ref)),
                  jctx)
 
@@ -669,7 +669,7 @@ def do_ue():
         "websocket_password": "passwd"
     }""" % locals()
 
-    j2render('ue.jinja2.cfg', 'ue.cfg', json_params)
+    j2render('ue.cfg.jinja2', 'ue.cfg', json_params)
 
 
 def main():
