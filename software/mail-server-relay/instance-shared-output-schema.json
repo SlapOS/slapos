@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Values returned by mail server slave instance",
+  "description": "Values returned by mail domain relay shared instance",
   "type": "object",
   "properties": {
     "outbound-host": {
