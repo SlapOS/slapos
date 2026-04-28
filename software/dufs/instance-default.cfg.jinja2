@@ -4,6 +4,9 @@
 parts =
   promises
   publish-connection-parameter
+{%- if 'backup-repository' in slapparameter_dict %}
+  cron-entry-dufs-backup
+{%- endif %}
 extends =
   {{ template_monitor }}
 
@@ -44,6 +47,7 @@ service = ${:etc}/service
 promise = ${:etc}/promise
 dufs-data-dir = ${:srv}/www
 dufs-data-dir-pub = ${:dufs-data-dir}/pub
+backup-dufs = ${:srv}/backup/dufs/
 backup-caucased = ${:srv}/backup/caucased/
 
 # Macros
@@ -56,6 +60,13 @@ recipe = slapos.cookbook:check_url_available
 path = ${directory:promise}/${:_buildout_section_name_}
 dash_path = {{ dash_bin }}
 curl_path = {{ curl_bin }}
+
+[cron-entry-dufs-backup]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = dufs-backup
+time = {{ slapparameter_dict['backup-frequency'] }}
+command = {{ dufs_backup }} ${directory:backup-dufs}/dufs ${directory:dufs-data-dir} ${instance-parameter:configuration.backup-repository}
 
 # Caucase
 [dufs-certificate-init-certificate]
