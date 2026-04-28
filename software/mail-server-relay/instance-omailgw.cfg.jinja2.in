@@ -84,7 +84,7 @@ stop-on-error = true
 recipe = slapos.recipe.template
 output = $${directory:etc}/omailgw-relay-hostname-list.json
 inline =
-  {{ json_module.dumps(slapparameter_dict.get('relay-hostname-list', [])) }}
+  {{ json_module.dumps(slapparameter_dict['relay-hostname-list']) }}
 
 [omailgw-ui-settings]
 recipe = slapos.recipe.template:jinja2
@@ -185,7 +185,7 @@ foreground-script =
   OMAILGW_ROOT_PASSWORD="$${omailgw-root-password:passwd}" \
   OMAILGW_MAILGW_EMAIL="$${omailgw-users:mailgw-user}" \
   OMAILGW_MAILGW_PASSWORD="$${omailgw-mailgw-password:passwd}" \
-  OMAILGW_RELAY_DOMAIN="{{ slapparameter_dict.get('relay-domain', 'omailgw.local') }}" \
+  OMAILGW_RELAY_DOMAIN="{{ slapparameter_dict['relay-domain'] }}" \
   OMAILGW_RELAY_LIST_JSON="$$(cat $${omailgw-relay-list:output})" \
   "$php_bin" -c "$${php.ini-conf:output}" bootstrap-omailgw.php
 

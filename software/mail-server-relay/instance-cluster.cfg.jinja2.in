@@ -11,11 +11,11 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-{% set omailgw_parameter_dict = slapparameter_dict.get('omailgw', {}) %}
-{% set omailgw_enable = omailgw_parameter_dict.get('enable', false) %}
+{% set omailgw_parameter_dict = slapparameter_dict['omailgw'] %}
+{% set omailgw_enable = omailgw_parameter_dict['enable'] %}
 {% set omailgw_relay_hostname_list = [] -%}
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
-{%   if config.get('state', 'started') != 'destroyed' -%}
+{%   if config['state'] != 'destroyed' -%}
 {%     do omailgw_relay_hostname_list.append(relay_name) -%}
 {%   endif -%}
 {% endfor -%}
@@ -24,11 +24,11 @@ offline = true
 recipe = slapos.recipe.build
 init =
   # Validate that domains are unique across all proxies in proxy-map
-  proxy_map = {{ slapparameter_dict.get('default-relay-config', {}).get('proxy-map', {}) }}
+  proxy_map = {{ slapparameter_dict['default-relay-config']['proxy-map'] }}
   domain_to_proxy = {}
   errors = []
   for proxy_id, proxy_config in proxy_map.items():
-    for domain in proxy_config.get('domains', []):
+    for domain in proxy_config['domains']:
       if domain in domain_to_proxy:
         errors.append(
           f"Domain '{domain}' appears in multiple proxies: "
@@ -68,7 +68,7 @@ software-url = $${:software-release-url}
 software-type = omailgw
 config-relay-hostname-list = {{ dumps(omailgw_relay_hostname_list) }}
 config-relay-domain = {{ dumps(slapparameter_dict.get('relay-domain', 'omailgw.local')) }}
-config-relay-poll-interval = {{ dumps(omailgw_parameter_dict.get('relay-poll-interval', 300)) }}
+config-relay-poll-interval = {{ dumps(omailgw_parameter_dict['relay-poll-interval']) }}
 return =
   api-url
   ui-url
@@ -87,15 +87,6 @@ config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-mail-domains = $${filter-shared-instances:accepted-domain-relays}
 config-cluster-fqdns = $${cluster-mx:fqdn-list}
-{% if omailgw_enable %}
-config-omailgw-enable = {{ dumps(True) }}
-config-omailgw-api-url = $${request-omailgw:connection-api-url}
-config-omailgw-api-user = $${request-omailgw:connection-mailgw-user}
-config-omailgw-api-password = $${request-omailgw:connection-mailgw-password}
-config-omailgw-relay-poll-interval = {{ dumps(omailgw_parameter_dict.get('relay-poll-interval', 300)) }}
-{% else %}
-config-omailgw-enable = {{ dumps(False) }}
-{% endif %}
 return =
   smtp-ipv6
   smtp-port
@@ -104,14 +95,28 @@ return =
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
 {% set relay_fqdn = config.get('fqdn') -%}
+{% if omailgw_enable %}
+[omailgw-relay-parameters-{{ relay_name }}]
+recipe = slapos.recipe.build
+init =
+  options['omailgw'] = {
+    'enable': True,
+    'api-url': self.buildout['request-omailgw']['connection-api-url'],
+    'api-user': self.buildout['request-omailgw']['connection-mailgw-user'],
+    'api-password': self.buildout['request-omailgw']['connection-mailgw-password'],
+    'server-hostname': {{ repr(relay_name) }},
+    'relay-poll-interval': {{ omailgw_parameter_dict['relay-poll-interval'] }},
+  }
+{% endif %}
+
 [request-relay-{{ relay_name }}]
 <= request-relay-base
 name = {{ relay_name }}
 state = {{ config['state'] }}
 software-url = {{ config.get('sr-url') or '$${:software-release-url}' }}
-software-type = {{ config.get('software-type') or 'relay' }}
+software-type = {{ config['software-type'] }}
 {% if omailgw_enable %}
-config-omailgw-server-hostname = {{ dumps(relay_name) }}
+config-omailgw = $${omailgw-relay-parameters-{{ relay_name }}:omailgw}
 {% endif %}
 
 {% if relay_fqdn -%}

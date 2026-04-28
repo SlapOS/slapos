@@ -11,11 +11,11 @@ parts =
   publish-connection-information
   inbound-postfix
   outbound-postfix
-{% if slapparameter_dict.get('omailgw-enable', false) %}
+{% set omailgw = slapparameter_dict['omailgw'] %}
+{% set omailgw_enable = omailgw['enable'] %}
+{% if omailgw_enable %}
   omailgw-cli
 {% endif %}
-
-{% set omailgw_enable = slapparameter_dict.get('omailgw-enable', false) %}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
@@ -185,11 +185,12 @@ inline =
 
 {% set mail_domains = slapparameter_dict['mail-domains'] %}
 {% set cluster_fqdns = slapparameter_dict['cluster-fqdns'] %}
-{% set proxy_map = slapparameter_dict.get('proxy-map', {}) %}
-{% set greylisting_enable = slapparameter_dict.get('greylisting-enable', true) %}
-{% set greylisting_delay = slapparameter_dict.get('greylisting-delay', 60) %}
-{% set greylisting_whitelist_clients = slapparameter_dict.get('greylisting-whitelist-clients', []) %}
-{% set greylisting_whitelist_recipients = slapparameter_dict.get('greylisting-whitelist-recipients', []) %}
+{% set proxy_map = slapparameter_dict['proxy-map'] %}
+{% set greylisting = slapparameter_dict['greylisting'] %}
+{% set greylisting_enable = greylisting['enable'] %}
+{% set greylisting_delay = greylisting['delay'] %}
+{% set greylisting_whitelist_clients = greylisting['whitelist-clients'] %}
+{% set greylisting_whitelist_recipients = greylisting['whitelist-recipients'] %}
 
 [internal-postfix-transport]
 recipe = slapos.recipe.template:jinja2
@@ -652,7 +653,7 @@ output = $${outbound-postfix-directory:etc}/proxy_access_senders
 inline =
   {% raw %}{#- NOTHING -#}{% endraw -%}
   {%- for proxy_id, proxy in proxy_map.items() -%}
-  {%- for domain in proxy.get('domains', []) %}
+  {%- for domain in proxy['domains'] %}
   {{ domain }} OK
   {%- endfor %}
   {%- endfor %}
@@ -807,10 +808,10 @@ context =
   key path_postmap directory:bin
   key path_mailq directory:bin
   key lock_dir directory:run
-api-url = {{ slapparameter_dict['omailgw-api-url'] }}
-api-user = {{ slapparameter_dict['omailgw-api-user'] }}
-api-password = {{ slapparameter_dict['omailgw-api-password'] }}
-server-hostname = {{ slapparameter_dict['omailgw-server-hostname'] }}
+api-user = {{ omailgw['api-user'] }}
+api-password = {{ omailgw['api-password'] }}
+server-hostname = {{ omailgw['server-hostname'] }}
+api-url = {{ omailgw['api-url'] }}
 
 [omailgw-loop]
 recipe = slapos.recipe.template
@@ -818,10 +819,12 @@ output = $${directory:bin}/omailgw-cli-loop
 mode = 700
 inline =
   #!/bin/sh
+  export MAIL_CONFIG="$${outbound-postfix-directory:etc}"
+  export SASL_CONF_PATH="$${outbound-postfix-directory:etc}"
   while true; do
     cd ${omailgw-cli-source:location}
     ${apache-php:location}/bin/php omailgw-cli.php --config="$${omailgw-config:output}" --log="$${outbound-postfix-main.cf:log-file}" >> "$${directory:var-log}/omailgw-cli.log" 2>&1 || true
-    sleep {{ slapparameter_dict.get('omailgw-relay-poll-interval', 300) }}
+    sleep {{ omailgw['relay-poll-interval'] }}
   done
 
 [omailgw-cli-service]
