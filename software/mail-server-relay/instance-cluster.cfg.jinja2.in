@@ -11,6 +11,15 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
+{% set omailgw_parameter_dict = slapparameter_dict.get('omailgw', {}) %}
+{% set omailgw_enable = omailgw_parameter_dict.get('enable', false) %}
+{% set omailgw_relay_hostname_list = [] -%}
+{% for relay_name, config in slapparameter_dict['topology'].items() -%}
+{%   if config.get('state', 'started') != 'destroyed' -%}
+{%     do omailgw_relay_hostname_list.append(relay_name) -%}
+{%   endif -%}
+{% endfor -%}
+
 [validate-proxy-map]
 recipe = slapos.recipe.build
 init =
@@ -48,6 +57,27 @@ init =
     for fqdn in fqdn_list
   )
 
+{% if omailgw_enable %}
+[request-omailgw]
+<= slap-connection
+recipe = slapos.cookbook:request.serialised
+name = omailgw
+state = started
+config-monitor-password = $${monitor-instance-parameter:password}
+software-url = $${:software-release-url}
+software-type = omailgw
+config-relay-hostname-list = {{ dumps(omailgw_relay_hostname_list) }}
+config-relay-domain = {{ dumps(slapparameter_dict.get('relay-domain', 'omailgw.local')) }}
+config-relay-poll-interval = {{ dumps(omailgw_parameter_dict.get('relay-poll-interval', 300)) }}
+return =
+  api-url
+  ui-url
+  root-user
+  root-password
+  mailgw-user
+  mailgw-password
+{% endif %}
+
 [request-relay-base]
 <= slap-connection
 recipe = slapos.cookbook:request.serialised
@@ -57,10 +87,20 @@ config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-mail-domains = $${filter-shared-instances:accepted-domain-relays}
 config-cluster-fqdns = $${cluster-mx:fqdn-list}
+{% if omailgw_enable %}
+config-omailgw-enable = {{ dumps(True) }}
+config-omailgw-api-url = $${request-omailgw:connection-api-url}
+config-omailgw-api-user = $${request-omailgw:connection-mailgw-user}
+config-omailgw-api-password = $${request-omailgw:connection-mailgw-password}
+config-omailgw-relay-poll-interval = {{ dumps(omailgw_parameter_dict.get('relay-poll-interval', 300)) }}
+{% else %}
+config-omailgw-enable = {{ dumps(False) }}
+{% endif %}
 return =
   smtp-ipv6
   smtp-port
   tls-fingerprints
+
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
 {% set relay_fqdn = config.get('fqdn') -%}
@@ -70,6 +110,9 @@ name = {{ relay_name }}
 state = {{ config['state'] }}
 software-url = {{ config.get('sr-url') or '$${:software-release-url}' }}
 software-type = {{ config.get('software-type') or 'relay' }}
+{% if omailgw_enable %}
+config-omailgw-server-hostname = {{ dumps(relay_name) }}
+{% endif %}
 
 {% if relay_fqdn -%}
 config-fqdn = {{ relay_fqdn }}
@@ -111,6 +154,12 @@ recipe = slapos.cookbook:publish.serialised
 relay-hosts = $${request-all-relays:hosts}
 backend-domains = $${filter-shared-instances:backend-domains}
 errors = $${validate-proxy-map:errors}
+{% if omailgw_enable %}
+omailgw-api-url = $${request-omailgw:connection-api-url}
+omailgw-ui-url = $${request-omailgw:connection-ui-url}
+omailgw-root-user = $${request-omailgw:connection-root-user}
+omailgw-root-password = $${request-omailgw:connection-root-password}
+{% endif %}
 
 
 # Shared instances (domains)

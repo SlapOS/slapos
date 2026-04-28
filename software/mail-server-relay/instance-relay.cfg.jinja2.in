@@ -11,6 +11,11 @@ parts =
   publish-connection-information
   inbound-postfix
   outbound-postfix
+{% if slapparameter_dict.get('omailgw-enable', false) %}
+  omailgw-cli
+{% endif %}
+
+{% set omailgw_enable = slapparameter_dict.get('omailgw-enable', false) %}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
@@ -59,6 +64,7 @@ srv = $${buildout:directory}/srv
 postfix-usr = $${:usr}/postfix
 postfix-etc = $${:etc}/postfix
 postfix-ssl = $${:postfix-etc}/ssl
+omailgw = $${:srv}/omailgw-cli
 
 [postgrey-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -780,4 +786,57 @@ depends =
 {% for postfix_wrapper in postfix_wrappers -%}
   {{ "  $${" + postfix_wrapper + ":recipe}" }}
 {% endfor -%}
+
+{% if omailgw_enable %}
+[omailgw-directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${directory:omailgw}
+var = $${:home}/var
+
+[omailgw-config]
+recipe = slapos.recipe.template:jinja2
+url = ${omailgw-cli-config.php.in:target}
+output = $${omailgw-directory:home}/config.php
+context =
+  key api_url :api-url
+  key api_user :api-user
+  key api_password :api-password
+  key var_dir omailgw-directory:var
+  key maillog outbound-postfix-main.cf:log-file
+  key server_hostname :server-hostname
+  key path_postmap directory:bin
+  key path_mailq directory:bin
+  key lock_dir directory:run
+api-url = {{ slapparameter_dict['omailgw-api-url'] }}
+api-user = {{ slapparameter_dict['omailgw-api-user'] }}
+api-password = {{ slapparameter_dict['omailgw-api-password'] }}
+server-hostname = {{ slapparameter_dict['omailgw-server-hostname'] }}
+
+[omailgw-loop]
+recipe = slapos.recipe.template
+output = $${directory:bin}/omailgw-cli-loop
+mode = 700
+inline =
+  #!/bin/sh
+  while true; do
+    cd ${omailgw-cli-source:location}
+    ${apache-php:location}/bin/php omailgw-cli.php --config="$${omailgw-config:output}" --log="$${outbound-postfix-main.cf:log-file}" >> "$${directory:var-log}/omailgw-cli.log" 2>&1 || true
+    sleep {{ slapparameter_dict.get('omailgw-relay-poll-interval', 300) }}
+  done
+
+[omailgw-cli-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${omailgw-loop:output}
+wrapper-path = $${directory:service}/omailgw-cli
+hash-files =
+  $${omailgw-config:output}
+  $${omailgw-loop:output}
+
+[omailgw-cli]
+recipe = slapos.recipe.build
+init =
+  ""
+depends =
+  $${omailgw-cli-service:recipe}
+{% endif %}
 

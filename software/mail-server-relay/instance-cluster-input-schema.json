@@ -97,6 +97,31 @@
       "$ref": "#/definitions/relay-config",
       "default": {}
     },
+    "omailgw": {
+      "title": "oMailGw",
+      "description": "Built-in oMailGw deployment for relay monitoring and administration.",
+      "type": "object",
+      "properties": {
+        "enable": {
+          "title": "Enable oMailGw",
+          "description": "Deploy the oMailGw API/UI child instance and configure relay-side clients.",
+          "type": "boolean",
+          "default": false
+        },
+        "relay-poll-interval": {
+          "title": "Relay Poll Interval",
+          "description": "Seconds between oMailGw CLI polling runs on each relay.",
+          "type": "integer",
+          "minimum": 60,
+          "default": 300
+        }
+      },
+      "additionalProperties": false,
+      "default": {
+        "enable": false,
+        "relay-poll-interval": 300
+      }
+    },
     "relay-domain": {
       "title": "Relay Domain",
       "description": "The domain that will point to all relay instances",
