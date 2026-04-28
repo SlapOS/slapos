@@ -1,0 +1,18 @@
+[mysqld]
+skip_networking
+socket = {{ socket }}
+datadir = {{ data_directory }}
+tmpdir = {{ tmp_directory }}
+pid_file = {{ pid_file }}
+log_error = {{ error_log }}
+character-set-server = utf8mb4
+collation-server = utf8mb4_general_ci
+max_allowed_packet = 64M
+
+[client]
+socket = {{ socket }}
+default-character-set = utf8mb4
+
+[mysql]
+socket = {{ socket }}
+default-character-set = utf8mb4
