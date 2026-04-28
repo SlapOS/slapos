@@ -123,11 +123,18 @@
       "default": false
     },
     "email-size-limit": {
-      "title": "E-mail size limit",
+      "title": "E-mail Size Limit",
       "description": "Maximum size of incoming and outgoing e-mails in MiB. You may also want to set the maximum attachment size in the webmail admin panel.",
       "type": "integer",
       "minimum": 1,
       "default": 50
+    },
+    "mailbox-size-limit": {
+      "title": "Mailbox Size Limit",
+      "description": "Storage size limit per individual user mailbox in MiB",
+      "type": "integer",
+      "minimum": 1,
+      "default": 1024
     },
     "request-dns": {
       "title": "Request Local DNS",

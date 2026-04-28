@@ -85,6 +85,10 @@ smtpd_relay_restrictions =
   reject
 {%- endif %}
 
+smtpd_recipient_restrictions =
+  # Check that the recipient mailbox is not full
+  check_policy_service unix:{{ postfix_dovecot_quota }}
+
 allow_min_user = yes
 
 local_transport = error
