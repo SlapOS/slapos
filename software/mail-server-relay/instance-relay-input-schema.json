@@ -14,7 +14,7 @@
           "description": "List of mail domain relay requested configurations",
           "type": "array",
           "items": {
-            "$ref": "./instance-slave-input-schema.json#/definitions/mail-domain-relay"
+            "$ref": "./instance-shared-input-schema.json#/definitions/mail-domain-relay"
           },
           "default": []
         }
