@@ -32,7 +32,7 @@
 {%- endif %}
 
   gtp_addr: [
-{%-   for addr in slapparameter_dict.get('gtp_addr_list', []) -%}
+{%-   for addr in slapparameter_dict.get('gtp_addr_list', []) | sort -%}
     "{{ addr }}", 
 {%-   endfor -%}
   ],

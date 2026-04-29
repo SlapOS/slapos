@@ -1,0 +1,57 @@
+ue_db: [
+{%- for s in slap_configuration['sim_list'] %}
+{%-   if s.get('disable_sim', '') != 'Disable SIM' %}
+{
+    sim_algo: "{{ s.get('sim_algo', 'milenage') }}",
+    imsi: "{{ s.imsi }}",
+    opc: "{{ s.get('opc', '') }}",
+    amf: {{ s.get('amf', '0x9001') }},
+    sqn: "{{ s.get('sqn', '000000000000') }}",
+    K: "{{ s.k }}",
+    impu: {{ s.impu }},
+    impi: "{{ s.impi }}",
+{%-     if s.get('domain', '') %}
+    domain: "{{ s.domain }}",
+{%-     endif %}
+    authent_type: "{{ s.get('authent_type', 'AKAv1') }}",
+{%-     if s.get('multi_sim', '') %}
+    multi_sim: true,
+{%-     endif %}
+{%-     if s.get('res_len', '') %}
+    res_len: {{ s.res_len }},
+{%-     endif %}
+{%-     if "ip" in s or s.get('enable_multicast', False) or s.get('enable_ipv6_multicast', False) or s.get('enable_broadcast') or s.get('route_list', False) %}
+    pdn_list:[{
+      access_point_name: "internet",
+      default: true,
+{%-       if "ip" in s %}
+      ipv4_addr: "{{ s['ip'] }}",
+{%-       endif %}
+{%-       if s.get('enable_multicast', False) %}
+      multicast: true,
+{%-       endif %}
+{%-       if s.get('enable_ipv6_multicast', False) %}
+      ipv6_multicast: true,
+{%-       endif %}
+{%-       if s.get('enable_broadcast', False) %}
+      broadcast: true,
+{%-       endif %}
+{%-       if s.get('route_list', False) %}
+      routes: [
+{%-         for route in s.route_list %}
+        [
+          {
+            ipv6_remote_addr_prefix: "{{ route['ipv6_remote_addr_prefix'] }}",
+            prefix_len: {{ route['prefix_len'] }},
+          }
+        ],
+{%-         endfor -%}
+      ],
+{%-       endif %}
+    }]
+{%-     endif %}
+},
+{%-   endif %}
+{%- endfor -%}
+]
+
