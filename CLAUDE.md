@@ -57,21 +57,24 @@ Key constraints:
 - Before launching, check for active runners: `ps aux | grep '[p]ython_for_test.*unittest'`
 - If config files changed (`instance.cfg.in`, `buildout.hash.cfg`, etc.), run with `--rebuild` first
 - Slave test classes take ~4-15 min; master-only classes take ~4 min
-- `--rebuild` only rebuilds the software profile (buildout configs/templates), **not** the slapos.cookbook egg. If you changed Python recipe code (e.g., `slapos/recipe/*.py`), you must also copy the changed file into the installed egg:
-  ```bash
-  cp slapos/recipe/changed_file.py \
-    <software-path>/eggs/slapos.cookbook-*.egg/slapos/recipe/changed_file.py
-  ```
-  The software path is at `<slapos-sr-testing-environment-base>/tmp/soft/<hash>/`.
+- `--rebuild` only rebuilds the software profile (buildout configs/templates). If you changed Python recipe code under `slapos/recipe/`, you must release a new cookbook egg version (see *Publishing Cookbook Egg Changes* below) so `--rebuild` picks it up via the new pin. Do **not** patch files inside the installed software release directly — see *Built Software Release is Read-Only*.
 
 ## Publishing Cookbook Egg Changes
 
-After modifying recipe code, CI will fail until the published egg tarball is updated:
-```bash
-<python-binary> setup.py sdist
-cp dist/slapos.cookbook-<version>.tar.gz <public-dir>/
-```
-The version pin lives in `stack/slapos.cfg` under `[versions]`. If you keep the same dev version, just overwrite the tarball. If you bump the version, update the pin too.
+**Any change under `slapos/recipe/` (or any other path included in the `slapos.cookbook` sdist) MUST be released as a new egg version with a matching pin update in the same commit set.** CI installs the cookbook from the pinned tarball at `<public-dir>` — it does not pick up local changes. Skipping this step makes the software release run against stale recipe code, which silently breaks integration tests in ways that look unrelated to the change (e.g. master partitions failing to publish slave parameters because a recipe option has been renamed in the buildout config but not in the egg).
+
+The release workflow is:
+
+1. Bump `version` in `setup.py` (always increment — never overwrite an already-published tarball).
+2. Bump the matching pin `slapos.cookbook = <new-version>` in `stack/slapos.cfg` under `[versions]`.
+3. Build and publish the sdist:
+   ```bash
+   <python-binary> setup.py sdist
+   cp dist/slapos.cookbook-<new-version>.tar.gz <public-dir>/
+   ```
+4. Commit the version bump + pin update together with the recipe change (or in an immediately-following commit on the same branch).
+
+Always increment the version. Reusing a published version number causes mirrors and buildout caches to keep serving the previous tarball, and test runs that ran before the overwrite remain unreproducible.
 
 ## Commit Messages
 
@@ -173,13 +176,21 @@ When adding promises to rapid-cdn instance profiles:
   ```
 - **Unit tests for `software.py`** go in `software/rapid-cdn/test/test_software.py`. Add `from test_software import *` in `test/test.py` to ensure CI discovery (CI uses `test_suite='test'` which only loads `test.py` directly).
 
+## Built Software Release is Read-Only
+
+**Never manually modify files inside the built software release directory** (e.g. `<slapos-sr-testing-environment-base>/tmp/soft/<hash>/` and anything under `srv/runner/`). That includes installed eggs (`eggs/slapos.cookbook-*.egg/...`), generated buildout parts, instance directories, and any artifact produced by `slapos node software` / `slapos node instance`.
+
+Only the source profile is editable: buildout `.cfg.in`, templates under `software/<name>/templates/`, JSON schemas, and recipe sources under `slapos/recipe/`. After editing, rebuild with `slapos node software --force --only=<hash>` to propagate the change. Recipe changes additionally require a new cookbook egg release and pin bump (see *Publishing Cookbook Egg Changes*).
+
+**Why:** Patching the built directory short-circuits the deployment pipeline that CI runs, so a passing local test no longer guarantees a passing end-to-end test. We have hit cases where a hand-patched recipe worked locally but CI ran against the unpatched, stale egg and silently broke. Treat the built tree as a CI-equivalent artifact: if a fix needs it to change, the source must change.
+
 ## Deploying and Testing Configuration Changes
 
 When testing changes to buildout configs, templates, or `software.py`:
 
 1. Rebuild: `slapos node software --force --only=<hash>`
 2. Reprocess instances: `slapos node instance --force --only=<partition>`
-3. Do **not** manually modify files under `srv/runner/`. Always use `slapos node software` / `slapos node instance` to apply changes — this validates the full deployment pipeline.
+3. Do **not** manually modify files under `srv/runner/` or anywhere else inside the built software release — see *Built Software Release is Read-Only*. Always use `slapos node software` / `slapos node instance` to apply changes — this validates the full deployment pipeline.
 
 Notes on the CLI flags:
 - `--all` is deprecated in favor of `--force` (for both `slapos node software` and `slapos node instance`).
