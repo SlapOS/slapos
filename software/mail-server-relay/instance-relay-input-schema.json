@@ -9,6 +9,9 @@
     {
       "type": "object",
       "properties": {
+        "fqdn": {
+          "$ref": "./instance-cluster-input-schema.json#/definitions/fqdn"
+        },
         "mail-domains": {
           "title": "Mail Domain Relays",
           "description": "List of mail domain relay requested configurations",

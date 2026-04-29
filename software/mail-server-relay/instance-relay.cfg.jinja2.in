@@ -145,13 +145,14 @@ recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
 log-file = $${missing_option_log-file:error}
 postfix-directory = $${missing_option_postfix-directory:error}
+fqdn = {{ dumps(slapparameter_dict.get('fqdn', instance_title)) }}
 context =
   section directory directory
   section postfix_directory $${:postfix-directory}
   key content :content
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
-  raw server_fqdn {{ server_fqdn }}
+  key server_fqdn :fqdn
   raw xz_utils_location ${xz-utils:location}
   raw postfix_location ${postfix:location}
   raw postfix_log_path $${:log-file}

@@ -303,8 +303,8 @@ class Relay(E2ETestCase):
       # Request two relays nodes to cover corner cases
       # such as multiple relay TLS fingerprints
       topology = {
-        "relay-one": {"state": "started"},
-        "relay-two": {"state": "started"},
+        "relay-one": {"fqdn": "relay.one.lan"},
+        "relay-two": {"fqdn": "relay.two.lan"},
       },
       proxy_map = {},
       extra = {
@@ -408,6 +408,16 @@ class Relay(E2ETestCase):
       server.smtp_addr = cls.smtpAddrOf(server)
       server.imap_addr = cls.imapAddrOf(server)
     cls.free_port = 10011
+
+  def test_relay_inbound_fqdn(self):
+    with smtplib.SMTP(**self.relay_inbound) as smtp:
+      _, resp = smtp.helo()
+      self.assertEqual(resp, b'relay.one.lan')
+
+  def test_relay_outbound_fqdn(self):
+    with smtplib.SMTP(**self.relay_outbound) as smtp:
+      _, resp = smtp.helo()
+      self.assertEqual(resp, b'relay.one.lan')
 
   def test_relay_unknown_sender_rejected(self):
     mail1 = self.mail_servers[0]
@@ -731,7 +741,7 @@ class E2E(E2ETestCase):
     external = [cls.getConnectionDict(e) for e in external_mail_servers]
     cls.relay_cluster = relay_cluster = cls.requestRelayCluster(
       topology = {
-        "relay-one": {"state": "started"},
+        "relay-one": {"fqdn": "relay.one.lan"},
       },
       proxy_map = {
         "external-proxy-1": {
@@ -943,7 +953,7 @@ class CustomOutbound(E2ETestCase):
   def requestDefaultInstance(cls, state="started"):
     relay_cluster = cls.requestRelayCluster(
       topology = {
-        "relay-one": {"state": "started"},
+        "relay-one": {"fqdn": "relay.one.lan"},
       },
       proxy_map = {},
       extra = {},
