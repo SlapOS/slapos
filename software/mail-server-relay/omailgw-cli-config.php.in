@@ -1,0 +1,22 @@
+<?php
+
+$config['api_user'] = '{{ api_user }}';
+$config['api_passwrd'] = '{{ api_password }}';
+$config['api_url'] = '{{ api_url }}';
+$config['api_demand'] = [];
+
+$config['curl_opt'][CURLOPT_SSL_VERIFYPEER] = false;
+$config['curl_opt'][CURLOPT_SSL_VERIFYHOST] = 0;
+
+$config['var_dir'] = '{{ var_dir }}/';
+$config['default_maillog'] = '{{ maillog }}';
+$config['server_hostname'] = '{{ server_hostname }}';
+$config['sqlite_file'] = $config['var_dir'] . 'database.sqlite';
+$config['sqlite_clean_data'] = strtotime('-30 day');
+$config['path_postmap'] = '{{ path_postmap }}/postmap';
+$config['path_mailq'] = '{{ path_mailq }}/mailq';
+$config['lock_dir'] = '{{ lock_dir }}';
+$config['lock_id'] = 'omailgwcli';
+$config['smtpd_auth_tester'] = null;
+$config['sudo_postfix_reload'] = '/bin/true';
+$config['rspamd_check'] = false;
