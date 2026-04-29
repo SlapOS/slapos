@@ -1,3 +1,8 @@
+2026-04-29
+''''''''''
+
+- Use GNU coreutils instead of Rust reimplementation.
+
 2026-04-25
 ''''''''''
 
