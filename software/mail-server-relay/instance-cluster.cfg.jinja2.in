@@ -54,12 +54,17 @@ dns-entries = $${filter-shared-instances:dns-entries}
 errors = $${validate-proxy-map:errors}
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
+{% set relay_fqdn = config.get('fqdn') -%}
 [request-relay-{{ relay_name }}]
 <= request-relay-base
 name = {{ relay_name }}
 state = {{ config['state'] }}
 software-url = {{ config.get('sr-url') or '$${:software-release-url}' }}
 software-type = {{ config.get('software-type') or 'relay' }}
+
+{% if relay_fqdn -%}
+config-fqdn = {{ relay_fqdn }}
+{%- endif %}
 
 {% for key, value in config.get('config', {}).items() -%}
 config-{{ key }} = {{ dumps(value) }}
