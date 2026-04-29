@@ -178,18 +178,8 @@ class E2ETestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def getRelayHost(cls, relay_cluster):
-    # TODO: the cluster should really publish this cleanly
     cluster_params = cls.getConnectionDict(relay_cluster)
-    dns_entries = cluster_params.get('dns-entries', '')
-    for line in dns_entries.strip().split('\n'):
-      if 'MX' in line:
-        parts = line.strip().split()
-        if len(parts) >= 4:
-          relay_host = parts[3]
-          if relay_host.startswith('[') and relay_host.endswith(']'):
-            relay_host = relay_host[1:-1]
-          return relay_host
-    raise Exception("Could not find relay host")
+    return cluster_params.get('relay-hosts')[0]
 
   @classmethod
   def getRelaySharedLogin(cls, password_shared):
