@@ -18,7 +18,6 @@ init =
   proxy_map = {{ slapparameter_dict.get('default-relay-config', {}).get('proxy-map', {}) }}
   domain_to_proxy = {}
   errors = []
-  
   for proxy_id, proxy_config in proxy_map.items():
     for domain in proxy_config.get('domains', []):
       if domain in domain_to_proxy:
@@ -29,10 +28,25 @@ init =
         )
       else:
         domain_to_proxy[domain] = proxy_id
-  
   options['validated-domains'] = str(len(domain_to_proxy))
   options['errors'] = errors
   options['domain-to-proxy'] = domain_to_proxy
+
+[cluster-mx]
+recipe = slapos.recipe.build
+topology = {{ dumps(slapparameter_dict.get('topology', {})) }}
+init =
+  # Collect a list of the relay nodes' fully qualified domain names
+  fqdn_list = []
+  for config in options['topology'].values():
+    fqdn = config.get('fqdn')
+    if fqdn:
+      fqdn_list.append(fqdn)
+  options['fqdn-list'] = fqdn_list
+  options['dns-template'] = '\n'.join(
+    "%%(name)s. MX 10 %s." % fqdn
+    for fqdn in fqdn_list
+  )
 
 [request-relay-base]
 <= slap-connection
@@ -41,17 +55,11 @@ config-monitor-password = $${monitor-instance-parameter:password}
 {% for key, value in slapparameter_dict['default-relay-config'].items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
-config-mail-domains = $${filter-shared-instances:accepted-domain-list}
+config-mail-domains = $${filter-shared-instances:accepted-domain-relays}
 return =
   smtp-ipv6
   smtp-port
   tls-fingerprints
-
-[publish-connection-information]
-recipe = slapos.cookbook:publish.serialised
-<= monitor-publish
-dns-entries = $${filter-shared-instances:dns-entries}
-errors = $${validate-proxy-map:errors}
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
 {% set relay_fqdn = config.get('fqdn') -%}
@@ -96,6 +104,13 @@ relay-host = {{ slapparameter_dict['relay-domain'] }}
 relay-host = $${request-relay-{{ next(iter(slapparameter_dict['topology'].keys())) }}:connection-smtp-ipv6}
 {% endif %}
 
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+<= monitor-publish
+relay-hosts = $${request-all-relays:hosts}
+backend-domains = $${filter-shared-instances:backend-domains}
+errors = $${validate-proxy-map:errors}
+
 
 # Shared instances (domains)
 # ----------------------------
@@ -106,6 +121,7 @@ recipe = slapos.recipe.build
 # Requesting same (reference, domain) again is a no-op, this happens normally
 # Error only if a different reference claims an already assigned domain
 target = $${directory:etc}/relay-domains.json
+shared-list = $${slap-configuration:valid-shared-instance-list}
 init =
   import json
   import secrets
@@ -118,12 +134,11 @@ init =
     print("No previous shared instances found")
     previous = {}
 
+  shared_list = options['shared-list']
   pub_domain_dict = {}
   output = {}
 
-  shared_list = {{ (slap_configuration.get('valid-shared-instance-list', [])) }}
-
-  def make_entry(shared):
+  def make_entry(shared, prev=None):
     authentication = shared['parameters']['authentication']
     entry = {
       **shared['parameters'],
@@ -131,26 +146,21 @@ init =
     }
     # For password-auth domains, generate or reuse a password
     if authentication == 'password':
-      prev = previous.get(shared['parameters']['name'], {})
-      if prev.get('authentication') == 'password' and prev.get('reference') == shared['reference'] and prev.get('password'):
+      prev = prev or {}
+      if prev.get('authentication') == 'password' and prev.get('password'):
         entry['password'] = prev['password']
       else:
         entry['password'] = secrets.token_urlsafe(24)
     return entry
 
-  # 1st pass: keep only shareds matching both domain and reference ( = previously accepted shareds)
+  # 1st pass: keep only shareds matching both domain and reference
+  # (= previously accepted shareds)
   for shared in shared_list:
     domain = shared['parameters']['name']
-    
     if prev_entry := previous.get(domain):
       if prev_entry['reference'] == shared['reference']:
-        entry = output[domain] = make_entry(shared)
-        pub_domain_dict[shared['reference']] = {
-          'addr': domain,
-          'authentication': entry['authentication'],
-          # 'password' field is specific to 'authentication' == 'password' case
-          'password': entry.get('password', '')
-        }
+        entry = output[domain] = make_entry(shared, prev_entry)
+        pub_domain_dict[shared['reference']] = entry
       else:
         # domain is already used by another shared, 2nd pass will handle it
         pass
@@ -161,30 +171,24 @@ init =
   # 2nd pass: claim unclaimed domains, error on duplicates
   for shared in shared_list:
     domain = shared['parameters']['name']
-    
     # If address was already processed in 1st pass
     if existing := output.get(domain):
       if existing['reference'] != shared['reference']:
-        pub_domain_dict[shared['reference']] = {'addr': domain, 'error': 'address_already_used'}
+        pub_domain_dict[shared['reference']] = {
+          'domain': domain,
+          'error': 'address_already_used',
+        }
       # (if it matches, nothing to do)
     else:
       # address not yet claimed
       entry = output[domain] = make_entry(shared)
-      pub_domain_dict[shared['reference']] = {
-        'addr': domain,
-        'authentication': entry['authentication'],
-        # 'password' field is specific to 'authentication' == 'password' case
-        'password': entry.get('password', '')
-      }
-
-  options['published-domain-dict'] = pub_domain_dict
-  options['accepted-domain-list'] = list(output.values())
-  options['dns-entries'] = "\n".join(
-    f"  {entry['name']} MX 10 {self.buildout['request-all-relays']['relay-host']}"
-    for entry in output.values()
-  )
+      pub_domain_dict[shared['reference']] = entry
 
   self.output = output
+
+  options['published-domain-dict'] = pub_domain_dict
+  options['accepted-domain-relays'] = list(output.values())
+  options['backend-domains'] = '\n'.join(e['name'] for e in output.values())
 
   options['location'] = ''  # we don't care about the part folder existing
 install =
@@ -195,40 +199,48 @@ install =
 [publish-shared]
 recipe = slapos.recipe.build
 published-domain-dict = $${filter-shared-instances:published-domain-dict}
-relay-tls-fingerprints = $${request-all-relays:tls-fingerprints}
 domain-to-proxy-map = $${validate-proxy-map:domain-to-proxy}
+dns-template = $${cluster-mx:dns-template}
+template =
+  [publish-shared-%(shared-ref)s]
+  recipe = slapos.cookbook:publish.serialised
+  -slave-reference = %(shared-ref)s
+error-template =
+  $${:template}
+  domain = %(domain)s
+  error = %(error)s
+ok-template =
+  $${:template}
+  dns-entries = %(dns-entries)s
+  tls-fingerprints = %(relay-fingerprints)s
+  outbound-host = %(relay-host)s
+  outbound-smtp-port = 10587
+  outbound-has-proxy = %(has-proxy)s
+password-template =
+  $${:ok-template}
+  outbound-user = %(name)s
+  outbound-password = %(password)s
 {% raw -%}
 init =
-  import textwrap
   from zc.buildout.buildout import dumps
-  dollar = '$$'
-  for shared_ref, info in options['published-domain-dict'].items():
-    section = textwrap.dedent(f"""
-      [publish-shared-{shared_ref}]
-      recipe = slapos.cookbook:publish.serialised
-      -slave-reference = {shared_ref}""")
-    if 'error' in info:
-      section += textwrap.dedent(f"""
-        domain = {info['addr']}
-        error = {info['error']}""")
+  dns_template = options['dns-template']
+  for shared_ref, entry in options['published-domain-dict'].items():
+    if 'error' in entry:
+      section = options['error-template'] % {
+        **entry,
+        'shared-ref': shared_ref,
+      }
     else:
-      section += textwrap.dedent(f"""
-        dns-entries =
-          {info['addr']} MX 10 {self.buildout['request-all-relays']['relay-host']}
-        tls-fingerprints = {dollar}{{request-all-relays:tls-fingerprints}}""")
-      if info.get('authentication') == 'password' and info.get('password'):
-        section += textwrap.dedent(f"""
-          outbound-host = {self.buildout['request-all-relays']['relay-host']}
-          outbound-smtp-port = 10587
-          outbound-user = {info['addr']}
-          outbound-password = {info['password']}""")
-      else:
-        section += textwrap.dedent(f"""
-          outbound-host = {self.buildout['request-all-relays']['relay-host']}
-          outbound-smtp-port = 10587""")
-      has_proxy = dumps(info['addr'] in options['domain-to-proxy-map'])
-      section += textwrap.dedent(f"""
-        outbound-has-proxy = {has_proxy}""")
+      pwd = entry.get('authentication') == 'password' and entry.get('password')
+      template = options['password-template' if pwd else 'ok-template']
+      section = template % {
+        **entry,
+        'shared-ref': shared_ref,
+        'dns-entries': dumps(dns_template % entry),
+        'relay-fingerprints': '$$' + '{request-all-relays:tls-fingerprints}',
+        'relay-host': '$$' + '{request-all-relays:relay-host}',
+        'has-proxy': dumps(entry['name'] in options['domain-to-proxy-map']),
+      }
     self.buildout.parse(section)
 {%- endraw %}
 
