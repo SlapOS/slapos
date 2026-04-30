@@ -24,6 +24,13 @@
       "request": "instance-relay-input-schema.json",
       "response": "instance-relay-output-schema.json",
       "index": 2
+    },
+    "omailgw": {
+      "title": "oMailGw API/UI",
+      "software-type": "omailgw",
+      "request": "instance-omailgw-input-schema.json",
+      "response": "instance-omailgw-output-schema.json",
+      "index": 3
     }
   }
 }

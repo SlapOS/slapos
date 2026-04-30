@@ -1,0 +1,347 @@
+[buildout]
+extends =
+  ${monitor2-template:output}
+  ${template-logrotate-base:output}
+
+parts =
+  directory
+  monitor-base
+  certificate-authority
+  php.ini-conf
+  omailgw-copy-api
+  omailgw-copy-ui
+  omailgw-relay-list
+  omailgw-ui-settings
+  omailgw-env
+  omailgw-bootstrap-php
+  omailgw-bootstrap-script
+  omailgw-bootstrap-app
+  omailgw-apache-extra
+  lamp-apache-httpd
+  omailgw-mariadb-service
+  apache-php-service
+  omailgw-schedule-service
+  publish-connection-information
+  logrotate-entry-apache
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[monitor-instance-parameter]
+password = {{ slapparameter_dict['monitor-password'] }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+log = $${:var}/log
+service = $${:etc}/service
+scripts = $${:etc}/run
+run = $${:var}/run
+httpd-log = $${:log}/apache
+php-ini-dir = $${:etc}/php
+tmp-php = $${:tmp}/php
+upload-tmp = $${:tmp}/upload
+apache.d = $${:etc}/apache.d
+omailgw-api = $${:srv}/omailgw-api
+www = $${:omailgw-api}/public
+mariadb-data = $${:srv}/mariadb
+
+[omailgw-users]
+root-user = root@omailgw.local
+mailgw-user = mailgw@omailgw.local
+
+[omailgw-root-password]
+recipe = slapos.cookbook:generate.password
+
+[omailgw-mailgw-password]
+recipe = slapos.cookbook:generate.password
+
+[omailgw-copy-api]
+recipe = plone.recipe.command
+command = if [ ! -e "$${directory:omailgw-api}/artisan" ]; then
+    rm -rf $${directory:omailgw-api};
+    mkdir -p $${directory:omailgw-api};
+    cp -ax ${omailgw-api-prepared:location}/. $${directory:omailgw-api}/;
+  fi
+update-command = $${:command}
+stop-on-error = true
+
+[omailgw-copy-ui]
+recipe = plone.recipe.command
+command = if [ -z "$(ls -A $${directory:www}/ui 2>/dev/null)" ]; then
+    mkdir -p $${directory:www}/ui;
+    cp -ax ${omailgw-ui-source:location}/. $${directory:www}/ui/;
+  fi
+update-command = $${:command}
+stop-on-error = true
+
+[omailgw-relay-list]
+recipe = slapos.recipe.template
+output = $${directory:etc}/omailgw-relay-hostname-list.json
+inline =
+  {{ json_module.dumps(slapparameter_dict['relay-hostname-list']) }}
+
+[omailgw-ui-settings]
+recipe = slapos.recipe.template:jinja2
+url = ${omailgw-ui-settings.js.in:target}
+output = $${directory:www}/ui/js/settings.js
+context =
+  key api_url :api-url
+api-url = $${publish-connection-information:api-url}
+
+[omailgw-env]
+recipe = slapos.recipe.template:jinja2
+url = ${omailgw-api.env.in:target}
+output = $${directory:omailgw-api}/.env
+context =
+  key app_url apache-php-configuration:url
+  key db_password omailgw-mailgw-password:passwd
+  key db_socket omailgw-mariadb-conf:socket
+  key root_email omailgw-users:root-user
+
+[omailgw-bootstrap-php]
+recipe = slapos.recipe.template:jinja2
+url = ${omailgw-bootstrap.php.in:target}
+output = $${directory:omailgw-api}/bootstrap-omailgw.php
+
+[omailgw-mariadb-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${omailgw-my.cnf.in:target}
+output = $${directory:etc}/mariadb.cnf
+context =
+  key socket :socket
+  key data_directory :data-directory
+  key tmp_directory directory:tmp
+  key pid_file :pid-file
+  key error_log :error-log
+socket = $${directory:run}/mariadb.sock
+data-directory = $${directory:mariadb-data}
+pid-file = $${directory:run}/mariadb.pid
+error-log = $${directory:log}/mariadb.log
+
+[omailgw-mariadb-wrapper]
+recipe = slapos.recipe.template:jinja2
+url = ${mariadb-service-template:output}
+output = $${directory:bin}/mysqld
+context =
+  key defaults_file omailgw-mariadb-conf:output
+  key datadir omailgw-mariadb-conf:data-directory
+
+[omailgw-mariadb-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${omailgw-mariadb-wrapper:output}
+wrapper-path = $${directory:service}/mariadb
+pidfile = $${omailgw-mariadb-conf:pid-file}
+
+[omailgw-bootstrap-script]
+recipe = slapos.recipe.template:jinja2
+url = ${mariadb-background-template:output}
+output = $${directory:bin}/omailgw-bootstrap
+mode = 700
+context =
+  key defaults_file omailgw-mariadb-conf:output
+  key install_script :install-script
+  key mariadb_socket omailgw-mariadb-conf:socket
+  key foreground_script :foreground-script
+install-script =
+  basedir='${mariadb:location}'
+  datadir='$${omailgw-mariadb-conf:data-directory}'
+  marker=$datadir/.slapos_initializing
+  [ -d "$datadir/mysql" ] && [ ! -f "$marker" ] || {
+    find "$datadir/" -mindepth 1 ! -path "$marker" -delete || mkdir -p "$datadir"
+    touch "$marker"
+    "$basedir/scripts/mysql_install_db" \
+      --defaults-file='$${omailgw-mariadb-conf:output}' \
+      --skip-name-resolve \
+      --auth-root-authentication-method=normal \
+      --basedir="$basedir" --plugin_dir="$basedir/lib/plugin" \
+      --datadir="$datadir" \
+      --skip-networking \
+      --skip-log-bin
+    rm "$marker"
+  }
+foreground-script =
+  mysql_bin="${mariadb:location}/bin/mysql"
+  php_bin="${apache-php:location}/bin/php"
+  cd "$${directory:omailgw-api}"
+  "$mysql_bin" --socket="$${omailgw-mariadb-conf:socket}" -uroot <<'EOF'
+  CREATE DATABASE IF NOT EXISTS omailgw CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+  CREATE USER IF NOT EXISTS 'omailgw'@'localhost' IDENTIFIED BY '$${omailgw-mailgw-password:passwd}';
+  ALTER USER 'omailgw'@'localhost' IDENTIFIED BY '$${omailgw-mailgw-password:passwd}';
+  GRANT ALL PRIVILEGES ON omailgw.* TO 'omailgw'@'localhost';
+  FLUSH PRIVILEGES;
+  EOF
+  if grep -q '^APP_KEY=$' .env; then
+    "$php_bin" -c "$${php.ini-conf:output}" artisan key:generate --force
+  fi
+  "$php_bin" -c "$${php.ini-conf:output}" artisan package:discover --ansi
+  "$php_bin" -c "$${php.ini-conf:output}" artisan migrate --force
+  OMAILGW_ROOT_EMAIL="$${omailgw-users:root-user}" \
+  OMAILGW_ROOT_PASSWORD="$${omailgw-root-password:passwd}" \
+  OMAILGW_MAILGW_EMAIL="$${omailgw-users:mailgw-user}" \
+  OMAILGW_MAILGW_PASSWORD="$${omailgw-mailgw-password:passwd}" \
+  OMAILGW_RELAY_DOMAIN="{{ slapparameter_dict['relay-domain'] }}" \
+  OMAILGW_RELAY_LIST_JSON="$$(cat $${omailgw-relay-list:output})" \
+  "$php_bin" -c "$${php.ini-conf:output}" bootstrap-omailgw.php
+
+[omailgw-bootstrap-app]
+recipe = plone.recipe.command
+command = $${omailgw-bootstrap-script:output}
+update-command = $${:command}
+stop-on-error = true
+
+[ca-directory]
+recipe = slapos.cookbook:mkdirectory
+root = $${directory:srv}/ssl
+requests = $${:root}/requests
+private = $${:root}/private
+certs = $${:root}/certs
+newcerts = $${:root}/newcerts
+crl = $${:root}/crl
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = ${openssl:location}/bin/openssl
+ca-dir = $${ca-directory:root}
+requests-directory = $${ca-directory:requests}
+wrapper = $${directory:bin}/certificate_authority
+ca-private = $${ca-directory:private}
+ca-certs = $${ca-directory:certs}
+ca-newcerts = $${ca-directory:newcerts}
+ca-crl = $${ca-directory:crl}
+
+[ca-apache-php]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = $${apache-php-configuration:key-file}
+cert-file = $${apache-php-configuration:cert-file}
+executable = $${apache-php-wrapper:wrapper-path}
+wrapper = $${directory:bin}/ca-apache-php
+
+[apache-network-configuration]
+listening-ip = {{ ipv6 }}
+listening-port = 9988
+
+[apache-php-configuration]
+default-document-root = $${directory:www}
+pid-file = $${directory:run}/apache.pid
+lock-file = $${directory:run}/apache.lock
+ip = $${apache-network-configuration:listening-ip}
+port = $${apache-network-configuration:listening-port}
+url = https://[$${:ip}]:$${:port}/
+error-log = $${directory:httpd-log}/error.log
+access-log = $${directory:httpd-log}/access.log
+log-dir = $${directory:httpd-log}
+php-ini-dir = $${directory:php-ini-dir}
+cert-file = $${ca-directory:certs}/httpd.crt
+key-file = $${ca-directory:certs}/httpd.key
+apache-config-dir = $${directory:apache.d}
+document-root = $${directory:www}
+
+[lamp-apache-httpd]
+recipe = slapos.recipe.template:jinja2
+url = ${template-apache-httpd:target}
+output = $${directory:apache.d}/lamp.conf
+context =
+  section parameter_dict apache-php-configuration
+
+[omailgw-apache-extra]
+recipe = slapos.recipe.template:jinja2
+url = ${omailgw-apache-extra.conf.in:target}
+output = $${directory:apache.d}/omailgw-extra.conf
+
+[apache-php-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${template-apache.conf:target}
+output = $${directory:etc}/apache.conf
+context =
+  section parameter_dict apache-php-configuration
+extensions = jinja2.ext.do
+
+[apache-php-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/apache-wrapper
+command-line = "${apache:location}/bin/httpd" -f "$${apache-php-conf:output}" -DFOREGROUND
+wait-for-files =
+  $${ca-directory:certs}/httpd.crt
+  $${ca-directory:certs}/httpd.key
+
+[apache-graceful]
+recipe = collective.recipe.template
+output = $${directory:scripts}/apache-httpd-graceful
+mode = 700
+input = inline:
+  #!/bin/sh
+  {{ bin_directory }}/slapos-kill -s USR1 --pidfile '$${apache-php-configuration:pid-file}'
+
+[apache-php-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${ca-apache-php:wrapper}
+wrapper-path = $${directory:service}/apache-php
+hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
+depends =
+  $${omailgw-copy-api:recipe}
+  $${omailgw-copy-ui:recipe}
+  $${omailgw-ui-settings:recipe}
+  $${omailgw-env:recipe}
+  $${omailgw-bootstrap-app:recipe}
+  $${apache-graceful:recipe}
+
+[logrotate-entry-apache]
+<= logrotate-entry-base
+name = apache
+log = $${apache-php-configuration:log-dir}/*.log
+frequency = daily
+rotate-num = 30
+
+[php.ini-configuration]
+tmp-dir = $${directory:tmp-php}
+php-upload-dir = $${directory:upload-tmp}
+
+[instance-parameter]
+document-root = $${apache-php-configuration:default-document-root}
+backend-url = $${apache-php-configuration:url}
+php.date.timezone = Europe/Paris
+
+[php.ini-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${template-php.ini:target}
+output = $${directory:php-ini-dir}/php.ini
+context =
+  section parameter_dict php.ini-configuration
+  section instance_dict instance-parameter
+extensions = jinja2.ext.do
+
+[omailgw-schedule-loop]
+recipe = slapos.recipe.template
+output = $${directory:bin}/omailgw-schedule-loop
+mode = 700
+inline =
+  #!/bin/sh
+  while true; do
+    cd $${directory:omailgw-api}
+    ${apache-php:location}/bin/php -c $${php.ini-conf:output} artisan schedule:run >> $${directory:log}/omailgw-schedule.log 2>&1 || true
+    sleep 60
+  done
+
+[omailgw-schedule-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${omailgw-schedule-loop:output}
+wrapper-path = $${directory:service}/omailgw-schedule
+depends =
+  $${omailgw-bootstrap-app:recipe}
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+<= monitor-publish
+api-url = $${apache-php-configuration:url}api
+ui-url = $${apache-php-configuration:url}ui/
+root-user = $${omailgw-users:root-user}
+root-password = $${omailgw-root-password:passwd}
+mailgw-user = $${omailgw-users:mailgw-user}
+mailgw-password = $${omailgw-mailgw-password:passwd}
