@@ -52,13 +52,8 @@ class TestBasic(NotepodTestCase):
 
   def test_image(self):
     # TODO find the image link in the bin/server of the partition
-    image = os.path.join(
-      self.computer_partition_root_path,
-      'software_release', 'parts', 'vm-ubuntu',
-      'ubuntu-desktop-2510.img')
-    self.assertTrue(os.path.isfile(image))
-    # very basic sanity check on the image
-    image_size = os.path.getsize(image)
-    self.assertGreater(image_size, 4*1024*1024)
-
-
+    img = 'ubuntu-desktop-2604.img'
+    parts = os.path.join(self.computer_partition_root_path,
+                         'software_release', 'parts')
+    for x in ('vm-ubuntu', img), ('installer', img + '.gz'):
+      self.assertGreater(os.path.getsize(os.path.join(parts, *x)), 5<<30)
