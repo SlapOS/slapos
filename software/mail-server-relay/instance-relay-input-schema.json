@@ -20,6 +20,15 @@
             "$ref": "./instance-shared-input-schema.json#/definitions/mail-domain-relay"
           },
           "default": []
+        },
+        "cluster-fqdns": {
+          "title": "Cluster FQDNs",
+          "description": "FQDNs of each relay node in the cluster",
+          "type": "array",
+          "items": {
+            "$ref": "./instance-cluster-input-schema.json#/definitions/fqdn"
+          },
+          "default": []
         }
       }
     }
