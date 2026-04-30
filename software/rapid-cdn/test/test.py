@@ -2361,7 +2361,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://empty.example.com:%s/test-path' % (HTTP_PORT,),
+      'https://empty1.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -2538,7 +2538,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result_http, via=False, backend_reached=False)
 
     self.assertEqual(
-      'https://url.example.com:%s/test-path/deeper' % (HTTP_PORT,),
+      'https://url1.example.com:%s/test-path/deeper' % (HTTP_PORT,),
       headers['Location']
     )
 
@@ -2869,7 +2869,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://authtobackendbackendignore.example.com:%s/test-path/deeper' % (
+      'https://authtobackendbackendignore1.example.com:%s/test-path/deeper' % (
         HTTP_PORT,),
       result_http.headers['Location']
     )
@@ -2971,7 +2971,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/'
-      'https/typezopepath.example.com:443/path/to/some/resource'
+      'https/typezopepath1.example.com:443/path/to/some/resource'
       '/VirtualHostRoot/'
       'test-path/deeper'
     )
@@ -2992,7 +2992,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://typezopedefaultpath.example.com:%s/'
+      'https://typezopedefaultpath1.example.com:%s/'
       'default-path/to/some/resource' % (
         HTTPS_PORT,),
       result.headers['Location']
@@ -3372,7 +3372,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https/typezope.example.com:443'
+      '/VirtualHostBase/https/typezope1.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -3413,7 +3413,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
+      'typezopeprefergzipencodingtobackendhttpsonly1.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -3425,7 +3425,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/http/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
+      'typezopeprefergzipencodingtobackendhttpsonly1.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -3448,7 +3448,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
+      'typezopeprefergzipencodingtobackendhttpsonly1.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -3463,7 +3463,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/http/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
+      'typezopeprefergzipencodingtobackendhttpsonly1.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -3491,7 +3491,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackend.example.com:443'
+      'typezopeprefergzipencodingtobackend1.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
 
@@ -3529,7 +3529,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackend.example.com:443'
+      'typezopeprefergzipencodingtobackend1.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -3561,7 +3561,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/http/typezopevirtualhostroothttpport'
+      '/VirtualHostBase/http/typezopevirtualhostroothttpport1'
       '.example.com:12345/VirtualHostRoot/test-path'
     )
 
@@ -3579,7 +3579,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqualResultJson(
       result,
       'Path',
-      '/VirtualHostBase/https/typezopevirtualhostroothttpsport'
+      '/VirtualHostBase/https/typezopevirtualhostroothttpsport1'
       '.example.com:12345/VirtualHostRoot/test-path'
     )
 
@@ -3957,7 +3957,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://sslproxyverifysslproxycacrtunverified.example.com:%s/'
+      'https://sslproxyverifysslproxycacrtunverified1.example.com:%s/'
       'test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
@@ -3996,7 +3996,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://sslproxyverifysslproxycacrt.example.com:%s/test-path' % (
+      'https://sslproxyverifysslproxycacrt1.example.com:%s/test-path' % (
         HTTP_PORT,),
       result_http.headers['Location']
     )
@@ -4041,7 +4041,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://ciphers.example.com:%s/test-path' % (HTTP_PORT,),
+      'https://ciphers1.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -4095,7 +4095,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://cipherstranslationall.example.com:%s/test-path' % (HTTP_PORT,),
+      'https://cipherstranslationall1.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -4308,7 +4308,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     # BEGIN: Check that squid.log is correctly filled in
     direct_pattern = re.compile(
-      r'.*TCP_MISS/200 .*cached.*enablecache.example.com'
+      r'.*TCP_MISS/200 .*cached.*enablecache1.example.com'
       '.* - DIRECT*')
     # ATS needs some time to flush logs
     timeout = 10
@@ -5316,7 +5316,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNotIn('Strict-Transport-Security', result_http.headers)
 
     self.assertEqual(
-      'https://urlhttpsurl.example.com:%s/test-path/deeper' % (HTTP_PORT,),
+      'https://urlhttpsurl1.example.com:%s/test-path/deeper' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -5382,7 +5382,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result_http.status_code
     )
     self.assertEqual(
-      'https://httpsurlonly.example.com:%s/test-path' % (HTTP_PORT,),
+      'https://httpsurlonly1.example.com:%s/test-path' % (HTTP_PORT,),
       result_http.headers['Location']
     )
 
@@ -5561,11 +5561,11 @@ class TestReplicateSlave(
     self.node_information_dict = node_information_dict
     self.assertEqual(
       {
-        'domain': 'replicate.example.com',
+        'domain': 'replicate1.example.com',
         'replication_number': '2',
-        'url': 'http://replicate.example.com',
-        'site_url': 'http://replicate.example.com',
-        'secure_access': 'https://replicate.example.com',
+        'url': 'http://replicate1.example.com',
+        'site_url': 'http://replicate1.example.com',
+        'secure_access': 'https://replicate1.example.com',
         'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       },
       parameter_dict
