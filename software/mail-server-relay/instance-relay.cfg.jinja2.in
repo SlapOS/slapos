@@ -522,33 +522,32 @@ content =
   smtpd_sender_login_maps = texthash:$${outbound-postfix-sender-login-map:output}
   {%- endif %}
 
-  # Server access restrictions
+  # Sender authentication and auth/domain match enforcement
   smtpd_sender_restrictions =
-    # reject login/domain mismatches
-    reject_sender_login_mismatch
   {%- if sorted_sender_hosts %}
-    # reject ip/domain mismatches
+    # Reject ip/domain mismatches for IP-authenticated senders
     check_client_access cidr:$${outbound-postfix-client-sender-access:output}
   {%- endif %}
-
-  smtpd_relay_restrictions =
-    # Permit IP-authentified senders;
-    # ip/domain mismatches are already rejected by the sender restrictions
+    # Reject login/domain mismatches for SASL-authenticated senders
+    reject_sender_login_mismatch
+    # Permit IP-authenticated senders;
+    # ip/domain mismatches are already rejected above
     permit_mynetworks
-    # Permit SASL-authentified senders;
-    # login/domain mismatches are already rejected by the sender restrictions
+    # Permit SASL-authenticated senders;
+    # password/domain mismatches are already rejected above
     permit_sasl_authenticated
   {%- if fingerprint_auth_backends %}
-    # Permit TLS-fingerprint authentified senders
-    # fingerprint/domain mismatches are rejected here
+    # Permit TLS-fingerprint authenticated senders;
+    # only matching fingerprint/domain pairs are accepted;
+    # fingerprint/domain mismatches are rejected directly
     check_ccert_access texthash:$${outbound-postfix-backend-clientcerts:output}
   {%- endif %}
     # Reject all others
     reject
 
-  smtpd_recipient_restrictions =
-    # Senders are previously authentified by smtpd_relay_restrictions;
-    # unauthenfied or unknown senders are already rejected there.
+  smtpd_relay_restrictions =
+    # Senders are previously authenticated by smtpd_sender_restrictions;
+    # unauthenticated or unknown senders are already rejected there.
     # Permit senders that additionally have access to an external proxy
     # regardless of the recipient.
     check_sender_access texthash:$${outbound-postfix-proxy-senders:output}
