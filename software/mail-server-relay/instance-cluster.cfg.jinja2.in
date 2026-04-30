@@ -56,6 +56,7 @@ config-monitor-password = $${monitor-instance-parameter:password}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-mail-domains = $${filter-shared-instances:accepted-domain-relays}
+config-cluster-fqdns = $${cluster-mx:fqdn-list}
 return =
   smtp-ipv6
   smtp-port
