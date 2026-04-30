@@ -3127,7 +3127,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_ssl_ca_crt(self):
     parameter_dict = self.assertSlaveBase(
-      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt')
+      'custom_domain_ssl_crt_ssl_key_ssl_ca_crt',
+      hostname='customdomainsslcrtsslkeysslcacrt')
 
     # as now the place to put the key is known put the key there
     auth = mimikra.get(
@@ -3325,7 +3326,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqualResultJson(result, 'Path', '/test-path')
 
   def test_custom_domain_ssl_crt_ssl_key(self):
-    parameter_dict = self.assertSlaveBase('custom_domain_ssl_crt_ssl_key')
+    parameter_dict = self.assertSlaveBase(
+      'custom_domain_ssl_crt_ssl_key', hostname='customdomainsslcrtsslkey')
 
     # as now the place to put the key is known put the key there
     auth = mimikra.get(
@@ -6286,6 +6288,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
   def test_ssl_ca_crt(self):
     parameter_dict = self.assertSlaveBase(
       'custom_domain_ssl_crt_ssl_key_ssl_ca_crt',
+      hostname='customdomainsslcrtsslkeysslcacrt',
       expected_parameter_dict={
         'warning-list': [
           'ssl_ca_crt is obsolete, please use key-upload-url',
