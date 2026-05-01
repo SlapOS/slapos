@@ -36,7 +36,7 @@ internal_socket_dir = "{{ gitaly.internal_socket }}"
 # # Git settings
 [git]
 bin_path = "{{ git }}"
-# catfile_cache_size = 100
+catfile_cache_size = {{ gitaly.catfile_cache_size }}
 
 # # Set this setting to `true` to start ignoring gitconfig files installed in
 # # the system. This includes both system-level (e.g. '/etc/gitconffig') and
@@ -45,6 +45,14 @@ bin_path = "{{ git }}"
 # # so via `[[git.config]]`. The default value is `false`.
 # ignore_gitconfig = false
 
+{%- if gitaly.pack_objects_cache == 'True' %}
+# Enable pack-objects cache
+[pack_objects_cache]
+enabled = true
+{%- if int(gitaly.pack_objects_cache_max_age) > 0 %}
+max_age = "{{ gitaly.pack_objects_cache_max_age }}m"
+{% endif %}
+{%- endif %}
 
 # [[git.config]]
 # key = fetch.fsckObjects
@@ -102,26 +110,38 @@ url = "http+unix://{{ urllib.parse.unquote_plus(gitlab_workhorse.socket) }}"
 # ca_path = /etc/pki/tls/certs
 # self_signed_cert = false
 
-# # You can adjust the concurrency of each RPC endpoint
-# [[concurrency]]
-# rpc = "/gitaly.RepositoryService/GarbageCollect"
-# max_per_repo = 1
-# max_queue_wait = "1m"
-# max_queue_size = 10
+# You can adjust the concurrency of each RPC endpoint
 
-# [[rate_limiting]]
-# rpc = "/gitaly.SmartHTTPService/PostUploadPackWithSidechannel"
-# interval = "1m"
-# burst = 5
+[[concurrency]]
+rpc = "/gitaly.RepositoryService/GarbageCollect"
+max_per_repo = 1
+max_queue_wait = "1m"
+max_queue_size = 10
+
+{%- if int(gitaly.concurrency_find_commit) > 0 %}
+[[concurrency]]
+rpc = "/gitaly.CommitService/FindCommit"
+max_per_repo = {{ gitaly.concurrency_find_commit }}
+max_queue_wait = "{{ gitaly.concurrency_find_commit_max_queue_wait }}s"
+max_queue_size = {{ gitaly.concurrency_find_commit_max_queue_size }}
+{%- endif %}
+
+{%- if int(gitaly.rate_limiting) > 0 %}
+[[rate_limiting]]
+rpc = "/gitaly.SmartHTTPService/PostUploadPackWithSidechannel"
+interval = "1s"
+burst = {{ gitaly.rate_limiting }}
+{%- endif %}
 
 # Daily maintenance designates time slots to run daily to optimize and maintain
 # enabled storages.
-# [daily_maintenance]
-# start_hour = 23
-# start_minute = 30
-# duration = "45m"
-# storages = ["default"]
-# disabled = false
+{% set hour, minute, duration = gitaly.daily_maintenance.split(' ') -%}
+[daily_maintenance]
+start_hour = {{ hour }}
+start_minute = {{ minute }}
+duration = "{{ duration }}m"
+storages = ["default"]
+disabled = false
 
 # Limit the resources Gitaly can use via Linux cgroups v1
 # [cgroups]
