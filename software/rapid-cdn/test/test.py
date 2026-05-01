@@ -3386,7 +3386,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
     self.assertEqual(
-      'https://typezope.example.com:%s/test-path/deeper' % (
+      'https://typezope1.example.com:%s/test-path/deeper' % (
         HTTP_PORT,),
       result.headers['Location']
     )
@@ -4051,7 +4051,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       ))[0]
     with open(configuration_file) as fh:
       self.assertTrue(
-        '/_ciphers.pem [ciphers DES-CBC3-SHA:AES128-SHA '
+        'ciphers______1.pem [ciphers DES-CBC3-SHA:AES128-SHA '
         in fh.read()
       )
 
@@ -4105,7 +4105,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       ))[0]
     with open(configuration_file) as fh:
       self.assertTrue(
-        '/_ciphers.translation.all.pem [ciphers '
+        'ciphers.translation.all______1.pem [ciphers '
         'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:'
         'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:'
         'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:'
