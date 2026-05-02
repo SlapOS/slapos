@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Error Page Manager Input Parameters",
+  "type": "object",
+  "properties": {
+    "monitor-interface-url": {
+      "title": "Monitor Web Interface URL",
+      "type": "string",
+      "format": "uri",
+      "default": "https://monitor.app.officejs.com/#page=ojsm_landing"
+    },
+    "monitor-cors-domains": {
+      "title": "Monitor CORS domains",
+      "type": "string",
+      "default": "monitor.app.officejs.com"
+    },
+    "monitor-username": {
+      "title": "Monitor username",
+      "type": "string",
+      "default": "admin"
+    },
+    "monitor-password": {
+      "title": "Monitor password",
+      "type": "string"
+    },
+    "monitor-httpd-port": {
+      "title": "Monitor HTTPD Port",
+      "type": "integer"
+    },
+    "cluster-identification": {
+      "title": "Cluster Identification",
+      "type": "string"
+    },
+    "slave-list": {
+      "title": "Slave list",
+      "type": "array"
+    },
+    "error-page-manager-port": {
+      "title": "Error Page Manager Port",
+      "description": "Port number for the error page manager HTTPS server.",
+      "type": "integer",
+      "default": 24000
+    },
+    "rotate-num": {
+      "title": "Rotate Number",
+      "description": "Number of log files to keep before rotation.",
+      "type": "integer",
+      "default": 4000
+    }
+  },
+  "additionalProperties": false
+}

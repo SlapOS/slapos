@@ -132,6 +132,11 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   http-request set-path {{ path | replace('%', '%%') }}%[path,regsub('^/$','')]
 {%-         endif %}
 {%-       endif %}
+{%-       if configuration.get('error-pages-dir') %}
+  errorfile 502 {{ configuration['error-pages-dir'] }}/slaves/{{ slave_instance['slave_reference'] }}/502.http
+  errorfile 503 {{ configuration['error-pages-dir'] }}/slaves/{{ slave_instance['slave_reference'] }}/503.http
+  errorfile 504 {{ configuration['error-pages-dir'] }}/slaves/{{ slave_instance['slave_reference'] }}/504.http
+{%-       endif %}
 {%-     endif %}
 {%-     if info_dict['health-check-failover-hostname'] and info_dict['health-check-failover-port'] %}
 {%-       set ssl_list = [] %}
