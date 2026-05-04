@@ -20,12 +20,6 @@
     "slap_software_type": "default",
     "slave_instance_list": [
       {
-        "custom_domain": "bang-loop.example.com",
-        "slap_software_type": "default",
-        "slave_reference": "_bang-loop-invalid",
-        "slave_title": "_bang-loop-invalid"
-      },
-      {
         "custom_domain": "reuse.example.com",
         "slap_software_type": "default",
         "slave_reference": "_reuse-orig",
@@ -44,10 +38,6 @@
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
       "slave-list": [
-        {
-          "custom_domain": "bang-loop.example.com",
-          "slave_reference": "_bang-loop-invalid"
-        },
         {
           "custom_domain": "reuse.example.com",
           "slave_reference": "_reuse-orig"
@@ -76,7 +66,7 @@
       "enable-http2-by-default": true,
       "enable-http3": false,
       "expert-backend-allow-downgrade-ssl": false,
-      "extra_slave_instance_list": "[{\"custom_domain\": \"bang-loop.example.com\", \"slave_reference\": \"_bang-loop-invalid\"}, {\"custom_domain\": \"reuse.example.com\", \"slave_reference\": \"_reuse-orig\"}]",
+      "extra_slave_instance_list": "[{\"custom_domain\": \"reuse.example.com\", \"slave_reference\": \"_reuse-orig\"}]",
       "frontend-name": "caddy-frontend-1",
       "http3-port": 443,
       "kedifa-caucase-url": "http://[@@_ipv6_address@@]:15090",
@@ -88,7 +78,7 @@
       "plain_http_port": 11080,
       "port": 11443,
       "request-timeout": 12,
-      "slave-kedifa-information": "{\"_bang-loop-invalid\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@bang-loop-invalid_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@bang-loop-invalid_key-generate-auth-url@@/@@bang-loop-invalid_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@bang-loop-invalid_key-generate-auth-url@@?auth=\"}, \"_reuse-orig\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@reuse-orig_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@reuse-orig_key-generate-auth-url@@/@@bang-loop-invalid_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@reuse-orig_key-generate-auth-url@@?auth=\"}}"
+      "slave-kedifa-information": "{\"_reuse-orig\": {\"kedifa-caucase-url\": \"http://[@@_ipv6_address@@]:15090\", \"key-download-url\": \"https://[@@_ipv6_address@@]:15080/@@reuse-orig_key-generate-auth-url@@\", \"key-generate-auth-url\": \"https://[@@_ipv6_address@@]:15080/@@reuse-orig_key-generate-auth-url@@/@@reuse-orig_key-upload-url@@\", \"key-upload-url\": \"https://[@@_ipv6_address@@]:15080/@@reuse-orig_key-generate-auth-url@@?auth=\"}}"
     },
     "full_address_list": [],
     "instance_title": "caddy-frontend-1",
