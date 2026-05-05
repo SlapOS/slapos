@@ -59,23 +59,23 @@ class PostfixTestCase(SlapOSInstanceTestCase):
           },
           "relay-domain": "foobaz.lan",
           "topology": {
-              "relay-foo": {
-                  "state": "started"
-              },
-              "relay-bar": {
-                  "state": "started",
-                  "config": {
-                    "proxy-map": {
-                      "bar-proxy": {
-                        "host": "bar.example.com",
-                        "port": 2525,
-                        "user": "user",
-                        "password": "pass",
-                        "domains": ["mail1.domain.lan", "mail2.domain.lan"]
-                      }
-                    }
+            "relay-foo": {
+              "fqdn": "relay.foo.lan"
+            },
+            "relay-bar": {
+              "fqdn": "relay.bar.lan",
+              "config": {
+                "proxy-map": {
+                  "bar-proxy": {
+                    "host": "bar.example.com",
+                    "port": 2525,
+                    "user": "user",
+                    "password": "pass",
+                    "domains": ["mail1.domain.lan", "mail2.domain.lan"]
                   }
+                }
               }
+            }
           }
         }
       )
@@ -114,28 +114,33 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       state=state,
     )
 
-  def test_dns_entries(self):
+  def test_returned_backend_domains(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     expected_entries = set([
-      "mail1.domain.lan MX 10 foobaz.lan",
-      "mail2.domain.lan MX 10 foobaz.lan",
-      "mail3.domain.lan MX 10 foobaz.lan",
+      "mail1.domain.lan",
+      "mail2.domain.lan",
+      "mail3.domain.lan",
     ])
     actual_entries = set(
-      filter(None, (line.strip() for line in parameter_dict["dns-entries"].splitlines()))
+      filter(None, (line.strip() for line in parameter_dict["backend-domains"].splitlines()))
     )
     self.assertEqual(actual_entries, expected_entries)
 
-  def test_slave_output_schema_and_dns(self):
+  def test_shared_output_schema_and_dns(self):
     for domain in ["mail1.domain.lan", "mail2.domain.lan"]:
-      slave_instance = self.requestSlaveInstanceForDomain(domain)
-      connection_dict = json.loads(slave_instance.getConnectionParameterDict().get("_", "{}"))
+      shared_instance = self.requestSlaveInstanceForDomain(domain)
+      connection_dict = json.loads(shared_instance.getConnectionParameterDict().get("_", "{}"))
       self.assertEqual(connection_dict.get("outbound-host", "<missing>"), "foobaz.lan")
       self.assertEqual(connection_dict.get("outbound-smtp-port", "<missing>"), "10587")
-      self.assertEqual(connection_dict.get("dns-entries", "<missing>"), f"{domain} MX 10 foobaz.lan")
-      
-      slave_dup_instance = self.requestSlaveInstanceForDomain(domain, suffix="-test")
-      connection_dict = json.loads(slave_dup_instance.getConnectionParameterDict().get("_", "{}"))
+      self.assertEqual(
+        connection_dict.get("dns-entries", "<missing>"),
+        # entries are sorted lexicographically as a side-effect of buildout's
+        # object to string serialization.
+        f"{domain}. MX 10 relay.bar.lan.\n"
+        f"{domain}. MX 10 relay.foo.lan."
+      )
+      shared_dup_instance = self.requestSlaveInstanceForDomain(domain, suffix="-test")
+      connection_dict = json.loads(shared_dup_instance.getConnectionParameterDict().get("_", "{}"))
       error = connection_dict.get("error", "<missing>")
       self.assertIn("address_already_used", error, f"Expected duplicate error for {domain}, got {error}")
 
