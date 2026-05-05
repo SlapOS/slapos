@@ -43,6 +43,12 @@
       "description": "As most common deloyment is using iptables for port redirection and in case of udp it is advertising to the process it's bind port instead of the really connected to, it's required to manually set this port for the whole cluster. Can be precisely set on each node by -frontend-i-config-http3-port",
       "type": "integer"
     },
+    "instance-retention-delay": {
+      "default": 7776000,
+      "description": "Seconds to keep a disappeared instance before removing it. Default is 90 days (7776000 seconds). 0 means immediate removal.",
+      "title": "Instance Retention Delay",
+      "type": "integer"
+    },
     "re6st-verification-url": {
       "description": "Url to verify if the internet and/or re6stnet is working.",
       "title": "Test Verification URL",
@@ -228,6 +234,12 @@
       "title": "DNS Nameserver",
       "default": "",
       "description": "DNS Nameserver used for checking DNS for custom domains",
+      "type": "string"
+    },
+    "dns-nameserver-port": {
+      "title": "DNS Nameserver Port",
+      "default": "",
+      "description": "Port number for the DNS nameserver used for domain validation. Uses default port 53 when empty.",
       "type": "string"
     },
     "rotate-num": {
