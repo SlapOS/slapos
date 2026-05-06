@@ -1,0 +1,33 @@
+[buildout]
+parts = switch-softwaretype
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+RootSoftwareInstance = dynamic-template-openwebui:output
+default = dynamic-template-openwebui:output
+
+[slap-configuration]
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = {{ software_json }}
+set-default = main
+validate-parameters = main
+
+[dynamic-template-openwebui]
+recipe = slapos.recipe.template:jinja2
+url = {{ instance_openwebui }}
+output = ${buildout:directory}/instance-openwebui.cfg
+extensions = jinja2.ext.do
+context =
+  section buildout buildout
+  section slap_configuration slap-configuration
+  key slapparameter_dict slap-configuration:configuration
+  raw python_bin {{ python_bin }}
+  raw openwebui_bin {{ openwebui_bin }}
+  raw haproxy_bin {{ haproxy_bin }}
+  raw logrotate_bin {{ logrotate_bin }}
+  raw openssl_bin {{ openssl_bin }}
+  raw template_monitor {{ template_monitor }}

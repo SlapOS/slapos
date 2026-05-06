@@ -1,0 +1,249 @@
+# =============================================================================
+# OpenWebUI - SlapOS Instance Profile
+# =============================================================================
+#
+# Deploys:
+#   - OpenWebUI (Python) listening on internal IPv6
+#   - HAProxy frontend for TLS termination
+#   - Self-signed TLS certificate
+#   - Frontend request for public HTTPS access
+#   - Promises to verify services are running
+#   - Logrotate for log management (via monitor stack)
+#
+# =============================================================================
+
+[buildout]
+extends = {{ template_monitor }}
+
+parts =
+  directory
+  tls-certificate
+  openwebui-secret-key
+  openwebui-startup
+  openwebui-service
+  haproxy-config
+  haproxy-service
+  logrotate-entry-openwebui
+  logrotate-entry-haproxy
+  openwebui-port-listening-promise
+  haproxy-port-listening-promise
+  html5as-frontend
+  publish-connection-information
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+
+# ─────────────────────────────────────────────────
+# Instance parameters
+# ─────────────────────────────────────────────────
+{# Schema defaults are applied by slapconfiguration.jsonschema #}
+{% set port = slapparameter_dict['port'] -%}
+{% set internal_port = slapparameter_dict['internal-port'] -%}
+{% set ollama_url = slapparameter_dict.get('ollama-url', '') -%}
+{% set openai_api_base_url = slapparameter_dict.get('openai-api-base-url', '') -%}
+{% set openai_api_key = slapparameter_dict.get('openai-api-key', '') -%}
+{% set webui_auth = slapparameter_dict['webui-auth'] -%}
+{% set log_level = slapparameter_dict['log-level'] -%}
+{% set logrotate_num = slapparameter_dict['logrotate-num'] -%}
+
+{% set ipv6 = slap_configuration.get('ipv6-random', '::1') -%}
+{% set ipv4 = slap_configuration.get('ipv4-random', '127.0.0.1') -%}
+
+# ─────────────────────────────────────────────────
+# Directory structure
+# ─────────────────────────────────────────────────
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+log = ${:var}/log
+run = ${:var}/run
+service = ${:etc}/service
+srv = ${:home}/srv
+tmp = ${:home}/tmp
+backup = ${:srv}/backup
+ssl = ${:etc}/ssl
+data = ${:srv}/data
+vector-db = ${:data}/vector_db
+uploads = ${:data}/uploads
+cache = ${:data}/cache
+
+# ─────────────────────────────────────────────────
+# Self-signed TLS certificate
+# ─────────────────────────────────────────────────
+[tls-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -f ${directory:ssl}/server.key ]; then
+    {{ openssl_bin }} req -x509 -nodes -days 3650 \
+      -newkey rsa:2048 \
+      -keyout ${directory:ssl}/server.key \
+      -out ${directory:ssl}/server.crt \
+      -subj "/CN=openwebui" \
+      -addext "subjectAltName=IP:{{ ipv6 }}"
+    cat ${directory:ssl}/server.key ${directory:ssl}/server.crt \
+      > ${directory:ssl}/server.pem
+  fi
+stop-on-error = true
+update-command = ${:command}
+
+# ─────────────────────────────────────────────────
+# Persistent secret key for OpenWebUI sessions
+# ─────────────────────────────────────────────────
+[openwebui-secret-key]
+recipe = plone.recipe.command
+command =
+  if [ ! -f ${:path} ]; then
+    {{ openssl_bin }} rand -hex 32 > ${:path}
+  fi
+path = ${directory:srv}/.webui_secret_key
+stop-on-error = true
+update-command = ${:command}
+
+# ─────────────────────────────────────────────────
+# OpenWebUI server
+# ─────────────────────────────────────────────────
+[openwebui-startup]
+recipe = plone.recipe.command
+command =
+  cat > ${:output} << 'STARTEOF'
+  #!/bin/sh
+  export DATA_DIR=${directory:data}
+  export WEBUI_SECRET_KEY=$(cat ${openwebui-secret-key:path})
+  export WEBUI_AUTH={{ 'true' if webui_auth else 'false' }}
+  export LOG_LEVEL={{ log_level }}
+  export VECTOR_DB=milvus
+{% if ollama_url %}
+  export OLLAMA_BASE_URL={{ ollama_url }}
+{% endif %}
+{% if openai_api_base_url %}
+  export OPENAI_API_BASE_URL={{ openai_api_base_url }}
+{% endif %}
+{% if openai_api_key %}
+  export OPENAI_API_KEY='{{ openai_api_key }}'
+{% endif %}
+  OWUI_EGG=$({{ python_bin }} -c "import open_webui, os; print(os.path.dirname(open_webui.__file__))")
+  export FRONTEND_BUILD_DIR=$OWUI_EGG/frontend
+  export HOME=${directory:home}
+  export TMPDIR=${directory:tmp}
+  exec {{ openwebui_bin }} serve --host {{ ipv6 }} --port {{ internal_port }}
+  STARTEOF
+  chmod 700 ${:output}
+output = ${directory:etc}/openwebui-start.sh
+stop-on-error = true
+update-command = ${:command}
+
+[openwebui-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${openwebui-startup:output}
+wrapper-path = ${directory:service}/openwebui
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+# ─────────────────────────────────────────────────
+# HAProxy — Frontend with TLS
+# ─────────────────────────────────────────────────
+[haproxy-config]
+recipe = plone.recipe.command
+command =
+  cat > ${:output} << 'HAPROXYEOF'
+  global
+    log stdout format raw local0 info
+    maxconn 512
+
+  defaults
+    log     global
+    mode    http
+    option  httplog
+    option  dontlognull
+    timeout connect 5s
+    timeout client  60s
+    timeout server  60s
+    timeout tunnel  24h
+    timeout http-keep-alive 60s
+    timeout http-request 30s
+    retries 3
+
+  frontend openwebui-frontend
+    bind [{{ ipv6 }}]:{{ port }} ssl crt ${directory:ssl}/server.pem
+    log-format "%ci:%cp [%t] %ft %b/%s %Tq/%Tw/%Tc/%Tr/%Tt %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %hr %hs %{+Q}r"
+    default_backend openwebui-backend
+
+  backend openwebui-backend
+    server openwebui [{{ ipv6 }}]:{{ internal_port }} check inter 10s fall 3 rise 2
+    option http-no-delay
+    http-response set-header X-Served-By openwebui-slapos
+  HAPROXYEOF
+output = ${directory:etc}/haproxy.cfg
+stop-on-error = true
+update-command = ${:command}
+[haproxy-service]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ haproxy_bin }}/sbin/haproxy -f ${haproxy-config:output} -W -db
+wrapper-path = ${directory:service}/haproxy
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+# ─────────────────────────────────────────────────
+# Promises
+# ─────────────────────────────────────────────────
+[openwebui-port-listening-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = openwebui-port-listening.py
+config-host = {{ ipv6 }}
+config-port = {{ internal_port }}
+
+[haproxy-port-listening-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = haproxy-port-listening.py
+config-host = {{ ipv6 }}
+config-port = {{ port }}
+
+# ─────────────────────────────────────────────────
+# Frontend request for public HTTPS access
+# ─────────────────────────────────────────────────
+[html5as-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = OpenWebUI Frontend
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = https://[{{ ipv6 }}]:{{ port }}
+config-https-only = true
+return = domain secure_access
+
+# ─────────────────────────────────────────────────
+# Logrotate entries (using monitor stack infrastructure)
+# ─────────────────────────────────────────────────
+[logrotate-entry-openwebui]
+<= logrotate-entry-base
+name = openwebui
+log = ${directory:log}/openwebui.log
+rotate-num = {{ logrotate_num }}
+frequency = daily
+
+[logrotate-entry-haproxy]
+<= logrotate-entry-base
+name = haproxy
+log = ${directory:log}/haproxy.log
+rotate-num = {{ logrotate_num }}
+frequency = daily
+
+# ─────────────────────────────────────────────────
+# Monitor instance parameter (required by monitor stack)
+# ─────────────────────────────────────────────────
+[monitor-instance-parameter]
+monitor-httpd-port = 8196
+
+# ─────────────────────────────────────────────────
+# Publish connection information
+# ─────────────────────────────────────────────────
+[publish-connection-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+url = https://[{{ ipv6 }}]:{{ port }}
+frontend-url = ${html5as-frontend:connection-secure_access}
+ipv6 = {{ ipv6 }}
+port = {{ port }}
