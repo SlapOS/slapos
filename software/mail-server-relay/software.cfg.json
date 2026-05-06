@@ -10,11 +10,11 @@
       "response": "instance-cluster-output-schema.json",
       "index": 0
     },
-    "cluster-slave": {
+    "cluster-shared": {
       "title": "Mail Server Cluster Slave",
       "software-type": "cluster",
-      "request": "instance-slave-input-schema.json",
-      "response": "instance-slave-output-schema.json",
+      "request": "instance-shared-input-schema.json",
+      "response": "instance-shared-output-schema.json",
       "shared": true,
       "index": 1
     },
