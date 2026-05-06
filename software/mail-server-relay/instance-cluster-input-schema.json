@@ -3,6 +3,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Cluster Input Parameters",
   "definitions": {
+    "fqdn": {
+      "title": "Fully Qualified Domain Name",
+      "description": "The public fully qualified domain name referencing this relay node",
+      "type": "string",
+      "pattern": "^.+$"
+    },
     "relay-config": {
       "type": "object",
       "properties": {
@@ -104,6 +110,9 @@
         "^[a-zA-Z0-9-]+$": {
           "type": "object",
           "properties": {
+            "fqdn": {
+              "$ref": "#/definitions/fqdn"
+            },
             "sla": {
               "type": "object",
               "description": "SLA parameters for the instance",

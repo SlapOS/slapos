@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Mail Domain Relay Input Parameters",
+  "definitions": {
+    "mail-domain-relay": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Domain Name",
+          "description": "The domain name for which to relay mail",
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9.-]+$"
+        },
+        "mail-server-host": {
+          "title": "Mail Server Host",
+          "description": "The backend mail server host (IPv6 or IPv4) for this domain",
+          "type": "string"
+        },
+        "mail-server-port": {
+          "title": "Mail Server Port",
+          "description": "The backend mail server port for this domain",
+          "type": "integer",
+          "default": 10025
+        },
+        "authentication": {
+          "title": "Authentication Method",
+          "description": "How this domain authenticates to the relay nodes for outbound mail",
+          "type": "string",
+          "enum": [
+            "none",
+            "password",
+            "fingerprint"
+          ],
+          "default": "none"
+        },
+        "fingerprints": {
+          "title": "Backend TLS certificate(s) fingerprint(s)",
+          "description:": "List of fingerprints of the backend's certificates to authentify the backend to the relay nodes",
+          "type": "array",
+          "items": {
+            "title": "TLS certificate fingerprint",
+            "type": "string",
+            "pattern": "^.+$"
+          },
+          "minItems": 1,
+          "maxItems": 5
+        }
+      },
+      "required": [
+        "name",
+        "mail-server-host"
+      ]
+    }
+  },
+  "$ref": "#/definitions/mail-domain-relay"
+}
