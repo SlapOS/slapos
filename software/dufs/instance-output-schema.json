@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Values returned by Dufs",
+  "type": "object",
+  "properties": {
+    "upload-url": {
+      "description": "Webdav upload URL",
+      "type": "string"
+    },
+    "user": {
+      "description": "Webdav upload user",
+      "type": "string"
+    },
+    "password": {
+      "description": "Webdav upload password",
+      "type": "string"
+    },
+    "public-url": {
+      "description": "Public Webdav URL",
+      "type": "string"
+    },
+    "caucase-url": {
+      "description": "Caucase URL",
+      "type": "string"
+    },
+    "backend-url": {
+      "title": "Backend URL",
+      "type": "string"
+    }
+  }
+}
