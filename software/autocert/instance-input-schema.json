@@ -1,0 +1,51 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "registration-email": {
+      "title": "Certificate registration-email",
+      "description": "Certificate registration-email.",
+      "type": "string",
+      "default": ""
+    },
+    "kedifa-caucase-url": {
+      "title": "Kedifa caucase URL",
+      "description": "Kedifa caucase URL. Please check this parameter from your slave frontend connexion information.",
+      "type": "string",
+      "format": "uri"
+    },
+    "kedifa-base-url": {
+      "title": "Kedifa base URL",
+      "description": "Kedifa base URL. Please check this parameter from your slave frontend connexion information.",
+      "type": "string",
+      "format": "uri"
+    },
+    "kedifa-domain-dict": {
+      "title": "Domains definition",
+      "description": "Domains definition",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "kedifa-id": {
+              "title": "Kefifa ID",
+              "description": "Kedifa id. Please check this parameter from your slave frontend connexion information.",
+              "type": "string",
+              "default": ""
+            },
+            "domain-list": {
+              "title": "Domain name",
+              "description": "Domain name, can be more than one.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}
