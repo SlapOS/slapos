@@ -161,35 +161,27 @@ class E2ETestCase(SlapOSInstanceTestCase):
       "mail-server-port": port,
     }
     parameters.update(extra_parameters)
-    requester = lambda: cls.slap.request(
-      software_release=RELAY_SR,
-      partition_reference=domain,
-      partition_parameter_kw=serialize(parameters),
-      shared=True,
-      software_type='cluster',
-      state=state,
-    )
+    def requester():
+      relay_shared = cls.slap.request(
+        software_release=RELAY_SR,
+        partition_reference=domain,
+        partition_parameter_kw=serialize(parameters),
+        shared=True,
+        software_type='cluster',
+        state=state,
+      )
+      relay_shared.domain = domain
+      relay_shared.examplemail = 'example@' + domain
+      relay_shared.backend_address = address
+      return relay_shared
     relay_shared = requester()
     relay_shared.rerequest = requester
-    relay_shared.domain = domain
-    relay_shared.examplemail = 'example@' + domain
-    relay_shared.backend_address = address
     return relay_shared
 
   @classmethod
   def getRelayHost(cls, relay_cluster):
-    # TODO: the cluster should really publish this cleanly
     cluster_params = cls.getConnectionDict(relay_cluster)
-    dns_entries = cluster_params.get('dns-entries', '')
-    for line in dns_entries.strip().split('\n'):
-      if 'MX' in line:
-        parts = line.strip().split()
-        if len(parts) >= 4:
-          relay_host = parts[3]
-          if relay_host.startswith('[') and relay_host.endswith(']'):
-            relay_host = relay_host[1:-1]
-          return relay_host
-    raise Exception("Could not find relay host")
+    return cluster_params.get('relay-hosts')[0]
 
   @classmethod
   def getRelaySharedLogin(cls, password_shared):
@@ -291,11 +283,16 @@ class E2ETestCase(SlapOSInstanceTestCase):
 
 
 class Relay(E2ETestCase):
+  # Use IPv6 of extra free partitions
+  partition_count = 15
+
   mail_server_domains = ["mail%d.domain.lan" % i for i in range(1, 3)]
   password_relay_domain = "mail.relay.password.domain.lan"
   ip_auth_relay_domain = "mail.relay.ip-auth.domain.lan"
   fingerprint_relay_domain = "mail.relay.fingerprint.domain.lan"
   unknown_domain = "unknown.domain.lan"
+  well_known_domain = "rapid.space"
+  owned_mx_domain = "mx-ipv6.messwithdns.test.rapid.space"
 
   @classmethod
   def requestDefaultInstance(cls, state="started"):
@@ -303,8 +300,8 @@ class Relay(E2ETestCase):
       # Request two relays nodes to cover corner cases
       # such as multiple relay TLS fingerprints
       topology = {
-        "relay-one": {"state": "started"},
-        "relay-two": {"state": "started"},
+        "relay-one": {"fqdn": "ipv6.messwithdns.test.rapid.space"},
+        "relay-two": {"fqdn": "ipv4.messwithdns.test.rapid.space"},
       },
       proxy_map = {},
       extra = {
@@ -341,11 +338,15 @@ class Relay(E2ETestCase):
     )
     cls.free_ipv6 = next(available_ipv6)
     # password auth relay
-    cls.password_relay_shared = cls.requestRelayShared(
-      cls.password_relay_domain,
-      (next(available_ipv6), 10025),
-      {"authentication": "password"},
-      state,
+    extra = {"authentication": "password"}
+    cls.password_relay_shared, cls.well_known_shared, cls.owned_mx_shared = (
+      cls.requestRelayShared(d, (next(available_ipv6), 10025), extra, state)
+      for d in (
+        cls.password_relay_domain, cls.well_known_domain, cls.owned_mx_domain
+      )
+    )
+    cls.password_relays = (
+      cls.password_relay_shared, cls.well_known_shared, cls.owned_mx_shared
     )
     # (obsolete) ip auth relay
     cls.ip_auth_relay_shared = cls.requestRelayShared(
@@ -397,9 +398,8 @@ class Relay(E2ETestCase):
       'port': cls.relay_outbound_port,
       'timeout': cls.smtp_timeout,
     }
-    cls.password_relay_shared.login = cls.getRelaySharedLogin(
-      cls.password_relay_shared
-    )
+    for relay in cls.password_relays:
+      relay.login = cls.getRelaySharedLogin(relay)
     cls.relay_servers = [
       cp for cp in cls.slap.computer.getComputerPartitionList()
       if cp.getState() == 'started' and cp.getType() == 'relay'
@@ -408,6 +408,16 @@ class Relay(E2ETestCase):
       server.smtp_addr = cls.smtpAddrOf(server)
       server.imap_addr = cls.imapAddrOf(server)
     cls.free_port = 10011
+
+  def test_relay_inbound_fqdn(self):
+    with smtplib.SMTP(**self.relay_inbound) as smtp:
+      _, resp = smtp.helo()
+      self.assertEqual(resp, b'ipv6.messwithdns.test.rapid.space')
+
+  def test_relay_outbound_fqdn(self):
+    with smtplib.SMTP(**self.relay_outbound) as smtp:
+      _, resp = smtp.helo()
+      self.assertEqual(resp, b'ipv6.messwithdns.test.rapid.space')
 
   def test_relay_unknown_sender_rejected(self):
     mail1 = self.mail_servers[0]
@@ -421,6 +431,33 @@ class Relay(E2ETestCase):
           to_addrs=[mail1.testmail],
           msg="Subject: Unknown sender should be rejected\n\n" + body,
        )
+
+  def test_relay_usurped_well_known_domain_rejected(self):
+    mail1 = self.mail_servers[0]
+    msg = "Subject: Send to relay from usurped well-known sender address"
+    with smtplib.SMTP(**self.relay_outbound) as smtp:
+      smtp.starttls()
+      smtp.login(*self.well_known_shared.login)
+      # login works fine but sending is rejected
+      with self.assertRaises(smtplib.SMTPRecipientsRefused):
+        smtp.sendmail(
+          from_addr=self.well_known_shared.examplemail,
+          to_addrs=[mail1.testmail],
+          msg=msg,
+        )
+
+  def test_relay_owned_mx_domain_accepted(self):
+    mail1 = self.mail_servers[0]
+    msg = "Subject: Send to relay from domain with cluster MX"
+    with smtplib.SMTP(**self.relay_outbound) as smtp:
+      smtp.starttls()
+      smtp.login(*self.owned_mx_shared.login)
+      smtp.sendmail(
+        from_addr=self.owned_mx_shared.examplemail,
+        to_addrs=[mail1.testmail],
+        msg=msg,
+      )
+    self.check_inbox(mail1, msg)
 
   def test_relay_password_shared_output_stable(self):
     params = self.getConnectionDict(self.password_relay_shared)
@@ -731,7 +768,7 @@ class E2E(E2ETestCase):
     external = [cls.getConnectionDict(e) for e in external_mail_servers]
     cls.relay_cluster = relay_cluster = cls.requestRelayCluster(
       topology = {
-        "relay-one": {"state": "started"},
+        "relay-one": {"fqdn": "relay.one.lan"},
       },
       proxy_map = {
         "external-proxy-1": {
@@ -943,7 +980,7 @@ class CustomOutbound(E2ETestCase):
   def requestDefaultInstance(cls, state="started"):
     relay_cluster = cls.requestRelayCluster(
       topology = {
-        "relay-one": {"state": "started"},
+        "relay-one": {"fqdn": "relay.one.lan"},
       },
       proxy_map = {},
       extra = {},
