@@ -1,0 +1,15 @@
+{
+  "name": "System Audit",
+  "description": "Agent to be deployed on NotePODs to check security compliance",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default setup for System Audit instance",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json",
+      "index": 0
+    }
+  }
+}
