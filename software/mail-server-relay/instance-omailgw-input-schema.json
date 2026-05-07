@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "oMailGw Input Parameters",
+  "properties": {
+    "relay-hostname-list": {
+      "title": "Relay Hostname List",
+      "description": "Relay hostnames that should be registered in oMailGw.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9.-]+$"
+      },
+      "default": []
+    },
+    "relay-domain": {
+      "title": "Relay Domain",
+      "description": "Domain associated with registered relay servers.",
+      "type": "string",
+      "default": "omailgw.local"
+    },
+    "relay-poll-interval": {
+      "title": "Relay Poll Interval",
+      "description": "Seconds between relay-side CLI polling runs.",
+      "type": "integer",
+      "minimum": 60,
+      "default": 300
+    }
+  }
+}
