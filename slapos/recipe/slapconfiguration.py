@@ -48,8 +48,56 @@ from slapos.util import (
 from slapos import format as slapformat
 from zc.buildout import UserError
 
+# jsonschema >= 4.18 uses the `referencing` library to resolve cross-file
+# $refs. `referencing` is Python 3 only, so older Python 2 environments keep
+# using the deprecated jsonschema.RefResolver path.
+try:
+  import referencing
+  import referencing.exceptions
+  from referencing import Registry, Resource
+  from referencing.jsonschema import DRAFT202012
+  _USE_REFERENCING = True
+except ImportError:
+  _USE_REFERENCING = False
+
 
 logger = logging.getLogger("slapos")
+
+
+def _capture_scope(validator):
+  """Capture a validator's current $ref-resolution scope for later restoration."""
+  if _USE_REFERENCING:
+    return validator._resolver
+  return validator.resolver.base_uri
+
+
+def _apply_scope(validator, scope):
+  """Restore a previously captured scope on (or evolved from) `validator`."""
+  if _USE_REFERENCING:
+    return validator.evolve(_resolver=scope)
+  validator.resolver.push_scope(scope)
+  return validator
+
+
+def _resolver_of(validator):
+  """Return the $ref resolver attached to `validator`."""
+  if _USE_REFERENCING:
+    return validator._resolver
+  return validator.resolver
+
+
+def _make_referencing_registry(software_description):
+  """Build a referencing.Registry that lazily loads sibling schema files
+  via SoftwareReleaseSchema._readAsJson.
+  """
+  if not _USE_REFERENCING:
+    return None
+  def retrieve(uri):
+    contents = software_description._readAsJson(uri, set_schema_id=True)
+    if contents is None:
+      raise referencing.exceptions.NoSuchResource(ref=uri)
+    return Resource.from_contents(contents, default_specification=DRAFT202012)
+  return Registry(retrieve=retrieve)
 
 
 class Recipe(object):
@@ -285,9 +333,12 @@ class Serialised(Recipe):
 
 
 class DefaultValidator(object):
-  def __init__(self, set_defaults=False, unstringify=None):
+  def __init__(self, set_defaults=False, unstringify=None, registry=None):
     self.set_defaults = set_defaults
     self.unstringify = unstringify
+    # referencing.Registry used when jsonschema >= 4.18 to resolve sibling
+    # schema files; ignored on older jsonschema where RefResolver is auto-built.
+    self.registry = registry
     self.applied_schemas = []
     self.memoized_defaults = {}
     self.applied_defaults = {}
@@ -346,7 +397,6 @@ class DefaultValidator(object):
       schema = args[0] if args else validator.schema
       e = None
       index = len(self.applied_schemas)
-      uri = validator.resolver.base_uri
       for e in original_iter_errors(validator, instance, *args):
         # In case of error, drop all collected subschema *before* yielding
         # control back to the caller.
@@ -362,10 +412,11 @@ class DefaultValidator(object):
       else:
         if not isinstance(schema, bool) and schema.get('properties'):
           # Only collect schemas with properties: we don't need the others.
-          # Keep validator to reuse validator, and base_uri to reconstruct
-          # a correct resolution scope later.
-          uri = validator.resolver.base_uri
-          self.applied_schemas.append((validator, schema, uri, instance))
+          # Keep validator to reuse validator, and the current resolver scope
+          # (a referencing.Resolver in jsonschema>=4.18, otherwise a base URI
+          # string) to reconstruct a correct resolution scope later.
+          scope = _capture_scope(validator)
+          self.applied_schemas.append((validator, schema, scope, instance))
           if self.set_defaults:
             # Defaults may be indirectly defined behind one or several $ref.
             # We resolve and memoize defaults now during validation instead
@@ -391,6 +442,41 @@ class DefaultValidator(object):
         del self.applied_schemas[index:]
       return unevaluated
 
+  def descend(self, kls):
+    # jsonschema 4.18+ rewrote `descend` to iterate keyword validators inline
+    # instead of routing through `iter_errors`, which means our `iter_errors`
+    # wrapper above no longer observes sub-schema descents (only the top-level
+    # call). Replace `descend` with a version that goes through `iter_errors`,
+    # restoring the pre-4.18 behavior our scope-collection logic relies on.
+    if not _USE_REFERENCING:
+      return None
+    def descend(validator, instance, schema, path=None, schema_path=None,
+                resolver=None):
+      if schema is True:
+        return
+      if schema is False:
+        yield jsonschema.exceptions.ValidationError(
+          "False schema does not allow %r" % (instance,),
+          validator=None, validator_value=None,
+          instance=instance, schema=schema,
+        )
+        return
+      if validator._ref_resolver is not None:
+        evolved = validator.evolve(schema=schema)
+      else:
+        if resolver is None:
+          resolver = validator._resolver.in_subresource(
+            Resource.from_contents(
+              schema, default_specification=DRAFT202012))
+        evolved = validator.evolve(schema=schema, _resolver=resolver)
+      for error in evolved.iter_errors(instance):
+        if path is not None:
+          error.path.appendleft(path)
+        if schema_path is not None:
+          error.schema_path.appendleft(schema_path)
+        yield error
+    return descend
+
   def create(self, schema, collect_defaults=True):
     v = self.original_validator_for(schema)
     if not self.unstringify and not collect_defaults:
@@ -403,6 +489,9 @@ class DefaultValidator(object):
     } if collect_defaults and unevaluatedProperties else ()
     kls = jsonschema.validators.extend(v, validators, None, type_checker)
     kls.iter_errors = self.iter_errors(kls)
+    descend = self.descend(kls)
+    if descend is not None:
+      kls.descend = descend
     return kls
 
   @contextmanager
@@ -428,10 +517,15 @@ class DefaultValidator(object):
       jsonschema.validators.validator_for = self.original_validator_for
 
   def validate(self, schema, instance):
+    # Build the validator-instance kwargs to forward the referencing.Registry
+    # under jsonschema>=4.18; older jsonschema doesn't accept this kwarg.
+    validator_kwargs = {}
+    if _USE_REFERENCING and self.registry is not None:
+      validator_kwargs['registry'] = self.registry
     with self.propagate(self.create) as validator_for:
       # Validate the instance with the extended validator
       e = None
-      for e in validator_for(schema)(schema).iter_errors(instance):
+      for e in validator_for(schema)(schema, **validator_kwargs).iter_errors(instance):
         yield e
       if e is None:
         # Unstringify properties according to schemas that apply
@@ -452,7 +546,7 @@ class DefaultValidator(object):
     # the type checking logic here could result in altered validation paths!
     if e is None and (self.unstringify or self.set_defaults):
       with self.propagate(collect_defaults=False) as validator_for:
-        for e in validator_for(schema)(schema).iter_errors(instance):
+        for e in validator_for(schema)(schema, **validator_kwargs).iter_errors(instance):
           yield e
 
   def fetch_key(self, key, schema, resolver):
@@ -461,9 +555,12 @@ class DefaultValidator(object):
     except KeyError:
       pass
     ref = schema['$ref']
-    # This uses the internal RefResolver of jsonschema now deprecated in
-    # favor of the referencing library. But we still use 4.17.3 which is
-    # still using RefResolver. Also referencing library is Python3 only.
+    # jsonschema >= 4.18 ships a referencing.Resolver whose lookup() returns a
+    # Resolved with a new resolver carrying the pushed scope; older versions
+    # use the deprecated RefResolver context manager.
+    if _USE_REFERENCING:
+      resolved = resolver.lookup(ref)
+      return self.fetch_key(key, resolved.contents, resolved.resolver)
     with resolver.resolving(ref) as resolved:
       return self.fetch_key(key, resolved, resolver)
 
@@ -496,7 +593,7 @@ class DefaultValidator(object):
       if id(subschema) in self.memoized_defaults:
         continue
       try:
-        default = self.fetch_key('default', subschema, validator.resolver)
+        default = self.fetch_key('default', subschema, _resolver_of(validator))
       except KeyError:
         continue
       self.memoized_defaults[id(subschema)] = default
@@ -504,10 +601,12 @@ class DefaultValidator(object):
   def collect_defaults(self):
     index = 0
     while index < len(self.applied_schemas):
-      validator, schema, uri, instance = self.applied_schemas[index]
+      validator, schema, scope, instance = self.applied_schemas[index]
       index += 1 # iterate over a potentially growing list
-      # Reconstruct correct resolution scope
-      validator.resolver.push_scope(uri)
+      # Reconstruct correct resolution scope. With the referencing library,
+      # this returns an evolved validator carrying the captured resolver;
+      # with the legacy RefResolver, scope is pushed onto `validator` in place.
+      effective_validator = _apply_scope(validator, scope)
       # Recursively collect defaults
       for key, subschema in schema['properties'].items():
         # Only consider defaults that will be applied
@@ -524,9 +623,9 @@ class DefaultValidator(object):
         except KeyError:
           record = defaultdict(list)
           self.applied_defaults[id(instance)] = instance, record
-        record[key].append((default, subschema, uri))
+        record[key].append((default, subschema, scope))
         # Validate the defaults to recursively collect their defaults
-        for error in validator.descend(
+        for error in effective_validator.descend(
           default,
           subschema,
           path='default of ' + key,
@@ -545,9 +644,9 @@ class DefaultValidator(object):
         instance[key] = default
 
   def apply_unstringify(self):
-    for validator, schema, uri, instance in self.applied_schemas:
-      # Reconstruct correct resolution scope
-      validator.resolver.push_scope(uri)
+    for validator, schema, scope, instance in self.applied_schemas:
+      # Reconstruct correct resolution scope (see collect_defaults).
+      effective_validator = _apply_scope(validator, scope)
       # Attempt to unstringify stringified values back to their expected type
       for key, subschema in schema['properties'].items():
         try:
@@ -561,7 +660,8 @@ class DefaultValidator(object):
           #   ]
           # }
           # In such cases, we do not aim to support unstringifying.
-          t = self.fetch_key('type', subschema, validator.resolver)
+          t = self.fetch_key(
+            'type', subschema, _resolver_of(effective_validator))
         except KeyError:
           continue
         # Support the general case where "type" may be an array of strings
@@ -683,6 +783,9 @@ class JsonSchema(Recipe):
     software_description = self._description(options)
     serialisation = software_description.getSerialisation(strict=True)
     unstringify_types_dict = {'integer': int, 'boolean': str_to_bool}
+    # Cross-file $refs in JSON Schemas are resolved through this registry under
+    # jsonschema>=4.18; on older versions it is None and ignored.
+    registry = _make_referencing_registry(software_description)
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
       parameter_dict = unwrap(parameter_dict)
     if validate.main:
@@ -696,6 +799,7 @@ class JsonSchema(Recipe):
       validator = DefaultValidator(
         set_defaults.main,
         unstringify_types_dict if unstringify.main else None,
+        registry=registry,
       )
       try:
         parameter_dict = self._validateMain(schema, validator, parameter_dict)
@@ -716,6 +820,7 @@ class JsonSchema(Recipe):
         validator = DefaultValidator(
           set_defaults.shared,
           unstringify_types_dict if unstringify.shared else None,
+          registry=registry,
         )
       else:
         schema = validator = None
