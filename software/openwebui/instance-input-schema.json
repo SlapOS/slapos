@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenWebUI - Instance Parameters",
+  "description": "Configuration parameters for deploying OpenWebUI via SlapOS.",
+  "type": "object",
+  "properties": {
+    "port": {
+      "type": "integer",
+      "title": "External HTTPS Port",
+      "description": "Port on which HAProxy exposes OpenWebUI (IPv6).",
+      "default": 8443,
+      "minimum": 1024,
+      "maximum": 65535
+    },
+    "internal-port": {
+      "type": "integer",
+      "title": "Internal Port",
+      "description": "Port on which OpenWebUI listens internally (behind HAProxy).",
+      "default": 18080,
+      "minimum": 1024,
+      "maximum": 65535
+    },
+    "ollama-url": {
+      "type": "string",
+      "title": "Ollama Backend URL",
+      "description": "URL of an Ollama instance to connect to (e.g. http://localhost:11434).",
+      "format": "uri"
+    },
+    "openai-api-base-url": {
+      "type": "string",
+      "title": "OpenAI-compatible API Base URL",
+      "description": "Base URL of an OpenAI-compatible API backend.",
+      "format": "uri"
+    },
+    "openai-api-key": {
+      "type": "string",
+      "title": "OpenAI API Key",
+      "description": "API key for the OpenAI-compatible backend."
+    },
+    "webui-auth": {
+      "type": "boolean",
+      "title": "Enable Authentication",
+      "description": "Enable OpenWebUI built-in authentication.",
+      "default": true
+    },
+    "log-level": {
+      "type": "string",
+      "title": "Log Level",
+      "description": "Python logging level for OpenWebUI.",
+      "default": "INFO",
+      "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    },
+    "logrotate-num": {
+      "type": "integer",
+      "title": "Log Retention (days)",
+      "description": "Number of rotated log files to keep.",
+      "default": 30,
+      "minimum": 1,
+      "maximum": 365
+    }
+  }
+}
