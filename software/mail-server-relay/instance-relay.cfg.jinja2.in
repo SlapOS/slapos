@@ -179,7 +179,7 @@ inline =
 
 {% set mail_domains = slapparameter_dict['mail-domains'] %}
 {% set cluster_fqdns = slapparameter_dict['cluster-fqdns'] %}
-{% set proxy_map = slapparameter_dict.get('proxy-map', {}) %}
+{% set proxy_map = slapparameter_dict['proxy-map'] %}
 {% set greylisting_enable = slapparameter_dict.get('greylisting-enable', true) %}
 {% set greylisting_delay = slapparameter_dict.get('greylisting-delay', 60) %}
 {% set greylisting_whitelist_clients = slapparameter_dict.get('greylisting-whitelist-clients', []) %}
