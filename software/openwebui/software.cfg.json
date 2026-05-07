@@ -1,0 +1,14 @@
+{
+  "name": "OpenWebUI",
+  "description": "OpenWebUI self-hosted AI chat interface with HAProxy TLS frontend",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "OpenWebUI instance",
+      "request": "instance-input-schema.json",
+      "index": 0
+    }
+  }
+}
