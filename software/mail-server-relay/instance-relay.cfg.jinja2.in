@@ -145,13 +145,14 @@ recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
 log-file = $${missing_option_log-file:error}
 postfix-directory = $${missing_option_postfix-directory:error}
+fqdn = {{ dumps(slapparameter_dict.get('fqdn', instance_title)) }}
 context =
   section directory directory
   section postfix_directory $${:postfix-directory}
   key content :content
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
-  raw server_fqdn {{ server_fqdn }}
+  key server_fqdn :fqdn
   raw xz_utils_location ${xz-utils:location}
   raw postfix_location ${postfix:location}
   raw postfix_log_path $${:log-file}
@@ -177,6 +178,7 @@ inline =
 # -----------------------------
 
 {% set mail_domains = slapparameter_dict['mail-domains'] %}
+{% set cluster_fqdns = slapparameter_dict['cluster-fqdns'] %}
 {% set proxy_map = slapparameter_dict.get('proxy-map', {}) %}
 {% set greylisting_enable = slapparameter_dict.get('greylisting-enable', true) %}
 {% set greylisting_delay = slapparameter_dict.get('greylisting-delay', 60) %}
@@ -343,6 +345,20 @@ depends =
 name = inbound_postfix
 log = $${inbound-postfix-main.cf:log-file}
 copytruncate = true
+
+
+# Postfix Backend Domain Verification
+# -----------------------------------
+
+[outbound-postfix-sender-mx]
+recipe = slapos.recipe.template:jinja2
+output = $${outbound-postfix-directory:etc}/backend_sender_verified_mx
+action = ok
+inline =
+  {% raw %}{#- NOTHING -#}{% endraw -%}
+  {%- for fqdn in cluster_fqdns %}
+  {{ fqdn }} $${:action}
+  {%- endfor %}
 
 
 # Postfix Backend Authentication
@@ -521,50 +537,67 @@ content =
   smtpd_sender_login_maps = texthash:$${outbound-postfix-sender-login-map:output}
   {%- endif %}
 
-  # Server access restrictions
+  # Sender authentication and auth/domain match enforcement
   smtpd_sender_restrictions =
-    # reject login/domain mismatches
-    reject_sender_login_mismatch
   {%- if sorted_sender_hosts %}
-    # reject ip/domain mismatches
+    # Reject ip/domain mismatches for IP-authenticated senders
     check_client_access cidr:$${outbound-postfix-client-sender-access:output}
   {%- endif %}
-
-  smtpd_relay_restrictions =
-    # Permit IP-authentified senders;
-    # ip/domain mismatches are already rejected by the sender restrictions
+    # Reject login/domain mismatches for SASL-authenticated senders
+    reject_sender_login_mismatch
+    # Permit IP-authenticated senders;
+    # ip/domain mismatches are already rejected above
     permit_mynetworks
-    # Permit SASL-authentified senders;
-    # login/domain mismatches are already rejected by the sender restrictions
+    # Permit SASL-authenticated senders;
+    # password/domain mismatches are already rejected above
     permit_sasl_authenticated
   {%- if fingerprint_auth_backends %}
-    # Permit TLS-fingerprint authentified senders
-    # fingerprint/domain mismatches are rejected here
+    # Permit TLS-fingerprint authenticated senders;
+    # only matching fingerprint/domain pairs are accepted;
+    # fingerprint/domain mismatches are rejected directly
     check_ccert_access texthash:$${outbound-postfix-backend-clientcerts:output}
   {%- endif %}
     # Reject all others
     reject
 
-  smtpd_recipient_restrictions =
-    # Senders are previously authentified by smtpd_relay_restrictions;
-    # unauthenfied or unknown senders are already rejected there.
+  smtpd_relay_restrictions =
+    # Senders are previously authenticated by smtpd_sender_restrictions;
+    # unauthenticated or unknown senders are already rejected there.
     # Permit senders that additionally have access to an external proxy
     # regardless of the recipient.
     check_sender_access texthash:$${outbound-postfix-proxy-senders:output}
     # Otherwise for senders that do not have access to an external proxy,
-    # permit only recipients that are known backends.
+    # permit only recipients that are known backends...
     reject_unauth_destination
+    # ... and reject senders with valid MX (or A/AAA) records other than the
+    # FQDNs of the relays of this cluster. This prevents backends from using
+    # existing well-known domains that they do not own.
+    check_sender_mx_access cidr:{
+      {0.0.0.0/0 reject_sender_with_unknown_mx},
+      {::/0 reject_sender_with_unknown_mx}
+    }
 
-  # Per-host sender domain restrictions
-  # Each sending backend is only allowed to use MAIL FROM with its own domains.
-  {% if sorted_sender_hosts or fingerprint_auth_backends %}
   smtpd_restriction_classes =
-  {%- for host in sorted_sender_hosts %}
+    reject_sender_with_unknown_mx
+    {%- if sorted_sender_hosts or fingerprint_auth_backends %}
+    # Per-host sender domain restrictions
+    # Each sending backend is only allowed to use MAIL FROM with its own domains.
+    {%- for host in sorted_sender_hosts %}
     restrict_sender_{{ loop.index }}
-  {%- endfor %}
-  {%- for index, backend in enumerate(fingerprint_auth_backends) %}
+    {%- endfor %}
+    {%- for index, backend in enumerate(fingerprint_auth_backends) %}
     $${outbound-postfix-backend-clientcerts:prefix}{{ index }}
-  {%- endfor %}
+    {%- endfor %}
+
+  # Reject senders with MX pointing to domains not among the cluster's FQDNs
+  reject_sender_with_unknown_mx =
+    check_sender_mx_access pipemap:{
+      unionmap:{
+        static:any,
+        texthash:$${outbound-postfix-sender-mx:output}
+      },
+      inline:{ {any,$${outbound-postfix-sender-mx:action}=DUNNO}, {any=REJECT} }
+    }
 
   {% for host in sorted_sender_hosts -%}
   restrict_sender_{{ loop.index }} =
