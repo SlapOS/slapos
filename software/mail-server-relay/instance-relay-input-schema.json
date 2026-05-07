@@ -9,59 +9,24 @@
     {
       "type": "object",
       "properties": {
+        "fqdn": {
+          "$ref": "./instance-cluster-input-schema.json#/definitions/fqdn"
+        },
         "mail-domains": {
-          "title": "Mail Domains",
-          "description": "List of domains that this relay server will consider internal",
+          "title": "Mail Domain Relays",
+          "description": "List of mail domain relay requested configurations",
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string",
-                "pattern": "^.+$",
-                "description": "The domain name"
-              },
-              "mail-server-host": {
-                "type": "string",
-                "description": "The mail server host (IPv6) for this domain",
-                "title": "Mail Server Host"
-              },
-              "mail-server-port": {
-                "type": "integer",
-                "description": "The mail server port for this domain",
-                "title": "Mail Server Port",
-                "default": 10025
-              },
-              "can-send": {
-                "type": "boolean",
-                "description": "Whether this domain can send (outbound) emails through the relay"
-              },
-              "authentication": {
-                "type": "string",
-                "enum": [
-                  "none",
-                  "password",
-                  "fingerprint"
-                ],
-                "description": "Authentication method: 'none' for IP-based, 'password' for SASL",
-                "default": "none"
-              },
-              "password": {
-                "type": "string",
-                "description": "SASL password (only when authentication is 'password')"
-              },
-              "fingerprints": {
-                "title": "Backend TLS certificate(s) fingerprint(s)",
-                "description:": "List of fingerprints of the backend's certificates to authentify the backend to the relay",
-                "type": "array",
-                "items": {
-                  "title": "TLS certificate fingerprint",
-                  "type": "string",
-                  "pattern": "^.+$"
-                },
-                "minItems": 1
-              }
-            }
+            "$ref": "./instance-shared-input-schema.json#/definitions/mail-domain-relay"
+          },
+          "default": []
+        },
+        "cluster-fqdns": {
+          "title": "Cluster FQDNs",
+          "description": "FQDNs of each relay node in the cluster",
+          "type": "array",
+          "items": {
+            "$ref": "./instance-cluster-input-schema.json#/definitions/fqdn"
           },
           "default": []
         }
