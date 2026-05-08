@@ -1,0 +1,243 @@
+[buildout]
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+
+extends =
+  {{ monitor_template_cfg }}
+
+parts =
+  directory
+  monitor-base
+  ollama-download-model-script
+  ollama-run-script
+  ollama-model-download-source-config
+  ollama-model-download-processed-config
+  ollama-model-download-wrapper
+  ollama-model-download-processed-config-promise
+  ollama-service
+  ollama-run-model-service
+  nginx-certificate
+  nginx-conf
+  nginx-service
+  nginx-frontend-promise
+  ollama-frontend-promise
+  publish-connection-parameter
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+model = {{ model | default('deepseek-r1:14b') }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+bin = ${:home}/bin
+tmp = ${:home}/tmp
+log = ${:var}/log
+services = ${:etc}/service
+models = ${:srv}/models
+scripts = ${:etc}/run
+run = ${:var}/run
+status = ${:var}/status
+ollama-model-download-expose = ${monitor-directory:private}/ollama-model-download
+www = ${:srv}/www
+httpd-log = ${:var}/log/apache
+ssl = ${:etc}/ssl
+
+[ollama-download-model-script]
+recipe = slapos.recipe.template:jinja2
+url = {{ download_script_template }}
+output = ${directory:bin}/ollama-download-model.py
+mode = 0755
+context =
+  key directory_log directory:log
+  key directory_models directory:models
+  key ollama_host ollama-service:ollama-host
+  raw ollama_location {{ ollama_path }}
+
+[ollama-run-script]
+recipe = slapos.recipe.template:jinja2
+url = {{ ollama_run_template }}
+output = ${directory:bin}/ollama-run.py
+mode = 0755
+context =
+  key directory_log directory:log
+  key config_file ollama-model-download-source-config:output
+  raw ollama_location {{ ollama_path }}
+
+[empty-file-state-base-promise]
+<= monitor-promise-base
+promise = check_file_state
+name = ${:_buildout_section_name_}.py
+config-state = empty
+config-url = ${monitor-base:base-url}/private/ollama-model-download/${:filename}
+
+[ollama-model-download-processed-config]
+recipe = slapos.recipe.build
+install =
+  import os
+  import hashlib
+
+  if not os.path.exists(location):
+    os.mkdir(location)
+
+  state_file = '${:state-file}'
+  state_dir = os.path.dirname(state_file)
+  if not os.path.exists(state_dir):
+    os.makedirs(state_dir)
+
+  with open(state_file, 'w') as f:
+    try:
+      with open('${:config-file}', 'r') as config_handler, open('${:processed-file}') as processed_handler:
+        processed = processed_handler.read()
+        model_name = config_handler.read()
+        if processed == model_name:
+            # Model matched, create an empty file
+            open(state_file, 'w').close()
+        else:
+            # Error happened, write error message to the stats file
+            # Looks like the promise check has some kind of 'delay'
+            # even the processed file changed, the output read from file is still the old one
+            # we need to run "slapos node instance" multiple times.
+            f.write(f"ERR: processed '{processed}' != desired '{model_name}'\n")
+    except Exception as e:
+      f.write(str(e))
+update = ${:install}
+# deepseek-r1:14b
+config-file = ${ollama-model-download-source-config:output}
+state-filename = ollama-model-download-processed-config.state
+# /srv/slapgrid/slappart14/srv/runner/instance/slappart0/srv/monitor/private/ollama-model-download ERR: processed '' != desired 'deepseek-r1:14b'
+state-file = ${directory:ollama-model-download-expose}/${:state-filename}
+# /srv/slapgrid/slappart14/srv/runner/instance/slappart0/var/run/ollama-model-download-processed empty or model name
+processed-file = ${directory:var}/run/ollama-model-download-processed
+
+[ollama-model-download-source-config]
+recipe = slapos.recipe.template:jinja2
+inline =
+  {{ model }}
+model = {{ model | default('deepseek-r1:14b') }}
+context =
+  key model :model
+#  deepseek-r1:14b
+output = ${directory:etc}/ollama-model-download.conf
+
+[ollama-model-download-wrapper]
+# Wrapper to execute ollama model download
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/ollama-model-updater
+command-line = ${directory:bin}/ollama-download-model.py ${:config} ${ollama-model-download-processed-config:processed-file} ${:error-state-file}
+config = ${ollama-model-download-source-config:output}
+error-state-filename = ollama-model-download-error.text
+error-state-file = ${directory:ollama-model-download-expose}/${:error-state-filename}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[ollama-model-download-processed-config-promise]
+# Promise to check if the model has been downloaded
+<= empty-file-state-base-promise
+filename = ${ollama-model-download-processed-config:state-filename}
+config-filename = ${ollama-model-download-processed-config:state-file}
+
+[ollama-service]
+recipe = slapos.cookbook:wrapper
+command-line = {{ ollama_path }}/ollama serve
+wrapper-path = ${directory:services}/ollama-service
+ollama-host = ${slap-configuration:ipv4-random}:11434
+environment =
+  PATH={{ cmake_location }}/bin:{{ git_location }}/bin:{{ gcc_location }}/bin:{{ ninja_location }}/bin:$PATH
+  CC={{ gcc_location }}/bin/gcc
+  CXX={{ gcc_location }}/bin/g++
+  CGO_ENABLED=1
+  export PATH=/usr/local/cuda/bin:$PATH
+  export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+  OLLAMA_HOST=${:ollama-host}
+
+[ollama-run-model-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${directory:bin}/ollama-run.py ${:config-file} ${ollama-model-download-processed-config:state-file}
+wrapper-path = ${directory:services}/ollama-run-model-service
+environment =
+  OLLAMA_MODELS=${directory:models}
+  CUDA_VISIBLE_DEVICES=-1
+config-file = ${ollama-model-download-source-config:output}
+depends =
+  ${ollama-model-download-processed-config-promise:recipe}
+  ${ollama-model-download-wrapper:recipe}
+
+[nginx-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${:key-file} ]
+  then
+    mkdir -p ${directory:ssl}
+    {{ openssl_location }}/bin/openssl req -x509 -nodes -sha256 -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${nginx-parameters:ipv6}" \
+      -newkey rsa -keyout ${:key-file} \
+      -out ${:cert-file}
+  fi
+update-command = ${:command}
+key-file = ${nginx-parameters:ssl-key}
+cert-file = ${nginx-parameters:ssl-certificate}
+common-name = ${nginx-parameters:ipv6}
+stop-on-error = true
+
+[nginx-parameters]
+ipv6 = ${slap-configuration:ipv6-random}
+port = 4443
+pid-file = ${directory:run}/nginx.pid
+config-file = ${directory:etc}/nginx.conf
+access-log = ${directory:httpd-log}/nginx-access.log
+error-log = ${directory:httpd-log}/nginx-error.log
+nginx-mime-types = {{ nginx_location }}/conf/mime.types
+backend-url = http://${ollama-service:ollama-host}
+ssl-certificate = ${directory:etc}/ssl/nginx.crt
+ssl-key = ${directory:etc}/ssl/nginx.key
+
+[nginx-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ nginx_conf_in }}
+output = ${nginx-parameters:config-file}
+context =
+    section parameter_dict nginx-parameters
+
+[nginx-service]
+recipe = slapos.cookbook:wrapper
+command-line = {{ nginx_location }}/sbin/nginx -c ${nginx-conf:output} -p ${directory:srv} -g "error_log ${directory:log}/nginx-startup.log debug;"
+wrapper-path = ${directory:services}/nginx-service
+wait-for-files =
+  ${nginx-parameters:ssl-certificate}
+  ${nginx-parameters:ssl-key}
+
+[nginx-frontend-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = nginx-ipv6-port-listening.py
+config-host = ${nginx-parameters:ipv6}
+config-port = ${nginx-parameters:port}
+
+[request-frontend]
+<= monitor-frontend
+name = Ollama Frontend
+config-url = https://[${nginx-parameters:ipv6}]:${nginx-parameters:port}
+
+[ollama-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = ollama-http-frontend.py
+url = ${request-frontend:connection-secure_access}
+config-url = ${:url}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = ${request-frontend:connection-secure_access}
+ipv4_url = ${nginx-parameters:backend-url}
+backend-url = ${request-frontend:config-url}
+model = ${slap-configuration:model}
+model-download-log = ${directory:log}/ollama-model-download.log
+service-log = ${directory:log}/ollama-service.log
