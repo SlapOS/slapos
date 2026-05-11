@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Error Page Manager Output Parameters",
+  "type": "object",
+  "properties": {
+    "sync-url": {
+      "title": "Sync URL",
+      "description": "URL for frontend nodes to poll for error page manifest (token embedded in path).",
+      "type": "string"
+    },
+    "base-url": {
+      "title": "Base URL",
+      "description": "Base URL for downloading haproxy error page files (token embedded in path).",
+      "type": "string"
+    },
+    "operator-url": {
+      "title": "Operator URL",
+      "description": "URL of the error page manager web UI (token embedded in path).",
+      "type": "string"
+    },
+    "certificate": {
+      "title": "TLS Certificate",
+      "description": "PEM certificate of the error page manager (for SSL verification by frontend nodes).",
+      "type": "string"
+    },
+    "slave-error-page-information": {
+      "title": "Slave Error Page Information",
+      "description": "JSON dict mapping slave references to their upload URLs (token embedded in URL).",
+      "type": "string"
+    },
+    "monitor-base-url": {
+      "title": "Monitor Base URL",
+      "type": "string"
+    }
+  }
+}
