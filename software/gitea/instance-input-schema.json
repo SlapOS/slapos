@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Parameters to instantiate Gitea",
+  "additionalProperties": false,
+  "properties": {
+    "smtp-server": {
+      "description": "SMTP server used by gitea to send emails (in host:port format). Leaving this empty will disable email sending.",
+      "type": "string"
+    },
+    "smtp-username": {
+      "description": "Username to connect to SMTP server",
+      "type": "string"
+    },
+    "smtp-password": {
+      "description": "Password to connect to SMTP server",
+      "type": "string"
+    },
+    "smtp-verify-ssl": {
+      "description": "Verify SSL certificate of SMTP server",
+      "type": "boolean",
+      "default": true
+    },
+    "email-from-address": {
+      "description": "Email address used in From: header of emails",
+      "type": "string"
+    },
+    "email-from-name": {
+      "description": "Name used in From: header of emails",
+      "default": "Gitea",
+      "type": "string"
+    }
+  }
+}
