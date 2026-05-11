@@ -105,7 +105,7 @@ server {
   ## HSTS Config
   ## https://www.nginx.com/blog/http-strict-transport-security-hsts-and-nginx/
   {% if int(cfg("nginx_hsts_max_age")) > 0 -%}
-  {%   if '{{ cfg("nginx_hsts_include_subdomains") }}' == 'true' -%}
+  {%   if cfg_bool("nginx_hsts_include_subdomains") == 'true' -%}
   add_header Strict-Transport-Security "max-age={{ cfg('nginx_hsts_max_age') }}; includeSubDomains"
   {%   else -%}
   add_header Strict-Transport-Security "max-age={{ cfg('nginx_hsts_max_age') }}";
@@ -120,7 +120,7 @@ server {
   add_header 'Access-Control-Allow-Origin' {{ cfg('nginx_header_allow_origin') }};
   add_header 'Access-Control-Allow-Credentials' true;
   #{{ 'gzip off;' if cfg_https else ''}}
-  {% if '{{ cfg("nginx_gzip_enabled") }}' == 'true' -%}
+  {% if cfg_bool("nginx_gzip_enabled") == 'true' -%}
   gzip on;
   gzip_static on;
   gzip_comp_level 2;
@@ -130,7 +130,7 @@ server {
   gzip_min_length 10240;
   gzip_proxied no-cache no-store private expired auth;
   gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/json application/xml application/rss+xml;
-  {% endif -%}
+  {%- endif %}
 
   ## https://github.com/gitlabhq/gitlabhq/issues/694
   ## Some requests take more than 30 seconds.
@@ -182,6 +182,24 @@ server {
     proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
     proxy_set_header    Upgrade             $http_upgrade;
     proxy_set_header    Connection          $connection_upgrade_gitlab_ssl;
+
+    proxy_pass http://gitlab-workhorse;
+  }
+
+  location ~* "^{{ cfg('nginx_cacheable_gitlab_path')}}" {
+
+    proxy_ignore_headers Cache-Control;
+    proxy_hide_header Cache-Control;
+
+    add_header Cache-Control "max-age=31536000, public, immutable, s-maxage=31536000" always;
+
+    proxy_set_header    Host                $http_host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    {% if cfg_https %}
+    proxy_set_header    X-Forwarded-Ssl     on;
+    {% endif %}
+    proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
+    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
 
     proxy_pass http://gitlab-workhorse;
   }
