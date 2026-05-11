@@ -9,10 +9,10 @@ defaults
   retries 1
   option redispatch
   maxconn 2000
-  timeout server 305s
+  timeout server {{ parameter_dict['timeout'] }}
   timeout queue 60s
   timeout connect 5s
-  timeout client 305s
+  timeout client {{ parameter_dict['timeout'] }}
   option httpclose
 
 listen cloudooo
