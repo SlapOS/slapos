@@ -803,7 +803,6 @@ context =
   key api_user :api-user
   key api_password :api-password
   key var_dir omailgw-directory:var
-  key maillog outbound-postfix-main.cf:log-file
   key server_hostname :server-hostname
   key path_postmap directory:bin
   key path_mailq directory:bin
@@ -819,11 +818,14 @@ output = $${directory:bin}/omailgw-cli-loop
 mode = 700
 inline =
   #!/bin/sh
-  export MAIL_CONFIG="$${outbound-postfix-directory:etc}"
-  export SASL_CONF_PATH="$${outbound-postfix-directory:etc}"
   while true; do
     cd ${omailgw-cli-source:location}
+    export MAIL_CONFIG="$${outbound-postfix-directory:etc}"
+    export SASL_CONF_PATH="$MAIL_CONFIG"
     ${apache-php:location}/bin/php omailgw-cli.php --config="$${omailgw-config:output}" --log="$${outbound-postfix-main.cf:log-file}" >> "$${directory:var-log}/omailgw-cli.log" 2>&1 || true
+    export MAIL_CONFIG="$${inbound-postfix-directory:etc}"
+    export SASL_CONF_PATH="$MAIL_CONFIG"
+    ${apache-php:location}/bin/php omailgw-cli.php --config="$${omailgw-config:output}" --log="$${inbound-postfix-main.cf:log-file}" >> "$${directory:var-log}/omailgw-cli.log" 2>&1 || true
     sleep {{ omailgw['relay-poll-interval'] }}
   done
 

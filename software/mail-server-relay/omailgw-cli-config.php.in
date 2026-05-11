@@ -9,7 +9,6 @@ $config['curl_opt'][CURLOPT_SSL_VERIFYPEER] = false;
 $config['curl_opt'][CURLOPT_SSL_VERIFYHOST] = 0;
 
 $config['var_dir'] = '{{ var_dir }}/';
-$config['default_maillog'] = '{{ maillog }}';
 $config['server_hostname'] = '{{ server_hostname }}';
 $config['sqlite_file'] = $config['var_dir'] . 'database.sqlite';
 $config['sqlite_clean_data'] = strtotime('-30 day');
