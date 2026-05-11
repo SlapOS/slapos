@@ -250,6 +250,10 @@ content =
   smtp_tls_chain_files = $${postfix-certificate:bundle}
   smtp_tls_session_cache_database = btree:$${inbound-postfix-directory:var-lib}/smtp_scache
 
+  # Limits
+  # Cap inbound message size at 100MiB (100 * 1024 * 1024)
+  message_size_limit = 104857600
+
 [inbound-postfix-wrapper]
 <= macro.postfix-wrapper
 etc = $${inbound-postfix-directory:etc}
@@ -631,6 +635,10 @@ content =
   smtp_sasl_security_options = noanonymous
   smtp_sasl_password_maps = texthash:$${outbound-postfix-proxy-passwd:output}
   smtp_sender_dependent_authentication = yes
+
+  # Limits
+  # Cap inbound message size at 100MiB (100 * 1024 * 1024)
+  message_size_limit = 104857600
 
 [outbound-postfix-sender-transport]
 recipe = slapos.recipe.template:jinja2
