@@ -108,7 +108,7 @@ install =
     for i, test in enumerate(options['tests']):
       tmp = self.download(test['url'], test['md5sum'])
       path = os.path.join(location, 'test%s.py' % i)
-      os.rename(tmp, path)
+      shutil.copy(tmp, path)
   finally:
     # reset the parameter
     self.buildout['buildout']['offline'] = buildout_offline
