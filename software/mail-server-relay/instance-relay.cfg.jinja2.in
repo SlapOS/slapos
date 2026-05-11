@@ -11,6 +11,11 @@ parts =
   publish-connection-information
   inbound-postfix
   outbound-postfix
+{% set omailgw = slapparameter_dict['omailgw'] %}
+{% set omailgw_enable = omailgw['enable'] %}
+{% if omailgw_enable %}
+  omailgw-cli
+{% endif %}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
@@ -59,6 +64,7 @@ srv = $${buildout:directory}/srv
 postfix-usr = $${:usr}/postfix
 postfix-etc = $${:etc}/postfix
 postfix-ssl = $${:postfix-etc}/ssl
+omailgw = $${:srv}/omailgw-cli
 
 [postgrey-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -179,11 +185,12 @@ inline =
 
 {% set mail_domains = slapparameter_dict['mail-domains'] %}
 {% set cluster_fqdns = slapparameter_dict['cluster-fqdns'] %}
-{% set proxy_map = slapparameter_dict.get('proxy-map', {}) %}
-{% set greylisting_enable = slapparameter_dict.get('greylisting-enable', true) %}
-{% set greylisting_delay = slapparameter_dict.get('greylisting-delay', 60) %}
-{% set greylisting_whitelist_clients = slapparameter_dict.get('greylisting-whitelist-clients', []) %}
-{% set greylisting_whitelist_recipients = slapparameter_dict.get('greylisting-whitelist-recipients', []) %}
+{% set proxy_map = slapparameter_dict['proxy-map'] %}
+{% set greylisting = slapparameter_dict['greylisting'] %}
+{% set greylisting_enable = greylisting['enable'] %}
+{% set greylisting_delay = greylisting['delay'] %}
+{% set greylisting_whitelist_clients = greylisting['whitelist-clients'] %}
+{% set greylisting_whitelist_recipients = greylisting['whitelist-recipients'] %}
 
 [internal-postfix-transport]
 recipe = slapos.recipe.template:jinja2
@@ -646,7 +653,7 @@ output = $${outbound-postfix-directory:etc}/proxy_access_senders
 inline =
   {% raw %}{#- NOTHING -#}{% endraw -%}
   {%- for proxy_id, proxy in proxy_map.items() -%}
-  {%- for domain in proxy.get('domains', []) %}
+  {%- for domain in proxy['domains'] %}
   {{ domain }} OK
   {%- endfor %}
   {%- endfor %}
@@ -780,4 +787,59 @@ depends =
 {% for postfix_wrapper in postfix_wrappers -%}
   {{ "  $${" + postfix_wrapper + ":recipe}" }}
 {% endfor -%}
+
+{% if omailgw_enable %}
+[omailgw-directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${directory:omailgw}
+var = $${:home}/var
+
+[omailgw-config]
+recipe = slapos.recipe.template:jinja2
+url = ${omailgw-cli-config.php.in:target}
+output = $${omailgw-directory:home}/config.php
+context =
+  key api_url :api-url
+  key api_user :api-user
+  key api_password :api-password
+  key var_dir omailgw-directory:var
+  key maillog outbound-postfix-main.cf:log-file
+  key server_hostname :server-hostname
+  key path_postmap directory:bin
+  key path_mailq directory:bin
+  key lock_dir directory:run
+api-user = {{ omailgw['api-user'] }}
+api-password = {{ omailgw['api-password'] }}
+server-hostname = {{ omailgw['server-hostname'] }}
+api-url = {{ omailgw['api-url'] }}
+
+[omailgw-loop]
+recipe = slapos.recipe.template
+output = $${directory:bin}/omailgw-cli-loop
+mode = 700
+inline =
+  #!/bin/sh
+  export MAIL_CONFIG="$${outbound-postfix-directory:etc}"
+  export SASL_CONF_PATH="$${outbound-postfix-directory:etc}"
+  while true; do
+    cd ${omailgw-cli-source:location}
+    ${apache-php:location}/bin/php omailgw-cli.php --config="$${omailgw-config:output}" --log="$${outbound-postfix-main.cf:log-file}" >> "$${directory:var-log}/omailgw-cli.log" 2>&1 || true
+    sleep {{ omailgw['relay-poll-interval'] }}
+  done
+
+[omailgw-cli-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${omailgw-loop:output}
+wrapper-path = $${directory:service}/omailgw-cli
+hash-files =
+  $${omailgw-config:output}
+  $${omailgw-loop:output}
+
+[omailgw-cli]
+recipe = slapos.recipe.build
+init =
+  ""
+depends =
+  $${omailgw-cli-service:recipe}
+{% endif %}
 
