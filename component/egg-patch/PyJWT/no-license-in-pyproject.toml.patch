@@ -1,0 +1,11 @@
+diff -ur pyjwt-2.12.1.orig/pyproject.toml pyjwt-2.12.1/pyproject.toml
+--- pyjwt-2.12.1.orig/pyproject.toml	2026-03-13 21:09:20.000000000 +0200
++++ pyjwt-2.12.1/pyproject.toml	2026-05-11 11:10:16.557569895 +0300
+@@ -38,7 +38,6 @@
+     "token",
+     "web",
+ ]
+-license = "MIT"
+ name = "PyJWT"
+ requires-python = ">=3.9"
+ 
