@@ -4571,6 +4571,93 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     self.assertEqual(check_result.text, data)
 
+  def test_enable_cache_last_modified(self):
+    # Precisely check out Last-Modified header behaviour through the cache:
+    #   * the value sent by the backend reaches the client verbatim,
+    #   * cache hits preserve the original Last-Modified,
+    #   * a 304 revalidation updates the cached Last-Modified to the value
+    #     re-sent by the backend (per RFC 9111 §3.2 cached-headers update).
+    parameter_dict = self.assertSlaveBase('enable_cache')
+    path = 'last-modified'
+    delta = 10
+    data = 'some data'
+    backend_url = self.getSlaveParameterDictDict()['enable_cache']['url']
+    original_last_modified = 'Fri, 07 Dec 2001 00:00:00 GMT'
+    revalidated_last_modified = 'Sat, 08 Dec 2001 00:00:00 GMT'
+
+    def setUpHeaders(headers):
+      result = http.client.HTTPMessage()
+      for header, value in headers:
+        result.add_header(header, value)
+      return result
+
+    headers = setUpHeaders([
+      ('X-Config-Status-Code', '200'),
+      ('X-Config-Reply-Header-Date', 'now'),
+      ('X-Config-Reply-Header-Server', 'TestBackend'),
+      ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+      ('X-Config-Reply-Header-Cache-Control',
+       'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+       'public' % (delta,)),
+      ('X-Config-Reply-Header-Content-Length', 'calculate'),
+      ('X-Config-Reply-Header-Content-Type', 'text/plain'),
+      ('X-Config-Reply-Header-Last-Modified', original_last_modified),
+    ])
+    config_result = mimikra.config(
+      backend_url + path,
+      headers=headers,
+      data=data
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
+
+    # First request: the response must carry the backend Last-Modified
+    # verbatim.
+    check_result = fakeHTTPSResult(parameter_dict['domain'], path)
+    self.assertEqual(check_result.status_code, http.client.OK)
+    self.assertResponseHeaders(check_result, cached=True, age=True)
+    self.assertEqual(
+      check_result.headers['Last-Modified'], original_last_modified)
+    self.assertEqual(check_result.text, data)
+
+    # Second request (cache hit, well within max-age): the cached
+    # Last-Modified must be preserved exactly.
+    check_result = fakeHTTPSResult(parameter_dict['domain'], path)
+    self.assertEqual(check_result.status_code, http.client.OK)
+    self.assertResponseHeaders(check_result, cached=True, age=True)
+    self.assertEqual(
+      check_result.headers['Last-Modified'], original_last_modified)
+    self.assertEqual(check_result.text, data)
+
+    # Wait for the cached entry to go stale, then reconfigure the backend
+    # so a revalidation produces a 304 carrying a *different* Last-Modified.
+    time.sleep(delta + 2)
+    headers = setUpHeaders([
+      ('X-Config-Status-Code', '304'),
+      ('X-Config-Reply-Header-Date', 'now'),
+      ('X-Config-Reply-Header-Server', 'TestBackend'),
+      ('X-Config-Reply-Header-Via', 'http/1.1 backendvia'),
+      ('X-Config-Reply-Header-Cache-Control',
+       'max-age=%s, stale-if-error=604800, stale-while-revalidate=15, '
+       'public' % (delta,)),
+      ('X-Config-Reply-Header-Content-Type', 'text/plain'),
+      ('X-Config-Reply-Header-Last-Modified', revalidated_last_modified),
+    ])
+    config_result = mimikra.config(
+      backend_url + path,
+      headers=headers,
+    )
+    self.assertEqual(config_result.status_code, http.client.CREATED)
+
+    # Third request: cache revalidates, backend replies 304. The cached
+    # body is still served, but the response's Last-Modified must be the
+    # value carried by the 304.
+    check_result = fakeHTTPSResult(parameter_dict['domain'], path)
+    self.assertEqual(check_result.status_code, http.client.OK)
+    self.assertResponseHeaders(check_result, cached=True, age=True)
+    self.assertEqual(
+      check_result.headers['Last-Modified'], revalidated_last_modified)
+    self.assertEqual(check_result.text, data)
+
   def test_enable_cache_negative_revalidate(self):
     parameter_dict = self.assertSlaveBase('enable_cache')
 
@@ -5413,6 +5500,39 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # modified by the CDN, but some Date header is added, if backend sends non
     self.assertEqual(result_with_date.headers['Date'], specific_date)
     self.assertNotEqual(result_normal.headers['Date'], specific_date)
+
+  def test_header_last_modified(self):
+    # Precisely check out Last-Modified header behaviour on a non-cached
+    # slave: the CDN must pass the backend value through verbatim, and must
+    # not synthesise a Last-Modified when the backend omits it.
+    frontend = 'url_https-url'
+    parameter_dict = self.assertSlaveBase(frontend)
+    backend_url = self.getSlaveParameterDictDict()[
+      frontend]['https-url'].strip()
+    normal_path = '/normal-last-modified'
+    with_last_modified_path = '/with_last_modified'
+    specific_last_modified = 'Fri, 07 Dec 2001 00:00:00 GMT'
+    result_configure = mimikra.config(
+      backend_url.rstrip('/') + with_last_modified_path, headers=d2h({
+        'X-Config-Reply-Header-Last-Modified': specific_last_modified,
+        'X-Config-Body': 'calculate',
+        'X-Config-Reply-Header-Server': 'TestBackend',
+        'X-Config-Reply-Header-Content-Length': 'calculate',
+        'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+      }))
+    self.assertEqual(result_configure.status_code, http.client.CREATED)
+
+    result_normal = fakeHTTPSResult(parameter_dict['domain'], normal_path)
+    result_with_last_modified = fakeHTTPSResult(
+      parameter_dict['domain'], with_last_modified_path)
+
+    # Last-Modified sent by the backend is NOT modified by the CDN.
+    self.assertEqual(
+      result_with_last_modified.headers['Last-Modified'],
+      specific_last_modified,
+    )
+    # The CDN does not synthesise a Last-Modified when the backend omits one.
+    self.assertNotIn('Last-Modified', result_normal.headers)
 
   def test_https_url_netloc_list(self):
     parameter_dict = self.assertSlaveBase('https-url-netloc-list')
