@@ -100,6 +100,7 @@ tests = $${slap-configuration:configuration.tests}
 location = $${directory:var}/tests
 install =
   import os
+  import shutil
   os.mkdir(location)
   buildout_offline = self.buildout['buildout']['offline']
   try:
