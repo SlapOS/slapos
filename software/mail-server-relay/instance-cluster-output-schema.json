@@ -2,5 +2,22 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Values returned by mail server cluster",
   "type": "object",
-  "properties": {}
+  "properties": {
+    "omailgw-api-url": {
+      "description": "Base URL of the built-in oMailGw API.",
+      "type": "string"
+    },
+    "omailgw-ui-url": {
+      "description": "URL of the built-in oMailGw web interface.",
+      "type": "string"
+    },
+    "omailgw-root-user": {
+      "description": "Administrator email for the built-in oMailGw instance.",
+      "type": "string"
+    },
+    "omailgw-root-password": {
+      "description": "Administrator password for the built-in oMailGw instance.",
+      "type": "string"
+    }
+  }
 }
