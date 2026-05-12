@@ -100,6 +100,7 @@ tests = $${slap-configuration:configuration.tests}
 location = $${directory:var}/tests
 install =
   import os
+  import shutil
   os.mkdir(location)
   buildout_offline = self.buildout['buildout']['offline']
   try:
@@ -108,7 +109,7 @@ install =
     for i, test in enumerate(options['tests']):
       tmp = self.download(test['url'], test['md5sum'])
       path = os.path.join(location, 'test%s.py' % i)
-      os.rename(tmp, path)
+      shutil.copy(tmp, path)
   finally:
     # reset the parameter
     self.buildout['buildout']['offline'] = buildout_offline
