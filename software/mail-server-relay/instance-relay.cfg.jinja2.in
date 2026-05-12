@@ -173,6 +173,31 @@ inline =
   # launch postfix
   ${postfix:location}/usr/libexec/postfix/master -c $${:etc}
 
+[macro.postfix-shell-env]
+recipe = slapos.recipe.template
+output = $${directory:bin}/activate-$${:role}
+etc = $${missing_option_etc:error}
+role = $${missing_option_role:error}
+inline =
+  if ! type deactivate > /dev/null 2>&1
+  then
+    _OLD_PATH=$PATH
+    _OLD_PS1=$PS1
+    deactivate () {
+      PATH=$_OLD_PATH
+      PS1=$_OLD_PS1
+      unset _OLD_PATH
+      unset _OLD_PS1
+      unset MAIL_CONFIG
+      unset SASL_CONF_PATH
+      unset -f deactivate
+    }
+  fi
+  export MAIL_CONFIG=$${:etc}
+  export SASL_CONF_PATH=$${:etc}
+  export PATH=$${directory:bin}:${postfix:location}/sbin:$_OLD_PATH
+  export PS1="($${:role}) $_OLD_PS1"
+
 
 # Postfix Transport Information
 # -----------------------------
@@ -198,6 +223,11 @@ context =
 
 [inbound-postfix-directory]
 <= macro.postfix-directory
+role = inbound
+
+[inbound-postfix-shell-env]
+<= macro.postfix-shell-env
+etc = $${inbound-postfix-directory:etc}
 role = inbound
 
 [inbound-postfix-master.cf]
@@ -341,6 +371,7 @@ depends =
   $${inbound-postfix-service:recipe}
   $${postfix-wrappers:depends}
   $${inbound-postfix-smtp-promise:recipe}
+  $${inbound-postfix-shell-env:recipe}
 
 [inbound-logrotate-entry-postfix]
 <= logrotate-entry-base
@@ -497,6 +528,11 @@ inline =
 
 [outbound-postfix-directory]
 <= macro.postfix-directory
+role = outbound
+
+[outbound-postfix-shell-env]
+<= macro.postfix-shell-env
+etc = $${outbound-postfix-directory:etc}
 role = outbound
 
 [outbound-postfix-master.cf]
@@ -718,6 +754,7 @@ depends =
   $${outbound-postfix-service:recipe}
   $${postfix-wrappers:depends}
   $${outbound-postfix-submission-promise:recipe}
+  $${outbound-postfix-shell-env:recipe}
 
 [outbound-logrotate-entry-postfix]
 <= logrotate-entry-base
@@ -731,21 +768,18 @@ copytruncate = true
 
 [base-wrapper]
 recipe = slapos.cookbook:wrapper
-# environment =
-#  MAIL_CONFIG=$${outbound-postfix-directory:etc}
-#  SASL_CONF_PATH=$${outbound-postfix-directory:etc}
 
 [base-bin-wrapper]
-< = base-wrapper
+<= base-wrapper
 command-line = $${:path}/$${:basename}
 wrapper-path = $${directory:bin}/$${:basename}
 
 [base-bin-bin-wrapper]
-< = base-bin-wrapper
+<= base-bin-wrapper
 path = ${postfix:location}/usr/bin
 
 [base-sbin-bin-wrapper]
-< = base-bin-wrapper
+<= base-bin-wrapper
 path = ${postfix:location}/usr/sbin
 
 {% set postfix_wrappers = [] -%}
@@ -778,14 +812,22 @@ path = ${postfix:location}/usr/sbin
 {%   for basename in basename_list -%}
 {%     do postfix_wrappers.append('wrapper-' ~ basename) -%}
 [wrapper-{{ basename }}]
-< = {{ extend }}
+<= {{ extend }}
 basename = {{ basename }}
 {%   endfor %}
 {% endfor %}
 
+[qshape]
+<= base-wrapper
+wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
+command-line =
+  ${perl:location}/bin/perl
+    ${postfix:location}/auxiliary/qshape/qshape.pl
+
 [postfix-wrappers]
 depends =
-{% for postfix_wrapper in postfix_wrappers -%}
-  {{ "  $${" + postfix_wrapper + ":recipe}" }}
-{% endfor -%}
+  $${qshape:recipe}
+{%- for postfix_wrapper in postfix_wrappers %}
+  {{ "$${" + postfix_wrapper + ":recipe}" }}
+{%- endfor %}
 
