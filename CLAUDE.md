@@ -235,9 +235,21 @@ url = ${:_profile_base_location_}/${:_update_hash_filename_}
 
 - Section must be `[versions]` (with 's')
 - Use **hyphens** in package names (`erp5-mcp-hateoas`), not underscores — buildout normalizes names
-- Use `:whl` suffix for packages with non-setuptools build systems (hatchling, flit) to avoid `--no-build-isolation` failures: `mcp = 1.6.0:whl`
+- Use `:whl` suffix for **pure-Python** packages with non-setuptools build systems (hatchling, flit, poetry-core) to avoid `--no-build-isolation` failures: `mcp = 1.6.0:whl`. See the next subsection for the native-extension exception.
 - `stack/slapos.cfg` pins many common packages; software-level `[versions]` can override
 - When overriding `pydantic`, must also override `pydantic-core` (tightly coupled versions)
+
+### `:whl` is for pure-Python wheels only
+
+Never pin a native-extension package (C or Rust — anything that ships a `.so` or platform-tagged wheel on PyPI) with `:whl`. A wheel install pulls a precompiled `.so` built against PyPI's manylinux/musllinux toolchain, not SlapOS's, and the SlapOS test suite has no way to verify that build path. Native extensions must source-build through `zc.recipe.egg:custom`, ideally as a reusable `component/<pkg>/buildout.cfg` so other SRs can extend it.
+
+Quick check before adding a `:whl` pin: look at the package's PyPI files. If you see `*manylinux*.whl`, `*musllinux*.whl`, or `*-cp3X-*-x86_64.whl`, it's a native ext — propose a source-build component instead. Pure-Python wheels ship a single `*-py3-none-any.whl` (platform-agnostic).
+
+Reference patterns:
+- `component/python-cryptography/buildout.cfg` — cryptography (Rust + cffi); the textbook `zc.recipe.egg:custom` shape
+- `component/maturin/buildout.cfg` + `component/rust/buildout.cfg` — toolchain shared by Rust/maturin natives (pull these in via `extends` in your native-ext component)
+
+Examples of common native exts NOT to `:whl`: `pydantic-core`, `rpds-py`, `cryptography`, `cffi`, `lxml`, `psutil`, `bcrypt`, `Pillow`, anything Cython/setuptools-rust/maturin-built. The `:whl` pin stays correct for pure-Python packages like `mcp`, `jsonschema`, `referencing`, `starlette`.
 
 ### Common build errors
 
