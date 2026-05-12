@@ -1104,6 +1104,11 @@ valided-instance-db-path = {{ instance_parameter_dict["valided-instance-db-path"
 domainvalidation-db-path = ${directory:srv}/domainvalidation-db.sqlite
 openssl = {{ software_parameter_dict['openssl'] }}
 instance-retention-delay = {{ slapparameter_dict['instance-retention-delay'] | string }}
+# Resolves to the rendered output of [instance-publish-slave-information]
+# below — both run on the master partition, so ${buildout:directory} is
+# shared. Cdninstancenode reads this file to detect when the master has
+# not yet consumed the frontend's published slave info.
+publish-slave-information-file = ${buildout:directory}/instance-publish-slave-information.cfg
 
 [cdn-instance-node]
 recipe = slapos.recipe.template
