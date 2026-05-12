@@ -16,7 +16,7 @@ offline = true
 {% set omailgw_relay_hostname_list = [] -%}
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
 {%   if config['state'] != 'destroyed' -%}
-{%     do omailgw_relay_hostname_list.append(relay_name) -%}
+{%     do omailgw_relay_hostname_list.append(config.get('fqdn', relay_name)) -%}
 {%   endif -%}
 {% endfor -%}
 
@@ -94,7 +94,7 @@ return =
 
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
-{% set relay_fqdn = config.get('fqdn') -%}
+{% set relay_fqdn = config.get('fqdn', relay_name) -%}
 {% if omailgw_enable %}
 [omailgw-relay-parameters-{{ relay_name }}]
 recipe = slapos.recipe.build
@@ -104,7 +104,6 @@ init =
     'api-url': self.buildout['request-omailgw']['connection-api-url'],
     'api-user': self.buildout['request-omailgw']['connection-mailgw-user'],
     'api-password': self.buildout['request-omailgw']['connection-mailgw-password'],
-    'server-hostname': {{ repr(relay_name) }},
     'relay-poll-interval': {{ omailgw_parameter_dict['relay-poll-interval'] }},
   }
 {% endif %}
@@ -118,10 +117,7 @@ software-type = {{ config['software-type'] }}
 {% if omailgw_enable %}
 config-omailgw = $${omailgw-relay-parameters-{{ relay_name }}:omailgw}
 {% endif %}
-
-{% if relay_fqdn -%}
 config-fqdn = {{ relay_fqdn }}
-{%- endif %}
 
 {% for key, value in config.get('config', {}).items() -%}
 config-{{ key }} = {{ dumps(value) }}

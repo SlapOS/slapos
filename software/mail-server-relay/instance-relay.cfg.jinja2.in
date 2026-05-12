@@ -146,19 +146,20 @@ context =
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
 
+{% set relay_fqdn = slapparameter_dict.get('fqdn', instance_title) %}
+
 [macro.postfix-main.cf]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
 log-file = $${missing_option_log-file:error}
 postfix-directory = $${missing_option_postfix-directory:error}
-fqdn = {{ dumps(slapparameter_dict.get('fqdn', instance_title)) }}
 context =
   section directory directory
   section postfix_directory $${:postfix-directory}
   key content :content
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
-  key server_fqdn :fqdn
+  raw server_fqdn {{ relay_fqdn }}
   raw xz_utils_location ${xz-utils:location}
   raw postfix_location ${postfix:location}
   raw postfix_log_path $${:log-file}
@@ -803,13 +804,12 @@ context =
   key api_user :api-user
   key api_password :api-password
   key var_dir omailgw-directory:var
-  key server_hostname :server-hostname
+  raw server_hostname {{ relay_fqdn }}
   key path_postmap directory:bin
   key path_mailq directory:bin
   key lock_dir directory:run
 api-user = {{ omailgw['api-user'] }}
 api-password = {{ omailgw['api-password'] }}
-server-hostname = {{ omailgw['server-hostname'] }}
 api-url = {{ omailgw['api-url'] }}
 
 [omailgw-loop]
