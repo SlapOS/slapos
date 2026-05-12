@@ -663,6 +663,318 @@ class TestBangStability(unittest.TestCase):
     self.assertEqual(cp2.bang.call_count, 1)
 
 
+class TestPublishFileSync(unittest.TestCase):
+  """
+  Tests for the master publish-file race documented in
+  test-rapid-cdn-instancenode.md (2026-05-12).
+
+  When a slave is added to an already-converged cluster, slapproxy bumps
+  master's timestamp once, master rebuilds with the frontend's stale
+  connection-slave-instance-information-list, then nothing wakes master
+  up again after the frontend builds and publishes. The slave's
+  [publish-<reference>] section never appears in master's
+  instance-publish-slave-information.cfg.
+
+  Fix: postDeployInstanceValidation now reads the publish file via a
+  dedicated helper _check_slave_publish_state. While the slave's
+  section is absent the helper reports invalid and postDeploy signals
+  needs_bang=True. instancenode.Recipe._processInstance captures the
+  signal into self._post_deploy_bang_requested, and
+  CDNInstanceNodeRecipe.instanceNodePostProcessing uses it as an extra
+  bang condition. Master then keeps rebuilding until the publish file
+  catches up.
+  """
+
+  def setUp(self):
+    self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
+    self.instance_db_fd, self.instance_db_path = tempfile.mkstemp()
+    self.requestinstance_db_fd, self.requestinstance_db_path = tempfile.mkstemp()
+    self.timestamp_file_fd, self.timestamp_file_path = tempfile.mkstemp()
+    self.publish_file_fd, self.publish_file_path = tempfile.mkstemp()
+
+    self.buildout = {
+      "buildout": {},
+      "slap-connection": {
+        "computer-id": "test-computer",
+        "partition-id": "test-partition",
+        "server-url": "http://test.example.com",
+        "requested": "started",
+      },
+    }
+    self.options = {
+      'domainvalidation-db-path': self.domainvalidation_db_path,
+      'instance-db-path': self.instance_db_path,
+      'requestinstance-db-path': self.requestinstance_db_path,
+      'timestamp-path': self.timestamp_file_path,
+      'publish-slave-information-file': self.publish_file_path,
+      'server-url': 'http://test.example.com',
+      'computer-id': 'test-computer',
+      'partition-id': 'test-partition',
+      'software-url': 'http://test.example.com/software',
+      'software-type': 'default',
+      'verification-secret': 'test-secret',
+      'openssl-binary': 'openssl',
+      'instance-retention-delay': '0',
+    }
+
+  def tearDown(self):
+    for fd, path in (
+      (self.domainvalidation_db_fd, self.domainvalidation_db_path),
+      (self.instance_db_fd, self.instance_db_path),
+      (self.requestinstance_db_fd, self.requestinstance_db_path),
+      (self.timestamp_file_fd, self.timestamp_file_path),
+      (self.publish_file_fd, self.publish_file_path),
+    ):
+      try:
+        os.close(fd)
+      except OSError:
+        pass
+      if os.path.exists(path):
+        os.unlink(path)
+
+  def _seedInstance(self, instance_db, reference, params, valid='valid'):
+    instance_hash = hashlib.sha256(
+      json.dumps(params, sort_keys=True).encode('utf-8')
+    ).hexdigest()
+    instance_db.insertInstanceList([(
+      reference,
+      json.dumps(params, sort_keys=True),
+      '{}',
+      instance_hash,
+      str(int(time.time())),
+      valid,
+    )])
+    return instance_hash
+
+  def _makeRecipe(self, options_override=None):
+    """
+    Construct a CDNInstanceNodeRecipe instance directly for helper-level
+    tests, without running install(). DNS resolver is patched so the
+    constructor does not touch system DNS.
+    """
+    options = dict(self.options)
+    if options_override is not None:
+      for k, v in options_override.items():
+        if v is None:
+          options.pop(k, None)
+        else:
+          options[k] = v
+    with mock.patch('dns.resolver.Resolver'):
+      return cdninstancenode.CDNInstanceNodeRecipe(
+        self.buildout, 'test', options)
+
+  def _runInstall(self, dns_returns_valid_token, omit_publish_file_option=False):
+    """
+    Run one CDNInstanceNodeRecipe.install() cycle with mocked slap and DNS.
+    Returns the computer_partition mock so the caller can inspect bang calls.
+    """
+    from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
+    CONNECTION_CACHE.clear()
+
+    domainvalidation_db_path = self.domainvalidation_db_path
+    options = dict(self.options)
+    if omit_publish_file_option:
+      options.pop('publish-slave-information-file', None)
+
+    with mock.patch('slapos.recipe.instancenode.slap') as mock_slap, \
+         mock.patch('dns.resolver.Resolver') as MockResolver:
+      slap_instance = mock.MagicMock()
+      computer_partition = mock.MagicMock()
+      slap_instance.registerComputerPartition.return_value = computer_partition
+      mock_slap.slap.return_value = slap_instance
+
+      mock_resolver_instance = MockResolver.return_value
+      mock_answer = mock.MagicMock()
+      mock_rdata = mock.MagicMock()
+
+      def get_dns_response(challenge_domain, *args, **kwargs):
+        if challenge_domain.startswith('_slapos-challenge.'):
+          domain = challenge_domain[len('_slapos-challenge.'):]
+        else:
+          parts = challenge_domain.split('.', 1)
+          domain = parts[1] if len(parts) > 1 else challenge_domain
+        if dns_returns_valid_token:
+          db = cdninstancenode.DomainValidationDB(domainvalidation_db_path)
+          entries = db.fetchAll(
+            "SELECT token FROM domain_validation WHERE domain=?", (domain,))
+          if entries:
+            mock_rdata.strings = [entries[0]['token'].encode('utf-8')]
+          else:
+            mock_rdata.strings = [b'placeholder']
+        else:
+          mock_rdata.strings = [b'wrong-token']
+        mock_answer.__iter__.return_value = iter([mock_rdata])
+        return mock_answer
+
+      mock_resolver_instance.resolve.side_effect = get_dns_response
+
+      recipe = cdninstancenode.CDNInstanceNodeRecipe(
+        self.buildout, 'test', options)
+      recipe.install()
+      return computer_partition
+
+  def _refreshTimestampFile(self, prev_write_ts):
+    prev_int = int(prev_write_ts)
+    os.utime(self.timestamp_file_path, (float(prev_int), float(prev_int)))
+    to_sleep = (prev_int + 1) - time.time() + 0.05
+    if to_sleep > 0:
+      time.sleep(to_sleep)
+
+  # ----- helper-level tests on _check_slave_publish_state -----
+
+  def test_check_slave_publish_state_section_present(self):
+    with open(self.publish_file_path, 'w') as fh:
+      fh.write('[publish-_inst1]\nrecipe = noop\n')
+    recipe = self._makeRecipe()
+    is_valid, error, info = recipe._check_slave_publish_state('_inst1')
+    self.assertTrue(is_valid)
+    self.assertIsNone(error)
+    self.assertEqual(info, {})
+
+  def test_check_slave_publish_state_section_absent(self):
+    with open(self.publish_file_path, 'w') as fh:
+      fh.write('[publish-_other]\nrecipe = noop\n')
+    recipe = self._makeRecipe()
+    is_valid, error, info = recipe._check_slave_publish_state('_inst1')
+    self.assertFalse(is_valid)
+    self.assertIsNotNone(error)
+    self.assertIn('message', info)
+
+  def test_check_slave_publish_state_missing_file(self):
+    os.unlink(self.publish_file_path)
+    recipe = self._makeRecipe()
+    is_valid, error, info = recipe._check_slave_publish_state('_inst1')
+    self.assertFalse(is_valid)
+    self.assertIsNotNone(error)
+
+  def test_check_slave_publish_state_option_unset(self):
+    recipe = self._makeRecipe(
+      options_override={'publish-slave-information-file': None})
+    is_valid, error, info = recipe._check_slave_publish_state('_inst1')
+    self.assertTrue(is_valid)
+    self.assertIsNone(error)
+    self.assertEqual(info, {})
+
+  # ----- install-loop tests -----
+
+  def test_install_marks_invalid_when_publish_section_missing(self):
+    """
+    First install with publish file lacking the slave's section: row is
+    inserted as invalid; bang fires once (via comparison['added']).
+    """
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+    self._seedInstance(
+      instance_db, 'inst1',
+      {'custom_domain': 'pub.example.com', 'url': 'http://pub.example.com'})
+
+    old_ts = time.time() - 100
+    os.utime(self.timestamp_file_path, (old_ts, old_ts))
+
+    cp = self._runInstall(dns_returns_valid_token=True)
+    self.assertEqual(cp.bang.call_count, 1)
+    row = requestinstance_db.getInstance('inst1')
+    self.assertIsNotNone(row)
+    self.assertNotEqual(row['valid_parameter'], 'valid')
+
+  def test_install_marks_valid_when_publish_section_present(self):
+    """
+    With publish file already containing the slave's section, row is
+    inserted as valid.
+    """
+    with open(self.publish_file_path, 'w') as fh:
+      fh.write('[publish-inst1]\nrecipe = noop\n')
+
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+    self._seedInstance(
+      instance_db, 'inst1',
+      {'custom_domain': 'pub.example.com', 'url': 'http://pub.example.com'})
+
+    old_ts = time.time() - 100
+    os.utime(self.timestamp_file_path, (old_ts, old_ts))
+
+    cp = self._runInstall(dns_returns_valid_token=True)
+    self.assertEqual(cp.bang.call_count, 1)
+    row = requestinstance_db.getInstance('inst1')
+    self.assertEqual(row['valid_parameter'], 'valid')
+
+  def test_bang_keeps_firing_while_publish_pending(self):
+    """
+    On unchanged-invalid rows where postDeploy still reports
+    needs_bang=True, bang must keep firing each cycle. Otherwise master
+    never rebuilds and the publish file never catches up. Quiesces only
+    once the publish file is consistent.
+    """
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+    self._seedInstance(
+      instance_db, 'inst1',
+      {'custom_domain': 'pub.example.com', 'url': 'http://pub.example.com'})
+
+    old_ts = time.time() - 100
+    os.utime(self.timestamp_file_path, (old_ts, old_ts))
+
+    # Run 1: empty publish file → invalid; bang from comparison['added']
+    cp1 = self._runInstall(dns_returns_valid_token=True)
+    self.assertEqual(cp1.bang.call_count, 1)
+    row1 = requestinstance_db.getInstance('inst1')
+    self.assertNotEqual(row1['valid_parameter'], 'valid')
+
+    self._refreshTimestampFile(row1['timestamp'])
+
+    # Run 2: publish file still empty, row unchanged-invalid. Bang must
+    # still fire — via the new _post_deploy_bang_requested path.
+    cp2 = self._runInstall(dns_returns_valid_token=True)
+    self.assertEqual(cp2.bang.call_count, 1)
+    row2 = requestinstance_db.getInstance('inst1')
+    self.assertNotEqual(row2['valid_parameter'], 'valid')
+
+    self._refreshTimestampFile(row2['timestamp'])
+
+    # Run 3: publish file now consistent → flip to valid → bang from
+    # valid_parameter transition.
+    with open(self.publish_file_path, 'w') as fh:
+      fh.write('[publish-inst1]\nrecipe = noop\n')
+    cp3 = self._runInstall(dns_returns_valid_token=True)
+    self.assertEqual(cp3.bang.call_count, 1)
+    row3 = requestinstance_db.getInstance('inst1')
+    self.assertEqual(row3['valid_parameter'], 'valid')
+
+    self._refreshTimestampFile(row3['timestamp'])
+
+    # Run 4: nothing changed → quiescence, no more bangs.
+    cp4 = self._runInstall(dns_returns_valid_token=True)
+    self.assertEqual(cp4.bang.call_count, 0)
+
+  def test_publish_file_option_unset_keeps_old_bang_stability(self):
+    """
+    When publish-slave-information-file option is unset, the new bang
+    condition must not fire. DNS-failure invalidity must NOT trip the
+    publish-pending path. Mirrors TestBangStability.test_bang_not_called_for_unchanged_invalid_instance.
+    """
+    instance_db = HostedInstanceLocalDB(self.instance_db_path)
+    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
+    self._seedInstance(
+      instance_db, 'inst1',
+      {'custom_domain': 'dnsfail.example.com', 'url': 'http://dnsfail.example.com'})
+
+    old_ts = time.time() - 100
+    os.utime(self.timestamp_file_path, (old_ts, old_ts))
+
+    cp1 = self._runInstall(
+      dns_returns_valid_token=False, omit_publish_file_option=True)
+    self.assertEqual(cp1.bang.call_count, 1)
+    row1 = requestinstance_db.getInstance('inst1')
+    self.assertNotEqual(row1['valid_parameter'], 'valid')
+
+    self._refreshTimestampFile(row1['timestamp'])
+
+    cp2 = self._runInstall(
+      dns_returns_valid_token=False, omit_publish_file_option=True)
+    self.assertEqual(cp2.bang.call_count, 0)
+
+
 class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def setUp(self):

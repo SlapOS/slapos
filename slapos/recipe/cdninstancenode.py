@@ -219,6 +219,46 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
     else:
       self.dns_nameservers = None
 
+    # Path to the master's rendered instance-publish-slave-information.cfg.
+    # When set, postDeployInstanceValidation rejects deployments whose
+    # [publish-<reference>] section is absent from the file and signals
+    # that a bang() is needed so the master rebuilds until it consumes
+    # the frontend's now-published slave-instance-information-list.
+    # Optional: when unset (or empty), the check is skipped (opt-in).
+    self.publish_slave_information_file = options.get(
+      'publish-slave-information-file') or None
+
+  def _check_slave_publish_state(self, instance_reference):
+    """
+    Check that the master's instance-publish-slave-information.cfg
+    already contains a ``[publish-<instance_reference>]`` section.
+
+    The file is rendered on the master partition by the
+    ``instance-publish-slave-information`` jinja2 template, which sources
+    each section from the frontend's
+    ``connection-slave-instance-information-list``. After a slave is added
+    to a converged cluster, the master rebuilds once with stale frontend
+    connection params (no section), then never re-rebuilds — leaving the
+    section permanently absent. This helper detects that gap.
+
+    Returns ``(is_valid, error_message, validation_info)`` following the
+    same shape as ``_verifyCustomDomainDNS``.
+    """
+    if not self.publish_slave_information_file:
+      return True, None, {}
+    try:
+      with open(self.publish_slave_information_file) as fh:
+        content = fh.read()
+    except IOError:
+      content = None
+    section = '[publish-%s]' % instance_reference
+    if content is not None and section in content:
+      return True, None, {}
+    message = (
+      'Cluster deployment in progress: slave publish entry not yet '
+      'rendered in master publish file')
+    return False, message, {'message': message}
+
   def _check_custom_domain(self, domain, token):
     """
     Check if the custom domain has the required TXT record.
@@ -765,10 +805,24 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
 
   def postDeployInstanceValidation(self, instance_reference, instance_data, publish_information):
     """
-    Override postDeployInstanceValidation to always return True.
-    For CDN instances, post-deploy validation always succeeds.
+    Verify the slave is in its desired post-deploy state. For CDN
+    instances this currently means: master's
+    ``instance-publish-slave-information.cfg`` already contains the
+    ``[publish-<reference>]`` section.
+
+    When the section is absent the validation reports invalid AND
+    signals ``needs_bang=True`` so the master is forced to re-render
+    until the frontend's published slave-instance-information-list has
+    propagated. The bang signal is the publish-file race's escape hatch:
+    without it, the row would settle as unchanged-invalid, the
+    timestamp-fallback in instanceNodePostProcessing would see no
+    change, and master would never wake up.
     """
-    return True, [], publish_information
+    is_valid, error_message, validation_info = self._check_slave_publish_state(
+      instance_reference)
+    if not is_valid:
+      return False, [error_message], validation_info, True
+    return True, [], publish_information, False
 
   def _publishConnectionParameters(self, instance_reference, conn_params):
     """
@@ -816,6 +870,12 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
       )
       if changed_instance:
         needs_bang = True
+    if not needs_bang and getattr(self, '_post_deploy_bang_requested', False):
+      # A postDeployInstanceValidation call asked for a bang even though
+      # the comparison/timestamp signals are silent. The publish-file
+      # race is the motivating case: an unchanged-invalid row whose
+      # state will only clear once the master rebuilds.
+      needs_bang = True
     if needs_bang:
       computer_partition = self._getComputerPartition()
       computer_partition.bang(message='CDN instances have been deployed and instance need reprocessing')
