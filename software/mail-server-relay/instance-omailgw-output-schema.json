@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Values returned by the oMailGw API/UI instance",
+  "type": "object",
+  "properties": {
+    "api-url": {
+      "description": "Base URL of the oMailGw API, including the /api suffix.",
+      "type": "string"
+    },
+    "ui-url": {
+      "description": "URL of the oMailGw web interface.",
+      "type": "string"
+    },
+    "root-user": {
+      "description": "Administrator email for oMailGw.",
+      "type": "string"
+    },
+    "root-password": {
+      "description": "Administrator password for oMailGw.",
+      "type": "string"
+    },
+    "mailgw-user": {
+      "description": "Relay-side API user email for oMailGw.",
+      "type": "string"
+    },
+    "mailgw-password": {
+      "description": "Relay-side API user password for oMailGw.",
+      "type": "string"
+    }
+  }
+}
