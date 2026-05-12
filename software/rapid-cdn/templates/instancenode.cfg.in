@@ -13,3 +13,4 @@ server-url = ${slap-connection:server-url}
 report-error = false
 timestamp-path = ${buildout:directory}/.timestamp
 instance-retention-delay = ${cdn-requester-configuration:instance-retention-delay}
+publish-slave-information-file = ${cdn-requester-configuration:publish-slave-information-file}

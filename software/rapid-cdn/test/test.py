@@ -8409,6 +8409,36 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertIn('Installing _second-', slapgrid_log)
     self.assertNotIn('Uninstalling _second-', slapgrid_log)
 
+  def test_added_slave_publish_section_present(self):
+    """
+    Regression test for the master publish-file race documented in
+    test-rapid-cdn-instancenode.md: after a slave is added to a
+    converged cluster, the master's instance-publish-slave-information.cfg
+    must contain the slave's [publish-_<reference>] section. The fix
+    drives convergence via cdninstancenode's postDeployInstanceValidation
+    + needs_bang signal; this test asserts the file end-state.
+    """
+    self.requestSlaveInstance('publish-check', {})
+    # Drive the convergence loop: cdninstancenode bangs master, master
+    # rebuilds, frontend rebuilds, master rebuilds, etc. Bounded.
+    for _ in range(5):
+      self.slap.waitForInstance(self.instance_max_retry)
+      self.runCDNInstanceNode()
+
+    master_path = self.getMasterPartitionPath()
+    publish_file = os.path.join(
+      master_path, 'instance-publish-slave-information.cfg')
+    self.assertTrue(
+      os.path.exists(publish_file),
+      'master publish file not rendered: %s' % publish_file)
+    with open(publish_file) as fh:
+      content = fh.read()
+    self.assertIn(
+      '[publish-_publish-check]', content,
+      'master publish file lacks [publish-_publish-check] section; '
+      'cluster did not consume frontend\'s published slave info.\n'
+      'Content:\n%s' % content)
+
   def test_destroyed_slave(self):
     self.requestSlaveInstance('deleted', {}, 'destroyed')
     self.slap.waitForInstance(self.instance_max_retry)
