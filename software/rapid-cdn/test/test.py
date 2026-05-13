@@ -5631,6 +5631,70 @@ class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
   test_enable_http3_false_http_version = '1'
 
 
+class TestSlaveJsonInXmlSerialisation(
+  SlaveHttpFrontendTestCase, TestDataMixin):
+  # Regression test for SR-67143: when software.cfg.json declares
+  # serialisation=json-in-xml on a slave software-type, each slave's
+  # parameter blob arrives at the rapid-cdn master partition wrapped
+  # as {'_': '<json string>', 'slave_reference': '<ref>'}. The
+  # slap-configuration recipe must transparently decode it before the
+  # Jinja2 templates iterate over slave-instance-list, otherwise every
+  # slave.get(...) returns None and the slave is silently
+  # mis-configured. Locks in the proper fix for the workaround in
+  # commit 5b05605833 ("rapid-cdn: Serialize shared with XML").
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+      })
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'json-in-xml': {
+        '_': json.dumps({
+          'url': cls.backend_url,
+        })
+      },
+    }
+
+  def test(self):
+    parameter_dict = self.assertSlaveBase('json-in-xml')
+    # Slave was unwrapped: rapid-cdn published a generated domain and url
+    # back to it. No assertion-pop side effect needed; assertSlaveBase
+    # already validates the published parameter dict shape.
+    del parameter_dict
+
+  def test_master_partition_state(self):
+    parameter_dict = self.parseConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
+    self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
+        'domain': 'example.com',
+        'accepted-slave-amount': '1',
+        'rejected-slave-amount': '0',
+        'slave-amount': '1',
+        'rejected-slave-dict': {}
+      },
+      parameter_dict
+    )
+
+
 class ReplicateSlaveMixin(object):
   def frontends1And2HaveDifferentIPv6(self):
     _, *prefixlen = self._ipv6_address.split('/')
