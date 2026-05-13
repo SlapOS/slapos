@@ -60,8 +60,6 @@
       'enable_cache',
       'health-check',
       'health-check-authenticate-to-failover-backend',
-      'health-check-failover-https-url',
-      'health-check-failover-https-url-netloc-list',
       'health-check-failover-ssl-proxy-ca-crt',
       'health-check-failover-ssl-proxy-verify',
       'health-check-failover-url',
@@ -73,8 +71,6 @@
       'health-check-rise',
       'health-check-timeout',
       'https-only',
-      'https-url',
-      'https-url-netloc-list',
       'path',
       'prefer-gzip-encoding-to-backend',
       'request-timeout',
@@ -292,7 +288,7 @@ context =
 {%-     endfor %}
 {%-     do slave.__setitem__('server-alias', ' '.join(slave_server_alias_unclashed)) %}
 {%-   endif %}
-{%-   for url_key in ['url', 'https-url', 'health-check-failover-url', 'health-check-failover-https-url'] %}
+{%-   for url_key in ['url', 'health-check-failover-url'] %}
 {%-     if url_key in slave %}
 {%-       set url = (slave[url_key] or '').strip() %}
 {%-       if not validators.url(url) %}
@@ -302,7 +298,7 @@ context =
 {%-       endif %}
 {%-     endif %}
 {%-   endfor %}
-{%-   for url_key in ['url-netloc-list', 'https-url-netloc-list', 'health-check-failover-url-netloc-list'] %}
+{%-   for url_key in ['url-netloc-list', 'health-check-failover-url-netloc-list'] %}
 {%-     if url_key in slave %}
 {%-       for netloc in slave[url_key].split() %}
 {%-         if not software.validate_netloc(netloc) %}
