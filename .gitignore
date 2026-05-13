@@ -16,3 +16,5 @@ slapos.cookbook.egg-info
 TEST_KNOWN_HOSTS
 node_modules
 update-release.sh
+.claude/settings.local.json
+.claude/env.local.json
