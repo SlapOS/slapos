@@ -721,13 +721,15 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     with self.patchSlap(parameters, shared):
       options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
       received = options['slave-instance-list']
+      # When SR serialisation is json-in-xml, each shared instance is
+      # transparently decoded (the {'_': '...json...'} wrapper is removed)
+      # so consumers see uniformly typed parameter dicts regardless of
+      # validate-parameters. slave_reference is system-injected and is
+      # preserved across the unwrap.
       self.assertEqual(
         received,
         [
-          dict(
-            slave_reference = "SHARED%d" % i,
-            **{'_': json.dumps(d, sort_keys=True)} if self.serialise else d
-          )
+          dict(d, slave_reference="SHARED%d" % i)
           for i, d in enumerate(shared)
         ],
       )
@@ -790,6 +792,26 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(options['valid-shared-instance-list'], [])
       self.assertIn('invalid-shared-instance-list', options)
       self.assertEqual(options['invalid-shared-instance-list'], [])
+
+  def test_jsonschema_shared_unwrapped_when_skip_shared_validation(self):
+    """When SR serialisation is json-in-xml and validate-parameters=main, each
+    shared instance is still transparently decoded so consumers (e.g. Jinja2
+    templates iterating slave-instance-list) see typed parameter dicts rather
+    than the raw {'_': '...json...'} wrapper. slave_reference, which is
+    system-injected outside the json payload, is preserved across the unwrap."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
+    with self.patchSlap(parameters, shared):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
+      received = options['slave-instance-list']
+      self.assertEqual(
+        received,
+        [
+          {"kind": 1, "slave_reference": "SHARED0"},
+          {"kind": 2, "thing": "hello", "slave_reference": "SHARED1"},
+        ],
+      )
 
   def test_jsonschema_non_existing_main_software_type(self):
     self.writeJsonSchema()
