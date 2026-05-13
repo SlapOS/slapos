@@ -21,7 +21,7 @@ try:
 except IndexError:
   last_meta = None
 try:
-  last_full_meta = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.full.meta')))[-1]
+  last_full_meta = sorted([e for e in glob.glob(os.path.join(mariadb_backup_directory, '*.full.meta')) if len(os.listdir(e)) ])[-1]
 except IndexError:
   last_full_meta = None
 if not last_meta:
