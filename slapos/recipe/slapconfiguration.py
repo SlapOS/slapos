@@ -685,6 +685,20 @@ class JsonSchema(Recipe):
     unstringify_types_dict = {'integer': int, 'boolean': str_to_bool}
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
       parameter_dict = unwrap(parameter_dict)
+      # Also unwrap each shared/slave instance so consumers see decoded
+      # parameter dicts regardless of validate-parameters. slave_reference
+      # is system-injected and lives outside the json-in-xml payload, so
+      # preserve it across the unwrap.
+      shared_list = options.get('slave-instance-list')
+      if shared_list:
+        unwrapped_shared_list = []
+        for instance in shared_list:
+          reference = instance.pop('slave_reference', None)
+          instance = unwrap(instance)
+          if isinstance(instance, dict) and reference is not None:
+            instance['slave_reference'] = reference
+          unwrapped_shared_list.append(instance)
+        options['slave-instance-list'] = unwrapped_shared_list
     if validate.main:
       schema = software_description.getInstanceRequestParameterSchema()
       if schema is None:
