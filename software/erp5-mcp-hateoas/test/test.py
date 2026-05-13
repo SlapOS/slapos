@@ -109,8 +109,8 @@ class TestDefaultDeploy(ERP5MCPTestCase):
     """Verify the internal MCP server responds on HTTP."""
     params = self.getConnectionParameterDict()
     ipv6 = params['mcp-ipv6']
-    # Internal port defaults to 18765
-    url = 'http://[%s]:18765/mcp' % ipv6
+    # Internal port defaults to 18765; streamable-http is mounted at /
+    url = 'http://[%s]:18765/' % ipv6
     response = requests.get(url, timeout=10)
     # The MCP server should respond; 401 is expected (OAuth requires auth)
     self.assertIn(response.status_code, (200, 401, 405))
@@ -140,7 +140,7 @@ class TestDefaultDeploy(ERP5MCPTestCase):
   def test_mcp_post_unauthenticated_returns_401(self):
     """MCP tool calls without a Bearer token must return 401."""
     response = requests.post(
-        self._internal_url('/mcp'),
+        self._internal_url('/'),
         json={
             'jsonrpc': '2.0',
             'method': 'initialize',
