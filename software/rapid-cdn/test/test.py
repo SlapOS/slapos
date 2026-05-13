@@ -2564,9 +2564,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
       r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+ '
-      r'"GET (/test-path/deeper){250} HTTP/1.1" '
+      r'"GET (https?://[^/]+)?(/test-path/deeper){250} HTTP/%(http_version)s" '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
-      r'-/.+/.+'
+      r'-/.+/.+' % dict(
+        http_version=self.max_client_version)
     )
 
     result_http = fakeHTTPResult(
