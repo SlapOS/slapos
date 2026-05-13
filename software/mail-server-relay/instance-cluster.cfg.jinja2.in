@@ -13,9 +13,12 @@ offline = true
 
 [validate-proxy-map]
 recipe = slapos.recipe.build
+proxy-map = {{
+  dumps(slapparameter_dict.get('default-relay-config', {}).get('proxy-map', {}))
+}}
 init =
   # Validate that domains are unique across all proxies in proxy-map
-  proxy_map = {{ slapparameter_dict.get('default-relay-config', {}).get('proxy-map', {}) }}
+  proxy_map = options['proxy-map']
   domain_to_proxy = {}
   errors = []
   for proxy_id, proxy_config in proxy_map.items():
