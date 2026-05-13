@@ -90,12 +90,8 @@ backend {{ slave_instance['slave_reference'] }}
 {%-     else %}
 {%-       set hostname = None %}
 {%-     endif %}
-{%-     set path_list = [parsed.path.rstrip('/')] %}
-{%-     set query = parsed.query %}
-{%-     if query %}
-{%-       do path_list.append(query) %}
-{%-     endif %}
-{%-     set path = '?'.join(path_list) %}
+{%-     set slave_path = parsed.path.rstrip('/') %}
+{%-     set slave_query = parsed.query %}
 {%-     set netloc_list = slave_instance.get('url-netloc-list', '').split() %}
 {%-     if hostname or len(netloc_list) > 0 %}
   timeout server {{ slave_instance['request-timeout'] }}s
@@ -133,8 +129,11 @@ backend {{ slave_instance['slave_reference'] }}
 {%-       for active_check_option in active_check_option_list %}
   {{ active_check_option }}
 {%-       endfor %}
-{%-       if path %}
-  http-request set-path {{ path.strip() | replace('%', '%%') }}%[path,regsub('^/$','')]
+{%-       if slave_path %}
+  http-request set-path {{ slave_path | replace('%', '%%') }}%[path,regsub('^/$','')]
+{%-       endif %}
+{%-       if slave_query %}
+  http-request set-query {{ slave_query | replace('%', '%%') }}
 {%-       endif %}
 {%-     endif %}
 {%-   endif %}
@@ -168,12 +167,8 @@ backend {{ slave_instance['slave_reference'] }}-failover
 {%-     else %}
 {%-       set hostname = None %}
 {%-     endif %}
-{%-     set path_list = [parsed_health_check.path.rstrip('/')] %}
-{%-     set query = parsed_health_check.query %}
-{%-     if query %}
-{%-       do path_list.append(query) %}
-{%-     endif %}
-{%-     set path = '?'.join(path_list) %}
+{%-     set slave_path = parsed_health_check.path.rstrip('/') %}
+{%-     set slave_query = parsed_health_check.query %}
 {%-     if hostname %}
 {%-       set health_check_netloc_list = slave_instance.get('health-check-failover-url-netloc-list', '').split() %}
 {%-       if len(health_check_netloc_list) > 0 %}
@@ -196,8 +191,11 @@ backend {{ slave_instance['slave_reference'] }}-failover
   timeout connect {{ slave_instance['backend-connect-timeout'] }}s
   timeout server {{ slave_instance['request-timeout'] }}s
   retries {{ slave_instance['backend-connect-retries'] }}
-{%-       if path %}
-  http-request set-path {{ path.strip() | replace('%', '%%') }}%[path,regsub('^/$','')]
+{%-       if slave_path %}
+  http-request set-path {{ slave_path | replace('%', '%%') }}%[path,regsub('^/$','')]
+{%-       endif %}
+{%-       if slave_query %}
+  http-request set-query {{ slave_query | replace('%', '%%') }}
 {%-       endif %}
 {%-     endif %}
 {%-   endif %}
