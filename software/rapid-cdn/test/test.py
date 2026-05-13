@@ -2549,10 +2549,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       '_Url_frontend_log',
       r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+ '
       r'\[\d{2}\/.{3}\/\d{4}\:\d{2}\:\d{2}\:\d{2}.\d{3}\] '
-      r'https-frontend~ _Url-https\/_Url-backend-https '
+      r'https-frontend~ _Url-https-http-%(http_version)s\/_Url-backend-https '
       r'\d+/\d+\/\d+\/\d+\/\d+ '
       r'200 \d+ - - ---- '
-      r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+'
+      r'\d+\/\d+\/\d+\/\d+\/\d+ \d+\/\d+' % dict(
+        http_version=self.max_client_version)
     )
 
     self.assertLastLogLineRegexp(
