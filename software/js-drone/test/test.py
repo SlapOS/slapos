@@ -38,16 +38,16 @@ from websocket import create_connection
 from slapos.testing.testcase import installSoftwareUrlList, makeModuleSetUpAndTestCaseClass
 
 '''
-  0. positionArray
-    0.1 latitude
-    0.2 longitude
-    0.3 absolute altitude
-    0.4 relative altitude
-  1. speedArray
-    1.1 yaw angle
-    1.2 air speed
-    1.3 climb rate
-  2. message
+  0. message
+  1. positionArray
+    1.1 latitude
+    1.2 longitude
+    1.3 absolute altitude
+    1.4 relative altitude
+  2. speedArray
+    2.1 yaw angle
+    2.2 air speed
+    2.3 climb rate
   3. log
 '''
 MONITORED_ITEM_NB = 4
@@ -139,9 +139,11 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
   def getInstanceParameterDict(cls):
     return {
       '_': json.dumps({
-        'droneGuidList': [cls.slap._computer_id],
-        'subscriberGuidList': [cls.slap._computer_id],
-        'subscriberNetIf': OPC_UA_NET_IF
+        'droneList': [{'guid': cls.slap._computer_id}],
+        'subscriberList': [{
+          'guid': cls.slap._computer_id,
+          'netIf': OPC_UA_NET_IF,
+        }],
       })
     }
 
@@ -231,6 +233,7 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
   def ua_dataSetMessage_encode(self):
     data_set_message = self.ua_dataSetMessageHeader_encode()
     data_set_message += struct.pack('H', MONITORED_ITEM_NB)
+    data_set_message += self.ua_string_encode(TEST_MESSAGE)
     data_set_message += self.ua_array_encode(
       POSITION_ARRAY_TYPE,
       'q',
@@ -241,7 +244,6 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
       'f',
       SPEED_ARRAY_VALUES,
     )
-    data_set_message += self.ua_string_encode(TEST_MESSAGE)
     data_set_message += self.ua_string_encode(LOG)
     return data_set_message
 
@@ -280,10 +282,11 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
         'numberOfSubscribers': 1,
         'id': 1,
         'debug': False,
-        'isASimulation': False,
         'loopPeriod': LOOP_PERIOD,
         'isADrone': False,
-        'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.0/subscribe.js',
+        'operatorScript': 'https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.3/operator.js',
+        'mapJson': 'https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.3/map.json',
+        'flightScript': 'https://lab.nexedi.com/nexedi/flight-scripts/-/raw/v2.3/subscribe.js',
         'netIf': OPC_UA_NET_IF,
         'multicastIp': MCAST_GRP
       }
@@ -322,7 +325,6 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
       )
       self.send_ua_networkMessage()
       time.sleep(0.1)
-      self.assertEqual(conn.recv_frame().data, MESSAGE_CONTENT.replace(b'\\', b''))
       self.assertEqual(
         conn.recv_frame().data,
         b''.join((
@@ -333,3 +335,4 @@ class SubscriberTestCase(SlapOSInstanceTestCase):
           b'"log":""}}}',
         )),
       )
+      self.assertEqual(conn.recv_frame().data, MESSAGE_CONTENT.replace(b'\\', b''))
