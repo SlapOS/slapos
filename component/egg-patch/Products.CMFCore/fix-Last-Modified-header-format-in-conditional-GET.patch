@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Xiaowu Zhang <xiaowu.zhang@nexedi.com>
+Date: Tue, 13 May 2025 00:00:00 +0000
+Subject: [PATCH] utils: fix Last-Modified header format in conditional GET
+
+_checkConditionalGET was using str(content_mod_time) to format the
+Last-Modified response header, which produces the non-standard Zope
+DateTime repr "2020/04/14 14:26:28.750000 UTC" instead of RFC 1123
+format "Tue, 14 Apr 2020 14:26:28 GMT".
+
+Use rfc1123_date() consistently, as already done in _setCacheHeaders
+and CachingPolicyManager.getHeaders.
+---
+ src/Products/CMFCore/utils.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/Products/CMFCore/utils.py b/src/Products/CMFCore/utils.py
+index 2f99d6d..1234567 100644
+--- a/src/Products/CMFCore/utils.py
++++ b/src/Products/CMFCore/utils.py
+@@ -468,7 +468,7 @@ def _checkConditionalGET(obj, extra_context):
+
+     response = REQUEST.RESPONSE
+     if content_mod_time and set_last_modified_header:
+-        response.setHeader('Last-modified', str(content_mod_time))
++        response.setHeader('Last-modified', rfc1123_date(content_mod_time.timeTime()))
+     if content_etag:
+         response.setHeader('ETag', content_etag, literal=1)
+     response.setStatus(304)
