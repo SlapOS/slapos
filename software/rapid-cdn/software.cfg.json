@@ -25,6 +25,7 @@
       "request": "instance-slave-input-schema.json",
       "response": "instance-slave-output-schema.json",
       "shared": true,
+      "serialisation": "xml",
       "software-type": "custom-personal",
       "title": "Custom Personal (Slave)"
     },
@@ -42,6 +43,7 @@
       "request": "instance-slave-input-schema.json",
       "response": "instance-slave-output-schema.json",
       "shared": true,
+      "serialisation": "xml",
       "software-type": "default",
       "title": "Default (slave)"
     },
