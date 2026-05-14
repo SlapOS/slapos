@@ -5632,10 +5632,13 @@ class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
 
 
 def _downgradeSlavesInProxyDb(proxy_db_path, slave_references):
-  # Rewrite the master partition's slave_instance_list column to replace
-  # each named slave's json-in-xml-wrapped entry ({'_': '<json>', ...})
-  # with the equivalent plain-dict entry, simulating pre-upgrade slaves
-  # that the SR-upgrade does not migrate in the proxy DB.
+  # Test-fixture mutation: rewrites the slap *proxy DB* (not the SR under
+  # test) so the master partition reads pre-upgrade-shaped entries during
+  # convergence. Rewrites the master's slave_instance_list column to
+  # replace each named slave's json-in-xml-wrapped entry
+  # ({'_': '<json>', ...}) with the equivalent plain-dict entry,
+  # simulating pre-upgrade slaves that the SR-upgrade does not migrate in
+  # the proxy DB.
   import sqlite3
   from slapos.util import dumps as xml_dumps, loads as xml_loads, bytes2str
   from slapos.proxy.db_version import DB_VERSION
