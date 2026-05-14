@@ -119,105 +119,6 @@ def patch_broken_pipe_error():
 patch_broken_pipe_error()
 
 
-class MockDNSServer(threading.Thread):
-  """Minimal UDP DNS server that responds to TXT queries.
-
-  Parses DNS wire format queries and responds with TXT records
-  from an in-memory dict. Binds to an OS-assigned port on 127.0.0.1.
-  """
-  def __init__(self, host='127.0.0.1', port=0):
-    super(MockDNSServer, self).__init__(daemon=True)
-    self.records = {}  # {b'_slapos-challenge.domain.com': b'token-value'}
-    self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self.sock.bind((host, port))
-    self.sock.settimeout(0.5)
-    self.port = self.sock.getsockname()[1]
-    self.running = True
-
-  def set_txt_record(self, domain, value):
-    self.records[domain.encode().lower()] = value.encode()
-
-  def _parse_name(self, data, offset):
-    """Parse a DNS name from wire format, returning (name_bytes, new_offset)."""
-    labels = []
-    while True:
-      length = data[offset]
-      if length == 0:
-        offset += 1
-        break
-      if (length & 0xC0) == 0xC0:
-        # compression pointer
-        pointer = struct.unpack('!H', data[offset:offset + 2])[0] & 0x3FFF
-        name, _ = self._parse_name(data, pointer)
-        labels.append(name)
-        offset += 2
-        return b'.'.join(labels) if labels[:-1] else labels[0], offset
-      offset += 1
-      labels.append(data[offset:offset + length])
-      offset += length
-    return b'.'.join(labels), offset
-
-  def _build_name(self, name):
-    """Encode a domain name into DNS wire format labels."""
-    parts = name.split(b'.')
-    result = b''
-    for part in parts:
-      result += bytes([len(part)]) + part
-    result += b'\x00'
-    return result
-
-  def run(self):
-    while self.running:
-      try:
-        data, addr = self.sock.recvfrom(512)
-      except socket.timeout:
-        continue
-      except OSError:
-        break
-
-      if len(data) < 12:
-        continue
-
-      # Parse header
-      txn_id = data[:2]
-      # Parse question
-      qname, offset = self._parse_name(data, 12)
-      qtype, qclass = struct.unpack('!HH', data[offset:offset + 4])
-
-      # Only handle TXT queries (type 16)
-      if qtype != 16:
-        continue
-
-      txt_data = self.records.get(qname.lower())
-
-      # Build response header
-      flags = 0x8180  # response, recursion available
-      if txt_data is None:
-        flags = 0x8183  # NXDOMAIN
-        ancount = 0
-      else:
-        ancount = 1
-
-      header = txn_id + struct.pack('!HHHHH', flags, 1, ancount, 0, 0)
-      # Echo the question section
-      question = self._build_name(qname) + struct.pack('!HH', qtype, qclass)
-      response = header + question
-
-      if txt_data is not None:
-        # Answer section: name pointer to question, type TXT, class IN, TTL 0
-        answer = b'\xc0\x0c'  # pointer to name at offset 12
-        txt_rdata = bytes([len(txt_data)]) + txt_data
-        answer += struct.pack('!HHIH', 16, 1, 0, len(txt_rdata))
-        answer += txt_rdata
-        response += answer
-
-      self.sock.sendto(response, addr)
-
-  def stop(self):
-    self.running = False
-    self.sock.close()
-
-
 def createKey():
   key = rsa.generate_private_key(
     public_exponent=65537, key_size=2048, backend=default_backend())
@@ -8464,9 +8365,108 @@ class TestSlaveManagementDomainReuse(
     SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   mock_dns = None
 
+  class MockDNSServer(threading.Thread):
+    """Minimal UDP DNS server that responds to TXT queries.
+
+    Parses DNS wire format queries and responds with TXT records
+    from an in-memory dict. Binds to an OS-assigned port on 127.0.0.1.
+    """
+    def __init__(self, host='127.0.0.1', port=0):
+      super(TestSlaveManagementDomainReuse.MockDNSServer, self).__init__(
+        daemon=True)
+      self.records = {}  # {b'_slapos-challenge.domain.com': b'token-value'}
+      self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      self.sock.bind((host, port))
+      self.sock.settimeout(0.5)
+      self.port = self.sock.getsockname()[1]
+      self.running = True
+
+    def set_txt_record(self, domain, value):
+      self.records[domain.encode().lower()] = value.encode()
+
+    def _parse_name(self, data, offset):
+      """Parse a DNS name from wire format, returning (name_bytes, new_offset)."""
+      labels = []
+      while True:
+        length = data[offset]
+        if length == 0:
+          offset += 1
+          break
+        if (length & 0xC0) == 0xC0:
+          # compression pointer
+          pointer = struct.unpack('!H', data[offset:offset + 2])[0] & 0x3FFF
+          name, _ = self._parse_name(data, pointer)
+          labels.append(name)
+          offset += 2
+          return b'.'.join(labels) if labels[:-1] else labels[0], offset
+        offset += 1
+        labels.append(data[offset:offset + length])
+        offset += length
+      return b'.'.join(labels), offset
+
+    def _build_name(self, name):
+      """Encode a domain name into DNS wire format labels."""
+      parts = name.split(b'.')
+      result = b''
+      for part in parts:
+        result += bytes([len(part)]) + part
+      result += b'\x00'
+      return result
+
+    def run(self):
+      while self.running:
+        try:
+          data, addr = self.sock.recvfrom(512)
+        except socket.timeout:
+          continue
+        except OSError:
+          break
+
+        if len(data) < 12:
+          continue
+
+        # Parse header
+        txn_id = data[:2]
+        # Parse question
+        qname, offset = self._parse_name(data, 12)
+        qtype, qclass = struct.unpack('!HH', data[offset:offset + 4])
+
+        # Only handle TXT queries (type 16)
+        if qtype != 16:
+          continue
+
+        txt_data = self.records.get(qname.lower())
+
+        # Build response header
+        flags = 0x8180  # response, recursion available
+        if txt_data is None:
+          flags = 0x8183  # NXDOMAIN
+          ancount = 0
+        else:
+          ancount = 1
+
+        header = txn_id + struct.pack('!HHHHH', flags, 1, ancount, 0, 0)
+        # Echo the question section
+        question = self._build_name(qname) + struct.pack('!HH', qtype, qclass)
+        response = header + question
+
+        if txt_data is not None:
+          # Answer section: name pointer to question, type TXT, class IN, TTL 0
+          answer = b'\xc0\x0c'  # pointer to name at offset 12
+          txt_rdata = bytes([len(txt_data)]) + txt_data
+          answer += struct.pack('!HHIH', 16, 1, 0, len(txt_rdata))
+          answer += txt_rdata
+          response += answer
+
+        self.sock.sendto(response, addr)
+
+    def stop(self):
+      self.running = False
+      self.sock.close()
+
   @classmethod
   def getInstanceParameterDict(cls):
-    cls.mock_dns = MockDNSServer()
+    cls.mock_dns = cls.MockDNSServer()
     cls.mock_dns.start()
     return {
       '_': json.dumps({
