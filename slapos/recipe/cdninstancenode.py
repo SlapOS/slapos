@@ -22,6 +22,7 @@ from slapos.recipe.instancenode import (
   configure_logging
 )
 from slapos.recipe.localinstancedb import LocalDBAccessor
+from zc.buildout import UserError
 
 # Cipher constants from instance-master.cfg.in
 GOOD_CIPHER_LIST = [
@@ -211,6 +212,9 @@ class Recipe(InstanceNodeRecipe):
         except ValueError:
           pass
         parsed = urlsplit('dns://' + entry)
+        if parsed.hostname is None:
+          raise UserError(
+            'Invalid dns-nameserver entry: %r' % (entry,))
         nameserver_ips.append(parsed.hostname)
         if parsed.port:
           nameserver_ports[parsed.hostname] = parsed.port
