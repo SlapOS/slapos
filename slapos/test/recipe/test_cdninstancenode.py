@@ -326,7 +326,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
         mock_resolver_instance.resolve.side_effect = get_dns_response
 
         # Create recipe and call install()
-        recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+        recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
         # Store recipe's database instance for DNS mock to use
         recipe_db_instance[0] = recipe.domain_validation_db
 
@@ -404,8 +404,8 @@ class TestCDNRequestFullScenario(unittest.TestCase):
         self.assertEqual(db_entry['domain'], 'dnsfail.example.com')
         self.assertFalse(bool(db_entry['validated']))
 
-        # Verify request_instance was not called at all by CDNInstanceNodeRecipe.
-        # With the new behaviour, CDNInstanceNodeRecipe skips instance requests
+        # Verify request_instance was not called at all by Recipe.
+        # With the new behaviour, Recipe skips instance requests
         # entirely, including destroys, so no calls to the master are made.
         self.assertEqual(request_instance.call_count, 0)
 
@@ -524,7 +524,7 @@ class TestBangStability(unittest.TestCase):
 
   def _runInstall(self, dns_returns_valid_token):
     """
-    Run one CDNInstanceNodeRecipe.install() cycle with mocked slap and DNS.
+    Run one Recipe.install() cycle with mocked slap and DNS.
     Returns the computer_partition mock so the caller can inspect bang calls.
     """
     from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
@@ -564,7 +564,7 @@ class TestBangStability(unittest.TestCase):
 
       mock_resolver_instance.resolve.side_effect = get_dns_response
 
-      recipe = cdninstancenode.CDNInstanceNodeRecipe(
+      recipe = cdninstancenode.Recipe(
         self.buildout, 'test', self.options)
       recipe.install()
       return computer_partition
@@ -680,7 +680,7 @@ class TestPublishFileSync(unittest.TestCase):
   section is absent the helper reports invalid and postDeploy signals
   needs_bang=True. instancenode.Recipe._processInstance captures the
   signal into self._post_deploy_bang_requested, and
-  CDNInstanceNodeRecipe.instanceNodePostProcessing uses it as an extra
+  Recipe.instanceNodePostProcessing uses it as an extra
   bang condition. Master then keeps rebuilding until the publish file
   catches up.
   """
@@ -748,7 +748,7 @@ class TestPublishFileSync(unittest.TestCase):
 
   def _makeRecipe(self, options_override=None):
     """
-    Construct a CDNInstanceNodeRecipe instance directly for helper-level
+    Construct a Recipe instance directly for helper-level
     tests, without running install(). DNS resolver is patched so the
     constructor does not touch system DNS.
     """
@@ -760,12 +760,12 @@ class TestPublishFileSync(unittest.TestCase):
         else:
           options[k] = v
     with mock.patch('dns.resolver.Resolver'):
-      return cdninstancenode.CDNInstanceNodeRecipe(
+      return cdninstancenode.Recipe(
         self.buildout, 'test', options)
 
   def _runInstall(self, dns_returns_valid_token, omit_publish_file_option=False):
     """
-    Run one CDNInstanceNodeRecipe.install() cycle with mocked slap and DNS.
+    Run one Recipe.install() cycle with mocked slap and DNS.
     Returns the computer_partition mock so the caller can inspect bang calls.
     """
     from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
@@ -808,7 +808,7 @@ class TestPublishFileSync(unittest.TestCase):
 
       mock_resolver_instance.resolve.side_effect = get_dns_response
 
-      recipe = cdninstancenode.CDNInstanceNodeRecipe(
+      recipe = cdninstancenode.Recipe(
         self.buildout, 'test', options)
       recipe.install()
       return computer_partition
@@ -975,7 +975,7 @@ class TestPublishFileSync(unittest.TestCase):
     self.assertEqual(cp2.bang.call_count, 0)
 
 
-class TestCDNInstanceNodeRecipe(unittest.TestCase):
+class TestRecipe(unittest.TestCase):
 
   def setUp(self):
     self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
@@ -1028,7 +1028,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_no_custom_domain(self):
     """Test validation when custom_domain is not provided"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Should be valid if no custom_domain (nothing to verify)
     is_valid, error_list, connection_parameters = recipe.preDeployInstanceValidation('ref1', {})
@@ -1043,7 +1043,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
   @mock.patch('dns.resolver.Resolver')
   def test_validate_custom_domain_success(self, MockResolver):
     """Test successful validation of custom domain"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     mock_resolver_instance = MockResolver.return_value
 
@@ -1085,7 +1085,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
   @mock.patch('dns.resolver.Resolver')
   def test_validate_custom_domain_failure_wrong_token(self, MockResolver):
     """Test validation failure when token doesn't match"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     mock_resolver_instance = MockResolver.return_value
 
@@ -1121,7 +1121,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
   @mock.patch('dns.resolver.Resolver')
   def test_validate_custom_domain_failure_no_record(self, MockResolver):
     """Test validation failure when DNS record is missing"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     mock_resolver_instance = MockResolver.return_value
 
@@ -1148,7 +1148,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
   @mock.patch('dns.resolver.Resolver')
   def test_validate_custom_domain_failure_timeout(self, MockResolver):
     """Test validation failure when DNS lookup times out"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     mock_resolver_instance = MockResolver.return_value
 
@@ -1172,7 +1172,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_custom_domain_already_validated(self):
     """Test that validation is skipped if already validated in DB"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Pre-populate database with validated entry
     stored_token = 'stored-token-12345'
@@ -1201,7 +1201,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
   @mock.patch('dns.resolver.Resolver')
   def test_validate_custom_domain_token_reuse(self, MockResolver):
     """Test that token is reused if entry exists but not yet validated"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Pre-populate database with unvalidated entry
     stored_token = 'stored-token-67890'
@@ -1237,7 +1237,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
   def test_validate_custom_domain_dns_entry_name_configurable(self, MockResolver):
     """Test that dns-entry-name option is respected"""
     self.options['dns-entry-name'] = 'custom-challenge'
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     mock_resolver_instance = MockResolver.return_value
     mock_answer = mock.MagicMock()
@@ -1262,7 +1262,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_domain_already_validated_for_other_instance(self):
     """Test that validation fails if domain is already validated for another instance"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Pre-populate database with validated entry for another instance
     recipe.domain_validation_db.setDomainValidation('other-instance', 'example.com', 'existing-token', True)
@@ -1284,7 +1284,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_domain_change_removes_old_domain(self):
     """Test that changing domain removes old domain entry for the instance"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Pre-populate database with old domain entry
     recipe.domain_validation_db.setDomainValidation('ref1', 'old-domain.com', 'old-token', True)
@@ -1317,7 +1317,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_process_destroyed_instance(self):
     """Test that _processDestroyedInstance removes domain validation entries and instance from DB"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Pre-populate database with an entry
     recipe.domain_validation_db.setDomainValidation('test-instance-ref', 'example.com', 'test-token', True)
@@ -1352,7 +1352,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
         mock_remove.assert_called_once_with(instance_reference)
 
         # Verify parent's _processDestroyedInstance was NOT called
-        # (CDNInstanceNodeRecipe no longer calls the master for destroys)
+        # (Recipe no longer calls the master for destroys)
         mock_parent_process.assert_not_called()
 
         # Verify debug log was called
@@ -1362,7 +1362,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_server_alias_requires_custom_domain(self):
     """Test validation fails when server-alias is provided without custom_domain"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # server-alias without custom_domain should fail
     parameters = {
@@ -1374,7 +1374,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_server_alias_invalid_domain(self):
     """Test validation fails for invalid server-alias domains"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Invalid domain in server-alias
     parameters = {
@@ -1389,7 +1389,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
   @mock.patch('dns.resolver.Resolver')
   def test_validate_server_alias_same_root_domain(self, MockResolver):
     """Test validation accepts server-alias with same root domain as custom_domain"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Mock DNS to return success
     mock_resolver_instance = MockResolver.return_value
@@ -1419,7 +1419,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_server_alias_different_root_domain(self):
     """Test validation fails for server-alias with different root domain"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # server-alias with different root domain should fail
     parameters = {
@@ -1433,7 +1433,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
   @mock.patch('dns.resolver.Resolver')
   def test_validate_server_alias_wildcard_same_root_domain(self, MockResolver):
     """Test validation accepts wildcard server-alias with same root domain"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Mock DNS to return success
     mock_resolver_instance = MockResolver.return_value
@@ -1463,7 +1463,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_server_alias_wildcard_different_root_domain(self):
     """Test validation fails for wildcard server-alias with different root domain"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Wildcard server-alias with different root domain should fail
     parameters = {
@@ -1477,7 +1477,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
   @mock.patch('dns.resolver.Resolver')
   def test_validate_server_alias_matches_custom_domain(self, MockResolver):
     """Test validation accepts server-alias that matches custom_domain exactly"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Mock DNS to return success
     mock_resolver_instance = MockResolver.return_value
@@ -1508,7 +1508,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
   @mock.patch('dns.resolver.Resolver')
   def test_validate_server_alias_subdomain_of_custom_domain(self, MockResolver):
     """Test validation accepts server-alias that is subdomain of custom_domain"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Mock DNS to return success
     mock_resolver_instance = MockResolver.return_value
@@ -1539,7 +1539,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
   @mock.patch('dns.resolver.Resolver')
   def test_validate_server_alias_update_adds_new_hosts(self, MockResolver):
     """Test that updating server-alias for already validated instance adds new hosts to used_hosts"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Mock DNS to return success
     mock_resolver_instance = MockResolver.return_value
@@ -1614,7 +1614,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_url_netloc_list_invalid(self):
     """Test validation fails for invalid url-netloc-list"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Invalid netloc format
     parameters = {
@@ -1626,7 +1626,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_url_netloc_list_valid(self):
     """Test validation accepts valid url-netloc-list"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Valid netloc format
     parameters = {
@@ -1638,7 +1638,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_cipher_valid(self):
     """Test validation accepts valid ciphers"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Valid cipher from GOOD_CIPHER_LIST
     parameters = {
@@ -1650,7 +1650,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_cipher_invalid(self):
     """Test validation fails for invalid ciphers"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Invalid cipher
     parameters = {
@@ -1662,7 +1662,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_cipher_translatable(self):
     """Test validation accepts translatable ciphers and logs warning"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Translatable cipher (old format)
     parameters = {
@@ -1679,7 +1679,7 @@ class TestCDNInstanceNodeRecipe(unittest.TestCase):
 
   def test_validate_ssl_certificate_valid(self):
     """Test validation accepts valid SSL certificates"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', {
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', {
       **self.options,
       'openssl-binary': '/usr/bin/openssl'
     })
@@ -1706,7 +1706,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_validate_ssl_certificate_invalid(self):
     """Test validation fails for invalid SSL certificates"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', {
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', {
       **self.options,
       'openssl-binary': '/usr/bin/openssl'
     })
@@ -1730,7 +1730,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_validate_ssl_key_cert_match(self):
     """Test validation checks SSL key and certificate match"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', {
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', {
       **self.options,
       'openssl-binary': '/usr/bin/openssl'
     })
@@ -1761,7 +1761,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_validate_ssl_key_cert_mismatch(self):
     """Test validation fails when SSL key and certificate don't match"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', {
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', {
       **self.options,
       'openssl-binary': '/usr/bin/openssl'
     })
@@ -1790,7 +1790,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_validate_ssl_ca_crt_requires_key_and_cert(self):
     """Test validation requires ssl_crt and ssl_key when ssl_ca_crt is present"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # ssl_ca_crt without ssl_crt and ssl_key
     parameters = {
@@ -1802,7 +1802,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_validate_ssl_ca_crt_with_key_and_cert(self):
     """Test validation passes when ssl_ca_crt has both ssl_crt and ssl_key"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # ssl_ca_crt with ssl_crt and ssl_key
     parameters = {
@@ -1822,7 +1822,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
   def test_dns_nameserver_single(self, MockResolver):
     """Test that single nameserver is used when dns-nameserver option is provided"""
     self.options['dns-nameserver'] = '8.8.8.8'
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     mock_resolver_instance = MockResolver.return_value
     mock_answer = mock.MagicMock()
@@ -1852,7 +1852,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
   def test_dns_nameserver_multiple(self, MockResolver):
     """Test that multiple nameservers (comma-separated) are used correctly"""
     self.options['dns-nameserver'] = '8.8.8.8, 8.8.4.4, 2001:4860:4860::8888'
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     mock_resolver_instance = MockResolver.return_value
     mock_answer = mock.MagicMock()
@@ -1881,7 +1881,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     test_options = self.options.copy()
     if 'dns-nameserver' in test_options:
       del test_options['dns-nameserver']
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', test_options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', test_options)
 
     mock_resolver_instance = MockResolver.return_value
     mock_answer = mock.MagicMock()
@@ -1916,7 +1916,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     """Test that dns-nameserver works together with dns-cache-ttl option"""
     self.options['dns-nameserver'] = '1.1.1.1'
     self.options['dns-cache-ttl'] = '0'  # Disable cache
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     mock_resolver_instance = MockResolver.return_value
     mock_answer = mock.MagicMock()
@@ -1945,7 +1945,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
   @mock.patch('dns.resolver.Resolver')
   def test_dns_resolver_created_once_in_init(self, MockResolver):
     """Test that DNS resolver is created once in __init__ with fresh cache"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Verify resolver was created once during __init__
     self.assertEqual(MockResolver.call_count, 1)
@@ -1961,7 +1961,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
   @mock.patch('dns.resolver.Resolver')
   def test_dns_resolver_reused_in_check_custom_domain(self, MockResolver):
     """Test that _check_custom_domain reuses the instance resolver"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Reset call count after __init__
     MockResolver.reset_mock()
@@ -2001,8 +2001,8 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
       return resolver
     MockResolver.side_effect = create_resolver
 
-    recipe1 = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
-    recipe2 = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe1 = cdninstancenode.Recipe(self.buildout, 'test', self.options)
+    recipe2 = cdninstancenode.Recipe(self.buildout, 'test', self.options)
 
     # Verify two resolvers were created (one per instance)
     self.assertEqual(MockResolver.call_count, 2)
@@ -2015,7 +2015,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_timestamp_path_not_provided(self):
     """Test that timestamp defaults to current time when timestamp-path is not provided"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     # timestamp should be set to current time (approximately)
     self.assertIsNotNone(recipe.timestamp)
     self.assertIsInstance(recipe.timestamp, float)
@@ -2029,7 +2029,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     os.utime(self.timestamp_file_path, (test_timestamp, test_timestamp))
     
     self.options['timestamp-path'] = self.timestamp_file_path
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     
     # timestamp should be read from file modification time
     self.assertEqual(recipe.timestamp, test_timestamp)
@@ -2038,7 +2038,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     """Test that timestamp defaults to current time when file doesn't exist"""
     non_existent_path = '/nonexistent/path/timestamp'
     self.options['timestamp-path'] = non_existent_path
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     
     # timestamp should be set to current time (approximately)
     self.assertIsNotNone(recipe.timestamp)
@@ -2052,7 +2052,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     mock_db.db.fetchOne.return_value = None
     self.mock_requestinstance_db.db = mock_db.db
 
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     recipe.requestinstance_db = self.mock_requestinstance_db
     recipe.timestamp = time.time()
 
@@ -2064,7 +2064,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_instanceNodePostProcessing_added_instance(self):
     """Test bang when comparison shows added instances"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     recipe.requestinstance_db = self.mock_requestinstance_db
     recipe.timestamp = time.time()
     recipe._comparison = {'added': ['inst1'], 'modified': [], 'removed': []}
@@ -2078,7 +2078,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_instanceNodePostProcessing_modified_instance(self):
     """Test bang when comparison shows modified instances"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     recipe.requestinstance_db = self.mock_requestinstance_db
     recipe.timestamp = time.time()
     recipe._comparison = {'added': [], 'modified': ['inst1'], 'removed': []}
@@ -2092,7 +2092,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_instanceNodePostProcessing_removed_instance(self):
     """Test bang when comparison shows removed instances (deleted from DB)"""
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     recipe.requestinstance_db = self.mock_requestinstance_db
     recipe.timestamp = time.time()
     recipe._comparison = {'added': [], 'modified': [], 'removed': ['inst1']}
@@ -2113,7 +2113,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     }
     self.mock_requestinstance_db.db = mock_db.db
 
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     recipe.requestinstance_db = self.mock_requestinstance_db
     recipe.timestamp = time.time() - 200
 
@@ -2130,7 +2130,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     mock_db.db.fetchOne.return_value = None
     self.mock_requestinstance_db.db = mock_db.db
 
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     recipe.requestinstance_db = self.mock_requestinstance_db
     recipe.timestamp = time.time()
 
@@ -2149,7 +2149,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     }
     self.mock_requestinstance_db.db = mock_db.db
 
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     recipe.requestinstance_db = self.mock_requestinstance_db
     recipe.timestamp = time.time() - 200
     recipe._comparison = {'added': [], 'modified': [], 'removed': []}
@@ -2167,7 +2167,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     mock_db.db.fetchOne.return_value = None
     self.mock_requestinstance_db.db = mock_db.db
 
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     recipe.requestinstance_db = self.mock_requestinstance_db
     recipe.timestamp = time.time()
 
@@ -2193,7 +2193,7 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     self.mock_requestinstance_db.getInstanceList.return_value = []
     self.mock_requestinstance_db.db.fetchOne.return_value = None
 
-    recipe = cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', self.options)
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     recipe.instance_db = self.mock_instance_db
     recipe.requestinstance_db = self.mock_requestinstance_db
 
@@ -2419,7 +2419,7 @@ class TestInstanceRetentionDelay(unittest.TestCase):
     options = self.options.copy()
     if retention_delay is not None:
       options['instance-retention-delay'] = str(retention_delay)
-    return cdninstancenode.CDNInstanceNodeRecipe(self.buildout, 'test', options)
+    return cdninstancenode.Recipe(self.buildout, 'test', options)
 
   def test_default_retention_value(self):
     """Test that default retention delay is 90 days (7776000 seconds)."""

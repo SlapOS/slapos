@@ -4,9 +4,13 @@ import hashlib
 import ipaddress
 import time
 import os
-import secrets
+try:
+  from secrets import token_hex
+except ImportError:
+  from os import urandom
+  token_hex = lambda n: urandom(n).hex()
+from six.moves.urllib.parse import urlsplit, urlparse
 import re
-import urllib.parse
 import subprocess
 import json
 import sys
@@ -153,13 +157,13 @@ class DomainValidationDB(LocalDBAccessor):
       (instance_reference, domain, token, validated, timestamp)
     )
 
-class CDNInstanceNodeRecipe(InstanceNodeRecipe):
+class Recipe(InstanceNodeRecipe):
   """
   RequestInstanceListRecipe with custom domain verification for CDN.
   """
 
   def __init__(self, buildout, name, options):
-    super(CDNInstanceNodeRecipe, self).__init__(buildout, name, options)
+    super(Recipe, self).__init__(buildout, name, options)
     self.instance_retention_delay = int(options.get('instance-retention-delay', '7776000'))
     self._already_retained_references = set()
     self.dns_entry_name = options.get('dns-entry-name', '_slapos-challenge')
@@ -206,7 +210,7 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
           continue
         except ValueError:
           pass
-        parsed = urllib.parse.urlsplit('dns://' + entry)
+        parsed = urlsplit('dns://' + entry)
         nameserver_ips.append(parsed.hostname)
         if parsed.port:
           nameserver_ports[parsed.hostname] = parsed.port
@@ -312,7 +316,7 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
       return validation_entry['token']
 
     # Generate random component
-    random_component = secrets.token_hex(16)  # 32 hex characters
+    random_component = token_hex(16)  # 32 hex characters
 
     # Create token using HMAC-SHA256 with instance_reference, domain, and random component
     secret = self.options.get('verification-secret', 'slapos-cdn-secret')
@@ -419,7 +423,7 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
     # Remove domain validation and hosts (removeDomainValidationForInstance handles both)
     self.domain_validation_db.removeDomainValidationForInstance(instance_reference)
 
-    # For CDNInstanceNodeRecipe, do not call the master to destroy the instance.
+    # For Recipe, do not call the master to destroy the instance.
     # Simply remove the instance from the local request database.
     try:
       self._removeInstanceFromDB(instance_reference)
@@ -434,7 +438,7 @@ class CDNInstanceNodeRecipe(InstanceNodeRecipe):
     Validate that netloc is haproxy compatible server netloc.
     Reuses logic from software/rapid-cdn/software.py
     """
-    parsed = urllib.parse.urlparse('scheme://' + netloc)
+    parsed = urlparse('scheme://' + netloc)
     if ':' in parsed.hostname:
       hostname = '[%s]' % parsed.hostname
     else:
@@ -905,7 +909,7 @@ def main():
     if pidfile_lock:
       with pidfile_lock:
         # Create recipe instance
-        recipe = CDNInstanceNodeRecipe(
+        recipe = Recipe(
           buildout=None,
           name='cdn-instance-node',
           options=options
@@ -916,7 +920,7 @@ def main():
     else:
       # No PID file locking
       # Create recipe instance
-      recipe = CDNInstanceNodeRecipe(
+      recipe = Recipe(
         buildout=None,
         name='cdn-instance-node',
         options=options
