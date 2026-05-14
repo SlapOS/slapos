@@ -1,3 +1,8 @@
+---
+name: add-frontend
+description: Request an IPv4 Frontend for a Service
+---
+
 # Request an IPv4 Frontend for a Service
 
 TRIGGER when: the user asks to add a frontend, CDN, or public URL to a SlapOS service, OR you need to expose an instance's internal service via an external HTTPS URL.

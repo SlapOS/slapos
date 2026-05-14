@@ -1,3 +1,8 @@
+---
+name: add-template
+description: Add a Jinja2 Template to a Software Release
+---
+
 # Add a Jinja2 Template to a Software Release
 
 TRIGGER when: the user asks to add a template file to a SlapOS software release, OR you need to create a new template as part of a larger task (e.g., adding a config file, an HTML page, a script that needs Jinja2 variables at instance time).

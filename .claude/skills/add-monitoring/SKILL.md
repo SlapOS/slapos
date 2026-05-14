@@ -1,3 +1,8 @@
+---
+name: add-monitoring
+description: Add the Monitoring Stack to a Software Release
+---
+
 # Add the Monitoring Stack to a Software Release
 
 TRIGGER when: the user asks to add monitoring, promises infrastructure, or logrotate to a SlapOS software release, OR when the instance profile needs `monitor-promise-base`, `logrotate-entry-base`, or `monitor-publish` which are provided by the monitoring stack.

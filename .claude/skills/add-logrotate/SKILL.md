@@ -1,3 +1,8 @@
+---
+name: add-logrotate
+description: Add Logrotate for a Service
+---
+
 # Add Logrotate for a Service
 
 TRIGGER when: the user asks to add log rotation for a SlapOS service, OR you need to manage log file growth for a service that writes logs.

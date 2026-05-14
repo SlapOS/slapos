@@ -1,3 +1,8 @@
+---
+name: add-promise
+description: Add a SlapOS Promise
+---
+
 # Add a SlapOS Promise
 
 TRIGGER when: the user asks to add, create, or implement a promise/monitor check in a SlapOS instance profile, OR you need to add a promise as part of a larger task.

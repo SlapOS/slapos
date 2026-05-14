@@ -1,3 +1,8 @@
+---
+name: add-service
+description: Add a Service to a SlapOS Instance
+---
+
 # Add a Service to a SlapOS Instance
 
 TRIGGER when: the user asks to add a service, daemon, launcher, or background process to a SlapOS instance profile, OR you need to create a supervised process as part of a larger task.

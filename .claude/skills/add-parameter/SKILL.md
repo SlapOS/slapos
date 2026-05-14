@@ -1,3 +1,8 @@
+---
+name: add-parameter
+description: Add an Instance Parameter (slapparameter)
+---
+
 # Add an Instance Parameter (slapparameter)
 
 TRIGGER when: the user asks to add a configurable parameter to a SlapOS instance, OR you need to make a value user-configurable via `slapos request --parameters`.

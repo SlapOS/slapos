@@ -1,3 +1,8 @@
+---
+name: add-component
+description: Add a Component to a Software Release
+---
+
 # Add a Component to a Software Release
 
 TRIGGER when: the user asks to add a component, binary, or library to a SlapOS software release, OR you need to make an external tool (curl, tar, openssl, etc.) available to an instance.
