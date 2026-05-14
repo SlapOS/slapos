@@ -121,12 +121,11 @@ class DomainValidationDB(LocalDBAccessor):
     """
     if not hosts:
       return
-    # Remove existing hosts for this instance first
+    # Replace any prior rows for this instance so stale aliases disappear.
     self.execute(
       "DELETE FROM used_hosts WHERE instance_reference=?",
       (instance_reference,)
     )
-    # Insert new hosts
     host_list = [(host, instance_reference) for host in hosts]
     self.insertMany(
       "INSERT INTO used_hosts (host, instance_reference) VALUES (?, ?)",
@@ -169,30 +168,23 @@ class Recipe(InstanceNodeRecipe):
     self._already_retained_references = set()
     self.dns_entry_name = options.get('dns-entry-name', '_slapos-challenge')
     self.domain_validation_db = DomainValidationDB(self.options['domain-validation-db-path'])
-    # Get openssl binary from options (required for SSL validation)
     self.openssl_binary = options.get('openssl-binary')
     if not self.openssl_binary:
       self.logger.warning('openssl-binary option not provided, SSL certificate validation will be skipped')
 
-    # Instance Time Stamp to check if call bang is needed
+    # Timestamp used to detect new DB writes since last run (bang gating).
     self.timestamp_path = options.get('timestamp-path')
     if self.timestamp_path and os.path.exists(self.timestamp_path):
       self.timestamp = os.path.getmtime(self.timestamp_path)
     else:
-      # Initialize to current time if path not provided or file doesn't exist
       self.timestamp = time.time()
 
-    # Nameserver configuration - if provided, query directly to this nameserver
-    # instead of using system DNS resolver. This is useful for:
-    # - Consistent DNS resolution regardless of system configuration
-    # - Faster queries (direct to authoritative nameserver)
-    # - Avoiding local DNS cache issues
-    # Each comma-separated entry may carry an explicit port using
-    # `ip:port` (or `[ipv6]:port`); the default port is 53.
+    # Each comma-separated dns-nameserver entry may carry an explicit port
+    # using `ip:port` (or `[ipv6]:port`); the default port is 53.
     dns_nameserver = options.get('dns-nameserver')
 
-    # Create DNS resolver with fresh cache at initialization
-    # This bypasses system DNS cache and remote DNS cache when using custom nameservers
+    # Fresh LRUCache so we bypass dnspython's global cache when querying
+    # custom nameservers.
     self.dns_resolver = dns.resolver.Resolver()
     self.dns_resolver.lifetime = 5.0
     self.dns_resolver.cache = dns.resolver.LRUCache()
@@ -291,13 +283,10 @@ class Recipe(InstanceNodeRecipe):
     """
     challenge_domain = '%s.%s' % (self.dns_entry_name, domain)
     try:
-      # Query DNS using the instance resolver
-      # The resolver has a fresh cache created at initialization, which bypasses
-      # dnspython's global cache and system/remote DNS caches.
       answers = self.dns_resolver.resolve(challenge_domain, 'TXT')
 
       for rdata in answers:
-        # TXT records can contain multiple strings, join them
+        # TXT records can be split across multiple strings
         txt_value = ''.join([x.decode('utf-8') for x in rdata.strings])
         if txt_value == token:
           return True
@@ -316,13 +305,10 @@ class Recipe(InstanceNodeRecipe):
     custom_domain, and a random element.
     """
     if validation_entry and validation_entry['domain'] == custom_domain:
-      # Reuse existing token (domain matches, but validation may not be complete)
+      # Reuse existing token (validation may still be incomplete)
       return validation_entry['token']
 
-    # Generate random component
     random_component = token_hex(16)  # 32 hex characters
-
-    # Create token using HMAC-SHA256 with instance_reference, domain, and random component
     secret = self.options.get('verification-secret', 'slapos-cdn-secret')
     message = '%s:%s:%s' % (instance_reference, custom_domain, random_component)
     key = secret.encode('utf-8')
@@ -333,7 +319,7 @@ class Recipe(InstanceNodeRecipe):
       hashlib.sha256
     ).hexdigest()
 
-    # Store the token to prevent regeneration
+    # Persist before returning so the same token survives retries.
     self.domain_validation_db.setDomainValidation(instance_reference, custom_domain, token, False)
     return token
 
@@ -424,11 +410,10 @@ class Recipe(InstanceNodeRecipe):
     """
     self.logger.debug('Destroying instance: %s', instance_reference)
 
-    # Remove domain validation and hosts (removeDomainValidationForInstance handles both)
+    # removeDomainValidationForInstance also clears used_hosts rows.
     self.domain_validation_db.removeDomainValidationForInstance(instance_reference)
 
-    # For Recipe, do not call the master to destroy the instance.
-    # Simply remove the instance from the local request database.
+    # CDN instances are local-only — never call the master to destroy them.
     try:
       self._removeInstanceFromDB(instance_reference)
     except Exception as e:
@@ -456,8 +441,7 @@ class Recipe(InstanceNodeRecipe):
     """
     if not domain:
       return False
-    # Basic domain validation: letters, numbers, dots, hyphens
-    # Must not start or end with dot or hyphen
+    # Letters/digits/dots/hyphens; labels cannot start or end with `-`.
     pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$'
     return bool(re.match(pattern, domain))
 
@@ -477,7 +461,6 @@ class Recipe(InstanceNodeRecipe):
     parts = domain.split('.')
     if len(parts) < 2:
       return domain
-    # Return last two parts (e.g., 'example.com' from 'www.example.com')
     return '.'.join(parts[-2:])
 
   def _validate_cipher(self, cipher, warning_list):
@@ -566,16 +549,14 @@ class Recipe(InstanceNodeRecipe):
     """
     hosts = set()
 
-    # Add custom_domain if present
     custom_domain = parameters.get('custom_domain')
     if custom_domain:
       hosts.add(custom_domain)
 
-    # Add server-alias entries if present
     server_alias = parameters.get('server-alias', '')
     if server_alias:
       for alias in server_alias.split():
-        # Handle wildcard domains (e.g., *.example.com)
+        # Strip leading `*.` so wildcard aliases match a real host name.
         if alias.startswith('*.'):
           clean_alias = alias[2:]
         else:
@@ -681,17 +662,14 @@ class Recipe(InstanceNodeRecipe):
     error_list = []
     warning_list = []
 
-    # Validate server-alias domains and check for conflicts
     self._validate_server_alias(instance_reference, parameters, error_list)
 
-    # Validate url-netloc-list fields
     for url_key in ['url-netloc-list', 'https-url-netloc-list', 'health-check-failover-url-netloc-list', 'health-check-failover-https-url-netloc-list']:
       if url_key in parameters and parameters[url_key]:
         for netloc in parameters[url_key].split():
           if not self._validate_netloc(netloc):
             error_list.append('slave %s %r invalid' % (url_key, netloc))
 
-    # Validate ciphers
     ciphers = parameters.get('ciphers', '')
     if ciphers:
       cipher_list = ciphers.strip().split()
@@ -699,32 +677,27 @@ class Recipe(InstanceNodeRecipe):
         if not self._validate_cipher(cipher, warning_list):
           error_list.append('Cipher %r is not supported.' % (cipher,))
 
-    # Validate SSL certificates
     for cert_key in ['ssl_proxy_ca_crt', 'health-check-failover-ssl-proxy-ca-crt']:
       if cert_key in parameters:
         cert_content = parameters.get(cert_key, '') or ''
         if cert_content and not self._validate_ssl_certificate(cert_content):
           error_list.append('%s is invalid' % (cert_key,))
 
-    # Validate SSL key/cert matching (for deprecated ssl_key/ssl_crt)
+    # Deprecated ssl_key/ssl_crt/ssl_ca_crt: they must come as a matching trio.
     ssl_key = parameters.get('ssl_key', '')
     ssl_crt = parameters.get('ssl_crt', '')
     ssl_ca_crt = parameters.get('ssl_ca_crt', '')
 
-    # Check if ssl_ca_crt is present without ssl_crt and ssl_key
     if ssl_ca_crt and not (ssl_crt and ssl_key):
       error_list.append('ssl_ca_crt is present, so ssl_crt and ssl_key are required')
 
-    # Check if ssl_key and ssl_crt match
     if ssl_key and ssl_crt:
       if not self._validate_ssl_key_cert_match(ssl_key, ssl_crt):
         error_list.append('slave ssl_key and ssl_crt does not match')
 
-    # Log warnings (cipher translations)
     for warning in warning_list:
       self.logger.warning('Instance %s: %s', instance_reference, warning)
 
-    # If there are validation errors, return them
     if error_list:
       return False, error_list, {
         'message': '; '.join(error_list),
@@ -893,44 +866,32 @@ def main():
   Main entry point for command-line execution.
   """
   try:
-    # Parse command-line arguments
     args = parse_command_line_args()
-
-    # Load config file and create buildout/options dicts with PID file locking
     options, pidfile_lock = load_config_and_create_objects(
       args.cfg,
       args.pidfile,
       section_name='slaposinstancenode'
     )
 
-    # Configure logging
-    # Command line arguments take precedence over config file options
+    # Command-line arguments take precedence over config file options.
     logfile = args.logfile or options.get('logfile')
     debug = args.debug or options.get('debug', 'false').lower() in ['y', 'yes', '1', 'true']
     configure_logging(logfile=logfile, debug=debug)
 
-    # Use PID file lock as context manager to prevent multiple instances
     if pidfile_lock:
       with pidfile_lock:
-        # Create recipe instance
         recipe = Recipe(
           buildout=None,
           name='cdn-instance-node',
           options=options
         )
-
-        # Run the recipe
         recipe.install()
     else:
-      # No PID file locking
-      # Create recipe instance
       recipe = Recipe(
         buildout=None,
         name='cdn-instance-node',
         options=options
       )
-
-      # Run the recipe
       recipe.install()
 
     return 0
@@ -938,7 +899,6 @@ def main():
     sys.stderr.write('\nInterrupted by user\n')
     return 130
   except SystemExit as e:
-    # Re-raise SystemExit to preserve exit code
     raise
   except Exception as e:
     sys.stderr.write('Error: %s\n' % str(e))

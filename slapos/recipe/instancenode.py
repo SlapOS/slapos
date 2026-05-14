@@ -96,30 +96,22 @@ class Recipe(object):
     self.logger = logging.getLogger(name)
     self.options = options
 
-    # Configure logging if logfile or debug options are explicitly provided
-    # This allows logging to be configured through recipe options
-    # Note: Only configure if explicitly requested and not already configured
-    # In main(), logging is configured before Recipe is created, so this won't run there
+    # Recipe-driven logging is opt-in (logfile or debug=true). Skip when
+    # main() has already configured the root logger, so tests stay quiet.
     logfile = options.get('logfile')
     debug_str = options.get('debug', '')
     debug = debug_str.lower() in ['y', 'yes', '1', 'true'] if debug_str else False
-    # Only configure if explicitly requested (logfile is set, or debug is explicitly set to true)
-    # This prevents auto-configuration in tests
     if (logfile or (debug_str and debug)):
-      # Only configure if not already configured (basicConfig can only be called once effectively)
       root_logger = logging.getLogger()
       if not root_logger.handlers:
         configure_logging(logfile=logfile, debug=debug)
 
-    # Required options
     self.instance_db_path = options['instance-db-path']
     self.requestinstance_db_path = options['requestinstance-db-path']
 
-    # Initialize databases
     self.instance_db = HostedInstanceLocalDB(self.instance_db_path)
     self.requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
 
-    # Store request options for later use
     self.server_url = options['server-url']
     self.computer_id = options['computer-id']
     self.partition_id = options['partition-id']
@@ -132,17 +124,14 @@ class Recipe(object):
 
     self.report_error = options.get('report-error', 'true').lower() in ['y', 'yes', '1', 'true']
 
-    # Optional prefix for request names
     self.request_name_prefix = options.get('request-name-prefix', '')
 
-    # Extract sla-* options from recipe options (same for all instances)
-    # These will be used as filter_kw in requests
+    # sla-* recipe options become filter_kw on each request (shared by all instances).
     self.sla_filter_kw = {}
     for key, value in six.iteritems(options):
       if key.startswith('sla-') and value:
         self.sla_filter_kw[key[4:]] = value  # Remove 'sla-' prefix
 
-    # Lazy initialization of computer_partition for publishing connection parameters
     self._computer_partition = None
 
     # Progress tracking for periodic logging
@@ -649,43 +638,30 @@ class Recipe(object):
     self.logger.info('Starting instance node processing')
     # Reset the post-deploy bang signal at the start of every install() cycle.
     self._post_deploy_bang_requested = False
-    # Get the full list of instance from instance-db-path
-    # this list is the list of instance we got from master
     update_list = self._getUpdateList()
-
-    # Get list of stored instance reference and their hash from requestinstance-db-path
     stored_dict = self._getStoredDict()
 
-    # Compare using InstanceListComparator
-    # and return the new instances, the instances that are removed and the instances that are modified
     comparator = InstanceListComparator(update_list, stored_dict)
     comparison = comparator.compare()
     self._comparison = comparison
 
-    # Create mapping of reference to instance data
     instance_map = {item['reference']: item for item in update_list}
     computed_hashes = comparator.update_dict
 
-    # Get all instances that need processing:
-    # 1. New instances (added)
-    # 2. Modified instances
-    # 3. Previously invalid instances (even if unchanged, they need re-validation)
-    # 4. Removed instances (they need to be destroyed)
-
+    # Previously invalid instances stay in the processing set even when their
+    # hash is unchanged, so a parameter or master fix can re-validate them.
     unchanged_invalid_instances_to_process = set()
     invalid_instance_rows = self.requestinstance_db.getInstanceList("reference", invalid_only=True)
     for row in invalid_instance_rows:
       if row["reference"] not in comparison['modified'] and row["reference"] not in comparison['removed']:
         unchanged_invalid_instances_to_process.add(row["reference"])
 
-    # Initialize reporting logging
     self.initialiseReportingLogging(
       len(update_list),
       comparison,
       len(unchanged_invalid_instances_to_process)
     )
 
-    # Process new instances
     for instance_reference in comparison['added']:
       instance_data = instance_map[instance_reference]
       instance_hash = computed_hashes[instance_reference]
@@ -693,7 +669,6 @@ class Recipe(object):
       self._progress_processed_count += 1
       self.logIfTimePassed()
 
-    # Process modified instances and unchanged invalid instances
     for instance_reference in set(comparison['modified']) | unchanged_invalid_instances_to_process:
       instance_data = instance_map[instance_reference]
       instance_hash = computed_hashes[instance_reference]
@@ -701,16 +676,13 @@ class Recipe(object):
       self._progress_processed_count += 1
       self.logIfTimePassed()
 
-    # Destroy removed instances
     for instance_reference in comparison['removed']:
       if self.shouldDestroyInstance(instance_reference):
         self._processDestroyedInstance(instance_reference)
       self._progress_processed_count += 1
       self.logIfTimePassed()
 
-    # Do global post processing if needed
     self.instanceNodePostProcessing()
-    # Log final summary
     self.logFinalReport()
     self.logger.info('================================================================================')
     return []
@@ -941,11 +913,7 @@ def load_config_and_create_objects(config_path, pidfile_path=None, section_name=
   """
   # Parse config file
   config_parser = parse_config_file(config_path)
-
-  # Get options from config
   options = create_options_dict_from_config(config_parser, section_name)
-
-  # Create PID file lock context
   pidfile_lock = PIDFileLock(pidfile_path) if pidfile_path else None
 
   return options, pidfile_lock
@@ -956,44 +924,32 @@ def main():
   Main entry point for command-line execution.
   """
   try:
-    # Parse command-line arguments
     args = parse_command_line_args()
-
-    # Load config file and create options dict with PID file locking
     options, pidfile_lock = load_config_and_create_objects(
       args.cfg,
       args.pidfile,
       section_name='slaposinstancenode'
     )
 
-    # Configure logging
-    # Command line arguments take precedence over config file options
+    # Command-line arguments take precedence over config file options.
     logfile = args.logfile or options.get('logfile')
     debug = args.debug or options.get('debug', 'false').lower() in ['y', 'yes', '1', 'true']
     configure_logging(logfile=logfile, debug=debug)
 
-    # Use PID file lock as context manager to prevent multiple instances
     if pidfile_lock:
       with pidfile_lock:
-        # Create recipe instance
         recipe = Recipe(
           buildout=None,
           name='request-instance-list',
           options=options
         )
-
-        # Run the recipe
         recipe.install()
     else:
-      # No PID file locking
-      # Create recipe instance
       recipe = Recipe(
         buildout=None,
         name='request-instance-list',
         options=options
       )
-
-      # Run the recipe
       recipe.install()
 
     return 0
@@ -1001,7 +957,6 @@ def main():
     sys.stderr.write('\nInterrupted by user\n')
     return 130
   except SystemExit as e:
-    # Re-raise SystemExit to preserve exit code
     raise
   except Exception as e:
     sys.stderr.write('Error: %s\n' % str(e))
