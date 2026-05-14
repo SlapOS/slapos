@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import sqlite3
 import time
 
@@ -12,13 +13,12 @@ class LocalDBAccessor(object):
   def _connectDB(self):
     con = sqlite3.connect(self.db_path, timeout=30.0)
     con.row_factory = sqlite3.Row
-    # Enable WAL mode for better concurrency (readers don't block writers)
-    # WAL mode may not be available in all configurations, so we ignore errors
+    # Enable WAL mode for better concurrency (readers don't block writers).
     try:
       con.execute('PRAGMA journal_mode=WAL')
-    except Exception:
-      # WAL mode not available, continue with default mode
-      pass
+    except Exception as exc:
+      logging.getLogger(__name__).warning(
+        'PRAGMA journal_mode=WAL failed: %s', exc)
     return con
 
   def _createDatabaseIfNeeded(self, schema):
@@ -30,7 +30,10 @@ class LocalDBAccessor(object):
     con.execute('BEGIN')
     try:
       con.executescript(schema)
-    except Exception:
+    except Exception as exc:
+      logging.getLogger(__name__).warning(
+        'executescript failed while initialising %s: %s',
+        self.db_path, exc)
       con.rollback()
       con.close()
       raise

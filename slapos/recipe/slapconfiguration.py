@@ -821,10 +821,14 @@ class JsonSchemaWithDBFromInstanceNode(JsonSchemaWithDB):
       try:
         params = json.loads(raw_params)
       except (ValueError, TypeError):
-        # If parameters cannot be parsed, skip this instance rather than failing
+        logger.warning(
+          'skipping shared instance %r: invalid params (cannot parse JSON)',
+          reference)
         continue
       if not isinstance(params, dict):
-        # Shared validation expects mapping-like parameters
+        logger.warning(
+          'skipping shared instance %r: non-dict params',
+          reference)
         continue
       # Copy parameters and add slave_reference
       item = dict(params)

@@ -771,8 +771,9 @@ class PIDFileLock(object):
                 os.remove(self.pidfile_path)
                 # Retry lock acquisition
                 return self.__enter__()
-        except (IOError, ValueError):
-          pass
+        except (IOError, ValueError) as exc:
+          logging.getLogger(__name__).warning(
+            'stale or unreadable PID file %s: %s', self.pidfile_path, exc)
       raise SystemExit('Failed to acquire lock on PID file %s: %s' % (self.pidfile_path, e))
 
   def __exit__(self, exc_type, exc_val, exc_tb):
