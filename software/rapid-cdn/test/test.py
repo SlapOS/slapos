@@ -5631,17 +5631,78 @@ class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
   test_enable_http3_false_http_version = '1'
 
 
-class TestSlaveJsonInXmlSerialisation(
+def _downgradeSlavesInProxyDb(proxy_db_path, slave_references):
+  # Rewrite the master partition's slave_instance_list column to replace
+  # each named slave's json-in-xml-wrapped entry ({'_': '<json>', ...})
+  # with the equivalent plain-dict entry, simulating pre-upgrade slaves
+  # that the SR-upgrade does not migrate in the proxy DB.
+  import sqlite3
+  from slapos.util import dumps as xml_dumps, loads as xml_loads, bytes2str
+  from slapos.proxy.db_version import DB_VERSION
+  refs = set(slave_references)
+  with sqlite3.connect(proxy_db_path) as db:
+    rows = db.execute(
+      "SELECT reference, computer_reference, slave_instance_list "
+      "FROM partition%s WHERE slave_instance_list IS NOT NULL" % DB_VERSION
+    ).fetchall()
+    for partition_ref, computer_ref, sil_blob in rows:
+      slave_instance_list = xml_loads(sil_blob.encode('utf-8'))
+      changed = False
+      for entry in slave_instance_list:
+        if '_' not in entry:
+          continue
+        # Proxy stores slave_reference as '<requested_by>_<user_ref>'.
+        if not any(
+          entry['slave_reference'].endswith('_' + r) for r in refs):
+          continue
+        entry.update(json.loads(entry.pop('_')))
+        changed = True
+      if changed:
+        db.execute(
+          "UPDATE partition%s SET slave_instance_list=? "
+          "WHERE reference=? AND computer_reference=?" % DB_VERSION,
+          (bytes2str(xml_dumps(slave_instance_list)),
+           partition_ref, computer_ref),
+        )
+
+
+class TestSlaveXmlSerialisation(TestSlave):
+  # Re-runs TestSlave's full slave list under the legacy xml-on-the-wire
+  # format. After each slap.request stores a slave json-in-xml-wrapped (the
+  # post-!2095 default), we rewrite its stored params in the slap proxy DB
+  # to plain-dict form, simulating pre-upgrade slaves the SR-upgrade does
+  # not migrate. requestSlaveInstance is hit by both wholesale (requestSlaves)
+  # and per-slave (updateSlaveConnectionParameterDictDict) refreshes, so the
+  # downgrade survives the test framework's idempotent re-requests.
+
+  @classmethod
+  def _xml_serialised_slave_references(cls):
+    return frozenset(cls.getSlaveParameterDictDict())
+
+  @classmethod
+  def requestSlaveInstance(
+    cls, partition_reference, partition_parameter_kw, state='started'):
+    result = super().requestSlaveInstance(
+      partition_reference=partition_reference,
+      partition_parameter_kw=partition_parameter_kw,
+      state=state,
+    )
+    if state != 'destroyed' and \
+        partition_reference in cls._xml_serialised_slave_references():
+      _downgradeSlavesInProxyDb(
+        cls.slap._proxy_database, [partition_reference])
+    return result
+
+
+class TestSlaveMixedSerialisation(
   SlaveHttpFrontendTestCase, TestDataMixin):
-  # Regression test for SR-67143: when software.cfg.json declares
-  # serialisation=json-in-xml on a slave software-type, each slave's
-  # parameter blob arrives at the rapid-cdn master partition wrapped
-  # as {'_': '<json string>', 'slave_reference': '<ref>'}. The
-  # slap-configuration recipe must transparently decode it before the
-  # Jinja2 templates iterate over slave-instance-list, otherwise every
-  # slave.get(...) returns None and the slave is silently
-  # mis-configured. Locks in the proper fix for the workaround in
-  # commit 5b05605833 ("rapid-cdn: Serialize shared with XML").
+  # Regression test for SR-67143: a rapid-cdn master partition upgraded
+  # across the slave-serialisation switch carries a mixed slave_instance_list
+  # because pre-existing slaves were stored as xml plain-dicts and the SR
+  # upgrade does not rewrite them. The cookbook unwrap loop must produce a
+  # uniformly decoded list regardless of per-entry wire format.
+
+  legacy_slave_references = frozenset(('legacy-a', 'legacy-b'))
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -5658,19 +5719,29 @@ class TestSlaveJsonInXmlSerialisation(
   @classmethod
   def getSlaveParameterDictDict(cls):
     return {
-      'json-in-xml': {
-        '_': json.dumps({
-          'url': cls.backend_url,
-        })
-      },
+      'legacy-a': {'url': cls.backend_url},
+      'legacy-b': {'url': cls.backend_url, 'enable_cache': True},
+      'fresh-a':  {'url': cls.backend_url},
+      'fresh-b':  {'url': cls.backend_url, 'enable_cache': True},
     }
 
-  def test(self):
-    parameter_dict = self.assertSlaveBase('json-in-xml')
-    # Slave was unwrapped: rapid-cdn published a generated domain and url
-    # back to it. No assertion-pop side effect needed; assertSlaveBase
-    # already validates the published parameter dict shape.
-    del parameter_dict
+  @classmethod
+  def requestSlaveInstance(
+    cls, partition_reference, partition_parameter_kw, state='started'):
+    result = super().requestSlaveInstance(
+      partition_reference=partition_reference,
+      partition_parameter_kw=partition_parameter_kw,
+      state=state,
+    )
+    if state != 'destroyed' and \
+        partition_reference in cls.legacy_slave_references:
+      _downgradeSlavesInProxyDb(
+        cls.slap._proxy_database, [partition_reference])
+    return result
+
+  def test_each_slave_published(self):
+    for ref in self.getSlaveParameterDictDict():
+      self.assertSlaveBase(ref)
 
   def test_master_partition_state(self):
     parameter_dict = self.parseConnectionParameterDict()
@@ -5686,9 +5757,9 @@ class TestSlaveJsonInXmlSerialisation(
         'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
         'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
         'domain': 'example.com',
-        'accepted-slave-amount': '1',
+        'accepted-slave-amount': '4',
         'rejected-slave-amount': '0',
-        'slave-amount': '1',
+        'slave-amount': '4',
         'rejected-slave-dict': {}
       },
       parameter_dict
