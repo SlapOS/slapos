@@ -8364,6 +8364,8 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 class TestSlaveManagementDomainReuse(
     SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   mock_dns = None
+  # cross an integer-second boundary so the timestamp string changes
+  _BANG_LOOP_BOUNDARY_SLEEP_SECONDS = 1.1
 
   class MockDNSServer(threading.Thread):
     """Minimal UDP DNS server that responds to TXT queries.
@@ -8371,13 +8373,15 @@ class TestSlaveManagementDomainReuse(
     Parses DNS wire format queries and responds with TXT records
     from an in-memory dict. Binds to an OS-assigned port on 127.0.0.1.
     """
+    _SOCKET_TIMEOUT_SECONDS = 0.5
+
     def __init__(self, host='127.0.0.1', port=0):
       super(TestSlaveManagementDomainReuse.MockDNSServer, self).__init__(
         daemon=True)
       self.records = {}  # {b'_slapos-challenge.domain.com': b'token-value'}
       self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
       self.sock.bind((host, port))
-      self.sock.settimeout(0.5)
+      self.sock.settimeout(self._SOCKET_TIMEOUT_SECONDS)
       self.port = self.sock.getsockname()[1]
       self.running = True
 
@@ -8609,13 +8613,13 @@ class TestSlaveManagementDomainReuse(
 
     # Sleep past the integer-second boundary so a new str(int(time.time()))
     # would differ from row1['timestamp'] if the bug were present.
-    time.sleep(1.1)
+    time.sleep(self._BANG_LOOP_BOUNDARY_SLEEP_SECONDS)
     self.runCDNInstanceNode()
     row2 = self._get_requestinstance_row('bang-loop-invalid')
     self.assertEqual(row2['timestamp'], row1['timestamp'])
     self.assertEqual(row2['json_error'], row1['json_error'])
 
-    time.sleep(1.1)
+    time.sleep(self._BANG_LOOP_BOUNDARY_SLEEP_SECONDS)
     self.runCDNInstanceNode()
     row3 = self._get_requestinstance_row('bang-loop-invalid')
     self.assertEqual(row3['timestamp'], row1['timestamp'])
