@@ -1133,6 +1133,10 @@ log = ${cdn-requester-configuration:cdn-requester-log}
 [cdn-instance-node-activity-sense]
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
+# verified no bootstrap cycle: software.py imports stdlib + caucase +
+# cryptography only (both available via stack/caucase + python-cryptography
+# built earlier); check_cdn_node_activity_check itself uses only os/re/
+# datetime.  See audit-fixes-2026-05-14.
 inline =
   import software
   from zope.interface import implementer
