@@ -454,6 +454,7 @@ backend-client-caucase-url = {{ caucase_url }}
 rejected-slave-dict = {{ dumps(json_module.dumps(rejected_slave_dict, sort_keys=True)) }}
 rejected-slave-url = ${rejected-slave-publish:url}
 publish-failsafe-error-promise-url = ${publish-failsafe-error-promise:config-url}
+publish-slave-sqlite-validation-database = ${master-introspection-frontend-url:frontend-url}/${master-slave-introspection-server:access-slave-list-path}
 master-key-upload-url = ${request-kedifa:connection-master-key-upload-url}
 master-key-generate-auth-url = ${request-kedifa:connection-master-key-generate-auth-url}
 kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
@@ -909,6 +910,19 @@ init =
   url.set(path = '')
   options['frontend-url'] = url.tostr()
 
+
+[master-slave-introspection-server]
+ip = {{ instance_parameter_dict['ipv4-random'] }}
+# TODO(audit): allocate via free-port (no slapos.cookbook:free_port pattern
+# is established in this template; sibling [master-introspection-server-
+# configuration] at L874 also hardcodes its port).
+port = 14968
+access-slave-list-path = slave-database
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:service}/sqlite-web-slave-introspection
+command-line = {{ software_parameter_dict['sqlite-web-bin'] }} -T -H ${:ip} -p ${:port} -u ${:access-slave-list-path} -r ${cdn-requester-configuration:valided-instance-db-path} 
+
+
 [rejected-slave-publish]
 url = ${master-introspection-frontend-url:frontend-url}/${master-introspection-template:rejected-slave-path}/${rejected-slave-json:filename}
 
@@ -985,6 +999,15 @@ inline =
         sendfile on;
         sendfile_max_chunk 1m;
       }
+      location /${master-slave-introspection-server:access-slave-list-path} {
+          proxy_pass http://${master-slave-introspection-server:ip}:${master-slave-introspection-server:port};
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header X-Forwarded-Prefix /${master-slave-introspection-server:access-slave-list-path};
+          proxy_redirect off;
+      }
     }
   }
 
@@ -996,6 +1019,13 @@ promise = check_socket_listening
 name = master-introspection-server-ip-port-listening.py
 config-host = ${master-introspection-server-configuration:ip}
 config-port = ${master-introspection-server-configuration:port}
+
+[master-introspection-slave-server-ip-port]
+<= monitor-promise-base
+promise = check_socket_listening
+name = master-introspection-slave-server-ip-port-listening.py
+config-host = ${master-slave-introspection-server:ip}
+config-port = ${master-slave-introspection-server:port}
 
 [master-key-upload-url-ready]
 recipe = slapos.recipe.build
@@ -1070,6 +1100,70 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
       key_len=2048
 )}}
 
+[cdn-requester-configuration]
+cdn-requester-log = ${directory:log}/cdn-instance-node.log
+instance-db-path = {{ instance_parameter_dict["instance-db-path"] }}
+valided-instance-db-path = {{ instance_parameter_dict["valided-instance-db-path"] }}
+domainvalidation-db-path = ${directory:srv}/domainvalidation-db.sqlite
+openssl = {{ software_parameter_dict['openssl'] }}
+instance-retention-delay = {{ slapparameter_dict['instance-retention-delay'] | string }}
+# Resolves to the rendered output of [instance-publish-slave-information]
+# below — both run on the master partition, so ${buildout:directory} is
+# shared. Cdninstancenode reads this file to detect when the master has
+# not yet consumed the frontend's published slave info.
+publish-slave-information-file = ${buildout:directory}/instance-publish-slave-information.cfg
+
+[cdn-instance-node]
+recipe = slapos.recipe.template
+url = {{ software_parameter_dict['template_instancenode_config'] }}
+output = ${directory:etc}/instancenode.cfg
+
+[cdn-instance-node-cron]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = cdn-instance-node
+frequency = * * * * *
+command = {{ software_parameter_dict['cdninstancenode-bin'] }} --cfg ${cdn-instance-node:output} --pidfile ${buildout:directory}/cdn-instance-node.pid --logfile ${cdn-requester-configuration:cdn-requester-log}
+
+[logrotate-entry-cdn-requester]
+<= logrotate-entry-base
+name = cdn-instance-node
+log = ${cdn-requester-configuration:cdn-requester-log}
+
+[cdn-instance-node-activity-sense]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+# verified no bootstrap cycle: software.py imports stdlib + caucase +
+# cryptography only (both available via stack/caucase + python-cryptography
+# built earlier); check_cdn_node_activity_check itself uses only os/re/
+# datetime.  See audit-fixes-2026-05-14.
+inline =
+  import software
+  from zope.interface import implementer
+  from slapos.grid.promise import interface
+  from slapos.grid.promise.generic import GenericPromise
+
+  @implementer(interface.IPromise)
+  class RunPromise(GenericPromise):
+    def sense(self):
+      status, message = software.check_cdn_node_activity_check(
+        '${cdn-requester-configuration:cdn-requester-log}')
+      if status == 'error':
+        self.logger.error(message)
+      elif status == 'warning':
+        self.logger.warning(message)
+      else:
+        self.logger.info(message)
+
+[cdn-instance-node-activity-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs =
+  slapos.core
+  software
+file = ${cdn-instance-node-activity-sense:output}
+output = ${directory:plugins}/cdn_instance_node_activity.py
+config-bang-on-failure = false
+
 [check-publish-failsafe-error]
 recipe = plone.recipe.command
 directory = ${directory:publish-failsafe-check-var}
@@ -1101,6 +1195,7 @@ parts =
   publish-information
   request-kedifa
   master-introspection-server-ip-port
+  master-introspection-slave-server-ip-port
   caucased-backend-client
   caucased-backend-client-promise
   master-key-upload-url-ready-promise
@@ -1110,6 +1205,9 @@ parts =
   master-key-generate-auth-url-ready-promise-anomaly
   master-key-download-url-ready-promise-anomaly
   master-introspection-frontend
+  cdn-instance-node-cron
+  logrotate-entry-cdn-requester
+  cdn-instance-node-activity-promise
 {%- for part in part_list %}
 {{ '  %s' % part }}
 {%- endfor %}
