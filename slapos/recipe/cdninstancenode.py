@@ -167,7 +167,7 @@ class Recipe(InstanceNodeRecipe):
     self.instance_retention_delay = int(options.get('instance-retention-delay', '7776000'))
     self._already_retained_references = set()
     self.dns_entry_name = options.get('dns-entry-name', '_slapos-challenge')
-    self.domain_validation_db = DomainValidationDB(self.options['domainvalidation-db-path'])
+    self.domain_validation_db = DomainValidationDB(self.options['domain-validation-db-path'])
     # Get openssl binary from options (required for SSL validation)
     self.openssl_binary = options.get('openssl-binary')
     if not self.openssl_binary:
@@ -847,7 +847,7 @@ class Recipe(InstanceNodeRecipe):
     """
     Post processing for the instance node.
     Triggers bang when instances have changed so the master partition
-    re-reads valided-instance-db-path via slapconfiguration.instancenode.deferred.
+    re-reads validated-instance-db-path via slapconfiguration.instancenode.deferred.
     """
     needs_bang = False
     # Use the comparison result to detect added, modified, or removed

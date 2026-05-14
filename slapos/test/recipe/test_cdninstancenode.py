@@ -26,7 +26,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
       }
     }
     self.options = {
-      'domainvalidation-db-path': self.domainvalidation_db_path,
+      'domain-validation-db-path': self.domainvalidation_db_path,
       'instance-db-path': self.instance_db_path,
       'requestinstance-db-path': self.requestinstance_db_path,
       'server-url': 'http://test.example.com',
@@ -271,7 +271,7 @@ class TestCDNRequestFullScenario(unittest.TestCase):
         mock_rdata = mock.MagicMock()
 
         # Store database path for DNS mock to access
-        domainvalidation_db_path = self.options['domainvalidation-db-path']
+        domainvalidation_db_path = self.options['domain-validation-db-path']
         # Will be set after recipe is created
         recipe_db_instance = [None]
 
@@ -483,7 +483,7 @@ class TestBangStability(unittest.TestCase):
       },
     }
     self.options = {
-      'domainvalidation-db-path': self.domainvalidation_db_path,
+      'domain-validation-db-path': self.domainvalidation_db_path,
       'instance-db-path': self.instance_db_path,
       'requestinstance-db-path': self.requestinstance_db_path,
       'timestamp-path': self.timestamp_file_path,
@@ -633,7 +633,7 @@ class TestBangStability(unittest.TestCase):
     flips for instances whose parameters didn't change (hash unchanged).
     When an unchanged invalid instance becomes valid (e.g. the DNS TXT
     record was finally published), bang() must fire so the master
-    reprocesses `valided-instance-db-path` and picks up the new valid row.
+    reprocesses `validated-instance-db-path` and picks up the new valid row.
     Regression guard that the no-op detection in updateInstanceInDB does
     not mask real state transitions.
     """
@@ -702,7 +702,7 @@ class TestPublishFileSync(unittest.TestCase):
       },
     }
     self.options = {
-      'domainvalidation-db-path': self.domainvalidation_db_path,
+      'domain-validation-db-path': self.domainvalidation_db_path,
       'instance-db-path': self.instance_db_path,
       'requestinstance-db-path': self.requestinstance_db_path,
       'timestamp-path': self.timestamp_file_path,
@@ -986,7 +986,7 @@ class TestRecipe(unittest.TestCase):
     }
     self.options = {
       'instance-db-path': "/path/to/instance.db",
-      'domainvalidation-db-path': self.domainvalidation_db_path,
+      'domain-validation-db-path': self.domainvalidation_db_path,
       'requestinstance-db-path': "/path/to/requestinstance.db",
       'server-url': 'http://test.example.com',
       'computer-id': 'test-computer',
@@ -2392,7 +2392,7 @@ class TestInstanceRetentionDelay(unittest.TestCase):
 
     self.buildout = None
     self.options = {
-      'domainvalidation-db-path': self.domainvalidation_db_path,
+      'domain-validation-db-path': self.domainvalidation_db_path,
       'instance-db-path': self.instance_db_path,
       'requestinstance-db-path': self.requestinstance_db_path,
       'server-url': 'http://test.example.com',

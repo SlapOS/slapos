@@ -843,17 +843,17 @@ class JsonSchemaWithDBFromInstanceNode(JsonSchemaWithDB):
     # Database containing valid instances managed by instancenode.Recipe
     # Note: this MUST be different from the database used by JsonSchemaWithDB
     # (instance-db-path) to avoid mixing concerns.
-    db_path = options.get('valided-instance-db-path')
+    db_path = options.get('validated-instance-db-path')
     if not db_path:
       raise UserError(
-        "valided-instance-db-path option is required when using "
+        "validated-instance-db-path option is required when using "
         "JsonSchemaWithDBFromInstanceNode."
       )
 
     instance_db_path = options.get('instance-db-path')
     if instance_db_path and instance_db_path == db_path:
       raise UserError(
-        "valided-instance-db-path must be different from instance-db-path."
+        "validated-instance-db-path must be different from instance-db-path."
       )
 
     # Delegate to standard JsonSchemaWithDB behavior
