@@ -172,6 +172,7 @@ class LocalDBAccessor(object):
         connection.close()
 
 class HostedInstanceLocalDB(object):
+  # Future schema changes must bump the version and add an ALTER TABLE branch.
   schema = """CREATE TABLE IF NOT EXISTS instance (
     reference VARCHAR(255), -- unique instance reference
     json_parameters TEXT,
@@ -183,7 +184,12 @@ class HostedInstanceLocalDB(object):
     );
     CREATE INDEX IF NOT EXISTS idx_reference ON instance(reference);
     CREATE INDEX IF NOT EXISTS idx_valid_parameter ON instance(valid_parameter);
-    CREATE INDEX IF NOT EXISTS idx_hash ON instance(hash);"""
+    CREATE INDEX IF NOT EXISTS idx_hash ON instance(hash);
+    CREATE TABLE IF NOT EXISTS schema_version (
+      version INTEGER PRIMARY KEY,
+      name VARCHAR(255)
+    );
+    INSERT OR IGNORE INTO schema_version (version, name) VALUES (1, 'instance');"""
 
   def __init__(self, db_path):
     self.db = LocalDBAccessor(db_path, self.schema)
