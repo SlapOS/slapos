@@ -5693,9 +5693,22 @@ class TestSlaveXmlSerialisation(TestSlave):
         cls.slap._proxy_database, [partition_reference])
     return result
 
+  def assertTestData(self, *args, **kwargs):
+    # Reuse TestSlave's snapshots. The cookbook unwrap loop is the only
+    # layer that distinguishes xml-on-the-wire from json-in-xml-on-the-wire,
+    # and it is designed to produce byte-identical decoded slave_instance_list
+    # entries. Sharing the snapshot files makes that equivalence explicit:
+    # any divergence here would prove the unwrap is incomplete.
+    original_id = self.id
+    self.id = lambda: original_id().replace(
+      '.TestSlaveXmlSerialisation.', '.TestSlave.', 1)
+    try:
+      super().assertTestData(*args, **kwargs)
+    finally:
+      del self.id
 
-class TestSlaveMixedSerialisation(
-  SlaveHttpFrontendTestCase, TestDataMixin):
+
+class TestSlaveMixedSerialisation(SlaveHttpFrontendTestCase):
   # Regression test for SR-67143: a rapid-cdn master partition upgraded
   # across the slave-serialisation switch carries a mixed slave_instance_list
   # because pre-existing slaves were stored as xml plain-dicts and the SR
