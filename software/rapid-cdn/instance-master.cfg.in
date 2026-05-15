@@ -869,9 +869,15 @@ context =
 service = ${:etc}/service
 promise-output = ${:srv}/promise-output
 
+[master-introspection-server-port]
+recipe = slapos.cookbook:free_port
+minimum = 14455
+maximum = 14464
+ip = {{ instance_parameter_dict['ipv6-random'] }}
+
 [master-introspection-server-configuration]
 ip = {{ instance_parameter_dict['ipv6-random'] }}
-port = 14455
+port = ${master-introspection-server-port:port}
 
 [master-introspection-server]
 ip = ${master-introspection-server-configuration:ip}
@@ -911,12 +917,15 @@ init =
   options['frontend-url'] = url.tostr()
 
 
+[master-slave-introspection-server-port]
+recipe = slapos.cookbook:free_port
+minimum = 14968
+maximum = 14977
+ip = {{ instance_parameter_dict['ipv4-random'] }}
+
 [master-slave-introspection-server]
 ip = {{ instance_parameter_dict['ipv4-random'] }}
-# TODO(audit): allocate via free-port (no slapos.cookbook:free_port pattern
-# is established in this template; sibling [master-introspection-server-
-# configuration] at L874 also hardcodes its port).
-port = 14968
+port = ${master-slave-introspection-server-port:port}
 access-slave-list-path = slave-database
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:service}/sqlite-web-slave-introspection
