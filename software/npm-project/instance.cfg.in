@@ -21,7 +21,7 @@ srv = ${:home}/srv
 bin = ${:home}/bin
 log = ${:var}/log
 run = ${:var}/run
-varnginx = $${:var}/nginx
+varnginx = ${:var}/nginx
 node-cache = ${:var}/cache/node
 services = ${:etc}/service
 ssl = ${:etc}/ssl
@@ -43,7 +43,7 @@ shared = false
 
 [npm-project-build]
 recipe = slapos.recipe.build
-dist = $${npm-project-src:location}/dist
+dist = ${npm-project-src:location}/dist
 install =
   import os, shutil, subprocess
 
@@ -61,6 +61,8 @@ install =
   # Write down the revision numbder to a file, allow user to check it quickly
   with open(os.path.join(src, "REVISION"), "w", encoding="utf-8") as f:
     f.write(r"${npm-project-src:revision}")
+
+  os.makedirs(location, exist_ok=True)
 
 [nginx-parameters]
 ipv6 = ${slap-configuration:ipv6-random}
