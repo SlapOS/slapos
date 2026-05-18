@@ -1,4 +1,4 @@
-From 2fcb917cd38a576fabc4281d33e9c5c6653abbd7 Mon Sep 17 00:00:00 2001
+From e5b62014359e81b4737f39e2109b0b361c76bd83 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
 Date: Thu, 25 Dec 2025 14:17:48 +0900
 Subject: [PATCH] SlapOS: adjust the "open" policy to be more strict
@@ -12,7 +12,7 @@ See https://imagemagick.org/script/security-policy.php
  1 file changed, 14 insertions(+), 13 deletions(-)
 
 diff --git a/config/policy-open.xml b/config/policy-open.xml
-index 17cb250aa..5ab0d0eff 100644
+index d1f1230de..ab79a3c07 100644
 --- a/config/policy-open.xml
 +++ b/config/policy-open.xml
 @@ -84,41 +84,41 @@
@@ -78,14 +78,14 @@ index 17cb250aa..5ab0d0eff 100644
 -  <!-- <policy domain="path" rights="none" pattern="@*"/> -->
 +  <policy domain="path" rights="none" pattern="@*"/>
    <!-- These image types are security risks on read, but write is fine -->
-   <!-- <policy domain="module" rights="write" pattern="{MSL,MVG,PS,SVG,URL,XPS}"/> -->
+   <!-- <policy domain="module" rights="write" pattern="{MSL,MVG,PS,SVG,TXT,URL,XPS}"/> -->
    <!-- This policy sets the number of times to replace content of certain
-@@ -150,4 +150,5 @@
-   <!-- Set the maximum amount of memory in bytes that are permitted for
-        allocation requests. -->
+@@ -152,4 +152,5 @@
    <!-- <policy domain="system" name="max-memory-request" value="256MiB"/> -->
+   <!-- If the basename of path is a symbolic link, the open fails -->
+   <!-- <policy domain="system" name="symlink" rights="none" pattern="follow"/> -->
 +  <policy domain="coder" rights="none" pattern="{EPHEMERAL,HTTPS,MSL,MVG,PLT,SHOW,TEXT,URL,WIN}" />
  </policymap>
 -- 
-2.48.0
+2.52.0
 
