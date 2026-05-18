@@ -1,0 +1,228 @@
+{%- if instance_parameter_dict['slap-software-type'] == software_type -%}
+# Error Page Manager instance profile
+[buildout]
+extends =
+  {{ software_parameter_dict['profile_common'] }}
+  {{ software_parameter_dict['profile_monitor'] }}
+  {{ software_parameter_dict['profile_logrotate_base'] }}
+
+parts =
+  monitor-base
+  directory
+  error-page-manager-certificate
+  operator-token
+  read-token
+{%- for slave in slapparameter_dict['slave-list'] %}
+  {{ slave['slave_reference'] }}-token
+{%- endfor %}
+  error-page-manager-config
+  error-page-manager
+  promise-error-page-manager
+  promise-logrotate-setup
+  slave-error-page-information
+
+[monitor-instance-parameter]
+monitor-httpd-port = {{ slapparameter_dict['monitor-httpd-port'] }}
+password = {{ slapparameter_dict['monitor-password'] }}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+output = ${buildout:directory}/${:filename}
+extensions = jinja2.ext.do
+extra-context =
+slapparameter_dict = {{ dumps(slapparameter_dict) }}
+context =
+    import json_module json
+    raw profile_common {{ software_parameter_dict['profile_common'] }}
+    key slapparameter_dict :slapparameter_dict
+    ${:extra-context}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin/
+etc = ${buildout:directory}/etc/
+srv = ${buildout:directory}/srv/
+var = ${buildout:directory}/var/
+tmp = ${buildout:directory}/tmp/
+backup = ${:srv}/backup
+log = ${:var}/log
+run = ${:var}/run
+scripts = ${:etc}/run
+service = ${:etc}/service
+error-pages = ${:srv}/error-pages
+error-pages-operator = ${:error-pages}/operator
+error-pages-slaves = ${:error-pages}/slaves
+tokens = ${:srv}/tokens
+
+[error-page-manager-certificate]
+# Self-signed certificate for the error page manager HTTPS server.
+# Generated in init phase so the PEM value is available for publish.
+recipe = slapos.recipe.build
+ip = {{ instance_parameter_dict['ipv6-random'] }}
+certificate = ${directory:etc}/error-page-manager.crt
+key = ${directory:etc}/error-page-manager.key
+openssl = {{ software_parameter_dict['openssl'] }}
+openssl-cnf = {{ software_parameter_dict['openssl_cnf'] }}
+init =
+  import os, subprocess
+  cert = options['certificate']
+  key = options['key']
+  ip = options['ip']
+  if not os.path.isfile(cert):
+    os.makedirs(os.path.dirname(cert), exist_ok=True)
+    subprocess.run(
+      ['/bin/bash', '-c',
+       '%(openssl)s req -new -newkey rsa:2048 -sha256 -nodes -x509 -days 36500'
+       ' -keyout %(key)s -subj "/CN=Error Page Manager"'
+       ' -reqexts SAN -extensions SAN'
+       ' -config <(cat %(cnf)s <(printf "\\n[SAN]\\nsubjectAltName=IP:%(ip)s"))'
+       ' -out %(cert)s' % {
+         'openssl': options['openssl'], 'key': key,
+         'cert': cert, 'ip': ip, 'cnf': options['openssl-cnf'],
+       }],
+      check=True)
+  with open(cert) as f:
+    options['certificate-value'] = f.read()
+
+[operator-token]
+recipe = slapos.recipe.build
+file = ${directory:tokens}/operator
+init =
+  import os, secrets
+  if not os.path.exists(options['file']):
+    os.makedirs(os.path.dirname(options['file']), exist_ok=True)
+    with open(options['file'], 'w') as f:
+      f.write(secrets.token_urlsafe(32))
+  with open(options['file']) as f:
+    options['value'] = f.read().strip()
+
+[read-token]
+recipe = slapos.recipe.build
+file = ${directory:tokens}/read
+init =
+  import os, secrets
+  if not os.path.exists(options['file']):
+    os.makedirs(os.path.dirname(options['file']), exist_ok=True)
+    with open(options['file'], 'w') as f:
+      f.write(secrets.token_urlsafe(32))
+  with open(options['file']) as f:
+    options['value'] = f.read().strip()
+
+{%- for slave in slapparameter_dict['slave-list'] %}
+{%-   set ref = slave['slave_reference'] %}
+[{{ ref }}-token]
+recipe = slapos.recipe.build
+file = ${directory:tokens}/{{ ref }}
+init =
+  import os, secrets
+  if not os.path.exists(options['file']):
+    os.makedirs(os.path.dirname(options['file']), exist_ok=True)
+    with open(options['file'], 'w') as f:
+      f.write(secrets.token_urlsafe(32))
+  with open(options['file']) as f:
+    options['value'] = f.read().strip()
+
+{%- endfor %}
+
+[error-page-manager-config]
+recipe = slapos.recipe.build
+output = ${directory:etc}/error-page-manager.json
+ip = {{ instance_parameter_dict['ipv6-random'] }}
+port = {{ slapparameter_dict['error-page-manager-port'] }}
+certificate = ${error-page-manager-certificate:certificate}
+key = ${error-page-manager-certificate:key}
+log-file = ${directory:log}/error-page-manager.log
+error-pages-dir = ${directory:error-pages}
+builtin-dir = {{ software_parameter_dict['error_pages_builtin_dir'] }}
+operator-token-file = ${operator-token:file}
+read-token-file = ${read-token:file}
+slave-references = {{ slapparameter_dict['slave-list'] | map(attribute='slave_reference') | join(' ') }}
+slave-token-dir = ${directory:tokens}
+init =
+  import json, os
+  refs = [r for r in options.get('slave-references', '').split() if r]
+  token_dir = options['slave-token-dir']
+  config = {
+    'ip': options['ip'],
+    'port': int(options['port']),
+    'certificate': options['certificate'],
+    'key': options['key'],
+    'log_file': options['log-file'],
+    'error_pages_dir': options['error-pages-dir'],
+    'builtin_dir': options['builtin-dir'],
+    'read_token_file': options['read-token-file'],
+    'operator_token_file': options['operator-token-file'],
+    'slave_token_files': [[ref, os.path.join(token_dir, ref)] for ref in refs],
+  }
+  os.makedirs(os.path.dirname(options['output']), exist_ok=True)
+  with open(options['output'], 'w') as f:
+    json.dump(config, f)
+
+[error-page-manager]
+recipe = slapos.cookbook:wrapper
+command-line = {{ software_parameter_dict['bin_directory'] }}/rapid-cdn-error-page-manager
+  ${error-page-manager-config:output}
+wrapper-path = ${directory:service}/error-page-manager
+hash-existing-files =
+  ${buildout:directory}/software_release/buildout.cfg
+  ${error-page-manager-config:output}
+
+[promise-error-page-manager]
+<= monitor-promise-base
+promise = check_socket_listening
+name = error-page-manager-listening.py
+config-host = {{ instance_parameter_dict['ipv6-random'] }}
+config-port = {{ slapparameter_dict['error-page-manager-port'] }}
+
+{%- set ip = instance_parameter_dict['ipv6-random'] %}
+{%- set port = slapparameter_dict['error-page-manager-port'] %}
+{%- set base_url = 'https://[' + ip + ']:' + port|string %}
+{%- set slave_error_page_information = {} %}
+{%- for slave in slapparameter_dict['slave-list'] %}
+{%-   set ref = slave['slave_reference'] %}
+{%-   do slave_error_page_information.__setitem__(ref, {
+        'upload-url': base_url + '/slave/${' + ref + '-token:value}/',
+      }) %}
+{%- endfor %}
+
+[slave-error-page-information]
+recipe = slapos.cookbook:publish.serialised
+sync-url = {{ base_url }}/sync/${read-token:value}
+base-url = {{ base_url }}/haproxy/${read-token:value}
+operator-url = {{ base_url }}/operator/${operator-token:value}/
+certificate = ${error-page-manager-certificate:certificate-value}
+{# sort_keys important to avoid shuffling on each run #}
+slave-error-page-information = {{ json_module.dumps(slave_error_page_information, sort_keys=True) }}
+monitor-base-url = ${monitor-instance-parameter:monitor-base-url}
+
+[logrotate-entry-error-page-manager]
+<= logrotate-entry-base
+name = error-page-manager
+log = ${directory:log}/error-page-manager.log
+rotate-num = {{ slapparameter_dict['rotate-num'] | int }}
+delaycompress =
+
+[logrotate-setup-validate]
+<= jinja2-template-base
+url = {{ software_parameter_dict['template_wrapper'] }}
+output = ${directory:scripts}/logrotate-setup-validate
+command =
+  if ${logrotate:wrapper-path} -d > ${:state-file-tmp} 2>&1 ; then
+    cat /dev/null > ${:state-file}
+    rm -f ${:state-file-tmp}
+  else
+    mv ${:state-file-tmp} ${:state-file}
+  fi
+extra-context =
+  key content :command
+state-file = ${directory:run}/logrotate-setup.state
+state-file-tmp = ${:state-file}.tmp
+
+[promise-logrotate-setup]
+<= monitor-promise-base
+promise = check_file_state
+name = ${:_buildout_section_name_}.py
+config-filename = ${logrotate-setup-validate:state-file}
+config-state = empty
+
+{%- endif %}
