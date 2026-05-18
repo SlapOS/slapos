@@ -426,6 +426,11 @@
           "default": "daily",
           "type": "string"
         },
+        "check-backup-periodicity": {
+          "description": "When perform backup consistency checks.",
+          "default": "Sunday 4:00",
+          "type": "string"
+        },
         "tidstorage-repozo-path": {
           "description": "Directory for backup timestamp and tidstorage status files.",
           "default": "~/srv/backup/tidstorage",

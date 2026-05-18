@@ -1,6 +1,7 @@
 {% set ports = itertools.count(slapparameter_dict['tcpv4-port']) -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
+{% set check_backup_periodicity = slapparameter_dict.get('check-backup-periodicity', 'Sunday 4:00') -%}
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set storage_dict = {} -%}
@@ -78,6 +79,7 @@ config-port = {{ "${" ~ zeo_section_name ~ ":port}" }}
 {% if backup_periodicity == 'never' -%}
 {%   set known_tid_storage_identifier_dict = () %}
 {%   set tidstorage_repozo_path = '' -%}
+{%   set check_backup_periodicity = 'never' %}
 {% else -%}
 
 [repozo-backup-script]
@@ -120,6 +122,46 @@ repozo-wrapper = ${:output}
 mode = 755
 output = ${buildout:bin-directory}/repozo-backup
 
+[check-backup-script]
+recipe = slapos.recipe.template
+inline =
+  #!/bin/sh
+  repozo="${tidstorage:repozo-binary}"
+  zodb_directory="${directory:zodb}"
+  EXIT_CODE=0
+
+  {% for family, zodb in six.iteritems(zodb_dict) -%}
+  {%   for name, zodb in zodb -%}
+  storage_name="{{ name }}"
+  zodb_backup_directory="{{ zodb.get('backup', '%(backup)s/%(name)s') % {'backup': default_backup_path, 'name': name} }}"
+  zodb_path="$storage_name.fs"
+
+  echo "Checking backup for $storage_name ..."
+  ${:repozo-verify-command}
+
+  CURRENT_EXIT_CODE=$?
+  if [ $CURRENT_EXIT_CODE != 0 ]; then
+    EXIT_CODE="$CURRENT_EXIT_CODE"
+    echo "ERROR: $storage_name Backup check failed."
+  fi
+  {%   endfor -%}
+  {% endfor -%}
+  exit $EXIT_CODE
+mode = 755
+output = ${buildout:bin-directory}/${:_buildout_section_name_}
+repozo-verify-command =
+  $repozo \
+    --verify \
+    --file="$zodb_directory/$zodb_path" \
+    --repository="$zodb_backup_directory"
+
+[check-backup-script:python2]
+# on python2 repozo --verify does not support --file
+repozo-verify-command =
+  $repozo \
+    --verify \
+    --repository="$zodb_backup_directory"
+
 [tidstorage]
 recipe = slapos.cookbook:tidstorage
 known-tid-storage-identifier-dict = {{ dumps(known_tid_storage_identifier_dict) }}
@@ -149,14 +191,20 @@ config-port = ${tidstorage:port}
 {% endif -%}
 
 [{{ section("cron-entry-tidstorage-backup") }}]
-# TODO:
-# - configurable full/incremental
-# - configurable retention
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = tidstorage
 time = {{ dumps(backup_periodicity) }}
 command = ${repozo-backup-script:repozo-wrapper}
+
+{% if check_backup_periodicity != 'never' %}
+[{{ section("cron-entry-tidstorage-check-backup") }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = check-backup
+time = {{ dumps(check_backup_periodicity) }}
+command = ${check-backup-script:output}
+{% endif -%}
 
 # Used for Wendelin resiliency or (more probably)
 # webrunner resiliency with Wendelin inside.
