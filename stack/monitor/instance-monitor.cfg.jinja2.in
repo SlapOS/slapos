@@ -422,6 +422,61 @@ name = check-free-disk-space.py
 config-collectordb = ${monitor-instance-parameter:collector-db}
 config-threshold-file = ${directory:etc}/min-free-disk-size
 
+[macro.cron-with-promise]
+recipe = slapos.recipe.build
+macro-command-wrapper-section = ${:_buildout_section_name_}-command-wrapper
+macro-cron-section = ${:_buildout_section_name_}-cron
+macro-error-file = ${logrotate-directory:srv}/${:name}-errormessage-file
+macro-initial-errormessage-file-section = ${:_buildout_section_name_}-initial-errormessage-file
+macro-promise-script-section = ${:_buildout_section_name_}-promise-script
+macro-promise-section = ${:_buildout_section_name_}-promise
+init =
+  def parse_section(section):
+    self.buildout.parse(section % options)
+
+  parse_section("""
+  [%(macro-command-wrapper-section)s]
+  <= cron-command-wrapper-base
+  context =
+    key command ${:_buildout_section_name_}:command
+    key errorfile ${:_buildout_section_name_}:macro-error-file
+  """)
+  command_wrapper_part = self.buildout[options['macro-command-wrapper-section']]
+
+  cron_options = '\n'.join(
+    '%s = %s' % (k,v) for k,v in options.items()
+    if not k.startswith(('init', 'recipe', 'command', 'macro-')))
+  cron_options += '\ncommand = %s' % command_wrapper_part['output']
+  parse_section("""
+  [%(macro-cron-section)s]
+  recipe = slapos.cookbook:cron.d
+  """ + cron_options)
+
+  parse_section("""
+  [%(macro-initial-errormessage-file-section)s]
+  recipe = slapos.recipe.template:jinja2
+  url = /dev/null
+  output = %(macro-error-file)s
+  once = %(macro-error-file)s
+  """)
+
+  parse_section("""
+  [%(macro-promise-script-section)s]
+  <= cron-promise-script-base
+  context =
+    key errorfile ${:_buildout_section_name_}:macro-error-file
+  """)
+  promise_script_part = self.buildout[options['macro-promise-script-section']]
+  options['macro-cron-promise-script'] = promise_script_part['output']
+
+  parse_section("""
+  [%(macro-promise-section)s]
+  <= monitor-promise-base
+  promise = check_command_execute
+  name = check-${:_buildout_section_name_}.py
+  config-command = %(macro-cron-promise-script)s
+  """)
+
 [monitor-base]
 # create dependencies between required monitor parts
 recipe = plone.recipe.command
