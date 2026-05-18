@@ -1,0 +1,35 @@
+<?php
+
+require __DIR__ . '/vendor/autoload.php';
+
+$app = require __DIR__ . '/bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
+
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+
+function getRequiredEnv(string $name): string
+{
+    $value = getenv($name);
+    if ($value === false || $value === '') {
+        fwrite(STDERR, sprintf("Missing required environment variable: %s\n", $name));
+        exit(1);
+    }
+    return $value;
+}
+
+$rootEmail = getRequiredEnv('OMAILGW_ROOT_EMAIL');
+$rootPassword = getRequiredEnv('OMAILGW_ROOT_PASSWORD');
+$mailgwEmail = getRequiredEnv('OMAILGW_MAILGW_EMAIL');
+$mailgwPassword = getRequiredEnv('OMAILGW_MAILGW_PASSWORD');
+
+User::updateOrCreate(
+    ['email' => $rootEmail],
+    ['password' => Hash::make($rootPassword), 'role' => 'root']
+);
+
+User::updateOrCreate(
+    ['email' => $mailgwEmail],
+    ['password' => Hash::make($mailgwPassword), 'role' => 'mailgw']
+);

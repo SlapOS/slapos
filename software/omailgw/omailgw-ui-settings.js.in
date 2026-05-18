@@ -1,0 +1,10 @@
+const userSettings = {
+  "ui_defaultlanguage": "fr-FR",
+  "api_url": "{{ api_url }}/",
+  "dashboard_percentAllError_danger": 3,
+  "dashboard_percentAllError_warning": 1,
+  "dashboard_percentInError_danger": 2,
+  "dashboard_percentInError_warning": 1,
+  "dashboard_percentOutError_danger": 3,
+  "dashboard_percentOutError_warning": 1,
+}

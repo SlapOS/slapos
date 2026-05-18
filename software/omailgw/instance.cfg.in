@@ -1,0 +1,37 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[dynamic-template-default]
+recipe = slapos.recipe.template:jinja2
+output = $${buildout:directory}/$${:filename}
+extensions = jinja2.ext.do
+url = ${template-default:output}
+filename = instance-default.cfg
+context =
+  import json_module json
+  key bin_directory buildout:bin-directory
+  key ipv6 slap-configuration:ipv6-random
+  key instance_title slap-configuration:instance-title
+  key slapparameter_dict slap-configuration:configuration
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = ${software.cfg.json:target}
+depends =
+  ${instance-input-schema.json:target}
+set-default = all
+validate-parameters = all
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-default:output

@@ -1,0 +1,152 @@
+#!{{ python3_bin }}
+
+import json
+import os
+import pathlib
+import re
+import ssl
+import subprocess
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+
+
+API_URL = "{{ api_url }}"
+ROOT_USER = "{{ root_user }}"
+ROOT_PASSWORD = "{{ root_password }}"
+CLI_CONFIG = "{{ cli_config }}"
+CLI_CWD = "{{ cli_cwd }}"
+CLI_SCRIPT = "{{ cli_script }}"
+MARKER_DIR = "{{ marker_dir }}"
+PHP_BIN = "{{ php_bin }}"
+PHP_INI = "{{ php_ini }}"
+
+
+SSL_CONTEXT = ssl.create_default_context()
+SSL_CONTEXT.check_hostname = False
+SSL_CONTEXT.verify_mode = ssl.CERT_NONE
+
+
+def _marker_path(tag):
+  safe_tag = re.sub(r"[^A-Za-z0-9_.-]", "_", tag)
+  return os.path.join(MARKER_DIR, safe_tag)
+
+
+def _relay_domain(tag):
+  _, separator, domain = tag.partition('.')
+  return domain or tag
+
+
+def _login_root():
+  params = urllib.parse.urlencode({
+    'email': ROOT_USER,
+    'password': ROOT_PASSWORD,
+  })
+  request = urllib.request.Request(
+    '%s/user/login?%s' % (API_URL, params),
+    method='POST',
+  )
+  with urllib.request.urlopen(request, context=SSL_CONTEXT) as response:
+    payload = json.load(response)
+  token = payload.get('token')
+  if not token:
+    raise RuntimeError('oMailGw root login did not return a token')
+  return token
+
+
+def _ensure_server(token, tag):
+  marker_path = _marker_path(tag)
+  if os.path.exists(marker_path):
+    return
+  params = urllib.parse.urlencode({
+    'hostname': tag,
+    'domain': _relay_domain(tag),
+  })
+  request = urllib.request.Request(
+    '%s/server/add?%s' % (API_URL, params),
+    method='POST',
+    headers={
+      'Accept': 'application/json',
+      'Authorization': 'Bearer %s' % token,
+    },
+  )
+  try:
+    with urllib.request.urlopen(request, context=SSL_CONTEXT):
+      pass
+  except urllib.error.HTTPError as error:
+    body = error.read().decode('utf-8', 'replace').lower()
+    if error.code not in (400, 409, 422) and 'exist' not in body and 'already' not in body:
+      raise
+  pathlib.Path(marker_path).touch()
+
+
+def _run_cli(tag, line_list):
+  env = os.environ.copy()
+  env['OMAILGW_SERVER_HOSTNAME'] = tag
+  input_data = ''.join(
+    line if line.endswith('\n') else line + '\n'
+    for line in line_list
+  )
+  process = subprocess.run(
+    [
+      PHP_BIN,
+      '-c',
+      PHP_INI,
+      CLI_SCRIPT,
+      '--config=%s' % CLI_CONFIG,
+      '--log=stdin',
+    ],
+    cwd=CLI_CWD,
+    env=env,
+    input=input_data,
+    text=True,
+  )
+  return process.returncode
+
+
+def _load_chunk(path):
+  tag_dict = {}
+  with open(path, 'r', encoding='utf-8') as chunk_file:
+    for line in chunk_file:
+      line = line.strip()
+      if not line:
+        continue
+      try:
+        payload = json.loads(line)
+      except json.JSONDecodeError:
+        print('Invalid Fluentd record: %r' % line, file=sys.stderr)
+        continue
+      tag = payload.get('tag')
+      log_line = payload.get('log')
+      if not tag or not isinstance(log_line, str):
+        continue
+      tag_dict.setdefault(tag, []).append(log_line)
+  return tag_dict
+
+
+def main():
+  pathlib.Path(MARKER_DIR).mkdir(parents=True, exist_ok=True)
+
+  chunk_path = sys.argv[-1]
+  tag_dict = _load_chunk(chunk_path)
+  if not tag_dict:
+    return 0
+
+  token = _login_root()
+  for tag, line_list in tag_dict.items():
+    _ensure_server(token, tag)
+    return_code = _run_cli(tag, line_list)
+    if return_code:
+      marker_path = _marker_path(tag)
+      if os.path.exists(marker_path):
+        os.unlink(marker_path)
+      _ensure_server(token, tag)
+      return_code = _run_cli(tag, line_list)
+      if return_code:
+        return return_code
+  return 0
+
+
+if __name__ == '__main__':
+  raise SystemExit(main())

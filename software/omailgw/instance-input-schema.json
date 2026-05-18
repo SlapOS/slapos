@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "title": "oMailGw Input Parameters",
+  "properties": {
+    "fluentd-bind": {
+      "title": "Fluentd Bind Address",
+      "description": "Address on which Fluentd listens for relay log forwarding.",
+      "type": "string",
+      "default": "<PARTITION_IPV6>"
+    },
+    "fluentd-port": {
+      "title": "Fluentd Port",
+      "description": "Port on which Fluentd listens for relay log forwarding.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 24224
+    }
+  }
+}
