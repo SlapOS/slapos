@@ -50,44 +50,50 @@
               }
             },
             "required": [
-              "host",
-              "port"
+              "host"
             ],
             "additionalProperties": false
           },
           "default": {}
         },
-        "greylisting-enable": {
-          "title": "Enable Greylisting",
-          "description": "Whether to enable greylisting on inbound mail",
-          "type": "boolean",
-          "default": true
-        },
-        "greylisting-delay": {
-          "title": "Greylist Delay",
-          "description": "Seconds a new sender triplet must wait before being accepted",
-          "type": "integer",
-          "default": 60
-        },
-        "greylisting-whitelist-clients": {
-          "title": "Greylisting Whitelist Clients",
-          "description": "Additional client patterns to whitelist in postgrey, one entry per item.",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^.+$"
+        "greylisting": {
+          "title": "Greylisting Configuration",
+          "type": "object",
+          "properties": {
+            "enable": {
+              "title": "Enable Greylisting",
+              "description": "Whether to enable greylisting on inbound mail",
+              "type": "boolean",
+              "default": true
+            },
+            "greylisting-delay": {
+              "title": "Greylisting Delay",
+              "description": "Seconds a new sender triplet must wait before being accepted",
+              "type": "integer",
+              "default": 60
+            },
+            "whitelist-clients": {
+              "title": "Greylisting Whitelist Clients",
+              "description": "Additional client patterns to whitelist in postgrey, one entry per item.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^.+$"
+              },
+              "default": []
+            },
+            "whitelist-recipients": {
+              "title": "Greylisting Whitelist Recipients",
+              "description": "Additional recipient patterns to whitelist in postgrey, one entry per item.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^.+$"
+              },
+              "default": []
+            }
           },
-          "default": []
-        },
-        "greylisting-whitelist-recipients": {
-          "title": "Greylisting Whitelist Recipients",
-          "description": "Additional recipient patterns to whitelist in postgrey, one entry per item.",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^.+$"
-          },
-          "default": []
+          "default": {}
         }
       }
     }
