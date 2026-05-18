@@ -104,6 +104,7 @@ inline =
     : > {{ repr(errorfile) }}
     trap 'rm -f "$tmpfile"' EXIT
   else
+    echo $(echo "ERROR $STATUS\n" | cat - $tmpfile) > $tmpfile
     mv $tmpfile {{ repr(errorfile) }}
   fi
   exit $STATUS
