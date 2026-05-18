@@ -1,0 +1,267 @@
+From cecf918566e51168ca71ab20d882b6751cbc9167 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Sat, 18 Apr 2026 08:12:09 +0900
+Subject: [PATCH] repozo: allow --verify to check backup against source Data.fs
+
+When using quick backups (-BQ), repozo only checksums the byte range
+of the last increment against the source file.  If earlier parts of
+the Data.fs are corrupted, quick backups will not detect it and will
+keep appending increments on top of a potentially inconsistent base.
+
+The --verify (-V) mode now accepts --file (-f) to verify the backup
+against the source Data.fs, by comparing md5 checksums of the
+concatenated backup data with the corresponding bytes of the source.
+With --quick, only sizes are compared.
+---
+ src/ZODB/scripts/repozo.py            |  27 ++++-
+ src/ZODB/scripts/tests/test_repozo.py | 147 +++++++++++++++++++++++++-
+ 2 files changed, 167 insertions(+), 7 deletions(-)
+
+diff --git a/src/ZODB/scripts/repozo.py b/src/ZODB/scripts/repozo.py
+index 69e03827..1972224a 100755
+--- a/src/ZODB/scripts/repozo.py
++++ b/src/ZODB/scripts/repozo.py
+@@ -100,6 +100,12 @@ Options for -R/--recover:
+         check fails, the partially recovered ZODB will be left in place.
+ 
+ Options for -V/--verify:
++    -f file
++    --file=file
++        Source Data.fs file.  If specified, the backup is also verified
++        against the source file by comparing md5 checksums of the source file
++        with checksums from the .dat file.
++
+     -Q / --quick
+         Verify file sizes only (skip md5 checksums).
+ """
+@@ -305,9 +311,6 @@ def parseargs(argv):
+         if options.gzip:
+             log('--gzip option is ignored in verify mode')
+             options.gzip = False
+-        if options.file is not None:
+-            log('--file option is ignored in verify mode')
+-            options.file = None
+         if options.killold:
+             log('--kill-old-on-full option is ignored in verify mode')
+             options.killold = False
+@@ -925,6 +928,24 @@ def do_verify(options):
+                     raise VerificationFail(
+                         "%s has checksum %s%s instead of %s" % (
+                             filename, actual_sum, when_uncompressed, sum))
++            if options.file and not options.quick:
++                src_size = os.path.getsize(options.file)
++                log("Verifying %s from %s to %s", options.file, startpos, endpos)
++                with open(options.file, 'rb') as srcfp:
++                    srcfp.seek(startpos)
++                    actual_sum = checksum(srcfp, endpos - startpos)
++                if actual_sum != sum:
++                    raise VerificationFail(
++                        f"source {options.file} between {startpos} and {endpos}"
++                        f" has checksum {actual_sum} instead of {sum}")
++
++    if options.file and options.quick:
++        _, _, endpos, _ = scandat(repofiles)
++        src_size = os.path.getsize(options.file)
++        if src_size < endpos:
++            raise VerificationFail(
++                "source is %d bytes, shorter than backup %d bytes"
++                % (src_size, endpos))
+ 
+ 
+ def get_checksum_and_size_of_gzipped_file(filename, quick):
+diff --git a/src/ZODB/scripts/tests/test_repozo.py b/src/ZODB/scripts/tests/test_repozo.py
+index bd344124..b2f622ab 100644
+--- a/src/ZODB/scripts/tests/test_repozo.py
++++ b/src/ZODB/scripts/tests/test_repozo.py
+@@ -13,6 +13,7 @@
+ ##############################################################################
+ 
+ import os
++import re
+ import sys
+ import unittest
+ from hashlib import md5
+@@ -237,7 +238,6 @@ class Test_parseargs(unittest.TestCase):
+                                     '--with-verify',
+                                     '-o', '/tmp/ignored.fs',
+                                     '-D', '2011-12-13',
+-                                    '-f', '/tmp/ignored.fs',
+                                     '-z', '-k', '-F'])
+         self.assertEqual(options.date, None)
+         self.assertIn('--date option is ignored in verify mode',
+@@ -251,9 +251,6 @@ class Test_parseargs(unittest.TestCase):
+         self.assertEqual(options.gzip, False)
+         self.assertIn('--gzip option is ignored in verify mode',
+                       sys.stderr.getvalue())
+-        self.assertEqual(options.file, None)
+-        self.assertIn('--file option is ignored in verify mode',
+-                      sys.stderr.getvalue())
+         self.assertEqual(options.killold, False)
+         self.assertIn('--kill-old-on-full option is ignored in verify mode',
+                       sys.stderr.getvalue())
+@@ -261,6 +258,15 @@ class Test_parseargs(unittest.TestCase):
+         self.assertIn('--with-verify option is ignored in verify mode',
+                       sys.stderr.getvalue())
+ 
++    def test_verify_accepts_file(self):
++        from ZODB.scripts import repozo
++        options = repozo.parseargs(['-V', '-r', '/tmp/nosuchdir',
++                                    '-f', '/tmp/Data.fs'])
++        self.assertEqual(options.mode, repozo.VERIFY)
++        self.assertEqual(options.file, '/tmp/Data.fs')
++        self.assertNotIn('--file option is ignored',
++                         sys.stderr.getvalue())
++
+ 
+ class FileopsBase:
+ 
+@@ -355,6 +361,7 @@ class OptionsTestBase:
+ 
+         class Options:
+             repository = self._repository_directory
++            file = None
+             date = None
+             keep_only_latest_index = False
+ 
+@@ -1481,6 +1488,138 @@ class Test_do_verify(OptionsTestBase, unittest.TestCase):
+             '/backup/2010-05-14-04-05-06.deltafsz 3 7 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n')  # noqa: E501 line too long
+         self._callFUT(options)
+ 
++    def _makeSourceFile(self, text):
++        import tempfile
++        if self._data_directory is None:
++            self._data_directory = tempfile.mkdtemp(prefix='zodb-test-')
++        fqn = os.path.join(self._data_directory, 'Data.fs')
++        _write_file(fqn, text.encode())
++        return fqn
++
++    def test_verify_against_source_match(self):
++        source = self._makeSourceFile('AAABBBB')
++        options = self._makeOptions(quick=False, file=source)
++        self._makeFile(2, 3, 4, '.fs', 'AAA')
++        self._makeFile(4, 5, 6, '.deltafs', 'BBBB')
++        self._makeFile(
++            2, 3, 4, '.dat',
++            '/backup/2010-05-14-02-03-04.fs 0 3 e1faffb3e614e6c2fba74296962386b7\n'  # noqa: E501 line too long
++            '/backup/2010-05-14-04-05-06.deltafs 3 7 f50881ced34c7d9e6bce100bf33dec60\n')  # noqa: E501 line too long
++        self._callFUT(options)
++
++    def test_verify_against_source_match_source_has_extra_bytes(self):
++        source = self._makeSourceFile('AAABBBBEXTRA')
++        options = self._makeOptions(quick=False, file=source)
++        self._makeFile(2, 3, 4, '.fs', 'AAA')
++        self._makeFile(4, 5, 6, '.deltafs', 'BBBB')
++        self._makeFile(
++            2, 3, 4, '.dat',
++            '/backup/2010-05-14-02-03-04.fs 0 3 e1faffb3e614e6c2fba74296962386b7\n'  # noqa: E501 line too long
++            '/backup/2010-05-14-04-05-06.deltafs 3 7 f50881ced34c7d9e6bce100bf33dec60\n')  # noqa: E501 line too long
++        self._callFUT(options)
++
++    def test_verify_against_source_mismatch_on_first_file(self):
++        from ZODB.scripts.repozo import VerificationFail
++        source = self._makeSourceFile('XXXBBBB')
++        options = self._makeOptions(quick=False, file=source)
++        self._makeFile(2, 3, 4, '.fs', 'AAA')
++        self._makeFile(4, 5, 6, '.deltafs', 'BBBB')
++        self._makeFile(
++            2, 3, 4, '.dat',
++            '/backup/2010-05-14-02-03-04.fs 0 3 e1faffb3e614e6c2fba74296962386b7\n'  # noqa: E501 line too long
++            '/backup/2010-05-14-04-05-06.deltafs 3 7 f50881ced34c7d9e6bce100bf33dec60\n')  # noqa: E501 line too long
++        self.assertRaisesRegex(
++            VerificationFail,
++            re.escape(
++                f'source {source} between 0 and 3 has checksum '
++              'bc9189406be84ec297464a514221406d instead of '
++              'e1faffb3e614e6c2fba74296962386b7',
++            ),
++            self._callFUT,
++            options,
++        )
++
++    def test_verify_against_source_mismatch_on_second_file(self):
++        from ZODB.scripts.repozo import VerificationFail
++        source = self._makeSourceFile('AAAXXXX')
++        options = self._makeOptions(quick=False, file=source)
++        self._makeFile(2, 3, 4, '.fs', 'AAA')
++        self._makeFile(4, 5, 6, '.deltafs', 'BBBB')
++        self._makeFile(
++            2, 3, 4, '.dat',
++            '/backup/2010-05-14-02-03-04.fs 0 3 e1faffb3e614e6c2fba74296962386b7\n'  # noqa: E501 line too long
++            '/backup/2010-05-14-04-05-06.deltafs 3 7 f50881ced34c7d9e6bce100bf33dec60\n')  # noqa: E501 line too long
++        self.assertRaisesRegex(
++            VerificationFail,
++            re.escape(
++                f'source {source} between 3 and 7 has checksum '
++              'ad347226dcc1d205f58e693925c28783 instead of '
++              'f50881ced34c7d9e6bce100bf33dec60',
++            ),
++            self._callFUT,
++            options,
++        )
++
++    def test_verify_against_source_no_file_skips(self):
++        options = self._makeOptions(quick=False)
++        self._makeFile(2, 3, 4, '.fs', 'AAA')
++        self._makeFile(4, 5, 6, '.deltafs', 'BBBB')
++        self._makeFile(
++            2, 3, 4, '.dat',
++            '/backup/2010-05-14-02-03-04.fs 0 3 e1faffb3e614e6c2fba74296962386b7\n'  # noqa: E501 line too long
++            '/backup/2010-05-14-04-05-06.deltafs 3 7 f50881ced34c7d9e6bce100bf33dec60\n')  # noqa: E501 line too long
++        self._callFUT(options)
++
++    def test_verify_against_source_match_gzip(self):
++        source = self._makeSourceFile('AAABBBB')
++        options = self._makeOptions(quick=False, file=source)
++        self._makeFile(2, 3, 4, '.fsz', 'AAA')
++        self._makeFile(4, 5, 6, '.deltafsz', 'BBBB')
++        self._makeFile(
++            2, 3, 4, '.dat',
++            '/backup/2010-05-14-02-03-04.fsz 0 3 e1faffb3e614e6c2fba74296962386b7\n'  # noqa: E501 line too long
++            '/backup/2010-05-14-04-05-06.deltafsz 3 7 f50881ced34c7d9e6bce100bf33dec60\n')  # noqa: E501 line too long
++        self._callFUT(options)
++
++    def test_verify_against_source_quick_match(self):
++        source = self._makeSourceFile('AAABBBB')
++        options = self._makeOptions(quick=True, file=source)
++        self._makeFile(2, 3, 4, '.fs', 'AAA')
++        self._makeFile(4, 5, 6, '.deltafs', 'BBBB')
++        self._makeFile(
++            2, 3, 4, '.dat',
++            '/backup/2010-05-14-02-03-04.fs 0 3 aaaa\n'
++            '/backup/2010-05-14-04-05-06.deltafs 3 7 bbbb\n')
++        self._callFUT(options)
++
++    def test_verify_against_source_quick_source_has_extra_bytes(self):
++        source = self._makeSourceFile('AAABBBBEXTRA')
++        options = self._makeOptions(quick=True, file=source)
++        self._makeFile(2, 3, 4, '.fs', 'AAA')
++        self._makeFile(4, 5, 6, '.deltafs', 'BBBB')
++        self._makeFile(
++            2, 3, 4, '.dat',
++            '/backup/2010-05-14-02-03-04.fs 0 3 aaaa\n'
++            '/backup/2010-05-14-04-05-06.deltafs 3 7 bbbb\n')
++        self._callFUT(options)
++
++    def test_verify_against_source_quick_source_too_small(self):
++        from ZODB.scripts.repozo import VerificationFail
++        source = self._makeSourceFile('AA')
++        options = self._makeOptions(quick=True, file=source)
++        self._makeFile(2, 3, 4, '.fs', 'AAA')
++        self._makeFile(4, 5, 6, '.deltafs', 'BBBB')
++        self._makeFile(
++            2, 3, 4, '.dat',
++            '/backup/2010-05-14-02-03-04.fs 0 3 aaaa\n'
++            '/backup/2010-05-14-04-05-06.deltafs 3 7 bbbb\n')
++        self.assertRaisesRegex(
++            VerificationFail,
++            'source is 2 bytes, shorter than backup 7 bytes',
++            self._callFUT,
++            options,
++        )
++
+ 
+ class MonteCarloTests(unittest.TestCase):
+ 
+-- 
+2.52.0
+
