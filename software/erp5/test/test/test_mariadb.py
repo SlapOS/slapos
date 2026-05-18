@@ -181,14 +181,13 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
 
   def test_full_mariabackup(self) -> None:
     self._executeCrontabAtDate('mariabackup', '2050-01-01')
+    mariabackup_dir = os.path.join(self.computer_partition_root_path,
+                                   'srv', 'backup', 'mariabackup')
     self.assertTrue(glob.glob(
-      os.path.join(
-        self.computer_partition_root_path,
-        'srv',
-        'backup',
-        'mariabackup',
-        '205001010000??.full.xb.zstd',
-    )))
+      os.path.join(mariabackup_dir, '205001010000??.full.xb.zstd')))
+    error_file = os.path.join(mariabackup_dir, 'mariabackup-errormessage-file')
+    with open(error_file, 'r') as file:
+      self.assertEqual('', file.read())
 
   def test_logrotate_and_slow_query_digest(self) -> None:
     # slow query digest needs to run after logrotate, since it operates on the rotated
