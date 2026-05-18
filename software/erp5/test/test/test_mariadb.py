@@ -32,6 +32,7 @@ import gzip
 import json
 import lzma
 import os
+import shutil
 import subprocess
 import time
 import tempfile
@@ -191,6 +192,23 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
     )))
     with open(os.path.join(srv_dir, 'mariabackup-errormessage-file'), 'r') as file:
       self.assertEqual('', file.read())
+
+  def test_mariabackup_cron_promise(self) -> None:
+    backup_dir = os.path.join(self.computer_partition_root_path, 'srv', 'backup')
+    backup_dir_tmp = backup_dir + '.tmp'
+    os.rename(backup_dir, backup_dir_tmp)
+    crontab_command =  self._getCrontabCommand('mariabackup')
+    subprocess.call(("faketime", '2050-01-01', '/bin/sh', '-c', crontab_command))
+    subprocess.call((
+      self.slap._slapos_bin, 'node', 'promise', '--cfg', self.slap._slapos_config))
+    os.rename(backup_dir_tmp, backup_dir)
+    promise_path = os.path.join(
+      self.computer_partition_root_path,
+      '.slapgrid', 'promise', 'result', 'check-cron-entry-mariabackup.status.json')
+    with open(promise_path) as f:
+      status = json.load(f)
+    self.assertTrue(status['result']['failed'])
+    self.assertIn('No such file or directory', status['result']['message'])
 
   def test_logrotate_and_slow_query_digest(self) -> None:
     # slow query digest needs to run after logrotate, since it operates on the rotated
