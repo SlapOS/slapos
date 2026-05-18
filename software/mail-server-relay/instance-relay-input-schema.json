@@ -29,6 +29,46 @@
             "$ref": "./instance-cluster-input-schema.json#/definitions/fqdn"
           },
           "default": []
+        },
+        "omailgw": {
+          "title": "oMailGw",
+          "description": "Relay-side oMailGw CLI configuration.",
+          "type": "object",
+          "properties": {
+            "enable": {
+              "title": "Enable oMailGw CLI",
+              "description": "Run the built-in oMailGw relay-side client for this relay.",
+              "type": "boolean",
+              "default": false
+            },
+            "api-url": {
+              "title": "oMailGw API URL",
+              "description": "Base URL of the oMailGw API, including the /api suffix.",
+              "type": "string"
+            },
+            "api-user": {
+              "title": "oMailGw API User",
+              "description": "API user used by the relay-side oMailGw client.",
+              "type": "string"
+            },
+            "api-password": {
+              "title": "oMailGw API Password",
+              "description": "API password used by the relay-side oMailGw client.",
+              "type": "string"
+            },
+            "relay-poll-interval": {
+              "title": "oMailGw Relay Poll Interval",
+              "description": "Seconds between background oMailGw relay polling runs.",
+              "type": "integer",
+              "minimum": 60,
+              "default": 300
+            }
+          },
+          "additionalProperties": false,
+          "default": {
+            "enable": false,
+            "relay-poll-interval": 300
+          }
         }
       }
     }
