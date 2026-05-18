@@ -53,6 +53,8 @@ setup(name=name,
         # caucase needed to connect to the KeDiFa caucase
         'caucase',
         'cryptography',
+        'websockets',  # for server
+        'websocket-client',  # for the client
       ],
       zip_safe=True,
       test_suite='test',
