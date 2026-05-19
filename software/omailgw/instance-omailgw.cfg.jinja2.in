@@ -1,3 +1,9 @@
+{% set fluentd_bind = slapparameter_dict.get('fluentd-bind', '<PARTITION_IPV6>') -%}
+{% if fluentd_bind == '<PARTITION_IPV6>' -%}
+{%   set fluentd_bind = ipv6 -%}
+{% endif -%}
+{% set fluentd_port = slapparameter_dict.get('fluentd-port', 24224) -%}
+
 [buildout]
 extends =
   ${monitor2-template:output}
@@ -8,7 +14,6 @@ parts =
   php.ini-conf
   omailgw-copy-api
   omailgw-copy-ui
-  omailgw-relay-list
   omailgw-ui-settings
   omailgw-env
   omailgw-bootstrap-php
@@ -18,15 +23,17 @@ parts =
   lamp-apache-httpd
   omailgw-mariadb-service
   apache-php-service
+  omailgw-cli-config
+  omailgw-fluentd-conf
+  omailgw-fluentd-bridge
+  omailgw-fluentd-service
+  omailgw-fluentd-promise
   omailgw-schedule-service
   publish-connection-information
   logrotate-entry-apache
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
-
-[monitor-instance-parameter]
-password = {{ slapparameter_dict['monitor-password'] }}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -47,6 +54,11 @@ apache.d = $${:etc}/apache.d
 omailgw-api = $${:srv}/omailgw-api
 www = $${:omailgw-api}/public
 mariadb-data = $${:srv}/mariadb
+omailgw-cli = $${:srv}/omailgw-cli
+omailgw-cli-var = $${:omailgw-cli}/var
+omailgw-cli-marker = $${:omailgw-cli}/marker
+fluentd-buffer = $${:var}/fluentd-buffer
+fluentd-exec-buffer = $${:var}/fluentd-exec-buffer
 
 [omailgw-users]
 root-user = root@omailgw.local
@@ -56,6 +68,9 @@ mailgw-user = mailgw@omailgw.local
 recipe = slapos.cookbook:generate.password
 
 [omailgw-mailgw-password]
+recipe = slapos.cookbook:generate.password
+
+[omailgw-fluentd-shared-key]
 recipe = slapos.cookbook:generate.password
 
 [omailgw-copy-api]
@@ -77,19 +92,12 @@ command = if [ -z "$(ls -A $${directory:www}/ui 2>/dev/null)" ]; then
 update-command = $${:command}
 stop-on-error = true
 
-[omailgw-relay-list]
-recipe = slapos.recipe.template
-output = $${directory:etc}/omailgw-relay-hostname-list.json
-inline =
-  {{ json_module.dumps(slapparameter_dict.get('relay-hostname-list', [])) }}
-
 [omailgw-ui-settings]
 recipe = slapos.recipe.template:jinja2
 url = ${omailgw-ui-settings.js.in:target}
 output = $${directory:www}/ui/js/settings.js
 context =
-  key api_url :api-url
-api-url = $${publish-connection-information:api-url}
+  key api_url publish-connection-information:api-url
 
 [omailgw-env]
 recipe = slapos.recipe.template:jinja2
@@ -182,8 +190,6 @@ foreground-script =
   OMAILGW_ROOT_PASSWORD="$${omailgw-root-password:passwd}" \
   OMAILGW_MAILGW_EMAIL="$${omailgw-users:mailgw-user}" \
   OMAILGW_MAILGW_PASSWORD="$${omailgw-mailgw-password:passwd}" \
-  OMAILGW_RELAY_DOMAIN="{{ slapparameter_dict.get('relay-domain', 'omailgw.local') }}" \
-  OMAILGW_RELAY_LIST_JSON="$$(cat $${omailgw-relay-list:output})" \
   "$php_bin" -c "$${php.ini-conf:output}" bootstrap-omailgw.php
 
 [omailgw-bootstrap-app]
@@ -219,6 +225,14 @@ key-file = $${apache-php-configuration:key-file}
 cert-file = $${apache-php-configuration:cert-file}
 executable = $${apache-php-wrapper:wrapper-path}
 wrapper = $${directory:bin}/ca-apache-php
+
+[ca-fluentd]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = $${ca-directory:certs}/fluentd.key
+cert-file = $${ca-directory:certs}/fluentd.crt
+executable = $${omailgw-fluentd-wrapper:wrapper-path}
+wrapper = $${directory:bin}/ca-fluentd
 
 [apache-network-configuration]
 listening-ip = {{ ipv6 }}
@@ -314,6 +328,87 @@ context =
   section instance_dict instance-parameter
 extensions = jinja2.ext.do
 
+[omailgw-cli-config]
+recipe = slapos.recipe.template:jinja2
+url = ${omailgw-cli-config.php.in:target}
+output = $${directory:omailgw-cli}/config.php
+context =
+  key api_url publish-connection-information:api-url
+  key api_user omailgw-users:mailgw-user
+  key api_password omailgw-mailgw-password:passwd
+  key var_dir directory:omailgw-cli-var
+  key server_hostname :server-hostname
+  key path_postmap :path-postmap
+  key path_mailq :path-mailq
+  key lock_dir directory:run
+server-hostname = omailgw
+path-postmap = /bin/true
+path-mailq = cat /dev/null
+
+[omailgw-fluentd-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${omailgw-fluentd.conf.in:target}
+output = $${directory:etc}/fluentd-agent.conf
+context =
+  key bind :bind
+  key port :port
+  key self_hostname :self-hostname
+  key shared_key omailgw-fluentd-shared-key:passwd
+  key cert_file ca-fluentd:cert-file
+  key key_file ca-fluentd:key-file
+  key bridge_command omailgw-fluentd-bridge:output
+  key bridge_buffer directory:fluentd-exec-buffer
+bind = {{ fluentd_bind }}
+port = {{ fluentd_port }}
+self-hostname = omailgw-server
+
+[omailgw-fluentd-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/fluentd-wrapper
+command-line = ${fluentd:location}/bin/fluentd -v -c $${omailgw-fluentd-conf:output}
+environment =
+  GEM_PATH=${fluentd:location}/lib/ruby/gems/
+wait-for-files =
+  $${ca-fluentd:cert-file}
+  $${ca-fluentd:key-file}
+
+[omailgw-fluentd-bridge]
+recipe = slapos.recipe.template:jinja2
+url = ${omailgw-fluentd-bridge.py.in:target}
+output = $${directory:bin}/omailgw-fluentd-bridge
+mode = 700
+context =
+  key api_url publish-connection-information:api-url
+  key root_user omailgw-users:root-user
+  key root_password omailgw-root-password:passwd
+  key cli_config omailgw-cli-config:output
+  key cli_cwd :cli-cwd
+  key cli_script :cli-script
+  key marker_dir directory:omailgw-cli-marker
+  key php_bin :php-bin
+  key php_ini php.ini-conf:output
+  key python3_bin :python3-bin
+cli-cwd = ${omailgw-cli-source:location}
+cli-script = ${omailgw-cli-source:location}/omailgw-cli.php
+php-bin = ${apache-php:location}/bin/php
+python3-bin = ${python3:location}/bin/python3
+
+[omailgw-fluentd-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${ca-fluentd:wrapper}
+wrapper-path = $${directory:service}/fluentd
+depends =
+  $${omailgw-bootstrap-app:recipe}
+  $${omailgw-cli-config:recipe}
+  $${omailgw-fluentd-bridge:recipe}
+
+[omailgw-fluentd-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = fluentd-listening.py
+config-host = {{ fluentd_bind }}
+config-port = {{ fluentd_port }}
+
 [omailgw-schedule-loop]
 recipe = slapos.recipe.template
 output = $${directory:bin}/omailgw-schedule-loop
@@ -342,3 +437,6 @@ root-user = $${omailgw-users:root-user}
 root-password = $${omailgw-root-password:passwd}
 mailgw-user = $${omailgw-users:mailgw-user}
 mailgw-password = $${omailgw-mailgw-password:passwd}
+fluentd-host = {{ fluentd_bind }}
+fluentd-port = {{ fluentd_port }}
+fluentd-shared-key = $${omailgw-fluentd-shared-key:passwd}
