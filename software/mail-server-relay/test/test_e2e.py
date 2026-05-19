@@ -32,6 +32,7 @@ import imaplib
 import smtplib
 import socket
 import ssl
+import subprocess
 import time
 
 from slapos.testing.testcase import (
@@ -179,6 +180,13 @@ class E2ETestCase(SlapOSInstanceTestCase):
     return relay_shared
 
   @classmethod
+  def getRelayNodes(cls):
+    return [
+      cp for cp in cls.slap.computer.getComputerPartitionList()
+      if cp.getState() == 'started' and cp.getType() == 'relay'
+    ]
+
+  @classmethod
   def getRelayHost(cls, relay_cluster):
     cluster_params = cls.getConnectionDict(relay_cluster)
     return cluster_params.get('relay-hosts')[0]
@@ -201,6 +209,11 @@ class E2ETestCase(SlapOSInstanceTestCase):
   @classmethod
   def partitionPath(cls, cp, *paths):
     return os.path.join(cls.slap.instance_directory, cp.getId(), *paths)
+
+  @classmethod
+  def slapos(cls, *args):
+    subprocess.call((
+      cls.slap._slapos_bin, *args,  '--cfg', cls.slap._slapos_config))
 
   @classmethod
   def client_ssl_context(cls, client_cert_bundle):
@@ -399,10 +412,7 @@ class Relay(E2ETestCase):
     }
     for relay in cls.password_relays:
       relay.login = cls.getRelaySharedLogin(relay)
-    cls.relay_servers = [
-      cp for cp in cls.slap.computer.getComputerPartitionList()
-      if cp.getState() == 'started' and cp.getType() == 'relay'
-    ]
+    cls.relay_nodes = cls.getRelayNodes()
     for server in cls.mail_servers:
       server.smtp_addr = cls.smtpAddrOf(server)
       server.imap_addr = cls.imapAddrOf(server)
@@ -680,10 +690,10 @@ class Relay(E2ETestCase):
 
   def test_server_authenticated_relay_with_client_tls(self):
     mailserver = self.mail_servers[0]
-    for i, relay_server in enumerate(self.relay_servers):
+    for i, relay_node in enumerate(self.relay_nodes):
       body = "Authenticate to backend with relay %d's client certificates" % i
       cert_bundle = self.partitionPath(
-        relay_server, 'etc', 'postfix', 'ssl', 'postfix.bundle.pem'
+        relay_node, 'etc', 'postfix', 'ssl', 'postfix.bundle.pem'
       )
       ssl_context = self.client_ssl_context(cert_bundle)
       addr = mailserver.smtp_addr
@@ -858,6 +868,7 @@ class E2E(E2ETestCase):
       'port': cls.relay_inbound_port,
       'timeout': cls.smtp_timeout,
     }
+    cls.relay_nodes = cls.getRelayNodes()
     for server in cls.mail_servers + cls.external_mail_servers:
       server.smtp_addr = cls.smtpAddrOf(server)
       server.imap_addr = cls.imapAddrOf(server)
@@ -1022,6 +1033,49 @@ class E2E(E2ETestCase):
       mailmsg,
     )
     self.assertIn("X-Forwarded-To: " + mail3.testmail, mailmsg)
+
+  def test_server_certificate_rotation(self):
+    server = self.mail_servers[0]
+    rotate = self.partitionPath(server, 'bin', 'postfix-certificate-rotate')
+    fingerprint = self.partitionPath(
+      server, 'etc', 'postfix', 'ssl', 'postfix-backend.digest')
+    next_fingerprint = self.partitionPath(
+      server, 'etc', 'postfix', 'ssl', 'postfix-backend.next.digest')
+    # check server before rotation
+    self.assertTrue(os.path.exists(fingerprint))
+    self.assertTrue(os.path.exists(next_fingerprint))
+    with open(fingerprint) as f:
+      tls_fingerprint = f.read().split('=', 1)[1].strip()
+    with open(next_fingerprint) as f:
+      tls_next_fingerprint = f.read().split('=', 1)[1].strip()
+    # check relay nodes before rotation
+    for relay_node in self.relay_nodes:
+      relay_node.tls_policy_map = self.partitionPath(
+        relay_node, 'etc', 'postfix', 'outbound', 'backend_tls_policy_map')
+      with open(relay_node.tls_policy_map) as f:
+        tls_policy_map = f.read()
+      self.assertIn(tls_fingerprint, tls_policy_map)
+      self.assertIn(tls_next_fingerprint, tls_policy_map)
+    # rotate (simulate cron)
+    subprocess.check_output((rotate))
+    self.assertFalse(os.path.exists(fingerprint))
+    # reprocess and check server
+    self.slapos('node', 'instance', '--only', server.getId())
+    self.assertTrue(os.path.exists(fingerprint))
+    with open(fingerprint) as f:
+      self.assertEqual(f.read().split('=', 1)[1].strip(), tls_next_fingerprint)
+    with open(next_fingerprint) as f:
+      tls_next_next_fingerprint = f.read().split('=', 1)[1].strip()
+    # reprocess and check cluster
+    relay_nodes = ','.join(p.getId() for p in self.relay_nodes)
+    self.slapos('node', 'instance', '--only', self.relay_cluster.getId())
+    self.slapos('node', 'instance', '--only', relay_nodes)
+    for relay_node in self.relay_nodes:
+      with open(relay_node.tls_policy_map) as f:
+        tls_policy_map = f.read()
+      self.assertNotIn(tls_fingerprint, tls_policy_map)
+      self.assertIn(tls_next_fingerprint, tls_policy_map)
+      self.assertIn(tls_next_next_fingerprint, tls_policy_map)
 
 
 class CustomOutbound(E2ETestCase):
