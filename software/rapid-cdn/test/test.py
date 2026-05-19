@@ -2097,6 +2097,22 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   monitor_setup_url_key = 'monitor-setup-url'
 
+  def test_slave_parameter_wire_format(self):
+    # Verify each slave's entry in the proxy DB is stored under the wire
+    # format the test framework chose at request time via
+    # _slaveParameterWireFormat. Together with the subclass overrides
+    # (TestSlaveXmlSerialisation forces 'plain-dict', TestSlaveMixedSerialisation
+    # splits per slave), this method is the runtime proof that the cookbook
+    # unwrap loop is being exercised against the wire format we claim.
+    cls = type(self)
+    self.assertEqual(
+      {ref: cls._slaveParameterWireFormat(ref)
+       for ref in self.getSlaveParameterDictDict()},
+      _inspectSlaveWireFormatsInProxyDb(
+        self.slap._proxy_database,
+        self.getSlaveParameterDictDict()),
+    )
+
   def test_monitor_setup(self):
     MASTER_IP = self.master_ipv6
     KEDIFA_IP = self.kedifa_ipv6
@@ -5642,6 +5658,32 @@ class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
   test_enable_http3_false_http_version = '1'
 
 
+def _inspectSlaveWireFormatsInProxyDb(proxy_db_path, slave_user_references):
+  # For each named slave (by *user* reference, e.g. 'legacy-a' — proxy stores
+  # it as '<requested_by>_<user_ref>') found in any partition's
+  # slave_instance_list, return 'json-in-xml' if the stored entry carries the
+  # '_' wrap key (the form slapos.recipe.request.JSONCodec produces and the
+  # production master uses via 'requestoptional.serialised'), 'plain-dict'
+  # otherwise (the form pre-!2095 requesters left in the DB, that the SR
+  # upgrade does not migrate). Refs missing from every partition are omitted.
+  import sqlite3
+  from slapos.util import loads as xml_loads
+  from slapos.proxy.db_version import DB_VERSION
+  refs = set(slave_user_references)
+  result = {}
+  with sqlite3.connect(proxy_db_path) as db:
+    rows = db.execute(
+      "SELECT slave_instance_list FROM partition%s "
+      "WHERE slave_instance_list IS NOT NULL" % DB_VERSION
+    ).fetchall()
+    for (sil_blob,) in rows:
+      for entry in xml_loads(sil_blob.encode('utf-8')):
+        for r in refs:
+          if entry['slave_reference'].endswith('_' + r):
+            result[r] = 'json-in-xml' if '_' in entry else 'plain-dict'
+  return result
+
+
 class TestSlaveXmlSerialisation(TestSlave):
   # Re-runs TestSlave's full slave list under the legacy xml-on-the-wire
   # format: slave params are passed to slap.request as plain dicts, so the
@@ -5705,6 +5747,26 @@ class TestSlaveMixedSerialisation(SlaveHttpFrontendTestCase):
     if partition_reference in cls.legacy_slave_references:
       return 'plain-dict'
     return 'json-in-xml'
+
+  def test_slave_parameter_wire_format(self):
+    # Explicit "the slave_instance_list IS mixed" assertion: 'legacy-a/b'
+    # land in the proxy DB as plain-dict (xml on the wire, mirroring
+    # pre-!2095 requesters whose entries the SR upgrade does not migrate);
+    # 'fresh-a/b' land as json-in-xml (the wrap that slapos.cookbook's
+    # requestoptional.serialised recipe produces). The cookbook unwrap
+    # loop must transparently decode both shapes — proven downstream by
+    # test_each_slave_published and test_master_partition_state.
+    self.assertEqual(
+      {
+        'legacy-a': 'plain-dict',
+        'legacy-b': 'plain-dict',
+        'fresh-a':  'json-in-xml',
+        'fresh-b':  'json-in-xml',
+      },
+      _inspectSlaveWireFormatsInProxyDb(
+        self.slap._proxy_database,
+        self.getSlaveParameterDictDict()),
+    )
 
   def test_each_slave_published(self):
     for ref in self.getSlaveParameterDictDict():
