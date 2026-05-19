@@ -1,3 +1,6 @@
+{% set fluentbit = slapparameter_dict['fluentbit'] %}
+{% set fluentbit_enable = fluentbit['enable'] %}
+
 [buildout]
 extends =
   ${monitor2-template:output}
@@ -10,11 +13,9 @@ parts =
   publish-connection-information
   inbound-postfix
   outbound-postfix
-{% if slapparameter_dict.get('omailgw-enable', false) %}
-  omailgw-cli
+{% if fluentbit_enable %}
+  relay-fluentbit
 {% endif %}
-
-{% set omailgw_enable = slapparameter_dict.get('omailgw-enable', false) %}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
@@ -63,7 +64,6 @@ srv = $${buildout:directory}/srv
 postfix-usr = $${:usr}/postfix
 postfix-etc = $${:etc}/postfix
 postfix-ssl = $${:postfix-etc}/ssl
-omailgw = $${:srv}/omailgw-cli
 
 [postgrey-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -840,60 +840,73 @@ depends =
   {{ "$${" + postfix_wrapper + ":recipe}" }}
 {%- endfor %}
 
-{% if omailgw_enable %}
-[omailgw-directory]
+{% if fluentbit_enable %}
+[relay-fluentbit-directory]
 recipe = slapos.cookbook:mkdirectory
-home = $${directory:omailgw}
-var = $${:home}/var
+home = $${directory:var-lib}/fluentbit
 
-[omailgw-config]
-recipe = slapos.recipe.template:jinja2
-url = ${omailgw-cli-config.php.in:target}
-output = $${omailgw-directory:home}/config.php
-context =
-  key api_url :api-url
-  key api_user :api-user
-  key api_password :api-password
-  key var_dir omailgw-directory:var
-  key server_hostname relay-info:fqdn
-  key path_postmap directory:bin
-  key path_mailq directory:bin
-  key lock_dir directory:run
-api-url = {{ slapparameter_dict['omailgw-api-url'] }}
-api-user = {{ slapparameter_dict['omailgw-api-user'] }}
-api-password = {{ slapparameter_dict['omailgw-api-password'] }}
-
-[omailgw-loop]
+[relay-fluentbit-config]
 recipe = slapos.recipe.template
-output = $${directory:bin}/omailgw-cli-loop
-mode = 700
+output = $${directory:etc}/relay-fluentbit.conf
+tag = {{ relay_fqdn }}
+logfile-list = $${outbound-postfix-main.cf:log-file},$${inbound-postfix-main.cf:log-file}
+state-db = $${relay-fluentbit-directory:home}/tail-state
+forward-host = {{ fluentbit['host'] }}
+forward-port = {{ fluentbit['port'] }}
+forward-shared-key = {{ fluentbit['shared-key'] }}
+forward-self-hostname = {{ relay_fqdn }}
+monitoring-host = {{ ipv6 }}
+monitoring-port = 2021
 inline =
-  #!/bin/sh
-  while true; do
-    cd ${omailgw-cli-source:location}
-    export MAIL_CONFIG="$${outbound-postfix-directory:etc}"
-    export SASL_CONF_PATH="$MAIL_CONFIG"
-    ${apache-php:location}/bin/php omailgw-cli.php --config="$${omailgw-config:output}" --log="$${outbound-postfix-main.cf:log-file}" >> "$${directory:var-log}/omailgw-cli.log" 2>&1 || true
-    sleep {{ slapparameter_dict.get('omailgw-relay-poll-interval', 300) }}
-    export MAIL_CONFIG="$${inbound-postfix-directory:etc}"
-    export SASL_CONF_PATH="$MAIL_CONFIG"
-    ${apache-php:location}/bin/php omailgw-cli.php --config="$${omailgw-config:output}" --log="$${inbound-postfix-main.cf:log-file}" >> "$${directory:var-log}/omailgw-cli.log" 2>&1 || true
-    sleep {{ slapparameter_dict.get('omailgw-relay-poll-interval', 300) }}
-  done
+  [SERVICE]
+      flush           5
+      HTTP_Server     On
+      HTTP_Listen     $${:monitoring-host}
+      HTTP_PORT       $${:monitoring-port}
+      Health_Check    On
+      HC_Errors_Count 0
+      HC_Retry_Failure_Count 0
+      HC_Period       60
+  [INPUT]
+      name            tail
+      path            $${:logfile-list}
+      tag             $${:tag}
+      Read_from_Head  True
+      db              $${:state-db}
+      Buffer_Max_Size 1M
+      Skip_Long_Lines On
+  [OUTPUT]
+      name            forward
+      match           *
+      Host            $${:forward-host}
+      Port            $${:forward-port}
+      Shared_Key      $${:forward-shared-key}
+      Self_Hostname   $${:forward-self-hostname}
+      Retry_Limit     50
+      tls             on
+      tls.verify      off
 
-[omailgw-cli-service]
+[relay-fluentbit-service]
 recipe = slapos.cookbook:wrapper
-command-line = $${omailgw-loop:output}
-wrapper-path = $${directory:service}/omailgw-cli
+fluentbit = ${fluent-bit:location}/bin/fluent-bit
+command-line = $${:fluentbit} -c $${relay-fluentbit-config:output}
+wrapper-path = $${directory:service}/relay-fluentbit
 hash-files =
-  $${omailgw-config:output}
-  $${omailgw-loop:output}
+  $${relay-fluentbit-config:output}
 
-[omailgw-cli]
+[relay-fluentbit-listen-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = fluentbit-http.py
+url = http://[$${relay-fluentbit-config:monitoring-host}]:$${relay-fluentbit-config:monitoring-port}/api/v1/health
+config-url = $${:url}
+
+[relay-fluentbit]
 recipe = slapos.recipe.build
 init =
   ""
 depends =
-  $${omailgw-cli-service:recipe}
+  $${relay-fluentbit-service:recipe}
+  $${relay-fluentbit-listen-promise:recipe}
 {% endif %}
 

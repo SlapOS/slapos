@@ -3,21 +3,23 @@
   "description": "Values returned by mail server cluster",
   "type": "object",
   "properties": {
-    "omailgw-api-url": {
-      "description": "Base URL of the built-in oMailGw API.",
+    "relay-hosts": {
+      "description": "List of relay hosts published by started relay instances.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "backend-domains": {
+      "description": "Backend domains currently assigned to shared relay requests.",
       "type": "string"
     },
-    "omailgw-ui-url": {
-      "description": "URL of the built-in oMailGw web interface.",
-      "type": "string"
-    },
-    "omailgw-root-user": {
-      "description": "Administrator email for the built-in oMailGw instance.",
-      "type": "string"
-    },
-    "omailgw-root-password": {
-      "description": "Administrator password for the built-in oMailGw instance.",
-      "type": "string"
+    "errors": {
+      "description": "Configuration validation errors for the cluster request.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   }
 }

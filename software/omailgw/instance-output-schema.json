@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Values returned by the oMailGw API/UI instance",
+  "description": "Values returned by the oMailGw instance",
   "type": "object",
   "properties": {
     "api-url": {
@@ -20,11 +20,23 @@
       "type": "string"
     },
     "mailgw-user": {
-      "description": "Relay-side API user email for oMailGw.",
+      "description": "Internal mail gateway API user email for oMailGw.",
       "type": "string"
     },
     "mailgw-password": {
-      "description": "Relay-side API user password for oMailGw.",
+      "description": "Internal mail gateway API user password for oMailGw.",
+      "type": "string"
+    },
+    "fluentd-host": {
+      "description": "Address to which relay-side Fluent Bit clients should connect.",
+      "type": "string"
+    },
+    "fluentd-port": {
+      "description": "Port to which relay-side Fluent Bit clients should connect.",
+      "type": "integer"
+    },
+    "fluentd-shared-key": {
+      "description": "Shared secret used by relay-side Fluent Bit clients to authenticate with Fluentd.",
       "type": "string"
     }
   }
