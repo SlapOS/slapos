@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Parameters to instantiate a NPM frontend project",
+  "additionalProperties": false,
+  "required": ["repo-url", "branch"],
+  "properties": {
+    "repo-url": {
+      "title": "Repository URL",
+      "description": "A npm project repo URL. If the repo is private, please make sure it contains the token, e.g: https://oauth2:YOUR_ACCESS_TOKEN@lab.nexedi.com/NAMESPACE/PROJECT_NAME.git",
+      "type": "string"
+    },
+    "branch": {
+      "title": "Branch",
+      "description": "NPM project repository branch",
+      "type": "string"
+    }
+  }
+}
