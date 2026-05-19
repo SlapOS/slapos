@@ -1,0 +1,31 @@
+<source>
+  @type forward
+  bind {{ bind }}
+  port {{ port }}
+  <transport tls>
+    cert_path {{ cert_file }}
+    private_key_path {{ key_file }}
+    private_key_passphrase
+  </transport>
+  <security>
+    self_hostname {{ self_hostname }}
+    shared_key {{ shared_key }}
+  </security>
+</source>
+<match **>
+  @type exec
+  command {{ bridge_command }}
+  command_timeout 300
+  <inject>
+    tag_key tag
+  </inject>
+  <format>
+    @type json
+  </format>
+  <buffer tag>
+    @type file
+    path {{ bridge_buffer }}/
+    flush_mode interval
+    flush_interval 5s
+  </buffer>
+</match>
