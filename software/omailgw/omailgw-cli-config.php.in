@@ -1,0 +1,30 @@
+<?php
+
+$serverHostname = getenv('OMAILGW_SERVER_HOSTNAME');
+if ($serverHostname === false || $serverHostname === '') {
+    $serverHostname = '{{ server_hostname }}';
+}
+$serverHostnameForPath = preg_replace('/[^A-Za-z0-9_.-]/', '_', $serverHostname);
+if ($serverHostnameForPath === null || $serverHostnameForPath === '') {
+    $serverHostnameForPath = 'omailgw';
+}
+
+$config['api_user'] = '{{ api_user }}';
+$config['api_passwrd'] = '{{ api_password }}';
+$config['api_url'] = '{{ api_url }}';
+$config['api_demand'] = [];
+
+$config['curl_opt'][CURLOPT_SSL_VERIFYPEER] = false;
+$config['curl_opt'][CURLOPT_SSL_VERIFYHOST] = 0;
+
+$config['var_dir'] = '{{ var_dir }}/';
+$config['server_hostname'] = $serverHostname;
+$config['sqlite_file'] = $config['var_dir'] . 'database-' . $serverHostnameForPath . '.sqlite';
+$config['sqlite_clean_data'] = strtotime('-30 day');
+$config['path_postmap'] = '{{ path_postmap }}';
+$config['path_mailq'] = '{{ path_mailq }}';
+$config['lock_dir'] = '{{ lock_dir }}';
+$config['lock_id'] = 'omailgwcli-' . $serverHostnameForPath;
+$config['smtpd_auth_tester'] = null;
+$config['sudo_postfix_reload'] = '/bin/true';
+$config['rspamd_check'] = false;
