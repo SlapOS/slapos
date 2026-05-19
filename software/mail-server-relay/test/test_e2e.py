@@ -32,6 +32,7 @@ import imaplib
 import smtplib
 import socket
 import ssl
+import subprocess
 import time
 
 from slapos.testing.testcase import (
@@ -201,6 +202,11 @@ class E2ETestCase(SlapOSInstanceTestCase):
   @classmethod
   def partitionPath(cls, cp, *paths):
     return os.path.join(cls.slap.instance_directory, cp.getId(), *paths)
+
+  @classmethod
+  def slapos(cls, *args):
+    subprocess.call((
+      cls.slap._slapos_bin, *args,  '--cfg', cls.slap._slapos_config))
 
   @classmethod
   def client_ssl_context(cls, client_cert_bundle):
@@ -1026,6 +1032,19 @@ class E2E(E2ETestCase):
       mailmsg,
     )
     self.assertIn("X-Forwarded-To: " + mail3.testmail, mailmsg)
+
+  def test_server_certificate_rotation(self):
+    server = self.mail_servers[0]
+    rotate = self.partitionPath(server, 'bin', 'postfix-certificate-rotate')
+    fingerprint = self.partitionPath(
+      server, 'etc', 'postfix', 'ssl', 'postfix-backend.digest')
+    self.assertTrue(os.path.exists(fingerprint))
+    # simulate cron rotation
+    subprocess.check_output((rotate))
+    self.assertFalse(os.path.exists(fingerprint))
+    # reprocess
+    self.slapos('node', 'instance', '--only', server.getId())
+    self.assertTrue(os.path.exists(fingerprint))
 
 
 class CustomOutbound(E2ETestCase):
