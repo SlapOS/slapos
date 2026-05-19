@@ -3,12 +3,12 @@
   "description": "4G and 5G amarisoft stack for ORS",
   "serialisation": "json-in-xml",
   "software-type": {
-    "gnb": {
-      "title": "gNB",
-      "software-type": "gnb",
-      "description": "gNodeB Configuration",
-      "request": "instance-ors-gnb-c1-input-schema.json",
-      "response": "instance-ors-gnb-schema.json",
+    "enb-gnb": {
+      "title": "eNB / gNB",
+      "software-type": "enb-gnb",
+      "description": "eNodeB / gNodeB Configuration",
+      "request": "instance-ors-enb-gnb-c1-input-schema.json",
+      "response": "instance-ors-enb-schema.json",
       "index": 1
     },
     "core-network": {
