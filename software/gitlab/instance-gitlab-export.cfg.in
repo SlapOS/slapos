@@ -84,5 +84,6 @@ context =
   raw     redis_pid_file          ${service-redis:pid-file}
   raw     postgres_pid_file       ${service-postgresql:pgdata-directory}/postmaster.pid
   raw     puma_pid_file           ${puma:pid}/puma.pid
+  raw     puma_socket             ${puma:socket}
   raw     gitlab_work_location    ${gitlab-work:location}
   raw     promise_lab_location    ${directory:promise.slow}
