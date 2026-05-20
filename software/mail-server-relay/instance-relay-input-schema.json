@@ -29,7 +29,46 @@
             "$ref": "./instance-cluster-input-schema.json#/definitions/fqdn"
           },
           "default": []
+        },
+        "fluentbit-enable": {
+          "title": "Enable Fluent Bit",
+          "description": "Run the relay-side Fluent Bit client for this relay.",
+          "type": "boolean",
+          "default": false
+        },
+        "fluentbit-host": {
+          "title": "Fluentd Address",
+          "description": "IPv4/IPv6 address or hostname of the remote Fluentd server.",
+          "type": "string"
+        },
+        "fluentbit-port": {
+          "title": "Fluentd Port",
+          "description": "TCP port of the remote Fluentd server.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "fluentbit-shared-key": {
+          "title": "Shared Key",
+          "description": "Shared secret used by the relay-side Fluent Bit client to authenticate with Fluentd.",
+          "type": "string"
         }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "fluentbit-enable": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "fluentbit-host",
+          "fluentbit-port",
+          "fluentbit-shared-key"
+        ]
       }
     }
   ]
