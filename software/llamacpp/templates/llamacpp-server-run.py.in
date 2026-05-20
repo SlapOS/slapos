@@ -30,6 +30,12 @@ CACHE_TYPE_V     = "{{ cache_type_v }}"
 CTX              = "{{ ctx }}"
 LOG_FILE         = "{{ log_file }}"
 EMBEDDING        = "{{ embedding }}"
+DRY_MULTIPLIER   = "{{ dry_multiplier }}"
+TEMP             = "{{ temp }}"
+TOP_P            = "{{ top_p }}"
+TOP_K            = "{{ top_k }}"
+MIN_P            = "{{ min_p }}"
+REASONING_BUDGET = "{{ reasoning_budget }}"
 
 def ensure_parent_dir(path: str) -> None:
     d = os.path.dirname(os.path.abspath(path))
@@ -71,6 +77,12 @@ def main() -> None:
         "-ngl", str(NGL),
         "--cache-type-k", CACHE_TYPE_K,
         "--cache-type-v", CACHE_TYPE_V,
+        "--dry-multiplier", str(DRY_MULTIPLIER),
+        "--temp", str(TEMP),
+        "--top_p", str(TOP_P),
+        "--top_k", str(TOP_K),
+        "--min_p", str(MIN_P),
+        "--reasoning-budget", str(REASONING_BUDGET),
         "--mlock",
         "--no-warmup",
         "-fa", "on",
