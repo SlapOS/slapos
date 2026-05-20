@@ -1,0 +1,7 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "No Input Parameters for System Audit",
+  "properties": {},
+  "additionalProperties": false
+}
