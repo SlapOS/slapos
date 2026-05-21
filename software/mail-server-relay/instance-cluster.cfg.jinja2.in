@@ -11,6 +11,9 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
+{% set fluentbit_parameter_dict = slapparameter_dict.get('fluentbit', {}) %}
+{% set fluentbit_enable = fluentbit_parameter_dict.get('enable', false) %}
+
 [validate-proxy-map]
 recipe = slapos.recipe.build
 proxy-map = {{
@@ -60,10 +63,19 @@ config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-mail-domains = $${filter-shared-instances:accepted-domain-relays}
 config-cluster-fqdns = $${cluster-mx:fqdn-list}
+{% if fluentbit_enable %}
+config-fluentbit-enable = {{ dumps(True) }}
+config-fluentbit-host = {{ dumps(fluentbit_parameter_dict['host']) }}
+config-fluentbit-port = {{ dumps(fluentbit_parameter_dict['port']) }}
+config-fluentbit-shared-key = {{ dumps(fluentbit_parameter_dict['shared-key']) }}
+{% else %}
+config-fluentbit-enable = {{ dumps(False) }}
+{% endif %}
 return =
   smtp-ipv6
   smtp-port
   tls-fingerprints
+
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
 {% set relay_fqdn = config.get('fqdn') -%}
@@ -73,10 +85,7 @@ name = {{ relay_name }}
 state = {{ config['state'] }}
 software-url = {{ config.get('sr-url') or '$${:software-release-url}' }}
 software-type = {{ config.get('software-type') or 'relay' }}
-
-{% if relay_fqdn -%}
 config-fqdn = {{ relay_fqdn }}
-{%- endif %}
 
 {% for key, value in config.get('config', {}).items() -%}
 config-{{ key }} = {{ dumps(value) }}
