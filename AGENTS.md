@@ -112,6 +112,15 @@ Each test directory contains:
 - Format: `<module-or-area>: <description starting with lowercase verb>`
 - Examples: `instancenode: skip error() for...`, `rapid-cdn: add access to...`
 
+## Plain English in Published Text
+
+Commit messages, MR comments, MR descriptions, branch names visible to others — anything that leaves the terminal — use plain English. Terminal chat is exempt.
+
+- Drop developer jargon: "wire format", "rescope", "indirection", "silent no-op", "drift", "wrap path", "happy path", "boil down to", "end-to-end", "tolerant of", "exercises the X path", "homogenised", "uniform decoded dicts".
+- Describe what the code or change actually does, in normal words a non-native English reader can follow on first read.
+- Keep code identifiers (class names, file paths, commit SHAs, line numbers, MR numbers) — those are precise.
+- Cut adjectives. Cut filler ("simply", "just", "actually", "essentially"). Short sentences.
+- Reviewers across the Nexedi org include non-native English speakers; plain prose is clearer and reduces back-and-forth on review.
 
 ## Code Style
 
