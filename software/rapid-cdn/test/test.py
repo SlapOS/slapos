@@ -11596,6 +11596,9 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
 
 
 class TestWebsocket(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+  MONITOR_INTERFACE_URL = (
+      'https://monitor.propagation.test/#page=ojsm_landing')
+
   @classmethod
   def getInstanceParameterDict(cls):
     return {
