@@ -15,6 +15,7 @@ T-2/var/log/httpd/_websockethttp1_access_log
 T-2/var/log/httpd/_websockethttp1_backend_log
 T-2/var/log/httpd/_websockethttp1_frontend_log
 T-2/var/log/httpd/_websockethttp1cache_access_log
+T-2/var/log/httpd/_websockethttp1cache_backend_log
 T-2/var/log/httpd/_websockethttp1cache_frontend_log
 T-2/var/log/httpd/_websockethttp2_access_log
 T-2/var/log/httpd/_websockethttp2_backend_log
