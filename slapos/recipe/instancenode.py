@@ -1,3 +1,4 @@
+# coding: utf-8
 ##############################################################################
 #
 # Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
