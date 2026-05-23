@@ -1,3 +1,5 @@
+# coding: utf-8
+import sys
 import unittest
 import mock
 from slapos.recipe import cdninstancenode
@@ -1145,6 +1147,7 @@ class TestRecipe(unittest.TestCase):
     self.assertFalse(bool(db_entry['validated']))
     self.assertEqual(connection_parameters['txt_value'], db_entry['token'])
 
+  @unittest.skipIf(sys.version_info[0] == 2, 'LifetimeTimeout did not exist on py2')
   @mock.patch('dns.resolver.Resolver')
   def test_validate_custom_domain_failure_timeout(self, MockResolver):
     """Test validation failure when DNS lookup times out"""
@@ -1679,10 +1682,10 @@ class TestRecipe(unittest.TestCase):
 
   def test_validate_ssl_certificate_valid(self):
     """Test validation accepts valid SSL certificates"""
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', {
-      **self.options,
-      'openssl-binary': '/usr/bin/openssl'
-    })
+    recipe = cdninstancenode.Recipe(self.buildout, 'test', dict(
+      self.options,
+      **{'openssl-binary': '/usr/bin/openssl'})
+    )
 
     valid_cert = """-----BEGIN CERTIFICATE-----
 MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
@@ -1706,10 +1709,10 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_validate_ssl_certificate_invalid(self):
     """Test validation fails for invalid SSL certificates"""
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', {
-      **self.options,
-      'openssl-binary': '/usr/bin/openssl'
-    })
+    recipe = cdninstancenode.Recipe(self.buildout, 'test',  dict(
+      self.options,
+      **{'openssl-binary': '/usr/bin/openssl'})
+    )
 
     # Invalid certificate content
     invalid_cert = "not a valid certificate"
@@ -1730,10 +1733,10 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_validate_ssl_key_cert_match(self):
     """Test validation checks SSL key and certificate match"""
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', {
-      **self.options,
-      'openssl-binary': '/usr/bin/openssl'
-    })
+    recipe = cdninstancenode.Recipe(self.buildout, 'test',  dict(
+      self.options,
+      **{'openssl-binary': '/usr/bin/openssl'})
+    )
 
     # Mock matching moduli (key and cert match)
     matching_modulus = b'Modulus=ABCD1234\n'
@@ -1761,10 +1764,10 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
 
   def test_validate_ssl_key_cert_mismatch(self):
     """Test validation fails when SSL key and certificate don't match"""
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', {
-      **self.options,
-      'openssl-binary': '/usr/bin/openssl'
-    })
+    recipe = cdninstancenode.Recipe(self.buildout, 'test',  dict(
+      self.options,
+      **{'openssl-binary': '/usr/bin/openssl'})
+    )
 
     parameters = {
       'ssl_key': '-----BEGIN PRIVATE KEY-----\ntest key\n-----END PRIVATE KEY-----',
