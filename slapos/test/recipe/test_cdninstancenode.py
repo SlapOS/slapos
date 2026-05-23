@@ -1,3 +1,4 @@
+# coding: utf-8
 import unittest
 import mock
 from slapos.recipe import cdninstancenode
