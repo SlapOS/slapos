@@ -1,3 +1,4 @@
+# coding: utf-8
 ##############################################################################
 #
 # Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
@@ -31,11 +32,29 @@ import os
 import sys
 import argparse
 import fcntl
+from collections import OrderedDict
 from six.moves.configparser import RawConfigParser
 from slapos.recipe.localinstancedb import HostedInstanceLocalDB, InstanceListComparator
 from slapos import slap
 from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
 import six
+
+def _convert_to_str(data):
+  if six.PY2:
+    if isinstance(data, (dict, OrderedDict)):
+      return type(data)((_convert_to_str(k), _convert_to_str(v)) for k, v in data.items())
+    if isinstance(data, list):
+      return [_convert_to_str(v) for v in data]
+    if isinstance(data, six.text_type):
+      return data.encode('utf-8')
+  return data
+
+def _json_loads(data, default=None):
+  if not data:
+    return default if default is not None else {}
+  if six.PY2:
+    return _convert_to_str(json.loads(data, object_pairs_hook=OrderedDict))
+  return json.loads(data)
 
 class Recipe(object):
   """
@@ -203,13 +222,11 @@ class Recipe(object):
     update_list = []
     for row in instance_list:
       try:
-        parameters = json.loads(row['json_parameters']) if row['json_parameters'] else {}
-        error_info = {}
-        if row['json_error']:
-          try:
-            error_info = json.loads(row['json_error'])
-          except (ValueError, TypeError):
-            error_info = {}
+        parameters = _json_loads(row['json_parameters'])
+        try:
+          error_info = _json_loads(row['json_error'])
+        except (ValueError, TypeError):
+          error_info = {}
         valid_parameter = row['valid_parameter'] if row['valid_parameter'] is not None else 'valid'
         update_list.append({
           'reference': row['reference'],
@@ -845,7 +862,11 @@ def configure_logging(logfile=None, debug=False):
     # Create directory if it doesn't exist
     logfile_dir = os.path.dirname(logfile)
     if logfile_dir and not os.path.exists(logfile_dir):
-      os.makedirs(logfile_dir, exist_ok=True)
+      try:
+        os.makedirs(logfile_dir)
+      except OSError:
+        if not os.path.isdir(logfile_dir):
+          raise
     handler = logging.FileHandler(logfile)
   else:
     handler = logging.StreamHandler(sys.stderr)

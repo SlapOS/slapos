@@ -1,19 +1,20 @@
+# encoding: utf-8
+import sys
 import dns.resolver
 import hmac
 import hashlib
 import ipaddress
 import time
 import os
-try:
-  from secrets import token_hex
-except ImportError:
+if sys.version_info[0] == 2:
   from os import urandom
-  token_hex = lambda n: urandom(n).hex()
+  token_hex = lambda n: urandom(n).encode('hex')
+else:
+  from secrets import token_hex
 from six.moves.urllib.parse import urlsplit, urlparse
 import re
 import subprocess
 import json
-import sys
 import logging
 from slapos.recipe.instancenode import (
   Recipe as InstanceNodeRecipe,
