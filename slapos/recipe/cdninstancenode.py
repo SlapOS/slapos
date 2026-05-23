@@ -1,3 +1,4 @@
+# encoding: utf-8
 import dns.resolver
 import hmac
 import hashlib

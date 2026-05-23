@@ -1,3 +1,4 @@
+# coding: utf-8
 import json
 import hashlib
 import fcntl
@@ -15,6 +16,8 @@ from testfixtures import LogCapture
 
 
 class TestRequestInstanceList(unittest.TestCase):
+  if sys.version_info[0] == 2:
+    assertRegex = unittest.TestCase.assertRegexpMatches
 
   def setUp(self):
     # Create temporary databases
