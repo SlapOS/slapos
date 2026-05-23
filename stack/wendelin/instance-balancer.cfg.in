@@ -127,6 +127,7 @@ csr = ${haproxy-certificate-csr-from-parameters:output}
      openssl=parameter_dict['openssl'] ~ '/bin/openssl',
 )}}
 {% do section('caucase-updater-haproxy-certificate') -%}
+{% do section('caucase-updater-haproxy-certificate-promise') -%}
 
 {% set frontend_caucase_url_hash_list = [] -%}
 {% for frontend_caucase_url in frontend_caucase_url_list -%}
