@@ -192,6 +192,29 @@ server {
     #   - files/gitlab-cookbooks/gitlab/attributes/default.rb   default['gitlab']['nginx']['proxy_set_headers']
     #   - files/gitlab-cookbooks/gitlab/libraries/gitlab.rb     parse_nginx_proxy_headers()
     # (last updated for omnibus-gitlab 8.5.1+ce.0-1-ge732b39)
+
+
+    ### BOT PROTECTION ###
+    # Lately the number of crawlers has mind-numbling increased,
+    # rendering the service borderline unusable. Let's try this
+    # simple approach to get rid of the dumbest crawlers.
+    # Inspired from: https://her.esy.fun/posts/0031-how-i-protect-my-forgejo-instance-from-ai-web-crawlers/index.html
+
+    # Allow the git command line using https URLs
+    if ($http_user_agent ~* "git/|git-lfs/") {
+          set $bypass_cookie 1;
+    }
+    # Bypass the blocker page when the cookie is set
+    if ($cookie_iamfromnexedi = "1") {
+          set $bypass_cookie 1;
+    }
+    # Set cookie and redirect transparently
+    if ($bypass_cookie != 1) {
+      add_header Content-Type text/html always;
+      return 400 '<script>document.cookie = "iamfromnexedi=1; Path=/;"; window.location.reload();</script>';
+    }
+
+
     if ($request_method = OPTIONS ) {
         add_header Allow "GET, OPTIONS";
         add_header Content-Type text/plain;
