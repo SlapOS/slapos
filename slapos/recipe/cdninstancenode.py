@@ -1,19 +1,20 @@
+# encoding: utf-8
+import sys
 import dns.resolver
 import hmac
 import hashlib
 import ipaddress
 import time
 import os
-try:
-  from secrets import token_hex
-except ImportError:
+if sys.version_info[0] == 2:
   from os import urandom
-  token_hex = lambda n: urandom(n).hex()
+  token_hex = lambda n: urandom(n).encode('hex')
+else:
+  from secrets import token_hex
 from six.moves.urllib.parse import urlsplit, urlparse
 import re
 import subprocess
 import json
-import sys
 import logging
 from slapos.recipe.instancenode import (
   Recipe as InstanceNodeRecipe,
@@ -23,6 +24,14 @@ from slapos.recipe.instancenode import (
 )
 from slapos.recipe.localinstancedb import LocalDBAccessor
 from zc.buildout import UserError
+
+if sys.version_info[0] == 2:
+  _RESOLVER_EXCEPTION_LIST = (
+    dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.Timeout)
+else:
+  _RESOLVER_EXCEPTION_LIST = (
+    dns.resolver.NXDOMAIN, dns.resolver.NoAnswer,
+    dns.resolver.Timeout, dns.resolver.LifetimeTimeout)
 
 # Cipher constants from instance-master.cfg.in
 GOOD_CIPHER_LIST = [
@@ -202,7 +211,15 @@ class Recipe(InstanceNodeRecipe):
           nameserver_ips.append(entry)
           continue
         except ValueError:
-          pass
+          # Python 2's ipaddress backport may reject bare IPv6 with `::`
+          # abbreviation; fall back to explicit IPv6Address constructor.
+          if sys.version_info[0] == 2 and entry.count(':') >= 2:
+            try:
+              ipaddress.IPv6Address(entry)
+              nameserver_ips.append(entry)
+              continue
+            except ValueError:
+              pass
         parsed = urlsplit('dns://' + entry)
         if parsed.hostname is None:
           raise UserError(
@@ -290,7 +307,7 @@ class Recipe(InstanceNodeRecipe):
         txt_value = ''.join([x.decode('utf-8') for x in rdata.strings])
         if txt_value == token:
           return True
-    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.Timeout, dns.resolver.LifetimeTimeout):
+    except _RESOLVER_EXCEPTION_LIST:
       pass
     except Exception as e:
       self.logger.warning('DNS check failed for %s: %s', challenge_domain, e)
