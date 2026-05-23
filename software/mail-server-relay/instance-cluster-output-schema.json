@@ -2,5 +2,24 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Values returned by mail server cluster",
   "type": "object",
-  "properties": {}
+  "properties": {
+    "relay-hosts": {
+      "description": "List of relay hosts published by started relay instances.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "backend-domains": {
+      "description": "Backend domains currently assigned to shared relay requests.",
+      "type": "string"
+    },
+    "errors": {
+      "description": "Configuration validation errors for the cluster request.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
 }
