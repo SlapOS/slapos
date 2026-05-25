@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input Parameters for System Audit, currently only for NotePOD",
+  "properties": {
+    "fido2-required": {
+      "description": "A FIDO2 token is required to open encrypted devices.",
+      "default": true,
+      "type": "boolean"
+    },
+    "os-versions": {
+      "description": "Space-separated list of allowed Ubuntu versions.",
+      "default": "26.04",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
