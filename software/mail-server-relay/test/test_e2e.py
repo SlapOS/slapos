@@ -33,6 +33,9 @@ import smtplib
 import socket
 import ssl
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 
 from slapos.testing.testcase import (
   makeModuleSetUpAndTestCaseClass,
@@ -74,6 +77,7 @@ SR_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 SR_PARDIR = os.path.abspath(os.path.join(SR_DIR, os.pardir))
 RELAY_SR = os.path.join(SR_DIR, 'software.cfg')
 EMAIL_SR = os.path.join(SR_PARDIR, 'mail-server', 'software.cfg')
+OMAILGW_SR = os.path.join(SR_PARDIR, 'omailgw', 'software.cfg')
 
 _, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(RELAY_SR)
 
@@ -81,13 +85,14 @@ DEBUG = bool(int(os.environ.get('SLAPOS_TEST_DEBUG', 0)))
 def setUpModule():
   installSoftwareUrlList(
     SlapOSInstanceTestCase,
-    [RELAY_SR, EMAIL_SR],
+    [RELAY_SR, EMAIL_SR, OMAILGW_SR],
     debug=DEBUG,
   )
 
 
 class E2ETestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'e2e'
+  partition_count = 15
   instance_max_retry = 4
 
   relay_inbound_port = 10025
@@ -101,13 +106,23 @@ class E2ETestCase(SlapOSInstanceTestCase):
     return unwrap(instance.getConnectionParameterDict())
 
   @classmethod
-  def requestRelayCluster(cls, topology, proxy_map, extra, state):
-    parameters = serialize({
+  def requestRelayCluster(
+    cls,
+    topology,
+    proxy_map,
+    extra,
+    state,
+    fluentbit=None,
+  ):
+    parameter_dict = {
       "default-relay-config": {
         "proxy-map": proxy_map,
       } | extra,
-      "topology": topology
-    })
+      "topology": topology,
+    }
+    if fluentbit is not None:
+      parameter_dict["fluentbit"] = fluentbit
+    parameters = serialize(parameter_dict)
     requester = lambda: cls.slap.request(
       software_release=RELAY_SR,
       partition_reference='mail-relay-cluster',
@@ -118,6 +133,21 @@ class E2ETestCase(SlapOSInstanceTestCase):
     relay_cluster = requester()
     relay_cluster.rerequest = requester
     return relay_cluster
+
+  @classmethod
+  def requestOMailGw(cls, reference, state):
+    requester = lambda: cls.slap.request(
+      software_release=OMAILGW_SR,
+      partition_reference=reference,
+      partition_parameter_kw=serialize({
+        'fluentd-port': 24229,
+      }),
+      software_type='default',
+      state=state,
+    )
+    omailgw = requester()
+    omailgw.rerequest = requester
+    return omailgw
 
   @classmethod
   def requestMailServer(cls, domain, state, extra=None):
@@ -218,6 +248,114 @@ class E2ETestCase(SlapOSInstanceTestCase):
     ctx.verify_mode = ssl.CERT_NONE
     return ctx
 
+  @classmethod
+  def omailgwLogin(cls, omailgw):
+    parameter_dict = cls.getConnectionDict(omailgw)
+    login_url = '%s/user/login?%s' % (
+      parameter_dict['api-url'],
+      urllib.parse.urlencode({
+        'email': parameter_dict['root-user'],
+        'password': parameter_dict['root-password'],
+      }),
+    )
+
+    def login():
+      login_request = urllib.request.Request(login_url, method='POST')
+      with urllib.request.urlopen(
+        login_request,
+        context=cls._get_ssl_context(),
+      ) as response:
+        login_payload = json.load(response)
+      token = login_payload.get('token')
+      if not token:
+        raise AssertionError('oMailGw login should return a token')
+      return token
+
+    return try_until(
+      wrap_exception(login),
+      timeout=60,
+      interval=2,
+      err_msg='Could not log in to oMailGw API',
+    )
+
+  def omailgwApiRequest(self, path, *, method='GET', data=None):
+    headers = {
+      'Authorization': 'Bearer %s' % self.omailgw_token,
+    }
+    payload = None
+    if data is not None:
+      headers['Content-Type'] = 'application/json'
+      payload = json.dumps(data).encode('utf-8')
+    request = urllib.request.Request(
+      self.omailgw_api_url + path,
+      data=payload,
+      headers=headers,
+      method=method,
+    )
+    try:
+      with urllib.request.urlopen(
+        request,
+        context=self._get_ssl_context(),
+      ) as response:
+        return json.load(response)
+    except urllib.error.HTTPError as error:
+      detail = error.read().decode('utf-8', 'replace')
+      raise AssertionError(
+        'oMailGw API %s %s failed with %s: %s' % (
+          method,
+          path,
+          error.code,
+          detail,
+        )
+      ) from error
+
+  def check_omailgw_received_mail(
+    self,
+    *,
+    relay_hostname,
+    sender,
+    recipient,
+    after_timestamp,
+  ):
+    def check_log():
+      result = self.omailgwApiRequest(
+        '/log/search',
+        method='POST',
+        data={
+          'search': [
+            { 'column': 'server', 'operator': '=', 'value': relay_hostname },
+            { 'column': 'from', 'operator': 'like', 'value': '%%%s%%' % sender },
+            { 'column': 'to', 'operator': 'like', 'value': '%%%s%%' % recipient },
+            { 'column': 'smtp_date', 'operator': '>=', 'value': after_timestamp },
+          ],
+          'orderBy': {
+            'column': 'smtp_date',
+            'order': 'DESC',
+          },
+          'limit': 10,
+        },
+      )
+      if isinstance(result, dict):
+        result = result.get('data', [])
+      for entry in result:
+        if (
+          entry.get('server') == relay_hostname
+          and sender in entry.get('from', '')
+          and recipient in entry.get('to', '')
+        ):
+          return entry
+      return False
+
+    return try_until(
+      wrap_exception(check_log),
+      timeout=120,
+      interval=2,
+      err_msg=(
+        'oMailGw did not receive a log entry for %s -> %s via %s'
+        % (sender, recipient, relay_hostname)
+      ),
+    )
+
   def send_email(self, mailserver, mail_recipient, body, send_as=None):
     sender = send_as or mailserver.testmail
     with smtplib.SMTP(*mailserver.smtp_addr, timeout=self.smtp_timeout) as smtp:
@@ -256,9 +394,25 @@ class E2ETestCase(SlapOSInstanceTestCase):
       err_msg=f"Email with '{expected}' not received by {mailserver.testmail}"
     )
 
-  def check_mail_e2e(self, mailserver, mail_recipient, body, send_as=None):
+  def check_mail_e2e(
+    self,
+    mailserver,
+    mail_recipient,
+    body,
+    send_as=None,
+    omailgw_relay_hostname=None,
+  ):
+    sender = send_as or mailserver.testmail
+    send_timestamp = int(time.time())
     self.send_email(mailserver, mail_recipient, body, send_as)
     self.check_inbox(mail_recipient, body)
+    if omailgw_relay_hostname is not None:
+      self.check_omailgw_received_mail(
+        relay_hostname=omailgw_relay_hostname,
+        sender=sender,
+        recipient=mail_recipient.testmail,
+        after_timestamp=send_timestamp,
+      )
 
   def check_not_in_inbox(self, mailserver, unexpected_content, wait_time=30):
     time.sleep(wait_time)
@@ -750,11 +904,16 @@ class E2E(E2ETestCase):
 
   @classmethod
   def requestDefaultInstance(cls, state="started"):
+    cls.omailgw_relay_hostname = 'relay.one.lan'
     external_mail_servers = [
       cls.requestExternalMailServer(external_domain, state)
       for external_domain in cls.external_domains
     ]
-    if not all(e.getConnectionParameterDict() for e in external_mail_servers):
+    omailgw = cls.requestOMailGw('%s-omailgw' % cls.__partition_reference__, state)
+    if (
+      not all(e.getConnectionParameterDict() for e in external_mail_servers)
+      or not omailgw.getConnectionParameterDict()
+    ):
       # requestDefaultInstance is called twice by the framework:
       # the first time to make the initial requests, and the second
       # time after the framework ran waitForInstance, to obtain the
@@ -765,11 +924,14 @@ class E2E(E2ETestCase):
       # already have an up to date non-empty connection dict.
       cls.waitForInstance()
       external_mail_servers = [e.rerequest() for e in external_mail_servers]
+      omailgw = omailgw.rerequest()
     cls.external_mail_servers = external_mail_servers
+    cls.omailgw = omailgw
     external = [cls.getConnectionDict(e) for e in external_mail_servers]
+    omailgw_connection = cls.getConnectionDict(omailgw)
     cls.relay_cluster = relay_cluster = cls.requestRelayCluster(
       topology = {
-        "relay-one": {"fqdn": "relay.one.lan"},
+        "relay-one": {"fqdn": cls.omailgw_relay_hostname},
       },
       proxy_map = {
         "external-proxy-1": {
@@ -788,6 +950,12 @@ class E2E(E2ETestCase):
           "greylisting-delay": 5,
         },
       },
+      fluentbit = {
+        'enable': True,
+        'host': omailgw_connection['fluentd-host'],
+        'port': int(omailgw_connection['fluentd-port']),
+        'shared-key': omailgw_connection['fluentd-shared-key'],
+      },
       state = state
     )
     cls.mail_servers = [
@@ -801,6 +969,8 @@ class E2E(E2ETestCase):
     super().setUpClass()
     # Fetch instance information for use in tests
     cls.external_mail_server = cls.external_mail_servers[0]
+    cls.omailgw_api_url = cls.getConnectionDict(cls.omailgw)['api-url']
+    cls.omailgw_token = cls.omailgwLogin(cls.omailgw)
     relay_host = cls.getRelayHost(cls.relay_cluster)
     cls.relay_inbound = {
       'host': relay_host,
@@ -874,7 +1044,12 @@ class E2E(E2ETestCase):
   def test_send_email(self):
     # each mail server has testmail@{{domain}}:password123::
     from_mail, to_mail = self.mail_servers[:2]
-    self.check_mail_e2e(from_mail, to_mail, "This is a test email.")
+    self.check_mail_e2e(
+      from_mail,
+      to_mail,
+      "This is a test email.",
+      omailgw_relay_hostname=self.omailgw_relay_hostname,
+    )
 
   def test_send_email_to_external(self):
     self.check_mail_e2e(
