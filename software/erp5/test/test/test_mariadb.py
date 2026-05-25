@@ -181,14 +181,33 @@ class TestCrontabs(MariaDBTestCase, CrontabMixin):
 
   def test_full_mariabackup(self) -> None:
     self._executeCrontabAtDate('mariabackup', '2050-01-01')
+    srv_dir = os.path.join(self.computer_partition_root_path, 'srv')
     self.assertTrue(glob.glob(
       os.path.join(
-        self.computer_partition_root_path,
-        'srv',
+        srv_dir,
         'backup',
         'mariabackup',
         '205001010000??.full.xb.zstd',
     )))
+    with open(os.path.join(srv_dir, 'mariabackup-errormessage-file'), 'r') as file:
+      self.assertEqual('', file.read())
+
+  def test_mariabackup_cron_promise(self) -> None:
+    backup_dir = os.path.join(self.computer_partition_root_path, 'srv', 'backup')
+    backup_dir_tmp = backup_dir + '.tmp'
+    os.rename(backup_dir, backup_dir_tmp)
+    crontab_command =  self._getCrontabCommand('mariabackup')
+    subprocess.call(("faketime", '2050-01-01', '/bin/sh', '-c', crontab_command))
+    subprocess.call((
+      'faketime', '-f', '+120s',
+    self.slap._slapos_bin, 'node', 'instance', '--cfg', self.slap._slapos_config))
+    promise_path = os.path.join(
+      self.computer_partition_root_path,
+      '.slapgrid', 'promise', 'result', 'check-cron-entry-mariabackup.status.json')
+    with open(promise_path) as f:
+      status = json.load(f)
+    self.assertTrue(status['result']['failed'])
+    self.assertIn('No such file or directory', status['result']['message'])
 
   def test_logrotate_and_slow_query_digest(self) -> None:
     # slow query digest needs to run after logrotate, since it operates on the rotated
