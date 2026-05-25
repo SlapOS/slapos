@@ -16,22 +16,7 @@
           "$ref": "ors-enb-gnb-classic.json"
         },
         {
-          "$ref": "ors-gnb.json"
-        },
-        {
-          "$ref": "ors-enb.json"
-        },
-        {
           "$ref": "ors-enb-gnb.json"
-        },
-        {
-          "$ref": "ors-enb-secondary.json"
-        },
-        {
-          "$ref": "ors-gnb-secondary.json"
-        },
-        {
-          "$ref": "ors-enb-gnb-secondary.json"
         }
       ],
       "type": "object",
@@ -49,13 +34,32 @@
       "default": {}
     },
     "monitor-interface-url": {
-      "$ref": "instance-ors-gnb-input-schema.json#/properties/monitor-interface-url"
+      "title": "Monitor Interface URL",
+      "description": "URL to the monitor app used in monitor setup URL",
+      "type": "string",
+      "default": "https://monitor.app.officejs.com/#page=ojsm_landing"
     },
     "rf-info": {
-      "$ref": "instance-ors-gnb-input-schema.json#/properties/rf-info"
+      "title": "Expert only: RF Info",
+      "description": "Expert only: override RF Info from parameters",
+      "type": "string",
+      "textarea": true
     }
   },
   "$defs": {
+    "enable_cell_gnb": {
+      "title": "Enable Cell: You must select this parameter to enable the cell",
+      "type": "string",
+      "enum": [
+        "Enable gNB",
+        "Disable gNB"
+      ],
+      "default": "Enable gNB"
+    },
+    "enable_cell_enb": {
+      "$ref": "#/$defs/enable_cell_gnb",
+      "default": "Enable eNB"
+    },
     "ors_cell": {
       "oneOf": [
         {
@@ -70,13 +74,7 @@
               "type": "object",
               "properties": {
                 "enable_cell": {
-                  "title": "Enable Cell: You must select this parameter to enable the cell",
-                  "type": "string",
-                  "enum": [
-                    "Enable gNB",
-                    "Disable gNB"
-                  ],
-                  "default": "Enable gNB"
+                  "$ref": "#/$defs/enable_cell_gnb"
                 }
               }
             },
@@ -85,9 +83,6 @@
             },
             {
               "$ref": "ors-gnb-cell.json"
-            },
-            {
-              "$ref": "ors-gnb-cell-secondary.json"
             },
             {
               "$ref": "ors-cell-secondary.json"
@@ -107,13 +102,7 @@
               "type": "object",
               "properties": {
                 "enable_cell": {
-                  "title": "Enable Cell: You must select this parameter to enable the cell",
-                  "type": "string",
-                  "enum": [
-                    "Enable eNB",
-                    "Disable eNB"
-                  ],
-                  "default": "Enable eNB"
+                  "$ref": "#/$defs/enable_cell_enb"
                 }
               }
             },
@@ -122,9 +111,6 @@
             },
             {
               "$ref": "ors-enb-cell.json"
-            },
-            {
-              "$ref": "ors-enb-cell-secondary.json"
             },
             {
               "$ref": "ors-cell-secondary.json"
