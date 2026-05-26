@@ -34,10 +34,16 @@
       "default": {}
     },
     "monitor-interface-url": {
-      "$ref": "instance-ors-enb-gnb-input-schema.json#/properties/monitor-interface-url"
+      "title": "Monitor Interface URL",
+      "description": "URL to the monitor app used in monitor setup URL",
+      "type": "string",
+      "default": "https://monitor.app.officejs.com/#page=ojsm_landing"
     },
     "rf-info": {
-      "$ref": "instance-ors-enb-gnb-input-schema.json#/properties/rf-info"
+      "title": "Expert only: RF Info",
+      "description": "Expert only: override RF Info from parameters",
+      "type": "string",
+      "textarea": true
     }
   },
   "$defs": {
