@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "description": "SQLite-backed catalog storage. When enabled and no `mariadb` parameter is set, a dedicated sqlite partition owns the database file and zope partitions connect to it instead of a mariadb server.",
+  "properties": {
+    "enable": {
+      "description": "Enable sqlite as the catalog backend.",
+      "default": false,
+      "type": "boolean"
+    },
+    "db-path": {
+      "description": "Absolute path of the sqlite database file. When omitted, defaults to <sqlite-partition>/srv/sqlite/erp5.db.",
+      "type": "string"
+    }
+  }
+}
