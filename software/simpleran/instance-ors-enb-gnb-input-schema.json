@@ -57,7 +57,7 @@
       "default": "Enable gNB"
     },
     "enable_cell_enb": {
-      "$ref": "#/$defs/enable_cell_gnb",
+      "title": "Enable Cell: You must select this parameter to enable the cell",
       "enum": [
         "Enable eNB",
         "Disable eNB"
@@ -65,7 +65,7 @@
       "default": "Enable eNB"
     },
     "enable_cell_nb": {
-      "$ref": "#/$defs/enable_cell_gnb",
+      "title": "Enable Cell: You must select this parameter to enable the cell",
       "enum": [
         "Enable NB IOT",
         "Disable NB IOT"
@@ -133,8 +133,7 @@
         {
           "title": "NB IOT Cell",
           "required": [
-            "enable_cell",
-            "dl_earfcn"
+            "enable_cell"
           ],
           "allOf": [
             {

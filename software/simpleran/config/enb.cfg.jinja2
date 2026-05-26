@@ -464,6 +464,7 @@
           si_value_tag: 0, /* increment modulo 4 if SIB is modified */
         },
       ],
+      drb_config: "{{ B('%s-drb.cfg' % cell_ref) }}",
       coverage_levels: [
         {
           nprach_detect_threshold: 40, /* in dB */
@@ -550,6 +551,15 @@
   ],
 {%- if do_nb %}
   nb_cell_default: {
+    plmn_list: [
+{%- for plmn in slapparameter_dict.plmn_list %}
+      {
+        plmn: "{{ plmn.plmn }}",
+        reserved: {{ plmn.get('reserved', false) |tojson }},
+        attach_without_pdn: {{ plmn.get('attach_without_pdn', false) |tojson }},
+      },
+{%- endfor %}
+    ],
     operation_mode: "standalone",
     rel13_5: true, /* release 13.5 NPBCH/BCCH scrambling changes */
     si_value_tag: 0,
@@ -581,7 +591,6 @@
       t_PollRetransmit: 6000,
       enb_t_PollRetransmit: 6000,
     },
-    drb_config: "{{ B('%s-drb.cfg' % cell_ref) }}",
   },
 {%- endif %}
 {%- if do_lte %}
