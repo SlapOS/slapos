@@ -57,8 +57,20 @@
       "default": "Enable gNB"
     },
     "enable_cell_enb": {
-      "$ref": "#/$defs/enable_cell_gnb",
+      "title": "Enable Cell: You must select this parameter to enable the cell",
+      "enum": [
+        "Enable eNB",
+        "Disable eNB"
+      ],
       "default": "Enable eNB"
+    },
+    "enable_cell_nb": {
+      "title": "Enable Cell: You must select this parameter to enable the cell",
+      "enum": [
+        "Enable NB IOT",
+        "Disable NB IOT"
+      ],
+      "default": "Enable NB IOT"
     },
     "ors_cell": {
       "oneOf": [
@@ -111,6 +123,34 @@
             },
             {
               "$ref": "ors-enb-cell.json"
+            },
+            {
+              "$ref": "ors-cell-secondary.json"
+            }
+          ],
+          "type": "object"
+        },
+        {
+          "title": "NB IOT Cell",
+          "required": [
+            "enable_cell"
+          ],
+          "allOf": [
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "Cell Type",
+              "type": "object",
+              "properties": {
+                "enable_cell": {
+                  "$ref": "#/$defs/enable_cell_nb"
+                }
+              }
+            },
+            {
+              "$ref": "ors-cell.json"
+            },
+            {
+              "$ref": "ors-nb-cell.json"
             },
             {
               "$ref": "ors-cell-secondary.json"
