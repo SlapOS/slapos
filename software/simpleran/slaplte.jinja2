@@ -59,6 +59,17 @@
         'tdd_ul_dl_config': '[Configuration 2] DSUDDDSUDD (5ms,  6DL/2UL), S-slot=10DL:2GP:2UL, default',
       },
 
+      'cell/nb': {
+        'inactivity_timer': 10000,
+        'ignore_gbr_congestion': False,
+        'cipher_algo_pref': [],
+        'integ_algo_pref': ['EIA2 (128 bit AES)','EIA1 (Snow 3G)'],
+      },
+      'cell/nb/fdd': {
+      },
+      'cell/nb/tdd': {
+      },
+
       'cell/nr': {
         'inactivity_timer': 10000,
         'ignore_gbr_congestion': False,
@@ -319,7 +330,7 @@
 {%-     set n = len(list(icell_dict|dictsort | selectattr('1._.cell_type', '==', cell.cell_type)))  %}
 {%-     do cell.setdefault('root_sequence_index', 1 + 203*(cell.cell_type == 'lte') + n)  %}
 {%-   endif %}
-{%-   if cell.cell_type == 'lte'  %}
+{%-   if cell.cell_type == 'lte' or cell.cell_type == 'nb'  %}
 {%-     do cell.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(cell.dl_earfcn))) %}
 {%-   elif cell.cell_type == 'nr' %}
 {%-     do cell.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(cell.dl_nr_arfcn, cell.nr_band)))  %}
@@ -391,7 +402,7 @@
 {%-     set _ = ishared['_']  %}
 {%-     if 'cell_type' in _  and  _.get('cell_kind') == 'enb_peer'  %}
 {%-       set ipeercell = ishared %}
-{%-       if _.cell_type == 'lte'  %}
+{%-       if _.cell_type == 'lte' or _.cell_type == 'nb'  %}
 {%-         do _.setdefault('ul_earfcn',    J(jdefault_ul_earfcn(_.dl_earfcn))) %}
 {%-         do _.setdefault('lte_band',    xearfcn_module.band(_.dl_earfcn)[0]["band"]) %}
 {%-       elif _.cell_type == 'nr' %}
