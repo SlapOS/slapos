@@ -1,0 +1,66 @@
+{%- set B = xbuildout.encode -%}
+// DRB configuration for NB IOT cell {{ B(cell_ref) }} @ {{ B(ru_ref) }}.
+[
+  {
+    qci: 9,
+    pdcp_config: {
+      discardTimer: 0,
+      headerCompression: null,
+    },
+    rlc_config: {
+      ul_am: {
+        t_PollRetransmit: 6000,
+        maxRetxThreshold: 32,
+      },
+      dl_am: {
+        enableStatusReportSN_Gap: false,
+        //t_Reordering: 60,
+      },
+      enb_dl_am: {
+        t_PollRetransmit: 6000,
+        maxRetxThreshold: 32,
+      },
+      enb_ul_am: {
+        //t_Reordering: 60,
+      },
+    },
+    logical_channel_config: {
+      priority: 13,
+      logical_channel_sr_prohibit: true,
+    },
+    "5qi_qos": {
+      priority_level: 90
+    },
+    use_periodic_ul_grant: false,
+  },
+  {
+    qci: 10,
+    pdcp_config: {
+      discardTimer: 0,
+      headerCompression: null,
+    },
+    rlc_config: {
+      ul_am: {
+        t_PollRetransmit: 6000,
+        maxRetxThreshold: 32,
+      },
+      dl_am: {
+        enableStatusReportSN_Gap: false,
+      },
+      enb_dl_am: {
+        t_PollRetransmit: 6000,
+        maxRetxThreshold: 32,
+      },
+      enb_ul_am: {
+      },
+    },
+    logical_channel_config: {
+      priority: 13,
+      logical_channel_sr_prohibit: true,
+    },
+    "5qi_qos": {
+      priority_level: 90
+    },
+    use_periodic_ul_grant: false,
+  }
+]
