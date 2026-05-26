@@ -18,6 +18,14 @@
       "response": "instance-slave-output-schema.json",
       "shared": true,
       "index": 1
+    },
+    "default-ors": {
+      "title": "Default for ORS",
+      "description": "Default configuration with additional parameters specific to Open Radio Station use-case",
+      "software-type": "default-ors",
+      "request": "instance-default-ors-input-schema.json",
+      "response": "instance-default-output-schema.json",
+      "index": 2
     }
   }
 }

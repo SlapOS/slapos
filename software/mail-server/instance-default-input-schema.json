@@ -1,8 +1,10 @@
 {
-  "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
-  "properties": {
+  "$defs": {
+    "default-base": {
+      "type": "object",
+      "properties": {
     "mail-domains": {
       "title": "Mail Domains",
       "description": "List of domains that this mail server will host mail for",
@@ -135,35 +137,17 @@
       "type": "integer",
       "minimum": 1,
       "default": 1024
-    },
-    "request-dns": {
-      "title": "Request Local DNS",
-      "description": "Local DNS request configuration (specific to Open Radio Station use-case)",
-      "type": "object",
-      "properties": {
-        "enable": {
-          "title": "Enable",
-          "description": "Request local DNS to a core network running on the same node",
-          "type": "boolean",
-          "default": false
-        },
-        "sr-url": {
-          "title": "SR URL",
-          "description": "The software URL to use for requesting DNS entries",
-          "type": "string",
-          "default": "automated_local_dns"
-        },
-        "sr-type": {
-          "title": "SR Type",
-          "description": "The software type to use for requesting DNS entries",
-          "type": "string",
-          "default": "core-network"
-        }
+    }
       },
-      "default": {}
+      "required": [
+        "mail-domains"
+      ]
     }
   },
-  "required": [
-    "mail-domains"
-  ]
+  "allOf": [
+    {
+      "$ref": "#/$defs/default-base"
+    }
+  ],
+  "unevaluatedProperties": false
 }
