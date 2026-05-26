@@ -41,6 +41,19 @@
     }
   },
   "$defs": {
+    "enable_cell_gnb": {
+      "title": "Enable Cell: You must select this parameter to enable the cell",
+      "type": "string",
+      "enum": [
+        "Enable gNB",
+        "Disable gNB"
+      ],
+      "default": "Enable gNB"
+    },
+    "enable_cell_enb": {
+      "$ref": "#/$defs/enable_cell_gnb",
+      "default": "Enable eNB"
+    },
     "ors_cell": {
       "oneOf": [
         {
@@ -55,13 +68,7 @@
               "type": "object",
               "properties": {
                 "enable_cell": {
-                  "title": "Enable Cell: You must select this parameter to enable the cell",
-                  "type": "string",
-                  "enum": [
-                    "Enable gNB",
-                    "Disable gNB"
-                  ],
-                  "default": "Enable gNB"
+                  "$ref": "#/$defs/enable_cell_gnb"
                 }
               }
             },
@@ -89,13 +96,7 @@
               "type": "object",
               "properties": {
                 "enable_cell": {
-                  "title": "Enable Cell: You must select this parameter to enable the cell",
-                  "type": "string",
-                  "enum": [
-                    "Enable eNB",
-                    "Disable eNB"
-                  ],
-                  "default": "Enable eNB"
+                  "$ref": "#/$defs/enable_cell_enb"
                 }
               }
             },
