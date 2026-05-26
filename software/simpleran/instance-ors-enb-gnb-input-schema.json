@@ -133,7 +133,8 @@
         {
           "title": "NB IOT Cell",
           "required": [
-            "enable_cell"
+            "enable_cell",
+            "dl_earfcn"
           ],
           "allOf": [
             {
