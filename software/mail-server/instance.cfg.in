@@ -26,9 +26,6 @@ context =
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.jsonschema
 jsonschema = ${software.cfg.json:target}
-depends =
-  ${instance-default-input-schema.json:target}
-  ${instance-slave-input-schema.json:target}
 set-default = all
 validate-parameters = all
 computer = $${slap-connection:computer-id}
@@ -40,3 +37,4 @@ cert = $${slap-connection:cert-file}
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-template-default:output
+default-ors = $${:default}
