@@ -1,0 +1,114 @@
+[buildout]
+extends =
+  {{ template_monitor }}
+parts =
+  directory
+  publish-connection-parameter
+  service-postgresql
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[slap-configuration]
+# apache-frontend reads from from a part named [slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+service = ${:etc}/service
+promise = ${:etc}/promise
+mattermost-dir = ${:srv}/mattermost
+mattermost-import-dir = ${:mattermost-dir}/import
+mattermost-export-dir = ${:mattermost-dir}/export
+mattermost-plugins-dir = ${:mattermost-dir}/plugins
+mattermost-client-plugins-dir = ${:mattermost-dir}/client-plugins
+mattermost-data-dir = ${:mattermost-dir}/data
+mattermost-logs-dir = ${:var}/log
+
+[mattermost]
+ipv6 = ${instance-parameter:ipv6-random}
+port = 8065
+url = http://[${:ipv6}]:${:port}
+
+import-dir = ${directory:mattermost-import-dir}
+export-dir = ${directory:mattermost-export-dir}
+plugins-dir = ${directory:mattermost-plugins-dir}
+client-plugins-dir = ${directory:mattermost-client-plugins-dir}
+data-dir = ${directory:mattermost-data-dir}
+logs-dir = ${directory:mattermost-logs-dir}
+
+recipe = slapos.cookbook:wrapper
+command-line =
+  bash -c "ulimit -n 49152; cd {{ mattermost_homepath }}/server; exec {{ mattermost_bin }} -c ${mattermost-config-file:output} server"
+wrapper-path = ${directory:service}/mattermost
+
+[config-file]
+recipe = slapos.recipe.template:jinja2
+url = {{ buildout['parts-directory'] }}/${:_buildout_section_name_}/${:_buildout_section_name_}.json.in
+output = ${directory:etc}/${:_buildout_section_name_}.json
+extensions = jinja2.ext.do
+
+[check-port-listening-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+
+[mattermost-config-file]
+<= config-file
+#output = ${directory:etc}/mattermost.json
+context =
+  section mattermost mattermost
+  section pgsql service-postgresql
+
+[service-postgresql]
+recipe  = slapos.cookbook:postgres
+bin     = {{ postgresql_location }}/bin
+services= ${directory:service}
+
+dbname  = mattermost_production
+superuser = mattermost-psql
+# no password - pgsql will listen only on unix sockets (see below) thus access
+# is protected with filesystem-level permissions.
+password=
+
+pgdata-directory = ${directory:srv}/postgresql
+
+# empty addresses - listen only on unix socket
+ipv4    =
+ipv6    =
+port    =
+
+depend  =
+    ${promise-postgresql:recipe}
+
+[promise-postgresql]
+<= monitor-promise-base
+promise = check_command_execute
+name = promise-postgresql.py
+config-command =
+    {{ postgresql_location }}/bin/psql \
+        -h ${service-postgresql:pgdata-directory} \
+        -U ${service-postgresql:superuser} \
+        -d ${service-postgresql:dbname} \
+        -c '\q'
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+mattermost-url = ${mattermost:url}
