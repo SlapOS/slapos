@@ -458,11 +458,7 @@
       ],
       sib_sched_list: [
         { 
-{%-   if cell.all_ce_level %}
-          filename: "sib2_nb_ce.asn",
-{%- else %}
-          filename: "sib2_nb.asn",
-{%- endif %}
+          filename: "{{ B('%s-sib2_nb.asn' % cell_ref) }}",
           si_periodicity: 128,
           si_repetition_pattern: 2,
           si_value_tag: 0, /* increment modulo 4 if SIB is modified */
@@ -585,7 +581,7 @@
       t_PollRetransmit: 6000,
       enb_t_PollRetransmit: 6000,
     },
-    drb_config: "drb_nb.cfg",
+    drb_config: "{{ B('%s-drb.cfg' % cell_ref) }}",
   },
 {%- endif %}
 {%- if do_lte %}
