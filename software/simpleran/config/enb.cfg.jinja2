@@ -26,7 +26,9 @@
     icell_dict_lte/icell_dict_nr keep LTE/NR parts of icell_dict registry #}
 {%- set icell_dict_lte = dict(icell_dict|dictsort | selectattr('1._.cell_type', '==', 'lte')) %}
 {%- set icell_dict_nr  = dict(icell_dict|dictsort | selectattr('1._.cell_type', '==', 'nr' )) %}
-{%- set do_lte = len(icell_dict_lte) > 0 %}
+{%- set icell_dict_nb  = dict(icell_dict|dictsort | selectattr('1._.cell_type', '==', 'nb' )) %}
+{%- set do_lte = len(icell_dict_lte)  > 0 %}
+{%- set do_nb  = len(icell_dict_nb)  > 0 %}
 {%- set do_nr  = len(icell_dict_nr)  > 0 %}
 {#- 
 
@@ -190,7 +192,7 @@
 {%- if slapparameter_dict.get('mbmsgw_addr', '') %}
   mbmsgw_addr: "{{ slapparameter_dict.mbmsgw_addr }}",
 {%- endif %}
-{%-  if do_lte %}
+{%-  if do_lte or do_nb %}
   // LTE core network
   mme_list: [
 {%-   for mme in slapparameter_dict.mme_list %}
@@ -244,7 +246,7 @@
 {#- 
 
 #}
-{%- if do_lte %}
+{%- if do_lte or do_nb %}
   enb_id: {{ slapparameter_dict.enb_id }},
 {%- endif %}
 {%- if do_nr %}
@@ -425,6 +427,167 @@
     {%- endfor %}
 {%- endif %}
   ],
+  // NB cells
+  nb_cell_list: [
+{%- if do_nb %}
+{%- for cell_ref, icell in icell_dict_nb|dictsort %}
+{%-   set cell = icell['_'] %}
+{%-   set ru_ref = J(jcell_ru_ref(icell, icell_dict)) %}
+{%-   set iru = iru_dict[ru_ref]  %}
+{%-   set ru = iru['_'] %}
+    // {{ B(cell_ref) }}  ({{ B(ru_ref) }})
+    {
+      rf_port:      {{ ru._rf_port }},
+      n_antenna_dl: {{ ru.n_antenna_dl }},
+      n_antenna_ul: {{ ru.n_antenna_ul }},
+      cell_id:    {{ cell.cell_id }},
+      tac:        {{ cell.tac }},
+      n_id_ncell:  {{ cell.pci }},
+      dl_earfcn:  {{ cell.dl_earfcn }},
+      ul_earfcn:  {{ cell.ul_earfcn }},
+      inactivity_timer: {{ cell.inactivity_timer }},
+      cipher_algo_pref: [
+{%-   for algo in cell.get('cipher_algo_pref', []) -%}
+    {{ {'EEA1 (Snow 3G)': 1, 'EEA2 (128 bit AES)': 2, 'EEA3 (ZUC)': 3}[algo] }}, 
+{%-   endfor -%}
+      ],
+      integ_algo_pref: [
+{%-   for algo in cell.get('integ_algo_pref', []) -%}
+    {{ {'EIA1 (Snow 3G)': 1, 'EIA2 (128 bit AES)': 2, 'EIA3 (ZUC)': 3}[algo] }}, 
+{%-   endfor -%}
+      ],
+      sib_sched_list: [
+        { 
+{%-   if cell.all_ce_level %}
+          filename: "sib2_nb_ce.asn",
+{%- else %}
+          filename: "sib2_nb.asn",
+{%- endif %}
+          si_periodicity: 128,
+          si_repetition_pattern: 2,
+          si_value_tag: 0, /* increment modulo 4 if SIB is modified */
+        },
+      ],
+      coverage_levels: [
+        {
+          nprach_detect_threshold: 40, /* in dB */
+          npdcch_ra_n_rep: 1,
+          npdsch_ra_n_rep: 1,
+          npdsch_ra_i_tbs: 3,
+          ul_sc_spacing: 1,
+          msg3_n_sc: 1,
+          msg3_single_tone_mcs: 2,
+          msg3_n_rep: 1,
+          npdcch_paging_n_rep: 1,
+          npdsch_paging_i_tbs: 4,
+          npdsch_paging_n_rep: 1,
+          npdcch_uss_n_rep_max: 8,
+          npdcch_uss_n_rep: 1,
+          npdcch_uss_start_sf: 4,
+          npdcch_uss_offset: 0,
+          npdsch_i_tbs: 5,
+          npdsch_n_rep: 1,
+          npusch_n_sc: 12,
+          npusch_single_tone_i_tbs: 4,
+          npusch_multi_tone_i_tbs: 4,
+          npusch_n_rep: 1,
+        },
+{%-   if cell.all_ce_level %}
+        {
+          npdcch_ra_n_rep: 4,
+          npdsch_ra_n_rep: 4,
+          npdsch_ra_i_tbs: 3,
+
+          ul_sc_spacing: 1,
+          msg3_n_sc: 1,
+          msg3_single_tone_mcs: 1,
+          msg3_n_rep: 4,
+
+          npdcch_paging_n_rep: 4,
+          npdsch_paging_i_tbs: 3,
+          npdsch_paging_n_rep: 4,
+
+          npdcch_uss_n_rep_max: 16,
+          npdcch_uss_n_rep: 4,
+          npdcch_uss_start_sf: 2,
+          npdcch_uss_offset: 0,
+          npdsch_i_tbs: 4,
+          npdsch_n_rep: 4,
+          npusch_n_sc: 3,
+          npusch_single_tone_i_tbs: 4,
+          npusch_multi_tone_i_tbs: 4,
+          npusch_n_rep: 4,
+          npusch_an_n_rep : 4,
+          inactivity_timer: 20000,
+        },
+        {
+          npdcch_ra_n_rep: 16,
+          npdsch_ra_n_rep: 8,
+          npdsch_ra_i_tbs: 1,
+
+          ul_sc_spacing: 1,
+          msg3_n_sc: 1,
+          msg3_single_tone_mcs: 0,
+          msg3_n_rep: 8,
+
+          npdcch_paging_n_rep: 8,
+          npdsch_paging_i_tbs: 1,
+          npdsch_paging_n_rep: 8,
+
+          npdcch_uss_n_rep_max: 32,
+          npdcch_uss_n_rep: 16,
+          npdcch_uss_start_sf: 1.5,
+          npdcch_uss_offset: 0,
+          npdsch_i_tbs: 1,
+          npdsch_n_rep: 8,
+          npusch_n_sc: 1,
+          npusch_single_tone_i_tbs: 1,
+          npusch_n_rep: 16,
+          npusch_an_n_rep: 8,
+          inactivity_timer: 50000,
+        },
+{%-   endif %}
+      ],
+    },
+    {%- endfor %}
+{%- endif %}
+  ],
+{%- if do_nb %}
+  nb_cell_default: {
+    operation_mode: "standalone",
+    rel13_5: true, /* release 13.5 NPBCH/BCCH scrambling changes */
+    si_value_tag: 0,
+    r_sib1: 4,
+    cell_barred: false,
+    intra_freq_reselection: true,
+    q_rx_lev_min: -70,
+    q_qual_min: -34,
+    p_max: 10,
+    
+    si_window_length: 160,
+    si_radio_frame_offset: 0,
+    si_value_tag_list_enable: true,
+    mac_config: {
+      msg3_max_harq_tx: 5,
+      ul_max_harq_tx: 5,
+      dl_max_harq_tx: 5,
+      ul_max_consecutive_retx: 30,
+      dl_max_consecutive_retx: 30,
+      time_alignment_timer_dedicated: 0,
+      periodic_bsr_timer: 16,
+      retx_bsr_timer: 64,
+      logical_channel_sr_prohibit_timer: 0,
+    },
+    npusch_max_its: 10,
+    srb_config: {
+      maxRetxThreshold: 32,
+      enb_maxRetxThreshold: 32,
+      t_PollRetransmit: 6000,
+      enb_t_PollRetransmit: 6000,
+    },
+    drb_config: "drb_nb.cfg",
+  },
+{%- endif %}
 {%- if do_lte %}
   cell_default: {
     plmn_list: [
