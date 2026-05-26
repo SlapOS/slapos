@@ -22,6 +22,8 @@
     "all_ce_level": {
       "$ref": "cell/lte/input-schema.json#/properties/ul_earfcn",
       "title": "All CE Levels",
+      "type": "boolean",
+      "default": false,
       "description": "Enable this to test several CE (Coverage Enhancement) levels"
     },
     "cipher_algo_pref": {
