@@ -261,10 +261,10 @@ txrx_active = {{ dumps(ru.txrx_active) }}
 {%-     set ru     = iru['_'] %}
 
 {%-     if icell_kind == 'enb'  %}
-{#-       generate CELL-drb.cfg and CELL-sib23.asn  #}
+{#-       generate CELL-drb.cfg, CELL-sib23.asn and CELL-sib2_nb.asn  #}
 {{ part('drb-config-%s' % cell_ref) }}
 <= config-base
-url = {{ {'lte': drb_lte_template, 'nr': drb_nr_template} [cell.cell_type] }}
+url = {{ {'lte': drb_lte_template, 'nr': drb_nr_template, 'nb': drb_nb_template} [cell.cell_type] }}
 output = ${directory:etc}/{{B('%s-drb.cfg' % cell_ref)}}
 extra-context =
     key cell_ref :cell_ref
@@ -305,6 +305,27 @@ ru       = {{ dumps(ru      ) }}
 link-binary = ${
 {#- -#}
 {{B('sib23-config-%s' % cell_ref)}}:output}
+{%-     endif %}
+
+{{ part('sib2_nb-config-%s' % cell_ref) }}
+<= config-base
+url = {{ sib2_nb_template }}
+output = ${directory:etc}/{{B('%s-sib2_nb.asn' % cell_ref)}}
+extra-context =
+    key cell_ref :cell_ref
+    key cell     :cell
+    key ru_ref   :ru_ref
+    key ru       :ru
+cell_ref = {{ dumps(cell_ref) }}
+cell     = {{ dumps(cell    ) }}
+ru_ref   = {{ dumps(ru_ref  ) }}
+ru       = {{ dumps(ru      ) }}
+
+{{ part('publish-sib2_nb-config-%s' % cell_ref) }}
+<= publish-config-base
+link-binary = ${
+{#- -#}
+{{B('sib2_nb-config-%s' % cell_ref)}}:output}
 {%-     endif %}
 
 {#-     publish information about the cell (skipping synthetic) #}
