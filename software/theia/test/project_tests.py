@@ -479,7 +479,7 @@ class TestTheiaResiliencePeertube(TestTheiaResilienceWithShortPaths):
 
 class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
   test_instance_max_retries = 50  # puma takes time to be ready
-  backup_max_tries = 480
+  backup_max_tries = 540
   backup_wait_interval = 60
   _connection_parameters_regex = re.compile(r"{.*}", re.DOTALL)
   _test_software_url = gitlab_software_release_url
