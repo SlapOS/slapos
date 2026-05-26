@@ -94,6 +94,60 @@
             }
           },
           "default": {}
+        },
+        "fluentbit": {
+          "title": "Fluent Bit",
+          "description": "Relay log forwarding to a remote Fluentd/oMailGw service.",
+          "type": "object",
+          "properties": {
+            "enable": {
+              "title": "Enable Fluent Bit",
+              "description": "Enable relay-side Fluent Bit clients that ship postfix logs to the remote Fluentd server.",
+              "type": "boolean",
+              "default": false
+            },
+            "host": {
+              "title": "Fluentd Address",
+              "description": "IPv4/IPv6 address or hostname of the remote Fluentd server.",
+              "type": "string",
+              "pattern": "^.+$"
+            },
+            "port": {
+              "title": "Fluentd Port",
+              "description": "TCP port of the remote Fluentd server.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "shared-key": {
+              "title": "Shared Key",
+              "description": "Shared secret used by relay-side Fluent Bit clients to authenticate with Fluentd.",
+              "type": "string",
+              "pattern": "^.+$"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "enable": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "host",
+                  "port",
+                  "shared-key"
+                ]
+              }
+            }
+          ],
+          "additionalProperties": false,
+          "default": {
+            "enable": false
+          }
         }
       }
     }
