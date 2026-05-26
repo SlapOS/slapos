@@ -1,7 +1,9 @@
+{% set fluentbit = slapparameter_dict['fluentbit'] %}
+{% set fluentbit_enable = fluentbit['enable'] %}
+
 [buildout]
 extends =
   ${monitor2-template:output}
-  ${template-logrotate-base:output}
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
@@ -11,6 +13,9 @@ parts =
   publish-connection-information
   inbound-postfix
   outbound-postfix
+{% if fluentbit_enable %}
+  relay-fluentbit
+{% endif %}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
@@ -140,19 +145,23 @@ context =
   raw ipv4 {{ ipv4 }}
   raw ipv6 {{ ipv6 }}
 
+{% set relay_fqdn = slapparameter_dict.get('fqdn', instance_title) %}
+
+[relay-info]
+fqdn = {{ dumps(relay_fqdn) }}
+
 [macro.postfix-main.cf]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
 log-file = $${missing_option_log-file:error}
 postfix-directory = $${missing_option_postfix-directory:error}
-fqdn = {{ dumps(slapparameter_dict.get('fqdn', instance_title)) }}
 context =
   section directory directory
   section postfix_directory $${:postfix-directory}
   key content :content
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
-  key server_fqdn :fqdn
+  key server_fqdn relay-info:fqdn
   raw xz_utils_location ${xz-utils:location}
   raw postfix_location ${postfix:location}
   raw postfix_log_path $${:log-file}
@@ -830,4 +839,66 @@ depends =
 {%- for postfix_wrapper in postfix_wrappers %}
   {{ "$${" + postfix_wrapper + ":recipe}" }}
 {%- endfor %}
+
+{% if fluentbit_enable %}
+[relay-fluentbit-directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${directory:var-lib}/fluentbit
+
+[relay-fluentbit-config]
+recipe = slapos.recipe.template
+output = $${directory:etc}/relay-fluentbit.conf
+tag = {{ relay_fqdn }}
+logfile-list = $${outbound-postfix-main.cf:log-file},$${inbound-postfix-main.cf:log-file}
+state-db = $${relay-fluentbit-directory:home}/tail-state
+forward-host = {{ fluentbit['host'] }}
+forward-port = {{ fluentbit['port'] }}
+forward-shared-key = {{ fluentbit['shared-key'] }}
+forward-self-hostname = {{ relay_fqdn }}
+monitoring-host = {{ ipv6 }}
+monitoring-port = 2021
+inline =
+  [SERVICE]
+      flush           5
+      HTTP_Server     On
+      HTTP_Listen     $${:monitoring-host}
+      HTTP_PORT       $${:monitoring-port}
+      Health_Check    On
+      HC_Errors_Count 0
+      HC_Retry_Failure_Count 0
+      HC_Period       60
+  [INPUT]
+      name            tail
+      path            $${:logfile-list}
+      tag             $${:tag}
+      Read_from_Head  True
+      db              $${:state-db}
+      Buffer_Max_Size 1M
+      Skip_Long_Lines On
+  [OUTPUT]
+      name            forward
+      match           *
+      Host            $${:forward-host}
+      Port            $${:forward-port}
+      Shared_Key      $${:forward-shared-key}
+      Self_Hostname   $${:forward-self-hostname}
+      Retry_Limit     50
+      tls             on
+      tls.verify      off
+
+[relay-fluentbit-service]
+recipe = slapos.cookbook:wrapper
+fluentbit = ${fluent-bit:location}/bin/fluent-bit
+command-line = $${:fluentbit} -c $${relay-fluentbit-config:output}
+wrapper-path = $${directory:service}/relay-fluentbit
+hash-files =
+  $${relay-fluentbit-config:output}
+
+[relay-fluentbit]
+recipe = slapos.recipe.build
+init =
+  ""
+depends =
+  $${relay-fluentbit-service:recipe}
+{% endif %}
 
