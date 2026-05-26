@@ -57,11 +57,17 @@
       "default": "Enable gNB"
     },
     "enable_cell_enb": {
-      "$ref": "#/$defs/enable_cell_gnb",
+      "enum": [
+        "Enable eNB",
+        "Disable eNB"
+      ],
       "default": "Enable eNB"
     },
     "enable_cell_nb": {
-      "$ref": "#/$defs/enable_cell_gnb",
+      "enum": [
+        "Enable NB IOT",
+        "Disable NB IOT"
+      ],
       "default": "Enable NB IOT"
     },
     "ors_cell": {
