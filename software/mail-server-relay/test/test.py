@@ -28,7 +28,6 @@
 import os
 import json
 import smtplib
-
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
