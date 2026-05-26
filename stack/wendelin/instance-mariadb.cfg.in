@@ -384,7 +384,7 @@ depends = ${binary-wrap-mariadb-backup:command}
 
 {% if physical_backup['enable'] -%}
 [{{ section('cron-entry-mariabackup') }}]
-recipe = slapos.cookbook:cron.d
+<= macro.cron-with-promise
 cron-entries = ${cron:cron-entries}
 name = mariabackup
 time = {{ dumps(physical_backup['periodicity']) }}
