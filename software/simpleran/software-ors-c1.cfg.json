@@ -7,7 +7,7 @@
       "title": "gNB",
       "software-type": "gnb",
       "description": "gNodeB Configuration",
-      "request": "instance-ors-gnb-c1-input-schema.json",
+      "request": "instance-ors-enb-gnb-c1-input-schema.json",
       "response": "instance-ors-gnb-schema.json",
       "index": 1
     },
