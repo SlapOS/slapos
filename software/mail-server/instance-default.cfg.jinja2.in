@@ -739,6 +739,19 @@ inline =
       }
   }
 
+[snappymail-deltachat-qr-conf]
+recipe = slapos.recipe.template
+output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-deltachat-qr.json
+mode = 600
+once = $${:output}
+inline =
+  {
+    "plugin": {
+      "imap_security": "starttls",
+      "smtp_security": "starttls"
+    }
+  }
+
 [snappymail-mailbox-conf]
 recipe = slapos.recipe.template
 output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-mailbox-detect.json
@@ -769,6 +782,7 @@ depends =
   $${snappymail-domain:recipe}
   $${snappymail-pw-conf:recipe}
   $${snappymail-import-dovecot-conf:recipe}
+  $${snappymail-deltachat-qr-conf:recipe}
   $${snappymail-mailbox-conf:recipe}
 
 
