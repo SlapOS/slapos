@@ -186,6 +186,34 @@ server {
     proxy_pass http://gitlab-workhorse;
   }
 
+  location ~* "^{{ cfg('nginx_cacheable_gitlab_path')}}" {
+
+    add_header Access-Control-Allow-Origin "*" always;
+    add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
+    add_header Access-Control-Allow-Headers "Origin, X-Requested-With, Authorization, Content-Type, Accept" always;
+
+    if ($request_method = OPTIONS) {
+        add_header Content-Length 0;
+        add_header Content-Type text/plain;
+        return 204;
+    }
+    proxy_ignore_headers Cache-Control;
+    proxy_hide_header Cache-Control;
+    proxy_hide_header Set-Cookie;
+
+    add_header Cache-Control "max-age=31536000, public, immutable, s-maxage=31536000" always;
+
+    proxy_set_header    Host                $http_host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    {% if cfg_https %}
+    proxy_set_header    X-Forwarded-Ssl     on;
+    {% endif %}
+    proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
+    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
+
+    proxy_pass http://gitlab-workhorse;
+  }
+
   location {{ path }} {
     # NOTE(slapos) proxy headers are defined upstream in omnibus-gitlab in:
     #   - files/gitlab-config-template/gitlab.rb.template       nginx['proxy_set_headers']
