@@ -204,19 +204,32 @@ class TestHandler(BaseHTTPRequestHandler):
 
 
 def server_https_weak_method(ip, port):
-  server_https_weak = ThreadedHTTPServer(
-    (ip, port),
-    TestHandler)
-  context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-  context.minimum_version = ssl.TLSVersion.TLSv1
-  context.maximum_version = ssl.TLSVersion.TLSv1
-  context.load_cert_chain(
-    os.path.join(
-      os.path.dirname(
-        os.path.realpath(__file__)), 'test_data', 'sha1-2048.pem'))
-  server_https_weak.socket = context.wrap_socket(
-    server_https_weak.socket, server_side=True)
-  server_https_weak.serve_forever()
+  try:
+    server_https_weak = ThreadedHTTPServer(
+      (ip, port),
+      TestHandler)
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.minimum_version = ssl.TLSVersion.TLSv1
+    context.maximum_version = ssl.TLSVersion.TLSv1
+    context.load_cert_chain(
+      os.path.join(
+        os.path.dirname(
+          os.path.realpath(__file__)), 'test_data', 'sha1-2048.pem'))
+    server_https_weak.socket = context.wrap_socket(
+      server_https_weak.socket, server_side=True)
+    if not isinstance(server_https_weak.socket, ssl.SSLSocket):
+      raise RuntimeError(
+        'server_https_weak: wrap_socket did not return an SSLSocket on '
+        '%s:%s; refusing to serve plain HTTP on a weak-SSL port' % (ip, port))
+    sys.stderr.write(
+      'server_https_weak READY tls=on ip=%s port=%s\n' % (ip, port))
+    sys.stderr.flush()
+    server_https_weak.serve_forever()
+  except BaseException as e:
+    sys.stderr.write(
+      'server_https_weak FAILED ip=%s port=%s: %r\n' % (ip, port, e))
+    sys.stderr.flush()
+    raise
 
 
 if __name__ == '__main__':
