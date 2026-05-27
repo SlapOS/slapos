@@ -269,8 +269,12 @@ content =
 
   smtpd_recipient_restrictions =
     permit_mynetworks
+    # Reject synchronously when the backend will reject
+    reject_unverified_recipient
+    # Reject invalid SPF, permit valid SPF
     check_policy_service unix:private/policyd-spf
 {% if greylisting_enable %}
+    # Greylist missing SPF
     check_policy_service inet:127.0.0.1:$${postgrey-service:port}
 {% endif %}
 
