@@ -7,7 +7,8 @@
   ],
   "properties": {
     "bandwidth": {
-      "$ref": "cell/common.json#/$defs/bandwidth",
+      "title": "Bandwidth",
+      "description": "Downlink Bandwidth (in MHz)",
       "enum": [
         "1.4 MHz",
         "3 MHz",
