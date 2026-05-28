@@ -37,12 +37,25 @@ context =
   section slap_connection slap-connection
   section slap_configuration slap-configuration
 
+[dynamic-template-omailgw]
+recipe = slapos.recipe.template:jinja2
+output = $${buildout:directory}/$${:filename}
+extensions = jinja2.ext.do
+url = ${template-omailgw:output}
+filename = instance-omailgw.cfg
+context =
+  import json_module json
+  key bin_directory buildout:bin-directory
+  key ipv6 slap-configuration:ipv6-random
+  key slapparameter_dict slap-configuration:configuration
+
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.jsonschema
 jsonschema = ${software.cfg.json:target}
 depends = 
   ${instance-relay-input-schema.json:target}
   ${instance-cluster-input-schema.json:target}
+  ${instance-omailgw-input-schema.json:target}
   ${instance-shared-input-schema.json:target}
 set-default = all
 validate-parameters = all
@@ -56,3 +69,4 @@ cert = $${slap-connection:cert-file}
 recipe = slapos.cookbook:switch-softwaretype
 relay = dynamic-template-relay:output
 cluster = dynamic-template-cluster:output
+omailgw = dynamic-template-omailgw:output
