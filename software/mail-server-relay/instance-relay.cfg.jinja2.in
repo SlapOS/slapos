@@ -250,18 +250,27 @@ content =
 
   mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8
 
+  # Custom restriction classes
   smtpd_restriction_classes =
     spf_passed
 
-  smtpd_recipient_restrictions =
-    permit_mynetworks
-    check_policy_service unix:private/policyd-spf
-{% if greylisting_enable %}
-    check_policy_service inet:127.0.0.1:$${postgrey-service:port}
-{% endif %}
-
   spf_passed =
     permit
+
+  smtpd_sender_restrictions =
+    # Internal domains are only allowed to originate via the submission relay.
+    check_sender_access texthash:$${inbound-postfix-internal-sender-access:output}
+
+  smtpd_recipient_restrictions =
+    permit_mynetworks
+    # Reject synchronously when the backend will reject
+    reject_unverified_recipient
+    # Reject invalid SPF, permit valid SPF
+    check_policy_service unix:private/policyd-spf
+{% if greylisting_enable %}
+    # Greylist missing SPF
+    check_policy_service inet:127.0.0.1:$${postgrey-service:port}
+{% endif %}
 
   policyd-spf_time_limit = 3600
 
@@ -283,6 +292,15 @@ content =
   # Limits
   # Cap inbound message size at 100MiB (100 * 1024 * 1024)
   message_size_limit = 104857600
+
+[inbound-postfix-internal-sender-access]
+recipe = slapos.recipe.template
+output = $${inbound-postfix-directory:etc}/internal_sender_access
+inline =
+  {% raw %}{#- NOTHING -#}{% endraw -%}
+  {%- for domain in mail_domains %}
+  {{ domain['name'] }} REJECT Inbound relay refuses internal sender domains
+  {%- endfor %}
 
 [inbound-postfix-wrapper]
 <= macro.postfix-wrapper
@@ -347,6 +365,7 @@ environment =
 hash-files =
   $${inbound-postfix-main.cf:output}
   $${inbound-postfix-master.cf:output}
+  $${inbound-postfix-internal-sender-access:output}
   $${inbound-postfix-wrapper:output}
   $${policyd-spf-conf:output}
 depends =
