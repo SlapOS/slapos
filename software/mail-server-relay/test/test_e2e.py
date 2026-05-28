@@ -717,6 +717,17 @@ class Relay(E2ETestCase):
         )
     self.check_not_in_inbox(mail1, msg_body, wait_time=5)
 
+  def test_inbound_internal_sender_domain_rejected(self):
+    mail1 = self.mail_servers[0]
+    msg_body = "This inbound email should be rejected for spoofing an internal sender."
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(**self.relay_inbound) as smtp:
+        smtp.sendmail(
+          from_addr=mail1.testmail,
+          to_addrs=[mail1.testmail],
+          msg=f"Subject: Inbound Internal Sender Spoof\n\n{msg_body}",
+        )
+
   def test_spf_pass(self):
     mail1 = self.mail_servers[0]
     msg_body = "This inbound email should bypass greylisting on first delivery."
