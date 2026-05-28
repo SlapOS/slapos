@@ -28,6 +28,9 @@
 import os
 import json
 import smtplib
+import ssl
+import urllib.parse
+import urllib.request
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -210,4 +213,71 @@ class ProxyMapDuplicateDomainTestCase(SlapOSInstanceTestCase):
                   "Error should mention the duplicate domain")
     self.assertIn("appears in multiple proxies", error_text.lower(),
                   "Error should indicate domain appears in multiple proxies")
+
+
+class OMailGwPublishTestCase(SlapOSInstanceTestCase):
+  __partition_reference__ = 'O'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'cluster'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "_": json.dumps(
+        {
+          "omailgw": {
+            "enable": True,
+            "relay-poll-interval": 300,
+          },
+          "relay-domain": "relay.omailgw.test",
+          "topology": {
+            "relay-omailgw": {
+              "state": "started"
+            }
+          }
+        }
+      )
+    }
+
+  def test_omailgw_connection_info_is_published(self):
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    self.assertEqual(parameter_dict["omailgw-root-user"], "root@omailgw.local")
+    self.assertTrue(parameter_dict["omailgw-root-password"])
+    self.assertTrue(parameter_dict["omailgw-api-url"].endswith('/api'))
+    self.assertTrue(parameter_dict["omailgw-ui-url"].endswith('/ui/'))
+
+  def test_omailgw_api_login_and_user_me(self):
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    api_url = parameter_dict["omailgw-api-url"]
+    root_user = parameter_dict["omailgw-root-user"]
+    root_password = parameter_dict["omailgw-root-password"]
+
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
+    login_url = '%s/user/login?%s' % (
+      api_url,
+      urllib.parse.urlencode({
+        'email': root_user,
+        'password': root_password,
+      }),
+    )
+    login_request = urllib.request.Request(login_url, method='POST')
+    with urllib.request.urlopen(login_request, context=ssl_context) as response:
+      login_payload = json.load(response)
+
+    token = login_payload.get('token')
+    self.assertTrue(token, 'oMailGw login should return a token')
+
+    user_me_request = urllib.request.Request(
+      '%s/user/me' % api_url,
+      headers={'Authorization': 'Bearer %s' % token},
+    )
+    with urllib.request.urlopen(user_me_request, context=ssl_context) as response:
+      user_me_payload = json.load(response)
+
+    self.assertEqual(user_me_payload['email'], root_user)
 
