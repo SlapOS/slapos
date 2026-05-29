@@ -1,0 +1,251 @@
+# =============================================================================
+# ERP5 MCP Server - SlapOS Instance Profile
+# =============================================================================
+#
+# Deploys:
+#   - ERP5 MCP server (Python) listening on internal IPv6
+#   - HAProxy frontend for TLS termination
+#   - Self-signed TLS certificate (for MCP OAuth)
+#   - Frontend request for public HTTPS access
+#   - Promises to verify services are running
+#   - Logrotate for log management (via monitor stack)
+#
+# Configurable parameters (via instance request):
+#   - mcp-port:         External port HAProxy listens on (default: 8765)
+#   - mcp-internal-port: Internal port for MCP server (default: 18765)
+#   - erp5-url:         Base URL of ERP5 instance
+#   - erp5-ac-cookie:   ERP5 __ac cookie for authentication (stdio mode)
+#   - mcp-transport:    MCP transport: stdio or streamable-http (default: streamable-http)
+#   - mcp-server-url:   Public HTTPS URL of this server (for OAuth)
+#   - mcp-log-level:    Log level: DEBUG, INFO, WARNING, ERROR (default: INFO)
+#   - logrotate-num:    Number of rotated logs to keep (default: 30)
+# =============================================================================
+
+[buildout]
+extends = {{ template_monitor }}
+
+parts =
+  directory
+  tls-certificate
+  erp5-mcp-startup
+  erp5-mcp-service
+  haproxy-config
+  haproxy-service
+  logrotate-entry-mcp
+  logrotate-entry-haproxy
+  mcp-port-listening-promise
+  haproxy-port-listening-promise
+  html5as-frontend
+  publish-connection-information
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+
+# ─────────────────────────────────────────────────
+# Instance parameters
+# ─────────────────────────────────────────────────
+{# Schema defaults are applied by slapconfiguration.jsonschema #}
+{% set mcp_port = slapparameter_dict['mcp-port'] -%}
+{% set mcp_internal_port = slapparameter_dict['mcp-internal-port'] -%}
+{% set erp5_url = slapparameter_dict['erp5-url'] -%}
+{% set erp5_ac_cookie = slapparameter_dict.get('erp5-ac-cookie', '') -%}
+{% set mcp_transport = slapparameter_dict['mcp-transport'] -%}
+{% set mcp_server_url = slapparameter_dict.get('mcp-server-url', '') -%}
+{% set mcp_log_level = slapparameter_dict['mcp-log-level'] -%}
+{% set logrotate_num = slapparameter_dict['logrotate-num'] -%}
+
+{% set ipv6 = slap_configuration.get('ipv6-random', '::1') -%}
+{% set ipv4 = slap_configuration.get('ipv4-random', '127.0.0.1') -%}
+
+{# Default server URL uses the HAProxy HTTPS frontend #}
+{% set default_server_url = 'https://[' ~ ipv6 ~ ']:' ~ mcp_port|string -%}
+{% set server_url = mcp_server_url or default_server_url -%}
+
+# ─────────────────────────────────────────────────
+# Directory structure
+# ─────────────────────────────────────────────────
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+log = ${:var}/log
+run = ${:var}/run
+service = ${:etc}/service
+srv = ${:home}/srv
+tmp = ${:home}/tmp
+backup = ${:srv}/backup
+ssl = ${:etc}/ssl
+
+# ─────────────────────────────────────────────────
+# Self-signed TLS certificate
+# ─────────────────────────────────────────────────
+[tls-certificate]
+recipe = plone.recipe.command
+command =
+  if [ ! -f ${directory:ssl}/server.key ]; then
+    {{ openssl_bin }} req -x509 -nodes -days 3650 \
+      -newkey rsa:2048 \
+      -keyout ${directory:ssl}/server.key \
+      -out ${directory:ssl}/server.crt \
+      -subj "/CN=erp5-mcp-server" \
+      -addext "subjectAltName=IP:{{ ipv6 }}"
+    cat ${directory:ssl}/server.key ${directory:ssl}/server.crt \
+      > ${directory:ssl}/server.pem
+  fi
+stop-on-error = true
+update-command = ${:command}
+
+# ─────────────────────────────────────────────────
+# ERP5 MCP Server
+# ─────────────────────────────────────────────────
+#
+# The MCP server listens on the *internal* port on IPv6.
+# HAProxy sits in front on the *external* port with TLS.
+# The erp5_mcp package runs uvicorn internally via mcp.run().
+#
+[erp5-mcp-startup]
+recipe = plone.recipe.command
+command =
+  cat > ${:output} << 'STARTEOF'
+  #!/bin/sh
+  export ERP5_BASE_URL={{ erp5_url }}
+  export ERP5_AC_COOKIE='{{ erp5_ac_cookie }}'
+  export ERP5_TRANSPORT={{ mcp_transport }}
+  export ERP5_HOST={{ ipv6 }}
+  export ERP5_PORT={{ mcp_internal_port }}
+  export ERP5_ENABLE_WRITE=true
+  export HOME=${directory:home}
+  export TMPDIR=${directory:tmp}
+  MCP_SERVER_URL_OVERRIDE='{{ mcp_server_url }}'
+  FRONTEND_URL='${html5as-frontend:connection-secure_access}'
+  if [ -n "$MCP_SERVER_URL_OVERRIDE" ]; then
+    export ERP5_SERVER_URL="$MCP_SERVER_URL_OVERRIDE"
+  elif [ -n "$FRONTEND_URL" ]; then
+    export ERP5_SERVER_URL="$FRONTEND_URL"
+  else
+    export ERP5_SERVER_URL={{ default_server_url }}
+  fi
+  exec {{ python_bin }} -m erp5_mcp
+  STARTEOF
+  chmod 700 ${:output}
+output = ${directory:etc}/erp5-mcp-start.sh
+stop-on-error = true
+update-command = ${:command}
+
+[erp5-mcp-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${erp5-mcp-startup:output}
+wrapper-path = ${directory:service}/erp5-mcp
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+# ─────────────────────────────────────────────────
+# HAProxy — Frontend with TLS
+# ─────────────────────────────────────────────────
+[haproxy-config]
+recipe = plone.recipe.command
+command =
+  cat > ${:output} << 'HAPROXYEOF'
+  global
+    log stdout format raw local0 info
+    maxconn 512
+
+  defaults
+    log     global
+    mode    http
+    option  httplog
+    option  dontlognull
+    timeout connect 5s
+    timeout client  60s
+    timeout server  60s
+    timeout tunnel  4h
+    timeout http-keep-alive 60s
+    timeout http-request 30s
+    retries 3
+
+  frontend mcp-frontend
+    bind [{{ ipv6 }}]:{{ mcp_port }} ssl crt ${directory:ssl}/server.pem
+    log-format "%ci:%cp [%t] %ft %b/%s %Tq/%Tw/%Tc/%Tr/%Tt %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %hr %hs %{+Q}r"
+    default_backend mcp-backend
+
+  backend mcp-backend
+    server erp5-mcp [{{ ipv6 }}]:{{ mcp_internal_port }} check inter 10s fall 3 rise 2
+    option http-no-delay
+    http-response set-header X-Served-By erp5-mcp-slapos
+  HAPROXYEOF
+output = ${directory:etc}/haproxy.cfg
+stop-on-error = true
+update-command = ${:command}
+[haproxy-service]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ haproxy_bin }}/sbin/haproxy -f ${haproxy-config:output} -W -db
+wrapper-path = ${directory:service}/haproxy
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+# ─────────────────────────────────────────────────
+# Promises
+# ─────────────────────────────────────────────────
+[mcp-port-listening-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = erp5-mcp-port-listening.py
+config-host = {{ ipv6 }}
+config-port = {{ mcp_internal_port }}
+
+[haproxy-port-listening-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = haproxy-port-listening.py
+config-host = {{ ipv6 }}
+config-port = {{ mcp_port }}
+
+# ─────────────────────────────────────────────────
+# Frontend request for public HTTPS access
+# ─────────────────────────────────────────────────
+[html5as-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = ERP5 MCP Frontend
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = https://[{{ ipv6 }}]:{{ mcp_port }}
+config-https-only = true
+return = domain secure_access
+
+# ─────────────────────────────────────────────────
+# Logrotate entries (using monitor stack infrastructure)
+# ─────────────────────────────────────────────────
+[logrotate-entry-mcp]
+<= logrotate-entry-base
+name = erp5-mcp
+log = ${directory:log}/erp5-mcp.log
+rotate-num = {{ logrotate_num }}
+frequency = daily
+
+[logrotate-entry-haproxy]
+<= logrotate-entry-base
+name = haproxy
+log = ${directory:log}/haproxy.log
+rotate-num = {{ logrotate_num }}
+frequency = daily
+
+# ─────────────────────────────────────────────────
+# Monitor instance parameter (required by monitor stack)
+# ─────────────────────────────────────────────────
+[monitor-instance-parameter]
+monitor-httpd-port = 8196
+
+# ─────────────────────────────────────────────────
+# Publish connection information
+# ─────────────────────────────────────────────────
+[publish-connection-information]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+mcp-url = https://[{{ ipv6 }}]:{{ mcp_port }}
+mcp-server-url = {{ server_url }}
+mcp-frontend-url = ${html5as-frontend:connection-secure_access}
+mcp-ipv6 = {{ ipv6 }}
+mcp-port = {{ mcp_port }}
+erp5-url = {{ erp5_url }}
+mcp-transport = {{ mcp_transport }}
