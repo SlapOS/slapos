@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input Parameters",
+  "allOf": [
+    {
+      "$ref": "./instance-default-input-schema.json#/$defs/default-base"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "request-dns": {
+          "title": "Request Local DNS",
+          "description": "Local DNS request configuration (specific to Open Radio Station use-case)",
+          "type": "object",
+          "properties": {
+            "enable": {
+              "title": "Enable",
+              "description": "Request local DNS to a core network running on the same node",
+              "type": "boolean",
+              "default": false
+            },
+            "sr-url": {
+              "title": "SR URL",
+              "description": "The software URL to use for requesting DNS entries",
+              "type": "string",
+              "default": "automated_local_dns"
+            },
+            "sr-type": {
+              "title": "SR Type",
+              "description": "The software type to use for requesting DNS entries",
+              "type": "string",
+              "default": "core-network"
+            }
+          },
+          "default": {}
+        },
+        "demo-disable-auth": {
+          "title": "Demo mode - Disable Accounts & Auth",
+          "description": "When this is enabled, neither account existence nor authentication will be enforced, allowing anyone to access the system with any mail & password combination.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  ],
+  "unevaluatedProperties": false
+}

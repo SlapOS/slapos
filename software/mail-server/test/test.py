@@ -37,6 +37,7 @@ from contextlib import contextmanager
 from email.mime.text import MIMEText
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.slap.standalone import SlapOSNodeCommandError
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
   os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
@@ -337,4 +338,94 @@ class PostfixTestCase(SlapOSInstanceTestCase):
           imap.logout()
         except Exception:
           pass
+
+
+class OrsTestCase(SlapOSInstanceTestCase):
+  __partition_reference__ = 'ors'
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'default-ors'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      "_": json.dumps(
+        {
+          "mail-domains": [
+            "example.com"
+          ],
+          "inbound-relay": {"enable": False},
+          "demo-disable-auth": True,
+        }
+      )
+    }
+
+  def _get_ssl_context(self):
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+  def login_imap(self, address, password):
+    parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
+    host = parameter_dict["imap-smtp-ipv6"]
+    imap = None
+    try:
+      imap = imaplib.IMAP4(host, int(parameter_dict["imap-port"]), timeout=10)
+      imap.starttls(ssl_context=self._get_ssl_context())
+      imap.login(address, password)
+    except Exception as e:
+      self.fail(f"IMAP login failed for {address}: {e}")
+    finally:
+      if imap:
+        try:
+          imap.logout()
+        except Exception:
+          pass
+
+  def test_demo_disable_auth_allows_any_credentials(self):
+    self.login_imap("anonymous@example.com", "whatever-password")
+    self.login_imap("another@example.com", "different-password")
+
+  def test_demo_disable_auth_is_rejected_on_default_software_type(self):
+    partition_reference = "default-demo-rejected"
+    try:
+      self.slap.request(
+        software_release=self.getSoftwareURL(),
+        partition_reference=partition_reference,
+        partition_parameter_kw={
+          "_": json.dumps(
+            {
+              "mail-domains": [
+                "reject-demo.example.com"
+              ],
+              "inbound-relay": {"enable": False},
+              "demo-disable-auth": True,
+            }
+          )
+        },
+        software_type='default',
+        state='started',
+      )
+      with self.assertRaises(SlapOSNodeCommandError):
+        self.slap.waitForInstance(max_retry=3)
+    finally:
+      self.slap.request(
+        software_release=self.getSoftwareURL(),
+        partition_reference=partition_reference,
+        partition_parameter_kw={
+          "_": json.dumps(
+            {
+              "mail-domains": [
+                "reject-demo.example.com"
+              ],
+              "inbound-relay": {"enable": False},
+            }
+          )
+        },
+        software_type='default',
+        state='destroyed',
+      )
+      self.slap.waitForInstance(max_retry=5)
 
