@@ -21,22 +21,7 @@
           "$ref": "ors-enb-gnb-duo.json"
         },
         {
-          "$ref": "ors-gnb.json"
-        },
-        {
-          "$ref": "ors-enb.json"
-        },
-        {
           "$ref": "ors-enb-gnb.json"
-        },
-        {
-          "$ref": "ors-enb-secondary.json"
-        },
-        {
-          "$ref": "ors-gnb-secondary.json"
-        },
-        {
-          "$ref": "ors-enb-gnb-secondary.json"
         }
       ],
       "type": "object",
@@ -54,10 +39,10 @@
       "default": {}
     },
     "monitor-interface-url": {
-      "$ref": "instance-ors-gnb-input-schema.json#/properties/monitor-interface-url"
+      "$ref": "instance-ors-enb-gnb-input-schema.json#/properties/monitor-interface-url"
     },
     "rf-info": {
-      "$ref": "instance-ors-gnb-input-schema.json#/properties/rf-info"
+      "$ref": "instance-ors-enb-gnb-input-schema.json#/properties/rf-info"
     }
   }
 }

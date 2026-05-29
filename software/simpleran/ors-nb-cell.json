@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ORS NB IOT Cell",
+  "type": "object",
+  "properties": {
+    "pci": {
+      "$ref": "ors-enb-cell.json#/properties/pci"
+    },
+    "tac": {
+      "$ref": "ors-enb-cell.json#/properties/tac"
+    },
+    "lte_band": {
+      "title": "LTE band",
+      "description": "LTE band number. Default depends on ORS model, please refer to the connection parameters",
+      "type": "integer"
+    },
+    "dl_frequency": {
+      "title": "DL Frequency",
+      "description": "Downlink center frequency of the cell. Default depends on your ORS model, please refer to the connection parameters. Make sure to not set a value outside the range of your ORS",
+      "type": "number"
+    },
+    "dl_earfcn": {
+      "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn",
+      "title": "DL EARFCN",
+      "description": "Set the NB IOT DL EARFCN."
+    },
+    "ul_earfcn": {
+      "$ref": "cell/lte/input-schema.json#/properties/ul_earfcn",
+      "title": "UL EARFCN",
+      "description": "Set the NB IOT UL EARFCN."
+    },
+    "all_ce_level": {
+      "title": "All CE Levels",
+      "type": "boolean",
+      "default": false,
+      "description": "Enable this to test several CE (Coverage Enhancement) levels"
+    },
+    "cipher_algo_pref": {
+      "$ref": "cell/lte/input-schema.json#/properties/cipher_algo_pref"
+    },
+    "integ_algo_pref": {
+      "$ref": "cell/lte/input-schema.json#/properties/integ_algo_pref"
+    }
+  }
+}
