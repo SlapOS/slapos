@@ -88,6 +88,7 @@ def setUpModule():
 
 class E2ETestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'e2e'
+  partition_count = 15
   instance_max_retry = 4
 
   relay_inbound_port = 10025
@@ -106,7 +107,10 @@ class E2ETestCase(SlapOSInstanceTestCase):
       "default-relay-config": {
         "proxy-map": proxy_map,
       } | extra,
-      "topology": topology
+      "topology": topology,
+      "omailgw": {
+        "enable": True,
+      },
     })
     requester = lambda: cls.slap.request(
       software_release=RELAY_SR,
