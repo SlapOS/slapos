@@ -1,8 +1,10 @@
 {#- defaults for global core network parameters.
     TODO automatically load mme defaults from JSON schema #}
 {%- set mme_defaults = {
-  'com_ws_port':  9002,
-  'com_addr': '127.0.1.3',
+  'mme_com_ws_port':  9002,
+  'mme_com_addr': '127.0.1.3',
+  'ims_com_ws_port':  9004,
+  'ims_com_addr': '127.0.1.5',
   'com_unsecure':     False,
   'websocket_url_ipv6': False,
   'ims_addr': '127.0.0.1',
@@ -18,11 +20,14 @@
 {%-   do slapparameter_dict.setdefault(k, v) %}
 {%- endfor %}
 {%- if slapparameter_dict.websocket_url_ipv6 %}
-{%-   do slapparameter_dict.update({"com_addr": my_ipv6}) %}
-{%-   do slapparameter_dict.update({"com_url": "[" + my_ipv6 + "]:" + str(slapparameter_dict.com_ws_port)}) %}
+{%-   do slapparameter_dict.update({"mme_com_addr": my_ipv6}) %}
+{%-   do slapparameter_dict.update({"mme_com_url": "[" + my_ipv6 + "]:" + str(slapparameter_dict.mme_com_ws_port)}) %}
+{%-   do slapparameter_dict.update({"ims_com_addr": my_ipv6}) %}
+{%-   do slapparameter_dict.update({"ims_com_url": "[" + my_ipv6 + "]:" + str(slapparameter_dict.ims_com_ws_port)}) %}
 {%-   do slapparameter_dict.update({"com_unsecure": True}) %}
 {%- else %}
-{%-   do slapparameter_dict.update({"com_url": slapparameter_dict.com_addr + ":" + str(slapparameter_dict.com_ws_port)}) %}
+{%-   do slapparameter_dict.update({"mme_com_url": slapparameter_dict.mme_com_addr + ":" + str(slapparameter_dict.mme_com_ws_port)}) %}
+{%-   do slapparameter_dict.update({"ims_com_url": slapparameter_dict.ims_com_addr + ":" + str(slapparameter_dict.ims_com_ws_port)}) %}
 {%- endif %}
 {%- set dns_list = [] %}
 {%- set sim_list = [] %}
@@ -146,9 +151,10 @@ parts =
   monitor-base
   check-interface-up.py
   publish-connection-information
-  websocket-promise
-  nginx-launcher
-  nginx-graceful
+  mme-websocket-promise
+  ims-websocket-promise
+  mme-nginx-launcher
+  mme-nginx-graceful
 # Don't add these sections during unit tests as there is no TUN IPv4 available
 {% if not slapparameter_dict.get("testing", False) %}
 {%-  for i in range(slapparameter_dict.get("iperf3", 0)) %}
@@ -361,6 +367,8 @@ context =
 <= config-base
 url = {{ ims_template }}
 output = ${directory:etc}/ims.cfg
+extra-context =
+    key websocket_password mme-websocket-password:passwd
 
 [publish-ims-config]
 <= publish-config-base
@@ -392,7 +400,7 @@ link-binary = ${ue-db-config:output}
 url = {{ mme_template }}
 output = ${directory:etc}/mme.cfg
 extra-context =
-    key websocket_password websocket-password:passwd
+    key websocket_password mme-websocket-password:passwd
 
 [publish-mme-config]
 <= publish-config-base
@@ -445,11 +453,11 @@ password = {{ slapparameter_dict['monitor-password'] | string }}
 {%-   endif %}
 {%- endfor %}
 
-[websocket-password]
+[mme-websocket-password]
 recipe = slapos.cookbook:generate.password
-storage-path = ${directory:etc}/.websocket_pwd
+storage-path = ${directory:etc}/.mme_websocket_pwd
 
-[request-slave-frontend-base]
+[mme-request-slave-frontend]
 recipe = slapos.cookbook:requestoptional
 server-url = ${slap-connection:server-url}
 key-file = ${slap-connection:key-file}
@@ -460,94 +468,93 @@ state = {{ slap_configuration['instance-state'] }}
 shared = true
 config-https-only = True
 config-type = websocket
-config-websocket-path-list = ${nginx-params:websocket-path}
-config-url = https://[${nginx-params:ip}]:${nginx-params:port}
+config-websocket-path-list = ${mme-nginx-params:websocket-path}
+config-url = https://[${mme-nginx-params:ip}]:${mme-nginx-params:port}
 return = secure_access domain
-
-[request-slave-frontend]
-<= request-slave-frontend-base
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 software-type = default
-name = Websocket Frontend
+name = mme Websocket Frontend
 
-[nginx-tempdir]
+[mme-nginx-tempdir]
 recipe = slapos.cookbook:mkdirectory
 tmp = ${buildout:directory}/tmp
-client-body-temp-path = ${:tmp}/client_body_temp_path
-proxy-temp-path = ${:tmp}/proxy_temp_path
-fastcgi-temp-path = ${:tmp}/fastcgi_temp_path
-uwsgi-temp-path = ${:tmp}/uwsgi_temp_path
-scgi-temp-path = ${:tmp}/scgi_temp_path
+tmp-mme = ${:tmp}/mme
+client-body-temp-path = ${:tmp-mme}/client_body_temp_path
+proxy-temp-path = ${:tmp-mme}/proxy_temp_path
+fastcgi-temp-path = ${:tmp-mme}/fastcgi_temp_path
+uwsgi-temp-path = ${:tmp-mme}/uwsgi_temp_path
+scgi-temp-path = ${:tmp-mme}/scgi_temp_path
 
-[nginx-launcher]
+[mme-nginx-launcher]
 recipe = slapos.cookbook:wrapper
-command-line = ${ca-websocket:executable} -c ${nginx-config:output}
-wrapper-path = ${directory:services}/nginx
+command-line = ${mme-ca-websocket:executable} -c ${mme-nginx-config:output}
+wrapper-path = ${directory:services}/mme-nginx
 
-[nginx-config]
+[mme-nginx-config]
 recipe = slapos.recipe.template:jinja2
 url = {{ nginx_template }}
-output = ${directory:etc}/nginx.conf
+output = ${directory:etc}/mme-nginx.conf
 context =
-    section params nginx-params
-    section ca ca-websocket
-    section tempdir nginx-tempdir
+    section params mme-nginx-params
+    section ca mme-ca-websocket
+    section tempdir mme-nginx-tempdir
     raw mime {{ nginx_mime }}
 
-[nginx-params]
-path-pid = ${directory:run}/nginx.pid
-path-error-log = ${directory:log}/nginx-error.log
-path-access-log = ${directory:log}/nginx-access.log
+[mme-nginx-params]
+path-pid = ${directory:run}/mme-nginx.pid
+path-error-log = ${directory:log}/mme-nginx-error.log
+path-access-log = ${directory:log}/mme-nginx-access.log
 ip = {{ my_ipv6 }}
 port = 6081
-websocket-ip = {{ slapparameter_dict.com_addr }}
-websocket-port = {{ slapparameter_dict.com_ws_port }}
+websocket-ip = {{ slapparameter_dict.mme_com_addr }}
+websocket-port = {{ slapparameter_dict.mme_com_ws_port }}
 websocket-path = websocket
 nb-workers = 2
 
-[nginx-graceful]
+[mme-nginx-graceful]
 recipe = slapos.recipe.template
-output = ${directory:scripts}/nginx-graceful
+output = ${directory:scripts}/mme-nginx-graceful
 inline =
   #!/bin/sh
-  exec kill -s SIGHUP $(cat ${nginx-params:path-pid})
+  exec kill -s SIGHUP $(cat ${mme-nginx-params:path-pid})
 
-[certificate-authority]
+[mme-certificate-authority]
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = {{ openssl_executable_location }}
-ca-dir = ${directory:srv}
-requests-directory = ${cadirectory:requests}
+ca-dir = ${directory:srv-mme}
+requests-directory = ${mme-cadirectory:requests}
 wrapper = ${directory:bin}/certificate_authority
-ca-private = ${cadirectory:private}
-ca-certs = ${cadirectory:certs}
-ca-newcerts = ${cadirectory:newcerts}
-ca-crl = ${cadirectory:crl}
+ca-private = ${mme-cadirectory:private}
+ca-certs = ${mme-cadirectory:certs}
+ca-newcerts = ${mme-cadirectory:newcerts}
+ca-crl = ${mme-cadirectory:crl}
 
-[certificate-authority-service]
+[mme-certificate-authority-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${certificate-authority:wrapper}
-wrapper-path = ${directory:services}/certificate_authority
+command-line = ${mme-certificate-authority:wrapper}
+wrapper-path = ${directory:services}/mme_certificate_authority
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
-[cadirectory]
+[mme-cadirectory]
 recipe = slapos.cookbook:mkdirectory
-requests = ${directory:srv}/requests/
-private = ${directory:srv}/private/
-certs = ${directory:srv}/certs/
-newcerts = ${directory:srv}/newcerts/
-crl = ${directory:srv}/crl/
+srv-mme = ${directory:srv}/mme/
+requests = ${:srv-mme}/requests/
+private = ${:srv-mme}/private/
+certs = ${:srv-mme}/certs/
+newcerts = ${:srv-mme}/newcerts/
+crl = ${:srv-mme}/crl/
 
-[ca-websocket]
-<= certificate-authority
+[mme-ca-websocket]
+<= mme-certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
-key-file = ${directory:etc}/websocket.key
-cert-file = ${directory:etc}/websocket.crt
+key-file = ${directory:etc}/mme-websocket.key
+cert-file = ${directory:etc}/mme-websocket.crt
 executable = {{ nginx_executable }}
-wrapper = ${directory:bin}/nginx-with-ca
+wrapper = ${directory:bin}/mme-nginx-with-ca
 
-[frontend-urlparse]
+[mme-frontend-urlparse]
 recipe = slapos.recipe.build
-domain = ${request-slave-frontend:connection-domain}
+domain = ${mme-request-slave-frontend:connection-domain}
 init =
   import six.moves.urllib.parse as urlparse
   parsed_url = urlparse.urlparse('wss://' + options['domain'])
@@ -558,12 +565,12 @@ init =
   options['raw_hostname'] = parsed_url.hostname
   options['port'] = parsed_url.port if parsed_url.port else 443
 
-[websocket-promise]
+[mme-websocket-promise]
 <= monitor-promise-base
 promise = check_socket_listening
-name = websocket_promise.py
-config-host = ${frontend-urlparse:raw_hostname}
-config-port = ${frontend-urlparse:port}
+name = mme_websocket_promise.py
+config-host = ${mme-frontend-urlparse:raw_hostname}
+config-port = ${mme-frontend-urlparse:port}
 
 [monitor-publish-connection-information]
 <= monitor-publish
@@ -571,12 +578,12 @@ config-port = ${frontend-urlparse:port}
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
 {%- if slapparameter_dict.websocket_url_ipv6 %}
-URL.websocket-hostname = {{ slapparameter_dict.com_addr }}
-URL.websocket-port = {{ slapparameter_dict.com_ws_port }}
+URL.websocket-hostname = {{ slapparameter_dict.mme_com_addr }}
+URL.websocket-port = {{ slapparameter_dict.mme_com_ws_port }}
 {%- else %}
-URL.websocket-hostname = ${frontend-urlparse:hostname}
-URL.websocket-port = ${frontend-urlparse:port}
-URL.websocket-password = ${websocket-password:passwd}
+URL.websocket-hostname = ${mme-frontend-urlparse:hostname}
+URL.websocket-port = ${mme-frontend-urlparse:port}
+URL.mme-websocket-password = ${mme-websocket-password:passwd}
 {%- endif %}
 {%- if not slapparameter_dict.websocket_url_ipv6 %}
 URL.websocket-amarisoft-gui = https://tech-academy.amarisoft.com/web-gui/
