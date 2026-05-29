@@ -23,6 +23,9 @@ T-2/var/log/httpd/_health-check-disabled_frontend_log
 T-2/var/log/httpd/_health-check-failover-url-auth-to-backend_access_log
 T-2/var/log/httpd/_health-check-failover-url-auth-to-backend_backend_log
 T-2/var/log/httpd/_health-check-failover-url-auth-to-backend_frontend_log
+T-2/var/log/httpd/_health-check-failover-url-bare-slash-with-query_access_log
+T-2/var/log/httpd/_health-check-failover-url-bare-slash-with-query_backend_log
+T-2/var/log/httpd/_health-check-failover-url-bare-slash-with-query_frontend_log
 T-2/var/log/httpd/_health-check-failover-url-netloc-list_access_log
 T-2/var/log/httpd/_health-check-failover-url-netloc-list_backend_log
 T-2/var/log/httpd/_health-check-failover-url-netloc-list_frontend_log
