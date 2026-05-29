@@ -4,6 +4,12 @@ cd $DIR/..
 
 JSON_LIST="/tmp/json-list-$(date +%s)"
 
+# Check
+#for f in $(find . -type f -name "*.json" | cut -c 3-) ; do
+#  echo $f
+#  python3 -c "import json ; f = open('$f', 'r') ; '\$schema' in json.load(f)"
+#done
+
 for f in $(find . -type f -name "*.json" | cut -c 3-) ; do
   python3 -c "import json ; f = open('$f', 'r') ; '\$schema' in json.load(f) and print('$f')"
 done >> $JSON_LIST
