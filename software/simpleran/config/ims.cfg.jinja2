@@ -16,6 +16,14 @@
     log_options: "all.level=debug,all.max_size=32",
     log_filename: "{{ directory['log'] }}/ims.log",
 
+    com_addr: "{{ slapparameter_dict.ims_com_url }}",
+{%- if not slapparameter_dict.com_unsecure %}
+    com_auth: {
+      password: "{{ websocket_password }}",
+      unsecure: false,
+    },
+{%- endif %}
+
     sip_addr: [
         {addr: "{{ ims_ipv4 }}", bind_addr: "{{ ims_ipv4 }}", port_min: 10000, port_max: 20000
 {%- if 'trunk' in slapparameter_dict -%}
