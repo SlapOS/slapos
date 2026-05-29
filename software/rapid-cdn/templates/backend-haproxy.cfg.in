@@ -94,8 +94,8 @@ frontend https-backend
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-       set hostname = info_dict['hostname'] %}
 {%-       set port = info_dict['port'] %}
-{%-       set path_list = [info_dict['path'].rstrip('/')] %}
 {%-       set query = info_dict['query'] %}
+{%-       set path_list = [info_dict['path'].rstrip('/') or ('/' if query else '')] %}
 {%-       if query %}
 {%-         do path_list.append(query) %}
 {%-       endif %}
@@ -156,8 +156,8 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover
 {%-       set hostname = info_dict['health-check-failover-hostname'] %}
 {%-       set port = info_dict['health-check-failover-port'] %}
-{%-       set path_list = [info_dict['health-check-failover-path'].rstrip('/')] %}
 {%-       set query = info_dict['health-check-failover-query'] %}
+{%-       set path_list = [info_dict['health-check-failover-path'].rstrip('/') or ('/' if query else '')] %}
 {%-       if query %}
 {%-         do path_list.append(query) %}
 {%-       endif %}
