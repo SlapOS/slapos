@@ -1,0 +1,224 @@
+{%- set B = xbuildout.encode -%}
+/* SIB2/SIB3 for {{ cell.cell_type | upper }} cell {{ B(cell_ref) }} @ {{ B(ru_ref) }}. */
+{%- if cell.cell_type == 'nb' %}
+{%-   if cell.all_ce_level %}
+{
+  message c1: systemInformation-r13: {
+    criticalExtensions systemInformation-r13: {
+      sib-TypeAndInfo-r13 {
+        sib2-r13: {
+          radioResourceConfigCommon-r13 {
+            rach-ConfigCommon-r13 {
+              preambleTransMax-CE-r13 n10,
+              powerRampingParameters-r13 {
+                powerRampingStep dB2,
+                preambleInitialReceivedTargetPower dBm-104
+              },
+              rach-InfoList-r13 {
+                {
+                  ra-ResponseWindowSize-r13 pp5,
+                  mac-ContentionResolutionTimer-r13 pp32
+                },
+                {
+                  ra-ResponseWindowSize-r13 pp6,
+                  mac-ContentionResolutionTimer-r13 pp32
+                },
+                {
+                  ra-ResponseWindowSize-r13 pp8,
+                  mac-ContentionResolutionTimer-r13 pp32
+                }
+              }
+            },
+            bcch-Config-r13 {
+              modificationPeriodCoeff-r13 n64
+            },
+            pcch-Config-r13 {
+              defaultPagingCycle-r13 rf128,
+              nB-r13 oneT,
+              npdcch-NumRepetitionPaging-r13 r32
+            },
+            nprach-Config-r13 {
+              nprach-CP-Length-r13 us66dot7,
+              rsrp-ThresholdsPrachInfoList-r13 {
+                30,  /* < -110 dBm */
+                20   /* < -120 dBm*/
+              },
+              nprach-ParametersList-r13 {
+                {
+                  nprach-Periodicity-r13 ms80,
+                  nprach-StartTime-r13 ms32,
+                  nprach-SubcarrierOffset-r13 n0,
+                  nprach-NumSubcarriers-r13 n24,
+                  nprach-SubcarrierMSG3-RangeStart-r13 twoThird,
+                  maxNumPreambleAttemptCE-r13 n5,
+                  numRepetitionsPerPreambleAttempt-r13 n1,
+                  npdcch-NumRepetitions-RA-r13 r8,
+                  npdcch-StartSF-CSS-RA-r13 v4,
+                  npdcch-Offset-RA-r13 zero
+                },
+                {
+                  nprach-Periodicity-r13 ms160,
+                  nprach-StartTime-r13 ms32,
+                  nprach-SubcarrierOffset-r13 n24,
+                  nprach-NumSubcarriers-r13 n12,
+                  nprach-SubcarrierMSG3-RangeStart-r13 one,
+                  maxNumPreambleAttemptCE-r13 n4,
+                  numRepetitionsPerPreambleAttempt-r13 n4,
+                  npdcch-NumRepetitions-RA-r13 r16,
+                  npdcch-StartSF-CSS-RA-r13 v2,
+                  npdcch-Offset-RA-r13 zero
+                },
+                {
+                  nprach-Periodicity-r13 ms320,
+                  nprach-StartTime-r13 ms32,
+                  nprach-SubcarrierOffset-r13 n36,
+                  nprach-NumSubcarriers-r13 n12,
+                  nprach-SubcarrierMSG3-RangeStart-r13 one,
+                  maxNumPreambleAttemptCE-r13 n3,
+                  numRepetitionsPerPreambleAttempt-r13 n16,
+                  npdcch-NumRepetitions-RA-r13 r64,
+                  npdcch-StartSF-CSS-RA-r13 v1dot5,
+                  npdcch-Offset-RA-r13 zero
+                }
+              }
+            },
+            npdsch-ConfigCommon-r13 {
+              nrs-Power-r13 0
+            },
+            npusch-ConfigCommon-r13 {
+              ack-NACK-NumRepetitions-Msg4-r13 {
+                r1,
+                r4,
+                r16
+              },
+              dmrs-Config-r13 {
+                threeTone-CyclicShift-r13 0,
+                sixTone-CyclicShift-r13 0
+              },
+              ul-ReferenceSignalsNPUSCH-r13 {
+                groupHoppingEnabled-r13 FALSE,
+                groupAssignmentNPUSCH-r13 0
+              }
+            },
+            uplinkPowerControlCommon-r13 {
+              p0-NominalNPUSCH-r13 -80,
+              alpha-r13 al1,
+              deltaPreambleMsg3-r13 0
+            },
+            nprach-Config-v1330 {
+              nprach-ParametersList-v1330 {
+                {
+                  nprach-NumCBRA-StartSubcarriers-r13 n24
+                },
+                {
+                  nprach-NumCBRA-StartSubcarriers-r13 n12
+                },
+                {
+                  nprach-NumCBRA-StartSubcarriers-r13 n12
+                }
+              }
+            }
+          },
+          ue-TimersAndConstants-r13 {
+            t300-r13 ms2500,
+            t301-r13 ms2500,
+            t310-r13 ms200,
+            n310-r13 n6,
+            t311-r13 ms10000,
+            n311-r13 n5
+          },
+          freqInfo-r13 {
+            additionalSpectrumEmission-r13 1
+          },
+          timeAlignmentTimerCommon-r13 infinity
+        }
+      }
+    }
+  }
+}
+{%-   else %}
+{
+  message c1: systemInformation-r13: {
+    criticalExtensions systemInformation-r13: {
+      sib-TypeAndInfo-r13 {
+        sib2-r13: {
+          radioResourceConfigCommon-r13 {
+            rach-ConfigCommon-r13 {
+              preambleTransMax-CE-r13 n10,
+              powerRampingParameters-r13 {
+                powerRampingStep dB2,
+                preambleInitialReceivedTargetPower dBm-104
+              },
+              rach-InfoList-r13 {
+                {
+                  ra-ResponseWindowSize-r13 pp5,
+                  mac-ContentionResolutionTimer-r13 pp32
+                }
+              }
+            },
+            bcch-Config-r13 {
+              modificationPeriodCoeff-r13 n64
+            },
+            pcch-Config-r13 {
+              defaultPagingCycle-r13 rf128,
+              nB-r13 oneT,
+              npdcch-NumRepetitionPaging-r13 r1
+            },
+            nprach-Config-r13 {
+              nprach-CP-Length-r13 us66dot7,
+              nprach-ParametersList-r13 {
+                {
+                  nprach-Periodicity-r13 ms80,
+                  nprach-StartTime-r13 ms32,
+                  nprach-SubcarrierOffset-r13 n0,
+                  nprach-NumSubcarriers-r13 n12,
+                  nprach-SubcarrierMSG3-RangeStart-r13 twoThird,
+                  maxNumPreambleAttemptCE-r13 n10,
+                  numRepetitionsPerPreambleAttempt-r13 n1,
+                  npdcch-NumRepetitions-RA-r13 r8,
+                  npdcch-StartSF-CSS-RA-r13 v4,
+                  npdcch-Offset-RA-r13 zero
+                }
+              }
+            },
+            npdsch-ConfigCommon-r13 {
+              nrs-Power-r13 0
+            },
+            npusch-ConfigCommon-r13 {
+              ack-NACK-NumRepetitions-Msg4-r13 {
+                r1
+              },
+              dmrs-Config-r13 {
+                threeTone-CyclicShift-r13 0,
+                sixTone-CyclicShift-r13 0
+              },
+              ul-ReferenceSignalsNPUSCH-r13 {
+                groupHoppingEnabled-r13 FALSE,
+                groupAssignmentNPUSCH-r13 0
+              }
+            },
+            uplinkPowerControlCommon-r13 {
+              p0-NominalNPUSCH-r13 -80,
+              alpha-r13 al1,
+              deltaPreambleMsg3-r13 0
+            }
+          },
+          ue-TimersAndConstants-r13 {
+            t300-r13 ms2500,
+            t301-r13 ms2500,
+            t310-r13 ms200,
+            n310-r13 n6,
+            t311-r13 ms10000,
+            n311-r13 n5
+          },
+          freqInfo-r13 {
+            additionalSpectrumEmission-r13 1
+          },
+          timeAlignmentTimerCommon-r13 infinity
+        }
+      }
+    }
+  }
+}
+{%-   endif %}
+{%- endif %}
