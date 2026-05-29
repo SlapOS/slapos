@@ -2524,7 +2524,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     headers = self.assertResponseHeaders(result)
     self.assertNotIn('Strict-Transport-Security', headers)
     self.assertEqualResultJson(
-      result, 'Path', '?a=b&c=' + '/test-path/deeper' * 250)
+      result, 'Path', '/?a=b&c=' + '/test-path/deeper' * 250)
 
     try:
       j = result.json()
@@ -2662,7 +2662,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             j = result_verb.json()
           except Exception:
             raise ValueError('JSON decode problem in:\n%s' % (result.text,))
-          self.assertEqual('?a=b&c=/' + verb, j['Path'], verb)
+          self.assertEqual('/?a=b&c=/' + verb, j['Path'], verb)
           self.assertEqual(verb, j['Verb'], verb)
     # check backend timeout behaviour
     small_timeout_text = "Small timeout"
@@ -2671,7 +2671,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     big_timeout = self.request_timeout + 5
     big_timeout_text = "Big timeout"
     mimikra.config(
-      self.backend_url.rstrip('/') + '?a=b&c=' + '/small-timeout',
+      self.backend_url.rstrip('/') + '/?a=b&c=' + '/small-timeout',
       headers=d2h({
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Body-Timeout': str(small_timeout),
@@ -2683,7 +2683,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       data=small_timeout_text,
     )
     mimikra.config(
-      self.backend_url.rstrip('/') + '?a=b&c=' + '/big-timeout',
+      self.backend_url.rstrip('/') + '/?a=b&c=' + '/big-timeout',
       headers=d2h({
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Body-Timeout': str(big_timeout),
@@ -2761,6 +2761,44 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(
       fakeHTTPSResult(parameter_dict['domain'], 'path').json()['Path'],
       '/%20whitespace%20/path')
+
+  def _get_backend_haproxy_backend_section(self, backend_name):
+    content = self._get_backend_haproxy_configuration()
+    marker = 'backend %s\n' % backend_name
+    self.assertIn(marker, content)
+    start = content.index(marker)
+    # A backend section ends at the next `backend ` header at column 0,
+    # or at the trailing `{# END OF FILE #}` comment line.
+    rest = content[start + len(marker):]
+    next_backend = rest.find('\nbackend ')
+    if next_backend == -1:
+      return content[start:]
+    return content[start:start + len(marker) + next_backend]
+
+  def test_backend_haproxy_bare_slash_url_emits_no_rewrite(self):
+    # Slave URL with bare-slash path and no query (the common case,
+    # e.g. `_enable-http2-default` has url=cls.backend_url) must NOT
+    # produce an `http-request set-path` line.  Without this guard,
+    # naively reapplying slapos!1866 (`rstrip('/') or '/'`) emits
+    # `set-path /%[path,regsub('^/$','')]`, which rewrites a sub-path
+    # request `/foo` to `//foo` at the backend.  That regression --
+    # silently affecting every slave with a bare `/` URL -- is the
+    # reason slapos!1866 was reverted.
+    section = self._get_backend_haproxy_backend_section(
+      '_enable-http2-default-http')
+    self.assertNotIn('http-request set-path', section)
+
+  def test_backend_haproxy_bare_slash_url_with_query_keeps_leading_slash(self):
+    # The `_Url` slave has url=' <backend_url>/?a=b&c= ' (parsed
+    # path='//', query='a=b&c=').  The rendered rewrite line must
+    # carry a leading slash, otherwise haproxy interprets the
+    # set-path argument as a bare query string and the backend
+    # receives a malformed URI without a path component.  This is
+    # the inconsistency that slapos!1866 set out to fix.
+    section = self._get_backend_haproxy_backend_section('_Url-http')
+    self.assertIn(
+      "http-request set-path /?a=b&c=%[path,regsub('^/$','')]",
+      section)
 
   def test_url_netloc_list(self):
     parameter_dict = self.assertSlaveBase('url-netloc-list')
@@ -2953,7 +2991,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     path = '/compressed'
     config_result = mimikra.config(
-      self.backend_url.rstrip('/') + '?a=b&c=' + path,
+      self.backend_url.rstrip('/') + '/?a=b&c=' + path,
       data=data_compressed,
       headers=d2h({
         'X-Config-Reply-Header-Content-Encoding': 'gzip',
@@ -2991,7 +3029,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     path = '/test_no_content_type_alter'
     config_result = mimikra.config(
-      self.backend_url.rstrip('/') + '?a=b&c=' + path,
+      self.backend_url.rstrip('/') + '/?a=b&c=' + path,
       headers=d2h({
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Content-Length': 'calculate',
@@ -7839,6 +7877,17 @@ class TestSlaveHealthCheck(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'health-check-failover-url': cls.backend_https_url,
         'health-check-failover-ssl-proxy-verify': True,
       },
+      'health-check-failover-url-bare-slash-with-query': {
+        # Failover URL with bare '/' path AND a query -- exercises the
+        # failover-path counterpart of the slapos!1866 fix.
+        'url': cls.backend_url + 'url',
+        'health-check-timeout': 1,  # fail fast for test
+        'health-check-interval': 1,  # fail fast for test
+        'health-check': True,
+        'health-check-http-path':
+        '/health-check-failover-url-bare-slash-with-query',
+        'health-check-failover-url': cls.backend_url + '?a=b&c=',
+      },
     }
 
   @classmethod
@@ -8211,6 +8260,41 @@ backend _health-check-default-http
 
     # as ssl proxy verification failed, service is unavailable
     self.assertEqual(result.status_code, http.client.SERVICE_UNAVAILABLE)
+
+  def _get_backend_haproxy_backend_section(self, backend_name):
+    content = self._get_backend_haproxy_configuration()
+    marker = 'backend %s\n' % backend_name
+    self.assertIn(marker, content)
+    start = content.index(marker)
+    rest = content[start + len(marker):]
+    next_backend = rest.find('\nbackend ')
+    if next_backend == -1:
+      return content[start:]
+    return content[start:start + len(marker) + next_backend]
+
+  def test_backend_haproxy_bare_slash_failover_url_emits_no_rewrite(self):
+    # Mirror of the regression guard on the primary path (TestSlave):
+    # a failover URL whose path strips to '' AND has no query must not
+    # produce an `http-request set-path` line in the `-failover` backend
+    # section.  `health-check-failover-url-ssl-proxy-verified` already
+    # has `health-check-failover-url=cls.backend_https_url`, parsed as
+    # path='/' query='', exercising this case without needing a new slave.
+    section = self._get_backend_haproxy_backend_section(
+      '_health-check-failover-url-ssl-proxy-verified-http-failover')
+    self.assertNotIn('http-request set-path', section)
+
+  def test_backend_haproxy_bare_slash_failover_url_with_query_keeps_leading_slash(
+      self):
+    # Counterpart of the primary `_Url` bug-fix test, applied to the
+    # failover section: a failover URL parsed as path='/' query='a=b&c='
+    # must render with a leading slash in the rewrite.  Without the
+    # conditional fix on line 159 of backend-haproxy.cfg.in, the rewrite
+    # would render as `set-path ?a=b&c=%[…]`, dropping the path component.
+    section = self._get_backend_haproxy_backend_section(
+      '_health-check-failover-url-bare-slash-with-query-http-failover')
+    self.assertIn(
+      "http-request set-path /?a=b&c=%[path,regsub('^/$','')]",
+      section)
 
 
 class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
