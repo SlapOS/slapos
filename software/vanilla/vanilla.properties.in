@@ -1,0 +1,468 @@
+#====================================================================================================================================#
+# Vanilla Databases                                                                                                                  #
+#====================================================================================================================================#
+#----------------------------------------------------------------------------------#
+# Vanilla Database : secu, repositories, servers, ged                              #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.database.driverClassName=org.h2.Driver
+bpm.vanilla.database.jdbcUrl=jdbc:h2:./vanilla/h2/vanilla;AUTO_SERVER=TRUE
+bpm.vanilla.database.userName={{ parameter_dict['db-user'] }}
+bpm.vanilla.database.password={{ parameter_dict['db-password'] }}
+bpm.vanilla.database.dialect=org.hibernate.dialect.H2Dialect
+#----------------------------------------------------------------------------------#
+# MDM Database                                                                     #
+#----------------------------------------------------------------------------------#
+bpm.mdm.database.driverClassName=org.h2.Driver
+bpm.mdm.database.jdbcUrl=jdbc:h2:./vanilla/h2/vanilladata;AUTO_SERVER=TRUE
+bpm.mdm.database.userName={{ parameter_dict['db-user'] }}
+bpm.mdm.database.password={{ parameter_dict['db-password'] }}
+bpm.mdm.database.dialect=org.hibernate.dialect.H2Dialect
+#----------------------------------------------------------------------------------#
+# Freemetrics Database                                                             #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.freemetrics.database.driverClassName=org.h2.Driver
+bpm.vanilla.freemetrics.database.jdbcUrl=jdbc:h2:./vanilla/h2/vanilla_kpi;AUTO_SERVER=TRUE
+bpm.vanilla.freemetrics.database.userName={{ parameter_dict['db-user'] }}
+bpm.vanilla.freemetrics.database.password={{ parameter_dict['db-password'] }}
+bpm.vanilla.freemetrics.database.dialect=org.hibernate.dialect.H2Dialect
+#----------------------------------------------------------------------------------#
+# Norparena Database                                                               #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.norparena.database.driverClassName=org.h2.Driver
+bpm.vanilla.norparena.database.jdbcUrl=jdbc:h2:./vanilla/h2/vanilladata;AUTO_SERVER=TRUE
+bpm.vanilla.norparena.database.userName={{ parameter_dict['db-user'] }}
+bpm.vanilla.norparena.database.password={{ parameter_dict['db-password'] }}
+bpm.vanilla.norparena.database.dialect=org.hibernate.dialect.H2Dialect
+bpm.vanilla.norparena.kmlFilesLocation=C:/vanilla/vanilla-jetty/webapps/vanilla_files/vanilla_kml
+bpm.vanilla.norparena.fusionMapFilesLocation=C:/vanilla/vanilla-jetty/webapps/vanilla_files/vanilla_maps
+bpm.vanilla.norparena.shapeFileLocation=C:/vanilla/vanilla-jetty/webapps/vanilla_files/shape_files
+#----------------------------------------------------------------------------------#
+# VanillaForms Database                                                            #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.forms.database.driverClassName=org.h2.Driver
+bpm.vanilla.forms.database.jdbcUrl=jdbc:h2:./vanilla/h2/vanilladata;AUTO_SERVER=TRUE
+bpm.vanilla.forms.database.userName={{ parameter_dict['db-user'] }}
+bpm.vanilla.forms.database.password={{ parameter_dict['db-password'] }}
+bpm.vanilla.forms.database.dialect=org.hibernate.dialect.H2Dialect
+#----------------------------------------------------------------------------------#
+# Vanilla Profiling Database                                                       #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.profiling.database.driverClassName=org.h2.Driver
+bpm.vanilla.profiling.database.jdbcUrl=jdbc:h2:./vanilla/h2/vanilladata;AUTO_SERVER=TRUE
+bpm.vanilla.profiling.database.userName={{ parameter_dict['db-user'] }}
+bpm.vanilla.profiling.database.password={{ parameter_dict['db-password'] }}
+bpm.vanilla.profiling.database.dialect=org.hibernate.dialect.H2Dialect
+#----------------------------------------------------------------------------------#
+# Agila Database                                                                   #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.vanilladata.database.driverClassName=org.h2.Driver
+bpm.vanilla.vanilladata.database.jdbcUrl=jdbc:h2:./vanilla/h2/vanilladata;AUTO_SERVER=TRUE
+bpm.vanilla.vanilladata.database.userName={{ parameter_dict['db-user'] }}
+bpm.vanilla.vanilladata.database.password={{ parameter_dict['db-password'] }}
+bpm.vanilla.vanilladata.database.dialect=org.hibernate.dialect.H2Dialect
+
+#====================================================================================================================================#
+# Vanilla Resources Path :                                                                                                           #
+# bpm.vanilla.platform.resourcesFolder Folder MUST contains the others properties Object                                             #
+#====================================================================================================================================#
+# The vanilla xml file containing JDBC drivers that will be used for SQL Connection
+bpm.vanilla.platform.jdbcDriverXmlFile=vanilla/resources/driverjdbc.xml
+# The folder containing JDBC JAR drivers that will be used for SQL Connection
+bpm.vanilla.platform.jdbcDriverFolder=vanilla/resources/jdbc
+# Requested by some API's
+bpm.vanilla.platform.resourcesFolder=vanilla/resources
+
+#====================================================================================================================================#
+# Repository Config                                                                                                                  #
+#====================================================================================================================================#
+
+#Path to the context file for each repository (if you want to add repository,
+# add a line with the repository id at the end)
+bpm.repository.context.file.1=vanilla/vanilla-conf/repositoryone.properties
+#Limit number of version for a model (0 = no limit)
+bpm.vanilla.repository.limit.version.model=0
+
+#Group and repository for public publication (Agila)
+bpm.public.group.id=3
+bpm.public.repository.id=1
+bpm.public.etl.folder.id=10
+
+#====================================================================================================================================#
+# Runtime Components Config                                                                                                          #
+#====================================================================================================================================#
+#----------------------------------------------------------------------------------#
+# URLs                                                                             #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.server.url={{ jetty_dict['url'] }}/VanillaRuntime
+#bpm.vanilla.server.url.external=http://localhost:7171/VanillaRuntime
+bpm.vanilla.server.root.login={{ parameter_dict['system-login'] }}
+bpm.vanilla.server.root.password={{ parameter_dict['system-password'] }}
+
+#----------------------------------------------------------------------------------#
+# Clusters                                                                         #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.server.local.protocole=http://
+bpm.vanilla.server.local.ip={{ jetty_dict['host'] }}
+bpm.vanilla.server.local.port={{ jetty_dict['http.port'] }}
+bpm.vanilla.server.local.context=/VanillaRuntime
+
+bpm.vanilla.cluster.registration.delay=600000
+
+#----------------------------------------------------------------------------------#
+# Authentication                                                                   #
+#----------------------------------------------------------------------------------#
+#Time out (in millisecond) to test the connection when you open a soft
+bpm.vanilla.authentication.timeOut=2000
+#Max connection try allowed before block
+bpm.vanilla.authentication.maxTry=5
+#Block time after max try connection reached (in millisecond : 1800000 = 30 min). The system check every 3 min.
+bpm.vanilla.authentication.maxTry.blockTime=1800000
+#True if you want the groups to be sort alphabetically in all connection parts (false otherwise)
+bpm.vanilla.authentication.sortGroup=false
+#IPs allowed to access administration. Separates IP with comma (ex: 192.168.1.*,192.168.2.24). Leaves empty to allow all ips
+bpm.vanilla.administration.ip.allowed=
+#Path to a file of forbidden words for a user password (separate each word by a comma in the file)
+#bpm.vanilla.administration.forbidden.words=
+#In millisecond - The user has to reconnect after the following time of inactivity
+bpm.vanilla.administration.session.timeout=1800000
+#Set to true if you want an admin to validate password change for users
+bpm.vanilla.administration.password.needadmin=false
+
+#----------------------------------------------------------------------------------#
+# Various                                                                          #
+#----------------------------------------------------------------------------------#
+#Log4j configuration File, if not present the System property log4j.configuration will be used
+bpm.log4j.configurationFile=vanilla/vanilla-conf/log.xml
+
+#Possible levels are DEBUG, INFO, WARN and ERROR
+bpm.vanilla.log.level=INFO
+
+bpm.metadata.connection.pool.size=50
+bpm.connection.manager.jdbc.pools.size=50
+
+#location to backup server activity
+bpm.vanilla.server.historizationfolder=webapps/vanilla_files/server/report/historic
+
+#location to vanilla_files
+bpm.vanillafiles.path=webapps/vanilla_files/
+
+#image for dashboard
+bpm.vanilla.image.folder=webapps/vanilla_files/vanilla_images
+
+bpm.vanilla.alertEnabled=true
+
+#Url to connect to the web service (leave empty to disable web service or it can be http://localhost:8081/vanillaService)
+bpm.web.service.url=
+
+#Name of the customer (display various custom devs according to the customer)
+bpm.vanilla.client=
+
+#----------------------------------------------------------------------------------#
+# Document Management Properties                                                   #
+#----------------------------------------------------------------------------------#
+bpm.ged.api.IndexDirectory=webapps/vanilla_files/
+
+#Solr properties, can put multiple cluster by enter multi urls for the bpm.solr.url properties (like : bpm.solr.url=http://192.168.1.10:8983/solr;http://192.168.1.11:8983/solr)
+bpm.solr.usesolr=false
+bpm.solr.embedded=true
+bpm.solr.configpath=webapps/vanilla_files/solr/
+bpm.solr.url=http://localhost:8983/solr
+
+#----------------------------------------------------------------------------------#
+# Scheduler                                                                        #
+#----------------------------------------------------------------------------------#
+#In millisecond - The check of jobs will start after that time
+bpm.scheduler.start.time=60000
+#In millisecond - It will check every define time the job to execute
+bpm.scheduler.check.time=180000
+#In millisecond - It will execute the job that should happen in the timelapse define on a restart server
+bpm.scheduler.relaunch.time=300000
+#If true, it use UTC time and server time if false
+bpm.scheduler.use.utc.time=false
+
+#----------------------------------------------------------------------------------#
+# LDAP Authentification                                                            #
+#----------------------------------------------------------------------------------#
+bpm.ldap.authentication.use=false
+bpm.ldap.authentication.type=simple
+bpm.ldap.authentication.url=ldap://192.168.1.151:389/CN=Partition,DC=BPM
+bpm.ldap.authentication.user.container=cn=users,CN=Partition,DC=BPM
+
+#----------------------------------------------------------------------------------#
+# Package Folder Creation                                                          #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.disco.package.folder=webapps/vanilla_files/VanillaDisconnected
+
+#----------------------------------------------------------------------------------#
+# Configuration for Dashboard Export with wkhtmltopdf                              #
+#----------------------------------------------------------------------------------#
+#This delay is the time let by the program to load javascript (if your dashboard seems incomplete, put a longer delay)
+bpm.dashboard.export.delay=5000
+#If it is on linux adapt paths
+bpm.dashboard.export.wkhtmltopdf.path=vanilla/resources/wkhtmltopdf/bin/wkhtmltopdf.exe
+bpm.dashboard.export.wkhtmltoimage.path=vanilla/resources/wkhtmltopdf/bin/wkhtmltoimage.exe
+bpm.dashboard.export.onLinux=false
+
+#----------------------------------------------------------------------------------#
+# JMX                                                                              #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.jmx.use=false
+bpm.vanilla.jmx.host=localhost
+bpm.vanilla.jmx.port=9999
+bpm.vanilla.jmx.rmi.security.use=true
+bpm.vanilla.jmx.rmi.security.config=securityFolder
+
+#====================================================================================================================================#
+# Servers Config                                                                                                                     #
+#====================================================================================================================================#
+# maximum tasks running at the same time for a VanillaServerRuntime component
+bpm.vanilla.server.commons.server.maximumRunningTasks=10
+
+#----------------------------------------------------------------------------------#
+# Reporting Server Config                                                          #
+#----------------------------------------------------------------------------------#
+#maximum stored connection on Repository (with different context)
+bpm.vanilla.server.reporting.server.repositoryPoolSize=10
+#number of ReportModel that will be cached in the server
+bpm.vanilla.server.reporting.server.reportPoolSize=20
+#folder where the generated report will be stored
+bpm.vanilla.server.reporting.server.generationFolder=webapps/vanilla_files/server/report
+#path for the log generated by the BirtPlatform
+bpm.vanilla.server.reporting.server.birtReportEngineLogs=webapps/vanilla_files/server/report/logs
+#folder used for JasperReports Images
+bpm.vanilla.server.reporting.server.imagesUri=
+#log level for Birt Engine INFO,OFF,SEVERE,ALL
+bpm.vanilla.reporting.birt.logLevel=WARNING
+#Background folder for report
+bpm.vanilla.server.backgroundFolder=webapps/vanilla_files/server/report/background
+
+#----------------------------------------------------------------------------------#
+# Gateway Server Config                                                            #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.server.gateway.server.repositoryPoolSize=10
+bpm.vanilla.server.gateway.server.reportPoolSize=
+bpm.vanilla.server.gateway.server.maxrows=50000
+bpm.vanilla.server.gateway.server.homeFolder=webapps/vanilla_files/server/gateway
+bpm.vanilla.server.gateway.server.tempFolder=webapps/vanilla_files/server/gateway/temp
+
+#----------------------------------------------------------------------------------#
+# Workflow Server Config                                                           #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.server.workflow.server.home=webapps/vanilla_files/server/workflow
+bpm.vanilla.server.workflow.server.historicTaskFolder=webapps/vanilla_files/server/workflow/historictask
+bpm.vanilla.server.workflow.server.generatedReportHome=webapps/vanilla_files/server/workflow/reports
+bpm.vanilla.server.workflow.server.files=webapps/vanilla_files/server/workflow/files
+bpm.vanilla.server.workflow.server.temporaryFiles=webapps/vanilla_files/server/workflow/temp
+
+#----------------------------------------------------------------------------------#
+# United Olap Server Config                                                        #
+#----------------------------------------------------------------------------------#
+bpm.memcached.server.useMemcached=true
+bpm.memcached.server.port=11211
+bpm.memcached.server.host=localhost
+
+bpm.united.olap.runtime.data.cache.disk.disabled=false
+bpm.united.olap.runtime.data.cache.disk.fileLocation=webapps/vanilla_files/uolap/cachedisk
+
+bpm.united.olap.runtime.projection.fileLocation=webapps/vanilla_files/uolap
+bpm.united.olap.runtime.projection.file.bufferSize=3000
+
+#====================================================================================================================================#
+# Vanilla Emailing system                                                                                                            #
+#====================================================================================================================================#
+#ex for orange.Fr
+bpm.vanilla.mailer.smtp.host=smtp.orange.fr
+bpm.vanilla.mailer.smtp.port=25
+bpm.vanilla.mailer.smtp.from=vanilla@bpm-conseil.com
+bpm.vanilla.mailer.smtp.user=
+bpm.vanilla.mailer.smtp.password=
+bpm.vanilla.mailer.smtp.auth=false
+bpm.vanilla.mailer.smtp.starttls.enable=false
+#end ex
+#this one is for gmail
+#bpm.vanilla.mailer.smtp.host=smtp.gmail.com
+#bpm.vanilla.mailer.smtp.port=587
+#bpm.vanilla.mailer.smtp.from=xx.aa@gmail.com
+#bpm.vanilla.mailer.smtp.user=xx.aa@gmail.com
+#bpm.vanilla.mailer.smtp.password=xxx
+#bpm.vanilla.mailer.smtp.auth=true
+#bpm.vanilla.mailer.smtp.starttls.enable=true 
+
+#====================================================================================================================================#
+# VanillaPortal Look and Feel                                                                                                        #
+#====================================================================================================================================#
+#----------------------------------------------------------------------------------#
+# Portal URLs                                                                      #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.webapps.url.faweb=http://localhost:8080/VanillaAnalysis?locale=fr_FR
+bpm.vanilla.webapps.url.fwr=http://localhost:8080/VanillaReport?locale=fr_FR
+bpm.vanilla.webapps.url.metadataweb=http://localhost:8080/VanillaMetadata?locale=fr_FR
+bpm.vanilla.webapps.url.fdweb=http://localhost:8080/VanillaDashboard?locale=fr_FR
+bpm.vanilla.webapps.url.fmuserweb=http://localhost:8080/VanillaKpiUser?locale=fr_FR
+bpm.vanilla.webapps.url.fmloaderweb=http://localhost:8080/VanillaKpiLoader?locale=fr_FR
+bpm.vanilla.webapps.url.fmdesignerweb=http://localhost:8080/VanillaKpiDesigner?locale=fr_FR
+bpm.vanilla.webapps.url.fmkpimapweb=http://localhost:8080/VanillaKpiMap?locale=fr_FR
+bpm.vanilla.webapps.url.air=http://localhost:8080/VanillaAir?locale=fr_FR
+bpm.vanilla.webapps.url.architectweb=http://localhost:8080/VanillaArchitect?locale=fr_FR
+bpm.vanilla.webapps.url.datapreparation=http://localhost:8080/VanillaDataPreparation?locale=fr_FR
+bpm.vanilla.webapps.url.hub=http://localhost:8080/VanillaHub?locale=fr_FR
+
+#Redirection URL when you click on disconnect in the portal
+bpm.vanilla.webapps.url.deconnect=
+
+#----------------------------------------------------------------------------------#
+# Various                                                                          #
+#----------------------------------------------------------------------------------#
+#folder that will contains user's personal images
+bpm.vanilla.user.image.folder=webapps/vanilla_files/usersPictures
+
+#Path to the CSS file which define the css for the login page of the webapps
+bpm.vanilla.login.css.path=webapps/vanilla_files/VanillaCss/
+
+#Path to the folder Help for the portal
+bpm.vanilla.help.url=help/
+
+#Custom properties file path
+bpm.custom.properties.path=vanilla/vanilla-conf/
+
+#theme to be used for the Portal css : it must be the CSS file within [VANILLA]/webapps/vanilla/css
+bpm.vanilla.default.theme=vanilla_theme_default
+
+#enable to BirtViewer to run report from Vanilla portal
+#if it is not enabled, the defaul Vanilla Report Viewer will be used
+#the BirtViewer webapp URL used is the one stored in the VanillaSetup (you can set it with EntrepriseServices but you will need to restart Vanilla)
+bpm.vanilla.server.useBirtViewer=false
+
+#----------------------------------------------------------------------------------#
+# Aklabox                                                                          #
+#----------------------------------------------------------------------------------#
+#If you want to be able to connect to an aklabox instance, you need to uncomment and fill the runtime url below
+bpm.aklabox.runtime.url=
+bpm.aklabox.webapp.url=
+#Directory for excel loader
+bpm.vanilla.loaderExcel.directory.id=100
+
+#----------------------------------------------------------------------------------#
+# CAS                                                                              #
+#----------------------------------------------------------------------------------#
+#The CAS attribut to retrieve
+#bpm.cas.login.attribut=
+
+#----------------------------------------------------------------------------------#
+# Feedback Properties                                                              #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.feedback.allowed=
+bpm.vanilla.feedback.url=http://www.bpm-conseil.com/feedback
+
+#----------------------------------------------------------------------------------#
+# Update Manager                                                                   #
+#----------------------------------------------------------------------------------#
+#bpm.update.manager.url=http://localhost:8080/UpdateManager
+
+#----------------------------------------------------------------------------------#
+# Update Manager                                                                   #
+# To add a licence you need to add the following properties                        #
+#  with the application name                                                       #
+#  bpm.licence.path.(applicationName)=                                             #
+#----------------------------------------------------------------------------------#
+#bpm.licence.path.SMARTWEB=vanilla-conf/LicenceAir
+
+#----------------------------------------------------------------------------------#
+# Air Properties                                                                   #
+#----------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------#
+# Smart Database                                                                   #
+#----------------------------------------------------------------------------------#
+bpm.vanilla.smart.database.driverClassName=org.h2.Driver
+bpm.vanilla.smart.database.jdbcUrl=jdbc:h2:./vanilla/h2/vanilladata;AUTO_SERVER=TRUE
+bpm.vanilla.smart.database.userName=biplatform
+bpm.vanilla.smart.database.password=biplatform
+bpm.vanilla.smart.database.dialect=org.hibernate.dialect.H2Dialect
+
+#Smart servers
+bpm.smart.r.server.url.1=localhost:6311
+#bpm.smart.r.server.url.2=localhost:6312
+bpm.smart.runtime.url={{ jetty_dict['url'] }}/VanillaRuntime
+#location R libraries
+bpm.vanilla.R.libraries.path=../library/
+#plot R functions
+bpm.vanilla.R.graphics.config.path=webapps/vanilla_files/air_files/air_config/plot_functions.xml
+
+#====================================================================================================================================#
+# Vanilla HUB                                                                                                                        #
+#====================================================================================================================================#
+bpm.vanillahub.database.driverClassName=org.h2.Driver
+bpm.vanillahub.database.jdbcUrl=jdbc:h2:./vanilla/h2/vanilladata;AUTO_SERVER=TRUE
+bpm.vanillahub.database.userName=biplatform
+bpm.vanillahub.database.password=biplatform
+bpm.vanillahub.database.dialect=org.hibernate.dialect.H2Dialect
+
+bpm.file.path=webapps/vanilla_files/hub_files/
+bpm.hub.runtime.url={{ jetty_dict['url'] }}/VanillaRuntime
+
+#Url to the Driver File
+bpm.jdbc.xml.path=vanilla/resources/driverjdbc.xml
+
+#====================================================================================================================================#
+# CKAN                                                                                                                               #
+#====================================================================================================================================#
+#bpm.ckan.url=http://192.168.2.226:8080/
+#bpm.ckan.apiKey=2ad31d54-adf5-4477-80bb-4afc1c10f4fc
+#bpm.ckan.org=bpm
+#bpm.d4c.url=
+#bpm.d4c.login=
+#bpm.d4c.password=
+
+#====================================================================================================================================#
+# WOPI       (To get the code http://IP:9980/hosting/discovery)                                                                      #
+#====================================================================================================================================#
+#bpm.wopi.ws.url=http://192.168.2.50:9980/loleaflet/dd2e4df/loleaflet.html?WOPISrc=http%3A%2F%2F192.168.2.8%3A8080%2FVanillaWopi%2Fwopi_office%2Ffiles%2F
+
+#====================================================================================================================================#
+# Auto Login                                                                                                                         #
+#====================================================================================================================================#
+#bpm.vanilla.autoLogin.enabled=false
+#bpm.vanilla.autoLogin.ip.allowed=0:0:0:0:0:0:0:1
+
+#====================================================================================================================================#
+# Keycloak                                                                                                                           #
+#====================================================================================================================================#
+#bpm.vanilla.keycloak.enabled=true
+#bpm.vanilla.keycloak.key=Vanilla7
+#bpm.vanilla.keycloak.configUrl=http://localhost:8080/vanilla_files/keycloak/keycloak.json
+
+#====================================================================================================================================#
+# LimeSurvey                                                                                                                         #
+#====================================================================================================================================#
+#bpm.limesurvey.url=https://XXXX-limesurvey.data4citizen.com
+#bpm.limesurvey.login=
+#bpm.limesurvey.password=
+
+#====================================================================================================================================#
+# KPI		                                                                                                                         #
+#====================================================================================================================================#
+bpm.vanilla.kpi.database.schema=vanilla_kpi_data
+bpm.vanilla.kpi.database.driverClassName=org.h2.Driver
+bpm.vanilla.kpi.database.jdbcUrl=jdbc:h2:./vanilla/h2/vanilla_kpi_data;AUTO_SERVER=TRUE
+bpm.vanilla.kpi.database.userName={{ parameter_dict['db-user'] }}
+bpm.vanilla.kpi.database.password={{ parameter_dict['db-password'] }}
+
+#====================================================================================================================================#
+# VMAP		                                                                                                                         #
+#====================================================================================================================================#
+#bpm.vanilla.vmap.database.schema=
+#bpm.vanilla.vmap.database.driverclassname=
+#bpm.vanilla.vmap.database.jdbcurl=
+#bpm.vanilla.vmap.database.username=
+#bpm.vanilla.vmap.database.password=
+
+#====================================================================================================================================#
+# CKAN Datastore		                                                                                                                         #
+#====================================================================================================================================#
+#bpm.vanilla.ckan.datastore.database.schema=
+#bpm.vanilla.ckan.datastore.database.driverClassName=
+#bpm.vanilla.ckan.datastore.database.jdbcUrl=
+#bpm.vanilla.ckan.datastore.database.userName=
+#bpm.vanilla.ckan.datastore.database.password=
+
+bpm.gotenberg.url=http://localhost:3000
