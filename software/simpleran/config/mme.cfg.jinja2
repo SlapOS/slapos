@@ -23,7 +23,7 @@
   log_options: "all.level=error,all.max_size=0,nas.level=debug,nas.max_size=1,s1ap.level=debug,s1ap.max_size=1,ngap.level=debug,ngap.max_size=1,file.rotate=1G,file.path=/dev/null",
   log_filename: "{{ directory['log'] }}/mme.log",
 
-  com_addr: "{{ slapparameter_dict.com_url }}",
+  com_addr: "{{ slapparameter_dict.mme_com_url }}",
 {%- if not slapparameter_dict.com_unsecure %}
   com_auth: {
     password: "{{ websocket_password }}",
