@@ -26,6 +26,7 @@
 ##############################################################################
 
 import contextlib
+import json
 import os
 import pathlib
 import subprocess
@@ -33,140 +34,149 @@ import tempfile
 import urllib.parse
 
 import requests
-
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+  os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
+)
 
 
-class TestResticRestServer(SlapOSInstanceTestCase):
+class ResticRestServerTestCase(SlapOSInstanceTestCase):
+  """Mixin with shared setup and helpers for restic-rest-server tests."""
+
+  backend_url_with_credentials: str
+  frontend_url_with_credentials: str
 
   def setUp(self):
-    self.connection_parameters = \
-        self.computer_partition.getConnectionParameterDict()
+    self.connection_parameters = self.computer_partition.getConnectionParameterDict()
     self.ca_cert = self._getCaucaseServiceCACertificate()
 
-    for key in ('backend-url', 'frontend-url'):
+    for key in ("backend-url", "frontend-url"):
       parsed_url = urllib.parse.urlparse(self.connection_parameters[key])
       url_with_credentials = parsed_url._replace(
-          netloc='{}:{}@[{}]:{}'.format(
-              self.connection_parameters['rest-server-user'],
-              self.connection_parameters['rest-server-password'],
-              parsed_url.hostname,
-              parsed_url.port,
-          )).geturl()
-      setattr(self, key.replace('-', '_') + '_with_credentials',
-              url_with_credentials)
+        netloc="{}:{}@[{}]:{}".format(
+          self.connection_parameters["rest-server-user"],
+          self.connection_parameters["rest-server-password"],
+          parsed_url.hostname,
+          parsed_url.port,
+        )
+      ).geturl()
+      setattr(self, key.replace("-", "_") + "_with_credentials", url_with_credentials)
+
+    self.workdir = self.enterContext(tempfile.TemporaryDirectory())
+    self.password_file = self.enterContext(
+      tempfile.NamedTemporaryFile(mode="w", delete=False)
+    )
+    with open(self.password_file.name, "w") as f:
+      f.write("secret")
+    with open(os.path.join(self.workdir, "data"), "w") as f:
+      f.write("data to backup")
+
+  def run_restic(self, *args, **kw):
+    restic_bin = os.path.join(self.computer_partition_root_path, "bin", "restic")
+    return subprocess.check_output(
+      (
+        restic_bin,
+        "--cacert",
+        self.ca_cert,
+        "--password-file",
+        self.password_file.name,
+        "--repo",
+        f"rest:{self.backend_url_with_credentials}/{self.id()}",
+      )
+      + args,
+      encoding="utf-8",
+      **kw,
+    )
 
   def _getCaucaseServiceCACertificate(self):
     ca_cert = tempfile.NamedTemporaryFile(
-        prefix="ca.crt.pem",
-        mode="w",
-        delete=False,
+      prefix="ca.crt.pem",
+      mode="w",
+      delete=False,
     )
     ca_cert.write(
-        requests.get(
-            urllib.parse.urljoin(
-                self.connection_parameters['caucase-url'],
-                '/cas/crt/ca.crt.pem',
-            )).text)
+      requests.get(
+        urllib.parse.urljoin(
+          self.connection_parameters["caucase-url"],
+          "/cas/crt/ca.crt.pem",
+        )
+      ).text
+    )
     self.addCleanup(os.unlink, ca_cert.name)
     return ca_cert.name
 
+
+class TestResticRestServer(ResticRestServerTestCase):
   def test_http_get(self):
-    resp = requests.get(self.connection_parameters['backend-url'], verify=self.ca_cert)
+    resp = requests.get(self.connection_parameters["backend-url"], verify=self.ca_cert)
     self.assertEqual(resp.status_code, requests.codes.unauthorized)
 
     resp = requests.get(
-        urllib.parse.urljoin(
-            self.backend_url_with_credentials,
-            '/metrics',
-        ),
-        verify=self.ca_cert,
+      urllib.parse.urljoin(
+        self.backend_url_with_credentials,
+        "/metrics",
+      ),
+      verify=self.ca_cert,
     )
     # a random metric
-    self.assertIn('process_cpu_seconds_total', resp.text)
+    self.assertIn("process_cpu_seconds_total", resp.text)
     resp.raise_for_status()
 
   def test_frontend_url(self):
-    resp = requests.get(self.connection_parameters['frontend-url'], verify=self.ca_cert)
+    resp = requests.get(self.connection_parameters["frontend-url"], verify=self.ca_cert)
     self.assertEqual(resp.status_code, requests.codes.unauthorized)
 
     resp = requests.get(
-        urllib.parse.urljoin(
-            self.frontend_url_with_credentials,
-            '/metrics',
-        ),
-        verify=self.ca_cert,
+      urllib.parse.urljoin(
+        self.frontend_url_with_credentials,
+        "/metrics",
+      ),
+      verify=self.ca_cert,
     )
-    self.assertIn('process_cpu_seconds_total', resp.text)
+    self.assertIn("process_cpu_seconds_total", resp.text)
     resp.raise_for_status()
 
   def test_backup_scenario(self):
-    restic_bin = os.path.join(
-        self.computer_partition_root_path,
-        'bin',
-        'restic',
+    with self.assertRaises(subprocess.CalledProcessError) as exc_context:
+      self.run_restic("snapshots", stderr=subprocess.PIPE)
+    self.assertIn(
+      "Is there a repository at the following location?",
+      exc_context.exception.stderr,
     )
+    out = self.run_restic("init")
+    self.assertIn("created restic repository", out)
 
-    def get_restic_output(*args, **kw):
-      return subprocess.check_output(
-          (
-              restic_bin,
-              '--cacert',
-              self.ca_cert,
-              '--password-file',
-              password_file.name,
-              '--repo',
-              'rest:' + self.backend_url_with_credentials,
-          ) + args,
-          universal_newlines=True,
-          **kw,
-      )
+    out = self.run_restic("backup", self.work_dir)
+    self.assertIn("Added to the repo", out)
 
-    with tempfile.TemporaryDirectory() as work_directory,\
-        tempfile.NamedTemporaryFile(mode='w') as password_file:
-      password_file.write('secret')
-      password_file.flush()
+    out = self.run_restic("snapshots")
+    self.assertEqual(out.splitlines()[-1], "1 snapshots")
+    snapshot_id = out.splitlines()[2].split()[0]
+    backup_path = out.splitlines()[2].split()[-3]
+    restore_directory = os.path.join(self.work_dir, "restore")
 
-      with open(os.path.join(work_directory, 'data'), 'w') as f:
-        f.write('data to backup')
-      with self.assertRaises(subprocess.CalledProcessError) as exc_context:
-        get_restic_output('snapshots', stderr=subprocess.PIPE)
-      self.assertIn('Is there a repository at the following location?',
-                    exc_context.exception.stderr)
+    out = self.run_restic("restore", snapshot_id, "--target", restore_directory)
+    self.assertIn("restoring snapshot", out)
+    with open(os.path.join(restore_directory, backup_path, "data")) as f:
+      self.assertEqual(f.read(), "data to backup")
 
-      out = get_restic_output('init')
-      self.assertIn('created restic repository', out)
-
-      out = get_restic_output('backup', work_directory)
-      self.assertIn('Added to the repo', out)
-
-      out = get_restic_output('snapshots')
-      self.assertEqual(out.splitlines()[-1], '1 snapshots')
-      snapshot_id = out.splitlines()[2].split()[0]
-      backup_path = out.splitlines()[2].split()[-3]
-      restore_directory = os.path.join(work_directory, 'restore')
-
-      out = get_restic_output(
-          'restore',
-          snapshot_id,
-          '--target',
-          restore_directory,
-      )
-      self.assertIn('restoring snapshot', out)
-      with open(os.path.join(restore_directory, backup_path, 'data')) as f:
-        self.assertEqual(f.read(), 'data to backup')
+  def test_forget_blocked_by_append_only(self):
+    self.run_restic("init")
+    self.run_restic("backup", self.workdir)
+    snapshot_id = json.loads(self.run_restic("snapshots", "--json"))[0]["id"]
+    out = self.run_restic("forget", snapshot_id, stderr=subprocess.STDOUT)
+    self.assertIn("unable to remove snapshot", out)
+    self.assertIn(
+      snapshot_id, [s["id"] for s in json.loads(self.run_restic("snapshots", "--json"))]
+    )
 
   def test_renew_certificate(self):
     def _getpeercert():
       # XXX low level way to get get the server certificate
       with requests.Session() as session:
         pool = session.get(
-          self.connection_parameters['frontend-url'],
+          self.connection_parameters["frontend-url"],
           verify=self.ca_cert,
         ).raw._pool.pool
         with contextlib.closing(pool.get()) as cnx:
@@ -177,21 +187,38 @@ class TestResticRestServer(SlapOSInstanceTestCase):
     # use a timeout, because this service runs forever
     subprocess.run(
       (
-        'timeout',
-        '5',
-        'faketime',
-        '+63 days',
+        "timeout",
+        "5",
+        "faketime",
+        "+63 days",
         os.path.join(
           self.computer_partition_root_path,
-          'etc/service/rest-server-certificate-updater'),
+          "etc/service/rest-server-certificate-updater",
+        ),
       ),
       capture_output=not self._debug,
     )
 
     # reprocess instance to get the new certificate, after removing the timestamp
     # to force execution
-    (pathlib.Path(self.computer_partition_root_path) / '.timestamp').unlink()
+    (pathlib.Path(self.computer_partition_root_path) / ".timestamp").unlink()
     self.waitForInstance()
 
     cert_after = _getpeercert()
-    self.assertNotEqual(cert_before['notAfter'], cert_after['notAfter'])
+    self.assertNotEqual(cert_before["notAfter"], cert_after["notAfter"])
+
+
+class TestResticRestServerAppendOnlyDisabled(ResticRestServerTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {"_": json.dumps({"append-only": False})}
+
+  def test_prune_allowed(self):
+    self.run_restic("init")
+    self.run_restic("backup", self.workdir)
+    snapshot_id = json.loads(self.run_restic("snapshots", "--json"))[0]["id"]
+    out = self.run_restic("forget", snapshot_id, stderr=subprocess.STDOUT)
+    self.assertIn("1 / 1 files deleted", out)
+    self.assertNotIn(
+      snapshot_id, [s["id"] for s in json.loads(self.run_restic("snapshots", "--json"))]
+    )
