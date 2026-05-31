@@ -180,6 +180,16 @@ target-directory = ${directory:bin}
 link-binary =
   {{ restic_location }}/bin/restic
 
+
+[rest-server-append-only]
+recipe = slapos.recipe.build
+init =
+  options["option"] = (
+    '--append-only'
+    if self.buildout["slap-configuration"]["configuration.append-only"]
+    else ''
+  )
+
 [rest-server]
 recipe = slapos.cookbook:wrapper
 command-line =
@@ -191,6 +201,7 @@ command-line =
     --tls-cert ${rest-server-certificate:cert-file}
     --tls-key ${rest-server-certificate:key-file}
     --prometheus
+    ${rest-server-append-only:option}
 wrapper-path = ${directory:service}/rest-server
 
 port = 19080
