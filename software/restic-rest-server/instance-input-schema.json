@@ -8,6 +8,12 @@
       "description": "Enable Prometheus metrics endpoint",
       "type": "boolean",
       "default": true
+    },
+    "append-only": {
+      "title": "Append Only",
+      "description": "Enable append only mode, preventing deletion of backup data",
+      "type": "boolean",
+      "default": true
     }
   }
 }
