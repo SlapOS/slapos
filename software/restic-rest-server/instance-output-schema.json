@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Values returned by Restic REST Server",
+  "type": "object",
+  "properties": {
+    "rest-server-user": {
+      "description": "Username for REST server authentication",
+      "type": "string"
+    },
+    "rest-server-password": {
+      "description": "Password for REST server authentication",
+      "type": "string"
+    },
+    "url": {
+      "description": "URL of the REST server",
+      "type": "string"
+    },
+    "caucase-url": {
+      "description": "URL of Caucase managing the server certificate",
+      "type": "string"
+    }
+  }
+}

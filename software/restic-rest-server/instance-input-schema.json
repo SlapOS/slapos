@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "prometheus": {
+      "title": "Prometheus Metrics",
+      "description": "Enable Prometheus metrics endpoint",
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

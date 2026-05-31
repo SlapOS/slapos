@@ -23,7 +23,9 @@ cert = ${slap-connection:cert-file}
 
 [slap-configuration]
 # frontend reads from from a part named [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = {{ software_cfg_json }}
+set-default = all
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
