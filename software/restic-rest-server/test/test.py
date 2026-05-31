@@ -47,16 +47,19 @@ class TestResticRestServer(SlapOSInstanceTestCase):
   def setUp(self):
     self.connection_parameters = \
         self.computer_partition.getConnectionParameterDict()
-    parsed_url = urllib.parse.urlparse(self.connection_parameters['url'])
-    self.url_with_credentials = parsed_url._replace(
-        netloc='{}:{}@[{}]:{}'.format(
-            self.connection_parameters['rest-server-user'],
-            self.connection_parameters['rest-server-password'],
-            parsed_url.hostname,
-            parsed_url.port,
-        )).geturl()
-
     self.ca_cert = self._getCaucaseServiceCACertificate()
+
+    for key in ('backend-url', 'frontend-url'):
+      parsed_url = urllib.parse.urlparse(self.connection_parameters[key])
+      url_with_credentials = parsed_url._replace(
+          netloc='{}:{}@[{}]:{}'.format(
+              self.connection_parameters['rest-server-user'],
+              self.connection_parameters['rest-server-password'],
+              parsed_url.hostname,
+              parsed_url.port,
+          )).geturl()
+      setattr(self, key.replace('-', '_') + '_with_credentials',
+              url_with_credentials)
 
   def _getCaucaseServiceCACertificate(self):
     ca_cert = tempfile.NamedTemporaryFile(
@@ -74,17 +77,31 @@ class TestResticRestServer(SlapOSInstanceTestCase):
     return ca_cert.name
 
   def test_http_get(self):
-    resp = requests.get(self.connection_parameters['url'], verify=self.ca_cert)
+    resp = requests.get(self.connection_parameters['backend-url'], verify=self.ca_cert)
     self.assertEqual(resp.status_code, requests.codes.unauthorized)
 
     resp = requests.get(
         urllib.parse.urljoin(
-            self.url_with_credentials,
+            self.backend_url_with_credentials,
             '/metrics',
         ),
         verify=self.ca_cert,
     )
     # a random metric
+    self.assertIn('process_cpu_seconds_total', resp.text)
+    resp.raise_for_status()
+
+  def test_frontend_url(self):
+    resp = requests.get(self.connection_parameters['frontend-url'], verify=self.ca_cert)
+    self.assertEqual(resp.status_code, requests.codes.unauthorized)
+
+    resp = requests.get(
+        urllib.parse.urljoin(
+            self.frontend_url_with_credentials,
+            '/metrics',
+        ),
+        verify=self.ca_cert,
+    )
     self.assertIn('process_cpu_seconds_total', resp.text)
     resp.raise_for_status()
 
@@ -104,7 +121,7 @@ class TestResticRestServer(SlapOSInstanceTestCase):
               '--password-file',
               password_file.name,
               '--repo',
-              'rest:' + self.url_with_credentials,
+              'rest:' + self.backend_url_with_credentials,
           ) + args,
           universal_newlines=True,
           **kw,
@@ -149,7 +166,7 @@ class TestResticRestServer(SlapOSInstanceTestCase):
       # XXX low level way to get get the server certificate
       with requests.Session() as session:
         pool = session.get(
-          self.connection_parameters['url'],
+          self.connection_parameters['frontend-url'],
           verify=self.ca_cert,
         ).raw._pool.pool
         with contextlib.closing(pool.get()) as cnx:

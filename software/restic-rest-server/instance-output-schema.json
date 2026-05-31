@@ -11,12 +11,16 @@
       "description": "Password for REST server authentication",
       "type": "string"
     },
-    "url": {
-      "description": "URL of the REST server",
+    "backend-url": {
+      "description": "Direct URL of the REST server. The CA certificate must be retrieved from caucase-url",
       "type": "string"
     },
     "caucase-url": {
       "description": "URL of Caucase managing the server certificate",
+      "type": "string"
+    },
+    "frontend-url": {
+      "description": "URL of the REST server, behind a CDN frontend, with a certificate that should be trusted directly, at the cost of less optimal performance that directly using backend-url",
       "type": "string"
     }
   }

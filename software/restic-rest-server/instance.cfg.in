@@ -234,5 +234,6 @@ instance-promises =
 recipe = slapos.cookbook:publish
 rest-server-user = ${rest-server-password:user}
 rest-server-password = ${rest-server-password:passwd}
-url = ${frontend:connection-secure_access}
+frontend-url = ${frontend:connection-secure_access}
+backend-url = ${rest-server:url}
 caucase-url = ${caucased:url}
