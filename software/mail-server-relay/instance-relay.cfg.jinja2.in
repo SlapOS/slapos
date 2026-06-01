@@ -259,6 +259,10 @@ content =
 
   # Inbound relay access
 
+  # Disable Delivery Status Notifications
+  # See https://www.postfix.org/DSN_README.html
+  smtpd_discard_ehlo_keywords = silent-discard, dsn
+
   # Disallow implicit subdomain matches in any table
   # Use leading dot as in .parent.domain for explicit matches
   parent_domain_matches_subdomains =
