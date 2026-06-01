@@ -1988,6 +1988,29 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'type': 'redirect',
         'https-only': False,
       },
+      'type-redirect-path': {
+        'url': '%ssome/path' % (cls.backend_url,),
+        'https-url': '%ssome/path' % (cls.backend_https_url,),
+        'type': 'redirect',
+        'https-only': False,
+      },
+      'type-redirect-path-trailing-slash': {
+        'url': '%ssome/path/' % (cls.backend_url,),
+        'https-url': '%ssome/path/' % (cls.backend_https_url,),
+        'type': 'redirect',
+        'https-only': False,
+      },
+      'type-redirect-path-custom_domain': {
+        'url': '%ssome/path' % (cls.backend_url,),
+        'type': 'redirect',
+        'custom_domain': 'customdomaintyperedirectpath.example.com',
+      },
+      'type-redirect-path-to-standard-port': {
+        'url': 'http://example.com/some/path',
+        'https-url': 'https://example.com/some/path',
+        'type': 'redirect',
+        'https-only': False,
+      },
       'enable_cache': {
         'url': cls.backend_url,
         'enable_cache': True,
@@ -2252,9 +2275,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '70',
+      'accepted-slave-amount': '74',
       'rejected-slave-amount': '0',
-      'slave-amount': '70',
+      'slave-amount': '74',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -3980,6 +4003,148 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqual(
       'http://example.com/test-path/deeper',
+      result.headers['Location']
+    )
+
+    self.assertResponseHeaders(
+      result, via=False, backend_reached=False, alt_svc=False)
+
+  def test_type_redirect_path(self):
+    parameter_dict = self.assertSlaveBase('type-redirect-path')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      '%ssome/path/test-path/deeper' % (self.backend_https_url,),
+      result.headers['Location']
+    )
+
+    self.assertResponseHeaders(
+      result, via=False, backend_reached=False)
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      '%ssome/path/test-path/deeper' % (self.backend_url,),
+      result.headers['Location']
+    )
+
+    self.assertResponseHeaders(
+      result, via=False, backend_reached=False, alt_svc=False)
+
+  def test_type_redirect_path_trailing_slash(self):
+    # A trailing slash on the configured URL must not change the redirect
+    # target (the trailing slash is stripped before the path is prepended,
+    # so no double slash appears in the Location header).
+    parameter_dict = self.assertSlaveBase('type-redirect-path-trailing-slash')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      '%ssome/path/test-path/deeper' % (self.backend_https_url,),
+      result.headers['Location']
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      '%ssome/path/test-path/deeper' % (self.backend_url,),
+      result.headers['Location']
+    )
+
+  def test_type_redirect_path_custom_domain(self):
+    parameter_dict = self.assertSlaveBase(
+      'type-redirect-path-custom_domain',
+      hostname='customdomaintyperedirectpath')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      '%ssome/path/test-path/deeper' % (self.backend_url,),
+      result.headers['Location']
+    )
+
+    self.assertResponseHeaders(
+      result, via=False, backend_reached=False)
+
+  def test_type_redirect_path_to_standard_port(self):
+    parameter_dict = self.assertSlaveBase('type-redirect-path-to-standard-port')
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://example.com/some/path/test-path/deeper',
+      result.headers['Location']
+    )
+
+    self.assertResponseHeaders(
+      result, via=False, backend_reached=False)
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'http://example.com/some/path/test-path/deeper',
       result.headers['Location']
     )
 
