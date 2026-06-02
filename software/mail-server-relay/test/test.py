@@ -142,7 +142,10 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       shared_dup_instance = self.requestSlaveInstanceForDomain(domain, suffix="-test")
       connection_dict = json.loads(shared_dup_instance.getConnectionParameterDict().get("_", "{}"))
       error = connection_dict.get("error", "<missing>")
-      self.assertIn("address_already_used", error, f"Expected duplicate error for {domain}, got {error}")
+      self.assertIn(
+        "this domain has already been claimed", error,
+        f"Expected duplicate error for {domain}, got {error}"
+      )
 
 
 class ProxyMapDuplicateDomainTestCase(SlapOSInstanceTestCase):

@@ -119,6 +119,26 @@ errors = $${validate-proxy-map:errors}
 # Shared instances (domains)
 # ----------------------------
 
+[macro.sys-path-add-egg]
+recipe = slapos.recipe.build
+eggs = $${missing_option_eggs:error}
+egg-paths =
+  $${buildout:develop-eggs-directory}
+  $${buildout:eggs-directory}
+init =
+  import zc.buildout
+  import pkg_resources
+  zc.buildout.easy_install.install(
+    [e.strip() for e in options['eggs'].splitlines()],
+    dest=None,
+    working_set=pkg_resources.working_set,
+    path=[p.strip() for p in options['egg-paths'].splitlines()]
+  )
+
+[sys-path-add-dnspython]
+<= macro.sys-path-add-egg
+eggs = dnspython
+
 [filter-shared-instances]
 recipe = slapos.recipe.build
 # JSON store for mapping domain -> shared reference
@@ -126,11 +146,16 @@ recipe = slapos.recipe.build
 # Error only if a different reference claims an already assigned domain
 target = $${directory:etc}/relay-domains.json
 shared-list = $${slap-configuration:valid-shared-instance-list}
+cluster-fqdns = $${cluster-mx:fqdn-list}
+domain-to-proxy = $${validate-proxy-map:domain-to-proxy}
+depends = $${sys-path-add-dnspython:recipe}
 init =
   import json
   import secrets
-  target = options['target']
+  import socket
+  import dns.resolver
 
+  target = options['target']
   try:
     with open(target, 'r') as fp:
       previous = json.load(fp)
@@ -138,23 +163,73 @@ init =
     print("No previous shared instances found")
     previous = {}
 
+  cluster_fqdns_dot = set(fqdn + '.' for fqdn in options['cluster-fqdns'])
+  domain_to_proxy = options['domain-to-proxy']
   shared_list = options['shared-list']
   pub_domain_dict = {}
   output = {}
 
   def make_entry(shared, prev=None):
-    authentication = shared['parameters']['authentication']
     entry = {
       **shared['parameters'],
       'reference': shared['reference'],
     }
+    authentication = entry['authentication']
+    domain = entry['name']
+    # Normalize prev for ease-of-use
+    prev = prev or {}
     # For password-auth domains, generate or reuse a password
     if authentication == 'password':
-      prev = prev or {}
       if prev.get('authentication') == 'password' and prev.get('password'):
         entry['password'] = prev['password']
       else:
         entry['password'] = secrets.token_urlsafe(24)
+    # Proxy map match
+    entry['has-proxy'] = has_proxy = domain in domain_to_proxy
+    # Verify domains
+    verified = prev.get('verified')
+    if verified:
+      # For now, verify once, always accept previously verified entries
+      # In the future, periodic re-verification could be implemented here
+      entry['verified'] = verified
+    elif has_proxy:
+      # Having a proxy skips verification, but it does not equal verification.
+      # So we mark the entry as unverified, and if the proxy is later removed,
+      # the entry will need to pass verification.
+      # If the MX points to the relay, verification will succeed, so removing
+      # a domain from the proxy map should not have the side effect of making
+      # it cease being able to receive mail from outside.
+      entry['verified'] = False
+    else:
+      try:
+        # look for MX records; return empty set when no MX record
+        mx = dns.resolver.resolve(domain, 'MX', raise_on_no_answer=False)
+      except dns.resolver.NXDOMAIN:
+        # accept non-existing domains
+        entry['verified'] = True
+      except Exception as e:
+        # report any other error and continue without accepting as verified
+        entry['error'] = str(e)
+        entry['verified'] = False
+      else:
+        if mx:
+          # accept as verified when the MX points to this relay cluster
+          entry['verified'] = any( # or all?
+            x.exchange.to_text() in cluster_fqdns_dot for x in mx
+          )
+        else:
+          try:
+            addresses = socket.getaddrinfo(domain, None)
+          except socket.gaierror:
+            # accept as verified domains without MX and without IP
+            entry['verified'] = True
+          except Exception as e:
+            # report any other error and continue without accepting as verified
+            entry['error'] = str(e)
+            entry['verified'] = False
+          else:
+            # do not verify domains without MX but with IP resolution
+            entry['verified'] = False
     return entry
 
   # 1st pass: keep only shareds matching both domain and reference
@@ -179,8 +254,8 @@ init =
     if existing := output.get(domain):
       if existing['reference'] != shared['reference']:
         pub_domain_dict[shared['reference']] = {
-          'domain': domain,
-          'error': 'address_already_used',
+          'name': domain,
+          'error': 'this domain has already been claimed',
         }
       # (if it matches, nothing to do)
     else:
@@ -190,9 +265,13 @@ init =
 
   self.output = output
 
+  accepted_entries = [
+    e for e in output.values() if e['verified'] or e['has-proxy']
+  ]
+
   options['published-domain-dict'] = pub_domain_dict
-  options['accepted-domain-relays'] = list(output.values())
-  options['backend-domains'] = '\n'.join(e['name'] for e in output.values())
+  options['accepted-domain-relays'] = accepted_entries
+  options['backend-domains'] = '\n'.join(e['name'] for e in accepted_entries)
 
   options['location'] = ''  # we don't care about the part folder existing
 install =
@@ -203,7 +282,6 @@ install =
 [publish-shared]
 recipe = slapos.recipe.build
 published-domain-dict = $${filter-shared-instances:published-domain-dict}
-domain-to-proxy-map = $${validate-proxy-map:domain-to-proxy}
 dns-template = $${cluster-mx:dns-template}
 template =
   [publish-shared-%(shared-ref)s]
@@ -211,8 +289,15 @@ template =
   -slave-reference = %(shared-ref)s
 error-template =
   $${:template}
-  domain = %(domain)s
+  domain = %(name)s
   error = %(error)s
+unverified-template =
+  $${:template}
+  domain = %(name)s
+  error =
+    Your domain has not yet passed our domain verification:
+    please set MX records pointing to this mail relay cluster
+  dns-entries = %(dns-entries)s
 ok-template =
   $${:template}
   dns-entries = %(dns-entries)s
@@ -234,6 +319,12 @@ init =
         **entry,
         'shared-ref': shared_ref,
       }
+    elif not entry['verified'] and not entry['has-proxy']:
+      section = options['unverified-template'] % {
+        'name': entry['name'],
+        'dns-entries': dumps(dns_template % entry),
+        'shared-ref': shared_ref,
+      }
     else:
       pwd = entry.get('authentication') == 'password' and entry.get('password')
       template = options['password-template' if pwd else 'ok-template']
@@ -243,7 +334,7 @@ init =
         'dns-entries': dumps(dns_template % entry),
         'relay-fingerprints': '$$' + '{request-all-relays:tls-fingerprints}',
         'relay-host': '$$' + '{request-all-relays:relay-host}',
-        'has-proxy': dumps(entry['name'] in options['domain-to-proxy-map']),
+        'has-proxy': dumps(entry['has-proxy']),
       }
     self.buildout.parse(section)
 {%- endraw %}
