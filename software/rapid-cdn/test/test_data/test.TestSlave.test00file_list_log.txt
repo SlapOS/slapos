@@ -145,6 +145,14 @@ T-2/var/log/httpd/_type-notebook_backend_log
 T-2/var/log/httpd/_type-notebook_frontend_log
 T-2/var/log/httpd/_type-redirect-custom_domain_access_log
 T-2/var/log/httpd/_type-redirect-custom_domain_frontend_log
+T-2/var/log/httpd/_type-redirect-path-custom_domain_access_log
+T-2/var/log/httpd/_type-redirect-path-custom_domain_frontend_log
+T-2/var/log/httpd/_type-redirect-path-to-standard-port_access_log
+T-2/var/log/httpd/_type-redirect-path-to-standard-port_frontend_log
+T-2/var/log/httpd/_type-redirect-path-trailing-slash_access_log
+T-2/var/log/httpd/_type-redirect-path-trailing-slash_frontend_log
+T-2/var/log/httpd/_type-redirect-path_access_log
+T-2/var/log/httpd/_type-redirect-path_frontend_log
 T-2/var/log/httpd/_type-redirect-to-standard-port_access_log
 T-2/var/log/httpd/_type-redirect-to-standard-port_frontend_log
 T-2/var/log/httpd/_type-redirect_access_log
