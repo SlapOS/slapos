@@ -974,6 +974,94 @@ class E2E(E2ETestCase):
     self.assertIn("X-Forwarded-To: " + mail3.testmail, mailmsg)
 
 
+class DMARC(E2ETestCase):
+  instance_max_retry = 4
+
+  mail_server_domain = "mail1.domain.lan"
+
+  @classmethod
+  def requestDefaultInstance(cls, state="started"):
+    cls.relay_cluster = relay_cluster = cls.requestRelayCluster(
+      topology={
+        "relay-one": {"fqdn": "relay.one.lan"},
+      },
+      proxy_map={},
+      extra={
+        "greylisting": {
+          "enable": False,
+        },
+        "dmarc": {
+          "enable": True,
+        },
+      },
+      state=state,
+    )
+    cls.mail_server = cls.requestMailServer(cls.mail_server_domain, state)
+    return relay_cluster
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    relay_host = cls.getRelayHost(cls.relay_cluster)
+    cls.relay_inbound = {
+      'host': relay_host,
+      'port': cls.relay_inbound_port,
+      'timeout': cls.smtp_timeout,
+    }
+    cls.mail_server.smtp_addr = cls.smtpAddrOf(cls.mail_server)
+    cls.mail_server.imap_addr = cls.imapAddrOf(cls.mail_server)
+
+  def test_dmarc_accepts_aligned_from_header(self):
+    sender = "testmail@spf-always-pass.messwithdns.test.rapid.space"
+    msg_body = "This inbound email should pass DMARC."
+    message = (
+      f"From: Normal Sender <{sender}>\n"
+      f"To: {self.mail_server.testmail}\n"
+      "Subject: DMARC Accept\n"
+      "\n"
+      f"{msg_body}"
+    )
+    with smtplib.SMTP(**self.relay_inbound) as smtp:
+      smtp.sendmail(
+        from_addr=sender,
+        to_addrs=[self.mail_server.testmail],
+        msg=message,
+      )
+
+    mailmsg = self.check_inbox(self.mail_server, msg_body)
+    self.assertIn(f"From: Normal Sender <{sender}>", mailmsg)
+
+  def test_dmarc_rejects_unaligned_from_header(self):
+    msg_body = "This inbound email should be rejected by DMARC."
+    message = (
+      f"From: Spoofed Sender <spoofed@google.com>\n"
+      f"To: {self.mail_server.testmail}\n"
+      "Subject: DMARC Reject\n"
+      "\n"
+      f"{msg_body}"
+    )
+    with smtplib.SMTP(**self.relay_inbound) as smtp:
+      try:
+        smtp.sendmail(
+          from_addr="testmail@spf-always-pass.messwithdns.test.rapid.space",
+          to_addrs=[self.mail_server.testmail],
+          msg=message,
+        )
+      except smtplib.SMTPDataError as exc:
+        code = exc.smtp_code
+        err = exc.smtp_error
+      except smtplib.SMTPRecipientsRefused as exc:
+        ((_recipient, (code, err)),) = exc.recipients.items()
+      else:
+        self.fail('Expected the relay to reject the message on DMARC failure')
+
+    if isinstance(err, bytes):
+      err = err.decode('utf-8', 'replace')
+    self.assertGreaterEqual(code, 500)
+    self.assertIn('dmarc', err.lower())
+    self.check_not_in_inbox(self.mail_server, msg_body, wait_time=5)
+
+
 class CustomOutbound(E2ETestCase):
   instance_max_retry = 4
 
@@ -1038,4 +1126,3 @@ class CustomOutbound(E2ETestCase):
       self.mailserver,
       "This is a test email.",
     )
-
