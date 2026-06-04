@@ -59,8 +59,8 @@ parts =
   ws-ims-nginx-launcher
   ws-ims-nginx-graceful
 # Don't add these sections during unit tests as there is no TUN IPv4 available
-{% if not slapparameter_dict.get("testing", False) %}
-{%-  for i in range(slapparameter_dict.get("iperf3", 0)) %}
+{% if not slapparameter_dict.testing %}
+{%-  for i in range(slapparameter_dict.iperf3) %}
   iperf-service-{{ i }}
   iperf-{{ i }}-listen-promise
 {%-  endfor %}
@@ -230,7 +230,7 @@ wrapper-path = ${directory:bin}/mme-ifup-empty
 command-line = echo Using interface
 mode = 775
 
-{%- for i in range(slapparameter_dict.get("iperf3", 0)) %}
+{%- for i in range(slapparameter_dict.iperf3) %}
 [iperf-service-{{ i }}]
 recipe = slapos.cookbook:wrapper
 port = {{ 5001 + i }}
@@ -484,7 +484,7 @@ AMARISOFT.version = {{ amarisoft['version_cn'] }}
 AMARISOFT.host-id = {{ amarisoft['ltemme_host_id'] }}
 AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
 AMARISOFT.license-expiration = {{ amarisoft['ltemme_expiration'] }}
-CORE.plmn = {{ slapparameter_dict.get('core_network_plmn', "00101") }}
+CORE.plmn = {{ slapparameter_dict.core_network_plmn }}
 CORE.gtp-address-list = 
 {%- for i, gtp_addr in enumerate(slapparameter_dict['gtp_addr_list'] | sort) -%}
 {%- if i == 0 -%}
@@ -493,13 +493,13 @@ CORE.gtp-address-list =
 , {{ gtp_addr }}
 {%- endif -%}
 {%- endfor %}
-{%- if not slapparameter_dict.get("testing", False) %}
+{%- if not slapparameter_dict.testing  %}
 PDN.gateway-ipv4 = ${slap-configuration:tun-ipv4-addr}
 PDN.ipv4-subnetwork = ${slap-configuration:tun-ipv4-network}
-{%-   if slapparameter_dict.get("iperf3", 0) %}
+{%-   if slapparameter_dict.iperf3 %}
 IPERF3.server-ipv4 = ${iperf-service-0:ip}
 {%-   endif %}
-{%-   for i in range(1, slapparameter_dict.get("iperf3", 0) + 1) %}
+{%-   for i in range(1, slapparameter_dict.iperf3 + 1) %}
 IPERF3.server-{{ i - 1 }}-port = ${iperf-service-{{ i - 1 }}:port}
 {%-   endfor %}
 {%  endif%}
@@ -526,8 +526,8 @@ config-display-prediction = 1
 [check-interface-up.py]
 <= macro.promise
 promise = check_interface_up
-config-testing = {{ slapparameter_dict.get("testing", False) }}
-{% if not slapparameter_dict.get("testing", False) %}
+config-testing = {{ slapparameter_dict.testing }}
+{% if not slapparameter_dict.testing %}
 config-ifname = ${slap-configuration:tun-name}
 {% else %}
 config-ifname =

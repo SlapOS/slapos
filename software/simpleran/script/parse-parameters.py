@@ -718,6 +718,12 @@ def core_network(config, publish, shared_list):
     # Defaults for global core network parameters.
     # TODO automatically load mme defaults from JSON schema
     mme_defaults = {
+        'testing': False,
+        'iperf3': 0,
+        'core_network_plmn': "00101",
+        'eps_5gs_interworking': 'With N26',
+        'network_name': "RAPIDSPACE",
+        'network_short_name': "RAPIDSPACE",
         'mme_com_ws_port':  9002,
         'mme_com_addr': '127.0.1.3',
         'ims_com_ws_port':  9004,
