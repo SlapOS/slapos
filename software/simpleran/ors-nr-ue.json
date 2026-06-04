@@ -4,9 +4,14 @@
   "title": "NR UE Cell",
   "required": [
     "dl_nr_arfcn",
-    "ssb_nr_arfcn"
+    "ssb_nr_arfcn",
+    "nr_band"
   ],
   "properties": {
+    "nr_band": {
+      "$ref": "cell/nr/input-schema.json#/properties/nr_band",
+      "description": "NR band number"
+    },
     "nr_bandwidth": {
       "$ref": "cell/common.json#/$defs/bandwidth",
       "default": 50
