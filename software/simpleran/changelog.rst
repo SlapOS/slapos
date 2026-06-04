@@ -6,6 +6,7 @@ Version 1.0.489 (2026-06-01)
 
 * Add support for NB-IOT
 * Bug fixes for ORS UE Mode
+* Publish IMS websocket
 
 Version 1.0.486 (2026-05-19)
 -------------
