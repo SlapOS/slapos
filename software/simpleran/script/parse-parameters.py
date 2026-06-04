@@ -643,6 +643,30 @@ def ors_radio(config, publish, shared_list):
 def core_network(config, publish, shared_list):
     config.setdefault('gtp_addr_list', ["Localhost address"])
 
+    tun_ipv4_addr    = slap_configuration.get('tun-ipv4-addr', '172.17.0.1')
+    tun_ipv6_addr    = slap_configuration.get('tun-ipv6-addr', '2001:db8::1')
+    tun_ipv4_network = slap_configuration.get('tun-ipv4-network', '172.17.0.0/17')
+    tun_ipv6_network = slap_configuration.get('tun-ipv6-network', '2001:db8::/55')
+    tun_ipv4_start   = int(netaddr.IPAddress(tun_ipv4_addr))
+    tun_ipv6_start   = int(netaddr.IPAddress(tun_ipv6_addr))
+    tun_ipv4_end     = netaddr.IPNetwork(tun_ipv4_network).last
+    tun_ipv6_end     = netaddr.IPNetwork(tun_ipv6_network).last
+
+    config.update({
+        'tun_name'           : slap_configuration.get('tun-name', 'slaptun0'              ),
+        'internet_ipv4'      : str(netaddr.IPAddress( tun_ipv4_start                          )),
+        'internet_ipv4_start': str(netaddr.IPAddress( tun_ipv4_start + 1                      )),
+        'internet_ipv4_end'  : str(netaddr.IPAddress((tun_ipv4_start + tun_ipv4_end) // 2 - 2 )),
+        'internet_ipv6_start': str(netaddr.IPAddress( tun_ipv6_start + 1                      )),
+        'internet_ipv6_end'  : str(netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2 - 1 )),
+        'ims_ipv4_start'     : str(netaddr.IPAddress((tun_ipv4_start + tun_ipv4_end) // 2 + 2 )),
+        'ims_ipv4_end'       : str(netaddr.IPAddress( tun_ipv4_end   - 1                      )),
+        'ims_ipv4'           : str(netaddr.IPAddress((tun_ipv4_start + tun_ipv4_end) // 2 + 1 )),
+        'ims_ipv6'           : str(netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2     )),
+        'ims_ipv6_start'     : str(netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2     )),
+        'ims_ipv6_end'       : str(netaddr.IPAddress( tun_ipv6_end   - 1                      )),
+    })
+
     # Sort shared list by IMSI
     def load_param(shared):
         shared['_'] = json.loads(shared['_'])
@@ -691,6 +715,92 @@ def core_network(config, publish, shared_list):
     shared_list = map(dump_param, shared_list)
     shared_list = list(shared_list)
 
+    # Defaults for global core network parameters.
+    # TODO automatically load mme defaults from JSON schema
+    mme_defaults = {
+        'mme_com_ws_port':  9002,
+        'mme_com_addr': '127.0.1.3',
+        'ims_com_ws_port':  9004,
+        'ims_com_addr': '127.0.1.5',
+        'com_unsecure':     False,
+        'websocket_url_ipv6': False,
+        'ims_addr': '127.0.0.1',
+        'ims_bind': '127.0.0.2',
+        'qci':  9,
+        'pdn_list': [
+            {'name': 'internet'},
+            {'name': 'default'},
+            {'name': 'sos'}
+        ]
+    }
+    for k,v in mme_defaults.items():
+        config.setdefault(k, v)
+    if config['websocket_url_ipv6']:
+        ipv6 = slap_configuration['ipv6-random']
+        config['mme_com_addr'] = ipv6
+        config['mme_com_url' ] = "[" + ipv6 + "]:" + str(config['mme_com_ws_port'])
+        config['ims_com_addr'] = ipv6
+        config['ims_com_url' ] = "[" + ipv6 + "]:" + str(config['ims_com_ws_port'])
+        config['com_unsecure'] = True
+    else:
+        config['mme_com_url'] = config['mme_com_addr'] + ":" + str(config['mme_com_ws_port'])
+        config['ims_com_url'] = config['ims_com_addr'] + ":" + str(config['ims_com_ws_port'])
+    config.setdefault('fixed_ips', False)
+
+    sim_list = []
+    dns_list = []
+    for shared in shared_list:
+        p = json.loads(shared['_'])
+        p.setdefault('slave_reference', shared['slave_reference'])
+        if p.get('subdomain', '') != '':
+            dns_list.append(p)
+        elif p.get('k', '') != '':
+            sim_list.append(p)
+            impi = p['imsi'] + "@ims.mnc" + p['mnc'] + ".mcc" + p['mcc'] + ".3gppnetwork.org"
+            p.setdefault('impi', impi)
+            p.setdefault('impu', p['imsi'])
+            p['impu'] = '"' + p['impu'] + '"'
+            if p.get('impu_list', ''):
+                impu_list = []
+                for x in p['impu_list']:
+                    impu_list.append(x['impu'])
+                impu_str = '", "'.join(impu_list)
+                p['impu'] = '["' + impu_str + '"]'
+
+    def valid_ip(network, ip):
+        try:
+            netaddr_ip = netaddr.IPAddress(ip)
+            return netaddr_ip in network
+        except netaddr.core.AddrFormatError:
+            return False
+
+    network = netaddr.IPNetwork(slap_configuration.get('tun-ipv4-network', ''))
+    # if we don't have enough IPv4 addresses in the network, don't force it
+    # should we make a promise fail ?
+    if len(sim_list) + 2 > network.size:
+        for s in sim_list:
+            s['ip'] = "Too many SIM for the IPv4 network"
+    else:
+        # calculate the IP addresses of each SIM
+        ip_list = []
+        first_addr = netaddr.IPAddress(network.first)
+        force_ip_list = []
+        for s in sim_list:
+            ip = s.get('force_ip', None)
+            if ip and valid_ip(network, ip):
+                s['ip'] = ip
+                force_ip_list.append(ip)
+        i = 2
+        for s in sorted(sim_list, key=lambda x: x['imsi']):
+            if 'ip' in s:
+                continue
+            ip = str(first_addr + i)
+            while ip in force_ip_list:
+                i += 1
+                ip = str(first_addr + i)
+            s['ip'] = ip
+            i += 1
+    return sim_list, dns_list
 
 def gtp_addr():
     gtp_localhost_addr = '127.0.1.100'
@@ -820,7 +930,7 @@ if options['software'].startswith('software-ors') and sr_type in ['enb', 'gnb', 
     ors_radio(config, publish, shared_list)
 
 if sr_type == 'core-network':
-    core_network(config, publish, shared_list)
+    sim_list, dns_list = core_network(config, publish, shared_list)
 elif sr_type in ['enb-gnb', 'enb', 'gnb']:
     config.setdefault('gtp_addr', "Automatic")
     config.setdefault('gtp_addr_list', [config['gtp_addr']])
@@ -844,3 +954,7 @@ options['publish'] = publish
 options['slap-configuration'] = slap_configuration
 options['slapparameter-dict'] = config
 options['shared-list'] = shared_list
+
+if sr_type == 'core-network':
+    options['sim-list'] = sim_list
+    options['dns-list'] = dns_list
