@@ -641,6 +641,11 @@ def ors_radio(config, publish, shared_list):
         publish['power']['tx-power'] += " (Maximum average power if all ressource blocks are used)"
 
 def core_network(config, publish, shared_list):
+
+    publish_sections = ['network', 'core', 'pdn', 'sim']
+    for s in publish_sections:
+        publish.setdefault(s, {})
+
     config.setdefault('gtp_addr_list', ["Localhost address"])
 
     tun_ipv4_addr    = slap_configuration.get('tun-ipv4-addr', '172.17.0.1')
@@ -806,6 +811,17 @@ def core_network(config, publish, shared_list):
                 ip = str(first_addr + i)
             s['ip'] = ip
             i += 1
+
+    publish['core']['plmn']               = config['core_network_plmn']
+    publish['core']['sip-bind-ip']        = config['ims_ipv4']
+    publish['core']['network-name']       = config['network_name']
+    publish['core']['network-short-name'] = config['network_short_name']
+
+    if not config['testing']:
+        publish['pdn']['gateway-ipv4']    = slap_configuration['tun-ipv4-addr']
+        publish['pdn']['ipv4-subnetwork'] = slap_configuration['tun-ipv4-network']
+    publish['pdn']['pdn-list'] = ", ".join([pdn['name'] for pdn in config['pdn_list']])
+
     return sim_list, dns_list
 
 def gtp_addr():
@@ -945,8 +961,10 @@ elif sr_type in ['enb-gnb', 'enb', 'gnb']:
 if sr_type in ['core-network', 'enb-gnb', 'enb', 'gnb']:
     gtp_addr()
 
-if options['software'].startswith('software-ors') and sr_type in ['enb', 'gnb', 'enb-gnb']:
-    publish['nodeb']['gtp_addr'] = config['gtp_addr_list'][0]
+if sr_type == 'core-network':
+    publish['core']['gtp-addr-list'] = ", ".join(config['gtp_addr_list'])
+elif options['software'].startswith('software-ors') and sr_type in ['enb', 'gnb', 'enb-gnb']:
+    publish['nodeb']['gtp-addr'] = config['gtp_addr_list'][0]
 
 publish = delete_empty(publish)
 publish = flatten(publish)
