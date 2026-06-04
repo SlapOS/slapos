@@ -66,6 +66,31 @@
               "$ref": "ors-gnb-cell.json#/properties/tdd_ul_dl_config"
             }
           }
+        },
+        {
+          "title": "eNB Cell",
+          "required": [
+            "enable_cell"
+          ],
+          "type": "object",
+          "properties": {
+            "enable_cell": {
+              "$ref": "instance-ors-enb-gnb-input-schema.json#/$defs/enable_cell_enb"
+            },
+            "tx_power_dbm": {
+              "$ref": "ors-cell.json#/properties/tx_power_dbm"
+            },
+            "rx_gain": {
+              "$ref": "ors-cell.json#/properties/rx_gain",
+              "description": "Rx gain (Range: 20 to 50 dB)"
+            },
+            "dl_frequency": {
+              "$ref": "ors-gnb-cell.json#/properties/dl_frequency"
+            },
+            "tdd_ul_dl_config": {
+              "$ref": "ors-enb-cell.json#/properties/tdd_ul_dl_config"
+            }
+          }
         }
       ],
       "type": "object",

@@ -1,53 +1,4 @@
-{#- defaults for global core network parameters.
-    TODO automatically load mme defaults from JSON schema #}
-{%- set mme_defaults = {
-  'com_ws_port':  9002,
-  'com_addr': '127.0.1.3',
-  'com_unsecure':     False,
-  'websocket_url_ipv6': False,
-  'ims_addr': '127.0.0.1',
-  'ims_bind': '127.0.0.2',
-  'qci':  9,
-  'pdn_list': [
-    {'name': 'internet'},
-    {'name': 'default'},
-    {'name': 'sos'}
-  ]
-} %}
-{%- for k,v in mme_defaults|dictsort %}
-{%-   do slapparameter_dict.setdefault(k, v) %}
-{%- endfor %}
-{%- if slapparameter_dict.websocket_url_ipv6 %}
-{%-   do slapparameter_dict.update({"com_addr": my_ipv6}) %}
-{%-   do slapparameter_dict.update({"com_url": "[" + my_ipv6 + "]:" + str(slapparameter_dict.com_ws_port)}) %}
-{%-   do slapparameter_dict.update({"com_unsecure": True}) %}
-{%- else %}
-{%-   do slapparameter_dict.update({"com_url": slapparameter_dict.com_addr + ":" + str(slapparameter_dict.com_ws_port)}) %}
-{%- endif %}
-{%- set dns_list = [] %}
-{%- set sim_list = [] %}
-{%- set fixed_ip = slapparameter_dict.get("fixed_ips", False) %}
-{%- for s in slave_instance_list %}
-{%-   set p = json_module.loads(s['_']) %}
-{%-   do p.setdefault('slave_reference', s.slave_reference) %}
-{%-   if p.get('subdomain', '') != '' %}
-{%-     do dns_list.append(p) %}
-{%-   elif p.get('k', '') != '' %}
-{%-     set impi = p.imsi + "@ims.mnc" + p.mnc + ".mcc" + p.mcc + ".3gppnetwork.org" %}
-{%-     do p.setdefault('impi', impi) %}
-{%-     do p.setdefault('impu', p.imsi) %}
-{%-     do p.update({'impu': '"' + p.impu + '"'}) %}
-{%-     if p.get('impu_list', '') %}
-{%        set impu_list = [] -%}
-{%-       for x in p.impu_list %}
-{%-         do impu_list.append(x.impu) %}
-{%-       endfor %}
-{%-       set impu_str = impu_list | join('", "') %}
-{%-       do p.update({'impu': '["' + impu_str + '"]'}) %}
-{%-     endif %}
-{%-     do sim_list.append(p) %}
-{%-   endif %}
-{%- endfor %}
+{%- set fixed_ip = slapparameter_dict.fixed_ips %}
 
 {% set part_list = [] -%}
 {%- for s in sim_list %}
@@ -70,55 +21,10 @@ impu         = {{ s.get('impu', 'No IMPU defined'        ) }}
 secret-key   = {{ s.get('k'   , 'No Secret Key defined'  ) }}
 operator-key = {{ s.get('opc' , 'No Operator Key defined') }}
 {%-     if fixed_ip %}
-ipv4 = ${sim-ip-configuration:{{s.slave_reference}}}
+ipv4 = {{ s.ip }}
 {%-     endif %}
 {%- endif %}
 {%- endfor %}
-
-[sim-ip-configuration]
-recipe = slapos.recipe.build
-sim-list = {{ dumps(sim_list) }}
-ipv4-network = {{ slap_configuration.get('tun-ipv4-network', '') }}
-init =
-  def valid_ip(network, ip):
-    try:
-      netaddr_ip = netaddr.IPAddress(ip)
-      return netaddr_ip in network
-    except netaddr.core.AddrFormatError:
-      return False
-  import netaddr
-  import json
-  network = netaddr.IPNetwork(options['ipv4-network'])
-  sim_list = options['sim-list']
-  # if we don't have enough IPv4 addresses in the network, don't force it
-  # should we make a promise fail ?
-  if len(sim_list) + 2 > network.size:
-    for s in sim_list:
-      options[s['slave_reference']] = "Too many SIM for the IPv4 network"
-  else:
-    # calculate the IP addresses of each SIM
-    ip_list = []
-    first_addr = netaddr.IPAddress(network.first)
-    force_ip_list = []
-    for s in sim_list:
-      ip = s.get('force_ip', None)
-      if ip and valid_ip(network, ip):
-        s['ip'] = ip
-        options[s['slave_reference']] = ip
-        force_ip_list.append(ip)
-    i = 2
-    for s in sorted(sim_list, key=lambda x: x['imsi']):
-      if 'ip' in s:
-        continue
-      ip = str(first_addr + i)
-      while ip in force_ip_list:
-        i += 1
-        ip = str(first_addr + i)
-      options[s['slave_reference']] = ip
-      s['ip'] = ip
-      i += 1
-  options['sim-with-ip-list'] = sim_list
-
 
 {%- for s in dns_list %}
 {%    set publish_section_title = 'publish-%s' % s.slave_reference %}
@@ -146,12 +52,15 @@ parts =
   monitor-base
   check-interface-up.py
   publish-connection-information
-  websocket-promise
-  nginx-launcher
-  nginx-graceful
+  ws-mme-websocket-promise
+  ws-mme-nginx-launcher
+  ws-mme-nginx-graceful
+  ws-ims-websocket-promise
+  ws-ims-nginx-launcher
+  ws-ims-nginx-graceful
 # Don't add these sections during unit tests as there is no TUN IPv4 available
-{% if not slapparameter_dict.get("testing", False) %}
-{%-  for i in range(slapparameter_dict.get("iperf3", 0)) %}
+{% if not slapparameter_dict.testing %}
+{%-  for i in range(slapparameter_dict.iperf3) %}
   iperf-service-{{ i }}
   iperf-{{ i }}-listen-promise
 {%-  endfor %}
@@ -183,11 +92,7 @@ url = {{ slap_connection['server-url'] }}
 key = {{ slap_connection['key-file'] }}
 cert = {{ slap_connection['cert-file'] }}
 ue_db_path = ${ue-db-config:output}
-{%- if fixed_ip %}
-sim_list = ${sim-ip-configuration:sim-with-ip-list}
-{%- else %}
 sim_list = {{ dumps(sim_list) }}
-{%- endif %}
 
 [monitor-httpd-conf-parameter]
 httpd-include-file = {{ buildout_directory }}/etc/httpd-include-file.conf
@@ -321,7 +226,7 @@ wrapper-path = ${directory:bin}/mme-ifup-empty
 command-line = echo Using interface
 mode = 775
 
-{%- for i in range(slapparameter_dict.get("iperf3", 0)) %}
+{%- for i in range(slapparameter_dict.iperf3) %}
 [iperf-service-{{ i }}]
 recipe = slapos.cookbook:wrapper
 port = {{ 5001 + i }}
@@ -361,6 +266,8 @@ context =
 <= config-base
 url = {{ ims_template }}
 output = ${directory:etc}/ims.cfg
+extra-context =
+    key websocket_password ws-ims-websocket-password:passwd
 
 [publish-ims-config]
 <= publish-config-base
@@ -392,7 +299,7 @@ link-binary = ${ue-db-config:output}
 url = {{ mme_template }}
 output = ${directory:etc}/mme.cfg
 extra-context =
-    key websocket_password websocket-password:passwd
+    key websocket_password ws-mme-websocket-password:passwd
 
 [publish-mme-config]
 <= publish-config-base
@@ -445,11 +352,14 @@ password = {{ slapparameter_dict['monitor-password'] | string }}
 {%-   endif %}
 {%- endfor %}
 
-[websocket-password]
-recipe = slapos.cookbook:generate.password
-storage-path = ${directory:etc}/.websocket_pwd
+{%- macro websocket_frontend(name, nginx_port, addr, port)  %}
 
-[request-slave-frontend-base]
+
+[ws-{{ name }}-websocket-password]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.{{ name }}_websocket_pwd
+
+[ws-{{ name }}-request-slave-frontend]
 recipe = slapos.cookbook:requestoptional
 server-url = ${slap-connection:server-url}
 key-file = ${slap-connection:key-file}
@@ -460,94 +370,72 @@ state = {{ slap_configuration['instance-state'] }}
 shared = true
 config-https-only = True
 config-type = websocket
-config-websocket-path-list = ${nginx-params:websocket-path}
-config-url = https://[${nginx-params:ip}]:${nginx-params:port}
+config-websocket-path-list = ${ws-{{ name }}-nginx-params:websocket-path}
+config-url = https://[${ws-{{ name }}-nginx-params:ip}]:${ws-{{ name }}-nginx-params:port}
 return = secure_access domain
-
-[request-slave-frontend]
-<= request-slave-frontend-base
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 software-type = default
-name = Websocket Frontend
+name = {{ name }} Websocket Frontend
 
-[nginx-tempdir]
+[ws-{{ name }}-nginx-tempdir]
 recipe = slapos.cookbook:mkdirectory
 tmp = ${buildout:directory}/tmp
-client-body-temp-path = ${:tmp}/client_body_temp_path
-proxy-temp-path = ${:tmp}/proxy_temp_path
-fastcgi-temp-path = ${:tmp}/fastcgi_temp_path
-uwsgi-temp-path = ${:tmp}/uwsgi_temp_path
-scgi-temp-path = ${:tmp}/scgi_temp_path
+tmp-{{ name }} = ${:tmp}/{{ name }}
+client-body-temp-path = ${:tmp-{{ name }}}/client_body_temp_path
+proxy-temp-path = ${:tmp-{{ name }}}/proxy_temp_path
+fastcgi-temp-path = ${:tmp-{{ name }}}/fastcgi_temp_path
+uwsgi-temp-path = ${:tmp-{{ name }}}/uwsgi_temp_path
+scgi-temp-path = ${:tmp-{{ name }}}/scgi_temp_path
 
-[nginx-launcher]
+[ws-{{ name }}-nginx-launcher]
 recipe = slapos.cookbook:wrapper
-command-line = ${ca-websocket:executable} -c ${nginx-config:output}
-wrapper-path = ${directory:services}/nginx
+command-line = {{ nginx_executable }} -c ${ws-{{ name }}-nginx-config:output}
+wrapper-path = ${directory:services}/{{ name }}-nginx
+hash-files = ${ws-{{ name }}-nginx-config:output}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+wait-for-files =
+  ${ws-{{ name }}-ca-websocket:key-file}
+  ${ws-{{ name }}-ca-websocket:cert-file}
 
-[nginx-config]
+[ws-{{ name }}-nginx-config]
 recipe = slapos.recipe.template:jinja2
 url = {{ nginx_template }}
-output = ${directory:etc}/nginx.conf
+output = ${directory:etc}/{{ name }}-nginx.conf
 context =
-    section params nginx-params
-    section ca ca-websocket
-    section tempdir nginx-tempdir
+    section params ws-{{ name }}-nginx-params
+    section ca ws-{{ name }}-ca-websocket
+    section tempdir ws-{{ name }}-nginx-tempdir
     raw mime {{ nginx_mime }}
 
-[nginx-params]
-path-pid = ${directory:run}/nginx.pid
-path-error-log = ${directory:log}/nginx-error.log
-path-access-log = ${directory:log}/nginx-access.log
+[ws-{{ name }}-nginx-params]
+path-pid = ${directory:run}/{{ name }}-nginx.pid
+path-error-log = ${directory:log}/{{ name }}-nginx-error.log
+path-access-log = ${directory:log}/{{ name }}-nginx-access.log
 ip = {{ my_ipv6 }}
-port = 6081
-websocket-ip = {{ slapparameter_dict.com_addr }}
-websocket-port = {{ slapparameter_dict.com_ws_port }}
+port = {{ nginx_port }}
+websocket-ip = {{ addr }}
+websocket-port = {{ port }}
 websocket-path = websocket
 nb-workers = 2
 
-[nginx-graceful]
+[ws-{{ name }}-nginx-graceful]
 recipe = slapos.recipe.template
-output = ${directory:scripts}/nginx-graceful
+output = ${directory:scripts}/{{ name }}-nginx-graceful
 inline =
   #!/bin/sh
-  exec kill -s SIGHUP $(cat ${nginx-params:path-pid})
+  exec kill -s SIGHUP $(cat ${ws-{{ name }}-nginx-params:path-pid})
 
-[certificate-authority]
-recipe = slapos.cookbook:certificate_authority
-openssl-binary = {{ openssl_executable_location }}
-ca-dir = ${directory:srv}
-requests-directory = ${cadirectory:requests}
-wrapper = ${directory:bin}/certificate_authority
-ca-private = ${cadirectory:private}
-ca-certs = ${cadirectory:certs}
-ca-newcerts = ${cadirectory:newcerts}
-ca-crl = ${cadirectory:crl}
-
-[certificate-authority-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${certificate-authority:wrapper}
-wrapper-path = ${directory:services}/certificate_authority
-hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
-
-[cadirectory]
-recipe = slapos.cookbook:mkdirectory
-requests = ${directory:srv}/requests/
-private = ${directory:srv}/private/
-certs = ${directory:srv}/certs/
-newcerts = ${directory:srv}/newcerts/
-crl = ${directory:srv}/crl/
-
-[ca-websocket]
+[ws-{{ name }}-ca-websocket]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
-key-file = ${directory:etc}/websocket.key
-cert-file = ${directory:etc}/websocket.crt
-executable = {{ nginx_executable }}
-wrapper = ${directory:bin}/nginx-with-ca
+key-file = ${directory:etc}/{{ name }}-websocket.key
+cert-file = ${directory:etc}/{{ name }}-websocket.crt
+executable = true
+wrapper = ${directory:bin}/UNUSED-{{ name }}-nginx-with-ca
 
-[frontend-urlparse]
+[ws-{{ name }}-frontend-urlparse]
 recipe = slapos.recipe.build
-domain = ${request-slave-frontend:connection-domain}
+domain = ${ws-{{ name }}-request-slave-frontend:connection-domain}
 init =
   import six.moves.urllib.parse as urlparse
   parsed_url = urlparse.urlparse('wss://' + options['domain'])
@@ -558,25 +446,32 @@ init =
   options['raw_hostname'] = parsed_url.hostname
   options['port'] = parsed_url.port if parsed_url.port else 443
 
-[websocket-promise]
+[ws-{{ name }}-websocket-promise]
 <= monitor-promise-base
 promise = check_socket_listening
-name = websocket_promise.py
-config-host = ${frontend-urlparse:raw_hostname}
-config-port = ${frontend-urlparse:port}
+name = {{ name }}_websocket_promise.py
+config-host = ${ws-{{ name }}-frontend-urlparse:raw_hostname}
+config-port = ${ws-{{ name }}-frontend-urlparse:port}
+{%- endmacro    %}
+
+{{ websocket_frontend("mme", 6081, slapparameter_dict.mme_com_addr, slapparameter_dict.mme_com_ws_port) }}
+{{ websocket_frontend("ims", 6082, slapparameter_dict.ims_com_addr, slapparameter_dict.ims_com_ws_port) }}
 
 [monitor-publish-connection-information]
 <= monitor-publish
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
+{%- for p in publish %}
+{{ p }} = {{ publish[p] }}
+{%- endfor %}
 {%- if slapparameter_dict.websocket_url_ipv6 %}
-URL.websocket-hostname = {{ slapparameter_dict.com_addr }}
-URL.websocket-port = {{ slapparameter_dict.com_ws_port }}
+URL.websocket-hostname = {{ slapparameter_dict.mme_com_addr }}
+URL.websocket-port = {{ slapparameter_dict.mme_com_ws_port }}
 {%- else %}
-URL.websocket-hostname = ${frontend-urlparse:hostname}
-URL.websocket-port = ${frontend-urlparse:port}
-URL.websocket-password = ${websocket-password:passwd}
+URL.websocket-hostname = ${ws-mme-frontend-urlparse:hostname}
+URL.websocket-port = ${ws-mme-frontend-urlparse:port}
+URL.mme-websocket-password = ${ws-mme-websocket-password:passwd}
 {%- endif %}
 {%- if not slapparameter_dict.websocket_url_ipv6 %}
 URL.websocket-amarisoft-gui = https://tech-academy.amarisoft.com/web-gui/
@@ -588,22 +483,12 @@ AMARISOFT.version = {{ amarisoft['version_cn'] }}
 AMARISOFT.host-id = {{ amarisoft['ltemme_host_id'] }}
 AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
 AMARISOFT.license-expiration = {{ amarisoft['ltemme_expiration'] }}
-CORE.plmn = {{ slapparameter_dict.get('core_network_plmn', "00101") }}
-CORE.gtp-address-list = 
-{%- for i, gtp_addr in enumerate(slapparameter_dict['gtp_addr_list'] | sort) -%}
-{%- if i == 0 -%}
-{{ gtp_addr }}
-{%- else -%}
-, {{ gtp_addr }}
-{%- endif -%}
-{%- endfor %}
-{%- if not slapparameter_dict.get("testing", False) %}
-PDN.gateway-ipv4 = ${slap-configuration:tun-ipv4-addr}
-PDN.ipv4-subnetwork = ${slap-configuration:tun-ipv4-network}
-{%-   if slapparameter_dict.get("iperf3", 0) %}
+CORE.plmn = {{ slapparameter_dict.core_network_plmn }}
+{%- if not slapparameter_dict.testing  %}
+{%-   if slapparameter_dict.iperf3 %}
 IPERF3.server-ipv4 = ${iperf-service-0:ip}
 {%-   endif %}
-{%-   for i in range(1, slapparameter_dict.get("iperf3", 0) + 1) %}
+{%-   for i in range(1, slapparameter_dict.iperf3 + 1) %}
 IPERF3.server-{{ i - 1 }}-port = ${iperf-service-{{ i - 1 }}:port}
 {%-   endfor %}
 {%  endif%}
@@ -630,8 +515,8 @@ config-display-prediction = 1
 [check-interface-up.py]
 <= macro.promise
 promise = check_interface_up
-config-testing = {{ slapparameter_dict.get("testing", False) }}
-{% if not slapparameter_dict.get("testing", False) %}
+config-testing = {{ slapparameter_dict.testing }}
+{% if not slapparameter_dict.testing %}
 config-ifname = ${slap-configuration:tun-name}
 {% else %}
 config-ifname =
