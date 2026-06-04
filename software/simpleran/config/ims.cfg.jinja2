@@ -1,28 +1,22 @@
-{%- set tun_ipv6_addr    = slap_configuration.get('tun-ipv6-addr', '2001:db8::1') %}
-{%- set tun_ipv6_network = slap_configuration.get('tun-ipv6-network', '2001:db8::/55') %}
-{%- set tun_ipv4_addr    = slap_configuration.get('tun-ipv4-addr', '172.17.0.1') %}
-{%- set tun_ipv4_network = slap_configuration.get('tun-ipv4-network', '172.17.0.0/17') %}
-{%- set tun_name         = slap_configuration.get('tun-name', 'slaptun0') %}
-{%- set tun_ipv6_start   = int(netaddr.IPAddress(tun_ipv6_addr)) %}
-{%- set tun_ipv6_end     = netaddr.IPNetwork(tun_ipv6_network).last  %}
-{%- set tun_ipv4_start   = int(netaddr.IPAddress(tun_ipv4_addr)) %}
-{%- set tun_ipv4_end     = netaddr.IPNetwork(tun_ipv4_network).last  %}
-
-{%- set internet_ipv4 = netaddr.IPAddress( tun_ipv4_start                         ) %}
-{%- set ims_ipv4      = netaddr.IPAddress((tun_ipv4_start + tun_ipv4_end) // 2 + 1) %}
-{%- set ims_ipv6      = netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2    ) %}
-
 {
     log_options: "all.level=debug,all.max_size=32",
     log_filename: "{{ directory['log'] }}/ims.log",
 
+    com_addr: "{{ slapparameter_dict.ims_com_url }}",
+{%- if not slapparameter_dict.com_unsecure %}
+    com_auth: {
+      password: "{{ websocket_password }}",
+      unsecure: false,
+    },
+{%- endif %}
+
     sip_addr: [
-        {addr: "{{ ims_ipv4 }}", bind_addr: "{{ ims_ipv4 }}", port_min: 10000, port_max: 20000
+        {addr: "{{ slapparameter_dict.ims_ipv4 }}", bind_addr: "{{ slapparameter_dict.ims_ipv4 }}", port_min: 10000, port_max: 20000
 {%- if 'trunk' in slapparameter_dict -%}
         , trunk: true
 {%- endif -%}
         },
-        "{{ ims_ipv6 }}",
+        "{{ slapparameter_dict.ims_ipv6 }}",
     ],
 
 {%- if 'trunk' in slapparameter_dict %}
@@ -32,7 +26,7 @@
     }
 {%- endif %}
 
-    mms_server_bind_addr: "{{ internet_ipv4 }}:1111",
+    mms_server_bind_addr: "{{ slapparameter_dict.internet_ipv4 }}:1111",
     sctp_addr: "{{ slapparameter_dict.ims_addr }}",
 
     
@@ -59,8 +53,8 @@
     ipsec_aalg_list: ["hmac-md5-96", "hmac-sha-1-96"],
     ipsec_ealg_list: ["null", "aes-cbc", "des-cbc", "des-ede3-cbc"],
 
-    ipsec_ifname: "{{ tun_name }}-ims",
-    ipsec_netns: "{{ tun_name }}-ims-netns",
+    ipsec_ifname: "{{ slapparameter_dict.tun_name }}-ims",
+    ipsec_netns: "{{ slapparameter_dict.tun_name }}-ims-netns",
 
     mt_call_sdp_file: "{{ directory['etc'] }}/mt_call_qos.sdp",
 
