@@ -16,7 +16,7 @@
 {%-   endfor -%}
   ],
 
-  plmn: "{{ slapparameter_dict.get('core_network_plmn', "00101") }}",
+  plmn: "{{ slapparameter_dict.core_network_plmn }}",
   mme_group_id: 32769,
   mme_code: 1,
 
@@ -35,8 +35,8 @@
   },
 
 
-  network_name: "{{ slapparameter_dict.get('network_name', 'RAPIDSPACE') }}",
-  network_short_name: "{{ slapparameter_dict.get('network_short_name', 'RAPIDSPACE') }}",
+  network_name: "{{ slapparameter_dict.network_name }}",
+  network_short_name: "{{ slapparameter_dict.network_short_name }}",
 
   cp_ciot_opt: true,
 
@@ -46,7 +46,7 @@
             {'With N26':    "with_n26",
              'Without N26': "without_n26",
              'None':        "none"}
-            [slapparameter_dict.get('eps_5gs_interworking', 'With N26')] %}
+            [slapparameter_dict.eps_5gs_interworking] %}
   eps_5gs_interworking: "{{ eps_5gs_interworking }}",
 
   fifteen_bearers: false,
