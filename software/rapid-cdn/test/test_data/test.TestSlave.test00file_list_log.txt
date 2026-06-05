@@ -193,6 +193,9 @@ T-2/var/log/httpd/_url-netloc-list_frontend_log
 T-2/var/log/httpd/_url-path-with-percent-encoded-whitespace_access_log
 T-2/var/log/httpd/_url-path-with-percent-encoded-whitespace_backend_log
 T-2/var/log/httpd/_url-path-with-percent-encoded-whitespace_frontend_log
+T-2/var/log/httpd/_url-path-with-query_access_log
+T-2/var/log/httpd/_url-path-with-query_backend_log
+T-2/var/log/httpd/_url-path-with-query_frontend_log
 T-2/var/log/httpd/_url-trailing-slash-absent_access_log
 T-2/var/log/httpd/_url-trailing-slash-absent_backend_log
 T-2/var/log/httpd/_url-trailing-slash-absent_frontend_log
