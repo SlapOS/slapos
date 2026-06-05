@@ -381,8 +381,6 @@ def ors_radio(config, publish, shared_list):
                 publish['id']['nr-cell-id'][c] = publish_hex(nr_cell_id)
                 publish['id']['handover-json-export'][c] = json.dumps({
                     'name': hn,
-                    'cell_type': 'nr',
-                    'cell_kind': 'enb_peer',
                     'nr_cell_id': global_id(config['enb_id'], config[c]['cell_id'], 8),
                     'gnb_id_bits': config['gnb_id_bits'],
                     'dl_nr_arfcn': dl_arfcn,
@@ -421,6 +419,12 @@ def ors_radio(config, publish, shared_list):
         # Add default names
         for i, ncell in enumerate(ncell_list):
             ncell.setdefault('name', 'NeighbourCell' + str(i))
+            if 'dl_earfcn' in ncell:
+                ncell.setdefault('cell_type', 'lte')
+                ncell.setdefault('cell_kind', 'enb_peer')
+            else:
+                ncell.setdefault('cell_type', 'nr')
+                ncell.setdefault('cell_kind', 'enb_peer')
         config.setdefault('gtp_addr_list', [config['gtp_addr']])
         if max(config['n_antenna_ul'], config['n_antenna_dl']) > 2:
             n_cell = config['cell1']['enable_cell'] + config['cell2']['enable_cell']
