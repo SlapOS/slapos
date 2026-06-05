@@ -6,20 +6,7 @@
     "test": {
       "allOf": [
         {
-          "title": "gNB Cell",
-          "allOf": [
-            {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "title": "Cell Type",
-              "type": "object",
-              "properties": {
-                "enable_cell": {
-                  "$ref": "#/$defs/enable_cell_gnb"
-                }
-              }
-            }
-          ],
-          "type": "object"
+          "$ref": "ors-enb-gnb-classic.json"
         }
       ],
       "type": "object",
