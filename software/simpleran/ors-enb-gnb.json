@@ -153,7 +153,7 @@
     },
     "x2_peers": {
       "title": "X2 Peers",
-      "description": "X2 Peers",
+      "description": "List of IP addresses and optional port of other eNodeBs to establish X2 connections. The default port is 36422.",
       "type": "array",
       "items": {
         "title": "X2 Peer",
@@ -174,7 +174,7 @@
     },
     "xn_peers": {
       "title": "XN Peers",
-      "description": "XN Peers",
+      "description": "List of IP addresses and optional port of other eNodeBs to establish Xn connections. The default port is 38422.",
       "type": "array",
       "items": {
         "title": "XN Peer",
