@@ -12,7 +12,7 @@ error = {{ s.error }}
 {%- elif s.get('disable_sim', '') == 'Disable SIM' %}
 info = Your SIM was disabled, you can enable it back by updating it's parameter.
 {%- else %}
-info = Your SIM card has been attached to service ${slap-configuration:instance-title}.
+info = Your SIM card has been attached to service  {{ slap_configuration['instance-title'] }}.
 plmn         = {{ s.get('plmn', 'No PLMN defined'        ) }}
 msin         = {{ s.get('msin', 'No MSIN defined'        ) }}
 imsi         = {{ s.get('imsi', 'No IMSI defined'        ) }}
@@ -34,7 +34,7 @@ recipe = slapos.cookbook:publish.serialised
 -slave-reference = {{ s.slave_reference }}
 domain = {{ s.subdomain }}.{{ s.get('domain', slapparameter_dict.get('local_domain', '')) }}
 ip = {{ s.get('ip', '') }}
-info = DNS entry has been attached to service ${slap-configuration:instance-title}.
+info = DNS entry has been attached to service {{ slap_configuration['instance-title'] }}.
 {%- endfor %}
 
 [buildout]
@@ -77,22 +77,6 @@ extends = {{ monitor_template }}
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
-
-[myslap]
-# NOTE we don't query slapos.cookbook:slapconfiguration the second time because
-# slapparameter_dict is potentially modified with defaults.
-parameter_dict = {{ dumps(slapparameter_dict) }}
-configuration = {{ dumps(slap_configuration) }}
-
-[slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = {{ slap_connection['computer-id'] }}
-partition = {{ slap_connection['partition-id'] }}
-url = {{ slap_connection['server-url'] }}
-key = {{ slap_connection['key-file'] }}
-cert = {{ slap_connection['cert-file'] }}
-ue_db_path = ${ue-db-config:output}
-sim_list = {{ dumps(sim_list) }}
 
 [monitor-httpd-conf-parameter]
 httpd-include-file = {{ buildout_directory }}/etc/httpd-include-file.conf
@@ -230,7 +214,7 @@ mode = 775
 [iperf-service-{{ i }}]
 recipe = slapos.cookbook:wrapper
 port = {{ 5001 + i }}
-ip = ${slap-configuration:tun-ipv4-addr}
+ip = {{ slap_configuration['tun-ipv4-addr'] }}
 command-line = {{ iperf3_location }}/bin/iperf3 --server --interval 1 --port ${:port} --bind ${:ip}
 wrapper-path = ${directory:service}/iperf3-{{ i }}
 mode = 0775
@@ -254,13 +238,15 @@ extensions = jinja2.ext.do
 extra-context =
 context =
   section directory directory
-  section slap_configuration slap-configuration
-  key slapparameter_dict myslap:parameter_dict
+  raw slap_configuration {{ json_module.dumps(slap_configuration) }}
+  raw slapparameter_dict {{ json_module.dumps(slap_configuration.configuration) }}
   raw gtp_addr_v6 {{ my_ipv6 }}
   raw gtp_addr_v4 {{ lan_ipv4 }}
+  import json_module json
   import  netaddr netaddr
   key ifup_empty mme-ifup-empty:wrapper-path
   ${:extra-context}
+  key ue_db_config ue-db-config:output
 
 [ims-config]
 <= config-base
@@ -286,9 +272,8 @@ link-binary = ${mt-call-config:output}
 <= config-base
 url = {{ ue_db_template }}
 output = ${directory:etc}/ue_db.cfg
-context =
-  section slap_configuration slap-configuration
-  import json_module json
+extra-context =
+  raw sim_list {{ json_module.dumps(sim_list) }}
 
 [publish-ue-db-config]
 <= publish-config-base
@@ -316,13 +301,13 @@ context =
   import json_module json
   import netaddr netaddr
   section directory directory
-  section slap_configuration slap-configuration
-  key slapparameter_dict slap-configuration:configuration
+  raw slap_configuration {{ json_module.dumps(slap_configuration) }}
+  raw slapparameter_dict {{ json_module.dumps(slap_configuration.configuration) }}
 
 [dnsmasq-service]
 recipe = slapos.cookbook:wrapper
 port = 5353
-ip = ${slap-configuration:tun-ipv4-addr}
+ip = {{ slap_configuration['tun-ipv4-addr'] }}
 command-line = {{ dnsmasq_location }}/sbin/dnsmasq --conf-file=${dnsmasq-config:output} -x ${directory:run}/dnsmasq.pid --local-service --keep-in-foreground
 wrapper-path = ${directory:service}/dnsmasq
 mode = 0775
@@ -517,7 +502,7 @@ config-display-prediction = 1
 promise = check_interface_up
 config-testing = {{ slapparameter_dict.testing }}
 {% if not slapparameter_dict.testing %}
-config-ifname = ${slap-configuration:tun-name}
+config-ifname = {{ slap_configuration['tun-name'] }}
 {% else %}
 config-ifname =
 {% endif %}

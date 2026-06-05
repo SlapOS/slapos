@@ -817,9 +817,8 @@ def core_network(config, publish, shared_list):
     publish['core']['network-name']       = config['network_name']
     publish['core']['network-short-name'] = config['network_short_name']
 
-    if not config['testing']:
-        publish['pdn']['gateway-ipv4']    = slap_configuration['tun-ipv4-addr']
-        publish['pdn']['ipv4-subnetwork'] = slap_configuration['tun-ipv4-network']
+    publish['pdn']['gateway-ipv4']    = slap_configuration['tun-ipv4-addr']
+    publish['pdn']['ipv4-subnetwork'] = slap_configuration['tun-ipv4-network']
     publish['pdn']['pdn-list'] = ", ".join([pdn['name'] for pdn in config['pdn_list']])
 
     return sim_list, dns_list
@@ -945,6 +944,21 @@ shared_list        = deepcopy(slap_configuration['slave-instance-list'])
 config             = slap_configuration['configuration']
 sr_type            = slap_configuration['slap-software-type']
 
+if config['testing']:
+    for k,v in {
+        'ipv4': "{'192.0.2.1'}",
+        'ipv6': "{'2001:db8::1'}",
+        'tun-ipv4-addr': "192.0.2.1",
+        'tun-ipv4-gateway': "",
+        'tun-ipv4-netmask': "255.255.128.0",
+        'tun-ipv4-network': "192.0.2.1/255.255.128.0",
+        'tun-ipv6-addr': "2001:db8::1",
+        'tun-ipv6-netmask': "ffff:ffff:ffff:fe00::",
+        'tun-ipv6-network': "2001:db8::1/55",
+        'tun-name': "slaptun1",
+        }.items():
+        slap_configuration.setdefault(k, v)
+
 if sr_type == 'test-model':
     test_model(config, publish, shared_list)
 
@@ -969,6 +983,10 @@ elif options['software'].startswith('software-ors') and sr_type in ['enb', 'gnb'
 publish = delete_empty(publish)
 publish = flatten(publish)
 publish = {publish_naming(k[:-1]): k[-1] for k in publish}
+
+for k,v in slap_configuration.items():
+    if type(v) is set:
+        slap_configuration[k] = list(slap_configuration[k])
 
 slap_configuration.update({
     'configuration': config,
