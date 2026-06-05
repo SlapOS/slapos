@@ -267,6 +267,7 @@
     },
     "eutra_eutra_handover": {
       "title": "EUTRA Handover",
+      "description": "EUTRA Handover description",
       "type": "object",
       "additionalProperties": false,
       "required": [
