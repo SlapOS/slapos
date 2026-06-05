@@ -267,6 +267,7 @@
     },
     "eutra_eutra_handover": {
       "title": "EUTRA Handover",
+      "description": "Handover parameters from LTE cells to LTE cells",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -349,6 +350,7 @@
     },
     "eutra_nr_handover": {
       "title": "NR Handover",
+      "description": "Handover parameters from LTE cells to NR cells",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -417,6 +419,7 @@
     },
     "nr_nr_handover": {
       "title": "NR Handover",
+      "description": "Handover parameters from NR cells to NR cells",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -499,6 +502,7 @@
     },
     "nr_eutra_handover": {
       "title": "EUTRA Handover",
+      "description": "Handover parameters from NR cells to LTE cells",
       "type": "object",
       "additionalProperties": false,
       "required": [
