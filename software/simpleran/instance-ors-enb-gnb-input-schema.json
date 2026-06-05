@@ -58,6 +58,7 @@
     },
     "enable_cell_enb": {
       "title": "Enable Cell: You must select this parameter to enable the cell",
+      "type": "string",
       "enum": [
         "Enable eNB",
         "Disable eNB"
@@ -66,6 +67,7 @@
     },
     "enable_cell_nb": {
       "title": "Enable Cell: You must select this parameter to enable the cell",
+      "type": "string",
       "enum": [
         "Enable NB IOT",
         "Disable NB IOT"
