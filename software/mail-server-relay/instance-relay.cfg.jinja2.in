@@ -581,6 +581,8 @@ content =
   {% if password_auth_domains -%}
   # Server SASL
   smtpd_sasl_auth_enable = yes
+  # allow SASL only after STARTTLS
+  smtpd_tls_auth_only = yes
   smtpd_sasl_path = $${outbound-postfix-smtpd-sasl-conf:config-name}
   cyrus_sasl_config_path = $${outbound-postfix-smtpd-sasl-conf:config-path}
   smtpd_sasl_local_domain = relay
