@@ -2,7 +2,7 @@
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
-  "unevaluatedProperties": false,
+  "additionalProperties": false,
   "properties": {
     "cell1": {
       "title": "Cell Parameters",
