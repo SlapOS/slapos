@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Radio Unit. Common properties",
+  "additionalProperties": false,
   "type": "object",
   "required": [
     "n_antenna_dl",
@@ -48,8 +49,8 @@
           "ru_link_type": "cpri"
         }
       },
-      "type": "object",
       "additionalProperties": false,
+      "type": "object",
       "required": [
         "sdr_dev",
         "sfp_port",

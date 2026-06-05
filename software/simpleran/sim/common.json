@@ -1,4 +1,5 @@
 {
+  "additionalProperties": false,
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Common SIM Card Parameters",
@@ -107,11 +108,11 @@
       "type": "array",
       "items": {
         "title": "IMPU",
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "impu"
         ],
-        "additionalProperties": false,
         "properties": {
           "impu": {
             "title": "sip URI or telephone number",
@@ -145,12 +146,12 @@
       "type": "array",
       "items": {
         "title": "Route",
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "ipv6_remote_addr_prefix",
           "prefix_len"
         ],
-        "additionalProperties": false,
         "properties": {
           "ipv6_remote_addr_prefix": {
             "title": "IPv6 remote address prefix",

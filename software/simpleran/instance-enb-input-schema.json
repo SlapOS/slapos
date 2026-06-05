@@ -1,4 +1,5 @@
 {
+  "additionalProperties": false,
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
@@ -55,8 +56,8 @@
       "type": "array",
       "items": {
         "title": "MME",
-        "type": "object",
         "additionalProperties": false,
+        "type": "object",
         "required": [
           "mme_addr"
         ],
@@ -91,8 +92,8 @@
       "type": "array",
       "items": {
         "title": "PLMN",
-        "type": "object",
         "additionalProperties": false,
+        "type": "object",
         "required": [
           "plmn"
         ],
@@ -135,8 +136,8 @@
       "type": "array",
       "items": {
         "title": "AMF",
-        "type": "object",
         "additionalProperties": false,
+        "type": "object",
         "required": [
           "amf_addr"
         ],
@@ -171,8 +172,8 @@
       "type": "array",
       "items": {
         "title": "PLMN",
-        "type": "object",
         "additionalProperties": false,
+        "type": "object",
         "required": [
           "plmn",
           "tac"
@@ -207,8 +208,8 @@
       "type": "array",
       "items": {
         "title": "AMF slice",
-        "type": "object",
         "additionalProperties": false,
+        "type": "object",
         "properties": {
           "sst": {
             "default": 1,
@@ -268,8 +269,8 @@
     "eutra_eutra_handover": {
       "title": "EUTRA Handover",
       "description": "Handover parameters from LTE cells to LTE cells",
-      "type": "object",
       "additionalProperties": false,
+      "type": "object",
       "required": [
         "hysteresis"
       ],
@@ -283,11 +284,12 @@
       "properties": {
         "event": {
           "title": "EUTRA Handover event",
+          "additionalProperties": false,
           "type": "object",
-          "unevaluatedProperties": false,
           "oneOf": [
             {
               "title": "A3 event",
+              "additionalProperties": false,
               "type": "object",
               "required": [
                 "a3_rsrp"
@@ -302,6 +304,7 @@
             },
             {
               "title": "A4 event",
+              "additionalProperties": false,
               "type": "object",
               "required": [
                 "a4_rsrp"
@@ -316,6 +319,7 @@
             },
             {
               "title": "A5 event",
+              "additionalProperties": false,
               "type": "object",
               "required": [
                 "a5_threshold1_rsrp",
@@ -351,8 +355,8 @@
     "eutra_nr_handover": {
       "title": "NR Handover",
       "description": "Handover parameters from LTE cells to NR cells",
-      "type": "object",
       "additionalProperties": false,
+      "type": "object",
       "required": [
         "hysteresis"
       ],
@@ -366,11 +370,12 @@
       "properties": {
         "event": {
           "title": "NR Handover event",
+          "additionalProperties": false,
           "type": "object",
-          "unevaluatedProperties": false,
           "oneOf": [
             {
               "title": "B1 event",
+              "additionalProperties": false,
               "type": "object",
               "required": [
                 "b1_rsrp"
@@ -385,6 +390,7 @@
             },
             {
               "title": "B2 event",
+              "additionalProperties": false,
               "type": "object",
               "required": [
                 "b2_threshold1_rsrp",
@@ -420,8 +426,8 @@
     "nr_nr_handover": {
       "title": "NR Handover",
       "description": "Handover parameters from NR cells to NR cells",
-      "type": "object",
       "additionalProperties": false,
+      "type": "object",
       "required": [
         "hysteresis"
       ],
@@ -435,11 +441,12 @@
       "properties": {
         "event": {
           "title": "NR Handover event",
+          "additionalProperties": false,
           "type": "object",
-          "unevaluatedProperties": false,
           "oneOf": [
             {
               "title": "A3 event",
+              "additionalProperties": false,
               "type": "object",
               "required": [
                 "a3_rsrp"
@@ -454,6 +461,7 @@
             },
             {
               "title": "A4 event",
+              "additionalProperties": false,
               "type": "object",
               "required": [
                 "a4_rsrp"
@@ -468,6 +476,7 @@
             },
             {
               "title": "A5 event",
+              "additionalProperties": false,
               "type": "object",
               "required": [
                 "a5_threshold1_rsrp",
@@ -503,8 +512,8 @@
     "nr_eutra_handover": {
       "title": "EUTRA Handover",
       "description": "Handover parameters from NR cells to LTE cells",
-      "type": "object",
       "additionalProperties": false,
+      "type": "object",
       "required": [
         "hysteresis"
       ],
@@ -518,11 +527,12 @@
       "properties": {
         "event": {
           "title": "EUTRA Handover event",
+          "additionalProperties": false,
           "type": "object",
-          "unevaluatedProperties": false,
           "oneOf": [
             {
               "title": "B1 event",
+              "additionalProperties": false,
               "type": "object",
               "required": [
                 "b1_rsrp"
@@ -538,6 +548,7 @@
             },
             {
               "title": "B2 event",
+              "additionalProperties": false,
               "type": "object",
               "required": [
                 "b2_threshold1_rsrp",

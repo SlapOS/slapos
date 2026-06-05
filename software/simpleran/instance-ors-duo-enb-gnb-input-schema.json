@@ -1,4 +1,5 @@
 {
+  "additionalProperties": false,
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
@@ -24,6 +25,7 @@
           "$ref": "ors-enb-gnb.json"
         }
       ],
+      "additionalProperties": false,
       "type": "object",
       "default": {}
     },
@@ -35,6 +37,7 @@
           "$ref": "ors-params.json"
         }
       ],
+      "additionalProperties": false,
       "type": "object",
       "default": {}
     },

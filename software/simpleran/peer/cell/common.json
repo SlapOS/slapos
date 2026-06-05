@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Peer Cell. Common properties",
+  "additionalProperties": false,
   "type": "object",
   "required": [
     "cell_type",

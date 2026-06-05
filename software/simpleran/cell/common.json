@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Cell. Common properties",
+  "additionalProperties": false,
   "type": "object",
   "required": [
     "cell_type",
@@ -81,6 +82,7 @@
         {
           "title": "Shared Radio Unit",
           "description": "Use radio unit defined in separate shared instance",
+          "additionalProperties": false,
           "type": "object",
           "required": [
             "ru_type",
@@ -101,6 +103,7 @@
         {
           "title": "Shared Radio Unit of a Cell",
           "description": "Use the same radio unit as referenced cell instance does",
+          "additionalProperties": false,
           "type": "object",
           "required": [
             "ru_type",

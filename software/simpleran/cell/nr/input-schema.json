@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "NR Cell",
+  "additionalProperties": false,
   "type": "object",
   "required": [
     "cell_type",
@@ -37,11 +38,11 @@
         },
         {
           "title": "Expert only: manual configuration",
+          "additionalProperties": false,
           "type": "object",
           "required": [
             "pattern1"
           ],
-          "additionalProperties": false,
           "properties": {
             "pattern1": {
               "$ref": "#/$defs/pattern",
@@ -120,17 +121,18 @@
     },
     "uss": {
       "title": "Expert only: PDCCH UE Search Space",
+      "additionalProperties": false,
       "type": "object",
       "required": [
         "n_candidates",
         "dci_0_1_and_1_1"
       ],
-      "additionalProperties": false,
       "description": "Expert only: PDCCH UE dedicated search space configuration defined in RRC PDCCH-Config. Default value depends on TDD configuration, see generated configuration file in Monitor App as a reference",
       "properties": {
         "n_candidates": {
           "title": "Number of Candidates List",
           "description": "Mandatory for the DL BWP #0. nrofCandidates parameters for each aggregation level (1, 2, 4, 8, 16).",
+          "additionalProperties": false,
           "type": "object",
           "required": [
             "n_candidates_1",
@@ -139,7 +141,6 @@
             "n_candidates_8",
             "n_candidates_16"
           ],
-          "additionalProperties": false,
           "properties": {
             "n_candidates_1": {
               "title": "Number of Candidates for aggregation level 1",
@@ -203,6 +204,7 @@
     "redcap_ue": {
       "title": "Reduced Capability parameters",
       "description": "Configure the cell to allow the connection of Reduced Capability UEs (RedCap) and enhanced Reduced Capability UEs (eRedCap).",
+      "additionalProperties": false,
       "type": "object",
       "properties": {
         "allow": {
@@ -226,6 +228,7 @@
         "eredcap_ue": {
           "title": "eRedCap UE Parameters",
           "description": "eRedCap UE Parameters",
+          "additionalProperties": false,
           "type": "object",
           "properties": {
             "allow": {
@@ -251,6 +254,7 @@
         "half_duplex": {
           "title": "Half Duplex",
           "description": "Half Duplex Parameters",
+          "additionalProperties": false,
           "type": "object",
           "properties": {
             "enable": {
@@ -284,6 +288,7 @@
       ]
     },
     "pattern": {
+      "additionalProperties": false,
       "type": "object",
       "required": [
         "period",
@@ -292,7 +297,6 @@
         "dl_symbols",
         "ul_symbols"
       ],
-      "additionalProperties": false,
       "properties": {
         "period": {
           "title": "Period",

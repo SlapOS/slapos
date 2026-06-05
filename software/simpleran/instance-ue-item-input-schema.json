@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Configuration of a shared instance attached to UEsim",
+  "additionalProperties": false,
   "type": "object",
   "oneOf": [
     {

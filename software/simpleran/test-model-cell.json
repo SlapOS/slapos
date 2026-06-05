@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "NR Cell",
+  "additionalProperties": false,
   "type": "object",
   "properties": {
     "enable_cell": {

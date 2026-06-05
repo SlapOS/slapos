@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "NR UE",
+  "additionalProperties": false,
   "type": "object",
-  "unevaluatedProperties": false,
   "allOf": [{ "$ref": "../../ue/common.json" }],
   "properties": {
     "ue_type": {

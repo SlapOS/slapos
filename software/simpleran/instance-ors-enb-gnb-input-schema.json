@@ -1,8 +1,8 @@
 {
+  "additionalProperties": false,
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
-  "additionalProperties": false,
   "properties": {
     "cell1": {
       "title": "Cell Parameters",
@@ -20,6 +20,7 @@
           "$ref": "ors-enb-gnb.json"
         }
       ],
+      "additionalProperties": false,
       "type": "object",
       "default": {}
     },
@@ -31,6 +32,7 @@
           "$ref": "ors-params.json"
         }
       ],
+      "additionalProperties": false,
       "type": "object",
       "default": {}
     },
@@ -91,6 +93,7 @@
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
               "title": "Cell Type",
+              "additionalProperties": false,
               "type": "object",
               "properties": {
                 "enable_cell": {
@@ -108,6 +111,7 @@
               "$ref": "ors-cell-secondary.json"
             }
           ],
+          "additionalProperties": false,
           "type": "object"
         },
         {
@@ -119,6 +123,7 @@
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
               "title": "Cell Type",
+              "additionalProperties": false,
               "type": "object",
               "properties": {
                 "enable_cell": {
@@ -136,6 +141,7 @@
               "$ref": "ors-cell-secondary.json"
             }
           ],
+          "additionalProperties": false,
           "type": "object"
         },
         {
@@ -147,6 +153,7 @@
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
               "title": "Cell Type",
+              "additionalProperties": false,
               "type": "object",
               "properties": {
                 "enable_cell": {
@@ -164,9 +171,11 @@
               "$ref": "ors-cell-secondary.json"
             }
           ],
+          "additionalProperties": false,
           "type": "object"
         }
       ],
+      "additionalProperties": false,
       "type": "object",
       "default": {}
     }

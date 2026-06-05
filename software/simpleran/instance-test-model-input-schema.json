@@ -1,12 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Test Model Input Parameters",
+  "additionalProperties": false,
   "type": "object",
   "properties": {
     "cell1": {
       "title": "Cell",
       "description": "Radio parameters of the cell",
-      "unevaluatedProperties": false,
+      "additionalProperties": false,
       "type": "object",
       "allOf": [
         {
@@ -18,7 +19,7 @@
     "nodeb": {
       "title": "NodeB",
       "description": "Radio parameters not related to cell",
-      "unevaluatedProperties": false,
+      "additionalProperties": false,
       "type": "object",
       "allOf": [
         {

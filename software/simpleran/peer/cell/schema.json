@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Values returned by Peer Cell instantiation (stub)",
+  "additionalProperties": false,
   "type": "object",
   "properties": {}
 }

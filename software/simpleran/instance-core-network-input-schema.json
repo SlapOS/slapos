@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Core Network Input Parameters",
+  "additionalProperties": false,
   "type": "object",
   "properties": {
     "core_network_plmn": {
@@ -80,11 +81,11 @@
       "type": "array",
       "items": {
         "title": "PDN",
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "name"
         ],
-        "additionalProperties": false,
         "properties": {
           "name": {
             "title": "APN name",
@@ -148,18 +149,18 @@
       "oneOf": [
         {
           "title": "Disable External SIP Trunk",
-          "type": "object",
           "additionalProperties": false,
+          "type": "object",
           "properties": {}
         },
         {
           "title": "Enable External SIP Trunk",
+          "additionalProperties": false,
           "type": "object",
           "required": [
             "addr",
             "name"
           ],
-          "additionalProperties": false,
           "properties": {
             "addr": {
               "title": "SIP Trunk Address",
@@ -181,10 +182,11 @@
       "type": "array",
       "items": {
         "title": "Profile",
+        "additionalProperties": false,
         "type": "object",
-        "unevaluatedProperties": false,
         "oneOf": [
           {
+            "additionalProperties": false,
             "type": "object",
             "title": "Profile A",
             "description": "Home network private key for profile A protection scheme",
@@ -201,6 +203,7 @@
             }
           },
           {
+            "additionalProperties": false,
             "type": "object",
             "title": "Profile B",
             "description": "Home network private key for profile B protection scheme",

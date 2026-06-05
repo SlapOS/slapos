@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "SDR transiever",
   "description": "Radio Unit constituted of several SDR boards",
+  "additionalProperties": false,
   "type": "object",
   "required": [
     "ru_type",
@@ -12,7 +13,6 @@
     "rx_gain",
     "sdr_dev_list"
   ],
-  "unevaluatedProperties": false,
   "allOf": [{ "$ref": "../../ru/common.json" }],
   "properties": {
     "ru_type": {

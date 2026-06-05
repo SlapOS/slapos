@@ -1,4 +1,5 @@
 {
+  "additionalProperties": false,
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
@@ -22,6 +23,7 @@
           "$ref": "ors-params.json#/properties/websocket_url_ipv6"
         }
       },
+      "additionalProperties": false,
       "type": "object",
       "default": {}
     },
@@ -37,6 +39,7 @@
           "required": [
             "enable_cell"
           ],
+          "additionalProperties": false,
           "type": "object",
           "properties": {
             "enable_cell": {
@@ -72,6 +75,7 @@
           "required": [
             "enable_cell"
           ],
+          "additionalProperties": false,
           "type": "object",
           "properties": {
             "enable_cell": {
@@ -93,6 +97,7 @@
           }
         }
       ],
+      "additionalProperties": false,
       "type": "object",
       "default": {}
     }
