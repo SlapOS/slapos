@@ -4,7 +4,7 @@
   "title": "Input Parameters",
   "properties": {
     "test": {
-      "oneOf": [
+      "allOf": [
         {
           "title": "gNB Cell",
           "allOf": [
