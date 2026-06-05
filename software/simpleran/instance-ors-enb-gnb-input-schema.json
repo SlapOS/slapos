@@ -2,6 +2,7 @@
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
+  "unevaluatedProperties": false,
   "properties": {
     "cell1": {
       "title": "Cell Parameters",
@@ -44,6 +45,11 @@
       "description": "Expert only: override RF Info from parameters",
       "type": "string",
       "textarea": true
+    },
+    "testing": {
+      "title": "Software Test Mode",
+      "description": "For development purpose only",
+      "type": "boolean"
     }
   },
   "$defs": {
