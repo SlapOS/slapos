@@ -75,8 +75,6 @@ param_dict = {
         'ncell_list': [
             {
                 'name': 'ORS1',
-                'cell_type': 'lte',
-                'cell_kind': 'enb_peer',
                 'dl_earfcn': 38450,
                 'pci': 1,
                 'e_cell_id': '0x0000001',
@@ -85,8 +83,6 @@ param_dict = {
             },
             {
                 'name': 'ORS2',
-                'cell_type': 'lte',
-                'cell_kind': 'enb_peer',
                 'dl_earfcn': 38050,
                 'pci': 2,
                 'e_cell_id': '0x0000002',
@@ -95,8 +91,6 @@ param_dict = {
             },
             {
                 'name': 'ORS3',
-                'cell_type': 'nr',
-                'cell_kind': 'enb_peer',
                 'dl_nr_arfcn': 519000,
                 'ssb_nr_arfcn': 518910,
                 'ul_nr_arfcn': 519000,
@@ -109,8 +103,6 @@ param_dict = {
             },
             {
                 'name': 'ORS4',
-                'cell_type': 'nr',
-                'cell_kind': 'enb_peer',
                 'dl_nr_arfcn': 378000,
                 'ssb_nr_arfcn': 378030,
                 'ul_nr_arfcn': 378000,
