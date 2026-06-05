@@ -3,6 +3,28 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Input Parameters",
   "properties": {
+    "test": {
+      "oneOf": [
+        {
+          "title": "gNB Cell",
+          "allOf": [
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "Cell Type",
+              "type": "object",
+              "properties": {
+                "enable_cell": {
+                  "$ref": "#/$defs/enable_cell_gnb"
+                }
+              }
+            }
+          ],
+          "type": "object"
+        }
+      ],
+      "type": "object",
+      "default": {}
+    },
     "nodeb": {
       "title": "eNB Parameters",
       "description": "Parameters not related to a single cell but to the eNB",
