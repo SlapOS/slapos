@@ -100,7 +100,7 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-           else %}
 {%-             set port_suffix = ':%s' % (info_dict['port'],) %}
 {%-           endif %}
-  redirect prefix {{ info_dict['scheme'] }}://{{ info_dict['hostname'] }}{{ port_suffix }} code 302
+  redirect prefix {{ info_dict['scheme'] }}://{{ info_dict['hostname'] }}{{ port_suffix }}{{ info_dict['path'] }} code 302
 {%-         else %}
   server {{ slave_instance['slave_reference'] }}-backend-{{ scheme }} {{ info_dict['hostname'] }}:{{ info_dict['port'] }}
 {%-           if slave_instance['disable-via-header'] %}
