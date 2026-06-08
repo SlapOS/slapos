@@ -1992,13 +1992,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'type-redirect-path': {
         'url': '%ssome/path' % (cls.backend_url,),
-        'https-url': '%ssome/path' % (cls.backend_https_url,),
         'type': 'redirect',
         'https-only': False,
       },
       'type-redirect-path-trailing-slash': {
         'url': '%ssome/path/' % (cls.backend_url,),
-        'https-url': '%ssome/path/' % (cls.backend_https_url,),
         'type': 'redirect',
         'https-only': False,
       },
@@ -2009,7 +2007,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'type-redirect-path-to-standard-port': {
         'url': 'http://example.com/some/path',
-        'https-url': 'https://example.com/some/path',
         'type': 'redirect',
         'https-only': False,
       },
@@ -4021,8 +4018,10 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.status_code
     )
 
+    # c5 collapses redirects to a single `backend-url` per slave; HTTPS and
+    # HTTP requests both redirect to the same target.
     self.assertEqual(
-      '%ssome/path/test-path/deeper' % (self.backend_https_url,),
+      '%ssome/path/test-path/deeper' % (self.backend_url,),
       result.headers['Location']
     )
 
@@ -4061,8 +4060,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.status_code
     )
 
+    # c5: HTTPS and HTTP requests share the single configured backend-url.
     self.assertEqual(
-      '%ssome/path/test-path/deeper' % (self.backend_https_url,),
+      '%ssome/path/test-path/deeper' % (self.backend_url,),
       result.headers['Location']
     )
 
@@ -4122,8 +4122,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.status_code
     )
 
+    # c5: HTTPS and HTTP requests both redirect to the single backend-url.
     self.assertEqual(
-      'https://example.com/some/path/test-path/deeper',
+      'http://example.com/some/path/test-path/deeper',
       result.headers['Location']
     )
 
