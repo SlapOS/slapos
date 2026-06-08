@@ -160,7 +160,9 @@
               "default": "started"
             },
             "config": {
-              "$ref": "#/definitions/relay-config"
+              "type": "object",
+              "description": "Instance-specific configuration parameters that override the cluster defaults. See 'default-relay-config' for available parameters.",
+              "additionalProperties": true
             },
             "custom-inbound-certificate": {
               "$ref": "#/definitions/custom-inbound-certificate"
