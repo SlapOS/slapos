@@ -332,7 +332,7 @@ class Relay(E2ETestCase):
       # We don't need to reprocess the partitions the second time, when
       # the relay cluster already returns a non-empty connection dict.
       cls.waitForInstance()
-    available_ipv6 = (
+    cls.available_ipv6 = available_ipv6 = (
       cls.getPartitionIPv6(cp.getId())
       for cp in cls.slap.computer.getComputerPartitionList()
       if cp.getState() != 'started'
@@ -481,11 +481,54 @@ class Relay(E2ETestCase):
     self.assertEqual(password, params.get('outbound-password'))
     self.assertEqual(user, params.get('outbound-user'))
 
-  def test_relay_password_auth_legitimate(self):
+  def test_relay_password_shared_add_new(self):
+    new_password_relay_domain = 'new-' + self.password_relay_domain
+    mail1 = self.mail_servers[0]
+    # Check new domain is refused
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(**self.relay_outbound) as smtp:
+        smtp.starttls()
+        smtp.sendmail(
+          from_addr='unknown@' + new_password_relay_domain,
+          to_addrs=[mail1.testmail],
+          msg="Subject: Unknown sender should be rejected\n\n",
+       )
+    # Test existing domain works
+    self.test_relay_password_auth_legitimate("Existing password domain works")
+    # Request new password relay
+    new_password_relay = self.requestRelayShared(
+      new_password_relay_domain,
+      (next(self.available_ipv6), 10025),
+      {"authentication": "password"},
+      'started',
+    )
+    # Reprocess the cluster
+    for _ in range(2):
+      self.waitForInstance()
+    new_password_relay = new_password_relay.rerequest()
+    new_password_relay.login = self.getRelaySharedLogin(new_password_relay)
+    # Check new relay works
+    mail1 = self.mail_servers[0]
+    body = "New password auth works"
+    with smtplib.SMTP(**self.relay_outbound) as smtp:
+      smtp.starttls()
+      smtp.login(*new_password_relay.login)
+      smtp.sendmail(
+        from_addr=new_password_relay.examplemail,
+        to_addrs=[mail1.testmail],
+        msg="Subject: New password Auth Legit\n\n" + body,
+      )
+    self.check_inbox(mail1, body)
+    # Test existing domain still works after
+    self.test_relay_password_auth_legitimate(
+      "Existing password domain still works"
+    )
+
+  def test_relay_password_auth_legitimate(self, body=None):
     """Authenticate as <domain> on the relay's submission port
     and send as @<domain> — must be accepted."""
     mail1 = self.mail_servers[0]
-    body = "Password auth legitimate test."
+    body = body or "Password auth legitimate test."
     with smtplib.SMTP(**self.relay_outbound) as smtp:
       smtp.starttls()
       smtp.login(*self.password_relay_shared.login)
