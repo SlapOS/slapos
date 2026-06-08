@@ -502,14 +502,16 @@ sasldb-path = $${outbound-postfix-directory:etc}/sasldb2
 # the SASL login name for a given sender will be <sender-domain>@relay
 local-domain = relay
 command =
-  rm -f $${:sasldb-path} &&
+  rm -f $${:sasldb-path}.tmp &&
+  touch $${:sasldb-path}.tmp &&
 {%- for domain, password in password_auth_domains.items() %}
   echo '{{ password }}' | ${cyrus-sasl:location}/sbin/saslpasswd2 \
-    -f $${:sasldb-path} -p -c \
+    -f $${:sasldb-path}.tmp -p -c \
     -u $${:local-domain} {{ domain }} &&
 {%- endfor %}
+  mv -f $${:sasldb-path}.tmp $${:sasldb-path} &&
   echo "sasldb populated"
-update-command = $${:command}
+update-command = test -e $${:sasldb-path} || { $${:command}; }
 {%- endif %}
 
 
