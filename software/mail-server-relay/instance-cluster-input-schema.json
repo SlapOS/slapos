@@ -94,6 +94,19 @@
             }
           },
           "default": {}
+        },
+        "dmarc": {
+          "title": "DMARC Configuration",
+          "type": "object",
+          "properties": {
+            "enable": {
+              "title": "Enable DMARC",
+              "description": "Whether to enable inbound DMARC verification with OpenDMARC",
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "default": {}
         }
       }
     }
