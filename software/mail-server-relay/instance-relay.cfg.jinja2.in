@@ -490,18 +490,23 @@ context =
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_sender_login_map.jinja2:target}
 output = $${outbound-postfix-directory:etc}/sender_login_map
+password-auth-domains = {{ dumps(list(password_auth_domains.keys())) }}
 context =
-  import json_module json
-  raw password_auth_domains {{ json_module.dumps(list(password_auth_domains.keys())) }}
+  key password_auth_domains :password-auth-domains
+  key local_domain outbound-postfix-sasldb:local-domain
 
 [outbound-postfix-sasldb]
 recipe = plone.recipe.command
 stop-on-error = true
 sasldb-path = $${outbound-postfix-directory:etc}/sasldb2
+# the SASL login name for a given sender will be <sender-domain>@relay
+local-domain = relay
 command =
   rm -f $${:sasldb-path} &&
 {%- for domain, password in password_auth_domains.items() %}
-  echo '{{ password }}' | ${cyrus-sasl:location}/sbin/saslpasswd2 -f $${:sasldb-path} -p -c -u relay {{ domain }} &&
+  echo '{{ password }}' | ${cyrus-sasl:location}/sbin/saslpasswd2 \
+    -f $${:sasldb-path} -p -c \
+    -u $${:local-domain} {{ domain }} &&
 {%- endfor %}
   echo "sasldb populated"
 update-command = $${:command}
@@ -581,10 +586,13 @@ content =
   {% if password_auth_domains -%}
   # Server SASL
   smtpd_sasl_auth_enable = yes
+  # allow SASL only after STARTTLS
+  smtpd_tls_auth_only = yes
   smtpd_sasl_path = $${outbound-postfix-smtpd-sasl-conf:config-name}
   cyrus_sasl_config_path = $${outbound-postfix-smtpd-sasl-conf:config-path}
-  smtpd_sasl_local_domain = relay
-  smtpd_sasl_security_options = noanonymous
+  # the SASL login name will be <sender-domain>@<local-domain>
+  smtpd_sasl_local_domain = $${outbound-postfix-sasldb:local-domain}
+  smtpd_sasl_tls_security_options = noanonymous
 
   # Server SASL Senders
   smtpd_sender_login_maps = texthash:$${outbound-postfix-sender-login-map:output}
