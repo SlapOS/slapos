@@ -88,7 +88,7 @@ class ServicesTestCase(SlapOSInstanceTestCase):
         supervisor.startProcess(monitor_httpd_process_name)
         for _retries in range(20):
           time.sleep(1)
-          info, = [i for i in 
+          info, = [i for i in
            supervisor.getAllProcessInfo() if ('monitor-httpd' in i['name']) and ('on-watch' in i['name'])]
           if info['statename'] == "RUNNING":
             break
