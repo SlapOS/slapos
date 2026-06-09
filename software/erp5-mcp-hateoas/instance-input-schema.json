@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ERP5 MCP Server - Instance Parameters",
+  "description": "Configuration parameters for deploying an ERP5 MCP server via SlapOS.",
+  "type": "object",
+  "properties": {
+    "mcp-port": {
+      "type": "integer",
+      "title": "MCP External Port",
+      "description": "Port on which HAProxy exposes the MCP server (IPv6).",
+      "default": 8765,
+      "minimum": 1024,
+      "maximum": 65535
+    },
+    "mcp-internal-port": {
+      "type": "integer",
+      "title": "MCP Internal Port",
+      "description": "Port on which the MCP server listens internally (behind HAProxy).",
+      "default": 18765,
+      "minimum": 1024,
+      "maximum": 65535
+    },
+    "erp5-url": {
+      "type": "string",
+      "title": "ERP5 Instance URL",
+      "description": "Base URL of the ERP5 instance to connect to (e.g. https://erp5.example.com).",
+      "format": "uri"
+    },
+    "erp5-ac-cookie": {
+      "type": "string",
+      "title": "ERP5 __ac Cookie",
+      "description": "Value of the __ac authentication cookie for ERP5 (used in stdio mode)."
+    },
+    "mcp-transport": {
+      "type": "string",
+      "title": "MCP Transport",
+      "description": "Transport protocol: streamable-http for remote access, stdio for local.",
+      "default": "streamable-http",
+      "enum": ["stdio", "sse", "streamable-http"]
+    },
+    "mcp-server-url": {
+      "type": "string",
+      "title": "MCP Server Public URL",
+      "description": "Public HTTPS URL of the MCP server for OAuth callbacks (required for streamable-http transport). Defaults to internal address if not set.",
+      "format": "uri"
+    },
+    "mcp-log-level": {
+      "type": "string",
+      "title": "Log Level",
+      "description": "Python logging level for the MCP server.",
+      "default": "INFO",
+      "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    },
+    "logrotate-num": {
+      "type": "integer",
+      "title": "Log Retention (days)",
+      "description": "Number of rotated log files to keep.",
+      "default": 30,
+      "minimum": 1,
+      "maximum": 365
+    }
+  },
+  "required": ["erp5-url"]
+}
