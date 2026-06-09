@@ -94,6 +94,19 @@
             }
           },
           "default": {}
+        },
+        "dmarc": {
+          "title": "DMARC Configuration",
+          "type": "object",
+          "properties": {
+            "enable": {
+              "title": "Enable DMARC",
+              "description": "Whether to enable inbound DMARC verification with OpenDMARC",
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "default": {}
         }
       }
     }
@@ -153,7 +166,9 @@
               "default": "started"
             },
             "config": {
-              "$ref": "#/definitions/relay-config"
+              "type": "object",
+              "description": "Instance-specific configuration parameters that override the cluster defaults. See 'default-relay-config' for available parameters.",
+              "additionalProperties": true
             }
           }
         }
