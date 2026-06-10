@@ -1278,49 +1278,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         os.mkdir(cls.working_directory)
 
   @classmethod
-  def waitForInstance(cls):
-    try:
-      super(HttpFrontendTestCase, cls).waitForInstance()
-    except BaseException:
-      cls._dumpFailureDiagnostics()
-      raise
-
-  @classmethod
-  def _dumpFailureDiagnostics(cls):
-    cls.logger.error(
-      '===== waitForInstance failed; dumping diagnostics =====')
-    try:
-      out = subprocess.check_output(
-        ['ip', '-6', 'addr', 'show', 'scope', 'global'],
-        stderr=subprocess.STDOUT, text=True, timeout=10)
-      cls.logger.error('ip -6 addr show scope global:\n%s', out)
-    except Exception as e:
-      cls.logger.error('ip -6 addr failed: %s', e)
-    try:
-      inst_dir = cls.slap.instance_directory
-      cls.logger.error('instance_directory: %s', inst_dir)
-      for entry in sorted(os.listdir(inst_dir)):
-        part_path = os.path.join(inst_dir, entry)
-        if not os.path.isdir(part_path):
-          continue
-        for relative in (
-            'var/url-ready.txt',
-            '.slapos-resource',
-            'etc/.slapos-instance-globals'):
-          file_path = os.path.join(part_path, relative)
-          if os.path.exists(file_path):
-            try:
-              with open(file_path) as fh:
-                cls.logger.error(
-                  '%s/%s:\n%s', entry, relative, fh.read())
-            except Exception as e:
-              cls.logger.error(
-                'reading %s/%s failed: %s', entry, relative, e)
-    except Exception as e:
-      cls.logger.error('partition dump failed: %s', e)
-    cls.logger.error('===== end diagnostics =====')
-
-  @classmethod
   def setUpClass(cls):
     try:
       cls.createWildcardExampleComCertificate()
