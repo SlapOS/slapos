@@ -21,6 +21,9 @@ T-2/var/log/httpd/_auth-to-backend-not-configured_frontend_log
 T-2/var/log/httpd/_auth-to-backend_access_log
 T-2/var/log/httpd/_auth-to-backend_backend_log
 T-2/var/log/httpd/_auth-to-backend_frontend_log
+T-2/var/log/httpd/_backend-nginx-authenticated-connection-drop_access_log
+T-2/var/log/httpd/_backend-nginx-authenticated-connection-drop_backend_log
+T-2/var/log/httpd/_backend-nginx-authenticated-connection-drop_frontend_log
 T-2/var/log/httpd/_bad-backend_access_log
 T-2/var/log/httpd/_bad-backend_backend_log
 T-2/var/log/httpd/_bad-backend_frontend_log
