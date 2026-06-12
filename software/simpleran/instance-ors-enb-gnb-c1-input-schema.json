@@ -1,0 +1,100 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "cell1": {
+      "title": "Cell Parameters",
+      "description": "Radio parameters related to the cell",
+      "$ref": "#/$defs/ors_cell"
+    },
+    "management": {
+      "title": "ORS Management Parameters",
+      "description": "Parameters which are not related to radio, such as promise thresholds, statistical collection, log verbosity etc...",
+      "properties": {
+        "xlog_enabled": {
+          "$ref": "ors-params.json#/properties/xlog_enabled"
+        },
+        "xlog_forwarding_enabled": {
+          "$ref": "ors-params.json#/properties/xlog_forwarding_enabled"
+        },
+        "websocket_url_ipv6": {
+          "$ref": "ors-params.json#/properties/websocket_url_ipv6"
+        }
+      },
+      "type": "object",
+      "default": {}
+    },
+    "monitor-interface-url": {
+      "$ref": "instance-ors-enb-gnb-input-schema.json#/properties/monitor-interface-url"
+    }
+  },
+  "$defs": {
+    "ors_cell": {
+      "oneOf": [
+        {
+          "title": "gNB Cell",
+          "required": [
+            "enable_cell"
+          ],
+          "type": "object",
+          "properties": {
+            "enable_cell": {
+              "$ref": "instance-ors-enb-gnb-input-schema.json#/$defs/enable_cell_gnb"
+            },
+            "tx_power_dbm": {
+              "$ref": "ors-cell.json#/properties/tx_power_dbm"
+            },
+            "rx_gain": {
+              "$ref": "ors-cell.json#/properties/rx_gain",
+              "description": "Rx gain (Range: 20 to 50 dB)"
+            },
+            "nr_bandwidth": {
+              "title": "Bandwidth",
+              "description": "Downlink Bandwidth in MHz",
+              "enum": [
+                20,
+                40,
+                50
+              ],
+              "type": "number"
+            },
+            "dl_frequency": {
+              "$ref": "ors-gnb-cell.json#/properties/dl_frequency"
+            },
+            "tdd_ul_dl_config": {
+              "$ref": "ors-gnb-cell.json#/properties/tdd_ul_dl_config"
+            }
+          }
+        },
+        {
+          "title": "eNB Cell",
+          "required": [
+            "enable_cell"
+          ],
+          "type": "object",
+          "properties": {
+            "enable_cell": {
+              "$ref": "instance-ors-enb-gnb-input-schema.json#/$defs/enable_cell_enb"
+            },
+            "tx_power_dbm": {
+              "$ref": "ors-cell.json#/properties/tx_power_dbm"
+            },
+            "rx_gain": {
+              "$ref": "ors-cell.json#/properties/rx_gain",
+              "description": "Rx gain (Range: 20 to 50 dB)"
+            },
+            "dl_frequency": {
+              "$ref": "ors-gnb-cell.json#/properties/dl_frequency"
+            },
+            "tdd_ul_dl_config": {
+              "$ref": "ors-enb-cell.json#/properties/tdd_ul_dl_config"
+            }
+          }
+        }
+      ],
+      "type": "object",
+      "default": {}
+    }
+  }
+}

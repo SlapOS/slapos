@@ -250,18 +250,37 @@ content =
 
   mynetworks = [{{ ipv6 }}]/128 {{ ipv4 }} 127.0.0.0/8
 
+  # Custom restriction classes
   smtpd_restriction_classes =
     spf_passed
 
-  smtpd_recipient_restrictions =
-    permit_mynetworks
-    check_policy_service unix:private/policyd-spf
-{% if greylisting_enable %}
-    check_policy_service inet:127.0.0.1:$${postgrey-service:port}
-{% endif %}
-
   spf_passed =
     permit
+
+  # Inbound relay access
+
+  # Disable Delivery Status Notifications
+  # See https://www.postfix.org/DSN_README.html
+  smtpd_discard_ehlo_keywords = silent-discard, dsn
+
+  # Disallow implicit subdomain matches in any table
+  # Use leading dot as in .parent.domain for explicit matches
+  parent_domain_matches_subdomains =
+
+  smtpd_sender_restrictions =
+    # Internal domains are only allowed to originate via the submission relay.
+    check_sender_access texthash:$${inbound-postfix-internal-sender-access:output}
+
+  smtpd_recipient_restrictions =
+    permit_mynetworks
+    # Reject synchronously when the backend will reject
+    reject_unverified_recipient
+    # Reject invalid SPF, permit valid SPF
+    check_policy_service unix:private/policyd-spf
+{% if greylisting_enable %}
+    # Greylist missing SPF
+    check_policy_service inet:127.0.0.1:$${postgrey-service:port}
+{% endif %}
 
   policyd-spf_time_limit = 3600
 
@@ -283,6 +302,15 @@ content =
   # Limits
   # Cap inbound message size at 100MiB (100 * 1024 * 1024)
   message_size_limit = 104857600
+
+[inbound-postfix-internal-sender-access]
+recipe = slapos.recipe.template:jinja2
+output = $${inbound-postfix-directory:etc}/internal_sender_access
+inline =
+  {% raw %}{#- NOTHING -#}{% endraw -%}
+  {%- for domain in mail_domains %}
+  {{ domain['name'] }} REJECT Inbound relay refuses internal sender domains
+  {%- endfor %}
 
 [inbound-postfix-wrapper]
 <= macro.postfix-wrapper
@@ -347,6 +375,7 @@ environment =
 hash-files =
   $${inbound-postfix-main.cf:output}
   $${inbound-postfix-master.cf:output}
+  $${inbound-postfix-internal-sender-access:output}
   $${inbound-postfix-wrapper:output}
   $${policyd-spf-conf:output}
 depends =
@@ -378,20 +407,6 @@ depends =
 name = inbound_postfix
 log = $${inbound-postfix-main.cf:log-file}
 copytruncate = true
-
-
-# Postfix Backend Domain Verification
-# -----------------------------------
-
-[outbound-postfix-sender-mx]
-recipe = slapos.recipe.template:jinja2
-output = $${outbound-postfix-directory:etc}/backend_sender_verified_mx
-action = ok
-inline =
-  {% raw %}{#- NOTHING -#}{% endraw -%}
-  {%- for fqdn in cluster_fqdns %}
-  {{ fqdn }} $${:action}
-  {%- endfor %}
 
 
 # Postfix Backend Authentication
@@ -475,21 +490,28 @@ context =
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_sender_login_map.jinja2:target}
 output = $${outbound-postfix-directory:etc}/sender_login_map
+password-auth-domains = {{ dumps(list(password_auth_domains.keys())) }}
 context =
-  import json_module json
-  raw password_auth_domains {{ json_module.dumps(list(password_auth_domains.keys())) }}
+  key password_auth_domains :password-auth-domains
+  key local_domain outbound-postfix-sasldb:local-domain
 
 [outbound-postfix-sasldb]
 recipe = plone.recipe.command
 stop-on-error = true
 sasldb-path = $${outbound-postfix-directory:etc}/sasldb2
+# the SASL login name for a given sender will be <sender-domain>@relay
+local-domain = relay
 command =
-  rm -f $${:sasldb-path} &&
+  rm -f $${:sasldb-path}.tmp &&
+  touch $${:sasldb-path}.tmp &&
 {%- for domain, password in password_auth_domains.items() %}
-  echo '{{ password }}' | ${cyrus-sasl:location}/sbin/saslpasswd2 -f $${:sasldb-path} -p -c -u relay {{ domain }} &&
+  echo '{{ password }}' | ${cyrus-sasl:location}/sbin/saslpasswd2 \
+    -f $${:sasldb-path}.tmp -p -c \
+    -u $${:local-domain} {{ domain }} &&
 {%- endfor %}
+  mv -f $${:sasldb-path}.tmp $${:sasldb-path} &&
   echo "sasldb populated"
-update-command = $${:command}
+update-command = test -e $${:sasldb-path} || { $${:command}; }
 {%- endif %}
 
 
@@ -559,6 +581,7 @@ content =
   # Server TLS parameters
   smtpd_tls_cert_file = $${postfix-certificate:cert-file}
   smtpd_tls_key_file = $${postfix-certificate:key-file}
+  # always require TLS
   smtpd_tls_security_level = encrypt
   # Ask for client certificate but do not require it
   smtpd_tls_ask_ccert = yes
@@ -568,7 +591,8 @@ content =
   smtpd_sasl_auth_enable = yes
   smtpd_sasl_path = $${outbound-postfix-smtpd-sasl-conf:config-name}
   cyrus_sasl_config_path = $${outbound-postfix-smtpd-sasl-conf:config-path}
-  smtpd_sasl_local_domain = relay
+  # the SASL login name will be <sender-domain>@<local-domain>
+  smtpd_sasl_local_domain = $${outbound-postfix-sasldb:local-domain}
   smtpd_sasl_security_options = noanonymous
 
   # Server SASL Senders
@@ -607,19 +631,11 @@ content =
     # regardless of the recipient.
     check_sender_access texthash:$${outbound-postfix-proxy-senders:output}
     # Otherwise for senders that do not have access to an external proxy,
-    # permit only recipients that are known backends...
+    # permit only recipients that are known backends.
     reject_unauth_destination
-    # ... and reject senders with valid MX (or A/AAA) records other than the
-    # FQDNs of the relays of this cluster. This prevents backends from using
-    # existing well-known domains that they do not own.
-    check_sender_mx_access cidr:{
-      {0.0.0.0/0 reject_sender_with_unknown_mx},
-      {::/0 reject_sender_with_unknown_mx}
-    }
 
+  {% if sorted_sender_hosts or fingerprint_auth_backends -%}
   smtpd_restriction_classes =
-    reject_sender_with_unknown_mx
-    {%- if sorted_sender_hosts or fingerprint_auth_backends %}
     # Per-host sender domain restrictions
     # Each sending backend is only allowed to use MAIL FROM with its own domains.
     {%- for host in sorted_sender_hosts %}
@@ -628,16 +644,6 @@ content =
     {%- for index, backend in enumerate(fingerprint_auth_backends) %}
     $${outbound-postfix-backend-clientcerts:prefix}{{ index }}
     {%- endfor %}
-
-  # Reject senders with MX pointing to domains not among the cluster's FQDNs
-  reject_sender_with_unknown_mx =
-    check_sender_mx_access pipemap:{
-      unionmap:{
-        static:any,
-        texthash:$${outbound-postfix-sender-mx:output}
-      },
-      inline:{ {any,$${outbound-postfix-sender-mx:action}=DUNNO}, {any=REJECT} }
-    }
 
   {% for host in sorted_sender_hosts -%}
   restrict_sender_{{ loop.index }} =

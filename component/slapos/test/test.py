@@ -70,7 +70,9 @@ def setUpModule():
     path=build_directory,
     # rebootstrap doesn't like a buildout not at the expected location
     buildout_binary=shutil.copy(os.path.join(os.path.dirname(sys.executable), 'buildout'), buildout_bin),
-    logger=SlapOSInstanceTestCase.logger)
+    logger=SlapOSInstanceTestCase.logger,
+    debug=SlapOSInstanceTestCase._debug,
+  )
 
 class TestSlapOSNodeBuild(SlapOSInstanceTestCase):
   request_instance = False

@@ -332,7 +332,7 @@ class Relay(E2ETestCase):
       # We don't need to reprocess the partitions the second time, when
       # the relay cluster already returns a non-empty connection dict.
       cls.waitForInstance()
-    available_ipv6 = (
+    cls.available_ipv6 = available_ipv6 = (
       cls.getPartitionIPv6(cp.getId())
       for cp in cls.slap.computer.getComputerPartitionList()
       if cp.getState() != 'started'
@@ -346,9 +346,7 @@ class Relay(E2ETestCase):
         cls.password_relay_domain, cls.well_known_domain, cls.owned_mx_domain
       )
     )
-    cls.password_relays = (
-      cls.password_relay_shared, cls.well_known_shared, cls.owned_mx_shared
-    )
+    cls.password_relays = (cls.password_relay_shared, cls.owned_mx_shared)
     # (obsolete) ip auth relay
     cls.ip_auth_relay_shared = cls.requestRelayShared(
       cls.ip_auth_relay_domain,
@@ -400,7 +398,11 @@ class Relay(E2ETestCase):
       'timeout': cls.smtp_timeout,
     }
     for relay in cls.password_relays:
-      relay.login = cls.getRelaySharedLogin(relay)
+      try:
+        relay.login = cls.getRelaySharedLogin(relay)
+      except Exception as e:
+        breakpoint()
+        pass
     cls.relay_servers = [
       cp for cp in cls.slap.computer.getComputerPartitionList()
       if cp.getState() == 'started' and cp.getType() == 'relay'
@@ -435,17 +437,16 @@ class Relay(E2ETestCase):
 
   def test_relay_usurped_well_known_domain_rejected(self):
     mail1 = self.mail_servers[0]
-    msg = "Subject: Send to relay from usurped well-known sender address"
-    with smtplib.SMTP(**self.relay_outbound) as smtp:
-      smtp.starttls()
-      smtp.login(*self.well_known_shared.login)
-      # login works fine but sending is rejected
-      with self.assertRaises(smtplib.SMTPRecipientsRefused):
-        smtp.sendmail(
-          from_addr=self.well_known_shared.examplemail,
-          to_addrs=[mail1.testmail],
-          msg=msg,
-        )
+    # Check request is reported as rejected
+    params = self.getConnectionDict(self.well_known_shared)
+    self.assertEqual(
+      params.get('error'),
+      "Your domain has not yet passed our domain verification:\n"
+      "please set MX records pointing to this mail relay cluster"
+    )
+    self.assertNotIn('outbound-host', params)
+    self.assertNotIn('outbound-user', params)
+    self.assertNotIn('outbound-password', params)
 
   def test_relay_owned_mx_domain_accepted(self):
     mail1 = self.mail_servers[0]
@@ -480,11 +481,54 @@ class Relay(E2ETestCase):
     self.assertEqual(password, params.get('outbound-password'))
     self.assertEqual(user, params.get('outbound-user'))
 
-  def test_relay_password_auth_legitimate(self):
+  def test_relay_password_shared_add_new(self):
+    new_password_relay_domain = 'new-' + self.password_relay_domain
+    mail1 = self.mail_servers[0]
+    # Check new domain is refused
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(**self.relay_outbound) as smtp:
+        smtp.starttls()
+        smtp.sendmail(
+          from_addr='unknown@' + new_password_relay_domain,
+          to_addrs=[mail1.testmail],
+          msg="Subject: Unknown sender should be rejected\n\n",
+       )
+    # Test existing domain works
+    self.test_relay_password_auth_legitimate("Existing password domain works")
+    # Request new password relay
+    new_password_relay = self.requestRelayShared(
+      new_password_relay_domain,
+      (next(self.available_ipv6), 10025),
+      {"authentication": "password"},
+      'started',
+    )
+    # Reprocess the cluster
+    for _ in range(2):
+      self.waitForInstance()
+    new_password_relay = new_password_relay.rerequest()
+    new_password_relay.login = self.getRelaySharedLogin(new_password_relay)
+    # Check new relay works
+    mail1 = self.mail_servers[0]
+    body = "New password auth works"
+    with smtplib.SMTP(**self.relay_outbound) as smtp:
+      smtp.starttls()
+      smtp.login(*new_password_relay.login)
+      smtp.sendmail(
+        from_addr=new_password_relay.examplemail,
+        to_addrs=[mail1.testmail],
+        msg="Subject: New password Auth Legit\n\n" + body,
+      )
+    self.check_inbox(mail1, body)
+    # Test existing domain still works after
+    self.test_relay_password_auth_legitimate(
+      "Existing password domain still works"
+    )
+
+  def test_relay_password_auth_legitimate(self, body=None):
     """Authenticate as <domain> on the relay's submission port
     and send as @<domain> — must be accepted."""
     mail1 = self.mail_servers[0]
-    body = "Password auth legitimate test."
+    body = body or "Password auth legitimate test."
     with smtplib.SMTP(**self.relay_outbound) as smtp:
       smtp.starttls()
       smtp.login(*self.password_relay_shared.login)
@@ -716,6 +760,17 @@ class Relay(E2ETestCase):
           msg=f"Subject: SPF Impersonation\n\n{msg_body}",
         )
     self.check_not_in_inbox(mail1, msg_body, wait_time=5)
+
+  def test_inbound_internal_sender_domain_rejected(self):
+    mail1 = self.mail_servers[0]
+    msg_body = "This inbound email should be rejected for spoofing an internal sender."
+    with self.assertRaises(smtplib.SMTPRecipientsRefused):
+      with smtplib.SMTP(**self.relay_inbound) as smtp:
+        smtp.sendmail(
+          from_addr=mail1.testmail,
+          to_addrs=[mail1.testmail],
+          msg=f"Subject: Inbound Internal Sender Spoof\n\n{msg_body}",
+        )
 
   def test_spf_pass(self):
     mail1 = self.mail_servers[0]

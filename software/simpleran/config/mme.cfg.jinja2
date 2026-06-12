@@ -1,29 +1,10 @@
-{%- set tun_name         = slap_configuration.get('tun-name', 'slaptun0')              %}
-{%- set tun_ipv4_addr    = slap_configuration.get('tun-ipv4-addr', '172.17.0.1')       %}
-{%- set tun_ipv6_addr    = slap_configuration.get('tun-ipv6-addr', '2001:db8::1')      %}
-{%- set tun_ipv4_network = slap_configuration.get('tun-ipv4-network', '172.17.0.0/17') %}
-{%- set tun_ipv6_network = slap_configuration.get('tun-ipv6-network', '2001:db8::/55') %}
-{%- set tun_ipv4_start   = int(netaddr.IPAddress(tun_ipv4_addr))                       %}
-{%- set tun_ipv6_start   = int(netaddr.IPAddress(tun_ipv6_addr))                       %}
-{%- set tun_ipv4_end     = netaddr.IPNetwork(tun_ipv4_network).last                    %}
-{%- set tun_ipv6_end     = netaddr.IPNetwork(tun_ipv6_network).last                    %}
-
-{%- set internet_ipv4_start = netaddr.IPAddress( tun_ipv4_start + 1                      ) %}
-{%- set internet_ipv4_end   = netaddr.IPAddress((tun_ipv4_start + tun_ipv4_end) // 2 - 2 ) %}
-{%- set internet_ipv6_start = netaddr.IPAddress( tun_ipv6_start + 1                      ) %}
-{%- set internet_ipv6_end   = netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2 - 1 ) %}
-{%- set ims_ipv4_start      = netaddr.IPAddress((tun_ipv4_start + tun_ipv4_end) // 2 + 2 ) %}
-{%- set ims_ipv4_end        = netaddr.IPAddress( tun_ipv4_end   - 1                      ) %}
-{%- set ims_ipv4            = netaddr.IPAddress((tun_ipv4_start + tun_ipv4_end) // 2 + 1 ) %}
-{%- set ims_ipv6            = netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2     ) %}
-{%- set ims_ipv6_start      = netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2     ) %}
-{%- set ims_ipv6_end        = netaddr.IPAddress( tun_ipv6_end   - 1                      ) %}
-
+{%- set slap_configuration = json_module.loads(slap_configuration) %}
+{%- set slapparameter_dict = json_module.loads(slapparameter_dict) %}
 {
   log_options: "all.level=error,all.max_size=0,nas.level=debug,nas.max_size=1,s1ap.level=debug,s1ap.max_size=1,ngap.level=debug,ngap.max_size=1,file.rotate=1G,file.path=/dev/null",
   log_filename: "{{ directory['log'] }}/mme.log",
 
-  com_addr: "{{ slapparameter_dict.com_url }}",
+  com_addr: "{{ slapparameter_dict.mme_com_url }}",
 {%- if not slapparameter_dict.com_unsecure %}
   com_auth: {
     password: "{{ websocket_password }}",
@@ -37,7 +18,7 @@
 {%-   endfor -%}
   ],
 
-  plmn: "{{ slapparameter_dict.get('core_network_plmn', "00101") }}",
+  plmn: "{{ slapparameter_dict.core_network_plmn }}",
   mme_group_id: 32769,
   mme_code: 1,
 
@@ -56,8 +37,8 @@
   },
 
 
-  network_name: "{{ slapparameter_dict.get('network_name', 'RAPIDSPACE') }}",
-  network_short_name: "{{ slapparameter_dict.get('network_short_name', 'RAPIDSPACE') }}",
+  network_name: "{{ slapparameter_dict.network_name }}",
+  network_short_name: "{{ slapparameter_dict.network_short_name }}",
 
   cp_ciot_opt: true,
 
@@ -67,7 +48,7 @@
             {'With N26':    "with_n26",
              'Without N26': "without_n26",
              'None':        "none"}
-            [slapparameter_dict.get('eps_5gs_interworking', 'With N26')] %}
+            [slapparameter_dict.eps_5gs_interworking] %}
   eps_5gs_interworking: "{{ eps_5gs_interworking }}",
 
   fifteen_bearers: false,
@@ -87,13 +68,13 @@
 {%- endfor -%}
 ],
       pdn_type: "ipv4v6",
-      tun_ifname:        "{{ tun_name }}",
-      first_ip_addr:     "{{ internet_ipv4_start }}",
-      last_ip_addr:      "{{ internet_ipv4_end   }}",
-      first_ipv6_prefix: "{{ internet_ipv6_start }}",
-      last_ipv6_prefix:  "{{ internet_ipv6_end   }}",
+      tun_ifname:        "{{ slapparameter_dict.tun_name }}",
+      first_ip_addr:     "{{ slapparameter_dict.internet_ipv4_start }}",
+      last_ip_addr:      "{{ slapparameter_dict.internet_ipv4_end   }}",
+      first_ipv6_prefix: "{{ slapparameter_dict.internet_ipv6_start }}",
+      last_ipv6_prefix:  "{{ slapparameter_dict.internet_ipv6_end   }}",
 {%- if slapparameter_dict.get('local_domain', '') %}
-      dns_addr: ["{{ tun_ipv4_addr }}"],
+      dns_addr: ["{{ slapparameter_dict.internet_ipv4 }}"],
 {%- else %}
       dns_addr: ["8.8.8.8", "2001:4860:4860::8888"],
 {%- endif %}
@@ -109,14 +90,14 @@
     {
       access_point_name: "ims",
       pdn_type: "ipv4v6",
-      tun_ifname:        "{{ tun_name }}-1",
-      first_ip_addr:     "{{ ims_ipv4_start }}",
-      last_ip_addr:      "{{ ims_ipv4_end   }}",
-      first_ipv6_prefix: "{{ ims_ipv6_start }}",
-      last_ipv6_prefix:  "{{ ims_ipv6_end   }}",
-      p_cscf_addr: ["{{ ims_ipv4 }}", "{{ ims_ipv6 }}"],
+      tun_ifname:        "{{ slapparameter_dict.tun_name }}-1",
+      first_ip_addr:     "{{ slapparameter_dict.ims_ipv4_start }}",
+      last_ip_addr:      "{{ slapparameter_dict.ims_ipv4_end   }}",
+      first_ipv6_prefix: "{{ slapparameter_dict.ims_ipv6_start }}",
+      last_ipv6_prefix:  "{{ slapparameter_dict.ims_ipv6_end   }}",
+      p_cscf_addr: ["{{ slapparameter_dict.ims_ipv4 }}", "{{ slapparameter_dict.ims_ipv6 }}"],
 {%- if slapparameter_dict.get('local_domain', '') %}
-      dns_addr: ["{{ tun_ipv4_addr }}"],
+      dns_addr: ["{{ slapparameter_dict.internet_ipv4 }}"],
 {%- else %}
       dns_addr: ["8.8.8.8", "2001:4860:4860::8888"],
 {%- endif %}
@@ -153,7 +134,7 @@
 
   }
 {%- else %}
-  include "{{ slap_configuration['ue_db_path'] }}",
+  include "{{ ue_db_config }}",
 {%- endif %}
 {%- if 'ecc_params' in slapparameter_dict %}
   ecc_params: {

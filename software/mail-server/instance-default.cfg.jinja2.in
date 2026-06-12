@@ -1,3 +1,5 @@
+{% set request_dns = slapparameter_dict.get('request-dns', {'enable': False}) %}
+
 [buildout]
 extends =
   ${monitor2-template:output}
@@ -15,7 +17,7 @@ parts =
   postfix-promise
   apache-httpd-promise
   publish-shared
-{% if slapparameter_dict['request-dns']['enable'] %}
+{% if request_dns['enable'] %}
   request-dns-entry
   request-dns-entry-autoconfig
   mail-config
@@ -112,6 +114,7 @@ init =
 {% set auto_outbound = outbound and inbound and not custom_outbound_host -%}
 {% set custom_outbound = outbound and custom_outbound_host -%}
 {% set custom_outbound_sasl = custom_outbound and outbound_relay.get('user') -%}
+{% set demo_disable_auth = slapparameter_dict.get('demo-disable-auth', False) -%}
 [instance-parameters]
 mail-domains = {{ dumps(mail_domains) }}
 inbound-relay = {{ dumps(inbound_relay) }}
@@ -140,10 +143,12 @@ imap-port = 10143
 imaps-port = 10993
 log-file = $${directory:var-log}/dovecot.log
 bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
+demo-disable-auth = {{ dumps(demo_disable_auth) }}
 context =
   section directory directory
   section dovecot_directory dovecot-directory
   key dovecot_passwd dovecot-passwords:target
+  key dovecot_passdb_lua dovecot-passdb-demo:output
   raw user_name {{ user_name }}
   raw ipv6 {{ ipv6 }}
   raw imap_port $${:imap-port}
@@ -157,6 +162,7 @@ context =
   raw dovecot_plugin_dir ${dovecot-pigeonhole:location}/lib/dovecot
   key sendmail_path wrapper-sendmail:wrapper-path
   key bogofilter_enable :bogofilter-enable
+  key demo_disable_auth :demo-disable-auth
 {% if slapparameter_dict['bogofilter']['enable'] %}
   key sieve_before bogofilter-directory:sieve-before
   key sieve_pipe_bin_dir bogofilter-directory:sieve-pipe
@@ -164,6 +170,11 @@ context =
   key sieve_report_ham bogofilter-sieve-report-ham:output
 {% endif %}
   raw user_mailbox_size_limit_mib {{ slapparameter_dict['mailbox-size-limit'] }}
+
+[dovecot-passdb-demo]
+recipe = slapos.recipe.template
+url = ${dovecot-passdb.jinja2.lua:target}
+output = $${directory:etc}/dovecot-passdb.lua
 
 [dovecot-passwords]
 recipe = slapos.recipe.build
@@ -739,6 +750,19 @@ inline =
       }
   }
 
+[snappymail-deltachat-qr-conf]
+recipe = slapos.recipe.template
+output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-deltachat-qr.json
+mode = 600
+once = $${:output}
+inline =
+  {
+    "plugin": {
+      "imap_security": "starttls",
+      "smtp_security": "starttls"
+    }
+  }
+
 [snappymail-mailbox-conf]
 recipe = slapos.recipe.template
 output = $${snappymail-files:target}/data/_data_/_default_/configs/plugin-mailbox-detect.json
@@ -769,6 +793,7 @@ depends =
   $${snappymail-domain:recipe}
   $${snappymail-pw-conf:recipe}
   $${snappymail-import-dovecot-conf:recipe}
+  $${snappymail-deltachat-qr-conf:recipe}
   $${snappymail-mailbox-conf:recipe}
 
 
@@ -782,7 +807,7 @@ output = $${directory:www}/password.php
 context =
   key dovecot_passwd dovecot-passwords:target
 
-{% if slapparameter_dict['request-dns']['enable'] %}
+{% if request_dns['enable'] %}
 # Mail Autoconfig
 # ---------------
 
@@ -1010,6 +1035,8 @@ init =
 {%- endif %}
 
 
+{% if request_dns['enable'] %}
+
 # Request local DNS entry
 # -----------------------
 
@@ -1017,8 +1044,8 @@ init =
 <= slap-connection
 name = dns-mail-entry
 recipe = slapos.cookbook:request.serialised
-software-url = {{ slapparameter_dict['request-dns']['sr-url'] }}
-software-type = {{ slapparameter_dict['request-dns']['sr-type'] }}
+software-url = {{ request_dns['sr-url'] }}
+software-type = {{ request_dns['sr-type'] }}
 shared = true
 sla-computer_guid = $${slap-connection:computer-id}
 return = domain ip
@@ -1034,6 +1061,8 @@ config-ip = {{ ipv6 }}
 config-name = dns-mail-entry-autoconfig
 config-subdomain = autoconfig.mail
 config-ip = {{ ipv6 }}
+
+{% endif %}
 
 
 # Publish connection information
@@ -1052,7 +1081,7 @@ webmail-admin-password = $${snappymail-admin-pw:passwd}
 password-url = $${:webmail-url}/password.php
 slaves = $${dovecot-passwords:new-account-dict}
 error-dict = $${dovecot-passwords:error-dict}
-{% if slapparameter_dict['request-dns']['enable'] %}
+{% if request_dns['enable'] %}
 domain = $${request-dns-entry:connection-domain}
 {% endif %}
 
