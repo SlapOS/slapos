@@ -74,6 +74,26 @@
       "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
       "type": "boolean"
     },
+    "internet_ipv4_start": {
+      "title": "Internet PDN's first IPv4 prefix",
+      "description": "first_ipv4_prefix of the internet PDN",
+      "type": "string"
+    },
+    "internet_ipv4_end": {
+      "title": "Internet PDN's last IPv4 prefix",
+      "description": "last_ipv4_prefix of the internet PDN",
+      "type": "string"
+    },
+    "internet_ipv6_start": {
+      "title": "Internet PDN's first IPv6 prefix",
+      "description": "first_ipv6_prefix of the internet PDN",
+      "type": "string"
+    },
+    "internet_ipv6_end": {
+      "title": "Internet PDN's last IPv6 prefix",
+      "description": "last_ipv6_prefix of the internet PDN",
+      "type": "string"
+    },
     "pdn_list": {
       "title": "PDN list",
       "description": "Configure the available EPS Packet Data Networks and 5GS Data Network Names. All PDNs will have the same IP range. (default: internet, default and sos)",
@@ -104,6 +124,65 @@
           "name": "sos"
         }
       ]
+    },
+    "external_mme_list": {
+      "title": "External MME List",
+      "description": "List of MME to which the MME is connected in order to do inter core handover.",
+      "type": "array",
+      "items": {
+        "title": "MME",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "addr",
+	  "code",
+	  "tai_list"
+        ],
+        "properties": {
+          "name": {
+            "title": "(Optional) Neighbour Cell Name",
+            "description": "Neighbour Cell name (for management purposes only)",
+            "type": "string"
+          },
+          "addr": {
+            "title": "MME Address",
+            "description": "IP address (and optional port) of S1AP SCTP connection to the external MME. The default port is 36412.",
+            "type": "string"
+          },
+          "code": {
+            "title": "MME Code",
+            "description": "Code of this external MME. It should be given by the external MME.",
+            "type": "string"
+          },
+          "tai_list": {
+            "title": "TAI List",
+            "description": "Optional String. IP address and optional port on which the S1AP SCTP connection is bound.",
+            "type": "array",
+            "items": {
+              "title": "TAI",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "plmn",
+	        "tacs"
+              ],
+              "properties": {
+                "plmn": {
+                  "title": "PLMN of this TAI",
+                  "description": "PLMN of this TAI",
+                  "type": "string"
+                },
+                "tacs": {
+                  "title": "TACS",
+                  "description": "List of TACS for this TAI (comma separated list)",
+                  "type": "string"
+                }
+	      }
+	    }
+          }
+        }
+      },
+      "default": []
     },
     "qci": {
       "default": 9,
