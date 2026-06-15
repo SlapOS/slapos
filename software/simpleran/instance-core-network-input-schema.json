@@ -74,6 +74,16 @@
       "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
       "type": "boolean"
     },
+    "internet_ipv6_start": {
+      "title": "Internet PDN's first IPv6 prefix",
+      "description": "first_ipv6_prefix of the internet PDN",
+      "type": "string"
+    },
+    "internet_ipv6_last": {
+      "title": "Internet PDN's last IPv6 prefix",
+      "description": "last_ipv6_prefix of the internet PDN",
+      "type": "string"
+    },
     "pdn_list": {
       "title": "PDN list",
       "description": "Configure the available EPS Packet Data Networks and 5GS Data Network Names. All PDNs will have the same IP range. (default: internet, default and sos)",
