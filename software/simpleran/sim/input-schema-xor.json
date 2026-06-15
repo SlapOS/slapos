@@ -44,6 +44,9 @@
     "force_ip": {
       "$ref": "common.json#/properties/force_ip"
     },
+    "force_ipv6": {
+      "$ref": "common.json#/properties/force_ipv6"
+    },
     "res_len": {
       "$ref": "common.json#/properties/res_len"
     },
