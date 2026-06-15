@@ -27,6 +27,9 @@ ue_db: [
 {%-       if "ip" in s %}
       ipv4_addr: "{{ s['ip'] }}",
 {%-       endif %}
+{%-       if "ipv6" in s %}
+      ipv6_prefix: "{{ s['ipv6'] }}",
+{%-       endif %}
 {%-       if s.get('enable_multicast', False) %}
       multicast: true,
 {%-       endif %}
