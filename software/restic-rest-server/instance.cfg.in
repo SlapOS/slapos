@@ -23,7 +23,9 @@ cert = ${slap-connection:cert-file}
 
 [slap-configuration]
 # frontend reads from from a part named [slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = {{ software_cfg_json }}
+set-default = all
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
@@ -178,6 +180,16 @@ target-directory = ${directory:bin}
 link-binary =
   {{ restic_location }}/bin/restic
 
+
+[rest-server-append-only]
+recipe = slapos.recipe.build
+init =
+  options["option"] = (
+    '--append-only'
+    if self.buildout["slap-configuration"]["configuration.append-only"]
+    else ''
+  )
+
 [rest-server]
 recipe = slapos.cookbook:wrapper
 command-line =
@@ -189,6 +201,7 @@ command-line =
     --tls-cert ${rest-server-certificate:cert-file}
     --tls-key ${rest-server-certificate:key-file}
     --prometheus
+    ${rest-server-append-only:option}
 wrapper-path = ${directory:service}/rest-server
 
 port = 19080
@@ -232,5 +245,6 @@ instance-promises =
 recipe = slapos.cookbook:publish
 rest-server-user = ${rest-server-password:user}
 rest-server-password = ${rest-server-password:passwd}
-url = ${frontend:connection-secure_access}
+frontend-url = ${frontend:connection-secure_access}
+backend-url = ${rest-server:url}
 caucase-url = ${caucased:url}
