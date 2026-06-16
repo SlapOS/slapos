@@ -1,0 +1,43 @@
+From 52c670fbd94a853dbd0b650d4e5eb617883089c0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 16 Jun 2026 11:02:12 +0900
+Subject: [PATCH] os/root_test: skip directory size comparison in Stat/Lstat
+ consistency tests
+
+On XFS, directory size depends on the inode number, so stat results for
+the same directory layout can differ across two independent directories.
+Omit fi.Size() from the comparison string when fi.IsDir() is true,
+preserving the consistency check for name, mode, and IsDir.
+
+Workaround for https://github.com/golang/go/issues/80015
+---
+ src/os/root_test.go | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/os/root_test.go b/src/os/root_test.go
+index 2cc32772de..34267429e9 100644
+--- a/src/os/root_test.go
++++ b/src/os/root_test.go
+@@ -961,6 +961,9 @@ func TestRootConsistencyStat(t *testing.T) {
+ 			if err != nil {
+ 				return "", err
+ 			}
++			if fi.IsDir() {
++				return fmt.Sprintf("name:%q mode:%v isdir:%v", fi.Name(), fi.Mode(), fi.IsDir()), nil
++			}
+ 			return fmt.Sprintf("name:%q size:%v mode:%v isdir:%v", fi.Name(), fi.Size(), fi.Mode(), fi.IsDir()), nil
+ 		})
+ 	}
+@@ -979,6 +982,9 @@ func TestRootConsistencyLstat(t *testing.T) {
+ 			if err != nil {
+ 				return "", err
+ 			}
++			if fi.IsDir() {
++				return fmt.Sprintf("name:%q mode:%v isdir:%v", fi.Name(), fi.Mode(), fi.IsDir()), nil
++			}
+ 			return fmt.Sprintf("name:%q size:%v mode:%v isdir:%v", fi.Name(), fi.Size(), fi.Mode(), fi.IsDir()), nil
+ 		})
+ 	}
+-- 
+2.52.0
+
