@@ -14,6 +14,10 @@ defaults
   timeout client {{ configuration['request-timeout'] }}s
   timeout connect {{ configuration['backend-connect-timeout'] }}s
   retries {{ configuration['backend-connect-retries'] }}
+  # Activate L7 retries so the haproxy 292b07270c fix can return a clean
+  # 502 instead of silently aborting the client h2 stream when a reused
+  # pool connection's upstream closed mid-keepalive.
+  retry-on conn-failure empty-response response-timeout
   {#- Allow to start with not resolved yet servers #}
   default-server init-addr last,libc,none
 
