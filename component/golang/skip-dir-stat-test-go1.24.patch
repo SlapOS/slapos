@@ -1,0 +1,44 @@
+From fe078dddc68140895e1af1ae12d7a3c6aed77925 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Tue, 16 Jun 2026 11:02:12 +0900
+Subject: [PATCH] os/root_test: skip Stat/Lstat subtests that compare directory
+ size
+
+TestRootConsistencyStat and TestRootConsistencyLstat compare stat results
+across two independently-created directories. On XFS, directory size
+depends on the inode number, so the same directory layout can produce
+different sizes. Skip subtrees whose path resolves to a directory
+(path.Base == ".") to avoid these spurious failures.
+
+Workaround for https://github.com/golang/go/issues/80015
+---
+ src/os/root_test.go | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/os/root_test.go b/src/os/root_test.go
+index 2cc32772de..52c595e1e0 100644
+--- a/src/os/root_test.go
++++ b/src/os/root_test.go
+@@ -951,6 +951,9 @@ func TestRootConsistencyRemove(t *testing.T) {
+ func TestRootConsistencyStat(t *testing.T) {
+ 	for _, test := range rootConsistencyTestCases {
+ 		test.run(t, func(t *testing.T, path string, r *os.Root) (string, error) {
++			if test.open == "." || test.open == "./" || strings.HasSuffix(test.open, "/.") {
++				t.Skip("directory size varies by filesystem")
++			}
+ 			var fi os.FileInfo
+ 			var err error
+ 			if r == nil {
+@@ -969,6 +972,9 @@ func TestRootConsistencyStat(t *testing.T) {
+ func TestRootConsistencyLstat(t *testing.T) {
+ 	for _, test := range rootConsistencyTestCases {
+ 		test.run(t, func(t *testing.T, path string, r *os.Root) (string, error) {
++			if test.open == "." || test.open == "./" || strings.HasSuffix(test.open, "/.") {
++				t.Skip("directory size varies by filesystem")
++			}
+ 			var fi os.FileInfo
+ 			var err error
+ 			if r == nil {
+-- 
+2.52.0
+
