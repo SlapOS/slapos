@@ -1,0 +1,74 @@
+From 292b07270c53de5db5d643c761bcecfee157a7fb Mon Sep 17 00:00:00 2001
+From: Christopher Faulet <cfaulet@haproxy.com>
+Date: Fri, 12 Jun 2026 15:57:50 +0200
+Subject: [PATCH] BUG/MEDIUM: http-ana: Don't ignore L7 retry errors
+
+with L7 retries are configured, when the max number of retries is reached
+the error must be reported to the client. However, when it was an abort on a
+reused connections, the client connection is silently closed. While it is
+expected without L7 retries, to let the client retries on its own, it is
+unexepcted with L7 retries.
+
+So let's fix it by ignoring the SF_SRV_REUSED flag on the stream when a L7
+retry fails. This way, a 502/425 will be reported to the client.
+
+This patch should help to fix the issue #3414. It must be backported to all
+supported versions.
+---
+ src/http_ana.c | 20 ++++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
+
+diff --git a/src/http_ana.c b/src/http_ana.c
+index d2d270fa8ffb..4806afd65379 100644
+--- a/src/http_ana.c
++++ b/src/http_ana.c
+@@ -1265,7 +1265,7 @@ int http_wait_for_response(struct stream *s, struct channel *rep, int an_bit)
+ 	struct htx *htx;
+ 	struct connection *srv_conn;
+ 	struct htx_sl *sl;
+-	int n;
++	int n, l7_retry_failed = 0;
+ 
+ 	DBG_TRACE_ENTER(STRM_EV_STRM_ANA|STRM_EV_HTTP_ANA, s, txn, msg);
+ 
+@@ -1306,19 +1306,22 @@ int http_wait_for_response(struct stream *s, struct channel *rep, int an_bit)
+ 			    (!conn || conn->err_code != CO_ER_SSL_EARLY_FAILED)) {
+ 				if (co_data(rep) || do_l7_retry(s, s->scb) == 0)
+ 					return 0;
++				l7_retry_failed = 1;
+ 			}
+ 
+ 			/* Perform a L7 retry on empty response or because server refuses the early data. */
+ 			if ((txn->flags & TX_L7_RETRY) &&
+ 			    (s->be->retry_type & PR_RE_EARLY_ERROR) &&
+-			    conn && conn->err_code == CO_ER_SSL_EARLY_FAILED &&
+-			    do_l7_retry(s, s->scb) == 0) {
+-				DBG_TRACE_DEVEL("leaving on L7 retry",
+-						STRM_EV_STRM_ANA|STRM_EV_HTTP_ANA, s, txn);
+-				return 0;
++			    conn && conn->err_code == CO_ER_SSL_EARLY_FAILED) {
++				if (do_l7_retry(s, s->scb) == 0) {
++					DBG_TRACE_DEVEL("leaving on L7 retry",
++							STRM_EV_STRM_ANA|STRM_EV_HTTP_ANA, s, txn);
++					return 0;
++				}
++				l7_retry_failed = 1;
+ 			}
+ 
+-			if (s->flags & SF_SRV_REUSED)
++			if (!l7_retry_failed && (s->flags & SF_SRV_REUSED))
+ 				goto abort_keep_alive;
+ 
+ 			if (s->be_tgcounters)
+@@ -1416,9 +1419,10 @@ int http_wait_for_response(struct stream *s, struct channel *rep, int an_bit)
+ 							STRM_EV_STRM_ANA|STRM_EV_HTTP_ANA, s, txn);
+ 					return 0;
+ 				}
++				l7_retry_failed = 1;
+ 			}
+ 
+-			if (s->flags & SF_SRV_REUSED)
++			if (!l7_retry_failed && (s->flags & SF_SRV_REUSED))
+ 				goto abort_keep_alive;
+ 
+ 			if (s->be_tgcounters)
