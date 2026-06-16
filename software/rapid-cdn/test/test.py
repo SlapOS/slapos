@@ -526,9 +526,6 @@ def fakeSetupHeaders(headers):
     headers = d2h(headers)
   assert isinstance(headers, http.client.HTTPMessage)
   for header_name, header_value in {
-    # workaround request problem of setting Accept-Encoding
-    # https://github.com/requests/requests/issues/2234
-    'Accept-Encoding': 'dummy',
     # Headers to tricks the whole system, like rouge user would do
     'X-Forwarded-For': '192.168.0.1',
     'X-Forwarded-Proto': 'irc',
