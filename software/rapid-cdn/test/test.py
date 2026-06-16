@@ -3743,6 +3743,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
+    self.assertNotIn(
+      'accept-encoding', j['Incoming Headers'])
 
     result = fakeHTTPResult(
       parameter_dict['domain'],
@@ -3755,6 +3757,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
+    self.assertNotIn(
+      'accept-encoding', result.json()['Incoming Headers'])
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -3796,6 +3800,36 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(
       'gzip', result.json()['Incoming Headers']['accept-encoding'])
 
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': '*'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https/'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      '*', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': '*'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http/'
+      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      '*', result.json()['Incoming Headers']['accept-encoding'])
+
   def test_type_zope_prefer_gzip_encoding_to_backend(self):
     parameter_dict = self.assertSlaveBase(
       'type-zope-prefer-gzip-encoding-to-backend')
@@ -3821,6 +3855,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'typezopeprefergzipencodingtobackend.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
+    self.assertNotIn(
+      'accept-encoding', j['Incoming Headers'])
 
     result = fakeHTTPResult(
       parameter_dict['domain'],
@@ -3866,6 +3902,47 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
       headers={'Accept-Encoding': 'gzip, deflate'})
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://%s:%s/test-path/deeper' % (
+        parameter_dict['domain'], HTTP_PORT),
+      result.headers['Location']
+    )
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': '*'})
+
+    self.assertEqual(
+      self.certificate_pem,
+      result.certificate)
+
+    try:
+      j = result.json()
+    except Exception:
+      raise ValueError('JSON decode problem in:\n%s' % (result.text,))
+    self.assertRequestHeaders(j['Incoming Headers'], parameter_dict['domain'])
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https/'
+      'typezopeprefergzipencodingtobackend.example.com:443'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      '*', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': '*'})
 
     self.assertEqual(
       http.client.FOUND,
@@ -5800,6 +5877,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': '*'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      '*', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -5807,6 +5896,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertNotIn(
+      'accept-encoding', result.json()['Incoming Headers'])
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -5846,11 +5940,30 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'],
+      port=HTTP_PORT, proto='http', client_version='1.1')
+    self.assertNotIn(
+      'accept-encoding', result.json()['Incoming Headers'])
+
     result = fakeHTTPResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': '*'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'],
+      port=HTTP_PORT, proto='http', client_version='1.1')
+    self.assertEqual(
+      '*', result.json()['Incoming Headers']['accept-encoding'])
 
   def test_prefer_gzip_encoding_to_backend(self):
     parameter_dict = self.assertSlaveBase(
@@ -5886,6 +5999,18 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': '*'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      '*', result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
       'test-path/deep/.././deeper')
 
     self.assertEqual(
@@ -5893,6 +6018,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertNotIn(
+      'accept-encoding', result.json()['Incoming Headers'])
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -5947,6 +6077,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper')
+
+    self.assertEqual(
+      http.client.FOUND,
+      result.status_code
+    )
+
+    self.assertEqual(
+      'https://%s:%s/test-path/deeper' % (parameter_dict['domain'], HTTP_PORT),
+      result.headers['Location']
+    )
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': '*'})
 
     self.assertEqual(
       http.client.FOUND,
