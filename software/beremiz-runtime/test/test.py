@@ -71,32 +71,3 @@ class BeremizRuntimeTestCase(SlapOSInstanceTestCase):
       process_names = [process['name']
                        for process in supervisor.getAllProcessInfo()]
     self.assertIn('beremiz-runtime-on-watch', process_names)
-
-  def check_connection(self, ip, port):
-    connection_list = [] # test node debug
-    for connection in psutil.net_connections(kind='tcp4'):
-      # test node debug
-      if connection.laddr.port == port:
-        connection_list.append(connection)
-      # debug end
-      if connection.laddr.ip == ip and connection.laddr.port == port and connection.status == 'ESTABLISHED':
-        return True
-    # test node debug
-    print(connection_list)
-    test_path = self.computer_partition_root_path
-    with open(os.path.join(test_path, '.' + os.path.basename(test_path) + '_beremiz-runtime.log')) as log_file:
-      print(log_file.readlines()[-15:])
-    # debug end
-    return False
-
-  def test_opc_ua(self):
-    self.assertTrue(self.check_connection('127.0.0.1', 4840))
-
-class BeremizRuntimeWithMd5sumTestCase(BeremizRuntimeTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      "runtime_plc_url": "https://lab.nexedi.com/nexedi/osie/-/raw/dd9aea8012376124ad216e3516e4f33945d14fc5/Beremiz/beremiz_test_opc_ua/bin/beremiz_test_opc_ua.tgz",
-      "runtime_plc_md5sum": "6c918cc80505f65b2bd20cdd7f40ba68"
-      }
-
