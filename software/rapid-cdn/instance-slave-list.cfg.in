@@ -425,7 +425,7 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['nginx'] }}
   -c ${slave-introspection-config:output}
 
-wrapper-path = {{ directory['service'] }}/slave-instrospection-nginx
+wrapper-path = {{ directory['service'] }}/slave-introspection-nginx
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 
 
