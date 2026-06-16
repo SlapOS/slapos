@@ -71,20 +71,3 @@ class BeremizRuntimeTestCase(SlapOSInstanceTestCase):
       process_names = [process['name']
                        for process in supervisor.getAllProcessInfo()]
     self.assertIn('beremiz-runtime-on-watch', process_names)
-
-  def check_connection(self, ip, port):
-    connection_list = [] # test node debug
-    for connection in psutil.net_connections(kind='tcp4'):
-      # test node debug
-      if connection.laddr.port == port:
-        connection_list.append(connection)
-      # debug end
-      if connection.laddr.ip == ip and connection.laddr.port == port and connection.status == 'ESTABLISHED':
-        return True
-    # test node debug
-    print(connection_list)
-    test_path = self.computer_partition_root_path
-    with open(os.path.join(test_path, '.' + os.path.basename(test_path) + '_beremiz-runtime.log')) as log_file:
-      print(log_file.readlines()[-15:])
-    # debug end
-    return False
