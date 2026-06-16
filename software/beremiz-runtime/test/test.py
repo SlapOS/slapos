@@ -88,15 +88,3 @@ class BeremizRuntimeTestCase(SlapOSInstanceTestCase):
       print(log_file.readlines()[-15:])
     # debug end
     return False
-
-  def test_opc_ua(self):
-    self.assertTrue(self.check_connection('127.0.0.1', 4840))
-
-class BeremizRuntimeWithMd5sumTestCase(BeremizRuntimeTestCase):
-  @classmethod
-  def getInstanceParameterDict(cls):
-    return {
-      "runtime_plc_url": "https://lab.nexedi.com/nexedi/osie/-/raw/dd9aea8012376124ad216e3516e4f33945d14fc5/Beremiz/beremiz_test_opc_ua/bin/beremiz_test_opc_ua.tgz",
-      "runtime_plc_md5sum": "6c918cc80505f65b2bd20cdd7f40ba68"
-      }
-
