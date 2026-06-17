@@ -120,6 +120,18 @@
       "title": "Normalise Accept-Encoding for Backend",
       "type": "string"
     },
+    "enforced-compression": {
+      "description": "When the client sends no Accept-Encoding header or sends Accept-Encoding: *, substitute it with the canonical form for the selected encoding before forwarding to the backend. Allowed values: none, deflate, gzip, br, zstd. The slave value overrides the cluster default freely (in either direction); set to 'none' to disable the substitution for this slave. If omitted, the cluster-level enforced-compression default applies.",
+      "enum": [
+        "none",
+        "deflate",
+        "gzip",
+        "br",
+        "zstd"
+      ],
+      "title": "Enforced Compression",
+      "type": "string"
+    },
     "server-alias": {
       "description": "Server Alias List separated by space",
       "title": "Server Alias",
