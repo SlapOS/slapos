@@ -1901,11 +1901,13 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'type-zope-normalize-accept-encoding': {
         'url': cls.backend_url,
         'normalize-accept-encoding': 'true',
+        'enforced-compression': 'none',
         'type': 'zope',
       },
       'type-zope-normalize-accept-encoding-https-only': {
         'url': cls.backend_url,
         'normalize-accept-encoding': 'true',
+        'enforced-compression': 'none',
         'type': 'zope',
         'https-only': 'false',
       },
@@ -2074,20 +2076,47 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'normalize-accept-encoding': {
         'url': cls.backend_url,
         'normalize-accept-encoding': 'true',
+        'enforced-compression': 'none',
       },
       'normalize-accept-encoding-https-only': {
         'url': cls.backend_url,
         'normalize-accept-encoding': 'true',
+        'enforced-compression': 'none',
         'https-only': 'false',
       },
       'enable_cache-normalize-accept-encoding': {
         'url': cls.backend_url,
         'enable_cache': True,
         'normalize-accept-encoding': 'true',
+        'enforced-compression': 'none',
       },
       'no-normalize-accept-encoding': {
         'url': cls.backend_url,
         'normalize-accept-encoding': 'false',
+        'enforced-compression': 'none',
+      },
+      'enforced-compression-none': {
+        'url': cls.backend_url,
+        'enforced-compression': 'none',
+      },
+      'enforced-compression-deflate': {
+        'url': cls.backend_url,
+        'enforced-compression': 'deflate',
+      },
+      'enforced-compression-gzip': {
+        'url': cls.backend_url,
+        'enforced-compression': 'gzip',
+      },
+      'enforced-compression-br': {
+        'url': cls.backend_url,
+        'enforced-compression': 'br',
+      },
+      'enforced-compression-zstd': {
+        'url': cls.backend_url,
+        'enforced-compression': 'zstd',
+      },
+      'enforced-compression-cluster-default': {
+        'url': cls.backend_url,
       },
       'disabled-cookie-list': {
         'url': cls.backend_url,
@@ -2284,9 +2313,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '77',
+      'accepted-slave-amount': '83',
       'rejected-slave-amount': '0',
-      'slave-amount': '77',
+      'slave-amount': '83',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -6157,6 +6186,78 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertNotIn(
       'accept-encoding', result.json()['Incoming Headers'])
+
+  def _assertEnforcedCompression(
+    self, slave_ref, expected_canonical):
+    parameter_dict = self.assertSlaveBase(slave_ref)
+
+    # Absent Accept-Encoding: rewrite fires.
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+    )
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    if expected_canonical is None:
+      self.assertNotIn(
+        'accept-encoding', result.json()['Incoming Headers'])
+    else:
+      self.assertEqual(
+        expected_canonical,
+        result.json()['Incoming Headers']['accept-encoding'])
+
+    # Accept-Encoding: * — rewrite fires.
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': '*'},
+    )
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    if expected_canonical is None:
+      self.assertEqual(
+        '*', result.json()['Incoming Headers']['accept-encoding'])
+    else:
+      self.assertEqual(
+        expected_canonical,
+        result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate'},
+    )
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      'gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+  def test_enforced_compression_none(self):
+    self._assertEnforcedCompression('enforced-compression-none', None)
+
+  def test_enforced_compression_deflate(self):
+    self._assertEnforcedCompression(
+      'enforced-compression-deflate', 'deflate')
+
+  def test_enforced_compression_gzip(self):
+    self._assertEnforcedCompression(
+      'enforced-compression-gzip', 'gzip, deflate')
+
+  def test_enforced_compression_br(self):
+    self._assertEnforcedCompression(
+      'enforced-compression-br', 'br, gzip, deflate')
+
+  def test_enforced_compression_zstd(self):
+    self._assertEnforcedCompression(
+      'enforced-compression-zstd', 'zstd, br, gzip, deflate')
+
+  def test_enforced_compression_cluster_default(self):
+    self._assertEnforcedCompression(
+      'enforced-compression-cluster-default', 'gzip, deflate')
 
   def _curl(self, domain, ip, port, cookie=None, source_ip=None):
     replacement_dict = dict(
