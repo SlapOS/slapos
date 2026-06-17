@@ -1898,14 +1898,14 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': cls.backend_url,
         'type': 'zope',
       },
-      'type-zope-prefer-gzip-encoding-to-backend': {
+      'type-zope-normalize-accept-encoding': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
+        'normalize-accept-encoding': 'true',
         'type': 'zope',
       },
-      'type-zope-prefer-gzip-encoding-to-backend-https-only': {
+      'type-zope-normalize-accept-encoding-https-only': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
+        'normalize-accept-encoding': 'true',
         'type': 'zope',
         'https-only': 'false',
       },
@@ -2071,19 +2071,23 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'enable-http2': False,
         'enable-http3': True,
       },
-      'prefer-gzip-encoding-to-backend': {
+      'normalize-accept-encoding': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
+        'normalize-accept-encoding': 'true',
       },
-      'prefer-gzip-encoding-to-backend-https-only': {
+      'normalize-accept-encoding-https-only': {
         'url': cls.backend_url,
-        'prefer-gzip-encoding-to-backend': 'true',
+        'normalize-accept-encoding': 'true',
         'https-only': 'false',
       },
-      'enable_cache-prefer-gzip-encoding-to-backend': {
+      'enable_cache-normalize-accept-encoding': {
         'url': cls.backend_url,
         'enable_cache': True,
-        'prefer-gzip-encoding-to-backend': 'true',
+        'normalize-accept-encoding': 'true',
+      },
+      'no-normalize-accept-encoding': {
+        'url': cls.backend_url,
+        'normalize-accept-encoding': 'false',
       },
       'disabled-cookie-list': {
         'url': cls.backend_url,
@@ -2280,9 +2284,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '76',
+      'accepted-slave-amount': '77',
       'rejected-slave-amount': '0',
-      'slave-amount': '76',
+      'slave-amount': '77',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -3518,9 +3522,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.headers['Location']
     )
 
-  def test_type_zope_prefer_gzip_encoding_to_backend_https_only(self):
+  def test_type_zope_normalize_accept_encoding_https_only(self):
     parameter_dict = self.assertSlaveBase(
-      'type-zope-prefer-gzip-encoding-to-backend-https-only')
+      'type-zope-normalize-accept-encoding-https-only')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -3540,7 +3544,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
+      'typezopenormalizeacceptencodinghttpsonly.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertNotIn(
@@ -3554,7 +3558,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/http/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
+      'typezopenormalizeacceptencodinghttpsonly.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertNotIn(
@@ -3579,11 +3583,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
+      'typezopenormalizeacceptencodinghttpsonly.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
-      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+      'gzip, deflate', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPResult(
       parameter_dict['domain'],
@@ -3594,11 +3598,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/http/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
+      'typezopenormalizeacceptencodinghttpsonly.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
-      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+      'gzip, deflate', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -3609,7 +3613,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:443'
+      'typezopenormalizeacceptencodinghttpsonly.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -3624,15 +3628,79 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/http/'
-      'typezopeprefergzipencodingtobackendhttpsonly.example.com:80'
+      'typezopenormalizeacceptencodinghttpsonly.example.com:80'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
       '*', result.json()['Incoming Headers']['accept-encoding'])
 
-  def test_type_zope_prefer_gzip_encoding_to_backend(self):
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https/'
+      'typezopenormalizeacceptencodinghttpsonly.example.com:443'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      'br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http/'
+      'typezopenormalizeacceptencodinghttpsonly.example.com:80'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      'br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br, zstd'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https/'
+      'typezopenormalizeacceptencodinghttpsonly.example.com:443'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      'zstd, br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br, zstd'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/http/'
+      'typezopenormalizeacceptencodinghttpsonly.example.com:80'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      'zstd, br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+  def test_type_zope_normalize_accept_encoding(self):
     parameter_dict = self.assertSlaveBase(
-      'type-zope-prefer-gzip-encoding-to-backend')
+      'type-zope-normalize-accept-encoding')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -3652,7 +3720,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackend.example.com:443'
+      'typezopenormalizeacceptencoding.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertNotIn(
@@ -3692,11 +3760,11 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackend.example.com:443'
+      'typezopenormalizeacceptencoding.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
-      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+      'gzip, deflate', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPResult(
       parameter_dict['domain'],
@@ -3733,7 +3801,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result,
       'Path',
       '/VirtualHostBase/https/'
-      'typezopeprefergzipencodingtobackend.example.com:443'
+      'typezopenormalizeacceptencoding.example.com:443'
       '/VirtualHostRoot/test-path/deeper'
     )
     self.assertEqual(
@@ -3754,6 +3822,38 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         parameter_dict['domain'], HTTP_PORT),
       result.headers['Location']
     )
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https/'
+      'typezopenormalizeacceptencoding.example.com:443'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      'br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br, zstd'})
+
+    self.assertEqualResultJson(
+      result,
+      'Path',
+      '/VirtualHostBase/https/'
+      'typezopenormalizeacceptencoding.example.com:443'
+      '/VirtualHostRoot/test-path/deeper'
+    )
+    self.assertEqual(
+      'zstd, br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
 
   def test_type_zope_virtualhostroot_http_port(self):
     parameter_dict = self.assertSlaveBase(
@@ -5253,25 +5353,28 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertRequestHeaders(
       backend_headers, parameter_dict['domain'], cached=True)
 
-  def test_vary_accept_encoding_caches_per_variant(self):
-    # Cache must select variants per `Vary: Accept-Encoding` (RFC 9111 §4.1):
-    # each request's Accept-Encoding value picks the matching cached variant,
-    # never some other variant's body.
+  def test_vary_caches_per_variant(self):
+    # Cache must select variants per the `Vary` header value (RFC 9111 §4.1).
+    # We use a custom request header here because ATS' Accept-Encoding Vary
+    # matching is intentionally permissive (a stored gzip variant can satisfy
+    # a request that also accepts gzip alongside brotli). A custom header
+    # gets strict equality matching, so a clear per-variant assertion is
+    # possible.
     parameter_dict = self.assertSlaveBase('enable_cache')
 
     for variant_value, body in [
-      ('gzip', 'body-ae-gzip'),
-      ('br', 'body-ae-br'),
+      ('A', 'body-variant-A'),
+      ('B', 'body-variant-B'),
     ]:
       config_result = mimikra.config(
-        self.backend_url + 'vary-ae',
+        self.backend_url + 'vary-custom',
         headers=d2h({
-          'X-Config-Vary-Key': 'Accept-Encoding',
+          'X-Config-Vary-Key': 'X-Variant-Token',
           'X-Config-Vary-Value': variant_value,
           'X-Config-Body': body,
           'X-Config-Reply-Header-Server': 'TestBackend',
           'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
-          'X-Config-Reply-Header-Vary': 'Accept-Encoding',
+          'X-Config-Reply-Header-Vary': 'X-Variant-Token',
           'X-Config-Reply-Header-Cache-Control': 'max-age=300',
           'X-Config-Reply-Header-Content-Length': 'calculate',
         })
@@ -5279,22 +5382,22 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.assertEqual(config_result.status_code, http.client.CREATED)
 
     # Two passes through both variants: even after the first-miss cycles
-    # populate the cache, repeated requests with each Accept-Encoding must
-    # return the body registered for *that* AE — never the other variant.
-    for ae, expected in [
-      ('gzip', 'body-ae-gzip'),
-      ('br', 'body-ae-br'),
-      ('gzip', 'body-ae-gzip'),
-      ('br', 'body-ae-br'),
+    # populate the cache, repeated requests with each X-Variant-Token must
+    # return the body registered for *that* token — never the other.
+    for token, expected in [
+      ('A', 'body-variant-A'),
+      ('B', 'body-variant-B'),
+      ('A', 'body-variant-A'),
+      ('B', 'body-variant-B'),
     ]:
       result = fakeHTTPSResult(
         parameter_dict['domain'],
-        'vary-ae',
-        headers={'Accept-Encoding': ae},
+        'vary-custom',
+        headers={'X-Variant-Token': token},
       )
       self.assertEqual(http.client.OK, result.status_code)
       self.assertEqual(expected, result.text)
-      self.assertEqual('Accept-Encoding', result.headers.get('Vary'))
+      self.assertEqual('X-Variant-Token', result.headers.get('Vary'))
 
   def test_vary_star_is_uncacheable(self):
     # `Vary: *` always fails to match (RFC 9111 §4.1) — the cache must
@@ -5329,58 +5432,60 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_vary_multiple_headers(self):
     # Vary listing more than one header — variants must key on the full
-    # (Accept-Encoding, Accept-Language) tuple, not on either header alone.
+    # tuple, not on either header alone. We use two custom headers here so
+    # ATS does strict equality matching (Accept-* family headers have
+    # permissive negotiation-aware Vary matching).
     parameter_dict = self.assertSlaveBase('enable_cache')
 
     variants = [
-      ('gzip', 'en', 'g-en'),
-      ('gzip', 'fr', 'g-fr'),
-      ('br', 'en', 'b-en'),
-      ('br', 'fr', 'b-fr'),
+      ('a', 'x', 'ax'),
+      ('a', 'y', 'ay'),
+      ('b', 'x', 'bx'),
+      ('b', 'y', 'by'),
     ]
-    for ae, al, body in variants:
+    for v_a, v_b, body in variants:
       config_result = mimikra.config(
         self.backend_url + 'vary-multi',
         headers=d2h({
-          'X-Config-Vary-Key': 'Accept-Encoding, Accept-Language',
-          'X-Config-Vary-Value': '%s, %s' % (ae, al),
+          'X-Config-Vary-Key': 'X-Vary-A, X-Vary-B',
+          'X-Config-Vary-Value': '%s, %s' % (v_a, v_b),
           'X-Config-Body': body,
           'X-Config-Reply-Header-Server': 'TestBackend',
           'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
-          'X-Config-Reply-Header-Vary': 'Accept-Encoding, Accept-Language',
+          'X-Config-Reply-Header-Vary': 'X-Vary-A, X-Vary-B',
           'X-Config-Reply-Header-Cache-Control': 'max-age=300',
           'X-Config-Reply-Header-Content-Length': 'calculate',
         })
       )
       self.assertEqual(config_result.status_code, http.client.CREATED)
 
-    # Walk every (AE, AL) combination, then re-request the first to confirm
-    # cache hit returns the matching tuple's body and not a sibling's.
-    for ae, al, expected in variants + [variants[0]]:
+    # Walk every (X-Vary-A, X-Vary-B) combination, then re-request the first
+    # to confirm cache hit returns the matching tuple's body, not a sibling.
+    for v_a, v_b, expected in variants + [variants[0]]:
       result = fakeHTTPSResult(
         parameter_dict['domain'],
         'vary-multi',
-        headers={'Accept-Encoding': ae, 'Accept-Language': al},
+        headers={'X-Vary-A': v_a, 'X-Vary-B': v_b},
       )
       self.assertEqual(http.client.OK, result.status_code)
       self.assertEqual(expected, result.text)
 
-  def test_vary_prefer_gzip_encoding_collapses_variants(self):
-    # `prefer-gzip-encoding-to-backend` rewrites client
-    # `Accept-Encoding: ...gzip...` to bare `gzip` in frontend-haproxy
-    # (templates/frontend-haproxy.cfg.in:130-132) BEFORE the request reaches
-    # ATS. With backend declaring `Vary: Accept-Encoding`, two client
-    # requests whose original AE strings differ but both contain `gzip` must
-    # collapse to a single cache entry.
+  def test_vary_normalize_accept_encoding_collapses_variants(self):
+    # `normalize-accept-encoding` buckets the client's Accept-Encoding to a
+    # canonical form (br-capable -> 'br, gzip, deflate'; gzip-capable ->
+    # 'gzip, deflate'; ...) at the frontend-haproxy layer BEFORE ATS sees
+    # it. With backend declaring `Vary: Accept-Encoding`, two client
+    # requests whose original AE strings differ but bucket to the same
+    # canonical form must collapse to a single cache entry.
     parameter_dict = self.assertSlaveBase(
-      'enable_cache-prefer-gzip-encoding-to-backend')
+      'enable_cache-normalize-accept-encoding')
 
     config_result = mimikra.config(
-      self.backend_url + 'vary-prefer-gzip',
+      self.backend_url + 'vary-normalize-ae',
       headers=d2h({
         'X-Config-Vary-Key': 'Accept-Encoding',
-        'X-Config-Vary-Value': 'gzip',
-        'X-Config-Body': 'gzip-variant',
+        'X-Config-Vary-Value': 'br, gzip, deflate',
+        'X-Config-Body': 'br-bucket-variant',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
         'X-Config-Reply-Header-Vary': 'Accept-Encoding',
@@ -5390,27 +5495,27 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
 
-    # First fetch: AE: gzip, deflate -> haproxy rewrites to gzip -> ATS MISS
-    # -> backend returns 'gzip-variant' -> ATS stores under the normalized
-    # cache key.
+    # First fetch: AE: gzip, deflate, br -> haproxy buckets to
+    # 'br, gzip, deflate' -> ATS MISS -> backend returns
+    # 'br-bucket-variant' -> ATS stores under the normalized cache key.
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'vary-prefer-gzip',
-      headers={'Accept-Encoding': 'gzip, deflate'},
+      'vary-normalize-ae',
+      headers={'Accept-Encoding': 'gzip, deflate, br'},
     )
     self.assertEqual(http.client.OK, result.status_code)
-    self.assertEqual('gzip-variant', result.text)
+    self.assertEqual('br-bucket-variant', result.text)
 
     # Reconfigure the variant. If the next request is a true cache HIT, the
-    # client gets the *old* body, not 'CHANGED'. If haproxy didn't normalize
-    # (or if the cache differentiated on the original AE) the second request
-    # would be a MISS and 'CHANGED' would be returned — that's the failure
-    # mode this test guards against.
+    # client gets the *old* body, not 'CHANGED'. If haproxy didn't bucket
+    # (or if the cache differentiated on the original AE) the second
+    # request would be a MISS and 'CHANGED' would be returned — that's the
+    # failure mode this test guards against.
     config_result = mimikra.config(
-      self.backend_url + 'vary-prefer-gzip',
+      self.backend_url + 'vary-normalize-ae',
       headers=d2h({
         'X-Config-Vary-Key': 'Accept-Encoding',
-        'X-Config-Vary-Value': 'gzip',
+        'X-Config-Vary-Value': 'br, gzip, deflate',
         'X-Config-Body': 'CHANGED',
         'X-Config-Reply-Header-Server': 'TestBackend',
         'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
@@ -5421,13 +5526,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
     self.assertEqual(config_result.status_code, http.client.CREATED)
 
+    # Different client AE in the same bucket: 'br, gzip' also contains
+    # 'br' -> haproxy buckets to 'br, gzip, deflate' -> ATS HIT -> client
+    # sees the previously-cached body, not 'CHANGED'.
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'vary-prefer-gzip',
-      headers={'Accept-Encoding': 'gzip, br'},
+      'vary-normalize-ae',
+      headers={'Accept-Encoding': 'br, gzip'},
     )
     self.assertEqual(http.client.OK, result.status_code)
-    self.assertEqual('gzip-variant', result.text)
+    self.assertEqual('br-bucket-variant', result.text)
 
   def test_enable_http2_false(self):
     parameter_dict = self.assertSlaveBase('enable-http2-false')
@@ -5643,9 +5751,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertHttp1(parameter_dict['domain'])
 
-  def test_prefer_gzip_encoding_to_backend_https_only(self):
+  def test_normalize_accept_encoding_https_only(self):
     parameter_dict = self.assertSlaveBase(
-      'prefer-gzip-encoding-to-backend-https-only')
+      'normalize-accept-encoding-https-only')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -5661,7 +5769,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertRequestHeaders(
       result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
-      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+      'gzip, deflate', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -5708,6 +5816,62 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      'br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br, zstd'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      'zstd, br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+    # An unknown / made-up encoding token doesn't match any bucket; the
+    # rewrite stays inert and the original value reaches the backend
+    # verbatim, including over HTTP.
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'made-up-encoding'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      'made-up-encoding',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'made-up-encoding'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'],
+      port=HTTP_PORT, proto='http', client_version='1.1')
+    self.assertEqual(
+      'made-up-encoding',
+      result.json()['Incoming Headers']['accept-encoding'])
+
     result = fakeHTTPResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
@@ -5719,7 +5883,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.json()['Incoming Headers'], parameter_dict['domain'],
       port=HTTP_PORT, proto='http', client_version='1.1')
     self.assertEqual(
-      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+      'gzip, deflate', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPResult(
       parameter_dict['domain'],
@@ -5765,9 +5929,37 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(
       '*', result.json()['Incoming Headers']['accept-encoding'])
 
-  def test_prefer_gzip_encoding_to_backend(self):
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'],
+      port=HTTP_PORT, proto='http', client_version='1.1')
+    self.assertEqual(
+      'br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br, zstd'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'],
+      port=HTTP_PORT, proto='http', client_version='1.1')
+    self.assertEqual(
+      'zstd, br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+  def test_normalize_accept_encoding(self):
     parameter_dict = self.assertSlaveBase(
-      'prefer-gzip-encoding-to-backend')
+      'normalize-accept-encoding')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -5783,7 +5975,56 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertRequestHeaders(
       result.json()['Incoming Headers'], parameter_dict['domain'])
     self.assertEqual(
-      'gzip', result.json()['Incoming Headers']['accept-encoding'])
+      'gzip, deflate', result.json()['Incoming Headers']['accept-encoding'])
+
+    # Single `gzip` token (no deflate) -- the substring matcher still
+    # picks the gzip bucket, so the backend receives the canonical
+    # `gzip, deflate` form.
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip'})
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      'gzip, deflate', result.json()['Incoming Headers']['accept-encoding'])
+
+    # Unknown encoding tokens mixed with a recognised one: the unknown
+    # tokens are ignored, the strongest recognised token still decides
+    # the bucket. `gzip, weirdcoding, deflate` -> `gzip, deflate`.
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, weirdcoding, deflate'})
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      'gzip, deflate', result.json()['Incoming Headers']['accept-encoding'])
+
+    # Recognised token preceded by an unknown one still buckets
+    # correctly: `weirdcoding, deflate` -> `deflate`.
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'weirdcoding, deflate'})
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      'deflate', result.json()['Incoming Headers']['accept-encoding'])
+
+    # No recognised token at all -- the header is left as-is.
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'weirdcoding'})
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      'weirdcoding', result.json()['Incoming Headers']['accept-encoding'])
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -5830,6 +6071,32 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
 
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      'br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers={'Accept-Encoding': 'gzip, deflate, br, zstd'})
+
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      'zstd, br, gzip, deflate',
+      result.json()['Incoming Headers']['accept-encoding'])
+
     result = fakeHTTPResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
@@ -5902,6 +6169,43 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'https://%s:%s/test-path/deeper' % (parameter_dict['domain'], HTTP_PORT),
       result.headers['Location']
     )
+
+  def test_no_normalize_accept_encoding(self):
+    # Opt-out: when `normalize-accept-encoding` is explicitly false, the
+    # rewrite block at frontend-haproxy is skipped entirely and the
+    # client's Accept-Encoding is forwarded to the backend verbatim.
+    parameter_dict = self.assertSlaveBase('no-normalize-accept-encoding')
+
+    for client_ae in (
+        'gzip, deflate',
+        'gzip, deflate, br',
+        'gzip, deflate, br, zstd',
+        'deflate',
+        '*',
+    ):
+      result = fakeHTTPSResult(
+        parameter_dict['domain'],
+        'test-path/deep/.././deeper',
+        headers={'Accept-Encoding': client_ae},
+      )
+      self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+      self.assertRequestHeaders(
+        result.json()['Incoming Headers'], parameter_dict['domain'])
+      self.assertEqual(
+        client_ae,
+        result.json()['Incoming Headers']['accept-encoding'])
+
+    # No Accept-Encoding sent -> backend sees none (haproxy never sets one
+    # when none was provided, regardless of normalize-accept-encoding).
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+    )
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertNotIn(
+      'accept-encoding', result.json()['Incoming Headers'])
 
   def _curl(self, domain, ip, port, cookie=None, source_ip=None):
     replacement_dict = dict(
