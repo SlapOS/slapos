@@ -84,6 +84,7 @@
       "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
+      "normalize-accept-encoding": true,
       "plain_http_port": 11080,
       "port": 11443,
       "request-timeout": 12,
