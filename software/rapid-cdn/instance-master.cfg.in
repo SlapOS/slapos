@@ -1113,7 +1113,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 cdn-requester-log = ${directory:log}/cdn-instance-node.log
 instance-db-path = {{ instance_parameter_dict["instance-db-path"] }}
 validated-instance-db-path = {{ instance_parameter_dict["validated-instance-db-path"] }}
-domainvalidation-db-path = ${directory:srv}/domainvalidation-db.sqlite
+domain-validation-db-path = ${directory:srv}/domainvalidation-db.sqlite
 openssl = {{ software_parameter_dict['openssl'] }}
 instance-retention-delay = {{ slapparameter_dict['instance-retention-delay'] | string }}
 # Resolves to the rendered output of [instance-publish-slave-information]
