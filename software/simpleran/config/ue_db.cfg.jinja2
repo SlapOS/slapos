@@ -1,4 +1,3 @@
-{%- set sim_list = json_module.loads(sim_list) %}
 ue_db: [
 {%- for s in sim_list %}
 {%-   if s.get('disable_sim', '') != 'Disable SIM' %}
