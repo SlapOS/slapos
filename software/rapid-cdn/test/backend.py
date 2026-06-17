@@ -118,15 +118,21 @@ class TestHandler(BaseHTTPRequestHandler):
     else:
       base_path = self.path
     if vary_key is not None and vary_value is not None:
-      # Both headers carry comma-separated lists of equal length so multi-
-      # header variants (e.g. Vary: Accept-Encoding, Accept-Language) can be
-      # registered with a single CONFIG call:
+      # For multi-header variants (e.g. Vary: Accept-Encoding, Accept-Language)
+      # both headers carry comma-separated lists of equal length:
       #   X-Config-Vary-Key:   Accept-Encoding, Accept-Language
       #   X-Config-Vary-Value: gzip, en
-      vary_key_list = [k.strip() for k in vary_key.split(',')]
-      vary_value_list = [v.strip() for v in vary_value.split(',')]
-      assert len(vary_key_list) == len(vary_value_list), \
-        'X-Config-Vary-Key / X-Config-Vary-Value length mismatch'
+      # For a single-header variant the value may itself contain commas
+      # (e.g. an expected request header `Accept-Encoding: br, gzip, deflate`),
+      # so we only split when the key contains a comma.
+      if ',' in vary_key:
+        vary_key_list = [k.strip() for k in vary_key.split(',')]
+        vary_value_list = [v.strip() for v in vary_value.split(',')]
+        assert len(vary_key_list) == len(vary_value_list), \
+          'X-Config-Vary-Key / X-Config-Vary-Value length mismatch'
+      else:
+        vary_key_list = [vary_key]
+        vary_value_list = [vary_value]
       variant = tuple(sorted(zip(vary_key_list, vary_value_list)))
       key = (base_path, variant)
     else:
