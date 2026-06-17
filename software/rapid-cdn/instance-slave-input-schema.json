@@ -113,11 +113,11 @@
       "title": "type:websocket Transparent proxy",
       "type": "string"
     },
-    "prefer-gzip-encoding-to-backend": {
-      "default": "false",
-      "description": "If set to true, frontend will rewrite Accept-Encoding request header to simply 'gzip' for all variants of Accept-Encoding containing 'gzip', in order to maximize cache hits for resources cached with Vary: Accept-Encoding when enable_cache is used",
+    "normalize-accept-encoding": {
+      "default": "true",
+      "description": "If true (the default), the frontend normalises the client's Accept-Encoding to a small canonical set before forwarding to the backend, so that responses cached with Vary: Accept-Encoding collapse into a handful of variants instead of one per browser-specific Accept-Encoding string. The rewrite preserves the best encoding the client supports: zstd-capable -> 'zstd, br, gzip, deflate'; br-capable -> 'br, gzip, deflate'; gzip-capable -> 'gzip, deflate'; deflate-capable -> 'deflate'; otherwise unchanged. Set to false to disable the rewrite and forward the client's Accept-Encoding verbatim.",
       "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
-      "title": "Prefer gzip Encoding for Backend",
+      "title": "Normalise Accept-Encoding for Backend",
       "type": "string"
     },
     "server-alias": {

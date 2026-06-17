@@ -74,6 +74,12 @@
       "description": "Globally enable HTTP3 protocol. Can be precisely set on each node by -frontend-i-config-enable-http3",
       "type": "boolean"
     },
+    "normalize-accept-encoding": {
+      "default": true,
+      "title": "Normalise Accept-Encoding for Backend",
+      "description": "Default applied to slaves that did not set their own normalize-accept-encoding. When enabled, the frontend collapses Accept-Encoding into a small canonical set before forwarding to the backend. Inherited from the cluster-level default; individual slaves may override.",
+      "type": "boolean"
+    },
     "expert-backend-allow-downgrade-ssl": {
       "title": "Expert Backend Allow Downgrade SSL",
       "description": "Allow SSL downgrade for backend connections (expert setting).",

@@ -37,6 +37,12 @@
       "description": "Globally enable HTTP3 protocol. Can be precisely set on each node by -frontend-i-config-enable-http3",
       "type": "boolean"
     },
+    "normalize-accept-encoding": {
+      "default": true,
+      "title": "Cluster Default Normalise Accept-Encoding",
+      "description": "Cluster-wide default for normalize-accept-encoding. When enabled, the frontend collapses the client's Accept-Encoding into a small canonical set before forwarding to the backend, so cached responses keyed on Vary: Accept-Encoding collapse into a handful of variants instead of one per browser. Slaves that set their own normalize-accept-encoding override this default.",
+      "type": "boolean"
+    },
     "http3-port": {
       "default": 443,
       "title": "Real advertised HTTP3 port",
