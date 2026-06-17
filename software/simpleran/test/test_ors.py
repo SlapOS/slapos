@@ -56,6 +56,22 @@ rf_info = {
     },
     "flavour": "ORS"
 }
+enb_minimal_param_dict = {
+  'testing': True,
+  'lte_mock': True,
+  'rf-info': json.dumps(rf_info),
+  'cell1': {
+      'enable_cell': 'Enable eNB',
+  },
+}
+gnb_minimal_param_dict = {
+  'testing': True,
+  'lte_mock': True,
+  'rf-info': json.dumps(rf_info),
+  'cell1': {
+      'enable_cell': 'Enable eNB',
+  },
+}
 param_dict = {
     'testing': True,
     'lte_mock': True,
@@ -226,7 +242,7 @@ class TestENBParameters(ORSTestCase):
     return {'_': json.dumps(enb_param_dict)}
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "enb"
+    return "enb-gnb"
   def test_enb_conf(self):
 
     conf = load_yaml_conf(self.slap, 'enb')
@@ -281,13 +297,91 @@ class TestENBParameters(ORSTestCase):
         self.assertEqual(p['plmn'],          conf_ncell['plmn'])
 
 
+class TestENBFrequency(ORSTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+      param_dict = {}
+      param_dict.update(enb_minimal_param_dict)
+      param_dict["cell1"]["lte_band"] = 33
+      param_dict["cell1"]["dl_frequency"] = 1905
+      param_dict["cell1"]["bandwidth"] = "5 MHz"
+    return {'_': json.dumps(param_dict)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "enb-gnb"
+  def test_enb_conf(self):
+
+    conf = load_yaml_conf(self.slap, 'enb')
+    self.assertEqual(conf['cell_list'][0]['dl_earfcn'], 36050)
+
+
+class TestGNBFrequency(ORSTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+      param_dict = {}
+      param_dict.update(gnb_minimal_param_dict)
+      param_dict["cell1"]["nr_band"] = 101
+      param_dict["cell1"]["dl_frequency"] = 1902.5
+      param_dict["cell1"]["nr_bandwidth"] = "5 MHz"
+    return {'_': json.dumps(param_dict)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "enb-gnb"
+  def test_enb_conf(self):
+
+    conf = load_yaml_conf(self.slap, 'enb')
+    self.assertEqual(conf['nr_cell_list'][0]['dl_nr_arfcn'], 380500)
+
+tti_bundling = {
+            "snr_threshold": 10,
+            "phr_threshold": 15,
+            "hysteresis": 5,
+            "mcs_max": 6,
+            "l_crb_max": 1,
+            "e_harq_pattern": True
+}
+
+class TestTTIBundling(ORSTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+      param_dict = {}
+      param_dict.update(enb_minimal_param_dict)
+      param_dict["cell1"]["tti_bundling"] = tti_bundling
+    return {'_': json.dumps(param_dict)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "enb-gnb"
+  def test_enb_conf(self):
+
+    conf = load_yaml_conf(self.slap, 'enb')
+    for k in "snr_threshold phr_threshold hysteresis mcs_max l_crb_max e_harq_pattern".split(' '):
+      self.assertEqual(conf['cell_list'][0]['tti_bundling'][k], tti_bundling[k])
+
+
+class TestTXPowerDBM(ORSTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+      param_dict = {}
+      param_dict.update(enb_param_dict)
+      param_dict["cell1"].pop("tx_gain")
+      param_dict["cell1"]["tx_power_dbm"] = 17
+    return {'_': json.dumps(param_dict)}
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return "enb-gnb"
+  def test_enb_conf(self):
+
+    conf = load_yaml_conf(self.slap, 'enb')
+    self.assertEqual(conf['tx_gain'], [74.61] * enb_param_dict['nodeb']['n_antenna_dl'])
+
+
 class TestGNBParameters1(ORSTestCase):
   @classmethod
   def getInstanceParameterDict(cls):
     return {'_': json.dumps(gnb_param_dict1)}
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "gnb"
+    return "enb-gnb"
   def test_gnb_conf(self):
 
     conf = load_yaml_conf(self.slap, 'enb')
@@ -365,7 +459,7 @@ class TestGNBParameters2(ORSTestCase):
     return {'_': json.dumps(gnb_param_dict2)}
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "gnb"
+    return "enb-gnb"
   def test_gnb_conf(self):
 
     conf = load_yaml_conf(self.slap, 'enb')
@@ -424,7 +518,7 @@ class TestENBMonitorGadgetUrl(ORSTestCase):
 
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "enb"
+    return "enb-gnb"
 
   def test_monitor_gadget_url(self):
     test_monitor_gadget_url(self)
@@ -436,7 +530,7 @@ class TestGNBMonitorGadgetUrl(ORSTestCase):
 
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "gnb"
+    return "enb-gnb"
 
   def test_monitor_gadget_url(self):
     test_monitor_gadget_url(self)
