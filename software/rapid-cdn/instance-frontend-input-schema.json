@@ -74,6 +74,13 @@
       "description": "Globally enable HTTP3 protocol. Can be precisely set on each node by -frontend-i-config-enable-http3",
       "type": "boolean"
     },
+    "enforced-compression": {
+      "default": "gzip",
+      "title": "Enforced Compression",
+      "description": "When the client sends no Accept-Encoding header or Accept-Encoding: *, the frontend substitutes it with the canonical form for this encoding before forwarding to the backend. Inherited from the cluster-level enforced-compression default; individual slaves may override.",
+      "enum": ["none", "deflate", "gzip", "br", "zstd"],
+      "type": "string"
+    },
     "expert-backend-allow-downgrade-ssl": {
       "title": "Expert Backend Allow Downgrade SSL",
       "description": "Allow SSL downgrade for backend connections (expert setting).",
