@@ -85,10 +85,10 @@ context =
 {%-     do slave_instance.__setitem__(prefix, info_dict) %}
 {%-   endfor %}
 {%-   do slave_instance.__setitem__('health-check-failover-ssl-proxy-verify', ('' ~ slave_instance.get('health-check-failover-ssl-proxy-verify', '')).lower() in TRUE_VALUES) %}
-{%-   for key in ['https-only', 'websocket-transparent'] %}
+{%-   for key in ['https-only', 'websocket-transparent', 'normalize-accept-encoding'] %}
 {%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'true')).lower() in TRUE_VALUES) %}
 {%-   endfor %}
-{%-   for key in ['enable_cache', 'disable-no-cache-request', 'disable-via-header', 'prefer-gzip-encoding-to-backend', 'strict-transport-security-sub-domains', 'strict-transport-security-preload'] %}
+{%-   for key in ['enable_cache', 'disable-no-cache-request', 'disable-via-header', 'strict-transport-security-sub-domains', 'strict-transport-security-preload'] %}
 {%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'false')).lower() in TRUE_VALUES) %}
 {%-   endfor %}
 {%-   for key in ['disabled-cookie-list'] %}
