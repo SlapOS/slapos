@@ -127,6 +127,16 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   http-request del-header Cache-Control
   http-request del-header Pragma
 {%-           endif %}
+{%-           set ENFORCED_COMPRESSION_AE = {
+        'deflate': 'deflate',
+        'gzip': 'gzip, deflate',
+        'br': 'br, gzip, deflate',
+        'zstd': 'zstd, br, gzip, deflate',
+      } %}
+{%-           if slave_instance['enforced-compression'] != 'none' %}
+  http-request set-header Accept-Encoding "{{ ENFORCED_COMPRESSION_AE[slave_instance['enforced-compression']] }}" if !{ req.hdr_cnt(Accept-Encoding) -m int gt 0 }
+  http-request set-header Accept-Encoding "{{ ENFORCED_COMPRESSION_AE[slave_instance['enforced-compression']] }}" if { req.fhdr(Accept-Encoding) -m str * }
+{%-           endif %}
 {%-           if slave_instance['normalize-accept-encoding'] %}
   # Collapse the long tail of browser-specific Accept-Encoding strings into a
   # small set of canonical forms, preserving the best encoding the client
