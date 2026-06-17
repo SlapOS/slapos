@@ -74,6 +74,7 @@
       "domain": "example.com",
       "enable-http2-by-default": true,
       "enable-http3": false,
+      "enforced-compression": "gzip",
       "expert-backend-allow-downgrade-ssl": false,
       "extra_slave_instance_list": "[{\"custom_domain\": \"bang-loop.example.com\", \"slave_reference\": \"_bang-loop-invalid\"}, {\"custom_domain\": \"reuse.example.com\", \"slave_reference\": \"_reuse-orig\"}]",
       "frontend-name": "caddy-frontend-1",
