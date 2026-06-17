@@ -948,7 +948,7 @@ shared_list        = deepcopy(slap_configuration['slave-instance-list'])
 config             = slap_configuration['configuration']
 sr_type            = slap_configuration['slap-software-type']
 
-if config['testing']:
+if config.get('testing', False):
     for k,v in {
         'ipv4': "{'192.0.2.1'}",
         'ipv6': "{'2001:db8::1'}",
