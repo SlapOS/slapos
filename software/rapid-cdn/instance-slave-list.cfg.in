@@ -93,6 +93,9 @@ context =
 {%-   for key in ['enable_cache', 'disable-no-cache-request', 'disable-via-header', 'strict-transport-security-sub-domains', 'strict-transport-security-preload'] %}
 {%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'false')).lower() in TRUE_VALUES) %}
 {%-   endfor %}
+{%-   if 'enforced-compression' not in slave_instance or slave_instance['enforced-compression'] == '' %}
+{%-     do slave_instance.__setitem__('enforced-compression', configuration['enforced-compression']) %}
+{%-   endif %}
 {%-   for key in ['disabled-cookie-list'] %}
 {%-     do slave_instance.__setitem__(key, slave_instance.get(key, '').split()) %}
 {%-   endfor %}
