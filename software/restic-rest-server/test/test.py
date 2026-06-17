@@ -165,8 +165,9 @@ class TestResticRestServer(ResticRestServerTestCase):
     self.run_restic("init")
     self.run_restic("backup", self.workdir)
     snapshot_id = json.loads(self.run_restic("snapshots", "--json"))[0]["id"]
-    out = self.run_restic("forget", snapshot_id, stderr=subprocess.STDOUT)
-    self.assertIn("unable to remove snapshot", out)
+    with self.assertRaises(subprocess.CalledProcessError) as exc_context:
+      self.run_restic("forget", snapshot_id, stderr=subprocess.PIPE)
+    self.assertIn("unable to remove snapshot", exc_context.exception.stderr)
     self.assertIn(
       snapshot_id, [s["id"] for s in json.loads(self.run_restic("snapshots", "--json"))]
     )
