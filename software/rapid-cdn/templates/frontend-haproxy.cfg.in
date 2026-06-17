@@ -127,8 +127,15 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   http-request del-header Cache-Control
   http-request del-header Pragma
 {%-           endif %}
-{%-           if slave_instance['prefer-gzip-encoding-to-backend'] %}
-  http-request set-header Accept-Encoding gzip if { hdr(Accept-Encoding) -m sub gzip }
+{%-           if slave_instance['normalize-accept-encoding'] %}
+  # Collapse the long tail of browser-specific Accept-Encoding strings into a
+  # small set of canonical forms, preserving the best encoding the client
+  # supports. ACLs match the original (pre-rewrite) value via req.orig_ae.
+  http-request set-var(req.orig_ae) req.fhdr(Accept-Encoding)
+  http-request set-header Accept-Encoding "zstd, br, gzip, deflate" if { var(req.orig_ae) -m sub zstd }
+  http-request set-header Accept-Encoding "br, gzip, deflate" if !{ var(req.orig_ae) -m sub zstd } { var(req.orig_ae) -m sub br }
+  http-request set-header Accept-Encoding "gzip, deflate" if !{ var(req.orig_ae) -m sub zstd } !{ var(req.orig_ae) -m sub br } { var(req.orig_ae) -m sub gzip }
+  http-request set-header Accept-Encoding "deflate" if !{ var(req.orig_ae) -m sub zstd } !{ var(req.orig_ae) -m sub br } !{ var(req.orig_ae) -m sub gzip } { var(req.orig_ae) -m sub deflate }
 {%-           endif %}
 {%-           if slave_instance['type'] == 'notebook' %}
 {#-             In haproxy world type:notebook is simple type:websocket with default parameters #}
