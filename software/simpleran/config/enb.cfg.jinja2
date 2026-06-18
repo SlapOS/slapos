@@ -340,8 +340,15 @@
     }},
     sp_config: 7,
 {%- endif %}
-{%- set n_rb_dl = J(jlte_n_rb_dl(cell.bandwidth)) %}
+{%- if 'n_rb_dl' in cell %}
+{%-   set n_rb_dl = cell.n_rb_dl %}
+{%- else %}
+{%-   set n_rb_dl = J(jlte_n_rb_dl(cell.bandwidth)) %}
+{%- endif %}
     n_rb_dl: {{ n_rb_dl }},
+{%- if 'n_rb_ul' in cell %}
+    n_rb_ul: {{ cell.n_rb_ul }},
+{%- endif %}
     si_coderate: {{ 0.30  if n_rb_dl == 6  else 0.20 }},
     pdsch_dedicated: {
       p_a: {{ {4: -6, 2: -3}.get(ru.n_antenna_dl, 0) }},
@@ -780,7 +787,12 @@
         band:         {{ cell.nr_band }},
         dl_nr_arfcn:  {{ cell.dl_nr_arfcn }},
         ul_nr_arfcn:  {{ cell.ul_nr_arfcn }},
+{%-     if 'n_rb_dl' in cell and 'n_rb_ul' in cell %}
+        n_rb_dl:    {{ cell.n_rb_dl }},
+        n_rb_ul:    {{ cell.n_rb_ul }},
+{%-     else %}
         bandwidth:    {{ cell.bandwidth }},
+{%-     endif %}
         subcarrier_spacing: {{ cell.subcarrier_spacing }},
 {%-     if not cell.get('amarisoft_ssb_computation', false) %}
         ssb_nr_arfcn:   {{ cell.ssb_nr_arfcn }},
@@ -1020,6 +1032,16 @@
           msg3_k2: 7,
 {%-     endif %}
         },
+{%-     if cell.get('enable_ul_su_mimo', False) %}
+        srs: {
+          resource_auto: {
+            codebook: {
+              resource_type: "periodic",
+              period: 80, /* in slots */
+            }
+          }
+        },
+{%-     endif %}
         drb_config: "{{ B('%s-drb.cfg' % cell_ref) }}",
 {%-     if "redcap_ue" in cell and "allow" in cell.redcap_ue and cell.redcap_ue.allow %}
         redcap_ue: {

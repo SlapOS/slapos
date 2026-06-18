@@ -41,6 +41,12 @@
       "type": "number",
       "default": 10000
     },
+    "enable_ul_su_mimo": {
+      "title": "Enable Uplink SU-MIMO",
+      "description": "Enable Uplink Single User MIMO (uplink MIMO on one UE)",
+      "type": "boolean",
+      "default": false
+    },
     "ru": {
       "$ref": "#/$defs/ru-of-cell",
       "propertyOrder": 9999
