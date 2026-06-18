@@ -41,8 +41,13 @@ ue_db: [
 {%-         for route in s.route_list %}
         [
           {
+{%-       if 'ipv4_remote_addr' in route %}
+            ipv4_remote_addr: "{{ route['ipv4_remote_addr'] }}",
+            mask: "{{ route['mask'] }}",
+{%-       else %}
             ipv6_remote_addr_prefix: "{{ route['ipv6_remote_addr_prefix'] }}",
             prefix_len: {{ route['prefix_len'] }},
+{%-       endif %}
           }
         ],
 {%-         endfor -%}
