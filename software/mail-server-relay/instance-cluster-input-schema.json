@@ -96,6 +96,30 @@
           "default": {}
         }
       }
+    },
+    "custom-inbound-certificate": {
+      "title": "Custom Inbound Certificate",
+      "description": "PEM encoded certificate and private key to use for inbound SMTP TLS on this relay. The certificate must match the relay FQDN and must not be expired.",
+      "type": "object",
+      "properties": {
+        "cert": {
+          "title": "Certificate",
+          "description": "PEM encoded certificate, optionally followed by intermediate certificates.",
+          "type": "string",
+          "minLength": 1
+        },
+        "key": {
+          "title": "Private Key",
+          "description": "PEM encoded private key matching the certificate.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "cert",
+        "key"
+      ],
+      "additionalProperties": false
     }
   },
   "properties": {
@@ -154,6 +178,9 @@
             },
             "config": {
               "$ref": "#/definitions/relay-config"
+            },
+            "custom-inbound-certificate": {
+              "$ref": "#/definitions/custom-inbound-certificate"
             }
           }
         }
