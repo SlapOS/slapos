@@ -397,8 +397,9 @@ def ors_radio(config, publish, shared_list):
                 publish['radio'].setdefault('tdd-ul-dl-config',      {})[c] = config[c]['tdd_ul_dl_config']
 
         # Define number of UL threads
-        if config[c]['cell_type'] == 'gNB' and config[c]['tdd_ul_dl_config'] == "DSUUUUUUUU (5ms,       1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink":
-            if config['n_antenna_ul'] * float(config[c]['nr_bandwidth'].removesuffix(" MHz")) >= 50:
+        if config[c]['cell_type'] == 'gNB' and config[c]['tdd_ul_dl_config'] == "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink" and config[c]['enable_ul_su_mimo']:
+            if config['n_antenna_ul'] * config[c]['nr_bandwidth'] >= 50:
+                # Only PD10ANS has more than 2 cores
                 if options['sbc-model'] == 'PD10ANS':
                     config[c]['nb_threads_ul'] = 3
                     config[c]['nb_threads_dl'] = 1
