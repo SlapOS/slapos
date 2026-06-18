@@ -51,6 +51,12 @@
       "type": "boolean",
       "default": false
     },
+    "phr_link_adaptation": {
+      "title": "PHR Link Adaptation",
+      "description": "If set to true, the eNB / gNB will lower the UL MCS and/or resource blocks allocation if the UE sends negative MAC power headroom reports indicating it is power limited. If set to false, the power headroom value is not taken into account for the UL link adaptation mecanism.",
+      "type": "boolean",
+      "default": true
+    },
     "rrc_configuration": {
       "title": "RRC Configuration",
       "description": "RRC Configuration",

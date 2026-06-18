@@ -350,6 +350,7 @@
     pdcch_format:       {{  1   if n_rb_dl == 6  else 2 }},
     prach_config_index: {{  15  if n_rb_dl == 6  else 4 }},
     initial_cqi:        {{  5   if n_rb_dl == 6  else 3 }},
+    phr_link_adaptation: {{ cell.phr_link_adaptation |tojson }},
     pucch_dedicated: {
       n1_pucch_sr_count: 11,
 {#- for CA with 2 cells it is possible to use PUCCH 1b CS ack/nack #}
@@ -1010,6 +1011,10 @@
 {%-     endif %}
         },
         pusch: {
+          phr_link_adaptation: {{ cell.phr_link_adaptation |tojson }},
+{%-     if cell.get('enable_ul_su_mimo', False) %}
+          max_rank: {{ ru.n_antenna_ul }},
+{%-     endif %}
 {%-     if ru.ru_type == "sunwave" %}
           k2: 4,
           msg3_k2: 7,
