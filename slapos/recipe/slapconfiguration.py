@@ -34,7 +34,7 @@ from contextlib import contextmanager
 
 import jsonschema
 import slapos.slap
-from slapos.recipe.librecipe import unwrap
+from slapos.recipe.librecipe import unwrap, JSON_SERIALISED_MAGIC_KEY
 import six
 from six.moves.configparser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
@@ -686,18 +686,19 @@ class JsonSchema(Recipe):
     unstringify_types_dict = {'integer': int, 'boolean': str_to_bool}
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
       parameter_dict = unwrap(parameter_dict)
-      # Also unwrap each shared/slave instance so consumers see decoded
-      # parameter dicts regardless of validate-parameters. slave_reference
-      # is system-injected and lives outside the json-in-xml payload, so
-      # preserve it across the unwrap.
       shared_list = options.get('slave-instance-list')
       if shared_list:
+        # Keep the other top-level keys (slave_reference, slave_title, ...)
+        # next to the decoded payload.
         unwrapped_shared_list = []
         for instance in shared_list:
-          reference = instance.pop('slave_reference', None)
-          instance = unwrap(instance)
-          if isinstance(instance, dict) and reference is not None:
-            instance['slave_reference'] = reference
+          payload = instance.pop(JSON_SERIALISED_MAGIC_KEY, None)
+          if payload is not None:
+            decoded = json.loads(payload)
+            if isinstance(decoded, dict):
+              for k, v in instance.items():
+                decoded[k] = v
+              instance = decoded
           unwrapped_shared_list.append(instance)
         options['slave-instance-list'] = unwrapped_shared_list
     if validate.main:

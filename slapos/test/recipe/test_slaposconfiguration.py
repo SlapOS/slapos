@@ -721,11 +721,6 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     with self.patchSlap(parameters, shared):
       options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
       received = options['slave-instance-list']
-      # When SR serialisation is json-in-xml, each shared instance is
-      # transparently decoded (the {'_': '...json...'} wrapper is removed)
-      # so consumers see uniformly typed parameter dicts regardless of
-      # validate-parameters. slave_reference is system-injected and is
-      # preserved across the unwrap.
       self.assertEqual(
         received,
         [
@@ -794,11 +789,7 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(options['invalid-shared-instance-list'], [])
 
   def test_jsonschema_shared_unwrapped_when_skip_shared_validation(self):
-    """When SR serialisation is json-in-xml and validate-parameters=main, each
-    shared instance is still transparently decoded so consumers (e.g. Jinja2
-    templates iterating slave-instance-list) see typed parameter dicts rather
-    than the raw {'_': '...json...'} wrapper. slave_reference, which is
-    system-injected outside the json payload, is preserved across the unwrap."""
+    """json-in-xml shared entries are decoded even when shared validation is skipped."""
     self.writeJsonSchema()
     parameters = {"number": 1}
     shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
@@ -814,15 +805,8 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       )
 
   def test_jsonschema_shared_mixed_serialisation_both_modes(self):
-    """Shared list mixing json-in-xml-wrapped and plain entries, with both
-    valid and invalid slaves, must be transparently decoded regardless of
-    whether shared validation runs. slave_reference is preserved across the
-    unwrap on every entry, wrapped or plain."""
+    """A mix of json-in-xml-wrapped and plain shared entries is decoded under both validation modes."""
     def mixed_shared_list():
-      # SHARED0/SHARED2 are json-in-xml-wrapped; SHARED1/SHARED3 arrive
-      # already plain. Valid slaves use kind=1 (gets 'thing' string default).
-      # Invalid slaves use kind=2 with a wrong-typed 'thing' (kind=2
-      # requires 'thing' to be integer).
       return [
         {'_': json.dumps({"kind": 1}, sort_keys=True),
          'slave_reference': 'SHARED0'},
@@ -833,7 +817,6 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       ]
     self.writeJsonSchema()
     parameters = {"number": 1}
-    # Mode A: validate-parameters='all' (default) — shared validation runs.
     with self.patchSlap(parameters, shared=[]):
       d = self.mock_computer_partition.getInstanceParameterDict.return_value
       d['slave_instance_list'] = mixed_shared_list()
@@ -852,8 +835,6 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
           'SHARED3': {"kind": 2, "thing": "hello"},
         },
       )
-    # Mode B: validate-parameters='main' — shared validation skipped;
-    # slave-instance-list survives and must contain all four decoded slaves.
     with self.patchSlap(parameters, shared=[]):
       d = self.mock_computer_partition.getInstanceParameterDict.return_value
       d['slave_instance_list'] = mixed_shared_list()
@@ -865,6 +846,35 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
           {"kind": 1, "slave_reference": "SHARED1"},
           {"kind": 2, "thing": "hello", "slave_reference": "SHARED2"},
           {"kind": 2, "thing": "hello", "slave_reference": "SHARED3"},
+        ],
+      )
+
+  def test_jsonschema_shared_unwrap_preserves_siblings(self):
+    """All other top-level keys (slave_title, slap_software_type, timestamp, ...) survive the unwrap."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, shared=[]):
+      d = self.mock_computer_partition.getInstanceParameterDict.return_value
+      d['slave_instance_list'] = [
+        {
+          '_': json.dumps({"kind": 1}, sort_keys=True),
+          'slave_reference': 'SHARED0',
+          'slave_title': 'first-slave',
+          'slap_software_type': 'default',
+          'timestamp': '1700000000',
+        },
+      ]
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
+      self.assertEqual(
+        options['slave-instance-list'],
+        [
+          {
+            'kind': 1,
+            'slave_reference': 'SHARED0',
+            'slave_title': 'first-slave',
+            'slap_software_type': 'default',
+            'timestamp': '1700000000',
+          },
         ],
       )
 
