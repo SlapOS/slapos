@@ -21,6 +21,25 @@ Outputs:
 
 """
 
+NR_TDD_CONFIG_MAP = {
+    "DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default"                      : 0,
+    "DDDSUUDDDD (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, same ratios as default"       : 1,
+    "DDDSUUUUDD (5ms,   5DL/4UL), S-slot=6DL:4GP:4UL, balanced downlink and uplink" : 2,
+    "DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink"                 : 3,
+    "DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink": 4,
+    "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink" : 5,
+    "DDDSU      (2.5ms, 3DL/1UL), S-slot=10DL:2GP:2UL, reduced latency"             : 6,
+}
+LTE_TDD_CONFIG_MAP = {
+    "[Configuration 0] DSUUUDSUUU (5ms,  2DL/6UL), S-slot=10DL:2GP:2UL, maximum uplink"              : 0,
+    "[Configuration 1] DSUUDDSUUD (5ms,  4DL/4UL), S-slot=10DL:2GP:2UL, balanced downlink and uplink": 1,
+    "[Configuration 2] DSUDDDSUDD (5ms,  6DL/2UL), S-slot=10DL:2GP:2UL, default"                     : 2,
+    "[Configuration 3] DSUUUDDDDD (10ms, 6DL/3UL), S-slot=10DL:2GP:2UL"                              : 3,
+    "[Configuration 4] DSUUDDDDDD (10ms, 7DL/2UL), S-slot=10DL:2GP:2UL, high downlink"               : 4,
+    "[Configuration 5] DSUDDDDDDD (10ms, 8DL/1UL), S-slot=10DL:2GP:2UL, maximum downlink"            : 5,
+    "[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink"                 : 6,
+}
+
 def ors_radio(config, publish, shared_list):
     """eNB / gNB / UE - ORS Specific"""
     from xlte import nrarfcn
@@ -296,9 +315,57 @@ def ors_radio(config, publish, shared_list):
 
         if config[c]['cell_type'] in ['eNB', 'gNB']:
             if rat == 'nr':
-                config[c]['nr_bandwidth'] = float(config[c]['nr_bandwidth'].removesuffix(' MHz'))
+                config[c].setdefault('nr_bandwidth_ul', config[c]['nr_bandwidth'])
+                config[c]['nr_bandwidth']    = float(config[c]['nr_bandwidth'   ].removesuffix(' MHz'))
+                config[c]['nr_bandwidth_ul'] = float(config[c]['nr_bandwidth_ul'].removesuffix(' MHz'))
             else:
-                config[c]['bandwidth']    = float(config[c]['bandwidth'].removesuffix(' MHz'))
+                config[c].setdefault('bandwidth_ul', config[c]['bandwidth'])
+                config[c]['bandwidth']    = float(config[c]['bandwidth'   ].removesuffix(' MHz'))
+                config[c]['bandwidth_ul'] = float(config[c]['bandwidth_ul'].removesuffix(' MHz'))
+
+        # Bandwidth
+        if config[c]['cell_type'] == 'gNB':
+            if config[c]['nr_bandwidth_ul'] != config[c]['nr_bandwidth']:
+                if config[c].get('subcarrier_spacing', 15 if config[c]['rf_mode'] == 'fdd' else 30) == 15:
+                    n_rb_map = {
+                        5 : 25,
+                        10: 52,
+                        15: 79,
+                        20: 106,
+                        25: 133,
+                        30: 160,
+                        35: 188,
+                        40: 216,
+                        45: 242,
+                        50: 270,
+                    }
+                else:
+                    n_rb_map = {
+                        5 : 11,
+                        10: 24,
+                        15: 38,
+                        20: 51,
+                        25: 65,
+                        30: 78,
+                        35: 92,
+                        40: 106,
+                        45: 119,
+                        50: 133,
+                    }
+                config[c]['n_rb_ul'] = n_rb_map[config[c]['nr_bandwidth_ul']]
+                config[c]['n_rb_dl'] = n_rb_map[config[c]['nr_bandwidth']]
+        elif config[c]['cell_type'] == 'eNB':
+            if config[c]['bandwidth_ul'] != config[c]['bandwidth']:
+                n_rb_map = {
+                    1.4 : 6,
+                    3: 15,
+                    5: 25,
+                    10: 50,
+                    15: 75,
+                    20: 100,
+                }
+                config[c]['n_rb_ul'] = n_rb_map[config[c]['bandwidth_ul']]
+                config[c]['n_rb_dl'] = n_rb_map[config[c]['bandwidth']]
 
         publish['hardware'].setdefault('sdr-serial-number', {})
         publish['hardware']['sbc-model'] = options['sbc-model']
@@ -416,19 +483,117 @@ def ors_radio(config, publish, shared_list):
                 publish['radio'].setdefault('root-sequence-index', {})[c] = config[c]['root_sequence_index']
                 publish['radio'].setdefault('tdd-ul-dl-config',      {})[c] = config[c]['tdd_ul_dl_config']
 
+    def configure_cpu():
+        if options['sbc-model'] != 'PD10ANS':
+            return
+        if config['cell1']['enable_cell'] and config['cell2']['enable_cell']:
+            return
+        if config['cell1']['enable_cell']:
+            c = 'cell1'
+        else:
+            c = 'cell2'
+        if config[c]['performance_mode'] == 'Maximum Uplink':
+            config[c]['nb_threads_ul'] = 3
+            config[c]['nb_threads_dl'] = 1
+            return
+        elif config[c]['performance_mode'] == 'Balanced':
+            config[c]['nb_threads_ul'] = 2
+            config[c]['nb_threads_dl'] = 2
+            return
+        elif config[c]['performance_mode'] == 'Maximum Downlink':
+            config[c]['nb_threads_ul'] = 1
+            config[c]['nb_threads_dl'] = 3
+            return
         # Define number of UL threads
-        if config[c]['cell_type'] == 'gNB' and config[c]['tdd_ul_dl_config'] == 'DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink' and config[c]['enable_ul_su_mimo']:
-            if config['n_antenna_ul'] * config[c]['nr_bandwidth'] >= 50:
-                # Only PD10ANS has more than 2 cores
-                if options['sbc-model'] == 'PD10ANS':
-                    config[c]['nb_threads_ul'] = 3
-                    config[c]['nb_threads_dl'] = 1
+        if config[c]['cell_type'] == 'gNB':
+            if config[c]['rf_mode'] == 'tdd':
+                tdd_config = config[c]['tdd_ul_dl_config']
+                if type(tdd_config) is dict:
+                    p1 = tdd_config['pattern1']
+                    p2 = tdd_config.get('pattern2')
+                    if p2:
+                        nb_ul_slot  = (p1['ul_slots'] + p1['ul_symbols']/14) * 5 / (p1['period'] + p2['period'])
+                        nb_ul_slot += (p2['ul_slots'] + p2['ul_symbols']/14) * 5 / (p1['period'] + p2['period'])
+                        nb_dl_slot  = (p1['dl_slots'] + p1['dl_symbols']/14) * 5 / (p1['period'] + p2['period'])
+                        nb_dl_slot += (p2['dl_slots'] + p2['dl_symbols']/14) * 5 / (p1['period'] + p2['period'])
+                    else:
+                        nb_ul_slot = (p1['ul_slots'] + p1['ul_symbols']/14) * p1['period'] / 5
+                        nb_dl_slot = (p1['dl_slots'] + p1['dl_symbols']/14) * p1['period'] / 5
+                else:
+                    nr_tdd_config = NR_TDD_CONFIG_MAP[tdd_config]
+                    nb_ul_slot = {
+                        0: 2 + 4/14,
+                        1: 2 + 4/14,
+                        2: 4 + 4/14,
+                        3: 6 + 10/14,
+                        4: 7 + 4/14,
+                        5: 8 + 2/14,
+                        6: 2 + 2/14,
+                    }[nr_tdd_config]
+                    nb_dl_slot = {
+                        0: 7 + 6/14,
+                        1: 7 + 6/14,
+                        2: 5 + 6/14,
+                        3: 3 + 2/14,
+                        4: 2 + 6/14,
+                        5: 1 + 10/14,
+                        6: 6 + 10/14,
+                    }[nr_tdd_config]
+            elif config[c]['rf_mode'] == 'fdd':
+                nb_ul_slot = 10
+                nb_dl_slot = 10
+            bandwidth_dl = config[c]['nr_bandwidth']
+            bandwidth_ul = config[c]['nr_bandwidth_ul']
+        elif config[c]['cell_type'] == 'eNB':
+            if config[c]['rf_mode'] == 'tdd':
+                tdd_config = config[c]['tdd_ul_dl_config']
+                lte_tdd_config = LTE_TDD_CONFIG_MAP[tdd_config]
+                nb_ul_slot = {
+                    0: 6 + 2 * 2/14,
+                    1: 4 + 2 * 2/14,
+                    2: 2 + 2 * 2/14,
+                    3: 3 + 2/14,
+                    4: 2 + 2/14,
+                    5: 1 + 2/14,
+                    6: 5 + 2 * 2/14,
+                }[lte_tdd_config]
+                nb_dl_slot = {
+                    0: 2 + 2 * 10/14,
+                    1: 4 + 2 * 10/14,
+                    2: 6 + 2 * 10/14,
+                    3: 6 + 10/14,
+                    4: 7 + 10/14,
+                    5: 8 + 10/14,
+                    6: 3 + 2 * 10/14,
+                }[lte_tdd_config]
+            elif config[c]['rf_mode'] == 'fdd':
+                nb_ul_slot = 10
+                nb_dl_slot = 10
+            bandwidth_dl = config[c]['bandwidth_dl']
+            bandwidth_ul = config[c]['bandwidth_ul']
+        else:
+            return
+        n_dl_layer = config['n_antenna_dl']
+        n_ul_layer = config['n_antenna_ul']
+        downlink_amount = nb_dl_slot * bandwidth_dl * n_dl_layer
+        uplink_amount   = nb_ul_slot * bandwidth_ul * n_ul_layer
+        if downlink_amount <= 800:
+            config[c]['nb_threads_ul'] = 3
+            config[c]['nb_threads_dl'] = 1
+            return
+        if uplink_amount <= 80:
+            config[c]['nb_threads_ul'] = 1
+            config[c]['nb_threads_dl'] = 3
+            return
+        if uplink_amount > 300 or (n_ul_layer >= 2 and uplink_amount > 150):
+            publish['nodeb']['performance-warning'] = 'Warning: you might need to reduce the downlink / uplink bandwidth or number of antennas to avoid perfomance issues, your current settings exceed expected capacities of this SBC model.'
 
     if len(sdr_list) >= 1:
         configure_rf_parameters(0)
     if len(sdr_list) >= 2:
         configure_rf_parameters(1)
 
+    configure_cpu()
 
     # ENB / GNB MODE
     if sr_type in ['enb', 'gnb', 'enb-gnb']:
