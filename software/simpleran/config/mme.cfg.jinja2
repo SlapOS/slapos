@@ -1,5 +1,3 @@
-{%- set slap_configuration = json_module.loads(slap_configuration) %}
-{%- set slapparameter_dict = json_module.loads(slapparameter_dict) %}
 {
   log_options: "all.level=error,all.max_size=0,nas.level=debug,nas.max_size=1,s1ap.level=debug,s1ap.max_size=1,ngap.level=debug,ngap.max_size=1,file.rotate=1G,file.path=/dev/null",
   log_filename: "{{ directory['log'] }}/mme.log",

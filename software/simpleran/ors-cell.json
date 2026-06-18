@@ -22,6 +22,9 @@
     "cell_id": {
       "$ref": "cell/common.json#/properties/cell_id",
       "description": "Cell ID. Equal to ORS Serial number modulo 256 by default"
+    },
+    "enable_ul_su_mimo": {
+      "$ref": "cell/common.json#/properties/enable_ul_su_mimo"
     }
   }
 }

@@ -3,6 +3,9 @@
   "title": "ORS Cell",
   "type": "object",
   "properties": {
+    "phr_link_adaptation": {
+      "$ref": "cell/common.json#/properties/phr_link_adaptation"
+    },
     "ignore_gbr_congestion": {
       "$ref": "cell/common.json#/properties/ignore_gbr_congestion"
     },
