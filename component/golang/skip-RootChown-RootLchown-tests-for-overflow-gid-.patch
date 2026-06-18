@@ -1,0 +1,43 @@
+From afbdd646582c6f4218f6c334d08a865bc6513a50 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Wed, 17 Jun 2026 17:27:48 +0900
+Subject: [PATCH] os: skip RootChown/RootLchown tests for overflow gid 65534
+
+In a Linux user namespace, unmapped supplementary groups get the
+overflow GID 65534 (nobody). Attempting to chown to this GID fails
+with EINVAL, causing TestRootChown and TestRootLchown to fail.
+
+Skip those entries in the test loop.
+
+Fixes golang/go#77383
+---
+ src/os/root_unix_test.go | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/os/root_unix_test.go b/src/os/root_unix_test.go
+index b4b37c2be9..6d4ce7c551 100644
+--- a/src/os/root_unix_test.go
++++ b/src/os/root_unix_test.go
+@@ -41,6 +41,9 @@ func TestRootChown(t *testing.T) {
+ 				}
+ 			}
+ 			for _, gid := range groups {
++				if gid == 65534 {
++					continue
++				}
+ 				err := root.Chown(test.open, -1, gid)
+ 				if errEndsTest(t, err, test.wantError, "root.Chown(%q, -1, %v)", test.open, gid) {
+ 					return
+@@ -81,6 +84,9 @@ func TestRootLchown(t *testing.T) {
+ 				}
+ 			}
+ 			for _, gid := range groups {
++				if gid == 65534 {
++					continue
++				}
+ 				err := root.Lchown(test.open, -1, gid)
+ 				if errEndsTest(t, err, wantError, "root.Lchown(%q, -1, %v)", test.open, gid) {
+ 					return
+-- 
+2.52.0
+
