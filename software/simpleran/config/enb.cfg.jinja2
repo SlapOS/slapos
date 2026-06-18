@@ -1010,6 +1010,7 @@
 {%-     endif %}
         },
         pusch: {
+          phr_link_adaptation: {{ cell.phr_link_adaptation |tojson }},
 {%-     if cell.get('enable_ul_su_mimo', False) %}
           max_rank: {{ ru.n_antenna_ul }},
 {%-     endif %}
