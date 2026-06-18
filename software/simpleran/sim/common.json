@@ -146,21 +146,44 @@
       "items": {
         "title": "Route",
         "type": "object",
-        "required": [
-          "ipv6_remote_addr_prefix",
-          "prefix_len"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "ipv6_remote_addr_prefix": {
-            "title": "IPv6 remote address prefix",
-            "type": "string"
+        "oneOf": [
+          {
+            "title": "IPv6 Route",
+            "required": [
+              "ipv6_remote_addr_prefix",
+              "prefix_len"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "ipv6_remote_addr_prefix": {
+                "title": "IPv6 remote address prefix",
+                "type": "string"
+              },
+              "prefix_len": {
+                "title": "Prefix length",
+                "type": "number"
+              }
+            }
           },
-          "prefix_len": {
-            "title": "Prefix length",
-            "type": "number"
+          {
+            "title": "IPv4 Route",
+            "required": [
+              "ipv4_remote_addr",
+              "mask"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "ipv4_remote_addr": {
+                "title": "IPv4 remote address",
+                "type": "string"
+              },
+              "mask": {
+                "title": "Mask",
+                "type": "string"
+              }
+            }
           }
-        }
+        ]
       },
       "default": []
     }
