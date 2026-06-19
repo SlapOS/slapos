@@ -40,6 +40,14 @@ LTE_TDD_CONFIG_MAP = {
     "[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink"                 : 6,
 }
 
+# Set serial number of this ORS
+sn = 0
+try:
+    hn = socket.gethostname()
+    sn = int(''.join(filter(lambda x:x.isdigit(), hn)))
+except (IndexError, ValueError):
+    pass
+
 def ors_radio(config, publish, shared_list):
     """eNB / gNB / UE - ORS Specific"""
     from xlte import nrarfcn
@@ -243,12 +251,6 @@ def ors_radio(config, publish, shared_list):
     # NodeB Radio ID's
     def publish_hex(h):
         return f'{h} ({int(h, 16)})'
-    sn = 0
-    try:
-        hostname = socket.gethostname()
-        sn = int(''.join(filter(lambda x:x.isdigit(), hostname)))
-    except (IndexError, ValueError):
-        pass
     config.setdefault('enb_id', '0x{:05X}'.format( sn                    % 2**20))
     config.setdefault('gnb_id', '0x{:05X}'.format((sn + 2**19) % 2**20))
     publish['hardware']['serial-number'] = hostname.upper()
@@ -931,7 +933,9 @@ def core_network(config, publish, shared_list):
         'websocket_url_ipv6': False,
         'ims_addr': '127.0.0.1',
         'ims_bind': '127.0.0.2',
+        'mme_bind_ipv6': slap_configuration['ipv6-random'],
         'qci':  9,
+        'code': sn % 64,
         'pdn_list': [
             {'name': 'internet'},
             {'name': 'default'},
@@ -1026,6 +1030,7 @@ def core_network(config, publish, shared_list):
             i += 1
 
     publish['core']['plmn']               = config['core_network_plmn']
+    publish['core']['code']               = config['code']
     publish['core']['sip-bind-ip']        = config['ims_ipv4']
     publish['core']['network-name']       = config['network_name']
     publish['core']['network-short-name'] = config['network_short_name']
