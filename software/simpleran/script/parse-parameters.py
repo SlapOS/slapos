@@ -206,13 +206,13 @@ def ors_radio(config, publish, shared_list):
         return f'{h} ({int(h, 16)})'
     sn = 0
     try:
-        hn = socket.gethostname()
-        sn = int(''.join(filter(lambda x:x.isdigit(), hn)))
+        hostname = socket.gethostname()
+        sn = int(''.join(filter(lambda x:x.isdigit(), hostname)))
     except (IndexError, ValueError):
         pass
     config.setdefault('enb_id', '0x{:05X}'.format( sn                    % 2**20))
     config.setdefault('gnb_id', '0x{:05X}'.format((sn + 2**19) % 2**20))
-    publish['hardware']['serial-number'] = hn.upper()
+    publish['hardware']['serial-number'] = hostname.upper()
     publish['id']['gnb-id'] = publish_hex(config['gnb_id'])
     publish['id']['enb-id'] = publish_hex(config['enb_id'])
 
@@ -367,7 +367,7 @@ def ors_radio(config, publish, shared_list):
                 publish['id']['eutra-cell-id'][c] = publish_hex(eutra_cell_id)
                 publish['cell'].setdefault('tac', {})[c] = config[c]['tac']
                 publish['id']['handover-json-export'][c] = json.dumps({
-                    'name': hn,
+                    'name': hostname,
                     'e_cell_id': global_id(config['enb_id'], config[c]['cell_id'], 8),
                     'dl_earfcn': dl_arfcn,
                     'pci': config[c]['pci'],
@@ -380,7 +380,7 @@ def ors_radio(config, publish, shared_list):
                 nr_cell_id = global_id(config['gnb_id'], config[c]['cell_id'], cid_len)
                 publish['id']['nr-cell-id'][c] = publish_hex(nr_cell_id)
                 publish['id']['handover-json-export'][c] = json.dumps({
-                    'name': hn,
+                    'name': hostname,
                     'nr_cell_id': global_id(config['enb_id'], config[c]['cell_id'], 8),
                     'gnb_id_bits': config['gnb_id_bits'],
                     'dl_nr_arfcn': dl_arfcn,
