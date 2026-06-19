@@ -125,6 +125,65 @@
         }
       ]
     },
+    "external_mme_list": {
+      "title": "External MME List",
+      "description": "List of MME to which the MME is connected in order to do inter core handover.",
+      "type": "array",
+      "items": {
+        "title": "MME",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "addr",
+	  "code",
+	  "tai_list"
+        ],
+        "properties": {
+          "name": {
+            "title": "(Optional) Neighbour Cell Name",
+            "description": "Neighbour Cell name (for management purposes only)",
+            "type": "string"
+          },
+          "addr": {
+            "title": "MME Address",
+            "description": "IP address (and optional port) of S1AP SCTP connection to the external MME. The default port is 36412.",
+            "type": "string"
+          },
+          "code": {
+            "title": "MME Code",
+            "description": "Code of this external MME. It should be given by the external MME.",
+            "type": "string"
+          },
+          "tai_list": {
+            "title": "TAI List",
+            "description": "Optional String. IP address and optional port on which the S1AP SCTP connection is bound.",
+            "type": "array",
+            "items": {
+              "title": "TAI",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "plmn",
+	        "tacs"
+              ],
+              "properties": {
+                "plmn": {
+                  "title": "PLMN of this TAI",
+                  "description": "PLMN of this TAI",
+                  "type": "string"
+                },
+                "tacs": {
+                  "title": "TACS",
+                  "description": "List of TACS for this TAI (comma separated list)",
+                  "type": "string"
+                }
+	      }
+	    }
+          }
+        }
+      },
+      "default": []
+    },
     "qci": {
       "default": 9,
       "title": "QCI of default E-RAB",
