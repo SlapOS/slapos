@@ -59,6 +59,7 @@ srv = $${buildout:directory}/srv
 postfix-usr = $${:usr}/postfix
 postfix-etc = $${:etc}/postfix
 postfix-ssl = $${:postfix-etc}/ssl
+postfix-ssl-inbound = $${:postfix-etc}/ssl_inbound
 
 [postgrey-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -90,6 +91,239 @@ command =
     cat $${:key-file} $${:cert-file} > $${:bundle}; \
   }
 update-command = $${:command}
+
+{% set custom_inbound_certificate = slapparameter_dict.get('custom-inbound-certificate') or {} -%}
+
+[inbound-custom-certificate-file]
+recipe = slapos.recipe.template
+output = $${directory:postfix-ssl-inbound}/custom.crt
+{% if custom_inbound_certificate.get('cert') -%}
+inline ={{ custom_inbound_certificate['cert'] | indent }}
+{% else -%}
+url = /dev/null
+{% endif %}
+
+[inbound-custom-certificate-key-file]
+recipe = slapos.recipe.template
+output = $${directory:postfix-ssl-inbound}/custom.key
+{% if custom_inbound_certificate.get('key') -%}
+inline ={{ custom_inbound_certificate['key'] | indent }}
+{% else -%}
+url = /dev/null
+{% endif %}
+
+[inbound-postfix-certificate]
+cert-file = $${directory:postfix-ssl-inbound}/postfix.crt
+key-file = $${directory:postfix-ssl-inbound}/postfix.key
+bundle = $${directory:postfix-ssl-inbound}/postfix.bundle.pem
+status-file = $${directory:postfix-ssl-inbound}/status
+
+[inbound-certificate-manager]
+recipe = slapos.recipe.template
+output = $${directory:bin}/inbound-certificate-manager
+mode = 0700
+openssl = ${openssl:location}/bin/openssl
+postfix = ${postfix:location}/usr/sbin/postfix
+interval = 300
+inline =
+  #!$${buildout:executable}
+  import argparse
+  import os
+  import ssl
+  import subprocess
+  import sys
+  import tempfile
+  import time
+
+  FQDN = {{ json_module.dumps(slapparameter_dict.get('fqdn', instance_title)) }}
+  OPENSSL = "$${:openssl}"
+  POSTFIX = "$${:postfix}"
+  POSTFIX_CONFIG = "$${inbound-postfix-directory:etc}"
+  INTERVAL = int("$${:interval}")
+  HAS_CUSTOM_CERTIFICATE = {{ 'True' if custom_inbound_certificate.get('cert') or custom_inbound_certificate.get('key') else 'False' }}
+  CUSTOM_CERT = "$${inbound-custom-certificate-file:output}"
+  CUSTOM_KEY = "$${inbound-custom-certificate-key-file:output}"
+  DEFAULT_CERT = "$${postfix-certificate:cert-file}"
+  DEFAULT_KEY = "$${postfix-certificate:key-file}"
+  TARGET_CERT = "$${inbound-postfix-certificate:cert-file}"
+  TARGET_KEY = "$${inbound-postfix-certificate:key-file}"
+  TARGET_BUNDLE = "$${inbound-postfix-certificate:bundle}"
+  STATUS_FILE = "$${inbound-postfix-certificate:status-file}"
+
+  def read_file(path):
+    try:
+      with open(path, "rb") as f:
+        return f.read()
+    except FileNotFoundError:
+      return b""
+
+  def run_openssl(args):
+    result = subprocess.run(
+      [OPENSSL] + args,
+      stdin=subprocess.DEVNULL,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE,
+      universal_newlines=False,
+    )
+    if result.returncode:
+      message = result.stderr.decode("utf-8", "replace").strip()
+      if not message:
+        message = "openssl %s failed" % " ".join(args)
+      raise ValueError(message)
+    return result.stdout
+
+  def validate_custom_certificate():
+    if not HAS_CUSTOM_CERTIFICATE:
+      return False, "no custom inbound certificate configured"
+    cert = read_file(CUSTOM_CERT).strip()
+    key = read_file(CUSTOM_KEY).strip()
+    if not cert and not key:
+      return False, "no custom inbound certificate configured"
+    if not cert:
+      raise ValueError("custom inbound certificate is missing")
+    if not key:
+      raise ValueError("custom inbound private key is missing")
+
+    run_openssl(["x509", "-in", CUSTOM_CERT, "-noout", "-checkend", "0"])
+    cert_pubkey = run_openssl(["x509", "-in", CUSTOM_CERT, "-pubkey", "-noout"]).strip()
+    key_pubkey = run_openssl(["pkey", "-in", CUSTOM_KEY, "-pubout"]).strip()
+    if cert_pubkey != key_pubkey:
+      raise ValueError("custom inbound certificate and private key do not match")
+
+    cert_info = ssl._ssl._test_decode_cert(CUSTOM_CERT)
+    ssl.match_hostname(cert_info, FQDN)
+    return True, "custom inbound certificate is valid for %s" % FQDN
+
+  def atomic_write(path, data, mode):
+    directory = os.path.dirname(path)
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(dir=directory)
+    try:
+      with os.fdopen(fd, "wb") as f:
+        f.write(data)
+      os.chmod(tmp_path, mode)
+      if read_file(path) == data:
+        os.unlink(tmp_path)
+        return False
+      os.replace(tmp_path, path)
+      return True
+    except Exception:
+      try:
+        os.unlink(tmp_path)
+      except FileNotFoundError:
+        pass
+      raise
+
+  def atomic_write_text(path, text, mode=0o644):
+    return atomic_write(path, text.encode("utf-8"), mode)
+
+  def install_certificate(cert_path, key_path):
+    cert = read_file(cert_path)
+    key = read_file(key_path)
+    if not cert:
+      raise ValueError("certificate file is empty: %s" % cert_path)
+    if not key:
+      raise ValueError("private key file is empty: %s" % key_path)
+    changed = atomic_write(TARGET_CERT, cert, 0o644)
+    changed = atomic_write(TARGET_KEY, key, 0o600) or changed
+    bundle = key.rstrip() + b"\n" + cert.lstrip()
+    changed = atomic_write(TARGET_BUNDLE, bundle, 0o600) or changed
+    return changed
+
+  def reload_postfix():
+    result = subprocess.run(
+      [POSTFIX, "-c", POSTFIX_CONFIG, "reload"],
+      stdin=subprocess.DEVNULL,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE,
+      universal_newlines=True,
+    )
+    if result.returncode:
+      message = (result.stderr or result.stdout).strip()
+      return False, "postfix reload failed: %s" % (message or result.returncode)
+    return True, "postfix reloaded"
+
+  def run_once():
+    try:
+      valid, reason = validate_custom_certificate()
+      if valid:
+        changed = install_certificate(CUSTOM_CERT, CUSTOM_KEY)
+        status = "OK: using custom inbound certificate; %s" % reason
+      else:
+        changed = install_certificate(DEFAULT_CERT, DEFAULT_KEY)
+        status = "OK: using generated self-signed inbound certificate; %s" % reason
+    except Exception as e:
+      changed = install_certificate(DEFAULT_CERT, DEFAULT_KEY)
+      status = "ERROR: custom inbound certificate invalid: %s; using generated self-signed inbound certificate" % e
+
+    if changed:
+      reload_ok, reload_message = reload_postfix()
+      if reload_ok:
+        status = "%s; %s" % (status, reload_message)
+      else:
+        status = "ERROR: %s; last certificate decision: %s" % (reload_message, status)
+    atomic_write_text(STATUS_FILE, status + "\n")
+
+  def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--loop", action="store_true")
+    args = parser.parse_args()
+    while True:
+      run_once()
+      if not args.loop:
+        return 0
+      time.sleep(INTERVAL)
+
+  if __name__ == "__main__":
+    sys.exit(main())
+
+[inbound-certificate-initial]
+recipe = plone.recipe.command
+stop-on-error = true
+command = $${inbound-certificate-manager:output}
+update-command = $${:command}
+depends =
+  $${postfix-certificate:recipe}
+  $${inbound-custom-certificate-file:recipe}
+  $${inbound-custom-certificate-key-file:recipe}
+  $${inbound-certificate-manager:recipe}
+
+[inbound-certificate-manager-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${inbound-certificate-manager:output} --loop
+wrapper-path = $${directory:service}/inbound-certificate-manager
+mode = 0775
+hash-files =
+  $${inbound-certificate-manager:output}
+  $${inbound-custom-certificate-file:output}
+  $${inbound-custom-certificate-key-file:output}
+depends =
+  $${inbound-certificate-initial:recipe}
+
+[inbound-certificate-status-promise-script]
+recipe = slapos.recipe.template
+output = $${directory:bin}/check-inbound-certificate-status
+mode = 0700
+inline =
+  #!/bin/sh
+  status_file="$${inbound-postfix-certificate:status-file}"
+  if ! test -s "$$status_file"; then
+    echo "ERROR: inbound certificate manager has not written a status yet"
+    exit 1
+  fi
+  status=$$(cat "$$status_file")
+  echo "$$status"
+  case "$$status" in
+    OK:*) exit 0 ;;
+    *) exit 1 ;;
+  esac
+
+[inbound-certificate-status-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = inbound_certificate_status.py
+config-command = $${inbound-certificate-status-promise-script:output}
+config-bang-on-failure = false
 
 
 # Postfix macros
@@ -290,8 +524,8 @@ content =
   transport_maps = texthash:$${internal-postfix-transport:output}
 
   # Server TLS parameters
-  smtpd_tls_cert_file = $${postfix-certificate:cert-file}
-  smtpd_tls_key_file = $${postfix-certificate:key-file}
+  smtpd_tls_cert_file = $${inbound-postfix-certificate:cert-file}
+  smtpd_tls_key_file = $${inbound-postfix-certificate:key-file}
   smtpd_tls_security_level = may
 
   # Client TLS parameters
@@ -379,6 +613,7 @@ hash-files =
   $${inbound-postfix-wrapper:output}
   $${policyd-spf-conf:output}
 depends =
+  $${inbound-certificate-manager-service:recipe}
   $${policyd-spf-conf:recipe}
 {% if greylisting_enable %}
   $${postgrey-service:recipe}
@@ -400,6 +635,7 @@ depends =
   $${inbound-postfix-service:recipe}
   $${postfix-wrappers:depends}
   $${inbound-postfix-smtp-promise:recipe}
+  $${inbound-certificate-status-promise:recipe}
   $${inbound-postfix-shell-env:recipe}
 
 [inbound-logrotate-entry-postfix]
@@ -836,4 +1072,3 @@ depends =
 {%- for postfix_wrapper in postfix_wrappers %}
   {{ "$${" + postfix_wrapper + ":recipe}" }}
 {%- endfor %}
-
