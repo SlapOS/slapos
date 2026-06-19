@@ -34,17 +34,17 @@ def ors_radio(config, publish, shared_list):
     def get_sdr_info(channel, opt):
         cmd = f"sudo -n {options['sdr-dir']}/get-sdr-info -{opt}"
         if channel == 1:
-            cmd += f" -c{channel}"
+            cmd += f' -c{channel}'
         return subprocess.check_output(cmd.split(' ')).decode()
 
     # Detect SDR Hardware
     max_antenna = 0
     config['sdr100'] = False
-    sdr_map = rf_info.setdefault("sdr_map", {})
+    sdr_map = rf_info.setdefault('sdr_map', {})
     for channel in [0, 1]:
         sdr_info = sdr_map.setdefault(str(channel), {})
         if not sdr_info:
-            for c in "bmstv":
+            for c in 'bmstv':
                 prop = {'v': 'version', 't': 'tdd', 'b': 'band', 's': 'serial', 'm': 'model'}[c]
                 try:
                     sdr_info[prop] = get_sdr_info(channel, c)
@@ -54,47 +54,47 @@ def ors_radio(config, publish, shared_list):
                 del sdr_map[str(channel)]
                 continue
         max_antenna += 2
-        sdr_info["version"] = float(sdr_info["version"])
-        if sdr_info["model"] in ["ORS", "ORSDUO"]:
-            sdr_info["power"] = "1W" if sdr_info["version"] >= 4 else "0.5W"
-        elif sdr_info["model"] == "ORSMAX":
-            sdr_info["power"] = "10W"
-        elif sdr_info["model"] == "SDR100":
+        sdr_info['version'] = float(sdr_info['version'])
+        if sdr_info['model'] in ['ORS', 'ORSDUO']:
+            sdr_info['power'] = '1W' if sdr_info['version'] >= 4 else '0.5W'
+        elif sdr_info['model'] == 'ORSMAX':
+            sdr_info['power'] = '10W'
+        elif sdr_info['model'] == 'SDR100':
             config['sdr100'] = True
-            sdr_info["power"] = "15mW"
+            sdr_info['power'] = '15mW'
 
-    rf_info.setdefault("max_antenna", max_antenna)
-    rf_info.setdefault("flavour", "ORS")
+    rf_info.setdefault('max_antenna', max_antenna)
+    rf_info.setdefault('flavour', 'ORS')
 
     # Render ORS model for connection parameters
     sdr_list = list(sdr_map.values())
     if len(sdr_list) == 0:
-        rf_info["flavour"] = None
-        publish['hardware']['ors-version'] = "No SDR hardware detected"
+        rf_info['flavour'] = None
+        publish['hardware']['ors-version'] = 'No SDR hardware detected'
     else:
-        if rf_info["flavour"] == "ORSBRUTE":
-            power = "20W"
-            flavour = "ORS Brute"
+        if rf_info['flavour'] == 'ORSBRUTE':
+            power = '20W'
+            flavour = 'ORS Brute'
         else:
-            if sdr_list[0]["model"] == "ORSMAX":
-                flavour = "ORS Max"
-            elif rf_info["flavour"] == "BBU":
-                flavour = "BBU"
+            if sdr_list[0]['model'] == 'ORSMAX':
+                flavour = 'ORS Max'
+            elif rf_info['flavour'] == 'BBU':
+                flavour = 'BBU'
             elif len(sdr_map) > 1:
-                flavour = "ORS Duo"
+                flavour = 'ORS Duo'
             else:
-                flavour = "ORS Classic"
-            if sdr_list[0]["power"] != sdr_list[-1]["power"]:
-                power = "+".join([sdr["power"] for sdr in sdr_list])
+                flavour = 'ORS Classic'
+            if sdr_list[0]['power'] != sdr_list[-1]['power']:
+                power = '+'.join([sdr['power'] for sdr in sdr_list])
             else:
-                power = "x".join([str(rf_info["max_antenna"]), sdr_list[0]["power"]])
-        if sdr_list[0]["tdd"] != sdr_list[-1]["tdd"]:
+                power = 'x'.join([str(rf_info['max_antenna']), sdr_list[0]['power']])
+        if sdr_list[0]['tdd'] != sdr_list[-1]['tdd']:
             tdd = 'TDD+FDD'
-            tdd = "+".join([sdr["tdd"] for sdr in sdr_list])
+            tdd = '+'.join([sdr['tdd'] for sdr in sdr_list])
         else:
-            tdd = sdr_list[0]["tdd"]
-        band = "+".join([sdr["band"] for sdr in sdr_list])
-        publish['hardware']['ors-version'] = f"{flavour} {tdd} {band} {power}"
+            tdd = sdr_list[0]['tdd']
+        band = '+'.join([sdr['band'] for sdr in sdr_list])
+        publish['hardware']['ors-version'] = f'{flavour} {tdd} {band} {power}'
         config['cell1']['model'] = sdr_list[0]['band']
         if len(sdr_list) >= 2:
             config['cell2']['model'] = sdr_list[1]['band']
@@ -135,7 +135,7 @@ def ors_radio(config, publish, shared_list):
         model = config[cell]['model']
         defaults = DEFAULTS[model]
         # Band specific defaults
-        for param in "rf_mode bandwidth nr_bandwidth bandwidth ssb_pos_bitmap".split(' '):
+        for param in 'rf_mode bandwidth nr_bandwidth bandwidth ssb_pos_bitmap'.split(' '):
             if param in defaults:
                 config[cell].setdefault(param, defaults[param])
 
@@ -203,15 +203,15 @@ def ors_radio(config, publish, shared_list):
 
     # NodeB Radio ID's
     def publish_hex(h):
-        return f"{h} ({int(h, 16)})"
+        return f'{h} ({int(h, 16)})'
     sn = 0
     try:
         hn = socket.gethostname()
         sn = int(''.join(filter(lambda x:x.isdigit(), hn)))
     except (IndexError, ValueError):
         pass
-    config.setdefault('enb_id', "0x{:05X}".format( sn                    % 2**20))
-    config.setdefault('gnb_id', "0x{:05X}".format((sn + 2**19) % 2**20))
+    config.setdefault('enb_id', '0x{:05X}'.format( sn                    % 2**20))
+    config.setdefault('gnb_id', '0x{:05X}'.format((sn + 2**19) % 2**20))
     publish['hardware']['serial-number'] = hn.upper()
     publish['id']['gnb-id'] = publish_hex(config['gnb_id'])
     publish['id']['enb-id'] = publish_hex(config['enb_id'])
@@ -282,19 +282,19 @@ def ors_radio(config, publish, shared_list):
 
         publish['hardware'].setdefault('sdr-serial-number', {})
         publish['hardware']['sbc-model'] = options['sbc-model']
-        publish['hardware']['sdr-serial-number'][c] = sdr_info["serial"]
+        publish['hardware']['sdr-serial-number'][c] = sdr_info['serial']
 
-        publish['radio'].setdefault('dl-frequency', {})[c] = f"{dl_frequency} MHz"
-        publish['radio'].setdefault('ul-frequency', {})[c] = f"{ul_frequency} MHz"
+        publish['radio'].setdefault('dl-frequency', {})[c] = f'{dl_frequency} MHz'
+        publish['radio'].setdefault('ul-frequency', {})[c] = f'{ul_frequency} MHz'
         publish['radio'].setdefault('band', {})[c] = ('b' if lte else 'n') + str(band)
-        publish['radio'].setdefault('rf-mode', {})[c] = config[c]["rf_mode"]
+        publish['radio'].setdefault('rf-mode', {})[c] = config[c]['rf_mode']
         if config[c]['cell_type'] == 'gNB':
             publish['radio'].setdefault('dl-nr-arfcn', {})[c] = dl_arfcn
             publish['radio'].setdefault('ul-nr-arfcn', {})[c] = ul_arfcn
             publish['radio'].setdefault('ssb-nr-arfcn', {})[c] = config[c]['ssb_nr_arfcn']
             publish['radio'].setdefault('bandwidth', {})[c] = f"{config[c]['nr_bandwidth']} MHz"
             if sr_type in ['enb', 'gnb', 'enb-gnb']:
-                publish['radio'].setdefault('ssb-pos-bitmap', {})[c] = config[c]["ssb_pos_bitmap"]
+                publish['radio'].setdefault('ssb-pos-bitmap', {})[c] = config[c]['ssb_pos_bitmap']
         elif config[c]['cell_type'] in ['eNB', 'NB']:
             publish['radio'].setdefault('dl-earfcn', {})[c] = dl_arfcn
             publish['radio'].setdefault('ul-earfcn', {})[c] = ul_arfcn
@@ -304,7 +304,7 @@ def ors_radio(config, publish, shared_list):
         # TX Gain, TX Power Offset, Range
         def round_float(f):
             return round(float(f) * 1000) / 1000
-        tx_power_params = defaults['tx_power'][sdr_info["version"] >= 4]
+        tx_power_params = defaults['tx_power'][sdr_info['version'] >= 4]
         #       Compute TX Gain and TX Power dBm
         if 'tx_gain' in config[c]:
             tx_gain      = round_float(config[c]['tx_gain'])
@@ -316,22 +316,22 @@ def ors_radio(config, publish, shared_list):
         #       Prepare published TX Power
         if tx_gain == None:
             tx_gain  = 0
-            tx_power = "Radio board unknown, please set tx_gain manually"
+            tx_power = 'Radio board unknown, please set tx_gain manually'
         elif tx_power_dbm == None:
-            tx_power = "Radio board unknown, cannot predict output power"
+            tx_power = 'Radio board unknown, cannot predict output power'
         else:
             tx_power_mw = 10 ** ( tx_power_dbm / 10 )
             if tx_power_mw < 0.01:
-                tx_power_watt = "{:0.2f} µW".format(tx_power_mw * 1000)
+                tx_power_watt = '{:0.2f} µW'.format(tx_power_mw * 1000)
             else:
-                tx_power_watt = "{:0.2f} mW".format(tx_power_mw)
-            tx_power = f"{tx_power_dbm} dBm, {tx_power_watt}"
+                tx_power_watt = '{:0.2f} mW'.format(tx_power_mw)
+            tx_power = f'{tx_power_dbm} dBm, {tx_power_watt}'
 
         #       Compute TX Power offset
-        if rf_info["flavour"] == "ORSBRUTE":
-            tx_power_offset = DEFAULTS["ORSBRUTE"]["tx_power_offset"]
-        if sdr_info["model"] == "ORSMAX":
-            tx_power_offset = DEFAULTS["ORSMAX"]["tx_power_offset"]
+        if rf_info['flavour'] == 'ORSBRUTE':
+            tx_power_offset = DEFAULTS['ORSBRUTE']['tx_power_offset']
+        if sdr_info['model'] == 'ORSMAX':
+            tx_power_offset = DEFAULTS['ORSMAX']['tx_power_offset']
         else:
             tx_power_offset = round_float(
                 get_tx_power_offset(dl_frequency, gain_to_dbm(tx_power_params, 90))
@@ -342,20 +342,20 @@ def ors_radio(config, publish, shared_list):
         config[c]['range'] = defaults['range']
         publish['hardware'].setdefault('range', {})[c] = defaults['range']
         publish['power'].setdefault('tx-power', {})[c] = tx_power
-        publish['power'].setdefault('tx-gain', {})[c] = f"{tx_gain} dB"
+        publish['power'].setdefault('tx-gain', {})[c] = f'{tx_gain} dB'
         publish['power'].setdefault('rx-gain', {})[c] = f"{config[c]['rx_gain']} dB"
 
         # Radio IDs
         if sr_type in ['enb', 'gnb', 'enb-gnb']:
             config[c].setdefault('pci', (sn + i * 252 * (nr+1)) % (504 * (nr+1)))
             config[c].setdefault('root_sequence_index', (sn + i * 79) % 138)
-            config[c].setdefault('cell_id', "0x{:02X}".format((sn + i * 2**7) % 2**8))
+            config[c].setdefault('cell_id', '0x{:02X}'.format((sn + i * 2**7) % 2**8))
             def to_int(x):
                 try:
                     return int(x, 16 if x.startswith('0x') else 10)
                 except ValueError:
                     return 0
-            global_id = lambda x,y,n: "0x{:07X}".format(to_int(x) * 2**n + to_int(y))
+            global_id = lambda x,y,n: '0x{:07X}'.format(to_int(x) * 2**n + to_int(y))
             publish['id'].setdefault('physical-cell-id', {})[c]    = config[c]['pci']
             publish['id'].setdefault('root-sequence-index', {})[c] = config[c]['root_sequence_index']
             publish['id'].setdefault('cell-id', {})[c]             = publish_hex(config[c]['cell_id'])
@@ -397,7 +397,7 @@ def ors_radio(config, publish, shared_list):
                 publish['radio'].setdefault('tdd-ul-dl-config',      {})[c] = config[c]['tdd_ul_dl_config']
 
         # Define number of UL threads
-        if config[c]['cell_type'] == 'gNB' and config[c]['tdd_ul_dl_config'] == "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink" and config[c]['enable_ul_su_mimo']:
+        if config[c]['cell_type'] == 'gNB' and config[c]['tdd_ul_dl_config'] == 'DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink' and config[c]['enable_ul_su_mimo']:
             if config['n_antenna_ul'] * config[c]['nr_bandwidth'] >= 50:
                 # Only PD10ANS has more than 2 cores
                 if options['sbc-model'] == 'PD10ANS':
@@ -457,7 +457,7 @@ def ors_radio(config, publish, shared_list):
                     'n_antenna_ul': config['n_antenna_ul'],
                     'txrx_active':  'ACTIVE',
                 }
-                for k in "tx_gain rx_gain tx_power_offset nb_threads_ul nb_threads_dl".split(" "):
+                for k in 'tx_gain rx_gain tx_power_offset nb_threads_ul nb_threads_dl'.split(' '):
                     if k in config[cell]:
                         ru_params[k] = config[cell][k]
                 shared_list.append({
@@ -483,9 +483,9 @@ def ors_radio(config, publish, shared_list):
                     }
                 config[cell]['inactivity_timer'] = config['inactivity_timer']
                 for k in config[cell]:
-                    if k != "cell_type":
+                    if k != 'cell_type':
                         cell_params[k] = config[cell][k]
-                for k in "nr_bandwidth tx_gain rx_gain tx_power_offset tx_power_dbm model".split(' '):
+                for k in 'nr_bandwidth tx_gain rx_gain tx_power_offset tx_power_dbm model'.split(' '):
                     cell_params.pop(k, '')
 
                 cell_params.update({
@@ -506,14 +506,14 @@ def ors_radio(config, publish, shared_list):
             })
 
         # Neighbour Cell List
-        publish['cell']['neighbour-cell-list'] = ", ".join(
-                ["{} ({})".format(ncell['name'], handover_id(ncell)) for ncell in ncell_list])
+        publish['cell']['neighbour-cell-list'] = ', '.join(
+                ['{} ({})'.format(ncell['name'], handover_id(ncell)) for ncell in ncell_list])
         # PLMN Cell List
         if lte_cell or nb_cell:
-            publish['cell']['4g-plmn-list'] = ", ".join([x['plmn'] for x in plmn_list])
+            publish['cell']['4g-plmn-list'] = ', '.join([x['plmn'] for x in plmn_list])
         if nr_cell:
-            publish['cell']['5g-plmn-list'] = ", ".join(
-                [x['plmn'] + " (TAC: {})".format(x['tac']) for x in plmn_list_5g])
+            publish['cell']['5g-plmn-list'] = ', '.join(
+                [x['plmn'] + ' (TAC: {})'.format(x['tac']) for x in plmn_list_5g])
         # AMF and PLMN List
         if not (lte_cell or nb_cell):
             config.pop('mme_list', '')
@@ -524,12 +524,12 @@ def ors_radio(config, publish, shared_list):
         # Add default names
         for i, mme in enumerate(mme_list):
             mme.setdefault('name', 'MME' + str(i))
-        publish['nodeb']['mme-list'] = ", ".join(
-                ["{} ({})".format(mme['name'], mme['mme_addr']) for mme in mme_list])
+        publish['nodeb']['mme-list'] = ', '.join(
+                ['{} ({})'.format(mme['name'], mme['mme_addr']) for mme in mme_list])
         for i, amf in enumerate(amf_list):
             amf.setdefault('name', 'AMF' + str(i))
-        publish['nodeb']['amf-list'] = ", ".join(
-                ["{} ({})".format(amf['name'], amf['amf_addr']) for amf in amf_list])
+        publish['nodeb']['amf-list'] = ', '.join(
+                ['{} ({})'.format(amf['name'], amf['amf_addr']) for amf in amf_list])
         for i, peer in enumerate(config['x2_peers']):
             shared_list.append({
                 'slave_title':          'X2_PEER' + peer.get('name', str(i)),
@@ -549,7 +549,7 @@ def ors_radio(config, publish, shared_list):
                 })
             })
 
-    if sr_type == 'gnb' and options['software'] == "software-ors":
+    if sr_type == 'gnb' and options['software'] == 'software-ors':
         # backward compatibility: if ORS is running in gnb mode, and gnb_* parameters
         #       are present, replace their generic enb_* counterparts with gnb_* ones
         if 'gnb_stats_fetch_period' in config:
@@ -565,7 +565,7 @@ def ors_radio(config, publish, shared_list):
                 '_': json.dumps({
                     'ru_type':      'sdr',
                     'ru_link_type': 'sdr',
-                    'sdr_dev_list': [0] if config['cell_number'] == "First Cell" else [1],
+                    'sdr_dev_list': [0] if config['cell_number'] == 'First Cell' else [1],
                     'n_antenna_dl': config['n_antenna_dl'],
                     'n_antenna_ul': config['n_antenna_ul'],
                     'tx_gain':      config['cell1']['tx_gain'],
@@ -643,7 +643,7 @@ def ors_radio(config, publish, shared_list):
 
     # Add descriptions
     if 'tx-power' in publish['power']:
-        publish['power']['tx-power'] += " (Maximum average power if all ressource blocks are used)"
+        publish['power']['tx-power'] += ' (Maximum average power if all ressource blocks are used)'
 
 def core_network(config, publish, shared_list):
 
@@ -651,7 +651,7 @@ def core_network(config, publish, shared_list):
     for s in publish_sections:
         publish.setdefault(s, {})
 
-    config.setdefault('gtp_addr_list', ["Localhost address"])
+    config.setdefault('gtp_addr_list', ['Localhost address'])
 
     tun_ipv4_addr    = slap_configuration.get('tun-ipv4-addr', '172.17.0.1')
     tun_ipv6_addr    = slap_configuration.get('tun-ipv6-addr', '2001:db8::1')
@@ -695,7 +695,7 @@ def core_network(config, publish, shared_list):
         p.setdefault('plmn', '00101')
         p.setdefault('mcc', p['plmn'][:3])
         if len(p['plmn']) == 5:
-            p.setdefault('mnc', "0" + p['plmn'][3:])
+            p.setdefault('mnc', '0' + p['plmn'][3:])
         elif len(p['plmn']) == 6:
             p.setdefault('mnc', p['plmn'][3:])
         else:
@@ -730,10 +730,10 @@ def core_network(config, publish, shared_list):
     mme_defaults = {
         'testing': False,
         'iperf3': 0,
-        'core_network_plmn': "00101",
+        'core_network_plmn': '00101',
         'eps_5gs_interworking': 'With N26',
-        'network_name': "RAPIDSPACE",
-        'network_short_name': "RAPIDSPACE",
+        'network_name': 'RAPIDSPACE',
+        'network_short_name': 'RAPIDSPACE',
         'mme_com_ws_port':  9002,
         'mme_com_addr': '127.0.1.3',
         'ims_com_ws_port':  9004,
@@ -754,13 +754,13 @@ def core_network(config, publish, shared_list):
     if config['websocket_url_ipv6']:
         ipv6 = slap_configuration['ipv6-random']
         config['mme_com_addr'] = ipv6
-        config['mme_com_url' ] = "[" + ipv6 + "]:" + str(config['mme_com_ws_port'])
+        config['mme_com_url' ] = '[' + ipv6 + ']:' + str(config['mme_com_ws_port'])
         config['ims_com_addr'] = ipv6
-        config['ims_com_url' ] = "[" + ipv6 + "]:" + str(config['ims_com_ws_port'])
+        config['ims_com_url' ] = '[' + ipv6 + ']:' + str(config['ims_com_ws_port'])
         config['com_unsecure'] = True
     else:
-        config['mme_com_url'] = config['mme_com_addr'] + ":" + str(config['mme_com_ws_port'])
-        config['ims_com_url'] = config['ims_com_addr'] + ":" + str(config['ims_com_ws_port'])
+        config['mme_com_url'] = config['mme_com_addr'] + ':' + str(config['mme_com_ws_port'])
+        config['ims_com_url'] = config['ims_com_addr'] + ':' + str(config['ims_com_ws_port'])
     config.setdefault('fixed_ips', False)
 
     sim_list = []
@@ -772,7 +772,7 @@ def core_network(config, publish, shared_list):
             dns_list.append(p)
         elif p.get('k', '') != '':
             sim_list.append(p)
-            impi = p['imsi'] + "@ims.mnc" + p['mnc'] + ".mcc" + p['mcc'] + ".3gppnetwork.org"
+            impi = p['imsi'] + '@ims.mnc' + p['mnc'] + '.mcc' + p['mcc'] + '.3gppnetwork.org'
             p.setdefault('impi', impi)
             p.setdefault('impu', p['imsi'])
             p['impu'] = '"' + p['impu'] + '"'
@@ -795,7 +795,7 @@ def core_network(config, publish, shared_list):
     # should we make a promise fail ?
     if len(sim_list) + 2 > network.size:
         for s in sim_list:
-            s['ip'] = "Too many SIM for the IPv4 network"
+            s['ip'] = 'Too many SIM for the IPv4 network'
     else:
         # calculate the IP addresses of each SIM
         ip_list = []
@@ -824,7 +824,7 @@ def core_network(config, publish, shared_list):
 
     publish['pdn']['gateway-ipv4']    = slap_configuration['tun-ipv4-addr']
     publish['pdn']['ipv4-subnetwork'] = slap_configuration['tun-ipv4-network']
-    publish['pdn']['pdn-list'] = ", ".join([pdn['name'] for pdn in config['pdn_list']])
+    publish['pdn']['pdn-list'] = ', '.join([pdn['name'] for pdn in config['pdn_list']])
 
     return sim_list, dns_list
 
@@ -865,39 +865,39 @@ def test_model(config, publish, shared_list):
         if not config[cell]['enable_cell']:
             continue
         # Default parameters (TODO: use slap-configuration:jsonschemas recipe)
-        config[cell].setdefault('file', "LTE Test Mode 31  - 20 MHz  - FDD")
+        config[cell].setdefault('file', 'LTE Test Mode 31  - 20 MHz  - FDD')
         config[cell].setdefault('enable_cell', True)
         sp = list(filter(lambda x: x, config[cell]['file'].split(' ')))
         config[cell]['file'] = {
-         "LTE Test Mode 31  - 10 MHz    - FDD":              "LTE-31-10MHzBP_SR1536-FDD-ADJUSTED.bin",
-         "LTE Test Mode 31  - 10 MHz    - TDD":              "LTE-31-10MHzBP_SR1536-TDD-ADJUSTED.bin",
-         "LTE Test Mode 31  - 1.4 MHz - TDD":                "LTE-31-1p4MHzBP_SR1p92-TDD-ADJUSTED.bin",
-         "LTE Test Mode 31  - 20 MHz    - FDD":              "LTE-31-20MHzBP_SR3072-FDD-ADJUSTED.bin",
-         "LTE Test Mode 31  - 3 MHz     - TDD":              "LTE-31-3MHzBP_SR3p84-TDD-ADJUSTED.bin",
-         "LTE Test Mode 31  - 5 MHz     - TDD":              "LTE-31-5MHzBP_SR7p68-TDD-ADJUSTED.bin",
-         "LTE Test Mode 32  - 10 MHz    - TDD":              "LTE-32-10MHzBP_SR1536-TDD-ADJUSTED.bin",
-         "LTE Test Mode 32  - 20 MHz    - TDD":              "LTE-32-20MHzBP_SR3072-TDD-ADJUSTED.bin",
-         "LTE Test Mode 33  - 10 MHz    - TDD":              "LTE-33-10MHzBP_SR1536-TDD-ADJUSTED.bin",
-         "LTE Test Mode 33  - 20 MHz    - TDD":              "LTE-33-20MHzBP_SR3072-TDD-ADJUSTED.bin",
-         "LTE Test Mode 31  - 20 MHz    - TDD":              "LTE-TM_31-20MHz_SR30720000-TDD-ADJUSTED.bin",
-         "NR    Test Mode 11    - 20 MHz    - TDD":          "NR-FR1-TM11-20MHz_SR30720000-TDD-ADJUSTED.bin",
-         "NR    Test Mode 11    - 5 MHz     - FDD":          "NR-FR1-TM11-5MHz_SR7680000-FDD-ADJUSTED.bin",
-         "NR    Test Mode 12    - 20 MHz    - TDD":          "NR-FR1-TM12-20MHz_SR30720000-TDD-ADJUSTED.bin",
-         "NR    Test Mode 2     - 20 MHz    - TDD":          "NR-FR1-TM2-20MHz_SR30720000-TDD-ADJUSTED.bin",
-         "NR    Test Mode 2a    - 20 MHz    - TDD":          "NR-FR1-TM2a-20MHz_SR30720000-TDD-ADJUSTED.bin",
-         "NR    Test Mode 2b    - 20 MHz    - TDD":          "NR-FR1-TM2b-20MHz_SR30720000-TDD-ADJUSTED.bin",
-         "NR    Test Mode 31    - 100 MHz - FDD":            "NR-FR1-TM31-100MHz_SR122880000_SCS30kHz-FDD-ADJUSTED.bin",
-         "NR    Test Mode 31    - 20 MHz    - FDD":          "NR-FR1-TM31-20MHz_SR30720000-FDD-ADJUSTED.bin",
-         "NR    Test Mode 31    - 20 MHz    - TDD":          "NR-FR1-TM31-20MHz_SR30720000-TDD-ADJUSTED.bin",
-         "NR    Test Mode 31    - 40 MHz    - TDD":          "NR-FR1-TM31-40MHz_SR61440000-TDD-ADJUSTED.bin",
-         "NR    Test Mode 31    - 5 MHz     - FDD":          "NR-FR1-TM31-5MHz_SR7680000-FDD-ADJUSTED.bin",
-         "NR    Test Mode 31a - 20 MHz  - FDD":              "NR-FR1-TM_31a-20MHzBP_SC30kHz_SR30p72-FDD-ADJUSTED.bin",
-         "NR    Test Mode 31a - 20 MHz  - FDD - SCS 15 kHz": "NR-FR1-TM31a-20MHz_SR30720000_SCS15kHz-FDD-ADJUSTED.bin",
-         "NR    Test Mode 31a - 20 MHz  - TDD":              "NR-FR1-TM31a-20MHz_SR30720000-TDD-ADJUSTED.bin",
-         "NR    Test Mode 31a - 5 MHz       - FDD":          "NR-FR1-TM31a-5MHz_SR7680000-FDD-ADJUSTED.bin",
-         "NR    Test Mode 31b - 20 MHz  - TDD":              "NR-FR1-TM31b-20MHz_SR30720000-TDD-ADJUSTED.bin",
-         "NR    Test Mode 32    - 20 MHz    - TDD":          "NR-FR1-TM32-20MHz_SR30720000-TDD-ADJUSTED.bin",
-         "NR    Test Mode 33    - 20 MHz    - TDD":          "NR-FR1-TM33-20MHz_SR30720000-TDD-ADJUSTED.bin",
+         'LTE Test Mode 31  - 10 MHz    - FDD':              'LTE-31-10MHzBP_SR1536-FDD-ADJUSTED.bin',
+         'LTE Test Mode 31  - 10 MHz    - TDD':              'LTE-31-10MHzBP_SR1536-TDD-ADJUSTED.bin',
+         'LTE Test Mode 31  - 1.4 MHz - TDD':                'LTE-31-1p4MHzBP_SR1p92-TDD-ADJUSTED.bin',
+         'LTE Test Mode 31  - 20 MHz    - FDD':              'LTE-31-20MHzBP_SR3072-FDD-ADJUSTED.bin',
+         'LTE Test Mode 31  - 3 MHz     - TDD':              'LTE-31-3MHzBP_SR3p84-TDD-ADJUSTED.bin',
+         'LTE Test Mode 31  - 5 MHz     - TDD':              'LTE-31-5MHzBP_SR7p68-TDD-ADJUSTED.bin',
+         'LTE Test Mode 32  - 10 MHz    - TDD':              'LTE-32-10MHzBP_SR1536-TDD-ADJUSTED.bin',
+         'LTE Test Mode 32  - 20 MHz    - TDD':              'LTE-32-20MHzBP_SR3072-TDD-ADJUSTED.bin',
+         'LTE Test Mode 33  - 10 MHz    - TDD':              'LTE-33-10MHzBP_SR1536-TDD-ADJUSTED.bin',
+         'LTE Test Mode 33  - 20 MHz    - TDD':              'LTE-33-20MHzBP_SR3072-TDD-ADJUSTED.bin',
+         'LTE Test Mode 31  - 20 MHz    - TDD':              'LTE-TM_31-20MHz_SR30720000-TDD-ADJUSTED.bin',
+         'NR    Test Mode 11    - 20 MHz    - TDD':          'NR-FR1-TM11-20MHz_SR30720000-TDD-ADJUSTED.bin',
+         'NR    Test Mode 11    - 5 MHz     - FDD':          'NR-FR1-TM11-5MHz_SR7680000-FDD-ADJUSTED.bin',
+         'NR    Test Mode 12    - 20 MHz    - TDD':          'NR-FR1-TM12-20MHz_SR30720000-TDD-ADJUSTED.bin',
+         'NR    Test Mode 2     - 20 MHz    - TDD':          'NR-FR1-TM2-20MHz_SR30720000-TDD-ADJUSTED.bin',
+         'NR    Test Mode 2a    - 20 MHz    - TDD':          'NR-FR1-TM2a-20MHz_SR30720000-TDD-ADJUSTED.bin',
+         'NR    Test Mode 2b    - 20 MHz    - TDD':          'NR-FR1-TM2b-20MHz_SR30720000-TDD-ADJUSTED.bin',
+         'NR    Test Mode 31    - 100 MHz - FDD':            'NR-FR1-TM31-100MHz_SR122880000_SCS30kHz-FDD-ADJUSTED.bin',
+         'NR    Test Mode 31    - 20 MHz    - FDD':          'NR-FR1-TM31-20MHz_SR30720000-FDD-ADJUSTED.bin',
+         'NR    Test Mode 31    - 20 MHz    - TDD':          'NR-FR1-TM31-20MHz_SR30720000-TDD-ADJUSTED.bin',
+         'NR    Test Mode 31    - 40 MHz    - TDD':          'NR-FR1-TM31-40MHz_SR61440000-TDD-ADJUSTED.bin',
+         'NR    Test Mode 31    - 5 MHz     - FDD':          'NR-FR1-TM31-5MHz_SR7680000-FDD-ADJUSTED.bin',
+         'NR    Test Mode 31a - 20 MHz  - FDD':              'NR-FR1-TM_31a-20MHzBP_SC30kHz_SR30p72-FDD-ADJUSTED.bin',
+         'NR    Test Mode 31a - 20 MHz  - FDD - SCS 15 kHz': 'NR-FR1-TM31a-20MHz_SR30720000_SCS15kHz-FDD-ADJUSTED.bin',
+         'NR    Test Mode 31a - 20 MHz  - TDD':              'NR-FR1-TM31a-20MHz_SR30720000-TDD-ADJUSTED.bin',
+         'NR    Test Mode 31a - 5 MHz       - FDD':          'NR-FR1-TM31a-5MHz_SR7680000-FDD-ADJUSTED.bin',
+         'NR    Test Mode 31b - 20 MHz  - TDD':              'NR-FR1-TM31b-20MHz_SR30720000-TDD-ADJUSTED.bin',
+         'NR    Test Mode 32    - 20 MHz    - TDD':          'NR-FR1-TM32-20MHz_SR30720000-TDD-ADJUSTED.bin',
+         'NR    Test Mode 33    - 20 MHz    - TDD':          'NR-FR1-TM33-20MHz_SR30720000-TDD-ADJUSTED.bin',
         }[config[cell]['file']]
         bandwidth = int(sp[5])
         config[cell]['rf_mode'] = sp[8].lower()
@@ -953,14 +953,14 @@ if config.get('testing', False):
     for k,v in {
         'ipv4': "{'192.0.2.1'}",
         'ipv6': "{'2001:db8::1'}",
-        'tun-ipv4-addr': "192.0.2.1",
-        'tun-ipv4-gateway': "",
-        'tun-ipv4-netmask': "255.255.128.0",
-        'tun-ipv4-network': "192.0.2.1/255.255.128.0",
-        'tun-ipv6-addr': "2001:db8::1",
-        'tun-ipv6-netmask': "ffff:ffff:ffff:fe00::",
-        'tun-ipv6-network': "2001:db8::1/55",
-        'tun-name': "slaptun1",
+        'tun-ipv4-addr': '192.0.2.1',
+        'tun-ipv4-gateway': '',
+        'tun-ipv4-netmask': '255.255.128.0',
+        'tun-ipv4-network': '192.0.2.1/255.255.128.0',
+        'tun-ipv6-addr': '2001:db8::1',
+        'tun-ipv6-netmask': 'ffff:ffff:ffff:fe00::',
+        'tun-ipv6-network': '2001:db8::1/55',
+        'tun-name': 'slaptun1',
         }.items():
         slap_configuration.setdefault(k, v)
 
@@ -973,7 +973,7 @@ if options['software'].startswith('software-ors') and sr_type in ['enb', 'gnb', 
 if sr_type == 'core-network':
     sim_list, dns_list = core_network(config, publish, shared_list)
 elif sr_type in ['enb-gnb', 'enb', 'gnb']:
-    config.setdefault('gtp_addr', "Automatic")
+    config.setdefault('gtp_addr', 'Automatic')
     config.setdefault('gtp_addr_list', [config['gtp_addr']])
     gtp_localhost_addr = '127.0.1.1'
 
@@ -981,7 +981,7 @@ if sr_type in ['core-network', 'enb-gnb', 'enb', 'gnb']:
     gtp_addr()
 
 if sr_type == 'core-network':
-    publish['core']['gtp-addr-list'] = ", ".join(config['gtp_addr_list'])
+    publish['core']['gtp-addr-list'] = ', '.join(config['gtp_addr_list'])
 elif options['software'].startswith('software-ors') and sr_type in ['enb', 'gnb', 'enb-gnb']:
     publish['nodeb']['gtp-addr'] = config['gtp_addr_list'][0]
 
