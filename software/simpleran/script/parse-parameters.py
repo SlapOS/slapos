@@ -848,8 +848,7 @@ def core_network(config, publish, shared_list):
 
     return sim_list, dns_list
 
-def gtp_addr():
-    gtp_localhost_addr = '127.0.1.100'
+def gtp_addr(gtp_localhost_addr):
     gtp_addr_list = []
     for gtp_addr in config['gtp_addr_list']:
         if gtp_addr == 'Automatic':
@@ -991,14 +990,15 @@ if options['software'].startswith('software-ors') and sr_type in ['enb', 'gnb', 
     ors_radio(config, publish, shared_list)
 
 if sr_type == 'core-network':
+    gtp_localhost_addr = '127.0.1.100'
     sim_list, dns_list = core_network(config, publish, shared_list)
 elif sr_type in ['enb-gnb', 'enb', 'gnb']:
+    gtp_localhost_addr = '127.0.1.1'
     config.setdefault('gtp_addr', 'Automatic')
     config.setdefault('gtp_addr_list', [config['gtp_addr']])
-    gtp_localhost_addr = '127.0.1.1'
 
 if sr_type in ['core-network', 'enb-gnb', 'enb', 'gnb']:
-    gtp_addr()
+    gtp_addr(gtp_localhost_addr)
 
 if sr_type == 'core-network':
     publish['core']['gtp-addr-list'] = ', '.join(config['gtp_addr_list'])
