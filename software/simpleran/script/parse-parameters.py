@@ -1,6 +1,26 @@
 import json, netaddr, math, socket, subprocess
 from copy import deepcopy
 
+"""
+Inputs:
+
+- lan-ipv4           : LAN IPv4
+- sbc-model          : Single Board Computer Model
+- software           : current software (e.g.: software-ors)
+- slap-configuration : slap-configuration section from self.buildout
+- publish            : Optionnal, connection parameters to publish
+
+Outputs:
+
+- slap-configuration : modified slap-configuration
+- publish            : connection parameters to publish
+- slapparameter-dict : slap-configuration.configuration
+- shared-list        : slap-configuration.slave-instance-list
+- sim-list           : Core Network only, list of SIM Cards
+- dns-list           : Core Network only, list of DNS entries
+
+"""
+
 def ors_radio(config, publish, shared_list):
     """eNB / gNB / UE - ORS Specific"""
     from xlte import nrarfcn
