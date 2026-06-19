@@ -1,5 +1,5 @@
 {
-  log_options: "all.level=error,all.max_size=0,nas.level=debug,nas.max_size=1,s1ap.level=debug,s1ap.max_size=1,ngap.level=debug,ngap.max_size=1,file.rotate=1G,file.path=/dev/null",
+  log_options: "all.level=error,all.max_size=0,nas.level=debug,nas.max_size=1,n14.level=debug,n14.max_size=1,gtpc.level=debug,gtpc.max_size=1,s1ap.level=debug,s1ap.max_size=1,ngap.level=debug,ngap.max_size=1,file.rotate=1G,file.path=/dev/null",
   log_filename: "{{ directory['log'] }}/mme.log",
 
   com_addr: "{{ slapparameter_dict.mme_com_url }}",
@@ -12,13 +12,72 @@
 
   gtp_addr: [
 {%-   for addr in slapparameter_dict.get('gtp_addr_list', []) | sort -%}
-    "{{ addr }}", 
+    "{{ addr }}",
 {%-   endfor -%}
   ],
 
   plmn: "{{ slapparameter_dict.core_network_plmn }}",
   mme_group_id: 32769,
-  mme_code: 1,
+  mme_code: {{ slapparameter_dict.code }},
+
+  external_mme_list: [
+{%-   for mme in slapparameter_dict.external_mme_list %}
+    {
+      addr: "{{ mme['addr'] }}",
+      mme_group_id: 32769,
+      mme_code: {{ mme['code'] }},
+      tai_lists: [
+{%-   for tai in mme.tai_list %}
+        {
+           plmn: "{{ tai['plmn'] }}",
+           tacs: [{{ tai['tacs'] }}],
+        },
+{%-   endfor %}
+      ],
+    },
+{%-   endfor %}
+  ],
+
+  external_amf_list: [
+{%-   for mme in slapparameter_dict.external_mme_list %}
+    {
+      amf_region_id: 128,
+      amf_set_id: 4,
+      amf_pointer: {{ mme['code'] }},
+      n26_support: false,
+      tai_lists: [
+{%-   for tai in mme.tai_list %}
+        {
+           plmn: "{{ tai['plmn'] }}",
+           tacs: [{{ tai['tacs'] }}],
+        },
+{%-   endfor %}
+      ],
+    },
+{%-   endfor %}
+  ],
+
+  n14: {
+      server_bind_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
+      gtp_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
+      external_amf_list: [
+{%-   for mme in slapparameter_dict.external_mme_list %}
+      {
+        bind_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
+        api_root: "http://[{{ mme['addr'] }}]:5580",
+        amf_region_id: 128,
+        amf_set_id: 4,
+        amf_pointer: {{ mme['code'] }},
+      },
+{%-   endfor %}
+      ],
+  },
+
+  gtp_c: {
+      bind_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
+      gtp_u_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
+  },
+
 
   ims_vops_eps: true,
   ims_vops_5gs_3gpp: true,
