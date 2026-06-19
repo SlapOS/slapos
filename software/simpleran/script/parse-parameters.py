@@ -219,7 +219,7 @@ def ors_radio(config, publish, shared_list):
     # RF parameters (frequency, band, arfcn...)
     def configure_rf_parameters(i):
 
-        c = 'cell' + str(i+1)
+        c = f'cell{i+1}'
         sdr_info = sdr_list[i]
 
         if not config[c]['enable_cell']:
@@ -235,9 +235,9 @@ def ors_radio(config, publish, shared_list):
         defaults = DEFAULTS[model]
 
         # Use ARFCN or frequency depending on what is in input parameters
-        band = config[c].get(rat + '_band', defaults[rat + '_band'])
-        dl_arfcn_name = 'dl_' + ('e' if lte else 'nr_')     + 'arfcn'
-        ul_arfcn_name = 'ul_' + ('e' if lte else 'nr_')     + 'arfcn'
+        band = config[c].get(rat + '_band', defaults[f'{rat}_band'])
+        dl_arfcn_name = f"dl_{'e' if lte else 'nr_'}arfcn"
+        ul_arfcn_name = f"ul_{'e' if lte else 'nr_'}arfcn"
         if dl_arfcn_name in config[c]:
             dl_arfcn = config[c][dl_arfcn_name]
             if lte:
@@ -246,7 +246,7 @@ def ors_radio(config, publish, shared_list):
             else:
                 dl_frequency = nrarfcn.frequency(dl_arfcn)
         else:
-            dl_frequency = config[c].get('dl_frequency', defaults[rat + '_frequency'])
+            dl_frequency = config[c].get('dl_frequency', defaults[f'{rat}_frequency'])
             if rat == 'lte':
                 dl_arfcn = earfcn.earfcn(dl_frequency, band)
             else:
@@ -268,7 +268,7 @@ def ors_radio(config, publish, shared_list):
             ul_arfcn = earfcn.dl2ul(dl_arfcn)
             ul_frequency = earfcn.frequency(ul_arfcn)
 
-        config[c][rat + '_band'] = band
+        config[c][f'{rat}_band'] = band
         config[c][dl_arfcn_name] = dl_arfcn
         config[c][ul_arfcn_name] = ul_arfcn
         config[c]['dl_frequency'] = dl_frequency
@@ -286,7 +286,7 @@ def ors_radio(config, publish, shared_list):
 
         publish['radio'].setdefault('dl-frequency', {})[c] = f'{dl_frequency} MHz'
         publish['radio'].setdefault('ul-frequency', {})[c] = f'{ul_frequency} MHz'
-        publish['radio'].setdefault('band', {})[c] = ('b' if lte else 'n') + str(band)
+        publish['radio'].setdefault('band', {})[c] = f"{'b' if lte else 'n'}{band}"
         publish['radio'].setdefault('rf-mode', {})[c] = config[c]['rf_mode']
         if config[c]['cell_type'] == 'gNB':
             publish['radio'].setdefault('dl-nr-arfcn', {})[c] = dl_arfcn
@@ -419,7 +419,7 @@ def ors_radio(config, publish, shared_list):
         plmn_list_5g = config.get('plmn_list_5g', [])
         # Add default names
         for i, ncell in enumerate(ncell_list):
-            ncell.setdefault('name', 'NeighbourCell' + str(i))
+            ncell.setdefault('name', f'NeighbourCell{i}')
             if 'dl_earfcn' in ncell:
                 ncell.setdefault('cell_type', 'lte')
                 ncell.setdefault('cell_kind', 'enb_peer')
@@ -447,7 +447,7 @@ def ors_radio(config, publish, shared_list):
         nr_cell = 0
         nb_cell = 0
         for i in range(2):
-            cell = 'cell' + str(i + 1)
+            cell = f'cell{i + 1}'
             if config[cell]['enable_cell']:
                 ru_params = {
                     'ru_type':          'sdr',
@@ -461,7 +461,7 @@ def ors_radio(config, publish, shared_list):
                     if k in config[cell]:
                         ru_params[k] = config[cell][k]
                 shared_list.append({
-                    'slave_title':          'SDR' + str(i),
+                    'slave_title': f'SDR{i}',
                     'slave_reference':  False,
                     '_': json.dumps(ru_params),
                 })
@@ -490,18 +490,18 @@ def ors_radio(config, publish, shared_list):
 
                 cell_params.update({
                     'cell_kind':    'enb',
-                    'ru': { 'ru_type':  'ru_ref',
-                                    'ru_ref':       'SDR' + str(i)}
+                    'ru': { 'ru_type': 'ru_ref',
+                            'ru_ref' : f'SDR{i}'}
                 })
                 shared_list.append({
-                    'slave_title':          'CELL' + str(i),
-                    'slave_reference':  False,
+                    'slave_title'    : f'CELL{i}',
+                    'slave_reference': False,
                     '_': json.dumps(cell_params),
                 })
         for i, ncell in enumerate(config['ncell_list']):
             shared_list.append({
-                'slave_title':          'PEERCELL' + ncell.get('name', str(i)),
-                'slave_reference':  False,
+                'slave_title'    : f"PEERCELL{ncell.get('name', i)}",
+                'slave_reference': False,
                 '_': json.dumps(ncell),
             })
 
@@ -513,7 +513,7 @@ def ors_radio(config, publish, shared_list):
             publish['cell']['4g-plmn-list'] = ', '.join([x['plmn'] for x in plmn_list])
         if nr_cell:
             publish['cell']['5g-plmn-list'] = ', '.join(
-                [x['plmn'] + ' (TAC: {})'.format(x['tac']) for x in plmn_list_5g])
+                [f"{x['plmn']} (TAC: {x['tac']})" for x in plmn_list_5g])
         # AMF and PLMN List
         if not (lte_cell or nb_cell):
             config.pop('mme_list', '')
@@ -523,29 +523,29 @@ def ors_radio(config, publish, shared_list):
         amf_list = config.get('amf_list', [])
         # Add default names
         for i, mme in enumerate(mme_list):
-            mme.setdefault('name', 'MME' + str(i))
+            mme.setdefault('name', f'MME{i}')
         publish['nodeb']['mme-list'] = ', '.join(
                 ['{} ({})'.format(mme['name'], mme['mme_addr']) for mme in mme_list])
         for i, amf in enumerate(amf_list):
-            amf.setdefault('name', 'AMF' + str(i))
+            amf.setdefault('name', f'AMF{i}')
         publish['nodeb']['amf-list'] = ', '.join(
                 ['{} ({})'.format(amf['name'], amf['amf_addr']) for amf in amf_list])
         for i, peer in enumerate(config['x2_peers']):
             shared_list.append({
-                'slave_title':          'X2_PEER' + peer.get('name', str(i)),
-                'slave_reference':  False,
+                'slave_title'    : f"X2_PEER{peer.get('name', i)}",
+                'slave_reference': False,
                 '_': json.dumps({
-                    'peer_type':    'lte',
-                    'x2_addr':      peer['x2_addr'],
+                    'peer_type': 'lte',
+                    'x2_addr'  : peer['x2_addr'],
                 })
             })
         for i, peer in enumerate(config['xn_peers']):
             shared_list.append({
-                'slave_title':          'X2_PEER' + peer.get('name', str(i)),
-                'slave_reference':  False,
+                'slave_title'    : f"X2_PEER{peer.get('name', i)}",
+                'slave_reference': False,
                 '_': json.dumps({
-                    'peer_type':    'nr',
-                    'xn_addr':      peer['xn_addr'],
+                    'peer_type': 'nr',
+                    'xn_addr'  : peer['xn_addr'],
                 })
             })
 
@@ -695,7 +695,7 @@ def core_network(config, publish, shared_list):
         p.setdefault('plmn', '00101')
         p.setdefault('mcc', p['plmn'][:3])
         if len(p['plmn']) == 5:
-            p.setdefault('mnc', '0' + p['plmn'][3:])
+            p.setdefault('mnc', f"0{p['plmn'][3:]}")
         elif len(p['plmn']) == 6:
             p.setdefault('mnc', p['plmn'][3:])
         else:
@@ -754,13 +754,13 @@ def core_network(config, publish, shared_list):
     if config['websocket_url_ipv6']:
         ipv6 = slap_configuration['ipv6-random']
         config['mme_com_addr'] = ipv6
-        config['mme_com_url' ] = '[' + ipv6 + ']:' + str(config['mme_com_ws_port'])
+        config['mme_com_url' ] = f"[{ipv6}]:{config['mme_com_ws_port']}"
         config['ims_com_addr'] = ipv6
-        config['ims_com_url' ] = '[' + ipv6 + ']:' + str(config['ims_com_ws_port'])
+        config['ims_com_url' ] = f"[{ipv6}]:{config['ims_com_ws_port']}"
         config['com_unsecure'] = True
     else:
-        config['mme_com_url'] = config['mme_com_addr'] + ':' + str(config['mme_com_ws_port'])
-        config['ims_com_url'] = config['ims_com_addr'] + ':' + str(config['ims_com_ws_port'])
+        config['mme_com_url'] = f"{config['mme_com_addr']}:{config['mme_com_ws_port']}"
+        config['ims_com_url'] = f"{config['ims_com_addr']}:{config['ims_com_ws_port']}"
     config.setdefault('fixed_ips', False)
 
     sim_list = []
@@ -772,16 +772,16 @@ def core_network(config, publish, shared_list):
             dns_list.append(p)
         elif p.get('k', '') != '':
             sim_list.append(p)
-            impi = p['imsi'] + '@ims.mnc' + p['mnc'] + '.mcc' + p['mcc'] + '.3gppnetwork.org'
+            impi = f"{p['imsi']}@ims.mnc{p['mnc']}.mcc{p['mcc']}.3gppnetwork.org"
             p.setdefault('impi', impi)
             p.setdefault('impu', p['imsi'])
-            p['impu'] = '"' + p['impu'] + '"'
+            p['impu'] = f'"{p["impu"]}"'
             if p.get('impu_list', ''):
                 impu_list = []
                 for x in p['impu_list']:
                     impu_list.append(x['impu'])
                 impu_str = '", "'.join(impu_list)
-                p['impu'] = '["' + impu_str + '"]'
+                p['impu'] = f'["{impu_str}"]'
 
     def valid_ip(network, ip):
         try:
@@ -913,8 +913,8 @@ def test_model(config, publish, shared_list):
             40 : 61440000,
             100: 122880000,
         }[bandwidth]
-        config[cell]['bandwidth'] = str(bandwidth) + ' MHz'
-        config[cell]['rate'] = str(config[cell]['rate'] / 10**6) + ' MHz'
+        config[cell]['bandwidth'] = f'{bandwidth} MHz'
+        config[cell]['rate'] = f"{config[cell]['rate'] / 10**6} MHz"
         config[cell]['dl_frequency'] *= 10**6
 
 def flatten(d):
