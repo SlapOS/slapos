@@ -11,6 +11,17 @@
 {% do plugins.append('ha_rocksdb') -%}
 {% do extra_dict.setdefault('rocksdb_keep_log_file_num', '64') -%}
 {% do extra_dict.setdefault('rocksdb_max_log_file_size', '16M') -%}
+{% do extra_dict.setdefault('rocksdb_default_cf_options',
+    'compression=kLZ4Compression;bottommost_compression=kZSTD') -%}
+{% do extra_dict.setdefault('rocksdb_override_cf_options',
+    'cf_neo_no_comp={'
+      'compression=kNoCompression;'
+      'bottommost_compression=kNoCompression};'
+    'cf_neo_append={'
+      'compression=kNoCompression;'
+      'bottommost_compression=kNoCompression;'
+      'target_file_size_multiplier=2}'
+    ) -%}
 {% endif -%}
 
 [mysqld]

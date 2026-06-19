@@ -9,7 +9,7 @@
           "title": "Domain Name",
           "description": "The domain name for which to relay mail",
           "type": "string",
-          "pattern": "^[a-zA-Z0-9.-_]+$"
+          "pattern": "^[a-zA-Z0-9._-]+$"
         },
         "mail-server-host": {
           "title": "Mail Server Host",
