@@ -212,9 +212,11 @@
 {%-   endfor  %}
 {%- endmacro  %}
 
-{#- json-decode _ in all shared instances #}
+{#- json-decode _ in all shared instances, tolerating recipe-side auto-unwrap #}
 {%- for ishared in qshared_instance_list  %}
-{%-   do ishared.update({'_': J(ishared['_'])}) %}
+{%-   if ishared['_'] is string  %}
+{%-     do ishared.update({'_': J(ishared['_'])}) %}
+{%-   endif  %}
 {%- endfor  %}
 
 
