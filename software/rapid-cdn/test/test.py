@@ -9508,11 +9508,104 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
     finally:
       self._delete(op_url)
 
+  # --- Accept-Language filename suffix (upload+storage v1) --------------------
+
+  def test_lang_variant_upload_creates_per_language_haproxy_file(self):
+    """PUT /operator/{token}/{code}.{lang} stores per-language source and .http."""
+    code = '503'
+    lang = 'fr'
+    fr_html = '<html><body>Bonjour 503</body></html>'
+    op_url = '%s%s.%s' % (self.operator_url, code, lang)
+
+    try:
+      self.assertEqual(self._put(op_url, fr_html).status_code, 204)
+      self.assertEqual(self._get(op_url).text, fr_html)
+
+      result = self._get(
+        '%s/cluster/%s.%s.http' % (self.base_url, code, lang))
+      self.assertEqual(result.status_code, 200)
+      self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
+      self.assertIn(fr_html, result.text)
+    finally:
+      self._delete(op_url)
+
+  def test_lang_variant_invalid_tag_rejected(self):
+    """Language tag must match BCP 47 subset; otherwise 400."""
+    for bad in ['FR', 'fr_CA', 'fr.CA', '../etc', '1', 'a', 'fra-zh']:
+      result = self._put(
+        '%s503.%s' % (self.operator_url, bad), '<html/>')
+      self.assertEqual(
+        result.status_code, 400,
+        'language tag %r should be rejected' % bad)
+
+  def test_lang_variant_bcp47_accepted(self):
+    """BCP 47 forms like fr, fr-CA, pt-BR, zh-Hant are accepted."""
+    code = '503'
+    for good in ['fr', 'en', 'pt-BR', 'zh-Hant']:
+      op_url = '%s%s.%s' % (self.operator_url, code, good)
+      result = self._put(op_url, '<html>x</html>')
+      self.assertEqual(
+        result.status_code, 204,
+        'language tag %r should be accepted' % good)
+      self._delete(op_url)
+
+  def test_lang_variant_delete_removes_only_that_variant(self):
+    """DELETE of a language variant leaves the default {code}.http intact."""
+    code = '503'
+    default_html = '<html><body>Default 503</body></html>'
+    fr_html = '<html><body>503 fr</body></html>'
+    op_default = self.operator_url + code
+    op_fr = self.operator_url + code + '.fr'
+    fr_http = '%s/cluster/%s.fr.http' % (self.base_url, code)
+    default_http = '%s/cluster/%s.http' % (self.base_url, code)
+
+    try:
+      self._put(op_default, default_html)
+      self._put(op_fr, fr_html)
+
+      # both .http files exist with their respective bodies
+      self.assertIn(fr_html, self._get(fr_http).text)
+      self.assertIn(default_html, self._get(default_http).text)
+
+      # delete only the fr variant: fr.http is GC'd, default unchanged
+      self.assertEqual(self._delete(op_fr).status_code, 204)
+      self.assertEqual(self._get(fr_http).status_code, 404)
+      self.assertIn(default_html, self._get(default_http).text)
+    finally:
+      self._delete(op_default)
+
+  def test_lang_variant_manifest_lists_language_files(self):
+    """GET /sync includes per-language .http files in the manifest."""
+    code = '503'
+    op_fr = self.operator_url + code + '.fr'
+    try:
+      self._put(op_fr, '<html>fr</html>')
+      manifest = json.loads(self._get(self.sync_url).text)
+      self.assertIn('cluster/%s.fr.http' % code, manifest)
+    finally:
+      self._delete(op_fr)
+
+  def test_lang_variant_shared_cascade_falls_back_to_default(self):
+    """A shared ref with only default-language source still serves default."""
+    code = '503'
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    default_html = '<html><body>shared default 503</body></html>'
+
+    try:
+      self._put(upload_base + code, default_html)
+      # No fr-specific upload, so no shared/<ref>/503.fr.http
+      haproxy_path = 'shared/%s/%s.fr.http' % (self.TEST_SLAVE_REF, code)
+      result = self._get('%s/%s' % (self.base_url, haproxy_path))
+      self.assertEqual(result.status_code, 404)
+    finally:
+      self._delete(upload_base + code)
+
   # --- /shared/ vs /slave/ rename verification --------------------------------
 
   def test_legacy_slave_url_is_404(self):
     """Old /slave/{token}/{code} URL no longer routes (renamed to /shared/)."""
     upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    # upload_base now contains /shared/<token>/. Swap it for /slave/<token>/.
     self.assertIn('/shared/', upload_base)
     legacy_url = upload_base.replace('/shared/', '/slave/') + '503'
     result = self._put(legacy_url, '<html/>')

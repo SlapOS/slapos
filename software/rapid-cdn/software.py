@@ -1,6 +1,7 @@
 import caucase.client
 import caucase.utils
 import os
+import re
 import ssl
 import sys
 import urllib.error
@@ -133,6 +134,20 @@ _EPM_HTTP_REASONS = {
   '504': 'Gateway Timeout',
 }
 
+# Accepted Accept-Language filename suffix: BCP 47 lang + optional
+# uppercase region (fr-CA) or title-case script (zh-Hant).
+_EPM_LANG_RE = re.compile(r'^[a-z]{2,3}(-([A-Z]{2,3}|[A-Z][a-z]{3}))?$')
+
+
+def _split_code_lang(rest):
+  parts = rest.split('.', 1)
+  if len(parts) == 1:
+    return parts[0], None
+  code, lang = parts
+  if not _EPM_LANG_RE.match(lang):
+    raise ValueError(lang)
+  return code, lang
+
 
 def _haproxy_format(code, html):
   reason = _EPM_HTTP_REASONS[code]
@@ -209,34 +224,85 @@ def error_page_manager_main():
     with open(path, 'rb') as f:
       return hashlib.sha256(f.read()).hexdigest()
 
-  def _refresh_haproxy_file(slot, code):
+  def _source_dir(slot):
     if slot == 'cluster':
-      haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'cluster')
-    else:
-      haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared', slot)
+      return os.path.join(ERROR_PAGES_DIR, 'operator')
+    return os.path.join(ERROR_PAGES_DIR, 'shared', slot)
+
+  def _haproxy_dir(slot):
+    if slot == 'cluster':
+      return os.path.join(ERROR_PAGES_DIR, 'haproxy', 'cluster')
+    return os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared', slot)
+
+  def _discover_langs(directory, code):
+    if not os.path.isdir(directory):
+      return set()
+    prefix = f'{code}.'
+    langs = set()
+    for name in os.listdir(directory):
+      if name.startswith(prefix) and name.endswith('.html'):
+        lang = name[len(prefix):-len('.html')]
+        if _EPM_LANG_RE.match(lang):
+          langs.add(lang)
+    return langs
+
+  def _expected_langs(slot, code):
+    op_langs = _discover_langs(
+      os.path.join(ERROR_PAGES_DIR, 'operator'), code)
+    if slot == 'cluster':
+      return op_langs
+    return op_langs | _discover_langs(
+      os.path.join(ERROR_PAGES_DIR, 'shared', slot), code)
+
+  def _refresh_haproxy_file(slot, code, lang=None):
+    haproxy_dir = _haproxy_dir(slot)
     os.makedirs(haproxy_dir, exist_ok=True)
-    haproxy_path = os.path.join(haproxy_dir, f'{code}.http')
+    suffix = f'.{lang}' if lang else ''
+    haproxy_path = os.path.join(haproxy_dir, f'{code}{suffix}.http')
 
-    if slot == 'cluster':
-      html = _read_html(os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html'))
-    else:
-      html = _read_html(os.path.join(ERROR_PAGES_DIR, 'shared', slot, f'{code}.html'))
-      if html is None:
-        html = _read_html(os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html'))
+    candidates = []
+    if slot != 'cluster' and lang:
+      candidates.append(os.path.join(
+        ERROR_PAGES_DIR, 'shared', slot, f'{code}.{lang}.html'))
+    if lang:
+      candidates.append(os.path.join(
+        ERROR_PAGES_DIR, 'operator', f'{code}.{lang}.html'))
+    if slot != 'cluster':
+      candidates.append(os.path.join(
+        ERROR_PAGES_DIR, 'shared', slot, f'{code}.html'))
+    candidates.append(os.path.join(
+      ERROR_PAGES_DIR, 'operator', f'{code}.html'))
+    candidates.append(os.path.join(BUILTIN_DIR, f'{code}.html'))
 
-    if html is None:
-      html = _read_html(os.path.join(BUILTIN_DIR, f'{code}.html'))
+    html = None
+    for path in candidates:
+      html = _read_html(path)
+      if html is not None:
+        break
 
     with open(haproxy_path, 'w', encoding='utf-8') as f:
       f.write(_haproxy_format(code, html))
 
+  def _refresh_slot_for_code(slot, code):
+    haproxy_dir = _haproxy_dir(slot)
+    os.makedirs(haproxy_dir, exist_ok=True)
+    _refresh_haproxy_file(slot, code, None)
+    expected = _expected_langs(slot, code)
+    for lang in expected:
+      _refresh_haproxy_file(slot, code, lang)
+    prefix = f'{code}.'
+    for name in os.listdir(haproxy_dir):
+      if not (name.startswith(prefix) and name.endswith('.http')):
+        continue
+      lang = name[len(prefix):-len('.http')]
+      if lang and lang not in expected:
+        os.unlink(os.path.join(haproxy_dir, name))
+
   def _refresh_all_for_code(code):
-    _refresh_haproxy_file('cluster', code)
-    shared_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared')
-    if os.path.isdir(shared_dir):
-      for ref in os.listdir(shared_dir):
-        if code in SHARED_CODES:
-          _refresh_haproxy_file(ref, code)
+    _refresh_slot_for_code('cluster', code)
+    if code in SHARED_CODES:
+      for ref in set(SHARED_TOKEN_MAP.values()):
+        _refresh_slot_for_code(ref, code)
 
   def _build_manifest():
     manifest = {}
@@ -286,6 +352,9 @@ def error_page_manager_main():
 </head>
 <body>
   <h1>Error Page Manager</h1>
+  <p>Per-language variants (e.g. <code>503.fr</code>) are managed via the
+  REST API (<code>PUT /operator/&lt;token&gt;/&lt;code&gt;.&lt;lang&gt;</code>).
+  This form covers the default-language pages only.</p>
   <form method="post">
     <table>
       <thead><tr><th>Code</th><th>HTML Content</th><th>Actions</th></tr></thead>
@@ -353,11 +422,19 @@ def error_page_manager_main():
           return
         if not rest:
           self._send(200, _web_ui(), 'text/html')
-        elif rest in SUPPORTED_CODES:
-          op_file = os.path.join(ERROR_PAGES_DIR, 'operator', f'{rest}.html')
-          self._send(200, _read_html(op_file) or '', 'text/html')
-        else:
+          return
+        try:
+          code, lang = _split_code_lang(rest)
+        except ValueError:
+          self._send(400, 'Invalid language tag')
+          return
+        if code not in SUPPORTED_CODES:
           self._send(404, 'Unknown code')
+          return
+        suffix = f'.{lang}' if lang else ''
+        op_file = os.path.join(
+          ERROR_PAGES_DIR, 'operator', f'{code}{suffix}.html')
+        self._send(200, _read_html(op_file) or '', 'text/html')
       elif section == 'shared':
         ref = SHARED_TOKEN_MAP.get(token)
         if ref is None:
@@ -415,7 +492,11 @@ def error_page_manager_main():
         if token != OPERATOR_TOKEN:
           self._send(401, 'Unauthorized')
           return
-        code = rest
+        try:
+          code, lang = _split_code_lang(rest)
+        except ValueError:
+          self._send(400, 'Invalid language tag')
+          return
         if code not in SUPPORTED_CODES:
           self._send(400, 'Unknown code')
           return
@@ -423,9 +504,14 @@ def error_page_manager_main():
         if html is None:
           self._send(413, 'Too large')
           return
+        suffix = f'.{lang}' if lang else ''
         with _lock:
-          os.makedirs(os.path.join(ERROR_PAGES_DIR, 'operator'), exist_ok=True)
-          with open(os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html'), 'w') as f:
+          os.makedirs(
+            os.path.join(ERROR_PAGES_DIR, 'operator'), exist_ok=True)
+          with open(
+            os.path.join(
+              ERROR_PAGES_DIR, 'operator', f'{code}{suffix}.html'),
+            'w') as f:
             f.write(html)
           _refresh_all_for_code(code)
         self._send(204, '')
@@ -434,7 +520,11 @@ def error_page_manager_main():
         if ref is None:
           self._send(401, 'Unauthorized')
           return
-        code = rest
+        try:
+          code, lang = _split_code_lang(rest)
+        except ValueError:
+          self._send(400, 'Invalid language tag')
+          return
         if code not in SHARED_CODES:
           self._send(
             400,
@@ -444,12 +534,14 @@ def error_page_manager_main():
         if html is None:
           self._send(413, 'Too large')
           return
+        suffix = f'.{lang}' if lang else ''
         with _lock:
           shared_dir = os.path.join(ERROR_PAGES_DIR, 'shared', ref)
           os.makedirs(shared_dir, exist_ok=True)
-          with open(os.path.join(shared_dir, f'{code}.html'), 'w') as f:
+          with open(
+            os.path.join(shared_dir, f'{code}{suffix}.html'), 'w') as f:
             f.write(html)
-          _refresh_haproxy_file(ref, code)
+          _refresh_slot_for_code(ref, code)
         self._send(204, '')
       else:
         self._send(404, 'Not found')
@@ -460,12 +552,18 @@ def error_page_manager_main():
         if token != OPERATOR_TOKEN:
           self._send(401, 'Unauthorized')
           return
-        code = rest
+        try:
+          code, lang = _split_code_lang(rest)
+        except ValueError:
+          self._send(400, 'Invalid language tag')
+          return
         if code not in SUPPORTED_CODES:
           self._send(400, 'Unknown code')
           return
+        suffix = f'.{lang}' if lang else ''
         with _lock:
-          op_file = os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html')
+          op_file = os.path.join(
+            ERROR_PAGES_DIR, 'operator', f'{code}{suffix}.html')
           if os.path.exists(op_file):
             os.unlink(op_file)
           _refresh_all_for_code(code)
@@ -475,18 +573,23 @@ def error_page_manager_main():
         if ref is None:
           self._send(401, 'Unauthorized')
           return
-        code = rest
+        try:
+          code, lang = _split_code_lang(rest)
+        except ValueError:
+          self._send(400, 'Invalid language tag')
+          return
         if code not in SHARED_CODES:
           self._send(
             400,
             f'Shared instances may only set: {", ".join(SHARED_CODES)}')
           return
+        suffix = f'.{lang}' if lang else ''
         with _lock:
           shared_file = os.path.join(
-            ERROR_PAGES_DIR, 'shared', ref, f'{code}.html')
+            ERROR_PAGES_DIR, 'shared', ref, f'{code}{suffix}.html')
           if os.path.exists(shared_file):
             os.unlink(shared_file)
-          _refresh_haproxy_file(ref, code)
+          _refresh_slot_for_code(ref, code)
         self._send(204, '')
       else:
         self._send(404, 'Not found')
@@ -496,10 +599,7 @@ def error_page_manager_main():
 
   with _lock:
     for code in SUPPORTED_CODES:
-      _refresh_haproxy_file('cluster', code)
-    for ref in set(SHARED_TOKEN_MAP.values()):
-      for code in SHARED_CODES:
-        _refresh_haproxy_file(ref, code)
+      _refresh_all_for_code(code)
   logger.info('Initialized haproxy error files')
 
   ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
