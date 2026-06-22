@@ -686,21 +686,11 @@ class JsonSchema(Recipe):
     unstringify_types_dict = {'integer': int, 'boolean': str_to_bool}
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
       parameter_dict = unwrap(parameter_dict)
-      shared_list = options.get('slave-instance-list')
-      if shared_list:
-        # Keep the other top-level keys (slave_reference, slave_title, ...)
-        # next to the decoded payload.
-        unwrapped_shared_list = []
-        for instance in shared_list:
-          payload = instance.pop(JSON_SERIALISED_MAGIC_KEY, None)
-          if payload is not None:
-            decoded = json.loads(payload)
-            if isinstance(decoded, dict):
-              for k, v in instance.items():
-                decoded[k] = v
-              instance = decoded
-          unwrapped_shared_list.append(instance)
-        options['slave-instance-list'] = unwrapped_shared_list
+      if not validate.shared:
+        for instance in options.get('slave-instance-list') or ():
+          payload = instance.get(JSON_SERIALISED_MAGIC_KEY)
+          if isinstance(payload, str):
+            instance[JSON_SERIALISED_MAGIC_KEY] = json.loads(payload)
     if validate.main:
       schema = software_description.getInstanceRequestParameterSchema()
       if schema is None:

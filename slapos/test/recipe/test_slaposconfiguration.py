@@ -721,13 +721,17 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     with self.patchSlap(parameters, shared):
       options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
       received = options['slave-instance-list']
-      self.assertEqual(
-        received,
-        [
+      if self.serialise and self.serialisation != 'xml':
+        expected = [
+          {'_': d, 'slave_reference': "SHARED%d" % i}
+          for i, d in enumerate(shared)
+        ]
+      else:
+        expected = [
           dict(d, slave_reference="SHARED%d" % i)
           for i, d in enumerate(shared)
-        ],
-      )
+        ]
+      self.assertEqual(received, expected)
 
 
 class JsonSchemaSharedTestUnserialised(JsonSchemaSharedTest):
@@ -789,7 +793,7 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(options['invalid-shared-instance-list'], [])
 
   def test_jsonschema_shared_unwrapped_when_skip_shared_validation(self):
-    """json-in-xml shared entries are decoded even when shared validation is skipped."""
+    """json-in-xml shared entries get '_' decoded in place even when shared validation is skipped."""
     self.writeJsonSchema()
     parameters = {"number": 1}
     shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
@@ -799,8 +803,8 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(
         received,
         [
-          {"kind": 1, "slave_reference": "SHARED0"},
-          {"kind": 2, "thing": "hello", "slave_reference": "SHARED1"},
+          {"_": {"kind": 1}, "slave_reference": "SHARED0"},
+          {"_": {"kind": 2, "thing": "hello"}, "slave_reference": "SHARED1"},
         ],
       )
 
@@ -842,15 +846,15 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(
         options['slave-instance-list'],
         [
-          {"kind": 1, "slave_reference": "SHARED0"},
+          {"_": {"kind": 1}, "slave_reference": "SHARED0"},
           {"kind": 1, "slave_reference": "SHARED1"},
-          {"kind": 2, "thing": "hello", "slave_reference": "SHARED2"},
+          {"_": {"kind": 2, "thing": "hello"}, "slave_reference": "SHARED2"},
           {"kind": 2, "thing": "hello", "slave_reference": "SHARED3"},
         ],
       )
 
-  def test_jsonschema_shared_unwrap_preserves_siblings(self):
-    """All other top-level keys (slave_title, slap_software_type, timestamp, ...) survive the unwrap."""
+  def test_jsonschema_shared_unwrap_preserves_top_level_keys(self):
+    """All top-level keys (slave_title, slap_software_type, timestamp, ...) sit next to the decoded '_' payload."""
     self.writeJsonSchema()
     parameters = {"number": 1}
     with self.patchSlap(parameters, shared=[]):
@@ -869,7 +873,7 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
         options['slave-instance-list'],
         [
           {
-            'kind': 1,
+            '_': {'kind': 1},
             'slave_reference': 'SHARED0',
             'slave_title': 'first-slave',
             'slap_software_type': 'default',
