@@ -96,6 +96,12 @@
           "default": {}
         }
       }
+    },
+    "custom-inbound-certificate": {
+      "title": "Custom Inbound Certificate",
+      "description": "PEM encoded private key followed by the certificate chain to use for inbound SMTP TLS on this relay.",
+      "type": "string",
+      "minLength": 1
     }
   },
   "properties": {
@@ -154,6 +160,9 @@
             },
             "config": {
               "$ref": "#/definitions/relay-config"
+            },
+            "custom-inbound-certificate": {
+              "$ref": "#/definitions/custom-inbound-certificate"
             }
           }
         }
