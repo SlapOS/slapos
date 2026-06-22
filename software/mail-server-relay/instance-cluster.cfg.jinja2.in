@@ -78,6 +78,10 @@ software-type = {{ config.get('software-type') or 'relay' }}
 config-fqdn = {{ relay_fqdn }}
 {%- endif %}
 
+{% if config.get('custom-inbound-certificate') -%}
+config-custom-inbound-certificate = {{ dumps(config['custom-inbound-certificate']) }}
+{%- endif %}
+
 {% for key, value in config.get('config', {}).items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
@@ -338,4 +342,3 @@ init =
       }
     self.buildout.parse(section)
 {%- endraw %}
-
