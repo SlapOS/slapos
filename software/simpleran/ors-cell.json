@@ -25,6 +25,18 @@
     },
     "enable_ul_su_mimo": {
       "$ref": "cell/common.json#/properties/enable_ul_su_mimo"
+    },
+    "performance_mode": {
+      "title": "Expert only: Performance Mode",
+      "description": "Determines how much UL and DL threads will get allocated. By default it is chosen automatically based on the number of UL / DL layers and UL / DL bandwidth. Only applies to certain SBCs.",
+      "type": "string",
+      "enum": [
+        "Maximum Uplink",
+        "Maximum Downlink",
+        "Balanced",
+        "Automatic"
+      ],
+      "default": "Automatic"
     }
   }
 }
