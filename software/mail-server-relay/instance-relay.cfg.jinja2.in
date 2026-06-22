@@ -59,6 +59,7 @@ srv = $${buildout:directory}/srv
 postfix-usr = $${:usr}/postfix
 postfix-etc = $${:etc}/postfix
 postfix-ssl = $${:postfix-etc}/ssl
+postfix-ssl-inbound = $${:postfix-etc}/ssl_inbound
 
 [postgrey-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -90,6 +91,48 @@ command =
     cat $${:key-file} $${:cert-file} > $${:bundle}; \
   }
 update-command = $${:command}
+
+{% set custom_inbound_certificate = slapparameter_dict.get('custom-inbound-certificate') or {} -%}
+
+{% if custom_inbound_certificate -%}
+[inbound-custom-certificate-file]
+recipe = slapos.recipe.template
+output = $${directory:postfix-ssl-inbound}/custom.crt
+inline ={{ custom_inbound_certificate['cert'] | indent }}
+
+[inbound-custom-certificate-key-file]
+recipe = slapos.recipe.template
+output = $${directory:postfix-ssl-inbound}/custom.key
+inline ={{ custom_inbound_certificate['key'] | indent }}
+{% endif %}
+
+[inbound-postfix-certificate]
+{% if custom_inbound_certificate -%}
+cert-file = $${inbound-custom-certificate-file:output}
+key-file = $${inbound-custom-certificate-key-file:output}
+{% else -%}
+cert-file = $${postfix-certificate:cert-file}
+key-file = $${postfix-certificate:key-file}
+{% endif %}
+
+[inbound-postfix-certificate-reload]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:service}/inbound-postfix-certificate-reload
+command-line =
+  /bin/sh -c
+  "${postfix:location}/usr/sbin/postfix -c $${inbound-postfix-directory:etc} status >/dev/null 2>&1 \
+    && ${postfix:location}/usr/sbin/postfix -c $${inbound-postfix-directory:etc} reload; \
+    exec /bin/sleep infinity"
+hash-files =
+  $${inbound-postfix-main.cf:output}
+  $${inbound-postfix-certificate:cert-file}
+  $${inbound-postfix-certificate:key-file}
+depends =
+  $${postfix-certificate:recipe}
+{% if custom_inbound_certificate %}
+  $${inbound-custom-certificate-file:recipe}
+  $${inbound-custom-certificate-key-file:recipe}
+{% endif %}
 
 
 # Postfix macros
@@ -290,8 +333,8 @@ content =
   transport_maps = texthash:$${internal-postfix-transport:output}
 
   # Server TLS parameters
-  smtpd_tls_cert_file = $${postfix-certificate:cert-file}
-  smtpd_tls_key_file = $${postfix-certificate:key-file}
+  smtpd_tls_cert_file = $${inbound-postfix-certificate:cert-file}
+  smtpd_tls_key_file = $${inbound-postfix-certificate:key-file}
   smtpd_tls_security_level = may
 
   # Client TLS parameters
@@ -379,6 +422,12 @@ hash-files =
   $${inbound-postfix-wrapper:output}
   $${policyd-spf-conf:output}
 depends =
+  $${postfix-certificate:recipe}
+{% if custom_inbound_certificate %}
+  $${inbound-custom-certificate-file:recipe}
+  $${inbound-custom-certificate-key-file:recipe}
+{% endif %}
+  $${inbound-postfix-certificate-reload:recipe}
   $${policyd-spf-conf:recipe}
 {% if greylisting_enable %}
   $${postgrey-service:recipe}
@@ -836,4 +885,3 @@ depends =
 {%- for postfix_wrapper in postfix_wrappers %}
   {{ "$${" + postfix_wrapper + ":recipe}" }}
 {%- endfor %}
-
