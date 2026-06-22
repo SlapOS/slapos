@@ -721,16 +721,17 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     with self.patchSlap(parameters, shared):
       options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
       received = options['slave-instance-list']
-      self.assertEqual(
-        received,
-        [
-          dict(
-            slave_reference = "SHARED%d" % i,
-            **{'_': json.dumps(d, sort_keys=True)} if self.serialise else d
-          )
+      if self.serialise and self.serialisation != 'xml':
+        expected = [
+          {'_': d, 'slave_reference': "SHARED%d" % i}
           for i, d in enumerate(shared)
-        ],
-      )
+        ]
+      else:
+        expected = [
+          dict(d, slave_reference="SHARED%d" % i)
+          for i, d in enumerate(shared)
+        ]
+      self.assertEqual(received, expected)
 
 
 class JsonSchemaSharedTestUnserialised(JsonSchemaSharedTest):
@@ -790,6 +791,96 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(options['valid-shared-instance-list'], [])
       self.assertIn('invalid-shared-instance-list', options)
       self.assertEqual(options['invalid-shared-instance-list'], [])
+
+  def test_jsonschema_shared_unwrapped_when_skip_shared_validation(self):
+    """json-in-xml shared entries get '_' decoded in place even when shared validation is skipped."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
+    with self.patchSlap(parameters, shared):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
+      received = options['slave-instance-list']
+      self.assertEqual(
+        received,
+        [
+          {"_": {"kind": 1}, "slave_reference": "SHARED0"},
+          {"_": {"kind": 2, "thing": "hello"}, "slave_reference": "SHARED1"},
+        ],
+      )
+
+  def test_jsonschema_shared_mixed_serialisation_both_modes(self):
+    """A mix of json-in-xml-wrapped and plain shared entries is decoded under both validation modes."""
+    def mixed_shared_list():
+      return [
+        {'_': json.dumps({"kind": 1}, sort_keys=True),
+         'slave_reference': 'SHARED0'},
+        {'kind': 1, 'slave_reference': 'SHARED1'},
+        {'_': json.dumps({"kind": 2, "thing": "hello"}, sort_keys=True),
+         'slave_reference': 'SHARED2'},
+        {'kind': 2, 'thing': 'hello', 'slave_reference': 'SHARED3'},
+      ]
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, shared=[]):
+      d = self.mock_computer_partition.getInstanceParameterDict.return_value
+      d['slave_instance_list'] = mixed_shared_list()
+      valid, invalid = self.receiveSharedParameters()
+      self.assertEqual(
+        valid,
+        {
+          'SHARED0': {"kind": 1, "thing": "hello"},
+          'SHARED1': {"kind": 1, "thing": "hello"},
+        },
+      )
+      self.assertEqual(
+        invalid,
+        {
+          'SHARED2': {"kind": 2, "thing": "hello"},
+          'SHARED3': {"kind": 2, "thing": "hello"},
+        },
+      )
+    with self.patchSlap(parameters, shared=[]):
+      d = self.mock_computer_partition.getInstanceParameterDict.return_value
+      d['slave_instance_list'] = mixed_shared_list()
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
+      self.assertEqual(
+        options['slave-instance-list'],
+        [
+          {"_": {"kind": 1}, "slave_reference": "SHARED0"},
+          {"kind": 1, "slave_reference": "SHARED1"},
+          {"_": {"kind": 2, "thing": "hello"}, "slave_reference": "SHARED2"},
+          {"kind": 2, "thing": "hello", "slave_reference": "SHARED3"},
+        ],
+      )
+
+  def test_jsonschema_shared_unwrap_preserves_top_level_keys(self):
+    """All top-level keys (slave_title, slap_software_type, timestamp, ...) sit next to the decoded '_' payload."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, shared=[]):
+      d = self.mock_computer_partition.getInstanceParameterDict.return_value
+      d['slave_instance_list'] = [
+        {
+          '_': json.dumps({"kind": 1}, sort_keys=True),
+          'slave_reference': 'SHARED0',
+          'slave_title': 'first-slave',
+          'slap_software_type': 'default',
+          'timestamp': '1700000000',
+        },
+      ]
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
+      self.assertEqual(
+        options['slave-instance-list'],
+        [
+          {
+            '_': {'kind': 1},
+            'slave_reference': 'SHARED0',
+            'slave_title': 'first-slave',
+            'slap_software_type': 'default',
+            'timestamp': '1700000000',
+          },
+        ],
+      )
 
   def test_jsonschema_non_existing_main_software_type(self):
     self.writeJsonSchema()
