@@ -482,6 +482,8 @@ def ors_radio(config, publish, shared_list):
             if config[c]['cell_type'] in ['eNB', 'gNB']:
                 publish['radio'].setdefault('root-sequence-index', {})[c] = config[c]['root_sequence_index']
                 publish['radio'].setdefault('tdd-ul-dl-config',      {})[c] = config[c]['tdd_ul_dl_config']
+        if config[c]['cell_type'] == 'gNB' and config[c]['nr_band'] == 79:
+            config[c]['amarisoft_ssb_computation'] = True
 
     def configure_cpu():
         if options['sbc-model'] != 'PD10ANS':
