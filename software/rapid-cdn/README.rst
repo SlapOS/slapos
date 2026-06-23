@@ -384,6 +384,314 @@ This allows backends to:
  * restrict access only from some frontend clusters
  * trust values (like ``X-Forwarded-For``) sent by the frontend
 
+Error Page Management
+=====================
+
+The Error Page Manager (EPM) controls the HTML pages returned to end
+users when the CDN itself generates an error response (backend down,
+no matching site, request timeout, ...).
+
+Two audiences share the same EPM:
+
+* the **CDN operator** customises pages cluster-wide for every error
+  code from 400 to 504;
+* the **site owner** of a shared frontend instance can override
+  502 / 503 / 504 for their own site only.
+
+This document covers both.
+
+
+Roles and access
+----------------
+
+* **Operator** -- receives ``error-page-manager-operator-url`` in the
+  master partition connection parameters.  Can read, write, and reset
+  any error code.  Changes apply to every hosted site that has not set
+  its own override.
+* **Site owner (shared instance)** -- receives ``error-page-upload-url``
+  in the shared-instance connection parameters.  Can write and reset
+  502, 503, and 504 for their own site.  Cannot read others' pages or
+  the operator's pages.
+
+Both URLs already contain an authentication token in the path.  Treat
+them as secrets.
+
+
+Connection parameters
+---------------------
+
+Operator URL::
+
+    error-page-manager-operator-url = https://[2001:db8::1]:24000/operator/TOKEN/
+
+Site-owner URL::
+
+    error-page-upload-url = https://[2001:db8::1]:24000/shared/TOKEN/
+
+The EPM uses a **self-signed TLS certificate**.  The certificate PEM is
+published as ``error-page-certificate`` in the relevant connection
+parameters.  When using curl pass it with ``--cacert``, or use ``-k`` /
+``--insecure`` for quick testing.
+
+
+Supported error codes
+---------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 80 18
+
+   * - Code
+     - CDN code description
+     - Customizable by
+
+   * - 400
+     - **Bad Request** -- the frontend HAProxy could not parse the
+       incoming HTTP request.
+     - CDN Operator
+
+   * - 404
+     - **Not Found** -- the request's ``Host`` header did not match
+       any shared instance configured in this cluster. 
+     - CDN Operator
+
+   * - 408
+     - **Request Timeout** -- the client opened a connection but did
+       not send a complete request within the cluster's request
+       timeout.
+     - CDN Operator
+
+   * - 500
+     - **Internal Server Error** -- the CDN infrastructure itself
+       failed to process the request.
+     - CDN Operator
+
+   * - 502
+     - **Bad Gateway** -- the backend HAProxy reached the backend
+       server, but the response is unparseable.
+     - CDN Operator, Shared instance user
+
+   * - 503
+     - **Service Unavailable** -- the backend HAProxy has no healthy
+       backend to serve the request.
+     - CDN Operator, Shared instance user
+
+   * - 504
+     - **Gateway Timeout** -- the backend connection was established
+       and the HTTP request was sent, but the backend did not
+       produce a complete response within CDN timeout.
+     - CDN Operator, Shared instance user
+
+
+Web management interface
+------------------------
+
+Open the operator URL or the shared-instance upload URL in a browser.
+The page shows one row per editable error code with a text area for
+the HTML body and two buttons:
+
+* **Save** -- stores the HTML and immediately regenerates the HAProxy
+  error files served to CDN users.
+* **Reset** -- removes the custom page; the CDN falls back to the
+  built-in default page (or to the operator's page in the case of a
+  shared-instance reset).
+
+The operator UI exposes all seven supported codes; the shared-instance
+UI exposes only codes 502, 503, and 504, scoped to the site owner's
+own files.  Both screens share the same look and the same Save / Reset
+semantics.
+
+
+REST API
+--------
+
+Both the operator URL and the shared-instance URL accept the same REST
+shape; only the URL prefix differs.  ``CODE`` is one of the supported
+codes from the table above.
+
+Retrieve current HTML
+~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    GET BASE_URL/CODE         # operator only
+
+Returns the stored HTML document (``text/html``) or an empty 200
+response if no custom page is set.  The shared-instance variant of GET
+is intentionally not exposed.
+
+Example::
+
+    curl --cacert epm.pem \
+         https://[2001:db8::1]:24000/operator/TOKEN/503
+
+Upload a custom HTML document
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    PUT BASE_URL/CODE
+
+Request body: a complete HTML document (UTF-8, max 2 MB).  Response:
+``204 No Content`` on success.  The change is applied immediately -- no
+restart is needed.
+
+Operator example::
+
+    curl --cacert epm.pem -X PUT \
+         -H 'Content-Type: text/html' \
+         --data-binary @my-503.html \
+         https://[2001:db8::1]:24000/operator/TOKEN/503
+
+Site-owner example::
+
+    curl --cacert epm.pem -X PUT \
+         -H 'Content-Type: text/html' \
+         --data-binary @my-503.html \
+         "https://[2001:db8::1]:24000/shared/TOKEN/503"
+
+Any lines at the very top of the uploaded document beginning with ``#``
+are silently dropped before HAProxy framing.  This syntax is
+**reserved** for a possible future feature that allows declaring custom
+response headers; no header support is implemented in this version.
+Treating ``#``-prefix lines as reserved now means files written today
+will keep behaving correctly if header support is added later.
+
+Reset to default
+~~~~~~~~~~~~~~~~
+
+::
+
+    DELETE BASE_URL/CODE
+
+Response: ``204 No Content``.  For the operator, the built-in default
+is restored for every site that had not set its own override.  For a
+site owner, the operator's page (or the built-in default if none) is
+restored for that site only.
+
+Example::
+
+    curl --cacert epm.pem -X DELETE \
+         https://[2001:db8::1]:24000/operator/TOKEN/503
+
+
+Override precedence
+-------------------
+
+For each error code and each hosted site the page shown to end users is
+chosen as follows:
+
+1. Site-owner override for that site (if set)
+2. Operator custom page (if set)
+3. Built-in default page
+
+Uploading a new operator page immediately re-generates the HAProxy
+error files for all sites that do **not** have their own override.
+Site-owner uploads only affect that one site.  Changes propagate to
+CDN frontend nodes within approximately one minute -- the frontend
+error-page-updater polls the EPM on that interval and triggers an
+HAProxy reload when files change.
+
+
+Custom error page HTML
+----------------------
+
+Each uploaded page is a complete, self-contained HTML document.  The
+EPM wraps it in a minimal HTTP/1.0 response envelope that HAProxy
+requires; there is no server-side templating.
+
+Multi-language pages with client-side switching
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Because the document is self-contained you can ship several languages
+in the same file and let the visitor's browser pick the right one with
+a small piece of inline JavaScript.
+
+The recipe:
+
+1. Wrap each translation in a ``<section data-lang="...">`` block, with
+   a matching ``lang=`` attribute for accessibility.
+2. Mark one section ``data-default`` -- the fallback when nothing else
+   matches.
+3. CSS hides every ``[data-lang]`` by default and reveals only the one
+   tagged ``.active``.
+4. A ``<noscript>`` block flips the rule so clients without JavaScript
+   see the ``data-default`` section instead of a blank page.
+5. A tiny inline script reads ``navigator.languages`` (already sorted
+   by browser preference, equivalent to ``Accept-Language`` with
+   q-values applied), tries each preference as an exact match and then
+   a primary-language fallback (e.g. ``fr-CA`` -> ``fr``), and adds
+   ``.active`` to the matching section.
+
+The **built-in default pages** bundled with this software release follow
+this pattern with five languages (English, French, Japanese, German,
+Polish) and are the recommended starting point -- download one,
+adjust the visible text, and upload:
+
+* `503.html <templates/error-pages/503.html>`_ -- Service Unavailable
+* `502.html <templates/error-pages/502.html>`_ -- Bad Gateway
+* `504.html <templates/error-pages/504.html>`_ -- Gateway Timeout
+* `500.html <templates/error-pages/500.html>`_ -- Internal Server Error
+* `404.html <templates/error-pages/404.html>`_ -- Not Found
+* `408.html <templates/error-pages/408.html>`_ -- Request Timeout
+* `400.html <templates/error-pages/400.html>`_ -- Bad Request
+
+Add or remove ``<section data-lang="...">`` blocks as needed.  The same
+JavaScript handles any number of languages without modification -- it
+discovers the list from the DOM at runtime.  A single-language page is
+also fine; just keep one ``data-lang`` / ``data-default`` section and
+the switcher will pick it unconditionally.
+
+HAProxy serves the file via the ``errorfile`` directive, which loads
+the whole file into a single buffer.  Rapid.CDN raises
+``tune.bufsize`` to **64 KiB** to accommodate multilingual error pages
+with comfortable headroom.  If you ship many languages or long
+localised copy you should still keep the per-page total under 64 KiB.
+
+
+Security headers and Content-Security-Policy
+--------------------------------------------
+
+The HTTP envelope generated for error files sets ``X-Content-Type-Options:
+nosniff`` and an explicit ``Content-Type: text/html; charset=utf-8``;
+nothing else security-relevant is added.  In particular, **no
+Content-Security-Policy is emitted** for error responses.  Inline
+JavaScript and inline CSS in uploaded pages execute by default, which
+is how the built-in multilingual switcher works.
+
+If your cluster deploys a CSP at the HAProxy layer that also applies
+to error responses (for example via ``http-after-response set-header
+Content-Security-Policy ...``), you have three options:
+
+1. **Allow inline content on error responses.**  The simplest path --
+   ``script-src 'unsafe-inline'; style-src 'unsafe-inline'`` on the
+   error-response CSP only.  Acceptable because the error-page HTML is
+   under your control (either shipped by the operator at SR build time,
+   or uploaded via PUT), so there is no untrusted-input path.
+
+2. **Allow only the known SHA-256 hashes** of the inline blocks shipped
+   in the built-in pages.  These are stable across all seven codes::
+
+       Content-Security-Policy:
+         script-src 'sha256-kd4gNDpn2kShafbtEoOkHmUNMKotywb7hR2o4124F88=';
+         style-src  'sha256-LHlcrzszQdddVhDnsD/EHYrGUNlsv/Dye8VaQITP9gI='
+                    'sha256-46ncLRPYE5GJAkUBe2ZUGES+FfmgO/M1KpwH8fS62iQ='
+
+   The hashes will need updating if the inline script or styles are
+   customised -- modern browsers print the correct value in the
+   developer console when the policy blocks the resource.
+
+3. **Compute hashes per upload.**  If you maintain your own custom
+   pages, allowlist their hashes the same way.
+
+Avoid the worst-case combination ``script-src 'self'`` (no
+``'unsafe-inline'``, no matching ``'sha256-...'``) **with** an inline
+``<style>`` block allowed.  In that configuration the CSS will hide
+all language sections, the script that would have shown one is blocked,
+and the visitor sees a blank page -- the ``<noscript>`` fallback does
+not engage because the browser does have JavaScript, it just denied
+execution.
+
 Technical notes
 ===============
 
