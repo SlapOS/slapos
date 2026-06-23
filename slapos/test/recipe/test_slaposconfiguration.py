@@ -723,7 +723,7 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
       received = options['slave-instance-list']
       if self.serialise and self.serialisation != 'xml':
         expected = [
-          {'_': d, 'slave_reference': "SHARED%d" % i}
+          dict(d, _=d, slave_reference="SHARED%d" % i)
           for i, d in enumerate(shared)
         ]
       else:
@@ -793,7 +793,7 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(options['invalid-shared-instance-list'], [])
 
   def test_jsonschema_shared_unwrapped_when_skip_shared_validation(self):
-    """json-in-xml shared entries get '_' decoded in place even when shared validation is skipped."""
+    """json-in-xml shared entries get '_' decoded in place and the payload keys mirrored at top level even when shared validation is skipped."""
     self.writeJsonSchema()
     parameters = {"number": 1}
     shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
@@ -803,8 +803,8 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(
         received,
         [
-          {"_": {"kind": 1}, "slave_reference": "SHARED0"},
-          {"_": {"kind": 2, "thing": "hello"}, "slave_reference": "SHARED1"},
+          {"_": {"kind": 1}, "kind": 1, "slave_reference": "SHARED0"},
+          {"_": {"kind": 2, "thing": "hello"}, "kind": 2, "thing": "hello", "slave_reference": "SHARED1"},
         ],
       )
 
@@ -846,15 +846,15 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(
         options['slave-instance-list'],
         [
-          {"_": {"kind": 1}, "slave_reference": "SHARED0"},
+          {"_": {"kind": 1}, "kind": 1, "slave_reference": "SHARED0"},
           {"kind": 1, "slave_reference": "SHARED1"},
-          {"_": {"kind": 2, "thing": "hello"}, "slave_reference": "SHARED2"},
+          {"_": {"kind": 2, "thing": "hello"}, "kind": 2, "thing": "hello", "slave_reference": "SHARED2"},
           {"kind": 2, "thing": "hello", "slave_reference": "SHARED3"},
         ],
       )
 
   def test_jsonschema_shared_unwrap_preserves_top_level_keys(self):
-    """All top-level keys (slave_title, slap_software_type, timestamp, ...) sit next to the decoded '_' payload."""
+    """All top-level keys (slave_title, slap_software_type, timestamp, ...) sit next to the decoded '_' payload, and payload keys are mirrored at top level too."""
     self.writeJsonSchema()
     parameters = {"number": 1}
     with self.patchSlap(parameters, shared=[]):
@@ -874,6 +874,7 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
         [
           {
             '_': {'kind': 1},
+            'kind': 1,
             'slave_reference': 'SHARED0',
             'slave_title': 'first-slave',
             'slap_software_type': 'default',
@@ -881,6 +882,31 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
           },
         ],
       )
+
+  def test_jsonschema_shared_unwrap_top_level_keys_win_on_collision(self):
+    """A payload key that collides with a system-injected sibling does not overwrite it."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    with self.patchSlap(parameters, shared=[]):
+      d = self.mock_computer_partition.getInstanceParameterDict.return_value
+      d['slave_instance_list'] = [
+        {
+          '_': json.dumps({
+            'kind': 1,
+            'slave_reference': 'PAYLOAD-OVERWRITE',
+            'slave_title': 'payload-overwrite',
+          }, sort_keys=True),
+          'slave_reference': 'SHARED0',
+          'slave_title': 'first-slave',
+        },
+      ]
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
+      received = options['slave-instance-list']
+      self.assertEqual(received[0]['slave_reference'], 'SHARED0')
+      self.assertEqual(received[0]['slave_title'], 'first-slave')
+      self.assertEqual(received[0]['kind'], 1)
+      self.assertEqual(received[0]['_']['slave_reference'], 'PAYLOAD-OVERWRITE')
+      self.assertEqual(received[0]['_']['slave_title'], 'payload-overwrite')
 
   def test_jsonschema_non_existing_main_software_type(self):
     self.writeJsonSchema()

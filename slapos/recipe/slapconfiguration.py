@@ -690,7 +690,11 @@ class JsonSchema(Recipe):
         for instance in options.get('slave-instance-list') or ():
           payload = instance.get(JSON_SERIALISED_MAGIC_KEY)
           if isinstance(payload, str):
-            instance[JSON_SERIALISED_MAGIC_KEY] = json.loads(payload)
+            payload = json.loads(payload)
+            instance[JSON_SERIALISED_MAGIC_KEY] = payload
+          if isinstance(payload, dict):
+            for k, v in payload.items():
+              instance.setdefault(k, v)
     if validate.main:
       schema = software_description.getInstanceRequestParameterSchema()
       if schema is None:
