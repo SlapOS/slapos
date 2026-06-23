@@ -251,13 +251,14 @@ inline ={{ custom_inbound_certificate | indent }}
 [inbound-postfix-certificate]
 recipe = slapos.recipe.build
 bundle = $${inbound-postfix-directory:ssl}/postfix-inbound.bundle.pem
+# Always install self-signed cert, even when inbound uses custom cert
+self-signed-bundle = $${postfix-certificate:bundle}
 {% if custom_inbound_certificate -%}
 selected-bundle = $${inbound-custom-certificate-bundle:output}
 {% else -%}
-selected-bundle = $${postfix-certificate:bundle}
+selected-bundle = $${:self-signed-bundle}
 {% endif %}
-init =
-  options['location'] = ''
+init = options['location'] = ''
 install =
   import os
   import shutil
@@ -416,7 +417,6 @@ hash-files =
   $${inbound-postfix-wrapper:output}
   $${policyd-spf-conf:output}
 depends =
-  $${postfix-certificate:recipe}
   $${inbound-postfix-certificate-reload:recipe}
   $${policyd-spf-conf:recipe}
 {% if greylisting_enable %}
