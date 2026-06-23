@@ -3,6 +3,11 @@
   "title": "ORS Cell",
   "type": "object",
   "properties": {
+    "fixed_mcs": {
+      "title": "Expert only: Fixed MCS",
+      "description": "Forces PUSCH and PDSCH MCS (range 0 to 28)",
+      "type": "number"
+    },
     "phr_link_adaptation": {
       "$ref": "cell/common.json#/properties/phr_link_adaptation"
     },
