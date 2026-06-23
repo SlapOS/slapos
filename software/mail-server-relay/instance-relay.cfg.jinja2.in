@@ -481,7 +481,6 @@ inline =
         sys.exit("Postfix does not serve the configured custom inbound certificate")
 
 [inbound-custom-certificate-served-promise]
-<= monitor-promise-base
 recipe = slapos.cookbook:promise.plugin
 eggs = slapos.core
 file = $${inbound-custom-certificate-served-sense:output}
