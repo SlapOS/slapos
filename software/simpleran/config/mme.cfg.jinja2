@@ -139,7 +139,7 @@
 {%- endfor -%}
 ],
       pdn_type: "ipv4v6",
-      tun_ifname:        "{{ slapparameter_dict.tun_name }}",
+      ifname:            "enp4s0",
       first_ip_addr:     "{{ slapparameter_dict.internet_ipv4_start }}",
       last_ip_addr:      "{{ slapparameter_dict.internet_ipv4_end   }}",
       first_ipv6_prefix: "{{ slapparameter_dict.internet_ipv6_start }}",
