@@ -2,6 +2,7 @@ global
   pidfile {{ configuration['pid-file'] }}
   # master-worker is compatible with foreground with process management
   master-worker
+  tune.bufsize 65536
   tune.http.logurilen 16384
   log {{ configuration['log-socket'] }} len 65535 local0
 
@@ -20,6 +21,11 @@ defaults
   retry-on conn-failure empty-response response-timeout
   {#- Allow to start with not resolved yet servers #}
   default-server init-addr last,libc,none
+{%- if configuration.get('error-pages-dir') %}
+{%-   for code in ['400', '408', '500', '502', '503', '504'] %}
+  errorfile {{ code }} {{ configuration['error-pages-dir'] }}/cluster/{{ code }}.http
+{%-   endfor %}
+{%- endif %}
 
 {%- set SCHEME_PREFIX_MAPPING = { 'http': 'http_backend', 'https': 'https_backend'} %}
 {%- macro frontend_entry(slave_reference, hostname, slave_instance, scheme) %}
@@ -135,6 +141,11 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         if path %}
   http-request set-path {{ path | replace('%', '%%') }}%[path,regsub('^/$','')]
 {%-         endif %}
+{%-       endif %}
+{%-       if configuration.get('error-pages-dir') %}
+  errorfile 502 {{ configuration['error-pages-dir'] }}/shared/{{ slave_instance['slave_reference'] }}/502.http
+  errorfile 503 {{ configuration['error-pages-dir'] }}/shared/{{ slave_instance['slave_reference'] }}/503.http
+  errorfile 504 {{ configuration['error-pages-dir'] }}/shared/{{ slave_instance['slave_reference'] }}/504.http
 {%-       endif %}
 {%-     endif %}
 {%-     if info_dict['health-check-failover-hostname'] and info_dict['health-check-failover-port'] %}
