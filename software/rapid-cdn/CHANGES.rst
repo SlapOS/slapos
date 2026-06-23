@@ -20,6 +20,25 @@ Unreleased
 
 Changes on ``master`` since 1.0.469 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.469...master>`__).
 
+Error Page Manager software type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The Software Release now exposes a new ``error-page-manager``
+software type, allocated automatically as an additional partition of
+each rapid-cdn cluster. The cluster publishes
+``error-page-manager-operator-url`` for cluster-wide error-page
+overrides. See ``README.rst`` for details. (`!1958 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/1958>`__)
+
+Per-site custom error pages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+Each shared instance now receives ``shared-error-page-information``,
+a new published parameter carrying a per-slave ``upload-url`` for
+custom 502/503/504 pages. See ``README.rst`` for the upload API and
+web UI. (`!1958 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/1958>`__)
+
 CDN instance node with a local audit database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
