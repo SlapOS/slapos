@@ -1,5 +1,3 @@
-{%- set slap_configuration = json_module.loads(slap_configuration) %}
-{%- set slapparameter_dict = json_module.loads(slapparameter_dict) %}
 {
   log_options: "all.level=error,all.max_size=0,nas.level=debug,nas.max_size=1,s1ap.level=debug,s1ap.max_size=1,ngap.level=debug,ngap.max_size=1,file.rotate=1G,file.path=/dev/null",
   log_filename: "{{ directory['log'] }}/mme.log",
@@ -33,16 +31,30 @@
 
   rx: {
     bind_addr: "127.0.1.100",
-    qci: {audio: 1, video: 2},
+    qos: {
+      audio: {
+        qci: 1
+      },
+      video: {
+        qci: 2
+      }
+    }
   },
-
+  qci_dscp_mapping: [
+    {
+      qci: 1,
+      dscp: 0x2e
+    },
+    {
+      qci: 65,
+      dscp: 0x2e
+    },
+  ],
 
   network_name: "{{ slapparameter_dict.network_name }}",
   network_short_name: "{{ slapparameter_dict.network_short_name }}",
-
   cp_ciot_opt: true,
-
-  nr_support: true,
+  dcnr_support: true,
 
 {%- set eps_5gs_interworking =
             {'With N26':    "with_n26",
@@ -104,7 +116,7 @@
 
       erabs: [
         {
-          qci: 9,
+          qci: 5,
           priority_level: 15,
           pre_emption_capability: "shall_not_trigger_pre_emption",
           pre_emption_vulnerability: "not_pre_emptable",
@@ -114,7 +126,6 @@
   ],
 
   tun_setup_script: "{{ ifup_empty }}",
-  ue_to_ue_forwarding: false,
   nas_cipher_algo_pref: [ ],
   nas_integ_algo_pref: [ 2, 1 ],
   ue_db_filename: "{{ directory['var'] }}/lte_ue.db",
