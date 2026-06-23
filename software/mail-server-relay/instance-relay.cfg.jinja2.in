@@ -82,7 +82,7 @@ bundle = $${directory:postfix-ssl}/$${:name}.bundle.pem
 openssl = ${openssl:location}/bin/openssl
 # Consider using public-key fingerprint instead of whole certificate fingerprint
 command =
-  test -e $${:key-file} || { \
+  test -e $${:bundle} || { \
     $${:openssl} req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
       -keyout $${:key-file} -out $${:cert-file}; \
     $${:openssl} x509 -noout -fingerprint -sha256 -in $${:cert-file} \
@@ -122,6 +122,7 @@ init =
   [%(impl-section)s]
   <= macro.postfix-spool-directory
   etc = $${directory:postfix-etc}/%(role)s
+  ssl = $${directory:postfix-etc}/%(role)s/ssl
   var-lib = $${directory:var-lib}/postfix/%(role)s
   var-spool = $${directory:var-lib}/postfix/%(role)s
   """ % options
@@ -238,6 +239,44 @@ content =
   policyd-spf  unix  -       n       n       -       0       spawn
     user=$${userinfo:pw-name} argv=${spf-engine:bin-directory}/policyd-spf $${policyd-spf-conf:output}
 
+{% set custom_inbound_certificate = slapparameter_dict.get('custom-inbound-certificate') -%}
+
+{% if custom_inbound_certificate -%}
+[inbound-custom-certificate-bundle]
+recipe = slapos.recipe.template
+output = $${inbound-postfix-directory:ssl}/custom.bundle.pem
+inline ={{ custom_inbound_certificate | indent }}
+{% endif %}
+
+[inbound-postfix-certificate]
+recipe = slapos.recipe.build
+bundle = $${inbound-postfix-directory:ssl}/postfix-inbound.bundle.pem
+{% if custom_inbound_certificate -%}
+selected-bundle = $${inbound-custom-certificate-bundle:output}
+{% else -%}
+selected-bundle = $${postfix-certificate:bundle}
+{% endif %}
+init =
+  options['location'] = ''
+install =
+  import os
+  import shutil
+  os.makedirs(os.path.dirname(options['bundle']), exist_ok=True)
+  shutil.copyfile(options['selected-bundle'], options['bundle'] + '.tmp')
+  os.replace(options['bundle'] + '.tmp', options['bundle'])
+
+[inbound-postfix-certificate-reload]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:service}/inbound-postfix-certificate-reload
+command-line =
+  /bin/sh -c
+  "${postfix:location}/usr/sbin/postfix -c $${inbound-postfix-directory:etc} status >/dev/null 2>&1 \
+    && ${postfix:location}/usr/sbin/postfix -c $${inbound-postfix-directory:etc} reload; \
+    exec /bin/sleep infinity"
+hash-files =
+  $${inbound-postfix-main.cf:output}
+  $${inbound-postfix-certificate:bundle}
+
 [inbound-postfix-main.cf]
 <= macro.postfix-main.cf
 output = $${inbound-postfix-directory:etc}/main.cf
@@ -290,8 +329,7 @@ content =
   transport_maps = texthash:$${internal-postfix-transport:output}
 
   # Server TLS parameters
-  smtpd_tls_cert_file = $${postfix-certificate:cert-file}
-  smtpd_tls_key_file = $${postfix-certificate:key-file}
+  smtpd_tls_chain_files = $${inbound-postfix-certificate:bundle}
   smtpd_tls_security_level = may
 
   # Client TLS parameters
@@ -379,6 +417,8 @@ hash-files =
   $${inbound-postfix-wrapper:output}
   $${policyd-spf-conf:output}
 depends =
+  $${postfix-certificate:recipe}
+  $${inbound-postfix-certificate-reload:recipe}
   $${policyd-spf-conf:recipe}
 {% if greylisting_enable %}
   $${postgrey-service:recipe}
@@ -397,6 +437,7 @@ recipe = slapos.recipe.build
 init =
   ""
 depends =
+  $${inbound-postfix-certificate:recipe}
   $${inbound-postfix-service:recipe}
   $${postfix-wrappers:depends}
   $${inbound-postfix-smtp-promise:recipe}
@@ -836,4 +877,3 @@ depends =
 {%- for postfix_wrapper in postfix_wrappers %}
   {{ "$${" + postfix_wrapper + ":recipe}" }}
 {%- endfor %}
-
