@@ -58,6 +58,7 @@ parts =
   ws-ims-websocket-promise
   ws-ims-nginx-launcher
   ws-ims-nginx-graceful
+  ims-mms-listen-promise
 # Don't add these sections during unit tests as there is no TUN IPv4 available
 {% if not slapparameter_dict.testing %}
 {%-  for i in range(slapparameter_dict.iperf3) %}
@@ -77,6 +78,13 @@ extends = {{ monitor_template }}
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
+
+[myslap]
+# NOTE we don't query slapos.cookbook:slapconfiguration the second time because
+# slapparameter_dict is potentially modified with defaults.
+slapparameter_dict = {{ dumps(slapparameter_dict) }}
+slap_configuration = {{ dumps(slap_configuration) }}
+sim_list = {{ dumps(sim_list) }}
 
 [monitor-httpd-conf-parameter]
 httpd-include-file = {{ buildout_directory }}/etc/httpd-include-file.conf
@@ -238,8 +246,8 @@ extensions = jinja2.ext.do
 extra-context =
 context =
   section directory directory
-  raw slap_configuration {{ json_module.dumps(slap_configuration) }}
-  raw slapparameter_dict {{ json_module.dumps(slap_configuration.configuration) }}
+  key slap_configuration myslap:slap_configuration
+  key slapparameter_dict myslap:slapparameter_dict
   raw gtp_addr_v6 {{ my_ipv6 }}
   raw gtp_addr_v4 {{ lan_ipv4 }}
   import json_module json
@@ -273,7 +281,7 @@ link-binary = ${mt-call-config:output}
 url = {{ ue_db_template }}
 output = ${directory:etc}/ue_db.cfg
 extra-context =
-  raw sim_list {{ json_module.dumps(sim_list) }}
+  key sim_list myslap:sim_list
 
 [publish-ue-db-config]
 <= publish-config-base
@@ -290,6 +298,13 @@ extra-context =
 <= publish-config-base
 link-binary = ${mme-config:output}
 
+[ims-mms-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = ims-mms-port-listening.py
+config-host = {{ slapparameter_dict.internet_ipv4 }}
+config-port = 1111
+
 {% if slapparameter_dict.get("local_domain", '') %}
 [dnsmasq-config]
 recipe = slapos.recipe.template:jinja2
@@ -301,8 +316,8 @@ context =
   import json_module json
   import netaddr netaddr
   section directory directory
-  raw slap_configuration {{ json_module.dumps(slap_configuration) }}
-  raw slapparameter_dict {{ json_module.dumps(slap_configuration.configuration) }}
+  key slap_configuration myslap:slap_configuration
+  key slapparameter_dict myslap:slapparameter_dict
 
 [dnsmasq-service]
 recipe = slapos.cookbook:wrapper
