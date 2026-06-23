@@ -140,6 +140,7 @@
 ],
       pdn_type: "ipv4v6",
       ifname:            "enp4s0",
+      gratuitous_arp: true,
       first_ip_addr:     "{{ slapparameter_dict.internet_ipv4_start }}",
       last_ip_addr:      "{{ slapparameter_dict.internet_ipv4_end   }}",
       first_ipv6_prefix: "{{ slapparameter_dict.internet_ipv6_start }}",
@@ -160,7 +161,7 @@
     },
   ],
 
-  tun_setup_script: "{{ ifup_empty }}",
+  tun_setup_script: "mme-ifup",
   nas_cipher_algo_pref: [ ],
   nas_integ_algo_pref: [ 2, 1 ],
   ue_db_filename: "{{ directory['var'] }}/lte_ue.db",
