@@ -431,7 +431,7 @@ name = inbound_smtp_listen.py
 config-host = {{ ipv6 }}
 config-port = $${inbound-postfix-main.cf:smtp-port}
 
-{% if custom_inbound_certificate %}
+{% if custom_inbound_certificate -%}
 [inbound-custom-certificate-expiration-promise]
 <= monitor-promise-base
 promise = check_command_execute
@@ -441,7 +441,7 @@ config-command =
     -in $${inbound-custom-certificate-bundle:output}
 config-bang-on-failure = false
 
-[inbound-custom-certificate-served-promise-script]
+[inbound-custom-certificate-served-sense]
 recipe = slapos.recipe.template
 output = $${directory:script}/check-inbound-custom-certificate-served.py
 inline =
@@ -449,38 +449,44 @@ inline =
   import ssl
   import sys
 
+  from zope.interface import implementer
+  from slapos.grid.promise import interface
+  from slapos.grid.promise.generic import GenericPromise
+
   host = {{ json_module.dumps(ipv6) }}
   port = int("$${inbound-postfix-main.cf:smtp-port}")
   certificate_pem_path = "$${inbound-custom-certificate-bundle:output}"
 
-  with open(certificate_pem_path) as certificate_file:
-    certificate_pem = certificate_file.read()
-  certificate_begin = "-----BEGIN CERTIFICATE-----"
-  certificate_end = "-----END CERTIFICATE-----"
-  begin = certificate_pem.index(certificate_begin)
-  end = certificate_pem.index(certificate_end, begin) + len(certificate_end)
-  expected_certificate_der = ssl.PEM_cert_to_DER_cert(certificate_pem[begin:end])
+  @implementer(interface.IPromise)
+  class RunPromise(GenericPromise):
+    def sense(self):
+      with open(certificate_pem_path) as certificate_file:
+        certificate_pem = certificate_file.read()
+      certificate_begin = "-----BEGIN CERTIFICATE-----"
+      certificate_end = "-----END CERTIFICATE-----"
+      begin = certificate_pem.index(certificate_begin)
+      end = certificate_pem.index(certificate_end, begin) + len(certificate_end)
+      expected_certificate_der = ssl.PEM_cert_to_DER_cert(certificate_pem[begin:end])
 
-  ssl_context = ssl.create_default_context()
-  ssl_context.check_hostname = False
-  ssl_context.verify_mode = ssl.CERT_NONE
+      ssl_context = ssl.create_default_context()
+      ssl_context.check_hostname = False
+      ssl_context.verify_mode = ssl.CERT_NONE
 
-  with smtplib.SMTP(host, port, timeout=10) as smtp:
-    smtp.ehlo()
-    smtp.starttls(context=ssl_context)
-    served_certificate_der = smtp.sock.getpeercert(binary_form=True)
+      with smtplib.SMTP(host, port, timeout=10) as smtp:
+        smtp.ehlo()
+        smtp.starttls(context=ssl_context)
+        served_certificate_der = smtp.sock.getpeercert(binary_form=True)
 
-  if served_certificate_der != expected_certificate_der:
-    sys.exit("Postfix does not serve the configured custom inbound certificate")
+      if served_certificate_der != expected_certificate_der:
+        sys.exit("Postfix does not serve the configured custom inbound certificate")
 
 [inbound-custom-certificate-served-promise]
 <= monitor-promise-base
-promise = check_command_execute
-name = inbound_custom_certificate_served.py
-config-command = ${buildout:executable} $${inbound-custom-certificate-served-promise-script:output}
-config-bang-on-failure = false
-
-{% endif %}
+recipe = slapos.cookbook:promise.plugin
+eggs = slapos.core
+file = $${inbound-custom-certificate-served-sense:output}
+output = $${directory:plugins}/inbound_custom_certificate_served.py
+{%- endif %}
 
 [inbound-postfix]
 recipe = slapos.recipe.build
@@ -491,11 +497,10 @@ depends =
   $${inbound-postfix-service:recipe}
   $${postfix-wrappers:depends}
   $${inbound-postfix-smtp-promise:recipe}
-{% if custom_inbound_certificate %}
+{%- if custom_inbound_certificate %}
   $${inbound-custom-certificate-expiration-promise:recipe}
-  $${inbound-custom-certificate-served-promise-script:recipe}
   $${inbound-custom-certificate-served-promise:recipe}
-{% endif %}
+{%- endif %}
   $${inbound-postfix-shell-env:recipe}
 
 [inbound-logrotate-entry-postfix]
