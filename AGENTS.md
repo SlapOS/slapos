@@ -5,13 +5,50 @@ agents that follow the [agents.md](https://agents.md) spec (OpenAI Codex,
 OpenCode, Aider, Gemini CLI, Cursor, GitHub Copilot, Block Goose, etc.).
 Claude Code reads its own thin `CLAUDE.md`, which imports this file.
 
+## Agent tooling lives in installable plugins
+
+The SlapOS development skills and the coding-rules knowledge base are not
+vendored here — they are two standalone, agent-agnostic
+[Agent Skills](https://agentskills.io) repositories, each also a Claude Code
+plugin marketplace:
+
+- **[slapos-agent-skills](https://lab.nexedi.com/cedric.leninivin/slapos-agent-skills)**
+  — scaffolding, build/deploy, and diagnostics skills (plus buildout-hash and
+  rebuild/reprocess hooks).
+- **[slapos-coding-rules](https://lab.nexedi.com/cedric.leninivin/slapos-coding-rules)**
+  — the harvested coding-rules tables, the harvest pipeline, and a commit-check
+  hook.
+
+Claude Code users: `.claude/settings.json` pre-registers both marketplaces, so
+the plugins are offered for install on open (see `CLAUDE.md`). Other agents
+install manually — clone each repo and point your agent at its
+`plugins/*/skills/<name>/SKILL.md` directories (or use a helper like
+`npx skills`); see each repo's `README.md`.
+
+## Before substantive changes, consult the coding rules
+
+The slapos codebase accumulates conventions that only surface in MR review
+comments. They are collected in the **slapos-coding-rules** plugin under
+`docs/coding-rules/`:
+
+- `INDEX.md` — overview, per-area rule counts
+- `<area>.md` — rules grouped by the part of the repo they apply to (e.g.
+  `recipe.md` for `slapos/recipe/`, `software-cross.md` for cross-SR conventions)
+
+Each rule is a table row with a stable ID, the rule text, rationale, and links
+to the supporting MR comments. **Treat `proposed`/`soft` rules as advice and
+`promoted`/`accepted` rules as binding.** If a rule contradicts other
+documentation, flag the conflict to the user — don't silently pick one. With the
+plugin installed, its PreToolUse hook also warns when a staged commit appears to
+contradict a rule.
+
 ## Project Overview
 
 **slapos.cookbook** is a Python package providing 90+ [zc.buildout](https://www.buildout.org/) recipes for the [SlapOS](https://slapos.nexedi.com/) distributed cloud operating system. Each recipe is a buildout plugin that configures and deploys a specific software component within a SlapOS partition.
 
 ## Local Environment
 
-Machine-specific paths are stored in `.claude/env.local.json` (not committed). Copy `.claude/env.local.json.example` and fill in paths for your environment. Keys:
+Machine-specific paths are stored in `.claude/env.local.json` (not committed). Copy the `env.local.json.example` template from the slapos-agent-skills plugin into `.claude/env.local.json` and fill in paths for your environment. Keys:
 
 - `cookbook-repository`: path to the slapos.cookbook checkout used for running unit tests
 - `slapos-egg-testing-environment`: path to `slapos-local-development-environment.sh` for egg unit tests
@@ -187,7 +224,7 @@ All recipes are registered as `zc.buildout` entry points in `setup.py`. A recipe
 
 Key rule: **never use `check_command_execute` for Python logic** — use `slapos.cookbook:promise.plugin` instead (shared process per partition vs new process per check).
 
-For a step-by-step walkthrough of generating buildout sections for a new promise, see `.claude/skills/add-promise/SKILL.md`. The skill follows the [Agent Skills](https://agentskills.io) (`SKILL.md`) spec and is loaded by any Agent-Skills-compatible agent (Claude Code, OpenCode, Codex, Gemini CLI, Goose, …).
+For a step-by-step walkthrough of generating buildout sections for a new promise, install the slapos-agent-skills plugin and use its `add-promise` skill (`/add-promise` in Claude Code). The skill follows the [Agent Skills](https://agentskills.io) (`SKILL.md`) spec and is loaded by any Agent-Skills-compatible agent (Claude Code, OpenCode, Codex, Gemini CLI, Goose, …).
 
 ## Deploying and Testing Configuration Changes
 

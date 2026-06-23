@@ -1,31 +1,22 @@
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/update-hash-on-edit.sh",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/remind-rebuild.sh",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/remind-reprocess.sh",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-hash-consistency.sh",
-            "timeout": 10
-          }
-        ]
+  "extraKnownMarketplaces": {
+    "slapos-agent-skills": {
+      "source": {
+        "source": "git",
+        "url": "https://lab.nexedi.com/cedric.leninivin/slapos-agent-skills.git"
       }
-    ]
+    },
+    "slapos-coding-rules": {
+      "source": {
+        "source": "git",
+        "url": "https://lab.nexedi.com/cedric.leninivin/slapos-coding-rules.git"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "slapos-scaffolding@slapos-agent-skills": true,
+    "slapos-build-deploy@slapos-agent-skills": true,
+    "slapos-diagnostics@slapos-agent-skills": true,
+    "slapos-coding-rules@slapos-coding-rules": true
   }
 }
