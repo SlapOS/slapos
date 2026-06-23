@@ -354,6 +354,10 @@
       p_a: {{ {4: -6, 2: -3}.get(ru.n_antenna_dl, 0) }},
       p_b: -1,
     },
+{%- if "fixed_mcs" in cell %}
+    pusch_mcs: {{ cell.fixed_mcs }},
+    pdsch_mcs: {{ cell.fixed_mcs }},
+{%- endif %}
     pdcch_format:       {{  1   if n_rb_dl == 6  else 2 }},
     prach_config_index: {{  15  if n_rb_dl == 6  else 4 }},
     initial_cqi:        {{  5   if n_rb_dl == 6  else 3 }},
@@ -1017,12 +1021,18 @@
 {%-     endif %}
         },
         pdsch: {
+{%-     if "fixed_mcs" in cell %}
+          mcs: {{ cell.fixed_mcs }},
+{%-     endif %}
 {%-     if ru.ru_type == "sunwave" %}
           k0: 0,
           k1: [ 8, 7, 7, 6, 5, 4, 12, 11 ],
 {%-     endif %}
         },
         pusch: {
+{%-     if "fixed_mcs" in cell %}
+          mcs: {{ cell.fixed_mcs }},
+{%-     endif %}
           phr_link_adaptation: {{ cell.phr_link_adaptation |tojson }},
 {%-     if cell.get('enable_ul_su_mimo', False) %}
           max_rank: {{ ru.n_antenna_ul }},
