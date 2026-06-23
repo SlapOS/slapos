@@ -439,6 +439,45 @@ name = inbound_custom_certificate_not_expired.py
 config-command = ${openssl:location}/bin/openssl x509 -checkend 0 -noout -in $${inbound-custom-certificate-bundle:output}
 config-bang-on-failure = false
 
+[inbound-custom-certificate-served-promise-script]
+recipe = slapos.recipe.template
+output = $${directory:script}/check-inbound-custom-certificate-served.py
+inline =
+  import smtplib
+  import ssl
+  import sys
+
+  host = {{ json_module.dumps(ipv6) }}
+  port = int("$${inbound-postfix-main.cf:smtp-port}")
+  certificate_pem_path = "$${inbound-custom-certificate-bundle:output}"
+
+  with open(certificate_pem_path) as certificate_file:
+    certificate_pem = certificate_file.read()
+  certificate_begin = "-----BEGIN CERTIFICATE-----"
+  certificate_end = "-----END CERTIFICATE-----"
+  begin = certificate_pem.index(certificate_begin)
+  end = certificate_pem.index(certificate_end, begin) + len(certificate_end)
+  expected_certificate_der = ssl.PEM_cert_to_DER_cert(certificate_pem[begin:end])
+
+  ssl_context = ssl.create_default_context()
+  ssl_context.check_hostname = False
+  ssl_context.verify_mode = ssl.CERT_NONE
+
+  with smtplib.SMTP(host, port, timeout=10) as smtp:
+    smtp.ehlo()
+    smtp.starttls(context=ssl_context)
+    served_certificate_der = smtp.sock.getpeercert(binary_form=True)
+
+  if served_certificate_der != expected_certificate_der:
+    sys.exit("Postfix does not serve the configured custom inbound certificate")
+
+[inbound-custom-certificate-served-promise]
+<= monitor-promise-base
+promise = check_command_execute
+name = inbound_custom_certificate_served.py
+config-command = ${buildout:executable} $${inbound-custom-certificate-served-promise-script:output}
+config-bang-on-failure = false
+
 {% endif %}
 
 [inbound-postfix]
@@ -452,6 +491,8 @@ depends =
   $${inbound-postfix-smtp-promise:recipe}
 {% if custom_inbound_certificate %}
   $${inbound-custom-certificate-expiration-promise:recipe}
+  $${inbound-custom-certificate-served-promise-script:recipe}
+  $${inbound-custom-certificate-served-promise:recipe}
 {% endif %}
   $${inbound-postfix-shell-env:recipe}
 
