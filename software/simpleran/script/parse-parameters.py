@@ -999,7 +999,7 @@ def core_network(config, publish, shared_list):
         force_ipv6_list = []
         for s in sim_list:
             ip = s.get('force_ip', None)
-            if ip and valid_ip(network, ip):
+            if ip:
                 s['ip'] = ip
                 force_ip_list.append(ip)
             ipv6 = s.get('force_ipv6', None)
