@@ -28,6 +28,11 @@
 import os
 import json
 import smtplib
+import shutil
+import ssl
+import subprocess
+import tempfile
+import time
 
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
@@ -148,6 +153,238 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       )
 
 
+class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
+  __partition_reference__ = 'custom-inbound-certificate'
+
+  relay_name = "relay-custom-cert"
+  relay_fqdn = "custom-inbound.relay.lan"
+  relay_inbound_port = 10025
+  smtp_timeout = 60
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'cluster'
+
+  @classmethod
+  def makeParameterDict(
+      cls,
+      custom_inbound_certificate=None,
+      relay_name=None,
+      relay_fqdn=None,
+  ):
+    relay_config = {
+      "fqdn": relay_fqdn or cls.relay_fqdn,
+    }
+    if custom_inbound_certificate is not None:
+      relay_config["custom-inbound-certificate"] = custom_inbound_certificate
+    return {
+      "_": json.dumps({
+        "topology": {
+          relay_name or cls.relay_name: relay_config,
+        },
+      })
+    }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return cls.makeParameterDict()
+
+  def requestCluster(self, custom_inbound_certificate=None):
+    return self.slap.request(
+      software_release=self.getSoftwareURL(),
+      partition_reference=self.__partition_reference__,
+      partition_parameter_kw=self.makeParameterDict(custom_inbound_certificate),
+      software_type='cluster',
+      state='started',
+    )
+
+  def requestClusterAndWait(self, custom_inbound_certificate=None):
+    self.requestCluster(custom_inbound_certificate)
+    for _ in range(2):
+      self.waitForInstance()
+    return self.requestCluster(custom_inbound_certificate)
+
+  def requestStandaloneClusterAndWait(
+      self,
+      partition_reference,
+      relay_name,
+      relay_fqdn,
+      custom_inbound_certificate,
+  ):
+    def requester():
+      return self.slap.request(
+        software_release=self.getSoftwareURL(),
+        partition_reference=partition_reference,
+        partition_parameter_kw=self.makeParameterDict(
+          custom_inbound_certificate,
+          relay_name=relay_name,
+          relay_fqdn=relay_fqdn,
+        ),
+        software_type='cluster',
+        state='started',
+      )
+    requester()
+    self.waitForInstance()
+    self.waitForInstance()
+    return requester()
+
+  @classmethod
+  def partitionPath(cls, cp, *paths):
+    return os.path.join(cls.slap.instance_directory, cp.getId(), *paths)
+
+  def getRelayPartition(self, relay_fqdn=None):
+    expected_fqdn_line = "myhostname = %s" % (relay_fqdn or self.relay_fqdn)
+    relay_list = []
+    for cp in self.slap.computer.getComputerPartitionList():
+      main_cf_path = self.partitionPath(cp, 'etc', 'postfix', 'inbound', 'main.cf')
+      if os.path.exists(main_cf_path):
+        with open(main_cf_path) as f:
+          if expected_fqdn_line in f.read():
+            relay_list.append((os.path.getmtime(main_cf_path), cp))
+    if relay_list:
+      return max(relay_list, key=lambda x: x[0])[1]
+    raise AssertionError(
+      "Could not find relay partition for %s" % (relay_fqdn or self.relay_fqdn)
+    )
+
+  def getRelayCertificatePathDict(self, relay):
+    return {
+      "default-cert": self.partitionPath(relay, 'etc', 'postfix', 'ssl', 'postfix.crt'),
+      "default-key": self.partitionPath(relay, 'etc', 'postfix', 'ssl', 'postfix.key'),
+      "inbound-bundle": self.partitionPath(
+        relay, 'etc', 'postfix', 'inbound', 'ssl', 'postfix-inbound.bundle.pem'
+      ),
+    }
+
+  @staticmethod
+  def readFile(path):
+    with open(path, "rb") as f:
+      return f.read()
+
+  @staticmethod
+  def pemToDer(certificate_pem):
+    return ssl.PEM_cert_to_DER_cert(certificate_pem.strip())
+
+  def getRelayHost(self, cluster=None):
+    connection_dict = json.loads(
+      (cluster or self.computer_partition).getConnectionParameterDict().get("_", "{}")
+    )
+    self.assertIn("relay-hosts", connection_dict)
+    return connection_dict["relay-hosts"][0]
+
+  def getServedInboundCertificateDer(self, cluster=None):
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+    with smtplib.SMTP(
+      self.getRelayHost(cluster),
+      self.relay_inbound_port,
+      timeout=self.smtp_timeout,
+    ) as smtp:
+      smtp.ehlo()
+      smtp.starttls(context=ssl_context)
+      return smtp.sock.getpeercert(binary_form=True)
+
+  def assertServedInboundCertificate(self, expected_certificate_pem, cluster=None):
+    expected_certificate_der = self.pemToDer(expected_certificate_pem)
+    deadline = time.time() + self.smtp_timeout
+    last_certificate_der = None
+    last_error = None
+    while True:
+      try:
+        last_certificate_der = self.getServedInboundCertificateDer(cluster)
+        last_error = None
+        if expected_certificate_der == last_certificate_der:
+          return
+      except Exception as e:
+        last_error = e
+
+      if time.time() >= deadline:
+        if last_error is not None:
+          raise AssertionError(
+            "Postfix did not serve the expected inbound certificate: %r"
+            % last_error
+          )
+        self.assertEqual(expected_certificate_der, last_certificate_der)
+      time.sleep(2)
+
+  @classmethod
+  def generateCertificate(cls, fqdn):
+    openssl = shutil.which("openssl") or "/usr/bin/openssl"
+    with tempfile.TemporaryDirectory() as tempdir:
+      cert = os.path.join(tempdir, "cert.pem")
+      key = os.path.join(tempdir, "key.pem")
+      subprocess.check_call(
+        [
+          openssl,
+          "req",
+          "-x509",
+          "-newkey",
+          "rsa:2048",
+          "-nodes",
+          "-days",
+          "30",
+          "-sha256",
+          "-subj",
+          "/CN=%s" % fqdn,
+          "-addext",
+          "subjectAltName=DNS:%s" % fqdn,
+          "-keyout",
+          key,
+          "-out",
+          cert,
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+      )
+      with open(cert) as cert_file, open(key) as key_file:
+        cert_pem = cert_file.read()
+        key_pem = key_file.read()
+        return {
+          "cert": cert_pem,
+          "key": key_pem,
+          "bundle": key_pem + cert_pem,
+        }
+
+  def assertCustomCertificateWritten(self, path_dict, certificate):
+    self.assertEqual(
+      certificate["bundle"].encode().strip(),
+      self.readFile(path_dict["inbound-bundle"]).strip(),
+    )
+
+  def test_custom_inbound_certificate_lifecycle(self):
+    relay = self.getRelayPartition()
+    path_dict = self.getRelayCertificatePathDict(relay)
+
+    self.assertServedInboundCertificate(
+      self.readFile(path_dict["default-cert"]).decode()
+    )
+
+    valid_certificate = self.generateCertificate(self.relay_fqdn)
+    cluster = self.requestClusterAndWait(valid_certificate["bundle"])
+    relay = self.getRelayPartition()
+    path_dict = self.getRelayCertificatePathDict(relay)
+
+    self.assertCustomCertificateWritten(path_dict, valid_certificate)
+    self.assertServedInboundCertificate(valid_certificate["cert"], cluster)
+
+  def test_custom_inbound_certificate_on_initial_request(self):
+    relay_name = "relay-custom-cert-initial"
+    relay_fqdn = "custom-inbound-initial.relay.lan"
+    valid_certificate = self.generateCertificate(relay_fqdn)
+    cluster = self.requestStandaloneClusterAndWait(
+      "custom-inbound-certificate-initial",
+      relay_name,
+      relay_fqdn,
+      valid_certificate["bundle"],
+    )
+    relay = self.getRelayPartition(relay_fqdn)
+    path_dict = self.getRelayCertificatePathDict(relay)
+
+    self.assertCustomCertificateWritten(path_dict, valid_certificate)
+    self.assertServedInboundCertificate(valid_certificate["cert"], cluster)
+
+
 class ProxyMapDuplicateDomainTestCase(SlapOSInstanceTestCase):
   """Test case for proxy-map with duplicate domains across proxies.
   
@@ -213,4 +450,3 @@ class ProxyMapDuplicateDomainTestCase(SlapOSInstanceTestCase):
                   "Error should mention the duplicate domain")
     self.assertIn("appears in multiple proxies", error_text.lower(),
                   "Error should indicate domain appears in multiple proxies")
-
