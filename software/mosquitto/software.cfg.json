@@ -1,0 +1,14 @@
+{
+  "name": "mosquitto",
+  "description": "Mosquitto is an open source (EPL/EDL licensed) message broker that implements the MQTT protocol.",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-input-schema.json",
+      "response": "instance-output-schema.json"
+    }
+  }
+}
