@@ -31,6 +31,7 @@ single-default = dynamic-profile-frontend:output
 single-custom-personal = dynamic-profile-frontend:output
 replicate = dynamic-profile-master:output
 kedifa = dynamic-profile-kedifa:output
+error-page-manager = dynamic-profile-error-page-manager:output
 
 [software-parameter-section]
 {% for key,value in software_parameter_dict.items() %}
@@ -68,6 +69,13 @@ filename = instance-kedifa.cfg
 extra-context =
   raw software_type kedifa
 
+[dynamic-profile-error-page-manager]
+< = jinja2-template-base
+url = {{ software_parameter_dict['profile_error_page_manager'] }}
+filename = instance-error-page-manager.cfg
+extra-context =
+  raw software_type error-page-manager
+
 [slap-configuration]
 # Fetches parameters defined in SlapOS Master for this instance.
 # Always the same.
@@ -78,6 +86,7 @@ depends =
   {{ software_parameter_dict['instance-frontend-input-schema.json'] }}
   {{ software_parameter_dict['instance-slave-input-schema.json'] }}
   {{ software_parameter_dict['instance-kedifa-input-schema.json'] }}
+  {{ software_parameter_dict['instance-error-page-manager-input-schema.json'] }}
 set-default = main
 validate-parameters = main
 report-error = main
