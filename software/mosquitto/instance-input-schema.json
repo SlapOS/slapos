@@ -1,7 +1,7 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Parameters to instantiate mosquitto.",
   "type": "object",
-  "configuration": {
-  }
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "No Input Parameters for mosquitto.",
+  "properties": {},
+  "additionalProperties": false
 }
