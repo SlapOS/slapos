@@ -74,12 +74,22 @@
       "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
       "type": "boolean"
     },
+    "internet_ipv4_start": {
+      "title": "Internet PDN's first IPv4 prefix",
+      "description": "first_ipv4_prefix of the internet PDN",
+      "type": "string"
+    },
+    "internet_ipv4_end": {
+      "title": "Internet PDN's last IPv4 prefix",
+      "description": "last_ipv4_prefix of the internet PDN",
+      "type": "string"
+    },
     "internet_ipv6_start": {
       "title": "Internet PDN's first IPv6 prefix",
       "description": "first_ipv6_prefix of the internet PDN",
       "type": "string"
     },
-    "internet_ipv6_last": {
+    "internet_ipv6_end": {
       "title": "Internet PDN's last IPv6 prefix",
       "description": "last_ipv6_prefix of the internet PDN",
       "type": "string"
