@@ -37,7 +37,7 @@
 static int die(const char *fmt, ...);
 static int die_err(const char *msg);
 
-int main(int argc, const char *argv[]) {
+int main(int argc, char * const argv[]) {
     cap_t caps;
     cap_value_t cap;
     cap_flag_value_t flag;
