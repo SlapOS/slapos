@@ -6348,9 +6348,12 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def _assertEnforcedCompression(
     self, slave_ref, expected_canonical):
+    # Drive the three branches of enforced-compression: absent AE
+    # (rewrite fires), `Accept-Encoding: *` (rewrite fires), and a
+    # concrete AE (rewrite does NOT fire). See README "Enforced
+    # Accept-Encoding compression".
     parameter_dict = self.assertSlaveBase(slave_ref)
 
-    # Absent Accept-Encoding: rewrite fires.
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
@@ -6366,7 +6369,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         expected_canonical,
         result.json()['Incoming Headers']['accept-encoding'])
 
-    # Accept-Encoding: * — rewrite fires.
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
