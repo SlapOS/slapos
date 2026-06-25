@@ -686,12 +686,13 @@ class JsonSchema(Recipe):
     unstringify_types_dict = {'integer': int, 'boolean': str_to_bool}
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
       parameter_dict = unwrap(parameter_dict)
-      if not validate.shared:
+      unwrap_shared = options.get(
+        'unwrap-shared', 'true').lower() not in ('false', '0', 'no')
+      if unwrap_shared and not validate.shared:
         for instance in options.get('slave-instance-list') or ():
-          payload = instance.get(JSON_SERIALISED_MAGIC_KEY)
+          payload = instance.pop(JSON_SERIALISED_MAGIC_KEY, None)
           if isinstance(payload, str):
             payload = json.loads(payload)
-            instance[JSON_SERIALISED_MAGIC_KEY] = payload
           if isinstance(payload, dict):
             for k, v in payload.items():
               instance.setdefault(k, v)

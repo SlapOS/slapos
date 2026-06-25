@@ -721,17 +721,13 @@ class JsonSchemaSharedTest(JsonSchemaTestCase):
     with self.patchSlap(parameters, shared):
       options = self.runJsonSchemaRecipe({'validate-parameters': 'main'})
       received = options['slave-instance-list']
-      if self.serialise and self.serialisation != 'xml':
-        expected = [
-          dict(d, _=d, slave_reference="SHARED%d" % i)
-          for i, d in enumerate(shared)
-        ]
-      else:
-        expected = [
+      self.assertEqual(
+        received,
+        [
           dict(d, slave_reference="SHARED%d" % i)
           for i, d in enumerate(shared)
-        ]
-      self.assertEqual(received, expected)
+        ],
+      )
 
 
 class JsonSchemaSharedTestUnserialised(JsonSchemaSharedTest):
@@ -793,7 +789,7 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(options['invalid-shared-instance-list'], [])
 
   def test_jsonschema_shared_unwrapped_when_skip_shared_validation(self):
-    """json-in-xml shared entries get '_' decoded in place and the payload keys mirrored at top level even when shared validation is skipped."""
+    """json-in-xml shared entries have '_' popped and the decoded payload merged at top level even when shared validation is skipped."""
     self.writeJsonSchema()
     parameters = {"number": 1}
     shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
@@ -803,8 +799,29 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(
         received,
         [
-          {"_": {"kind": 1}, "kind": 1, "slave_reference": "SHARED0"},
-          {"_": {"kind": 2, "thing": "hello"}, "kind": 2, "thing": "hello", "slave_reference": "SHARED1"},
+          {"kind": 1, "slave_reference": "SHARED0"},
+          {"kind": 2, "thing": "hello", "slave_reference": "SHARED1"},
+        ],
+      )
+
+  def test_jsonschema_shared_unwrap_disabled(self):
+    """When unwrap-shared=false the recipe leaves slave-instance-list untouched: '_' stays as a JSON string."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}, {"kind": 2, "thing": "hello"}]
+    with self.patchSlap(parameters, shared):
+      options = self.runJsonSchemaRecipe({
+        'validate-parameters': 'main',
+        'unwrap-shared': 'false',
+      })
+      received = options['slave-instance-list']
+      self.assertEqual(
+        received,
+        [
+          {"_": json.dumps({"kind": 1}, sort_keys=True),
+           "slave_reference": "SHARED0"},
+          {"_": json.dumps({"kind": 2, "thing": "hello"}, sort_keys=True),
+           "slave_reference": "SHARED1"},
         ],
       )
 
@@ -846,15 +863,15 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(
         options['slave-instance-list'],
         [
-          {"_": {"kind": 1}, "kind": 1, "slave_reference": "SHARED0"},
+          {"kind": 1, "slave_reference": "SHARED0"},
           {"kind": 1, "slave_reference": "SHARED1"},
-          {"_": {"kind": 2, "thing": "hello"}, "kind": 2, "thing": "hello", "slave_reference": "SHARED2"},
+          {"kind": 2, "thing": "hello", "slave_reference": "SHARED2"},
           {"kind": 2, "thing": "hello", "slave_reference": "SHARED3"},
         ],
       )
 
   def test_jsonschema_shared_unwrap_preserves_top_level_keys(self):
-    """All top-level keys (slave_title, slap_software_type, timestamp, ...) sit next to the decoded '_' payload, and payload keys are mirrored at top level too."""
+    """All top-level keys (slave_title, slap_software_type, timestamp, ...) stay at root next to the merged payload."""
     self.writeJsonSchema()
     parameters = {"number": 1}
     with self.patchSlap(parameters, shared=[]):
@@ -873,7 +890,6 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
         options['slave-instance-list'],
         [
           {
-            '_': {'kind': 1},
             'kind': 1,
             'slave_reference': 'SHARED0',
             'slave_title': 'first-slave',
@@ -905,8 +921,7 @@ class JsonSchemaTestMisc(JsonSchemaTestCase):
       self.assertEqual(received[0]['slave_reference'], 'SHARED0')
       self.assertEqual(received[0]['slave_title'], 'first-slave')
       self.assertEqual(received[0]['kind'], 1)
-      self.assertEqual(received[0]['_']['slave_reference'], 'PAYLOAD-OVERWRITE')
-      self.assertEqual(received[0]['_']['slave_title'], 'payload-overwrite')
+      self.assertNotIn('_', received[0])
 
   def test_jsonschema_non_existing_main_software_type(self):
     self.writeJsonSchema()
