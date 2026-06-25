@@ -6124,9 +6124,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(
       'gzip, deflate', result.json()['Incoming Headers']['accept-encoding'])
 
-    # Single `gzip` token (no deflate) -- the substring matcher still
-    # picks the gzip bucket, so the backend receives the canonical
-    # `gzip, deflate` form.
+    # Edge cases for the substring bucketing -- see README
+    # "Accept-Encoding normalization" for the mapping table.
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
@@ -6137,9 +6136,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(
       'gzip, deflate', result.json()['Incoming Headers']['accept-encoding'])
 
-    # Unknown encoding tokens mixed with a recognised one: the unknown
-    # tokens are ignored, the strongest recognised token still decides
-    # the bucket. `gzip, weirdcoding, deflate` -> `gzip, deflate`.
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
@@ -6150,8 +6146,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(
       'gzip, deflate', result.json()['Incoming Headers']['accept-encoding'])
 
-    # Recognised token preceded by an unknown one still buckets
-    # correctly: `weirdcoding, deflate` -> `deflate`.
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
@@ -6162,7 +6156,6 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertEqual(
       'deflate', result.json()['Incoming Headers']['accept-encoding'])
 
-    # No recognised token at all -- the header is left as-is.
     result = fakeHTTPSResult(
       parameter_dict['domain'],
       'test-path/deep/.././deeper',
@@ -6318,9 +6311,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     )
 
   def test_no_normalize_accept_encoding(self):
-    # Opt-out: when `normalize-accept-encoding` is explicitly false, the
-    # rewrite block at frontend-haproxy is skipped entirely and the
-    # client's Accept-Encoding is forwarded to the backend verbatim.
+    # Opt-out: `normalize-accept-encoding: false` forwards the client's
+    # AE verbatim. See README "Accept-Encoding normalization".
     parameter_dict = self.assertSlaveBase('no-normalize-accept-encoding')
 
     for client_ae in (
