@@ -553,3 +553,31 @@ Caveats
 """""""
 
 Synthesising an ``Accept-Encoding`` when the client sent none is more aggressive than the major CDNs (CloudFront, Cloudflare, Fastly) do -- they only normalize what the client sent. We do it because typical origins return ``identity`` when no preference was expressed, wasting bandwidth at every hop. The cluster operator opts in by leaving the default at ``gzip``; setting cluster-level ``enforced-compression: none`` reverts to the more conservative behaviour.
+
+ATS variant-cache cap
+~~~~~~~~~~~~~~~~~~~~~
+
+Apache Traffic Server caps the number of cached variants per URL with ``proxy.config.cache.limits.http.max_alts`` (set in ``templates/trafficserver/records.config.jinja2``). The ATS default is 5; Rapid.CDN sets it to **32**.
+
+Variant pressure
+""""""""""""""""
+
+``normalize-accept-encoding`` produces up to four canonical ``Accept-Encoding`` strings (``deflate`` / ``gzip, deflate`` / ``br, gzip, deflate`` / ``zstd, br, gzip, deflate``), and ``enforced-compression`` covers the same four buckets. Real-world ``Vary`` headers commonly add at least one more dimension (``Accept-Language``, a User-Agent class, Cookie-keyed segments). Eight-to-sixteen distinct variants per URL are reachable today, and that number will only grow.
+
+Behaviour at the boundary
+"""""""""""""""""""""""""
+
+When the alternate count exceeds ``max_alts``, ATS evicts in FIFO order -- writing the (cap+1)th alternate kicks out the very first one written. That alone is benign. The risk is the cascade: if a workload re-requests variants in the same order they were written, every refetch hits a just-evicted slot and triggers another eviction in turn, and the hit rate cascades to zero for that URL while ATS keeps honestly performing one eviction per write. We confirmed this end-to-end against ATS 9.2.13 -- with ``max_alts=5``, six sequential variants and same-order refetch produced zero cache hits and seven alternate-eviction STATUS log lines.
+
+Why 32
+""""""
+
+Setting ``max_alts=32`` leaves comfortable headroom above the worst-case ``Vary`` cardinality the SR can produce and eliminates the cascade risk. The cost is roughly **80 KB of extra first-doc metadata per hot URL**: the alternate vector marshals stored request/response headers, not bodies, so disk write-amplification on bodies is unchanged. The alternate-selection scan is O(N), but at N=32 the linear pass is microseconds. Larger values (64+) are technically fine but signal a ``Vary`` design that is growing unbounded -- prefer attacking the ``Vary`` key over raising the cap further.
+
+Tests
+"""""
+
+Two tests in ``TestSlave`` document the boundary:
+
+* ``test_vary_variant_capacity_at_limit`` -- 32 distinct variants, all served from cache.
+* ``test_vary_variant_capacity_above_limit`` -- 33 distinct variants written, refetched newest-first to avoid the cascade; 32 survive, the oldest write evicted.

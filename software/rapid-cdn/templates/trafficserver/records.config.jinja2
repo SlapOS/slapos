@@ -133,19 +133,10 @@ CONFIG proxy.config.net.max_requests_in INT 10000
 CONFIG proxy.config.cache.ram_cache.size INT {{ ats_configuration.get('ram-cache-size', '1G') }}
 CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
     # https://docs.trafficserver.apache.org/records.config#proxy-config-cache-limits-http-max-alts
-    # Per-URL cap on cached `Vary` alternates. Default ATS value is 5,
-    # which is too tight for our workload: normalize-accept-encoding and
-    # enforced-compression together produce up to 4 canonical
-    # Accept-Encoding buckets, and real-world `Vary` headers commonly
-    # add a second dimension (Accept-Language, User-Agent class, ...).
-    # When the alternate count exceeds the cap, ATS evicts in FIFO order
-    # (oldest write first). If subsequent requests come in the same order
-    # the alternates were originally written, each refetch hits a
-    # just-evicted slot and triggers another eviction in turn -- the hit
-    # rate cascades to zero for that URL. Setting the cap to 32 leaves
-    # comfortable headroom above the worst-case Vary cardinality and
-    # eliminates the cascade risk, at the cost of ~80 KB extra first-doc
-    # metadata per hot URL (negligible).
+    # Per-URL cap on cached `Vary` alternates. ATS default is 5, raised
+    # to 32 to absorb the canonical-AE buckets plus other Vary
+    # dimensions and to avoid a FIFO eviction cascade. See README
+    # "ATS variant-cache cap".
 CONFIG proxy.config.cache.limits.http.max_alts INT 32
     # https://docs.trafficserver.apache.org/records.config#proxy-config-cache-max-doc-size
 CONFIG proxy.config.cache.max_doc_size INT 0
