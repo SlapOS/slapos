@@ -5428,6 +5428,124 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.assertEqual(expected, result.text)
       self.assertEqual('X-Variant-Token', result.headers.get('Vary'))
 
+  # Mirrors `proxy.config.cache.limits.http.max_alts` in
+  # templates/trafficserver/records.config.jinja2 -- the per-URL cap on
+  # cached variants when the origin emits `Vary`. Keep in sync.
+  _max_alts = 32
+
+  def _primeVariantsAndReconfigure(self, path, tokens):
+    # Helper for the two variant-capacity tests below. For each token:
+    # 1) configure the backend so a request with `X-Variant-Token: <tok>`
+    #    returns `body-<tok>` plus `Vary: X-Variant-Token`,
+    # 2) issue a GET to populate the cache,
+    # 3) reconfigure the backend so the same request now returns
+    #    `evicted-<tok>` -- a sentinel that distinguishes cache HIT (we get
+    #    `body-<tok>`) from cache MISS (we get `evicted-<tok>`).
+    parameter_dict = self.assertSlaveBase('enable_cache')
+
+    def configure(token, body):
+      config_result = mimikra.config(
+        self.backend_url + path,
+        headers=d2h({
+          'X-Config-Vary-Key': 'X-Variant-Token',
+          'X-Config-Vary-Value': token,
+          'X-Config-Body': body,
+          'X-Config-Reply-Header-Server': 'TestBackend',
+          'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+          'X-Config-Reply-Header-Vary': 'X-Variant-Token',
+          'X-Config-Reply-Header-Cache-Control': 'max-age=300',
+          'X-Config-Reply-Header-Content-Length': 'calculate',
+        })
+      )
+      self.assertEqual(config_result.status_code, http.client.CREATED)
+
+    for token in tokens:
+      configure(token, 'body-%s' % token)
+    for token in tokens:
+      result = fakeHTTPSResult(
+        parameter_dict['domain'],
+        path,
+        headers={'X-Variant-Token': token},
+      )
+      self.assertEqual(http.client.OK, result.status_code)
+      self.assertEqual('body-%s' % token, result.text)
+    for token in tokens:
+      configure(token, 'evicted-%s' % token)
+
+    return parameter_dict
+
+  def _classifyVariants(self, parameter_dict, path, tokens):
+    # After _primeVariantsAndReconfigure, re-fetch each token and classify
+    # the response: the original `body-<tok>` means a cache HIT (the entry
+    # survived), `evicted-<tok>` means a cache MISS (the entry was not
+    # served and the backend's new body was returned).
+    survivors, evicted = [], []
+    for token in tokens:
+      result = fakeHTTPSResult(
+        parameter_dict['domain'],
+        path,
+        headers={'X-Variant-Token': token},
+      )
+      self.assertEqual(http.client.OK, result.status_code)
+      if result.text == 'body-%s' % token:
+        survivors.append(token)
+      elif result.text == 'evicted-%s' % token:
+        evicted.append(token)
+      else:
+        self.fail(
+          'Unexpected body %r for token %r' % (result.text, token))
+    return survivors, evicted
+
+  def test_vary_variant_capacity_at_limit(self):
+    # ATS caches up to `proxy.config.cache.limits.http.max_alts` variants
+    # per URL. When the number of distinct `Vary` values stays AT or BELOW
+    # that cap, every variant is held and served from cache: re-fetching
+    # any of them returns the originally cached body, even after the
+    # backend has been reconfigured to a different one.
+    tokens = ['v%d' % i for i in range(1, self._max_alts + 1)]
+    parameter_dict = self._primeVariantsAndReconfigure(
+      'vary-cap-at-limit', tokens)
+    survivors, evicted = self._classifyVariants(
+      parameter_dict, 'vary-cap-at-limit', tokens)
+
+    # All `_max_alts` variants must survive: this is the documented
+    # happy-path capacity of the ATS variant cache for one URL.
+    self.assertEqual(tokens, survivors)
+    self.assertEqual([], evicted)
+
+  def test_vary_variant_capacity_above_limit(self):
+    # When the number of distinct `Vary` values EXCEEDS
+    # `proxy.config.cache.limits.http.max_alts`, ATS evicts in FIFO
+    # order: writing the (cap+1)th alternate kicks out the very first
+    # one written. The remaining `_max_alts` entries stay cacheable.
+    # This is the documented behaviour at
+    # https://docs.trafficserver.apache.org/records.config#proxy-config-cache-limits-http-max-alts
+    #
+    # A subtlety this test guards against: if a workload requests
+    # variants in the same order they were written (1..N), every
+    # request after the first cap-1 evictions misses, because the
+    # next-fetched variant was just evicted to make room for the one
+    # we asked for a moment ago — a cascade that drives the URL's hit
+    # rate to zero. Re-fetching in reverse (newest-first) avoids that
+    # cascade and shows only v1 (the oldest write) as the loser.
+    tokens = ['v%d' % i for i in range(1, self._max_alts + 2)]
+    parameter_dict = self._primeVariantsAndReconfigure(
+      'vary-cap-above-limit', tokens)
+    # Re-fetch in REVERSE order. Phase 1 of the priming step (six
+    # sequential writes 1..6 into a 5-slot vector) already evicted v1
+    # via FIFO. v2..v6 are still in the cache. By asking for them
+    # newest-first we hit each one cleanly before any cascade can
+    # start: only v1 (the genuine FIFO eviction) returns the
+    # reconfigured "evicted-v1" body.
+    survivors, evicted = self._classifyVariants(
+      parameter_dict, 'vary-cap-above-limit', list(reversed(tokens)))
+
+    # `_max_alts` variants survive — the cap holds. The single eviction
+    # is the oldest write, exactly as ATS documents at
+    # https://docs.trafficserver.apache.org/records.config#proxy-config-cache-limits-http-max-alts
+    self.assertEqual(list(reversed(tokens[1:])), survivors)
+    self.assertEqual(['v1'], evicted)
+
   def test_vary_star_is_uncacheable(self):
     # `Vary: *` always fails to match (RFC 9111 §4.1) — the cache must
     # re-fetch on every request, so a backend reconfigure between two
