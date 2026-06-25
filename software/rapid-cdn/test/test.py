@@ -5428,6 +5428,102 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.assertEqual(expected, result.text)
       self.assertEqual('X-Variant-Token', result.headers.get('Vary'))
 
+  # Mirrors `proxy.config.cache.limits.http.max_alts` in
+  # templates/trafficserver/records.config.jinja2 -- keep in sync.
+  # See README "ATS variant-cache cap".
+  _max_alts = 32
+
+  def _primeVariantsAndReconfigure(self, path, tokens):
+    # Configure one backend body per token, prime the cache, then
+    # reconfigure each body to `evicted-<tok>` so subsequent fetches
+    # can distinguish HIT (original body) from MISS (`evicted-` body).
+    parameter_dict = self.assertSlaveBase('enable_cache')
+
+    def configure(token, body):
+      config_result = mimikra.config(
+        self.backend_url + path,
+        headers=d2h({
+          'X-Config-Vary-Key': 'X-Variant-Token',
+          'X-Config-Vary-Value': token,
+          'X-Config-Body': body,
+          'X-Config-Reply-Header-Server': 'TestBackend',
+          'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+          'X-Config-Reply-Header-Vary': 'X-Variant-Token',
+          'X-Config-Reply-Header-Cache-Control': 'max-age=300',
+          'X-Config-Reply-Header-Content-Length': 'calculate',
+        })
+      )
+      self.assertEqual(config_result.status_code, http.client.CREATED)
+
+    for token in tokens:
+      configure(token, 'body-%s' % token)
+    for token in tokens:
+      result = fakeHTTPSResult(
+        parameter_dict['domain'],
+        path,
+        headers={'X-Variant-Token': token},
+      )
+      self.assertEqual(http.client.OK, result.status_code)
+      self.assertEqual('body-%s' % token, result.text)
+    # ATS writes the first-doc alternate vector asynchronously; give
+    # the write pipeline time to drain before reconfiguring backend
+    # bodies. Do not re-fetch variants during this settle window: for
+    # the above-limit case the priming step already caused one FIFO
+    # eviction, and any refetch of an already-evicted token would
+    # trigger a fresh write that evicts the next-oldest -- a cascade
+    # that amplifies write-race exposure and destroys the state the
+    # above-limit test wants to observe.
+    time.sleep(10)
+    for token in tokens:
+      configure(token, 'evicted-%s' % token)
+
+    return parameter_dict
+
+  def _classifyVariants(self, parameter_dict, path, tokens):
+    # Re-fetch each token and split into survivors (cache HIT, original
+    # body) vs evicted (cache MISS, reconfigured `evicted-<tok>` body).
+    survivors, evicted = [], []
+    for token in tokens:
+      result = fakeHTTPSResult(
+        parameter_dict['domain'],
+        path,
+        headers={'X-Variant-Token': token},
+      )
+      self.assertEqual(http.client.OK, result.status_code)
+      if result.text == 'body-%s' % token:
+        survivors.append(token)
+      elif result.text == 'evicted-%s' % token:
+        evicted.append(token)
+      else:
+        self.fail(
+          'Unexpected body %r for token %r' % (result.text, token))
+    return survivors, evicted
+
+  def test_vary_variant_capacity_at_limit(self):
+    # At-or-below `_max_alts`: every variant survives. See README
+    # "ATS variant-cache cap".
+    tokens = ['v%d' % i for i in range(1, self._max_alts + 1)]
+    parameter_dict = self._primeVariantsAndReconfigure(
+      'vary-cap-at-limit', tokens)
+    survivors, evicted = self._classifyVariants(
+      parameter_dict, 'vary-cap-at-limit', tokens)
+
+    self.assertEqual(tokens, survivors)
+    self.assertEqual([], evicted)
+
+  def test_vary_variant_capacity_above_limit(self):
+    # Above the cap: ATS evicts FIFO (oldest first); refetching
+    # newest-first avoids the cascade and exposes only v1 as the
+    # genuine eviction. See README "ATS variant-cache cap".
+    tokens = ['v%d' % i for i in range(1, self._max_alts + 2)]
+    parameter_dict = self._primeVariantsAndReconfigure(
+      'vary-cap-above-limit', tokens)
+    survivors, evicted = self._classifyVariants(
+      parameter_dict, 'vary-cap-above-limit', list(reversed(tokens)))
+
+    self.assertEqual(list(reversed(tokens[1:])), survivors)
+    self.assertEqual(['v1'], evicted)
+
   def test_vary_star_is_uncacheable(self):
     # `Vary: *` always fails to match (RFC 9111 §4.1) — the cache must
     # re-fetch on every request, so a backend reconfigure between two
