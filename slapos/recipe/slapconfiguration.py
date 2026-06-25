@@ -689,13 +689,21 @@ class JsonSchema(Recipe):
       unwrap_shared = options.get(
         'unwrap-shared', 'true').lower() not in ('false', '0', 'no')
       if unwrap_shared and not validate.shared:
-        for instance in options.get('slave-instance-list') or ():
-          payload = instance.pop(JSON_SERIALISED_MAGIC_KEY, None)
-          if isinstance(payload, str):
-            payload = json.loads(payload)
-          if isinstance(payload, dict):
-            for k, v in payload.items():
-              instance.setdefault(k, v)
+        shared_list = options.get('slave-instance-list')
+        if shared_list:
+          unwrapped_shared_list = []
+          for instance in shared_list:
+            # Copy so slapgrid's reference to the SlapOS Master proxy state
+            # is not mutated; downstream reprocess detection depends on it.
+            entry = dict(instance)
+            payload = entry.pop(JSON_SERIALISED_MAGIC_KEY, None)
+            if isinstance(payload, str):
+              payload = json.loads(payload)
+            if isinstance(payload, dict):
+              for k, v in payload.items():
+                entry.setdefault(k, v)
+            unwrapped_shared_list.append(entry)
+          options['slave-instance-list'] = unwrapped_shared_list
     if validate.main:
       schema = software_description.getInstanceRequestParameterSchema()
       if schema is None:
