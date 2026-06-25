@@ -481,3 +481,103 @@ websocket
 ~~~~~~~~~
 
 All frontends are websocket aware now, and ``type:websocket`` parameter became optional. It's required if support for ``websocket-path-list`` or ``websocket-transparent`` is required.
+
+Accept-Encoding normalization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Shared instances default to ``normalize-accept-encoding: true``: the client-facing haproxy collapses the long tail of browser-specific ``Accept-Encoding`` strings to a small canonical set before forwarding to the origin. This replaces the gzip-only ``prefer-gzip-encoding-to-backend`` parameter from earlier releases. Set ``normalize-accept-encoding: false`` on a shared instance to forward the client's ``Accept-Encoding`` verbatim.
+
+Why
+"""
+
+Without normalization, every browser variant of ``Accept-Encoding`` (``gzip, deflate``; ``gzip, deflate, br``; ``gzip, deflate, br, zstd``; ``br, zstd, gzip``; ...) becomes a separate cache key under ``Vary: Accept-Encoding``. The cache fragments and hit ratio drops while the origin keeps re-encoding the same response. The same trade-off is made by AWS CloudFront (``EnableAcceptEncodingGzip`` / ``EnableAcceptEncodingBrotli`` cache-policy switches), Cloudflare, Fastly and Akamai: normalize at the edge, leave one canonical bucket per encoding strength.
+
+Mapping
+"""""""
+
+ACLs match the original (pre-rewrite) value via ``req.orig_ae`` using substring (``-m sub``) matching. The first encoding token recognised from strongest to weakest (``zstd`` > ``br`` > ``gzip`` > ``deflate``) decides the bucket; unknown tokens are dropped. If no recognised token is present, the header is left untouched.
+
+================================ ===================================
+Client ``Accept-Encoding``       Forwarded to origin
+================================ ===================================
+``gzip, deflate, br, zstd``      ``zstd, br, gzip, deflate``
+``gzip, deflate, br``            ``br, gzip, deflate``
+``gzip, deflate``                ``gzip, deflate``
+``gzip``                         ``gzip, deflate``
+``gzip, weirdcoding, deflate``   ``gzip, deflate``
+``weirdcoding, deflate``         ``deflate``
+``deflate``                      ``deflate``
+``identity``                     ``identity``   (no recognised token)
+``weirdcoding``                  ``weirdcoding`` (no recognised token)
+``*``                            ``*``          (no recognised token)
+(header absent)                  (header absent)
+================================ ===================================
+
+Deviations from a strict reading of RFC 9110 §12.5.3
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Two deviations are deliberate and match CloudFront / Cloudflare / Fastly / Akamai:
+
+1. **Widening of acceptable codings.** When the client lists only a stronger encoding (e.g. ``gzip``, ``br``, ``zstd``), we append weaker ones (``gzip`` → ``gzip, deflate``; ``br`` → ``br, gzip, deflate``; ...). Strictly, §12.5.3 says any unlisted coding is "not acceptable", so we are claiming acceptance the client did not give. In practice every client that advertises a modern coding also handles all weaker ones, so this is a non-event.
+
+2. **Dropping unrecognised tokens that appear alongside a recognised one** (``gzip, weirdcoding, deflate`` → ``gzip, deflate``). This is a forward-compatibility hazard: when a new encoding emerges (br in 2015, zstd in 2020), normalize-AE will demote clients that advertise it alongside known codings until the haproxy ACL chain is extended to recognise the new token.
+
+q-values are silently stripped. Per §12.5.3, ``gzip;q=0`` means "I refuse gzip" -- rewriting it to ``gzip, deflate`` flips a refusal into an acceptance. No mainstream browser emits q=0, so this is a paper risk; bespoke clients (curl scripts, embedded devices) should not rely on this CDN to honour it.
+
+Enforced Accept-Encoding compression
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``enforced-compression`` is exposed at both the cluster (master) and shared-instance level with the same name. Allowed values are ``none``, ``deflate``, ``gzip``, ``br``, ``zstd``; the default is ``gzip``. Each shared instance inherits the cluster default and may override; the cluster value is **not** a ceiling -- the shared instance is free to pick a stronger or weaker encoding, or ``none`` to opt out for that shared instance.
+
+Trigger
+"""""""
+
+When the client sends no ``Accept-Encoding`` header at all, or sends the explicit wildcard ``Accept-Encoding: *`` -- both of which mean "any encoding is acceptable" per RFC 9110 §12.5.3 -- the client-facing haproxy substitutes the canonical form for the shared instance's effective ``enforced-compression`` value before forwarding upstream. When the client sent any concrete ``Accept-Encoding`` (including ``identity`` or an unknown coding), the rewrite does nothing.
+
+Mapping
+"""""""
+
+============== ==========================================
+Effective value Forwarded to origin
+============== ==========================================
+``none``        (rewrite disabled, header forwarded as-is)
+``deflate``     ``deflate``
+``gzip``        ``gzip, deflate``
+``br``          ``br, gzip, deflate``
+``zstd``        ``zstd, br, gzip, deflate``
+============== ==========================================
+
+The canonical forms match exactly what ``normalize-accept-encoding`` emits, so the two features compose with no special-case interaction: when both are on, normalize-AE re-emits the same string, which is a no-op.
+
+Caveats
+"""""""
+
+Synthesising an ``Accept-Encoding`` when the client sent none is more aggressive than the major CDNs (CloudFront, Cloudflare, Fastly) do -- they only normalize what the client sent. We do it because typical origins return ``identity`` when no preference was expressed, wasting bandwidth at every hop. The cluster operator opts in by leaving the default at ``gzip``; setting cluster-level ``enforced-compression: none`` reverts to the more conservative behaviour.
+
+ATS variant-cache cap
+~~~~~~~~~~~~~~~~~~~~~
+
+Apache Traffic Server caps the number of cached variants per URL with ``proxy.config.cache.limits.http.max_alts`` (set in ``templates/trafficserver/records.config.jinja2``). The ATS default is 5; Rapid.CDN sets it to **32**.
+
+Variant pressure
+""""""""""""""""
+
+``normalize-accept-encoding`` produces up to four canonical ``Accept-Encoding`` strings (``deflate`` / ``gzip, deflate`` / ``br, gzip, deflate`` / ``zstd, br, gzip, deflate``), and ``enforced-compression`` covers the same four buckets. Real-world ``Vary`` headers commonly add at least one more dimension (``Accept-Language``, a User-Agent class, Cookie-keyed segments). Eight-to-sixteen distinct variants per URL are reachable today, and that number will only grow.
+
+Behaviour at the boundary
+"""""""""""""""""""""""""
+
+When the alternate count exceeds ``max_alts``, ATS evicts in FIFO order -- writing the (cap+1)th alternate kicks out the very first one written. That alone is benign. The risk is the cascade: if a workload re-requests variants in the same order they were written, every refetch hits a just-evicted slot and triggers another eviction in turn, and the hit rate cascades to zero for that URL while ATS keeps honestly performing one eviction per write. We confirmed this end-to-end against ATS 9.2.13 -- with ``max_alts=5``, six sequential variants and same-order refetch produced zero cache hits and seven alternate-eviction STATUS log lines.
+
+Why 32
+""""""
+
+Setting ``max_alts=32`` leaves comfortable headroom above the worst-case ``Vary`` cardinality the SR can produce and eliminates the cascade risk. The cost is roughly **80 KB of extra first-doc metadata per hot URL**: the alternate vector marshals stored request/response headers, not bodies, so disk write-amplification on bodies is unchanged. The alternate-selection scan is O(N), but at N=32 the linear pass is microseconds. Larger values (64+) are technically fine but signal a ``Vary`` design that is growing unbounded -- prefer attacking the ``Vary`` key over raising the cap further.
+
+Tests
+"""""
+
+Two tests in ``TestSlave`` document the boundary:
+
+* ``test_vary_variant_capacity_at_limit`` -- 32 distinct variants, all served from cache.
+* ``test_vary_variant_capacity_above_limit`` -- 33 distinct variants written, refetched newest-first to avoid the cascade; 32 survive, the oldest write evicted.
