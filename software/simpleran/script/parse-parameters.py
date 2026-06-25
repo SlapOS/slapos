@@ -439,7 +439,7 @@ def ors_radio(config, publish, shared_list):
             sdr_dev_list += [1] if config['cell2']['enable_cell'] else []
         # make real ru/cell/peer/... shared instances to be rejected in ORS mode
         for shared in shared_list:
-            shared_params = shared['_'] if isinstance(shared['_'], dict) else json.loads(shared['_'])
+            shared_params = json.loads(shared['_'])
             if 'ru_type' in shared_params or 'cell_type' in shared_params:
                 shared.update({'_': json.dumps({'REJECT': 1})})
         lte_cell = 0
@@ -623,8 +623,7 @@ def ors_radio(config, publish, shared_list):
                         'sim_algo': config['sim']['sim_algo'],
                     })})
         for shared in shared_list:
-            # Copy first so the update below leaves shared['_'] unchanged, like the previous json.loads did.
-            shared_params = dict(shared['_']) if isinstance(shared['_'], dict) else json.loads(shared['_'])
+            shared_params = json.loads(shared['_'])
             if 'imsi' in shared_params:
                 shared_params.update({'ue_type': 'lte'})
 
@@ -679,8 +678,7 @@ def core_network(config, publish, shared_list):
 
     # Sort shared list by IMSI
     def load_param(shared):
-        if isinstance(shared['_'], str):
-            shared['_'] = json.loads(shared['_'])
+        shared['_'] = json.loads(shared['_'])
         return shared
     def dump_param(shared):
         shared['_'] = json.dumps(shared['_'])
