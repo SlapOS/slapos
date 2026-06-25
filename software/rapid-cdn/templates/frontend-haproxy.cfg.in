@@ -134,6 +134,9 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
         'zstd': 'zstd, br, gzip, deflate',
       } %}
 {%-           if slave_instance['enforced-compression'] != 'none' %}
+  # When the client sent no Accept-Encoding or sent the wildcard `*`,
+  # substitute the canonical form for the slave's enforced-compression
+  # setting. See README "Enforced Accept-Encoding compression".
   http-request set-header Accept-Encoding "{{ ENFORCED_COMPRESSION_AE[slave_instance['enforced-compression']] }}" if !{ req.hdr_cnt(Accept-Encoding) -m int gt 0 }
   http-request set-header Accept-Encoding "{{ ENFORCED_COMPRESSION_AE[slave_instance['enforced-compression']] }}" if { req.fhdr(Accept-Encoding) -m str * }
 {%-           endif %}
