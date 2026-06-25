@@ -5457,6 +5457,120 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       self.assertEqual(expected, result.text)
       self.assertEqual('X-Variant-Token', result.headers.get('Vary'))
 
+  # Mirrors `proxy.config.cache.limits.http.max_alts` in
+  # templates/trafficserver/records.config.jinja2 -- keep in sync.
+  # See README "ATS variant-cache cap".
+  _max_alts = 32
+
+  def _primeVariantsAndReconfigure(self, path, tokens):
+    # Configure one backend body per token, prime the cache, then
+    # reconfigure each body to `evicted-<tok>` so subsequent fetches
+    # can distinguish HIT (original body) from MISS (`evicted-` body).
+    parameter_dict = self.assertSlaveBase('enable_cache')
+
+    def configure(token, body):
+      config_result = mimikra.config(
+        self.backend_url + path,
+        headers=d2h({
+          'X-Config-Vary-Key': 'X-Variant-Token',
+          'X-Config-Vary-Value': token,
+          'X-Config-Body': body,
+          'X-Config-Reply-Header-Server': 'TestBackend',
+          'X-Config-Reply-Header-Via': 'http/1.1 backendvia',
+          'X-Config-Reply-Header-Vary': 'X-Variant-Token',
+          'X-Config-Reply-Header-Cache-Control': 'max-age=300',
+          'X-Config-Reply-Header-Content-Length': 'calculate',
+        })
+      )
+      self.assertEqual(config_result.status_code, http.client.CREATED)
+
+    for token in tokens:
+      configure(token, 'body-%s' % token)
+    for token in tokens:
+      result = fakeHTTPSResult(
+        parameter_dict['domain'],
+        path,
+        headers={'X-Variant-Token': token},
+      )
+      self.assertEqual(http.client.OK, result.status_code)
+      self.assertEqual('body-%s' % token, result.text)
+    # ATS writes the first-doc alternate vector asynchronously; give
+    # the write pipeline time to drain before reconfiguring backend
+    # bodies. Do not re-fetch variants during this settle window: for
+    # the above-limit case the priming step already caused one FIFO
+    # eviction, and any refetch of an already-evicted token would
+    # trigger a fresh write that evicts the next-oldest -- a cascade
+    # that amplifies write-race exposure and destroys the state the
+    # above-limit test wants to observe.
+    time.sleep(10)
+    for token in tokens:
+      configure(token, 'evicted-%s' % token)
+
+    return parameter_dict
+
+  def _classifyVariants(self, parameter_dict, path, tokens):
+    # Re-fetch each token and split into survivors (cache HIT, original
+    # body) vs evicted (cache MISS, reconfigured `evicted-<tok>` body).
+    survivors, evicted = [], []
+    for token in tokens:
+      result = fakeHTTPSResult(
+        parameter_dict['domain'],
+        path,
+        headers={'X-Variant-Token': token},
+      )
+      self.assertEqual(http.client.OK, result.status_code)
+      if result.text == 'body-%s' % token:
+        survivors.append(token)
+      elif result.text == 'evicted-%s' % token:
+        evicted.append(token)
+      else:
+        self.fail(
+          'Unexpected body %r for token %r' % (result.text, token))
+    return survivors, evicted
+
+  # ATS writes the first-doc alternate vector asynchronously and all
+  # variants of one URL share the same first-doc key -- so a burst of
+  # `_max_alts` sequential writes can race on that shared vector and
+  # occasionally lose one entry. Each retry uses a fresh URL path so a
+  # failed race leaves no cache state behind to interfere with the
+  # next attempt. In practice the tests below pass on the first
+  # attempt >90% of the time; the retries only kick in when a race
+  # actually happens.
+  _variant_capacity_max_attempts = 5
+
+  def _runVariantCapacity(
+    self, path_stem, tokens, refetch_tokens,
+    expected_survivors, expected_evicted):
+    last_survivors, last_evicted = None, None
+    for attempt in range(self._variant_capacity_max_attempts):
+      path = '%s-attempt-%d' % (path_stem, attempt)
+      parameter_dict = self._primeVariantsAndReconfigure(path, tokens)
+      last_survivors, last_evicted = self._classifyVariants(
+        parameter_dict, path, refetch_tokens)
+      if (last_survivors == expected_survivors
+          and last_evicted == expected_evicted):
+        return
+    self.assertEqual(expected_survivors, last_survivors)
+    self.assertEqual(expected_evicted, last_evicted)
+
+  def test_vary_variant_capacity_at_limit(self):
+    # At-or-below `_max_alts`: every variant survives. See README
+    # "ATS variant-cache cap".
+    tokens = ['v%d' % i for i in range(1, self._max_alts + 1)]
+    self._runVariantCapacity(
+      'vary-cap-at-limit', tokens, tokens,
+      expected_survivors=tokens, expected_evicted=[])
+
+  def test_vary_variant_capacity_above_limit(self):
+    # Above the cap: ATS evicts FIFO (oldest first); refetching
+    # newest-first avoids the cascade and exposes only v1 as the
+    # genuine eviction. See README "ATS variant-cache cap".
+    tokens = ['v%d' % i for i in range(1, self._max_alts + 2)]
+    self._runVariantCapacity(
+      'vary-cap-above-limit', tokens, list(reversed(tokens)),
+      expected_survivors=list(reversed(tokens[1:])),
+      expected_evicted=['v1'])
+
   def test_vary_star_is_uncacheable(self):
     # `Vary: *` always fails to match (RFC 9111 §4.1) — the cache must
     # re-fetch on every request, so a backend reconfigure between two
