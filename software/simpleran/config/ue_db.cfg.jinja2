@@ -1,4 +1,3 @@
-{%- set sim_list = json_module.loads(sim_list) %}
 ue_db: [
 {%- for s in sim_list %}
 {%-   if s.get('disable_sim', '') != 'Disable SIM' %}
@@ -28,6 +27,9 @@ ue_db: [
 {%-       if "ip" in s %}
       ipv4_addr: "{{ s['ip'] }}",
 {%-       endif %}
+{%-       if "ipv6" in s %}
+      ipv6_prefix: "{{ s['ipv6'] }}",
+{%-       endif %}
 {%-       if s.get('enable_multicast', False) %}
       multicast: true,
 {%-       endif %}
@@ -42,8 +44,13 @@ ue_db: [
 {%-         for route in s.route_list %}
         [
           {
+{%-       if 'ipv4_remote_addr' in route %}
+            ipv4_remote_addr: "{{ route['ipv4_remote_addr'] }}",
+            mask: "{{ route['mask'] }}",
+{%-       else %}
             ipv6_remote_addr_prefix: "{{ route['ipv6_remote_addr_prefix'] }}",
             prefix_len: {{ route['prefix_len'] }},
+{%-       endif %}
           }
         ],
 {%-         endfor -%}
