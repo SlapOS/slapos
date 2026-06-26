@@ -68,62 +68,17 @@
       "type": "string",
       "default": "RAPIDSPACE"
     },
-    "fixed_ips": {
-      "default": false,
-      "title": "Fixed IP for the UE",
-      "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
-      "type": "boolean"
+    "pdn_first": {
+      "$ref": "#/$defs/pdn",
+      "title": "First PDN",
+      "description": "Parameters for the first PDN (default PDN by default). Default APNs: internet, default, sos",
+      "default": {}
     },
-    "internet_ipv4_start": {
-      "title": "Internet PDN's first IPv4 prefix",
-      "description": "first_ipv4_prefix of the internet PDN",
-      "type": "string"
-    },
-    "internet_ipv4_end": {
-      "title": "Internet PDN's last IPv4 prefix",
-      "description": "last_ipv4_prefix of the internet PDN",
-      "type": "string"
-    },
-    "internet_ipv6_start": {
-      "title": "Internet PDN's first IPv6 prefix",
-      "description": "first_ipv6_prefix of the internet PDN",
-      "type": "string"
-    },
-    "internet_ipv6_end": {
-      "title": "Internet PDN's last IPv6 prefix",
-      "description": "last_ipv6_prefix of the internet PDN",
-      "type": "string"
-    },
-    "pdn_list": {
-      "title": "PDN list",
-      "description": "Configure the available EPS Packet Data Networks and 5GS Data Network Names. All PDNs will have the same IP range. (default: internet, default and sos)",
-      "type": "array",
-      "items": {
-        "title": "PDN",
-        "type": "object",
-        "required": [
-          "name"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "title": "APN name",
-            "description": "APN name",
-            "type": "string"
-          }
-        }
-      },
-      "default": [
-        {
-          "name": "internet"
-        },
-        {
-          "name": "default"
-        },
-        {
-          "name": "sos"
-        }
-      ]
+    "pdn_second": {
+      "$ref": "#/$defs/pdn",
+      "title": "Second PDN",
+      "description": "Parameters for the second PDN (IMS PDN by default). Default APNs: ims",
+      "default": {}
     },
     "external_mme_list": {
       "title": "External MME List",
@@ -324,6 +279,68 @@
       "description": "Home network key identifier (range 0 to 255)",
       "type": "number",
       "default": 1
+    },
+    "pdn": {
+      "type": "object",
+      "properties": {
+        "pdn_list": {
+          "title": "PDN list",
+          "description": "Configure the available EPS Packet Data Networks and 5GS Data Network Names. All PDNs will have the same IP range. (default: internet, default and sos)",
+          "type": "array",
+          "items": {
+            "title": "PDN",
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "title": "APN name",
+                "description": "APN name",
+                "type": "string"
+              }
+            }
+          },
+          "default": [
+            {
+              "name": "internet"
+            },
+            {
+              "name": "default"
+            },
+            {
+              "name": "sos"
+            }
+          ]
+        },
+        "fixed_ips": {
+          "default": false,
+          "title": "Fixed IP for the UE",
+          "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
+          "type": "boolean"
+        },
+        "internet_ipv4_start": {
+          "title": "Internet PDN's first IPv4 prefix",
+          "description": "first_ipv4_prefix of the internet PDN",
+          "type": "string"
+        },
+        "internet_ipv4_end": {
+          "title": "Internet PDN's last IPv4 prefix",
+          "description": "last_ipv4_prefix of the internet PDN",
+          "type": "string"
+        },
+        "internet_ipv6_start": {
+          "title": "Internet PDN's first IPv6 prefix",
+          "description": "first_ipv6_prefix of the internet PDN",
+          "type": "string"
+        },
+        "internet_ipv6_end": {
+          "title": "Internet PDN's last IPv6 prefix",
+          "description": "last_ipv6_prefix of the internet PDN",
+          "type": "string"
+        }
+      }
     }
   }
 }
