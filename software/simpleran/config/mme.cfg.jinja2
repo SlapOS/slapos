@@ -20,6 +20,9 @@
   mme_group_id: 32769,
   mme_code: {{ slapparameter_dict.code }},
 
+{%- set inter_core_handover = len(slapparameter_dict.external_mme_list)  > 0 %}
+
+{%- if inter_core_handover %}
   external_mme_list: [
 {%-   for mme in slapparameter_dict.external_mme_list %}
     {
@@ -77,6 +80,7 @@
       bind_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
       gtp_u_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
   },
+{%- endif %}
 
 
   ims_vops_eps: true,
