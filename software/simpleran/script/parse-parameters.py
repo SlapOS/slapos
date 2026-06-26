@@ -40,14 +40,6 @@ LTE_TDD_CONFIG_MAP = {
     "[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink"                 : 6,
 }
 
-# Set serial number of this ORS
-sn = 0
-try:
-    hostname = socket.gethostname()
-    sn = int(''.join(filter(lambda x:x.isdigit(), hostname)))
-except (IndexError, ValueError):
-    pass
-
 def ors_radio(config, publish, shared_list):
     """eNB / gNB / UE - ORS Specific"""
     from xlte import nrarfcn
@@ -251,6 +243,12 @@ def ors_radio(config, publish, shared_list):
     # NodeB Radio ID's
     def publish_hex(h):
         return f'{h} ({int(h, 16)})'
+    sn = 0
+    try:
+        hostname = socket.gethostname()
+        sn = int(''.join(filter(lambda x:x.isdigit(), hostname)))
+    except (IndexError, ValueError):
+        pass
     config.setdefault('enb_id', '0x{:05X}'.format( sn                    % 2**20))
     config.setdefault('gnb_id', '0x{:05X}'.format((sn + 2**19) % 2**20))
     publish['hardware']['serial-number'] = hostname.upper()
@@ -851,7 +849,7 @@ def core_network(config, publish, shared_list):
     tun_ipv4_end     = netaddr.IPNetwork(tun_ipv4_network).last
     tun_ipv6_end     = netaddr.IPNetwork(tun_ipv6_network).last
 
-    network_defaults = {
+    config.update({
         'tun_name'           : slap_configuration.get('tun-name', 'slaptun0'              ),
         'internet_ipv4'      : str(netaddr.IPAddress( tun_ipv4_start                          )),
         'internet_ipv4_start': str(netaddr.IPAddress( tun_ipv4_start + 1                      )),
@@ -864,9 +862,7 @@ def core_network(config, publish, shared_list):
         'ims_ipv6'           : str(netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2     )),
         'ims_ipv6_start'     : str(netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2     )),
         'ims_ipv6_end'       : str(netaddr.IPAddress( tun_ipv6_end   - 1                      )),
-    }
-    for k,v in network_defaults.items():
-        config.setdefault(k, v)
+    })
 
     # Sort shared list by IMSI
     def load_param(shared):
@@ -933,9 +929,7 @@ def core_network(config, publish, shared_list):
         'websocket_url_ipv6': False,
         'ims_addr': '127.0.0.1',
         'ims_bind': '127.0.0.2',
-        'mme_bind_ipv6': slap_configuration['ipv6-random'],
         'qci':  9,
-        'code': sn % 64,
         'pdn_list': [
             {'name': 'internet'},
             {'name': 'default'},
@@ -984,7 +978,6 @@ def core_network(config, publish, shared_list):
             return False
 
     network = netaddr.IPNetwork(slap_configuration.get('tun-ipv4-network', ''))
-    networkv6 = netaddr.IPNetwork(slap_configuration.get('tun-ipv6-network', ''))
     # if we don't have enough IPv4 addresses in the network, don't force it
     # should we make a promise fail ?
     if len(sim_list) + 2 > network.size:
@@ -994,19 +987,12 @@ def core_network(config, publish, shared_list):
         # calculate the IP addresses of each SIM
         ip_list = []
         first_addr = netaddr.IPAddress(network.first)
-        first_addrv6 = netaddr.IPAddress(networkv6.first)
         force_ip_list = []
-        force_ipv6_list = []
         for s in sim_list:
             ip = s.get('force_ip', None)
-            if ip:
+            if ip and valid_ip(network, ip):
                 s['ip'] = ip
                 force_ip_list.append(ip)
-            ipv6 = s.get('force_ipv6', None)
-            if ipv6:
-                s['ipv6'] = ipv6
-                force_ipv6_list.append(ipv6)
-        # Allocate fixed IPv4
         i = 2
         for s in sorted(sim_list, key=lambda x: x['imsi']):
             if 'ip' in s:
@@ -1017,20 +1003,8 @@ def core_network(config, publish, shared_list):
                 ip = str(first_addr + i)
             s['ip'] = ip
             i += 1
-        # Allocate fixed IPv6
-        i = 2
-        for s in sorted(sim_list, key=lambda x: x['imsi']):
-            if 'ipv6' in s:
-                continue
-            ipv6 = str(first_addrv6 + i * 2**64)
-            while ipv6 in force_ipv6_list:
-                i += 1
-                ipv6 = str(first_addrv6 + i * 2**64)
-            s['ipv6'] = ipv6
-            i += 1
 
     publish['core']['plmn']               = config['core_network_plmn']
-    publish['core']['code']               = config['code']
     publish['core']['sip-bind-ip']        = config['ims_ipv4']
     publish['core']['network-name']       = config['network_name']
     publish['core']['network-short-name'] = config['network_short_name']

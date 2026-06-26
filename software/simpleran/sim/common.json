@@ -74,13 +74,8 @@
       "type": "string"
     },
     "force_ip": {
-      "title": "Force IPv4",
-      "description": "Force IP of the SIM: Fixed IP for the UE needs to be enabled on the core network to be able to force the IP and the IP should be within the PDN IPv4 sub network",
-      "type": "string"
-    },
-    "force_ipv6": {
-      "title": "Force IPv6",
-      "description": "Force IPv6 of the SIM: Fixed IP for the UE needs to be enabled on the core network to be able to force the IPv6 and the IP should be within the PDN IPv6 sub network",
+      "title": "Force IP",
+      "description": "Force IP of the SIM: Fixed IP for the UE needs to be enabled on the core network to use force the IP and the IP should be within the PDN IPv4 sub network",
       "type": "string"
     },
     "authent_type": {
