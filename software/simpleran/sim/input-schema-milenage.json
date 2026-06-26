@@ -52,11 +52,17 @@
     "multi_sim": {
       "$ref": "common.json#/properties/multi_sim"
     },
-    "force_ip": {
-      "$ref": "common.json#/properties/force_ip"
+    "force_ip_pdn1": {
+      "$ref": "common.json#/properties/force_ip_pdn1"
     },
-    "force_ipv6": {
-      "$ref": "common.json#/properties/force_ipv6"
+    "force_ipv6_pdn1": {
+      "$ref": "common.json#/properties/force_ipv6_pdn1"
+    },
+    "force_ip_pdn2": {
+      "$ref": "common.json#/properties/force_ip_pdn2"
+    },
+    "force_ipv6_pdn2": {
+      "$ref": "common.json#/properties/force_ipv6_pdn2"
     },
     "res_len": {
       "$ref": "common.json#/properties/res_len"
