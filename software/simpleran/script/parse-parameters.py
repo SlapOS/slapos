@@ -1,10 +1,9 @@
-import json, netaddr, math, socket, subprocess
+import json, netaddr, netifaces, math, socket, subprocess
 from copy import deepcopy
 
 """
 Inputs:
 
-- lan-ipv4           : LAN IPv4
 - sbc-model          : Single Board Computer Model
 - software           : current software (e.g.: software-ors)
 - slap-configuration : slap-configuration section from self.buildout
@@ -40,13 +39,40 @@ LTE_TDD_CONFIG_MAP = {
     '[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink'                 : 6,
 }
 
-# Set serial number of this ORS
+# Get serial number of this ORS
 sn = 0
 try:
     hn = socket.gethostname()
     sn = int(''.join(filter(lambda x:x.isdigit(), hn)))
 except (IndexError, ValueError):
     pass
+
+# Lan info
+for i in netifaces.interfaces():
+    if not (i.startswith('slaptun') or i.startswith('slaptap') or i.startswith('re6stnet') or i == 'lo'):
+        a = netifaces.ifaddresses(i)
+        if netifaces.AF_INET in a:
+            iface_index = 0
+            try:
+                gws = netifaces.gateways()
+                if (len(a[netifaces.AF_INET]) > 1) and 'default' in gws and netifaces.AF_INET in gws['default']:
+                    # try to find the IP with the default gateway
+                    gw = netifaces.gateways()['default'][netifaces.AF_INET][0]
+                    for i, addr in enumerate(a[netifaces.AF_INET]):
+                        if gw in netaddr.IPNetwork('%s/%s' % (addr['addr'], addr['netmask'])):
+                             iface_index = i
+            except:
+                pass
+
+            try:
+                lan_ipv4 = a[netifaces.AF_INET][iface_index]['addr']
+            except:
+                lan_ipv4 = '0.0.0.0'
+            try:
+                lan_mac = a[netifaces.AF_LINK][iface_index]['addr']
+            except:
+                lan_mac = '00:00:00:00:00:00'
+            lan_interface = i
 
 def ors_radio(config, publish, shared_list):
     """eNB / gNB / UE - ORS Specific"""
@@ -834,6 +860,20 @@ def ors_radio(config, publish, shared_list):
     if 'tx-power' in publish['power']:
         publish['power']['tx-power'] += ' (Maximum average power if all ressource blocks are used)'
 
+def radio(config, publish, shared_list):
+    """eNB / gNB / UE"""
+    publish_sections = ['network']
+    for s in publish_sections:
+        publish.setdefault(s, {})
+    if sr_type == 'ue':
+        publish['network'][f'ue-ipv4'] = lan_ipv4
+        publish['network'][f'ue-mac']  = lan_mac
+        publish['network'][f'ue-ipv6'] = slap_configuration['ipv6-random']
+    elif sr_type in ['enb', 'gnb', 'enb-gnb']:
+        publish['network'][f'nodeb-ipv4'] = lan_ipv4
+        publish['network'][f'nodeb-mac']  = lan_mac
+        publish['network'][f'nodeb-ipv6'] = slap_configuration['ipv6-random']
+
 def core_network(config, publish, shared_list):
 
     publish_sections = ['network', 'core', 'pdn', 'sim']
@@ -1029,11 +1069,13 @@ def core_network(config, publish, shared_list):
             s['ipv6'] = ipv6
             i += 1
 
-    publish['core']['plmn']               = config['core_network_plmn']
-    publish['core']['code']               = config['code']
-    publish['core']['sip-bind-ip']        = config['ims_ipv4']
-    publish['core']['network-name']       = config['network_name']
-    publish['core']['network-short-name'] = config['network_short_name']
+    publish['network']['core-network-ipv4'] = lan_ipv4
+    publish['network']['core-network-mac']  = lan_mac
+    publish['core']['plmn']                 = config['core_network_plmn']
+    publish['core']['code']                 = config['code']
+    publish['core']['sip-bind-ip']          = config['ims_ipv4']
+    publish['core']['network-name']         = config['network_name']
+    publish['core']['network-short-name']   = config['network_short_name']
 
     publish['pdn']['gateway-ipv4']    = slap_configuration['tun-ipv4-addr']
     publish['pdn']['ipv4-subnetwork'] = slap_configuration['tun-ipv4-network']
@@ -1061,7 +1103,7 @@ def gtp_addr(gtp_localhost_addr):
                     r = subprocess.check_output(['ip', '-json', 'route', 'get', addr])
                     gtp_addr_list.append(json.loads(r)[0]['prefsrc'])
         elif gtp_addr == 'IPv4 LAN address':
-            gtp_addr_list.append(options['lan-ipv4'])
+            gtp_addr_list.append(lan_ipv4)
         elif gtp_addr == 'IPv6 Re6st address':
             gtp_addr_list.append(slap_configuration['ipv6-random'])
         elif gtp_addr == 'Localhost address':
@@ -1181,6 +1223,8 @@ if sr_type == 'test-model':
 
 if options['software'].startswith('software-ors') and sr_type in ['enb', 'gnb', 'ue', 'enb-gnb']:
     ors_radio(config, publish, shared_list)
+if sr_type in ['enb', 'gnb', 'ue', 'enb-gnb']:
+    radio(config, publish, shared_list)
 
 if sr_type == 'core-network':
     gtp_localhost_addr = '127.0.1.100'
