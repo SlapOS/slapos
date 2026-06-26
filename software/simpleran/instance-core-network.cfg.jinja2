@@ -1,40 +1,13 @@
 {%- set fixed_ip = slapparameter_dict.fixed_ips %}
 
 {% set part_list = [] -%}
-{%- for s in sim_list %}
-{%    set publish_section_title = 'publish-%s' % s.slave_reference %}
-{%    do part_list.append(publish_section_title) %}
-[{{ publish_section_title }}]
+{%- for section in publish_section_list %}
+{%    do part_list.append(section['title']) %}
+[{{ section['title'] }}]
 recipe = slapos.cookbook:publish.serialised
--slave-reference = {{ s.slave_reference }}
-{%- if 'error' in s %}
-error = {{ s.error }}
-{%- elif s.get('disable_sim', '') == 'Disable SIM' %}
-info = Your SIM was disabled, you can enable it back by updating it's parameter.
-{%- else %}
-info = Your SIM card has been attached to service  {{ slap_configuration['instance-title'] }}.
-plmn         = {{ s.get('plmn', 'No PLMN defined'        ) }}
-msin         = {{ s.get('msin', 'No MSIN defined'        ) }}
-imsi         = {{ s.get('imsi', 'No IMSI defined'        ) }}
-impi         = {{ s.get('impi', 'No IMPI defined'        ) }}
-impu         = {{ s.get('impu', 'No IMPU defined'        ) }}
-secret-key   = {{ s.get('k'   , 'No Secret Key defined'  ) }}
-operator-key = {{ s.get('opc' , 'No Operator Key defined') }}
-{%-     if fixed_ip %}
-ipv4 = {{ s.ip }}
-{%-     endif %}
-{%- endif %}
-{%- endfor %}
-
-{%- for s in dns_list %}
-{%    set publish_section_title = 'publish-%s' % s.slave_reference %}
-{%    do part_list.append(publish_section_title) %}
-[{{ publish_section_title }}]
-recipe = slapos.cookbook:publish.serialised
--slave-reference = {{ s.slave_reference }}
-domain = {{ s.subdomain }}.{{ s.get('domain', slapparameter_dict.get('local_domain', '')) }}
-ip = {{ s.get('ip', '') }}
-info = DNS entry has been attached to service {{ slap_configuration['instance-title'] }}.
+{%-   for param in section['publish'] %}
+{{ param }} = {{ section['publish'][param] }}
+{%-   endfor %}
 {%- endfor %}
 
 [buildout]
@@ -42,25 +15,29 @@ parts =
   directory
   mme-config
   mme-service
+{%- if slapparameter_dict.get('ims_pdn') %}
   ims-config
+  ims-service
+  publish-ims-config
+  ws-ims-websocket-promise
+  ws-ims-nginx-launcher
+  ws-ims-nginx-graceful
+{%- endif %}
   mt-call-config
   publish-mme-config
-  publish-ims-config
   publish-mt-call-config
   publish-ue-db-config
-  ims-service
   monitor-base
   check-interface-up.py
   publish-connection-information
   ws-mme-websocket-promise
   ws-mme-nginx-launcher
   ws-mme-nginx-graceful
-  ws-ims-websocket-promise
-  ws-ims-nginx-launcher
-  ws-ims-nginx-graceful
 # Don't add these sections during unit tests as there is no TUN IPv4 available
 {% if not slapparameter_dict.testing %}
+{%-  if slapparameter_dict.get('ims_pdn') %}
   ims-mms-listen-promise
+{%-  endif%}
 {%-  for i in range(slapparameter_dict.iperf3) %}
   iperf-service-{{ i }}
   iperf-{{ i }}-listen-promise
@@ -300,7 +277,7 @@ link-binary = ${mme-config:output}
 <= monitor-promise-base
 promise = check_socket_listening
 name = ims-mms-port-listening.py
-config-host = {{ slapparameter_dict.internet_ipv4 }}
+config-host = {{ slapparameter_dict.default_pdn.ipv4 }}
 config-port = 1111
 
 {% if slapparameter_dict.get("local_domain", '') %}
