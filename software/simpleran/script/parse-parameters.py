@@ -42,8 +42,8 @@ LTE_TDD_CONFIG_MAP = {
 # Get serial number of this ORS
 sn = 0
 try:
-    hn = socket.gethostname()
-    sn = int(''.join(filter(lambda x:x.isdigit(), hn)))
+    hostname = socket.gethostname()
+    sn = int(''.join(filter(lambda x:x.isdigit(), hostname)))
 except (IndexError, ValueError):
     pass
 
