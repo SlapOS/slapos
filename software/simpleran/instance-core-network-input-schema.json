@@ -68,62 +68,54 @@
       "type": "string",
       "default": "RAPIDSPACE"
     },
-    "fixed_ips": {
-      "default": false,
-      "title": "Fixed IP for the UE",
-      "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
-      "type": "boolean"
-    },
-    "internet_ipv4_start": {
-      "title": "Internet PDN's first IPv4 prefix",
-      "description": "first_ipv4_prefix of the internet PDN",
-      "type": "string"
-    },
-    "internet_ipv4_end": {
-      "title": "Internet PDN's last IPv4 prefix",
-      "description": "last_ipv4_prefix of the internet PDN",
-      "type": "string"
-    },
-    "internet_ipv6_start": {
-      "title": "Internet PDN's first IPv6 prefix",
-      "description": "first_ipv6_prefix of the internet PDN",
-      "type": "string"
-    },
-    "internet_ipv6_end": {
-      "title": "Internet PDN's last IPv6 prefix",
-      "description": "last_ipv6_prefix of the internet PDN",
-      "type": "string"
-    },
-    "pdn_list": {
-      "title": "PDN list",
-      "description": "Configure the available EPS Packet Data Networks and 5GS Data Network Names. All PDNs will have the same IP range. (default: internet, default and sos)",
-      "type": "array",
-      "items": {
-        "title": "PDN",
-        "type": "object",
-        "required": [
-          "name"
+    "pdn1": {
+      "$ref": "#/$defs/pdn",
+      "title": "PDN1",
+      "description": "Only two PDNs are currently supported, this section defines the first PDN. It is the default APN or DNN used in case the UE does not explicitly request it. By default it has the following APN names: internet, default, sos",
+      "default": {
+        "apn_list": [
+          "internet",
+          "default",
+          "sos"
         ],
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "title": "APN name",
-            "description": "APN name",
-            "type": "string"
+        "qci": 9,
+        "fixed_ips": false
+      }
+    },
+    "pdn2": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/pdn",
+          "title": "PDN2",
+          "description": "The second optional PDN, by default it has ims APN name and is used for IMS services."
+        },
+        {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Cell Type",
+          "type": "object",
+          "properties": {
+            "ims": {
+              "title": "Enable IMS",
+              "description": "If set to true, IMS will be enabled and P-CSCF server address will be configured on this PDN for VoLTE / VoNR",
+              "type": "boolean"
+            },
+            "disable_pdn": {
+              "title": "Disable PDN",
+              "description": "Set to true to disable this PDN",
+              "type": "boolean"
+            }
           }
         }
-      },
-      "default": [
-        {
-          "name": "internet"
-        },
-        {
-          "name": "default"
-        },
-        {
-          "name": "sos"
-        }
-      ]
+      ],
+      "type": "object",
+      "default": {
+        "apn_list": [
+          "ims"
+        ],
+        "qci": 5,
+        "ims": true,
+        "fixed_ips": false
+      }
     },
     "external_mme_list": {
       "title": "External MME List",
@@ -183,12 +175,6 @@
         }
       },
       "default": []
-    },
-    "qci": {
-      "default": 9,
-      "title": "QCI of default E-RAB",
-      "description": "QoS Class Identifier of the default E-RAB",
-      "type": "number"
     },
     "eps_5gs_interworking": {
       "title": "EPS 5GS Interworking",
@@ -324,6 +310,55 @@
       "description": "Home network key identifier (range 0 to 255)",
       "type": "number",
       "default": 1
+    },
+    "pdn": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "required": [
+        "apn_list",
+        "qci"
+      ],
+      "properties": {
+        "apn_list": {
+          "title": "APN list",
+          "description": "Access Point Name or Data Network Name network identifier list. Use dots (.) to separate the APN or DNN elements. Adding multiple items to this will create aliases of the first APN / DNN.",
+          "type": "array",
+          "items": {
+            "title": "APN Name",
+            "type": "string"
+          }
+        },
+        "qci": {
+          "title": "QCI of default E-RAB",
+          "description": "QoS Class Identifier of the default E-RAB",
+          "type": "number"
+        },
+        "fixed_ips": {
+          "title": "Fixed IP for the UE",
+          "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
+          "type": "boolean"
+        },
+        "ipv4_start": {
+          "title": "Expert only: First IPv4 address",
+          "description": "First available IPv4 address of the PDN",
+          "type": "string"
+        },
+        "ipv4_end": {
+          "title": "Expert only: Last IPv4 address",
+          "description": "Last available IPv4 address of the PDN",
+          "type": "string"
+        },
+        "ipv6_start": {
+          "title": "Expert only: First IPv6 prefix",
+          "description": "First available global IPv6 prefix used in Router Advertisement message sent to the UE (only the high 8 bytes of the IPv6 address are meaningful). Note that the selected prefix will also be used as the interface identifier sent in NAS signalling.",
+          "type": "string"
+        },
+        "ipv6_end": {
+          "title": "Expert only: Last IPv6 prefix",
+          "description": "Last available global IPv6 prefix used in Router Advertisement message sent to the UE (only the high 8 bytes of the IPv6 address are meaningful). Note that the selected prefix will also be used as the interface identifier sent in NAS signalling.",
+          "type": "string"
+        }
+      }
     }
   }
 }
