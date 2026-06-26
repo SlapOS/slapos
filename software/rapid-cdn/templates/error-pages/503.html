@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>503 Service Unavailable</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f7f8fa;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 3rem 3.5rem;
+      max-width: 520px;
+      width: 90%;
+      text-align: center;
+    }
+    .code {
+      font-size: 5rem;
+      font-weight: 800;
+      color: #e0e4ea;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin: 1rem 0 0.75rem;
+      color: #222;
+    }
+    p {
+      color: #666;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid #eef0f3;
+      margin: 2rem 0 1.5rem;
+    }
+    .footer {
+      font-size: 0.75rem;
+      color: #aaa;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    [data-lang] { display: none; }
+    [data-lang].active { display: block; }
+  </style>
+  <noscript><style>
+    [data-lang] { display: none; }
+    [data-default] { display: block; }
+  </style></noscript>
+</head>
+<body>
+  <div class="card">
+    <div class="code">503</div>
+    <section data-lang="en" data-default lang="en">
+      <h1>Service Unavailable</h1>
+      <p>Rapid.CDN cannot reach this site's backing service. Rapid.CDN is operating normally; the configured backend may be down or unreachable.</p>
+    </section>
+    <section data-lang="fr" lang="fr">
+      <h1>Service indisponible</h1>
+      <p>Rapid.CDN ne peut pas joindre le service applicatif de ce site. Rapid.CDN fonctionne normalement ; le backend configuré est peut-être hors service ou inaccessible.</p>
+    </section>
+    <section data-lang="ja" lang="ja">
+      <h1>サービス利用不可</h1>
+      <p>Rapid.CDN はこのサイトのバックエンドサービスに到達できません。Rapid.CDN は正常に動作しています。設定されたバックエンドが停止しているか、到達不能の可能性があります。</p>
+    </section>
+    <section data-lang="de" lang="de">
+      <h1>Dienst nicht verfügbar</h1>
+      <p>Rapid.CDN kann den Backend-Dienst dieser Seite nicht erreichen. Rapid.CDN funktioniert normal; das konfigurierte Backend ist möglicherweise nicht erreichbar oder ausgefallen.</p>
+    </section>
+    <section data-lang="pl" lang="pl">
+      <h1>Usługa niedostępna</h1>
+      <p>Rapid.CDN nie może nawiązać połączenia z usługą zaplecza tej strony. Rapid.CDN działa normalnie; skonfigurowane zaplecze może być niedostępne lub wyłączone.</p>
+    </section>
+    <hr class="divider">
+    <div class="footer">Rapid.CDN &bull; 503</div>
+  </div>
+  <script>
+    (function () {
+      var sections = document.querySelectorAll('[data-lang]');
+      var available = Array.prototype.map.call(sections, function (s) {
+        return s.getAttribute('data-lang').toLowerCase();
+      });
+      var prefs = (navigator.languages && navigator.languages.length)
+        ? navigator.languages : [navigator.language || 'en'];
+      var chosen = null;
+      for (var i = 0; i < prefs.length && !chosen; i++) {
+        var p = String(prefs[i]).toLowerCase();
+        var idx = available.indexOf(p);
+        if (idx === -1) idx = available.indexOf(p.split('-')[0]);
+        if (idx !== -1) chosen = available[idx];
+      }
+      if (!chosen) {
+        var def = document.querySelector('[data-default]');
+        chosen = def ? def.getAttribute('data-lang').toLowerCase() : (available[0] || 'en');
+      }
+      var picked = document.querySelector('[data-lang="' + chosen + '"]');
+      if (picked) {
+        picked.classList.add('active');
+        document.documentElement.setAttribute('lang', chosen);
+      }
+    })();
+  </script>
+</body>
+</html>
