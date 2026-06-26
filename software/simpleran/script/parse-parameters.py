@@ -1069,6 +1069,8 @@ def core_network(config, publish, shared_list):
             s['ipv6'] = ipv6
             i += 1
 
+    config['lan_interface'] = lan_interface
+
     publish['network']['core-network-ipv4'] = lan_ipv4
     publish['network']['core-network-mac']  = lan_mac
     publish['core']['plmn']                 = config['core_network_plmn']
