@@ -248,8 +248,6 @@ context =
   section directory directory
   key slap_configuration myslap:slap_configuration
   key slapparameter_dict myslap:slapparameter_dict
-  raw gtp_addr_v6 {{ my_ipv6 }}
-  raw gtp_addr_v4 {{ lan_ipv4 }}
   import json_module json
   import  netaddr netaddr
   key ifup_empty mme-ifup-empty:wrapper-path
@@ -482,8 +480,6 @@ URL.websocket-ims-password = ${ws-ims-websocket-password:passwd}
 URL.websocket-amarisoft-gui = https://tech-academy.amarisoft.com/web-gui/
 {%- endif %}
 NETWORK.core-network-ipv6 = {{ my_ipv6 }}
-NETWORK.core-network-ipv4 = {{ lan_ipv4 }}
-NETWORK.core-network-mac= {{ mac }}
 AMARISOFT.version = {{ amarisoft['version_cn'] }}
 AMARISOFT.host-id = {{ amarisoft['ltemme_host_id'] }}
 AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
