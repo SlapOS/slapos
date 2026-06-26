@@ -34,7 +34,7 @@ from contextlib import contextmanager
 
 import jsonschema
 import slapos.slap
-from slapos.recipe.librecipe import unwrap
+from slapos.recipe.librecipe import unwrap, JSON_SERIALISED_MAGIC_KEY
 import six
 from six.moves.configparser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
@@ -686,6 +686,24 @@ class JsonSchema(Recipe):
     unstringify_types_dict = {'integer': int, 'boolean': str_to_bool}
     if serialisation == SoftwareReleaseSerialisation.JsonInXml:
       parameter_dict = unwrap(parameter_dict)
+      unwrap_shared = options.get(
+        'unwrap-shared', 'true').lower() not in ('false', '0', 'no')
+      if unwrap_shared and not validate.shared:
+        shared_list = options.get('slave-instance-list')
+        if shared_list:
+          unwrapped_shared_list = []
+          for instance in shared_list:
+            # Copy so slapgrid's reference to the SlapOS Master proxy state
+            # is not mutated; downstream reprocess detection depends on it.
+            entry = dict(instance)
+            payload = entry.pop(JSON_SERIALISED_MAGIC_KEY, None)
+            if isinstance(payload, str):
+              payload = json.loads(payload)
+            if isinstance(payload, dict):
+              for k, v in payload.items():
+                entry.setdefault(k, v)
+            unwrapped_shared_list.append(entry)
+          options['slave-instance-list'] = unwrapped_shared_list
     if validate.main:
       schema = software_description.getInstanceRequestParameterSchema()
       if schema is None:
