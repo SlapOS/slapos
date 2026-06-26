@@ -22,22 +22,22 @@ Outputs:
 """
 
 NR_TDD_CONFIG_MAP = {
-    "DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default"                      : 0,
-    "DDDSUUDDDD (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, same ratios as default"       : 1,
-    "DDDSUUUUDD (5ms,   5DL/4UL), S-slot=6DL:4GP:4UL, balanced downlink and uplink" : 2,
-    "DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink"                 : 3,
-    "DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink": 4,
-    "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink" : 5,
-    "DDDSU      (2.5ms, 3DL/1UL), S-slot=10DL:2GP:2UL, reduced latency"             : 6,
+    'DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default'                      : 0,
+    'DDDSUUDDDD (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, same ratios as default'       : 1,
+    'DDDSUUUUDD (5ms,   5DL/4UL), S-slot=6DL:4GP:4UL, balanced downlink and uplink' : 2,
+    'DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink'                 : 3,
+    'DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink': 4,
+    'DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink' : 5,
+    'DDDSU      (2.5ms, 3DL/1UL), S-slot=10DL:2GP:2UL, reduced latency'             : 6,
 }
 LTE_TDD_CONFIG_MAP = {
-    "[Configuration 0] DSUUUDSUUU (5ms,  2DL/6UL), S-slot=10DL:2GP:2UL, maximum uplink"              : 0,
-    "[Configuration 1] DSUUDDSUUD (5ms,  4DL/4UL), S-slot=10DL:2GP:2UL, balanced downlink and uplink": 1,
-    "[Configuration 2] DSUDDDSUDD (5ms,  6DL/2UL), S-slot=10DL:2GP:2UL, default"                     : 2,
-    "[Configuration 3] DSUUUDDDDD (10ms, 6DL/3UL), S-slot=10DL:2GP:2UL"                              : 3,
-    "[Configuration 4] DSUUDDDDDD (10ms, 7DL/2UL), S-slot=10DL:2GP:2UL, high downlink"               : 4,
-    "[Configuration 5] DSUDDDDDDD (10ms, 8DL/1UL), S-slot=10DL:2GP:2UL, maximum downlink"            : 5,
-    "[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink"                 : 6,
+    '[Configuration 0] DSUUUDSUUU (5ms,  2DL/6UL), S-slot=10DL:2GP:2UL, maximum uplink'              : 0,
+    '[Configuration 1] DSUUDDSUUD (5ms,  4DL/4UL), S-slot=10DL:2GP:2UL, balanced downlink and uplink': 1,
+    '[Configuration 2] DSUDDDSUDD (5ms,  6DL/2UL), S-slot=10DL:2GP:2UL, default'                     : 2,
+    '[Configuration 3] DSUUUDDDDD (10ms, 6DL/3UL), S-slot=10DL:2GP:2UL'                              : 3,
+    '[Configuration 4] DSUUDDDDDD (10ms, 7DL/2UL), S-slot=10DL:2GP:2UL, high downlink'               : 4,
+    '[Configuration 5] DSUDDDDDDD (10ms, 8DL/1UL), S-slot=10DL:2GP:2UL, maximum downlink'            : 5,
+    '[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink'                 : 6,
 }
 
 # Set serial number of this ORS
