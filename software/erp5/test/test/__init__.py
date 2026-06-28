@@ -52,6 +52,26 @@ def setUpModule():
   setup_module_executed = True
 
 
+
+## zope.testrunner support
+class SetupModule:
+    @classmethod
+    def setUp(cls):
+        setUpModule()
+
+
+class SetupClass:
+    def __init__(self, _cls):
+        self._cls = _cls
+        self.__name__ = f'SetupClass for {_cls.__name__}'
+        self.__bases__ = (SetupModule, )  # TODO: different setup module per module ?
+
+    def setUp(self):
+        self._cls.setUpClass()
+    def tearDown(self):
+        self._cls.tearDownClass()
+
+
 # Metaclass to parameterize our tests.
 # This is a rough adaption of the parameterized package:
 #   https://github.com/wolever/parameterized
@@ -76,6 +96,7 @@ class ERP5InstanceTestMeta(type):
     base_class = super().__new__(cls, name, bases, attrs)
     if base_class._isParameterized():
       cls._parameterize(base_class)
+    base_class.layer = SetupClass(base_class)
     return base_class
 
   # _isParameterized tells whether class is parameterized.
