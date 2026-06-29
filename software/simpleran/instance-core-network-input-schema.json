@@ -71,14 +71,36 @@
     "pdn_first": {
       "$ref": "#/$defs/pdn",
       "title": "First PDN",
-      "description": "Parameters for the first PDN (default PDN by default). Default APNs: internet, default, sos",
-      "default": {}
+      "description": "Only two PDNs are currently supported. By default the first PDN has the following APNs: internet, default, sos",
+      "default": {
+        "pdn_list": [
+          {
+            "name": "internet"
+          },
+          {
+            "name": "default"
+          },
+          {
+            "name": "sos"
+          }
+        ],
+        "qci": 9,
+        "fixed_ips": false
+      }
     },
     "pdn_second": {
       "$ref": "#/$defs/pdn",
       "title": "Second PDN",
-      "description": "Parameters for the second PDN (IMS PDN by default). Default APNs: ims",
-      "default": {}
+      "description": "Only two PDNs are currently supported. By default the second PDN is used for IMS APN",
+      "default": {
+        "pdn_list": [
+          {
+            "name": "ims"
+          }
+        ],
+        "qci": 5,
+        "fixed_ips": false
+      }
     },
     "external_mme_list": {
       "title": "External MME List",
@@ -138,12 +160,6 @@
         }
       },
       "default": []
-    },
-    "qci": {
-      "default": 9,
-      "title": "QCI of default E-RAB",
-      "description": "QoS Class Identifier of the default E-RAB",
-      "type": "number"
     },
     "eps_5gs_interworking": {
       "title": "EPS 5GS Interworking",
@@ -314,8 +330,13 @@
             }
           ]
         },
+        "qci": {
+          "default": 9,
+          "title": "QCI of default E-RAB",
+          "description": "QoS Class Identifier of the default E-RAB",
+          "type": "number"
+        },
         "fixed_ips": {
-          "default": false,
           "title": "Fixed IP for the UE",
           "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
           "type": "boolean"

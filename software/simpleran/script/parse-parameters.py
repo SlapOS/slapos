@@ -1083,7 +1083,41 @@ def core_network(config, publish, shared_list):
     publish['pdn']['ipv4-subnetwork'] = slap_configuration['tun-ipv4-network']
     publish['pdn']['pdn-list'] = ', '.join([pdn['name'] for pdn in config['pdn_list']])
 
-    return sim_list, dns_list
+    publish_section_list = []
+    for s in sim_list:
+        publish_section = {}
+        publish_section['title'] = f'publish-{s.slave_reference}'
+        p = {}
+        p['-slave-reference'] = s.slave_reference
+        if 'error' in s:
+            p['error'] = s.error
+        elif s.get('disable_sim') == 'Disable SIM':
+            p['info'] = "Your SIM was disabled, you can enable it back by updating it's parameter."
+        else:
+            p.update({
+              'info': f"Your SIM card has been attached to service  {slap_configuration['instance-title']}.",
+              'plmn'        : s.get('plmn', 'No PLMN defined'        ),
+              'msin'        : s.get('msin', 'No MSIN defined'        ),
+              'imsi'        : s.get('imsi', 'No IMSI defined'        ),
+              'impi'        : s.get('impi', 'No IMPI defined'        ),
+              'impu'        : s.get('impu', 'No IMPU defined'        ),
+              'secret-key'  : s.get('k'   , 'No Secret Key defined'  ),
+              'operator-key': s.get('opc' , 'No Operator Key defined'),
+            })
+            if fixed_ip:
+                p['ipv4'] = s.ip
+        publish_section['publish'] = p
+
+    for s in dns_list:
+        publish_section = {}
+        publish_section['title'] = f'publish-{s.slave_reference}'
+        p = {}
+        p['-slave-reference'] = s.slave_reference
+        p['domain'] = f"{s.subdomain}.{s.get('domain', slapparameter_dict.get('local_domain', ''))}"
+        p['ip'] = s.get('ip', '')
+        p['info'] = f"DNS entry has been attached to service {slap_configuration['instance-title']}."
+
+    return sim_list, dns_list, publish_section_list
 
 def gtp_addr(gtp_localhost_addr):
     gtp_addr_list = []
@@ -1230,7 +1264,7 @@ if sr_type in ['enb', 'gnb', 'ue', 'enb-gnb']:
 
 if sr_type == 'core-network':
     gtp_localhost_addr = '127.0.1.100'
-    sim_list, dns_list = core_network(config, publish, shared_list)
+    sim_list, dns_list, publish_section_list = core_network(config, publish, shared_list)
 elif sr_type in ['enb-gnb', 'enb', 'gnb']:
     gtp_localhost_addr = '127.0.1.1'
     config.setdefault('gtp_addr', 'Automatic')
@@ -1264,3 +1298,4 @@ options['shared-list'] = shared_list
 if sr_type == 'core-network':
     options['sim-list'] = sim_list
     options['dns-list'] = dns_list
+    options['publish-section-list'] = publish_section_list
