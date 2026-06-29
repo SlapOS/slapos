@@ -85,6 +85,11 @@ frontend https-backend
 {%-         if slave_instance['ssl_proxy_verify'] %}
 {%-           if slave_instance['path_to_ssl_proxy_ca_crt']  %}
 {%-             do ssl_list.append('required ca-file %s' % (slave_instance['path_to_ssl_proxy_ca_crt'],)) %}
+{#-           haproxy >= 3.3 turns on automatic SNI (request Host header) by default and, #}
+{#-           with "verify required", matches that SNI against the backend certificate's #}
+{#-           names. The proxied backend certificate is validated against ca-file only, so #}
+{#-           disable auto-SNI to keep the pre-3.3 chain-only verification behaviour. #}
+{%-             do ssl_list.append('no-sni-auto no-check-sni-auto') %}
 {%-           else %}
 {#-           Backend SSL shall be verified, but not CA provided, disallow connection #}
 {#-           Simply dropping hostname from the dict will result with ignoring it... #}
@@ -147,6 +152,10 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-         if slave_instance['health-check-failover-ssl-proxy-verify'] %}
 {%-           if slave_instance['path_to_health-check-failover-ssl-proxy-ca-crt']  %}
 {%-             do ssl_list.append('required ca-file %s' % (slave_instance['path_to_health-check-failover-ssl-proxy-ca-crt'],)) %}
+{#-           See above: disable haproxy >= 3.3 auto-SNI so "verify required" keeps #}
+{#-           chain-only verification instead of matching the request Host against the #}
+{#-           backend certificate names. #}
+{%-             do ssl_list.append('no-sni-auto no-check-sni-auto') %}
 {%-           else %}
 {#-           Backend SSL shall be verified, but not CA provided, disallow connection #}
 {#-           Simply dropping hostname from the dict will result with ignoring it... #}
