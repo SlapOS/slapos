@@ -1,0 +1,135 @@
+{
+    "cell1": {
+        "tti_bundling": {
+            "snr_threshold": 1,
+            "phr_threshold": 1,
+            "hysteresis": 1,
+            "mcs_max": 1,
+            "l_crb_max": 1,
+            "e_harq_pattern": true
+        },
+        "cipher_algo_pref": [
+            "EEA2 (128 bit AES)"
+        ],
+        "integ_algo_pref": [
+            "EIA3 (ZUC)"
+        ],
+        "ignore_gbr_congestion": true,
+        "tx_power_offset": 1
+    },
+    "nodeb": {
+        "n_antenna_dl": 2,
+        "n_antenna_ul": 1,
+        "gnb_id": "1",
+        "gnb_id_bits": 22,
+        "amf_list": [
+            {
+                "name": "1",
+                "amf_addr": "1",
+                "backup_amf_addr": "2",
+                "ngap_bind_addr": "1"
+            }
+        ],
+        "plmn_list_5g": [
+            {
+                "plmn": "1",
+                "tac": "1",
+                "ranac": 1,
+                "reserved": true
+            }
+        ],
+        "enb_id": "1",
+        "mme_list": [
+            {
+                "name": "1",
+                "mme_addr": "1",
+                "backup_mme_addr": "1",
+                "s1ap_bind_addr": "1"
+            }
+        ],
+        "plmn_list": [
+            {
+                "plmn": "1",
+                "attach_without_pdn": true,
+                "reserved": true
+            }
+        ],
+        "gps_sync": true,
+        "gtp_addr": "IPv6 Re6st address",
+        "x2_peers": [
+            {
+                "name": "1",
+                "x2_addr": "1"
+            }
+        ],
+        "xn_peers": [
+            {
+                "name": "1",
+                "xn_addr": "1"
+            }
+        ],
+        "eutra_eutra_handover": {
+            "event": {
+                "a3_rsrp": 1
+            },
+            "hysteresis": 1,
+            "time_to_trigger": 1024
+        },
+        "eutra_nr_handover": {
+            "event": {
+                "b1_rsrp": 1
+            },
+            "hysteresis": 1,
+            "time_to_trigger": 480
+        },
+        "nssai": [
+            {
+                "sst": 1,
+                "sd": "5"
+            }
+        ],
+        "nr_nr_handover": {
+            "event": {
+                "a3_rsrp": 1
+            },
+            "hysteresis": 1,
+            "time_to_trigger": 640
+        },
+        "nr_eutra_handover": {
+            "event": {
+                "b1_rsrp": 1
+            },
+            "hysteresis": 5,
+            "time_to_trigger": 640
+        },
+        "gtp_payload_mtu": 1,
+        "mbmsgw_addr": "1",
+        "inactivity_timer": 1,
+        "handover_a1_rsrp": 1,
+        "handover_a1_hysteresis": 1,
+        "handover_a1_time_to_trigger": 1024,
+        "handover_a2_rsrp": 1,
+        "handover_a2_hysteresis": 1,
+        "handover_a2_time_to_trigger": 512,
+        "handover_meas_gap_config": "Gap Pattern 0"
+    },
+    "management": {
+        "log_phy_debug": false,
+        "enb_stats_fetch_period": 1,
+        "enb_drb_stats_enabled": true,
+        "max_rx_sample_db": 1,
+        "min_rxtx_delay": 1,
+        "xlog_enabled": false,
+        "xlog_forwarding_enabled": true,
+        "check_core_network": true,
+        "wendelin_telecom_software_release_url": "1",
+        "xlog_fluentbit_forward_host": "1",
+        "xlog_fluentbit_forward_port": 1,
+        "xlog_fluentbit_forward_shared_key": "1",
+        "amarisoft_version": "1",
+        "websocket_url_ipv6": false,
+        "lock": "1"
+    },
+    "monitor-interface-url": "1",
+    "rf-info": "1"
+}
