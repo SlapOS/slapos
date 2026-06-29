@@ -3889,7 +3889,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqual(
       self.certificate_pem,
@@ -3916,7 +3916,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def _test_type_websocket(self, parameter_dict, path='test-path'):
     result = fakeHTTPSResult(
       parameter_dict['domain'], path,
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqual(
       self.certificate_pem,
@@ -3957,7 +3957,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqual(
       self.certificate_pem,
@@ -3987,7 +3987,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqual(
       self.certificate_pem,
@@ -4009,7 +4009,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'ws/test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqualResultJson(
       result,
@@ -4031,7 +4031,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'with%20space/test-path', headers={'Connection': 'Upgrade'})
+      'with%20space/test-path', headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqualResultJson(
       result,
@@ -4058,7 +4058,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqual(
       self.certificate_pem,
@@ -4080,7 +4080,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'ws/test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqualResultJson(
       result,
@@ -4102,7 +4102,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'with%20space/test-path', headers={'Connection': 'Upgrade'})
+      'with%20space/test-path', headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqualResultJson(
       result,
