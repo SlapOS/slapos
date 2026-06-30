@@ -20,6 +20,19 @@
       ],
       "type": "string"
     },
+    "bandwidth_ul": {
+      "title": "Uplink Bandwidth",
+      "description": "Uplink Bandwidth (same as downlink bandwidth by default)",
+      "enum": [
+        "1.4 MHz",
+        "3 MHz",
+        "5 MHz",
+        "10 MHz",
+        "15 MHz",
+        "20 MHz"
+      ],
+      "type": "string"
+    },
     "lte_band": {
       "title": "LTE band",
       "description": "LTE band number. Default depends on ORS model, please refer to the connection parameters",
