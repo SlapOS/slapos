@@ -104,7 +104,6 @@ inline =
   #!/bin/sh
   # Amarisoft init scripts
   sudo -n {{ amarisoft['dir'] }}/init-mme;
-  rm -f ${directory:var}/lte_ue.db;
   # Print hardware and software info in info-log
   cat >> ${:info-log} << EOF
 
@@ -153,7 +152,6 @@ inline =
   #!/bin/sh
   # Amarisoft init scripts
   sudo -n {{ amarisoft['dir'] }}/init-mme;
-  rm -f ${directory:var}/lte_ue.db;
   # Print hardware and software info in info-log
   cat >> ${:info-log} << EOF
 
