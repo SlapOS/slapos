@@ -404,11 +404,7 @@ class Relay(E2ETestCase):
       'timeout': cls.smtp_timeout,
     }
     for relay in cls.password_relays:
-      try:
-        relay.login = cls.getRelaySharedLogin(relay)
-      except Exception as e:
-        breakpoint()
-        pass
+      relay.login = cls.getRelaySharedLogin(relay)
     cls.relay_servers = [
       cp for cp in cls.slap.computer.getComputerPartitionList()
       if cp.getState() == 'started' and cp.getType() == 'relay'
