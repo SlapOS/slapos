@@ -25,10 +25,10 @@ ue_db: [
 {%-   for pdn in s.pdn_list %}
       {
         access_point_name: "{{ pdn.access_point_name }}",
-        default: {{ pdn.default }},
-        multicast: {{ pdn.multicast }},
-        ipv6_multicast: {{ pdn.ipv6_multicast }},
-        broadcast: {{ pdn.broadcast }},
+        default: {{ pdn.default | tojson }},
+        multicast: {{ pdn.multicast | tojson }},
+        ipv6_multicast: {{ pdn.ipv6_multicast | tojson }},
+        broadcast: {{ pdn.broadcast | tojson }},
 {%-     if pdn.get('ipv4_addr') %}
         ipv4_addr: "{{ pdn.ipv4_addr }}",
 {%-     endif %}

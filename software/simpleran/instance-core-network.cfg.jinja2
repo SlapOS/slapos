@@ -2,7 +2,7 @@
 
 {% set part_list = [] -%}
 {%- for section in publish_section_list %}
-{%    do part_list.append(publish_section_title) %}
+{%    do part_list.append(section['title']) %}
 [{{ section['title'] }}]
 recipe = slapos.cookbook:publish.serialised
 {%-   for param in section['publish'] %}
@@ -15,22 +15,24 @@ parts =
   directory
   mme-config
   mme-service
+{%- if slapparameter_dict.get('ims_pdn') %}
   ims-config
+  ims-service
+  publish-ims-config
+  ws-ims-websocket-promise
+  ws-ims-nginx-launcher
+  ws-ims-nginx-graceful
+{%- endif %}
   mt-call-config
   publish-mme-config
-  publish-ims-config
   publish-mt-call-config
   publish-ue-db-config
-  ims-service
   monitor-base
   check-interface-up.py
   publish-connection-information
   ws-mme-websocket-promise
   ws-mme-nginx-launcher
   ws-mme-nginx-graceful
-  ws-ims-websocket-promise
-  ws-ims-nginx-launcher
-  ws-ims-nginx-graceful
 # Don't add these sections during unit tests as there is no TUN IPv4 available
 {% if not slapparameter_dict.testing %}
 {%-  if slapparameter_dict.get('ims_pdn') %}

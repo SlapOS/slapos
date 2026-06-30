@@ -1046,11 +1046,11 @@ def core_network(config, publish, shared_list):
             # should we make a promise fail ?
             def sim_ip(sim, ip=None):
                 if ip:
-                    sim['pdn_list'][-1]['ipv4_addr'] = ip
+                    sim['pdn_list'][-1]['ipv4_addr'] = str(netaddr.IPAddress(ip))
                 return sim['pdn_list'][-1].get('ipv4_addr')
             def sim_ipv6(sim, ip=None):
                 if ip:
-                    sim['pdn_list'][-1]['ipv6_prefix'] = ip
+                    sim['pdn_list'][-1]['ipv6_prefix'] = str(netaddr.IPAddress(ip))
                 return sim['pdn_list'][-1].get('ipv6_prefix')
             if len(sim_list) > ((ipv4_end - 2) - (ipv4_start + 1)):
                 for sim in sim_list:
@@ -1074,10 +1074,10 @@ def core_network(config, publish, shared_list):
                 for sim in sorted(sim_list, key=lambda x: x['imsi']):
                     if sim_ip(sim):
                         continue
-                    ip = str(first_addr + i)
+                    ip = first_addr + i
                     while ip in force_ip_list:
                         i += 1
-                        ip = str(first_addr + i)
+                        ip = first_addr + i
                     sim_ip(sim, ip=ip)
                     i += 1
                 # Allocate fixed IPv6
@@ -1085,10 +1085,10 @@ def core_network(config, publish, shared_list):
                 for sim in sorted(sim_list, key=lambda x: x['imsi']):
                     if sim_ipv6(sim):
                         continue
-                    ipv6 = str(first_addrv6 + i * 2**64)
+                    ipv6 = first_addrv6 + i * 2**64
                     while ipv6 in force_ipv6_list:
                         i += 1
-                        ipv6 = str(first_addrv6 + i * 2**64)
+                        ipv6 = first_addrv6 + i * 2**64
                     sim_ipv6(sim, ip=ipv6)
                     i += 1
 
@@ -1131,11 +1131,10 @@ def core_network(config, publish, shared_list):
             publish['core']['p-cscf-addr'] = pdn['ipv4']
         name = pdn['apn_list'][0]
         publish['pdn'][f'{name}-apn-list']     = ', '.join(pdn['apn_list'])
+        publish['pdn'][f'{name}-sim-ipv4']     = f"{pdn['ipv4_start']} -> {pdn['ipv4_end']}"
+        publish['pdn'][f'{name}-sim-ipv6']     = f"{pdn['ipv6_start']} -> {pdn['ipv6_end']}"
         publish['pdn'][f'{name}-ipv4-gateway'] = pdn['ipv4']
-        publish['pdn'][f'{name}-ipv4-start']   = pdn['ipv4_start']
-        publish['pdn'][f'{name}-ipv4-end']     = pdn['ipv4_end']
-        publish['pdn'][f'{name}-ipv6-start']   = pdn['ipv6_start']
-        publish['pdn'][f'{name}-ipv6-end']     = pdn['ipv6_end']
+        publish['pdn'][f'{name}-ipv6-gateway'] = pdn['ipv6']
         publish['pdn'][f'{name}-qci']          = pdn['qci']
         publish['pdn'][f'{name}-dns-list']     = ', '.join(pdn['dns_addr_list'])
 
@@ -1143,44 +1142,44 @@ def core_network(config, publish, shared_list):
     publish['core']['network-short-name']   = config['network_short_name']
 
     publish_section_list = []
-    for s in sim_list:
+    for sim in sim_list:
         publish_section = {}
-        publish_section['title'] = f"publish-{s['slave_reference']}"
+        publish_section['title'] = f"publish-{sim['slave_reference']}"
         p = {}
-        p['-slave-reference'] = s['slave_reference']
-        if 'error' in s:
-            p['error'] = s['error']
-        elif s.get('disable_sim') == 'Disable SIM':
-            p['info'] = "Your SIM was disabled, you can enable it back by updating it's parameter."
+        p['-slave-reference'] = sim['slave_reference']
+        if 'error' in sim:
+            p['error'] = sim['error']
+        elif sim.get('disable_sim') == 'Disable SIM':
+            p['info'] = "Your SIM was disabled, you can enable it back by updating it'sim parameter."
         else:
             p.update({
               'info': f"Your SIM card has been attached to service  {slap_configuration['instance-title']}.",
-              'plmn'        : s.get('plmn', 'No PLMN defined'        ),
-              'msin'        : s.get('msin', 'No MSIN defined'        ),
-              'imsi'        : s.get('imsi', 'No IMSI defined'        ),
-              'impi'        : s.get('impi', 'No IMPI defined'        ),
-              'impu'        : s.get('impu', 'No IMPU defined'        ),
-              'secret-key'  : s.get('k'   , 'No Secret Key defined'  ),
-              'operator-key': s.get('opc' , 'No Operator Key defined'),
+              'plmn'        : sim.get('plmn', 'No PLMN defined'        ),
+              'msin'        : sim.get('msin', 'No MSIN defined'        ),
+              'imsi'        : sim.get('imsi', 'No IMSI defined'        ),
+              'impi'        : sim.get('impi', 'No IMPI defined'        ),
+              'impu'        : sim.get('impu', 'No IMPU defined'        ),
+              'secret-key'  : sim.get('k'   , 'No Secret Key defined'  ),
+              'operator-key': sim.get('opc' , 'No Operator Key defined'),
             })
-            if 'pdn1-ip' in s:
-                p[f"{config['pdn_list'][0]['name']}-ipv4"] = s['pdn1-ip']
-            if 'pdn2-ip' in s:
-                p[f"{config['pdn_list'][1]['name']}-ipv4"] = s['pdn2-ip']
-            if 'pdn1-ipv6' in s:
-                p[f"{config['pdn_list'][0]['name']}-ipv6"] = s['pdn1-ipv6']
-            if 'pdn2-ipv6' in s:
-                p[f"{config['pdn_list'][1]['name']}-ipv6"] = s['pdn2-ipv6']
+            for pdn in sim.get('pdn_list', []):
+                if 'ipv4_addr' in pdn:
+                    p[f"{pdn['access_point_name']}-ipv4-addr"]   = pdn['ipv4_addr']
+                if 'ipv6_prefix' in pdn:
+                    p[f"{pdn['access_point_name']}-ipv6-prefix"] = pdn['ipv6_prefix']
         publish_section['publish'] = p
+        publish_section_list.append(publish_section)
 
-    for s in dns_list:
+    for dns in dns_list:
         publish_section = {}
-        publish_section['title'] = f'publish-{s.slave_reference}'
+        publish_section['title'] = f'publish-{dns.slave_reference}'
         p = {}
-        p['-slave-reference'] = s.slave_reference
-        p['domain'] = f"{s.subdomain}.{s.get('domain', slapparameter_dict.get('local_domain', ''))}"
-        p['ip'] = s.get('ip', '')
+        p['-slave-reference'] = dns.slave_reference
+        p['domain'] = f"{dns.subdomain}.{dns.get('domain', slapparameter_dict.get('local_domain', ''))}"
+        p['ip'] = dns.get('ip', '')
         p['info'] = f"DNS entry has been attached to service {slap_configuration['instance-title']}."
+        publish_section['publish'] = p
+        publish_section_list.append(publish_section)
 
 
     return sim_list, publish_section_list
@@ -1364,3 +1363,7 @@ options['shared-list'] = shared_list
 if sr_type == 'core-network':
     options['sim-list'] = sim_list
     options['publish-section-list'] = publish_section_list
+
+print("JHGD")
+print(json.dumps(publish_section_list, indent=4))
+print("JHGD")

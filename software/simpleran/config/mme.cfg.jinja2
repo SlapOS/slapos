@@ -86,16 +86,16 @@
   },
 {%- endif %}
 
-
-  ims_vops_eps: true,
-  ims_vops_5gs_3gpp: true,
-  ims_vops_5gs_n3gpp: true,
   emergency_number_list: [
 
     { category: 0x1f, digits: "911" },
     { category: 0x1f, digits: "112" },
   ],
 
+{%- if slapparameter_dict.get('ims_pdn') %}
+  ims_vops_eps: true,
+  ims_vops_5gs_3gpp: true,
+  ims_vops_5gs_n3gpp: true,
   rx: {
     bind_addr: "127.0.1.100",
     qos: {
@@ -107,6 +107,14 @@
       }
     }
   },
+  ims_list: [
+    {
+      ims_addr: "{{ slapparameter_dict.ims_addr }}",
+      bind_addr: "{{  slapparameter_dict.ims_bind }}",
+    }
+  ],
+{%- endif %}
+
   qci_dscp_mapping: [
     {
       qci: 1,
@@ -131,13 +139,6 @@
   eps_5gs_interworking: "{{ eps_5gs_interworking }}",
 
   fifteen_bearers: false,
-
-  ims_list: [
-    {
-      ims_addr: "{{ slapparameter_dict.ims_addr }}",
-      bind_addr: "{{  slapparameter_dict.ims_bind }}",
-    }
-  ],
 
   pdn_list: [
 {%- for pdn in slapparameter_dict.pdn_list %}
