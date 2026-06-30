@@ -35,6 +35,7 @@ import json
 import io
 import gzip
 import multiprocessing
+import shutil
 import subprocess
 from unittest import skip
 import ssl
@@ -45,8 +46,10 @@ import re
 from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
 import urllib.parse
+import configparser
 import socket
 import sys
+import threading
 import lzma
 from slapos.slap.standalone import SlapOSNodeInstanceError
 import caucase.client
@@ -475,6 +478,7 @@ class TestDataMixin(object):
       '@@_server_https_weak_port@@': str(self._server_https_weak_port),
       '@@_server_netloc_a_http_port@@': str(self._server_netloc_a_http_port),
       '@@_server_netloc_b_http_port@@': str(self._server_netloc_b_http_port),
+      '@@_server_nginx_auth_444_port@@': str(self._server_nginx_auth_444_port),
       '@@another_server_ca.certificate_pem@@': unicode_escape(
         self.another_server_ca.certificate_pem.decode()),
       '@@another_server_ca.certificate_pem_double@@': unicode_escape(
@@ -594,6 +598,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   # minimise partition path
   __partition_reference__ = 'T-'
+
+  @classmethod
+  def getRapidCDNNginx(cls):
+    installed_cfg = configparser.ConfigParser(strict=False, interpolation=None)
+    installed_cfg.read(os.path.join(cls.software_path, '.installed.cfg'))
+    return installed_cfg['nginx-output']['nginx']
 
   @classmethod
   def prepareCertificate(cls):
@@ -1265,6 +1275,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       cls._server_https_auth_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_netloc_a_http_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_netloc_b_http_port = findFreeTCPPort(cls._ipv4_address)
+      cls._server_nginx_auth_444_port = findFreeTCPPort(cls._ipv4_address)
       cls.startServerProcess()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
@@ -1405,6 +1416,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   ignore_status_code_slave_list = [
     'authtobackend.example.com',
     'authtobackendnotconfigured.example.com',
+    'backendnginxauthenticatedconnectiondrop.example.com',
     'badbackend.example.com',
     'ciphers.example.com',
     'cipherstranslationall.example.com',
@@ -1746,6 +1758,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'bad-backend': {
         'url': 'http://bad.backend/',
+      },
+      'backend-nginx-authenticated-connection-drop': {
+        # real-nginx backend with `return 444` + ssl_verify_client on (mTLS
+        # against the same caucase CA the frontend's backend-client cert is
+        # signed by). Started by the test method itself. Uses IPv6 loopback
+        # to mirror the production shape (gitlab backend on IPv6 literal).
+        'url': 'https://%s:%s/' % (
+          cls._ipv4_address, cls._server_nginx_auth_444_port),
+        'authenticate-to-backend': True,
       },
       'Url': {
         # make URL "incorrect", with whitespace, nevertheless it shall be
@@ -2278,9 +2299,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '75',
+      'accepted-slave-amount': '76',
       'rejected-slave-amount': '0',
-      'slave-amount': '75',
+      'slave-amount': '76',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -2753,6 +2774,157 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPSResult(
       parameter_dict['domain'], '/down')
     self.assertResponseHeaders(result, backend_reached=False)
+
+  def test_backend_nginx_authenticated_hammer_connection_drop(self):
+    # Reproduces the production "Connection died" symptom observed when the
+    # haproxy backend pool is hot with successful responses and an
+    # intermittent backend close arrives on a separate request: haproxy
+    # resets the h2 client stream of the request that hit the close
+    # instead of returning a clean 502.
+    #
+    # Uses the same real-nginx setup as
+    # test_backend_nginx_authenticated_connection_drop (ssl_verify_client
+    # on, h2 ALPN advertised) plus an additional /warm location that
+    # returns 200 so haproxy's backend connection pool stays hot with
+    # successful responses while we probe /.
+    #
+    # Background: WORKERS threads issue /warm requests in a tight loop to
+    # keep haproxy's backend pool churning with successful responses.
+    # Foreground: a probe loop hits / and counts outcomes. The test passes
+    # iff every probe returned a clean 502 (no curl-level exceptions and
+    # no unexpected status codes).
+    parameter_dict = self.assertSlaveBase(
+      'backend-nginx-authenticated-connection-drop')
+
+    master_parameter_dict = self.parseConnectionParameterDict()
+    caucase_url = master_parameter_dict['backend-client-caucase-url']
+    ca_response = mimikra.get(caucase_url + '/cas/crt/ca.crt.pem')
+    self.assertEqual(ca_response.status_code, http.client.OK)
+
+    nginx_dir = tempfile.mkdtemp(prefix='nginx-auth-hammer-')
+    try:
+      ca_path = os.path.join(nginx_dir, 'ca.crt')
+      with open(ca_path, 'w') as fh:
+        fh.write(ca_response.text)
+      conf_path = os.path.join(nginx_dir, 'nginx.conf')
+      with open(conf_path, 'w') as fh:
+        fh.write(
+          'daemon off;\n'
+          'master_process off;\n'
+          'worker_processes 1;\n'
+          'pid %(dir)s/nginx.pid;\n'
+          'error_log %(dir)s/error.log info;\n'
+          'events { worker_connections 256; }\n'
+          'http {\n'
+          '  access_log %(dir)s/access.log;\n'
+          '  server {\n'
+          '    listen %(ip)s:%(port)s ssl http2;\n'
+          '    ssl_certificate %(cert)s;\n'
+          '    ssl_certificate_key %(cert)s;\n'
+          '    ssl_client_certificate %(ca)s;\n'
+          '    ssl_verify_client on;\n'
+          '    location = /warm { return 200 "ok\\n"; }\n'
+          '    location /      { return 444; }\n'
+          '  }\n'
+          '}\n' % {
+            'dir': nginx_dir,
+            'ip': self._ipv4_address,
+            'port': self._server_nginx_auth_444_port,
+            'cert': self.test_server_certificate_file.name,
+            'ca': ca_path,
+          })
+      nginx_process = subprocess.Popen(
+        [self.getRapidCDNNginx(),
+         '-p', nginx_dir,
+         '-c', conf_path,
+         '-e', os.path.join(nginx_dir, 'error.log')],
+      )
+      try:
+        for _ in range(50):
+          probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          try:
+            probe.settimeout(1)
+            probe.connect(
+              (self._ipv4_address, self._server_nginx_auth_444_port))
+            probe.close()
+            break
+          except OSError:
+            time.sleep(0.1)
+          finally:
+            probe.close()
+        else:
+          self.fail('nginx auth-hammer backend did not start listening in time')
+
+        # Sanity-check the warm path through the frontend. We deliberately
+        # do NOT assert on the drop path here: under the bug, even a single
+        # `/` probe can already fail (especially over h3), and we want the
+        # hammer phase below to be what surfaces the failure with counts.
+        warm = fakeHTTPSResult(parameter_dict['domain'], '/warm')
+        self.assertEqual(http.client.OK, warm.status_code)
+
+        # Background load: sustain /warm requests while we probe /.
+        stop_event = threading.Event()
+
+        def warm_worker():
+          while not stop_event.is_set():
+            try:
+              fakeHTTPSResult(parameter_dict['domain'], '/warm')
+            except Exception:
+              pass
+
+        WORKERS = 50
+        DURATION_SECONDS = 120
+
+        warm_threads = []
+        for _ in range(WORKERS):
+          t = threading.Thread(target=warm_worker)
+          t.daemon = True
+          t.start()
+          warm_threads.append(t)
+
+        try:
+          # Foreground probe loop on /.
+          connection_errors = 0
+          clean_502 = 0
+          unexpected = []
+          start = time.time()
+          while time.time() - start < DURATION_SECONDS:
+            try:
+              r = fakeHTTPSResult(parameter_dict['domain'], '/')
+              if r.status_code == http.client.BAD_GATEWAY:
+                clean_502 += 1
+              else:
+                unexpected.append(r.status_code)
+            except CurlException:
+              connection_errors += 1
+        finally:
+          stop_event.set()
+          for t in warm_threads:
+            t.join(timeout=10)
+
+        total = clean_502 + connection_errors + len(unexpected)
+        self.assertGreater(total, 0, 'no probes were issued')
+        self.assertEqual(
+          connection_errors, 0,
+          'haproxy aborted %d/%d probe connections under sustained '
+          'background load (clean 502: %d, unexpected: %r). Expected all '
+          'probes to return 502 cleanly; haproxy must not propagate a '
+          'backend close to other h2 client streams.'
+          % (connection_errors, total, clean_502, unexpected))
+        self.assertFalse(
+          unexpected,
+          'unexpected non-502 statuses on probe path: %r' % (unexpected,))
+      finally:
+        nginx_process.terminate()
+        nginx_process.wait()
+    finally:
+      for name in ('error.log', 'access.log'):
+        p = os.path.join(nginx_dir, name)
+        if os.path.exists(p):
+          with open(p) as fh:
+            sys.stderr.write(
+              '=== nginx %s ===\n%s=== end %s ===\n' % (name, fh.read(), name))
+      shutil.rmtree(nginx_dir, ignore_errors=True)
 
   def test_url_trailing_slash_absent(self):
     parameter_dict = self.assertSlaveBase('url-trailing-slash-absent')
