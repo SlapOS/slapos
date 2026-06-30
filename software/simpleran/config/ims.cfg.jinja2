@@ -47,13 +47,16 @@
         {impu: "tel:404", code: 404},     
         {impu: "urn:service:sos", anonymous: true, authentication: false}, 
         {impu: "urn:service:sos.police", anonymous: true, authentication: false}, 
+        {impu: "urn:service:sos.ecall.automatic", anonymous: true, authentication: false},
+        {impu: "urn:service:sos.ecall.manual", anonymous: true, authentication: false},
+        {impu: "urn:service:test.sos.ecall", anonymous: true, authentication: false},
     ],
     
     precondition: "on",
     "100rel": true,
     
-    ipsec_aalg_list: ["hmac-md5-96", "hmac-sha-1-96"],
-    ipsec_ealg_list: ["null", "aes-cbc", "des-cbc", "des-ede3-cbc"],
+    ipsec_aalg_list: ["null", "hmac-md5-96", "hmac-sha-1-96", "hmac-md5-128", "hmac-sha-1-160", "aes-cmac-96", "aes-gmac", "aes-gmac-us"],
+    ipsec_ealg_list: ["null", "aes-cbc", "des-ede3-cbc", "blowfish", "aes-ctr", "aes-gcm", "aes-gcm-us"],
 
     ipsec_ifname: "{{ default_pdn.tun_name }}-ims",
     ipsec_netns: "{{ default_pdn.tun_name }}-ims-netns",
