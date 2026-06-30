@@ -1019,6 +1019,7 @@ def core_network(config, publish, shared_list):
         pdn.setdefault('ipv4'      , str(netaddr.IPAddress(ipv4_start  )))
         pdn.setdefault('ipv4_start', str(netaddr.IPAddress(first_addr  )))
         pdn.setdefault('ipv4_end'  , str(netaddr.IPAddress(ipv4_end - 2)))
+        pdn.setdefault('ipv6'      , str(netaddr.IPAddress(ipv6_start  )))
         pdn.setdefault('ipv6_start', str(netaddr.IPAddress(first_addrv6)))
         pdn.setdefault('ipv6_end'  , str(netaddr.IPAddress(ipv6_end - 1)))
         if config.get('local_domain'):
@@ -1110,8 +1111,7 @@ def core_network(config, publish, shared_list):
     for pdn in pdn_list:
         if 'ims' in pdn:
             config['ims_pdn'] = pdn
-        if 'default' in pdn:
-            config['default_pdn'] = pdn
+    config['default_pdn'] = pdn_list[0]
 
     config['pdn_list'] = pdn_list
     config.pop('pdn1', '')

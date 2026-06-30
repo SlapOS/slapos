@@ -33,7 +33,7 @@ ue_db: [
         ipv4_addr: "{{ pdn.ipv4_addr }}",
 {%-     endif %}
 {%-     if pdn.get('ipv6_prefix') %}
-        ipv4_prefix: "{{ pdn.ipv4_prefix }}",
+        ipv6_prefix: "{{ pdn.ipv6_prefix }}",
 {%-     endif %}
 {%-     if pdn.get('route_list') %}
         routes: [
