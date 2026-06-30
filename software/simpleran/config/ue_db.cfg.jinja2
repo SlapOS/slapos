@@ -1,4 +1,3 @@
-{%- set sim_list = json_module.loads(sim_list) %}
 ue_db: [
 {%- for s in sim_list %}
 {%-   if s.get('disable_sim', '') != 'Disable SIM' %}
@@ -21,12 +20,51 @@ ue_db: [
 {%-     if s.get('res_len', '') %}
     res_len: {{ s.res_len }},
 {%-     endif %}
+{%- if len(s.pdn_list)  > 0 %}
+    pdn_list: [
+{%-   for pdn in s.pdn_list %}
+      {
+        access_point_name: "{{ pdn.access_point_name }}",
+        default: {{ pdn.default }},
+        multicast: {{ pdn.multicast }},
+        ipv6_multicast: {{ pdn.ipv6_multicast }},
+        broadcast: {{ pdn.broadcast }},
+{%-     if pdn.get('ipv4_addr') %}
+        ipv4_addr: "{{ pdn.ipv4_addr }}",
+{%-     endif %}
+{%-     if pdn.get('ipv6_prefix') %}
+        ipv4_prefix: "{{ pdn.ipv4_prefix }}",
+{%-     endif %}
+{%-     if pdn.get('route_list') %}
+        routes: [
+{%-       for route in pdn.route_list %}
+          [
+            {
+{%-          if 'ipv4_remote_addr' in route %}
+              ipv4_remote_addr: "{{ route['ipv4_remote_addr'] }}",
+              mask: "{{ route['mask'] }}",
+{%-          else %}
+              ipv6_remote_addr_prefix: "{{ route['ipv6_remote_addr_prefix'] }}",
+              prefix_len: {{ route['prefix_len'] }},
+{%-          endif %}
+            }
+          ],
+{%-        endfor -%}
+        ],
+{%-     endif %}
+      },
+{%-   endfor %}
+    ],
+{%- endif %}
 {%-     if "ip" in s or s.get('enable_multicast', False) or s.get('enable_ipv6_multicast', False) or s.get('enable_broadcast') or s.get('route_list', False) %}
     pdn_list:[{
       access_point_name: "internet",
       default: true,
 {%-       if "ip" in s %}
       ipv4_addr: "{{ s['ip'] }}",
+{%-       endif %}
+{%-       if "ipv6" in s %}
+      ipv6_prefix: "{{ s['ipv6'] }}",
 {%-       endif %}
 {%-       if s.get('enable_multicast', False) %}
       multicast: true,
@@ -42,8 +80,13 @@ ue_db: [
 {%-         for route in s.route_list %}
         [
           {
+{%-       if 'ipv4_remote_addr' in route %}
+            ipv4_remote_addr: "{{ route['ipv4_remote_addr'] }}",
+            mask: "{{ route['mask'] }}",
+{%-       else %}
             ipv6_remote_addr_prefix: "{{ route['ipv6_remote_addr_prefix'] }}",
             prefix_len: {{ route['prefix_len'] }},
+{%-       endif %}
           }
         ],
 {%-         endfor -%}

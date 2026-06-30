@@ -1,5 +1,3 @@
-{%- set slap_configuration = json_module.loads(slap_configuration) %}
-{%- set slapparameter_dict = json_module.loads(slapparameter_dict) %}
 {
     log_options: "all.level=debug,all.max_size=32",
     log_filename: "{{ directory['log'] }}/ims.log",
