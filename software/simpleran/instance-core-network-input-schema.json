@@ -135,8 +135,8 @@
         "additionalProperties": false,
         "required": [
           "addr",
-	  "code",
-	  "tai_list"
+          "code",
+          "tai_list"
         ],
         "properties": {
           "name": {
@@ -164,7 +164,7 @@
               "additionalProperties": false,
               "required": [
                 "plmn",
-	        "tacs"
+                "tacs"
               ],
               "properties": {
                 "plmn": {
@@ -177,8 +177,8 @@
                   "description": "List of TACS for this TAI (comma separated list)",
                   "type": "string"
                 }
-	      }
-	    }
+              }
+            }
           }
         }
       },
