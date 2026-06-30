@@ -181,7 +181,6 @@
   tun_setup_script: "{{ ifup_empty }}",
   nas_cipher_algo_pref: [ ],
   nas_integ_algo_pref: [ 2, 1 ],
-  ue_db_filename: "{{ directory['var'] }}/lte_ue.db",
 {%- if slapparameter_dict.get('hss_addr', '') %}
   ue_db: [],
   s6: {
