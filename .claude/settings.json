@@ -1,0 +1,22 @@
+{
+  "extraKnownMarketplaces": {
+    "slapos-agent-skills": {
+      "source": {
+        "source": "git",
+        "url": "https://lab.nexedi.com/cedric.leninivin/slapos-agent-skills.git"
+      }
+    },
+    "slapos-coding-rules": {
+      "source": {
+        "source": "git",
+        "url": "https://lab.nexedi.com/cedric.leninivin/slapos-coding-rules.git"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "slapos-scaffolding@slapos-agent-skills": true,
+    "slapos-build-deploy@slapos-agent-skills": true,
+    "slapos-diagnostics@slapos-agent-skills": true,
+    "slapos-coding-rules@slapos-coding-rules": true
+  }
+}
