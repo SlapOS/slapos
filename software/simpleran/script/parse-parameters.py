@@ -1006,8 +1006,8 @@ def core_network(config, publish, shared_list):
     ipv4_interval = (tun_ipv4_end - tun_ipv4_start) // 2
     ipv4_start    = tun_ipv4_start
     ipv4_end      = tun_ipv4_start + ipv4_interval
-    ipv6_interval = (tun_ipv6_end - tun_ipv6_start) // 2
-    ipv6_start    = tun_ipv6_start
+    ipv6_interval = (((tun_ipv6_end - tun_ipv6_start) // 2) // 2**64) * 2**64
+    ipv6_start    = (tun_ipv6_start // 2**64) * 2**64
     ipv6_end      = tun_ipv6_start + ipv6_interval
     for i, pdn in enumerate(pdn_list):
         pdn['name'] = pdn['apn_list'][0]
@@ -1015,7 +1015,7 @@ def core_network(config, publish, shared_list):
         if i > 0:
             pdn['tun_name'] = f"{pdn['tun_name']}-{i}"
         first_addr   = ipv4_start + 1
-        first_addrv6 = ipv6_start + 1
+        first_addrv6 = ipv6_start + 2**64
         pdn.setdefault('ipv4'      , str(netaddr.IPAddress(ipv4_start  )))
         pdn.setdefault('ipv4_start', str(netaddr.IPAddress(first_addr  )))
         pdn.setdefault('ipv4_end'  , str(netaddr.IPAddress(ipv4_end - 2)))
@@ -1038,6 +1038,10 @@ def core_network(config, publish, shared_list):
                 sim_pdn['broadcast']      = sim.get('enable_broadcast', False)
                 if sim.get('route_list'):
                     sim_pdn['route_list'] = sim['route_list']
+            else:
+                sim_pdn['multicast']      = False
+                sim_pdn['ipv6_multicast'] = False
+                sim_pdn['broadcast']      = False
             sim['pdn_list'].append(sim_pdn)
 
         pdn_id = f'pdn{i+1}'
@@ -1061,11 +1065,11 @@ def core_network(config, publish, shared_list):
                 force_ip_list = []
                 force_ipv6_list = []
                 for sim in sim_list:
-                    ip = sim.get(f'{pdn_id}_force_ip', None)
+                    ip = sim.get(f'force_ip_{pdn_id}', None)
                     if ip:
                         sim_ip(sim, ip=ip)
                         force_ip_list.append(ip)
-                    ipv6 = sim.get(f'{pdn_id}_force_ipv6', None)
+                    ipv6 = sim.get(f'force_ipv6_{pdn_id}', None)
                     if ipv6:
                         sim_ipv6(sim, ip=ipv6)
                         force_ipv6_list.append(ipv6)
@@ -1105,11 +1109,11 @@ def core_network(config, publish, shared_list):
 
         ipv4_start += ipv4_interval + 1
         ipv4_end   += ipv4_interval + 1
-        ipv6_start += ipv6_interval - 1
+        ipv6_start += ipv6_interval
         ipv6_end   += ipv6_interval
 
     for pdn in pdn_list:
-        if 'ims' in pdn:
+        if pdn.get('ims'):
             config['ims_pdn'] = pdn
     config['default_pdn'] = pdn_list[0]
 
@@ -1364,6 +1368,3 @@ if sr_type == 'core-network':
     options['sim-list'] = sim_list
     options['publish-section-list'] = publish_section_list
 
-print("JHGD")
-print(json.dumps(publish_section_list, indent=4))
-print("JHGD")
