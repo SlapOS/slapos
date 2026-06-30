@@ -1,7 +1,11 @@
-{%- set slap_configuration = json_module.loads(slap_configuration) %}
-{%- set slapparameter_dict = json_module.loads(slapparameter_dict) %}
+{%- set inter_core_handover = len(slapparameter_dict.external_mme_list)  > 0 %}
+{%- set default_pdn = slapparameter_dict.default_pdn %}
 {
+{%- if inter_core_handover %}
+  log_options: "all.level=error,all.max_size=0,nas.level=debug,nas.max_size=1,n14.level=debug,n14.max_size=1,gtpc.level=debug,gtpc.max_size=1,s1ap.level=debug,s1ap.max_size=1,ngap.level=debug,ngap.max_size=1,file.rotate=1G,file.path=/dev/null",
+{%- else %}
   log_options: "all.level=error,all.max_size=0,nas.level=debug,nas.max_size=1,s1ap.level=debug,s1ap.max_size=1,ngap.level=debug,ngap.max_size=1,file.rotate=1G,file.path=/dev/null",
+{%- endif %}
   log_filename: "{{ directory['log'] }}/mme.log",
 
   com_addr: "{{ slapparameter_dict.mme_com_url }}",
@@ -14,35 +18,118 @@
 
   gtp_addr: [
 {%-   for addr in slapparameter_dict.get('gtp_addr_list', []) | sort -%}
-    "{{ addr }}", 
+    "{{ addr }}",
 {%-   endfor -%}
   ],
 
   plmn: "{{ slapparameter_dict.core_network_plmn }}",
   mme_group_id: 32769,
-  mme_code: 1,
+  mme_code: {{ slapparameter_dict.code }},
 
-  ims_vops_eps: true,
-  ims_vops_5gs_3gpp: true,
-  ims_vops_5gs_n3gpp: true,
+{%- if inter_core_handover %}
+  external_mme_list: [
+{%-   for mme in slapparameter_dict.external_mme_list %}
+    {
+      addr: "{{ mme['addr'] }}",
+      mme_group_id: 32769,
+      mme_code: {{ mme['code'] }},
+      tai_lists: [
+{%-   for tai in mme.tai_list %}
+        {
+           plmn: "{{ tai['plmn'] }}",
+           tacs: [{{ tai['tacs'] }}],
+        },
+{%-   endfor %}
+      ],
+    },
+{%-   endfor %}
+  ],
+
+  external_amf_list: [
+{%-   for mme in slapparameter_dict.external_mme_list %}
+    {
+      amf_region_id: 128,
+      amf_set_id: 4,
+      amf_pointer: {{ mme['code'] }},
+      n26_support: false,
+      tai_lists: [
+{%-   for tai in mme.tai_list %}
+        {
+           plmn: "{{ tai['plmn'] }}",
+           tacs: [{{ tai['tacs'] }}],
+        },
+{%-   endfor %}
+      ],
+    },
+{%-   endfor %}
+  ],
+
+  n14: {
+      server_bind_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
+      gtp_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
+      external_amf_list: [
+{%-   for mme in slapparameter_dict.external_mme_list %}
+      {
+        bind_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
+        api_root: "http://[{{ mme['addr'] }}]:5580",
+        amf_region_id: 128,
+        amf_set_id: 4,
+        amf_pointer: {{ mme['code'] }},
+      },
+{%-   endfor %}
+      ],
+  },
+
+  gtp_c: {
+      bind_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
+      gtp_u_addr: "{{ slapparameter_dict['mme_bind_ipv6'] }}",
+  },
+{%- endif %}
+
   emergency_number_list: [
 
     { category: 0x1f, digits: "911" },
     { category: 0x1f, digits: "112" },
   ],
 
+{%- if slapparameter_dict.get('ims_pdn') %}
+  ims_vops_eps: true,
+  ims_vops_5gs_3gpp: true,
+  ims_vops_5gs_n3gpp: true,
   rx: {
     bind_addr: "127.0.1.100",
-    qci: {audio: 1, video: 2},
+    qos: {
+      audio: {
+        qci: 1
+      },
+      video: {
+        qci: 2
+      }
+    }
   },
+  ims_list: [
+    {
+      ims_addr: "{{ slapparameter_dict.ims_addr }}",
+      bind_addr: "{{  slapparameter_dict.ims_bind }}",
+    }
+  ],
+{%- endif %}
 
+  qci_dscp_mapping: [
+    {
+      qci: 1,
+      dscp: 0x2e
+    },
+    {
+      qci: 65,
+      dscp: 0x2e
+    },
+  ],
 
   network_name: "{{ slapparameter_dict.network_name }}",
   network_short_name: "{{ slapparameter_dict.network_short_name }}",
-
   cp_ciot_opt: true,
-
-  nr_support: true,
+  dcnr_support: true,
 
 {%- set eps_5gs_interworking =
             {'With N26':    "with_n26",
@@ -53,71 +140,47 @@
 
   fifteen_bearers: false,
 
-  ims_list: [
-    {
-      ims_addr: "{{ slapparameter_dict.ims_addr }}",
-      bind_addr: "{{  slapparameter_dict.ims_bind }}",
-    }
-  ],
-
   pdn_list: [
+{%- for pdn in slapparameter_dict.pdn_list %}
     {
       access_point_name: [
-{%- for pdn in slapparameter_dict.pdn_list -%}
-"{{ pdn.name }}",
-{%- endfor -%}
+{%-   for apn in pdn['apn_list'] -%}
+"{{ apn }}",
+{%-   endfor -%}
 ],
       pdn_type: "ipv4v6",
-      tun_ifname:        "{{ slapparameter_dict.tun_name }}",
-      first_ip_addr:     "{{ slapparameter_dict.internet_ipv4_start }}",
-      last_ip_addr:      "{{ slapparameter_dict.internet_ipv4_end   }}",
-      first_ipv6_prefix: "{{ slapparameter_dict.internet_ipv6_start }}",
-      last_ipv6_prefix:  "{{ slapparameter_dict.internet_ipv6_end   }}",
-{%- if slapparameter_dict.get('local_domain', '') %}
-      dns_addr: ["{{ slapparameter_dict.internet_ipv4 }}"],
+{%- if inter_core_handover %}
+      ifname:            {{ lan_interface }},
+{%- else %}
+      tun_ifname:        "{{ pdn.tun_name }}",
+{%- endif %}
+      first_ip_addr:     "{{ pdn.ipv4_start }}",
+      last_ip_addr:      "{{ pdn.ipv4_end   }}",
+      first_ipv6_prefix: "{{ pdn.ipv6_start }}",
+      last_ipv6_prefix:  "{{ pdn.ipv6_end   }}",
+{%- if pdn.get('volte') %}
+      p_cscf_addr: ["{{ pdn.ipv4 }}", "{{ pdn.ipv6 }}"],
+{%- endif %}
+{%- if pdn.get('local_domain', '') %}
+      dns_addr: ["{{ default_pdn.ipv4 }}"],
 {%- else %}
       dns_addr: ["8.8.8.8", "2001:4860:4860::8888"],
 {%- endif %}
       erabs: [
         {
-          qci: {{ slapparameter_dict.qci }},
+          qci: {{ pdn.qci }},
           priority_level: 15,
           pre_emption_capability: "shall_not_trigger_pre_emption",
           pre_emption_vulnerability: "not_pre_emptable",
         },
       ],
     },
-    {
-      access_point_name: "ims",
-      pdn_type: "ipv4v6",
-      tun_ifname:        "{{ slapparameter_dict.tun_name }}-1",
-      first_ip_addr:     "{{ slapparameter_dict.ims_ipv4_start }}",
-      last_ip_addr:      "{{ slapparameter_dict.ims_ipv4_end   }}",
-      first_ipv6_prefix: "{{ slapparameter_dict.ims_ipv6_start }}",
-      last_ipv6_prefix:  "{{ slapparameter_dict.ims_ipv6_end   }}",
-      p_cscf_addr: ["{{ slapparameter_dict.ims_ipv4 }}", "{{ slapparameter_dict.ims_ipv6 }}"],
-{%- if slapparameter_dict.get('local_domain', '') %}
-      dns_addr: ["{{ slapparameter_dict.internet_ipv4 }}"],
-{%- else %}
-      dns_addr: ["8.8.8.8", "2001:4860:4860::8888"],
-{%- endif %}
-
-      erabs: [
-        {
-          qci: 9,
-          priority_level: 15,
-          pre_emption_capability: "shall_not_trigger_pre_emption",
-          pre_emption_vulnerability: "not_pre_emptable",
-        },
-      ],
-    },
+{%- endfor %}
   ],
 
   tun_setup_script: "{{ ifup_empty }}",
-  ue_to_ue_forwarding: false,
   nas_cipher_algo_pref: [ ],
   nas_integ_algo_pref: [ 2, 1 ],
-  ue_db_filename: "{{ directory['var'] }}/lte_ue.db",
 {%- if slapparameter_dict.get('hss_addr', '') %}
   ue_db: [],
   s6: {
