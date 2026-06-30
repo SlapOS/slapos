@@ -891,22 +891,27 @@ def core_network(config, publish, shared_list):
     tun_ipv4_end     = netaddr.IPNetwork(tun_ipv4_network).last
     tun_ipv6_end     = netaddr.IPNetwork(tun_ipv6_network).last
 
-    network_defaults = {
-        'tun_name'           : slap_configuration.get('tun-name', 'slaptun0'              ),
-        'internet_ipv4'      : str(netaddr.IPAddress( tun_ipv4_start                          )),
-        'internet_ipv4_start': str(netaddr.IPAddress( tun_ipv4_start + 1                      )),
-        'internet_ipv4_end'  : str(netaddr.IPAddress((tun_ipv4_start + tun_ipv4_end) // 2 - 2 )),
-        'internet_ipv6_start': str(netaddr.IPAddress( tun_ipv6_start + 1                      )),
-        'internet_ipv6_end'  : str(netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2 - 1 )),
-        'ims_ipv4_start'     : str(netaddr.IPAddress((tun_ipv4_start + tun_ipv4_end) // 2 + 2 )),
-        'ims_ipv4_end'       : str(netaddr.IPAddress( tun_ipv4_end   - 1                      )),
-        'ims_ipv4'           : str(netaddr.IPAddress((tun_ipv4_start + tun_ipv4_end) // 2 + 1 )),
-        'ims_ipv6'           : str(netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2     )),
-        'ims_ipv6_start'     : str(netaddr.IPAddress((tun_ipv6_start + tun_ipv6_end) // 2     )),
-        'ims_ipv6_end'       : str(netaddr.IPAddress( tun_ipv6_end   - 1                      )),
-    }
-    for k,v in network_defaults.items():
-        config.setdefault(k, v)
+    pdn_list = [config[pdn] for pdn in ['pdn1', 'pdn2'] if not config[pdn].get('disable_pdn')]
+
+    ipv4_interval = (tun_ipv4_end - tun_ipv4_start) / 2
+    ipv4_start    = tun_ipv4_start
+    ipv4_end      = tun_ipv4_start + ipv4_interval
+    ipv6_interval = (tun_ipv6_end - tun_ipv6_start) / 2
+    ipv6_start    = tun_ipv6_start
+    ipv6_end      = tun_ipv6_start + ipv6_interval
+    for i, pdn in enumerate(pdn_list):
+        pdn['tun_name'] = slap_configuration.get('tun-name', 'slaptun0')
+        if i > 0:
+            pdn['tun_name'] = f"{pdn['tun_name']}-{i}"
+        pdn.setdefault('ipv4', str(netaddr.IPAddress(ipv4_start          )))
+        pdn.setdefault('ipv4_start', str(netaddr.IPAddress(ipv4_start + 1)))
+        pdn.setdefault('ipv4_end',   str(netaddr.IPAddress(ipv4_end - 2  )))
+        pdn.setdefault('ipv6_start', str(netaddr.IPAddress(ipv6_start + 1)))
+        pdn.setdefault('ipv6_end',   str(netaddr.IPAddress(ipv6_end - 1  )))
+        ipv4_start += ipv4_interval + 1
+        ipv4_end   += ipv4_interval + 1
+        ipv6_start += ipv6_interval - 1
+        ipv6_end   += ipv6_interval
 
     # Sort shared list by IMSI
     def load_param(shared):
@@ -1117,7 +1122,7 @@ def core_network(config, publish, shared_list):
         p['ip'] = s.get('ip', '')
         p['info'] = f"DNS entry has been attached to service {slap_configuration['instance-title']}."
 
-    return sim_list, dns_list, publish_section_list
+    return sim_list, publish_section_list
 
 def gtp_addr(gtp_localhost_addr):
     gtp_addr_list = []
@@ -1264,7 +1269,7 @@ if sr_type in ['enb', 'gnb', 'ue', 'enb-gnb']:
 
 if sr_type == 'core-network':
     gtp_localhost_addr = '127.0.1.100'
-    sim_list, dns_list, publish_section_list = core_network(config, publish, shared_list)
+    sim_list, publish_section_list = core_network(config, publish, shared_list)
 elif sr_type in ['enb-gnb', 'enb', 'gnb']:
     gtp_localhost_addr = '127.0.1.1'
     config.setdefault('gtp_addr', 'Automatic')
@@ -1297,5 +1302,4 @@ options['shared-list'] = shared_list
 
 if sr_type == 'core-network':
     options['sim-list'] = sim_list
-    options['dns-list'] = dns_list
     options['publish-section-list'] = publish_section_list

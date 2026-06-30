@@ -197,6 +197,44 @@
 {%- endif %}
   ],
 
+  pdn_list: [
+{%- for pdn in slapparameter_dict.pdn_list %}
+    {
+      access_point_name: [
+{%-   for apn in pdn['apn_list'] -%}
+"{{ apn.name }}",
+{%-   endfor -%}
+],
+      pdn_type: "ipv4v6",
+{%- if inter_core_handover %}
+      ifname:            {{ lan_interface }},
+{%- else %}
+      tun_ifname:        "{{ pdn.tun_name }}",
+{%- endif %}
+      first_ip_addr:     "{{ pdn.ipv4_start }}",
+      last_ip_addr:      "{{ pdn.ipv4_end   }}",
+      first_ipv6_prefix: "{{ pdn.ipv6_start }}",
+      last_ipv6_prefix:  "{{ pdn.ipv6_end   }}",
+{%- if pdn.get('volte') %}
+      p_cscf_addr: ["{{ pdn.ipv4 }}", "{{ pdn.ipv6 }}"],
+{%- endif %}
+{%- if pdn.get('local_domain', '') %}
+      dns_addr: ["{{ pdn.internet_ipv4 }}"],
+{%- else %}
+      dns_addr: ["8.8.8.8", "2001:4860:4860::8888"],
+{%- endif %}
+      erabs: [
+        {
+          qci: {{ pdn.qci }},
+          priority_level: 15,
+          pre_emption_capability: "shall_not_trigger_pre_emption",
+          pre_emption_vulnerability: "not_pre_emptable",
+        },
+      ],
+    },
+{%- endfor %}
+  ],
+
   tun_setup_script: "{{ ifup_empty }}",
   nas_cipher_algo_pref: [ ],
   nas_integ_algo_pref: [ 2, 1 ],
