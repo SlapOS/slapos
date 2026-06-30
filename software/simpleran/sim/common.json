@@ -74,8 +74,13 @@
       "type": "string"
     },
     "force_ip": {
-      "title": "Force IP",
-      "description": "Force IP of the SIM: Fixed IP for the UE needs to be enabled on the core network to use force the IP and the IP should be within the PDN IPv4 sub network",
+      "title": "Force IPv4",
+      "description": "Force IP of the SIM: Fixed IP for the UE needs to be enabled on the core network to be able to force the IP and the IP should be within the PDN IPv4 sub network",
+      "type": "string"
+    },
+    "force_ipv6": {
+      "title": "Force IPv6",
+      "description": "Force IPv6 of the SIM: Fixed IP for the UE needs to be enabled on the core network to be able to force the IPv6 and the IP should be within the PDN IPv6 sub network",
       "type": "string"
     },
     "authent_type": {
@@ -146,21 +151,44 @@
       "items": {
         "title": "Route",
         "type": "object",
-        "required": [
-          "ipv6_remote_addr_prefix",
-          "prefix_len"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "ipv6_remote_addr_prefix": {
-            "title": "IPv6 remote address prefix",
-            "type": "string"
+        "oneOf": [
+          {
+            "title": "IPv6 Route",
+            "required": [
+              "ipv6_remote_addr_prefix",
+              "prefix_len"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "ipv6_remote_addr_prefix": {
+                "title": "IPv6 remote address prefix",
+                "type": "string"
+              },
+              "prefix_len": {
+                "title": "Prefix length",
+                "type": "number"
+              }
+            }
           },
-          "prefix_len": {
-            "title": "Prefix length",
-            "type": "number"
+          {
+            "title": "IPv4 Route",
+            "required": [
+              "ipv4_remote_addr",
+              "mask"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "ipv4_remote_addr": {
+                "title": "IPv4 remote address",
+                "type": "string"
+              },
+              "mask": {
+                "title": "Mask",
+                "type": "string"
+              }
+            }
           }
-        }
+        ]
       },
       "default": []
     }
