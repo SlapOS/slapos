@@ -141,8 +141,8 @@
   pdn_list: [
     {
       access_point_name: [
-{%- for pdn in slapparameter_dict.pdn_list -%}
-"{{ pdn.name }}",
+{%- for apn in slapparameter_dict.apn_list -%}
+"{{ apn }}",
 {%- endfor -%}
 ],
       pdn_type: "ipv4v6",
@@ -155,11 +155,11 @@
       last_ip_addr:      "{{ slapparameter_dict.internet_ipv4_end   }}",
       first_ipv6_prefix: "{{ slapparameter_dict.internet_ipv6_start }}",
       last_ipv6_prefix:  "{{ slapparameter_dict.internet_ipv6_end   }}",
-{%- if slapparameter_dict.get('local_domain', '') %}
-      dns_addr: ["{{ slapparameter_dict.internet_ipv4 }}"],
-{%- else %}
-      dns_addr: ["8.8.8.8", "2001:4860:4860::8888"],
-{%- endif %}
+      dns_addr: [
+{%- for dns_addr in pdn.dns_addr_list -%}
+"{{ dns_addr }}",
+{%- endfor -%}
+],
       erabs: [
         {
           qci: {{ slapparameter_dict.qci }},

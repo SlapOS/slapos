@@ -74,15 +74,9 @@
       "description": "Only two PDNs are currently supported, this section defines the first PDN. It is the default APN or DNN used in case the UE does not explicitly request it. By default it has the following APN names: internet, default, sos",
       "default": {
         "apn_list": [
-          {
-            "name": "internet"
-          },
-          {
-            "name": "default"
-          },
-          {
-            "name": "sos"
-          }
+          "internet",
+          "default",
+          "sos"
         ],
         "qci": 9,
         "fixed_ips": false
@@ -96,9 +90,7 @@
           "description": "The second optional PDN, by default it has ims APN name and is used for IMS services.",
           "default": {
             "apn_list": [
-              {
-                "name": "ims"
-              }
+              "ims"
             ],
             "qci": 5,
             "volte": true,
@@ -323,25 +315,17 @@
     "pdn": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
+      "required": [
+        "apn_list"
+      ],
       "properties": {
         "apn_list": {
           "title": "APN list",
           "description": "Access Point Name or Data Network Name network identifier list. Use dots (.) to separate the APN or DNN elements. Adding multiple items to this will create aliases of the first APN / DNN.",
           "type": "array",
           "items": {
-            "title": "APN",
-            "type": "object",
-            "required": [
-              "name"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "name": {
-                "title": "APN name",
-                "description": "APN name",
-                "type": "string"
-              }
-            }
+            "title": "APN Name",
+            "type": "string"
           }
         },
         "qci": {
