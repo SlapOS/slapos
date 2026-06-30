@@ -8,22 +8,23 @@ Claude Code reads its own thin `CLAUDE.md`, which imports this file.
 ## Agent tooling lives in installable plugins
 
 The SlapOS development skills and the coding-rules knowledge base are not
-vendored here — they are two standalone, agent-agnostic
-[Agent Skills](https://agentskills.io) repositories, each also a Claude Code
-plugin marketplace:
+vendored here — they live in a single standalone, agent-agnostic
+[Agent Skills](https://agentskills.io) repository,
+**[slapos-agent-skills](https://lab.nexedi.com/cedric.leninivin/slapos-agent-skills)**,
+which is also a Claude Code plugin marketplace with four plugins:
 
-- **[slapos-agent-skills](https://lab.nexedi.com/cedric.leninivin/slapos-agent-skills)**
-  — scaffolding, build/deploy, and diagnostics skills (plus buildout-hash and
+- **slapos-scaffolding** — scaffolding skills.
+- **slapos-build-deploy** — build/deploy skills (plus buildout-hash and
   rebuild/reprocess hooks).
-- **[slapos-coding-rules](https://lab.nexedi.com/cedric.leninivin/slapos-coding-rules)**
-  — the harvested coding-rules tables, the harvest pipeline, and a commit-check
-  hook.
+- **slapos-diagnostics** — diagnostics skills.
+- **slapos-coding-rules** — the harvested coding-rules tables, the harvest
+  pipeline, and a commit-check hook.
 
-Claude Code users: `.claude/settings.json` pre-registers both marketplaces, so
+Claude Code users: `.claude/settings.json` pre-registers the marketplace, so
 the plugins are offered for install on open (see `CLAUDE.md`). Other agents
-install manually — clone each repo and point your agent at its
+install manually — clone the repo and point your agent at its
 `plugins/*/skills/<name>/SKILL.md` directories (or use a helper like
-`npx skills`); see each repo's `README.md`.
+`npx skills`); see the repo's `README.md`.
 
 ## Before substantive changes, consult the coding rules
 
