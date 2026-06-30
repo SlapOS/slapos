@@ -269,12 +269,14 @@ extra-context =
 <= publish-config-base
 link-binary = ${mme-config:output}
 
+{%- if slapparameter_dict.get('ims_pdn') %}
 [ims-mms-listen-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = ims-mms-port-listening.py
-config-host = {{ slapparameter_dict.internet_ipv4 }}
+config-host = {{ slapparameter_dict.default_pdn.ipv4 }}
 config-port = 1111
+{%- endif %}
 
 {% if slapparameter_dict.get("local_domain", '') %}
 [dnsmasq-config]

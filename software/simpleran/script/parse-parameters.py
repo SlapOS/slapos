@@ -893,117 +893,6 @@ def core_network(config, publish, shared_list):
 
     pdn_list = [config[pdn] for pdn in ['pdn1', 'pdn2'] if pdn in config and not config[pdn].get('disable_pdn')]
 
-    for s in sim_list:
-        s['pdn_list'] = []
-
-    ipv4_interval = (tun_ipv4_end - tun_ipv4_start) // 2
-    ipv4_start    = tun_ipv4_start
-    ipv4_end      = tun_ipv4_start + ipv4_interval
-    ipv6_interval = (tun_ipv6_end - tun_ipv6_start) // 2
-    ipv6_start    = tun_ipv6_start
-    ipv6_end      = tun_ipv6_start + ipv6_interval
-    for i, pdn in enumerate(pdn_list):
-        pdn['name'] = pdn['apn_list'][0]
-        pdn['tun_name'] = slap_configuration.get('tun-name', 'slaptun0')
-        if i > 0:
-            pdn['tun_name'] = f"{pdn['tun_name']}-{i}"
-        first_addr   = ipv4_start + 1
-        first_addrv6 = ipv6_start + 1
-        pdn.setdefault('ipv4'      , str(netaddr.IPAddress(ipv4_start  )))
-        pdn.setdefault('ipv4_start', str(netaddr.IPAddress(first_addr  )))
-        pdn.setdefault('ipv4_end'  , str(netaddr.IPAddress(ipv4_end - 2)))
-        pdn.setdefault('ipv6_start', str(netaddr.IPAddress(first_addrv6)))
-        pdn.setdefault('ipv6_end'  , str(netaddr.IPAddress(ipv6_end - 1)))
-        if config.get('local_domain'):
-            pdn['dns_addr_list'] = [pdn_list[0]['ipv4']]
-        else:
-            pdn['dns_addr_list'] = ["8.8.8.8", "2001:4860:4860::8888"]
-
-        for sim in sim_list:
-            pdn = {
-                'access_point_name': pdn['name'],
-                'default': i == 0,
-            }
-            if i == 0:
-                pdn['multicast']      = sim.get('enable_multicast', False)
-                pdn['ipv6_multicast'] = sim.get('enable_ipv6_multicast', False)
-                pdn['broadcast']      = sim.get('enable_broadcast', False)
-                if sim.get('route_list'):
-                    pdn['route_list'] = sim['route_list']
-            sim['pdn_list'].append(pdn)
-
-        pdn_id = f'pdn{i+1}'
-        if pdn['fixed_ip']:
-            # if we don't have enough IPv4 addresses in the network, don't force it
-            # should we make a promise fail ?
-            def sim_ip(sim, ip=None):
-                if ip:
-                    sim['pdn_list'][-1]['ipv4_addr'] = ip
-                return sim['pdn_list'][-1].get('ipv4_addr')
-            def sim_ipv6(sim, ip=None):
-                if ip:
-                    sim['pdn_list'][-1]['ipv6_prefix'] = ip
-                return sim['pdn_list'][-1].get('ipv6_prefix')
-            if len(sim_list) > ((ipv4_end - 2) - (ipv4_start + 1))
-                for sim in sim_list:
-                    sim_ip(sim, ip='Too many SIM for the IPv4 network')
-            else:
-                # calculate the IP addresses of each SIM
-                ip_list = []
-                force_ip_list = []
-                force_ipv6_list = []
-                for sim in sim_list:
-                    ip = sim.get(f'{pdn_id}_force_ip', None)
-                    if ip:
-                        sim_ip(sim, ip=ip)
-                        force_ip_list.append(ip)
-                    ipv6 = sim.get(f'{pdn_id}_force_ipv6', None)
-                    if ipv6:
-                        sim_ipv6(sim, ip=ipv6)
-                        force_ipv6_list.append(ipv6)
-                # Allocate fixed IPv4
-                i = 2
-                for sim in sorted(sim_list, key=lambda x: x['imsi']):
-                    if sim_ip(sim):
-                        continue
-                    ip = str(first_addr + i)
-                    while ip in force_ip_list:
-                        i += 1
-                        ip = str(first_addr + i)
-                    sim_ip(sim, ip=ip)
-                    i += 1
-                # Allocate fixed IPv6
-                i = 2
-                for sim in sorted(sim_list, key=lambda x: x['imsi']):
-                    if sim_ipv6(sim):
-                        continue
-                    ipv6 = str(first_addrv6 + i * 2**64)
-                    while ipv6 in force_ipv6_list:
-                        i += 1
-                        ipv6 = str(first_addrv6 + i * 2**64)
-                    sim_ipv6(sim, ip=ipv6)
-                    i += 1
-
-        for sim in sim_list:
-            remove_pdn = []
-            for i, pdn in enumerate(sim['pdn_list']):
-                for k in """ipv4_addr ipv6_prefix multicast ipv6_multicast broadcast route_list""".split(' '):
-                    if k in pdn and pdn[k]:
-                        break
-                else:
-                    remove_pdn.append(i)
-            for i in remove_pdn:
-                del sim['pdn_list'][i]
-
-        ipv4_start += ipv4_interval + 1
-        ipv4_end   += ipv4_interval + 1
-        ipv6_start += ipv6_interval - 1
-        ipv6_end   += ipv6_interval
-
-    config['pdn_list'] = pdn_list
-    config.pop('pdn1', '')
-    config.pop('pdn2', '')
-
     # Sort shared list by IMSI
     def load_param(shared):
         shared['_'] = json.loads(shared['_'])
@@ -1111,12 +1000,123 @@ def core_network(config, publish, shared_list):
                 impu_str = '", "'.join(impu_list)
                 p['impu'] = f'["{impu_str}"]'
 
-    def valid_ip(network, ip):
-        try:
-            netaddr_ip = netaddr.IPAddress(ip)
-            return netaddr_ip in network
-        except netaddr.core.AddrFormatError:
-            return False
+    for s in sim_list:
+        s['pdn_list'] = []
+
+    ipv4_interval = (tun_ipv4_end - tun_ipv4_start) // 2
+    ipv4_start    = tun_ipv4_start
+    ipv4_end      = tun_ipv4_start + ipv4_interval
+    ipv6_interval = (tun_ipv6_end - tun_ipv6_start) // 2
+    ipv6_start    = tun_ipv6_start
+    ipv6_end      = tun_ipv6_start + ipv6_interval
+    for i, pdn in enumerate(pdn_list):
+        pdn['name'] = pdn['apn_list'][0]
+        pdn['tun_name'] = slap_configuration.get('tun-name', 'slaptun0')
+        if i > 0:
+            pdn['tun_name'] = f"{pdn['tun_name']}-{i}"
+        first_addr   = ipv4_start + 1
+        first_addrv6 = ipv6_start + 1
+        pdn.setdefault('ipv4'      , str(netaddr.IPAddress(ipv4_start  )))
+        pdn.setdefault('ipv4_start', str(netaddr.IPAddress(first_addr  )))
+        pdn.setdefault('ipv4_end'  , str(netaddr.IPAddress(ipv4_end - 2)))
+        pdn.setdefault('ipv6_start', str(netaddr.IPAddress(first_addrv6)))
+        pdn.setdefault('ipv6_end'  , str(netaddr.IPAddress(ipv6_end - 1)))
+        if config.get('local_domain'):
+            pdn['dns_addr_list'] = [pdn_list[0]['ipv4']]
+        else:
+            pdn['dns_addr_list'] = ["8.8.8.8", "2001:4860:4860::8888"]
+
+        for sim in sim_list:
+            sim_pdn = {
+                'access_point_name': pdn['name'],
+                'default': i == 0,
+            }
+            if i == 0:
+                sim_pdn['multicast']      = sim.get('enable_multicast', False)
+                sim_pdn['ipv6_multicast'] = sim.get('enable_ipv6_multicast', False)
+                sim_pdn['broadcast']      = sim.get('enable_broadcast', False)
+                if sim.get('route_list'):
+                    sim_pdn['route_list'] = sim['route_list']
+            sim['pdn_list'].append(sim_pdn)
+
+        pdn_id = f'pdn{i+1}'
+        if pdn.get('fixed_ips'):
+            # if we don't have enough IPv4 addresses in the network, don't force it
+            # should we make a promise fail ?
+            def sim_ip(sim, ip=None):
+                if ip:
+                    sim['pdn_list'][-1]['ipv4_addr'] = ip
+                return sim['pdn_list'][-1].get('ipv4_addr')
+            def sim_ipv6(sim, ip=None):
+                if ip:
+                    sim['pdn_list'][-1]['ipv6_prefix'] = ip
+                return sim['pdn_list'][-1].get('ipv6_prefix')
+            if len(sim_list) > ((ipv4_end - 2) - (ipv4_start + 1)):
+                for sim in sim_list:
+                    sim_ip(sim, ip='Too many SIM for the IPv4 network')
+            else:
+                # calculate the IP addresses of each SIM
+                ip_list = []
+                force_ip_list = []
+                force_ipv6_list = []
+                for sim in sim_list:
+                    ip = sim.get(f'{pdn_id}_force_ip', None)
+                    if ip:
+                        sim_ip(sim, ip=ip)
+                        force_ip_list.append(ip)
+                    ipv6 = sim.get(f'{pdn_id}_force_ipv6', None)
+                    if ipv6:
+                        sim_ipv6(sim, ip=ipv6)
+                        force_ipv6_list.append(ipv6)
+                # Allocate fixed IPv4
+                i = 2
+                for sim in sorted(sim_list, key=lambda x: x['imsi']):
+                    if sim_ip(sim):
+                        continue
+                    ip = str(first_addr + i)
+                    while ip in force_ip_list:
+                        i += 1
+                        ip = str(first_addr + i)
+                    sim_ip(sim, ip=ip)
+                    i += 1
+                # Allocate fixed IPv6
+                i = 2
+                for sim in sorted(sim_list, key=lambda x: x['imsi']):
+                    if sim_ipv6(sim):
+                        continue
+                    ipv6 = str(first_addrv6 + i * 2**64)
+                    while ipv6 in force_ipv6_list:
+                        i += 1
+                        ipv6 = str(first_addrv6 + i * 2**64)
+                    sim_ipv6(sim, ip=ipv6)
+                    i += 1
+
+        for sim in sim_list:
+            remove_pdn = []
+            for i, pdn in enumerate(sim['pdn_list']):
+                for k in """ipv4_addr ipv6_prefix multicast ipv6_multicast broadcast route_list""".split(' '):
+                    if k in pdn and pdn[k]:
+                        break
+                else:
+                    remove_pdn.append(i)
+            for i in remove_pdn:
+                del sim['pdn_list'][i]
+
+        ipv4_start += ipv4_interval + 1
+        ipv4_end   += ipv4_interval + 1
+        ipv6_start += ipv6_interval - 1
+        ipv6_end   += ipv6_interval
+
+    for pdn in pdn_list:
+        if 'ims' in pdn:
+            config['ims_pdn'] = pdn
+        if 'default' in pdn:
+            config['default_pdn'] = pdn
+
+    config['pdn_list'] = pdn_list
+    config.pop('pdn1', '')
+    config.pop('pdn2', '')
+
 
     config['lan_interface'] = lan_interface
 
@@ -1126,7 +1126,7 @@ def core_network(config, publish, shared_list):
     publish['core']['code']                 = config['code']
 
     for pdn in config['pdn_list']:
-        if pdn.get('volte'):
+        if pdn.get('ims'):
             publish['core']['sip-bind-ip'] = pdn['ipv4']
             publish['core']['p-cscf-addr'] = pdn['ipv4']
         name = pdn['apn_list'][0]
@@ -1145,7 +1145,7 @@ def core_network(config, publish, shared_list):
     publish_section_list = []
     for s in sim_list:
         publish_section = {}
-        publish_section['title'] = f'publish-{s['slave_reference']}'
+        publish_section['title'] = f"publish-{s['slave_reference']}"
         p = {}
         p['-slave-reference'] = s['slave_reference']
         if 'error' in s:
@@ -1181,6 +1181,7 @@ def core_network(config, publish, shared_list):
         p['domain'] = f"{s.subdomain}.{s.get('domain', slapparameter_dict.get('local_domain', ''))}"
         p['ip'] = s.get('ip', '')
         p['info'] = f"DNS entry has been attached to service {slap_configuration['instance-title']}."
+
 
     return sim_list, publish_section_list
 

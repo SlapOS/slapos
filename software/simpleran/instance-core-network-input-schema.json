@@ -93,7 +93,7 @@
               "ims"
             ],
             "qci": 5,
-            "volte": true,
+            "ims": true,
             "fixed_ips": false
           }
         },
@@ -102,16 +102,15 @@
           "title": "Cell Type",
           "type": "object",
           "properties": {
-            "volte": {
-              "title": "Enable VoLTE / VoNR",
-              "description": "If set to true, P-CSCF server address will be configured on this PDN for VoLTE / VoNR",
+            "ims": {
+              "title": "Enable IMS",
+              "description": "If set to true, IMS will be enabled and P-CSCF server address will be configured on this PDN for VoLTE / VoNR",
               "type": "boolean"
             },
             "disable_pdn": {
               "title": "Disable PDN",
               "description": "Set to true to disable this PDN",
-              "type": "boolean",
-              "default": "false"
+              "type": "boolean"
             }
           }
         }
@@ -316,7 +315,8 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "required": [
-        "apn_list"
+        "apn_list",
+        "qci"
       ],
       "properties": {
         "apn_list": {
@@ -329,7 +329,6 @@
           }
         },
         "qci": {
-          "default": 9,
           "title": "QCI of default E-RAB",
           "description": "QoS Class Identifier of the default E-RAB",
           "type": "number"

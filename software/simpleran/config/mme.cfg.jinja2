@@ -1,4 +1,5 @@
 {%- set inter_core_handover = len(slapparameter_dict.external_mme_list)  > 0 %}
+{%- set default_pdn = slapparameter_dict.default_pdn %}
 {
 {%- if inter_core_handover %}
   log_options: "all.level=error,all.max_size=0,nas.level=debug,nas.max_size=1,n14.level=debug,n14.max_size=1,gtpc.level=debug,gtpc.max_size=1,s1ap.level=debug,s1ap.max_size=1,ngap.level=debug,ngap.max_size=1,file.rotate=1G,file.path=/dev/null",
@@ -151,10 +152,10 @@
 {%- else %}
       tun_ifname:        "{{ slapparameter_dict.tun_name }}",
 {%- endif %}
-      first_ip_addr:     "{{ slapparameter_dict.internet_ipv4_start }}",
-      last_ip_addr:      "{{ slapparameter_dict.internet_ipv4_end   }}",
-      first_ipv6_prefix: "{{ slapparameter_dict.internet_ipv6_start }}",
-      last_ipv6_prefix:  "{{ slapparameter_dict.internet_ipv6_end   }}",
+      first_ip_addr:     "{{ slapparameter_dict.ipv4_start }}",
+      last_ip_addr:      "{{ slapparameter_dict.ipv4_end   }}",
+      first_ipv6_prefix: "{{ slapparameter_dict.ipv6_start }}",
+      last_ipv6_prefix:  "{{ slapparameter_dict.ipv6_end   }}",
       dns_addr: [
 {%- for dns_addr in pdn.dns_addr_list -%}
 "{{ dns_addr }}",
@@ -180,7 +181,7 @@
       last_ipv6_prefix:  "{{ slapparameter_dict.ims_ipv6_end   }}",
       p_cscf_addr: ["{{ slapparameter_dict.ims_ipv4 }}", "{{ slapparameter_dict.ims_ipv6 }}"],
 {%- if slapparameter_dict.get('local_domain', '') %}
-      dns_addr: ["{{ slapparameter_dict.internet_ipv4 }}"],
+      dns_addr: ["{{ slapparameter_dict.ipv4 }}"],
 {%- else %}
       dns_addr: ["8.8.8.8", "2001:4860:4860::8888"],
 {%- endif %}
@@ -219,7 +220,7 @@
       p_cscf_addr: ["{{ pdn.ipv4 }}", "{{ pdn.ipv6 }}"],
 {%- endif %}
 {%- if pdn.get('local_domain', '') %}
-      dns_addr: ["{{ pdn.internet_ipv4 }}"],
+      dns_addr: ["{{ default_pdn.ipv4 }}"],
 {%- else %}
       dns_addr: ["8.8.8.8", "2001:4860:4860::8888"],
 {%- endif %}
