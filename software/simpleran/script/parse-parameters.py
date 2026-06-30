@@ -1014,14 +1014,12 @@ def core_network(config, publish, shared_list):
         pdn['tun_name'] = slap_configuration.get('tun-name', 'slaptun0')
         if i > 0:
             pdn['tun_name'] = f"{pdn['tun_name']}-{i}"
-        first_addr   = ipv4_start + 1
-        first_addrv6 = ipv6_start + 2**64
-        pdn.setdefault('ipv4'      , str(netaddr.IPAddress(ipv4_start  )))
-        pdn.setdefault('ipv4_start', str(netaddr.IPAddress(first_addr  )))
-        pdn.setdefault('ipv4_end'  , str(netaddr.IPAddress(ipv4_end - 2)))
-        pdn.setdefault('ipv6'      , str(netaddr.IPAddress(ipv6_start  )))
-        pdn.setdefault('ipv6_start', str(netaddr.IPAddress(first_addrv6)))
-        pdn.setdefault('ipv6_end'  , str(netaddr.IPAddress(ipv6_end - 1)))
+        pdn.setdefault('ipv4'      , str(netaddr.IPAddress(ipv4_start        )))
+        pdn.setdefault('ipv4_start', str(netaddr.IPAddress(ipv4_start + 1    )))
+        pdn.setdefault('ipv4_end'  , str(netaddr.IPAddress(ipv4_end - 2      )))
+        pdn.setdefault('ipv6'      , str(netaddr.IPAddress(ipv6_start        )))
+        pdn.setdefault('ipv6_start', str(netaddr.IPAddress(ipv6_start + 2**64)))
+        pdn.setdefault('ipv6_end'  , str(netaddr.IPAddress(ipv6_end - 1      )))
         if config.get('local_domain'):
             pdn['dns_addr_list'] = [pdn_list[0]['ipv4']]
         else:
@@ -1046,15 +1044,17 @@ def core_network(config, publish, shared_list):
 
         pdn_id = f'pdn{i+1}'
         if pdn.get('fixed_ips'):
+            first_addr   = netaddr.IPAddress(ipv4_start + 1)
+            first_addrv6 = netaddr.IPAddress(ipv6_start + 2**64)
             # if we don't have enough IPv4 addresses in the network, don't force it
             # should we make a promise fail ?
             def sim_ip(sim, ip=None):
                 if ip:
-                    sim['pdn_list'][-1]['ipv4_addr'] = str(netaddr.IPAddress(ip))
+                    sim['pdn_list'][-1]['ipv4_addr'] = ip
                 return sim['pdn_list'][-1].get('ipv4_addr')
             def sim_ipv6(sim, ip=None):
                 if ip:
-                    sim['pdn_list'][-1]['ipv6_prefix'] = str(netaddr.IPAddress(ip))
+                    sim['pdn_list'][-1]['ipv6_prefix'] = ip
                 return sim['pdn_list'][-1].get('ipv6_prefix')
             if len(sim_list) > ((ipv4_end - 2) - (ipv4_start + 1)):
                 for sim in sim_list:
@@ -1078,10 +1078,11 @@ def core_network(config, publish, shared_list):
                 for sim in sorted(sim_list, key=lambda x: x['imsi']):
                     if sim_ip(sim):
                         continue
-                    ip = first_addr + i
+                    ip = str(first_addr + i)
+                    print("JHGD force_ip_list = {}, ip = {}".format(repr(force_ip_list), repr(ip)))
                     while ip in force_ip_list:
                         i += 1
-                        ip = first_addr + i
+                        ip = str(first_addr + i)
                     sim_ip(sim, ip=ip)
                     i += 1
                 # Allocate fixed IPv6
@@ -1089,10 +1090,10 @@ def core_network(config, publish, shared_list):
                 for sim in sorted(sim_list, key=lambda x: x['imsi']):
                     if sim_ipv6(sim):
                         continue
-                    ipv6 = first_addrv6 + i * 2**64
+                    ipv6 = str(first_addrv6 + i * 2**64)
                     while ipv6 in force_ipv6_list:
                         i += 1
-                        ipv6 = first_addrv6 + i * 2**64
+                        ipv6 = str(first_addrv6 + i * 2**64)
                     sim_ipv6(sim, ip=ipv6)
                     i += 1
 

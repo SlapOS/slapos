@@ -87,15 +87,7 @@
         {
           "$ref": "#/$defs/pdn",
           "title": "PDN2",
-          "description": "The second optional PDN, by default it has ims APN name and is used for IMS services.",
-          "default": {
-            "apn_list": [
-              "ims"
-            ],
-            "qci": 5,
-            "ims": true,
-            "fixed_ips": false
-          }
+          "description": "The second optional PDN, by default it has ims APN name and is used for IMS services."
         },
         {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -115,7 +107,15 @@
           }
         }
       ],
-      "type": "object"
+      "type": "object",
+      "default": {
+        "apn_list": [
+          "ims"
+        ],
+        "qci": 5,
+        "ims": true,
+        "fixed_ips": false
+      }
     },
     "external_mme_list": {
       "title": "External MME List",
