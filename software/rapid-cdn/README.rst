@@ -481,3 +481,68 @@ websocket
 ~~~~~~~~~
 
 All frontends are websocket aware now, and ``type:websocket`` parameter became optional. It's required if support for ``websocket-path-list`` or ``websocket-transparent`` is required.
+
+Accept-Encoding normalization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Shared instances default to ``normalize-accept-encoding: true``: the client-facing haproxy collapses the long tail of browser-specific ``Accept-Encoding`` strings to a small canonical set before forwarding to the origin. This replaces the gzip-only ``prefer-gzip-encoding-to-backend`` parameter from earlier releases. Set ``normalize-accept-encoding: false`` on a shared instance to forward the client's ``Accept-Encoding`` verbatim.
+
+Why
+"""
+
+Without normalization, every browser variant of ``Accept-Encoding`` (``gzip, deflate``; ``gzip, deflate, br``; ``gzip, deflate, br, zstd``; ``br, zstd, gzip``; ...) becomes a separate cache key under ``Vary: Accept-Encoding``. The cache fragments and hit ratio drops while the origin keeps re-encoding the same response.
+
+Mapping
+"""""""
+
+================================ ===================================
+Client ``Accept-Encoding``       Forwarded to origin
+================================ ===================================
+``gzip, deflate, br, zstd``      ``zstd, br, gzip, deflate``
+``gzip, deflate, br``            ``br, gzip, deflate``
+``gzip, deflate``                ``gzip, deflate``
+``gzip``                         ``gzip, deflate``
+``gzip, weirdcoding, deflate``   ``gzip, deflate``
+``weirdcoding, deflate``         ``deflate``
+``deflate``                      ``deflate``
+``identity``                     ``identity``   (no recognised token)
+``weirdcoding``                  ``weirdcoding`` (no recognised token)
+``*``                            ``*``          (no recognised token)
+(header absent)                  (header absent)
+================================ ===================================
+
+Deviations from a strict reading of RFC 9110 §12.5.3
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Two deviations are deliberate and match real implementations:
+
+1. **Widening of acceptable codings.** When the client lists only a stronger encoding (e.g. ``gzip``, ``br``, ``zstd``), we append weaker ones (``gzip`` → ``gzip, deflate``; ``br`` → ``br, gzip, deflate``; ...). Strictly, §12.5.3 says any unlisted coding is "not acceptable", so we are claiming acceptance the client did not give. In practice every client that advertises a modern coding also handles all weaker ones, so this is a non-event.
+
+2. **Dropping unrecognised tokens that appear alongside a recognised one** (``gzip, weirdcoding, deflate`` → ``gzip, deflate``). This is a forward-compatibility hazard: when a new encoding emerges (br in 2015, zstd in 2020), normalize-AE will demote clients that advertise it alongside known codings until the haproxy ACL chain is extended to recognise the new token.
+
+q-values are silently stripped. Per §12.5.3, ``gzip;q=0`` means "I refuse gzip" -- rewriting it to ``gzip, deflate`` flips a refusal into an acceptance. No mainstream browser emits q=0, so this is a paper risk; bespoke clients (curl scripts, embedded devices) should not rely on this CDN to honour it.
+
+Enforced Accept-Encoding compression
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``enforced-compression`` is controls enforcing the compression to backend with Accept-Encoding header.
+
+Trigger
+"""""""
+
+When the client sends no ``Accept-Encoding`` header at all, or sends the explicit wildcard ``Accept-Encoding: *`` -- both of which mean "any encoding is acceptable" per RFC 9110 §12.5.3 -- the client-facing haproxy substitutes the canonical form for the shared instance's effective ``enforced-compression`` value before forwarding upstream. When the client sent any concrete ``Accept-Encoding`` (including ``identity`` or an unknown coding), the rewrite does nothing.
+
+Mapping
+"""""""
+
+============== ==========================================
+Effective value Forwarded to origin
+============== ==========================================
+``none``        (rewrite disabled, header forwarded as-is)
+``deflate``     ``deflate``
+``gzip``        ``gzip, deflate``
+``br``          ``br, gzip, deflate``
+``zstd``        ``zstd, br, gzip, deflate``
+============== ==========================================
+
+The canonical forms match exactly what ``normalize-accept-encoding`` emits, so the two features compose with no special-case interaction: when both are on, normalize-AE re-emits the same string, which is a no-op.
