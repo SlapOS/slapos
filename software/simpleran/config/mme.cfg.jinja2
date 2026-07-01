@@ -158,7 +158,7 @@
       last_ip_addr:      "{{ pdn.ipv4_end   }}",
       first_ipv6_prefix: "{{ pdn.ipv6_start }}",
       last_ipv6_prefix:  "{{ pdn.ipv6_end   }}",
-{%- if pdn.get('volte') %}
+{%- if pdn.get('ims') %}
       p_cscf_addr: ["{{ pdn.ipv4 }}", "{{ pdn.ipv6 }}"],
 {%- endif %}
 {%- if pdn.get('local_domain', '') %}
