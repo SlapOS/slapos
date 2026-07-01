@@ -422,6 +422,34 @@ In case of slaves using cache (``enable_cache = True``) the request will travel 
 
 Usage of Haproxy as a relay to the backend allows much better control of the backend, removes the hassle of checking the backend from frontend Haproxy and allows future developments like client SSL certificates to the backend or even health checks.
 
+Instance Node
+-------------
+
+The master partition is an *instance node* and as such run one locally to validates each slave.
+It validates against the JSON schema and, for slaves with a custom ``domain``, checks DNS ownership via an HMAC-signed ``_slapos-challenge`` TXT record. 
+SSL certificate validity and server-alias conflicts between slaves are also checked. 
+
+Validation is passive: no slave is rejected, blocked, or modified. Results are stored in a local SQLite database so operators can review them. 
+
+The recipes involved:
+
+ * ``slapos.recipe.slapconfiguration`` (``JsonSchemaWithDB`` variants):
+   validates each slave and records ``valid`` / ``invalid`` plus errors
+   in the instance database.
+ * ``slapos.recipe.cdninstancenode``: CDN-specific checks (DNS ownership,
+   SSL, server-alias conflict).
+
+So on slapos node instance run, the recipe stores the slave instance list in a local database for processing by the instance node and it reads the results from another one.
+
+Validation is asynchronous as some validation like DNS check doesn't depend on slapos node instance parameters. 
+The instance node runs from cron on the master partition, independently of slapgrid, so DNS challenges are re-checked between slapgrid cycles.
+When validation state changes the master partition is banged so slapgrid reprocesses it.
+
+The instance database is served by ``sqlite-web`` on the master-introspection frontend and is returned by the master partition as ``publish-slave-sqlite-validation-database``.
+
+``instance-retention-delay`` (seconds, default 90 days) sets how long a slave stays in the database after disappearing from the master; ``0`` removes it immediately.
+Before that a slave instance in stopped/destroyed state would disappear and validation would be lost, now we stop serving the instance like before but the validation result is kept for the retention delay. 
+
 Kedifa implementation
 ---------------------
 
