@@ -265,18 +265,6 @@ install =
   shutil.copyfile(options['selected-bundle'], options['bundle'] + '.tmp')
   os.replace(options['bundle'] + '.tmp', options['bundle'])
 
-[inbound-postfix-certificate-reload]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${directory:service}/inbound-postfix-certificate-reload
-command-line =
-  /bin/sh -c
-  "${postfix:location}/usr/sbin/postfix -c $${inbound-postfix-directory:etc} status >/dev/null 2>&1 \
-    && ${postfix:location}/usr/sbin/postfix -c $${inbound-postfix-directory:etc} reload; \
-    exec /bin/sleep infinity"
-hash-files =
-  $${inbound-postfix-main.cf:output}
-  $${inbound-postfix-certificate:bundle}
-
 [inbound-postfix-main.cf]
 <= macro.postfix-main.cf
 output = $${inbound-postfix-directory:etc}/main.cf
@@ -350,11 +338,6 @@ inline =
   {{ domain['name'] }} REJECT Inbound relay refuses internal sender domains
   {%- endfor %}
 
-[inbound-postfix-wrapper]
-<= macro.postfix-wrapper
-etc = $${inbound-postfix-directory:etc}
-spool-pid = $${inbound-postfix-directory:spool-pid}
-
 [policyd-spf-conf]
 recipe = slapos.recipe.template:jinja2
 url = ${policyd_spf.jinja2.conf:target}
@@ -401,6 +384,11 @@ inline =
 {% endfor %}
 {% endif %}
 
+[inbound-postfix-wrapper]
+<= macro.postfix-wrapper
+etc = $${inbound-postfix-directory:etc}
+spool-pid = $${inbound-postfix-directory:spool-pid}
+
 [inbound-postfix-service]
 recipe = slapos.cookbook:wrapper
 command-line = $${inbound-postfix-wrapper:output}
@@ -410,19 +398,29 @@ pidfile = $${directory:run}/inbound_postfix.pid
 environment =
   MAIL_CONFIG=$${inbound-postfix-directory:etc}
   SASL_CONF_PATH=$${inbound-postfix-directory:etc}
-hash-files =
+# Restart postfix on instance upgrade
+hash-existing-files =
+  ${buildout:directory}/buildout.cfg
+depends =
+  # Reload postfix on buildout run
+  $${inbound-postfix-reload:recipe}
+  # Pull dependent configuration and services
   $${inbound-postfix-main.cf:output}
   $${inbound-postfix-master.cf:output}
-  $${inbound-postfix-internal-sender-access:output}
-  $${inbound-postfix-wrapper:output}
-  $${policyd-spf-conf:output}
-depends =
-  $${inbound-postfix-certificate-reload:recipe}
   $${policyd-spf-conf:recipe}
-{% if greylisting_enable %}
+  {%- if greylisting_enable %}
   $${postgrey-service:recipe}
-{% endif %}
+  {%- endif %}
+  # Rotate logs periodically
   $${inbound-logrotate-entry-postfix:recipe}
+
+[inbound-postfix-reload]
+recipe = slapos.recipe.template
+output = $${directory:script}/$${:_buildout_section_name_}
+inline =
+  #!/bin/sh -e
+  export MAIL_CONFIG=$${inbound-postfix-directory:etc}
+  ${postfix:location}/usr/sbin/postfix reload
 
 [inbound-postfix-smtp-promise]
 <= monitor-promise-base
@@ -840,27 +838,25 @@ pidfile = $${directory:run}/outbound_postfix.pid
 environment =
   MAIL_CONFIG=$${outbound-postfix-directory:etc}
   SASL_CONF_PATH=$${outbound-postfix-directory:etc}
-hash-files =
+# Restart postfix on instance upgrade
+hash-existing-files =
+  ${buildout:directory}/buildout.cfg
+depends =
+  # Reload postfix on buildout run
+  $${outbound-postfix-reload:recipe}
+  # Pull dependent configuration and services
   $${outbound-postfix-main.cf:output}
   $${outbound-postfix-master.cf:output}
-  $${outbound-postfix-wrapper:output}
-{%- for host in sorted_sender_hosts %}
-  $${outbound-postfix-sender-access-{{ loop.index }}:output}
-{%- endfor %}
-{%- if sorted_sender_hosts %}
-  $${outbound-postfix-client-sender-access:output}
-{%- endif %}
-{%- if password_auth_domains %}
-  $${outbound-postfix-smtpd-sasl-conf:output}
-  $${outbound-postfix-sender-login-map:output}
-  $${outbound-postfix-sasldb:sasldb-path}
-{%- endif %}
-{%- if fingerprint_auth_backends %}
-  $${outbound-postfix-backend-clientcerts:output}
-  $${outbound-postfix-backend-tls-policy-map:output}
-{%- endif %}
-depends =
+  # Rotate logs periodically
   $${outbound-logrotate-entry-postfix:recipe}
+
+[outbound-postfix-reload]
+recipe = slapos.recipe.template
+output = $${directory:script}/$${:_buildout_section_name_}
+inline =
+  #!/bin/sh -e
+  export MAIL_CONFIG=$${outbound-postfix-directory:etc}
+  ${postfix:location}/usr/sbin/postfix reload
 
 [outbound-postfix-submission-promise]
 <= monitor-promise-base
