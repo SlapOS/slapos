@@ -5975,6 +5975,7 @@ class TestSlaveMixedSerialisation(SlaveHttpFrontendTestCase):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
