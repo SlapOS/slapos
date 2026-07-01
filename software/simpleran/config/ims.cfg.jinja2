@@ -1,5 +1,5 @@
-{%- set slap_configuration = json_module.loads(slap_configuration) %}
-{%- set slapparameter_dict = json_module.loads(slapparameter_dict) %}
+{%- set ims_pdn = slapparameter_dict.ims_pdn %}
+{%- set default_pdn = slapparameter_dict.default_pdn %}
 {
     log_options: "all.level=debug,all.max_size=32",
     log_filename: "{{ directory['log'] }}/ims.log",
@@ -13,12 +13,12 @@
 {%- endif %}
 
     sip_addr: [
-        {addr: "{{ slapparameter_dict.ims_ipv4 }}", bind_addr: "{{ slapparameter_dict.ims_ipv4 }}", port_min: 10000, port_max: 20000
+        {addr: "{{ ims_pdn.ipv4 }}", bind_addr: "{{ ims_pdn.ipv4 }}", port_min: 10000, port_max: 20000
 {%- if 'trunk' in slapparameter_dict -%}
         , trunk: true
 {%- endif -%}
         },
-        "{{ slapparameter_dict.ims_ipv6 }}",
+        "{{ ims_pdn.ipv6 }}",
     ],
 
 {%- if 'trunk' in slapparameter_dict %}
@@ -28,7 +28,7 @@
     }
 {%- endif %}
 
-    mms_server_bind_addr: "{{ slapparameter_dict.internet_ipv4 }}:1111",
+    mms_server_bind_addr: "{{ default_pdn.ipv4 }}:1111",
     sctp_addr: "{{ slapparameter_dict.ims_addr }}",
 
     
@@ -47,18 +47,19 @@
         {impu: "tel:404", code: 404},     
         {impu: "urn:service:sos", anonymous: true, authentication: false}, 
         {impu: "urn:service:sos.police", anonymous: true, authentication: false}, 
+        {impu: "urn:service:sos.ecall.automatic", anonymous: true, authentication: false},
+        {impu: "urn:service:sos.ecall.manual", anonymous: true, authentication: false},
+        {impu: "urn:service:test.sos.ecall", anonymous: true, authentication: false},
     ],
     
     precondition: "on",
     "100rel": true,
     
-    ipsec_aalg_list: ["hmac-md5-96", "hmac-sha-1-96"],
-    ipsec_ealg_list: ["null", "aes-cbc", "des-cbc", "des-ede3-cbc"],
+    ipsec_aalg_list: ["null", "hmac-md5-96", "hmac-sha-1-96", "hmac-md5-128", "hmac-sha-1-160", "aes-cmac-96", "aes-gmac", "aes-gmac-us"],
+    ipsec_ealg_list: ["null", "aes-cbc", "des-ede3-cbc", "blowfish", "aes-ctr", "aes-gcm", "aes-gcm-us"],
 
-    ipsec_ifname: "{{ slapparameter_dict.tun_name }}-ims",
-    ipsec_netns: "{{ slapparameter_dict.tun_name }}-ims-netns",
+    ipsec_ifname: "{{ default_pdn.tun_name }}-ims",
+    ipsec_netns: "{{ default_pdn.tun_name }}-ims-netns",
 
     mt_call_sdp_file: "{{ directory['etc'] }}/mt_call_qos.sdp",
-
-    ue_db_filename: "{{ directory['var'] }}/lte_ue_ims.db",
 }
