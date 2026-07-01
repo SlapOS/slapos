@@ -5465,22 +5465,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       )
       self.assertEqual(http.client.OK, result.status_code)
       self.assertEqual('body-%s' % token, result.text)
-    # ATS writes the first-doc alternate vector asynchronously: with
-    # _max_alts variants primed in rapid succession the last writes may
-    # not be durable yet. Let the write pipeline settle, then re-fetch
-    # each variant -- a HIT confirms the cached body, a MISS re-fetches
-    # the (still-unchanged) backend and retries the write. After this
-    # the cache is guaranteed to hold every variant before the backend
-    # is reconfigured below.
-    time.sleep(5)
-    for token in tokens:
-      result = fakeHTTPSResult(
-        parameter_dict['domain'],
-        path,
-        headers={'X-Variant-Token': token},
-      )
-      self.assertEqual(http.client.OK, result.status_code)
-      self.assertEqual('body-%s' % token, result.text)
+    # ATS writes the first-doc alternate vector asynchronously; give
+    # the write pipeline time to drain before reconfiguring backend
+    # bodies. Do not re-fetch variants during this settle window: for
+    # the above-limit case the priming step already caused one FIFO
+    # eviction, and any refetch of an already-evicted token would
+    # trigger a fresh write that evicts the next-oldest -- a cascade
+    # that amplifies write-race exposure and destroys the state the
+    # above-limit test wants to observe.
+    time.sleep(10)
     for token in tokens:
       configure(token, 'evicted-%s' % token)
 
