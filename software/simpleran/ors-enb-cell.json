@@ -20,6 +20,19 @@
       ],
       "type": "string"
     },
+    "bandwidth_ul": {
+      "title": "Uplink Bandwidth",
+      "description": "Uplink Bandwidth (same as downlink bandwidth by default)",
+      "enum": [
+        "1.4 MHz",
+        "3 MHz",
+        "5 MHz",
+        "10 MHz",
+        "15 MHz",
+        "20 MHz"
+      ],
+      "type": "string"
+    },
     "lte_band": {
       "title": "LTE band",
       "description": "LTE band number. Default depends on ORS model, please refer to the connection parameters",
@@ -45,6 +58,22 @@
       "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn",
       "title": "Expert only: DL EARFCN",
       "description": "Expert only: Can be used instead of DL Frequency to directly set the Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL EARFCN)"
+    },
+    "sr_period": {
+      "title": "Scheduling Request Period",
+      "description": "Scheduling Request period in ms. When allowing TypeA half-duplex UEs, the value must be >= 40. The special value 0 means that no Scheduling Request resource is allocated hence the UE uses a PRACH instead.",
+      "enum": [
+        5, 
+        10, 
+        20, 
+        40, 
+        80, 
+        2, 
+        1,
+        0
+      ],
+      "type": "integer",
+      "default": 20
     },
     "tti_bundling": {
       "$ref": "cell/lte/input-schema.json#/properties/tti_bundling"
