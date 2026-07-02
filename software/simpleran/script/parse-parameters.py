@@ -1,4 +1,4 @@
-import json, netaddr, netifaces, math, socket, subprocess
+import json, netaddr, netifaces, math, socket, subprocess, time
 from copy import deepcopy
 
 """
@@ -901,6 +901,24 @@ def core_network(config, publish, shared_list):
         shared['_'] = json.dumps(shared['_'])
         return shared
 
+    def replace(ref, i):
+        invalid = False
+        new_ref = []
+        ref.replace('__', '___')
+        for c in ref:
+            if c.isascii() and (c.isalnum() or c in '-_'):
+                new_ref.append(c)
+            else:
+                invalid = True
+        if invalid:
+            new_ref.append(f'__{i}')
+        return ''.join(new_ref)
+
+    def replace_invalid_character(shared_list):
+        for i, shared in enumerate(shared_list):
+            shared['slave_reference'] = replace(shared['slave_reference'], i)
+            shared['slave_title'] = replace(shared['slave_title'], i)
+
     def parse_sim_param(shared):
         p = shared['_']
         p.setdefault('imsi', p.get('plmn', '') + p.get('msin', ''))
@@ -934,6 +952,7 @@ def core_network(config, publish, shared_list):
         return shared
 
     shared_list = map(load_param, shared_list)
+    replace_invalid_character(shared_list)
     shared_list = map(parse_sim_param, shared_list)
     shared_list = sorted(shared_list, key=lambda x: x['_'].get('imsi',''))
     shared_list = check_dup(shared_list)
