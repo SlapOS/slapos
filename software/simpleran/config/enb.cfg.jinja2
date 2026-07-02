@@ -275,6 +275,7 @@
       root_sequence_index: {{ cell.root_sequence_index }},
       inactivity_timer: {{ cell.inactivity_timer }},
       ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
+      sr_period: {{ cell.sr_period }},
 {%-   if 'tti_bundling' in cell %}
 {%-     if 'snr_threshold' in cell.tti_bundling %}
       tti_bundling: {
@@ -636,7 +637,6 @@
     pusch_msg3_mcs: 0,
     dl_256qam: true,
     ul_64qam: true,
-    sr_period: 20,
 {%-     if ors %}
     mac_config: {
        ul_max_harq_tx: 5,
@@ -805,6 +805,7 @@
         root_sequence_index: {{ cell.root_sequence_index }},
         inactivity_timer: {{ cell.inactivity_timer }},
         ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
+        sr_period: {{ cell.sr_period }},
         cipher_algo_pref: [
 {%-   for algo in cell.get('cipher_algo_pref', []) -%}
           {{ {'NEA1 (Snow 3G)': 1, 'NEA2 (128 bit AES)': 2, 'NEA3 (ZUC)': 3}[algo] }}, 
@@ -1102,7 +1103,6 @@
     intra_freq_reselection: true,
     q_rx_lev_min: -70,
     q_qual_min: -20,
-    sr_period: 40,
     prach: {
       msg1_subcarrier_spacing: 30,
       msg1_fdm: 1,
