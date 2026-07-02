@@ -1077,6 +1077,57 @@ class E2E(E2ETestCase):
       self.assertIn(tls_next_fingerprint, tls_policy_map)
       self.assertIn(tls_next_next_fingerprint, tls_policy_map)
 
+  def test_relay_certificate_rotation(self):
+    server = self.mail_servers[0]
+    relay_node = self.relay_nodes[0]
+    rotate = self.partitionPath(relay_node, 'bin', 'postfix-certificate-rotate')
+    fingerprint = self.partitionPath(
+      relay_node, 'etc', 'postfix', 'ssl', 'postfix.digest')
+    next_fingerprint = self.partitionPath(
+      relay_node, 'etc', 'postfix', 'ssl', 'postfix.next.digest')
+    # check relay before rotation
+    self.assertTrue(os.path.exists(fingerprint))
+    self.assertTrue(os.path.exists(next_fingerprint))
+    with open(fingerprint) as f:
+      tls_fingerprint = f.read().split('=', 1)[1].strip()
+    with open(next_fingerprint) as f:
+      tls_next_fingerprint = f.read().split('=', 1)[1].strip()
+    # check server nodes before rotation
+    relay_clientcerts = self.partitionPath(
+      server, 'etc', 'postfix', 'relay_clientcerts')
+    with open(relay_clientcerts) as f:
+      clientcerts = f.read()
+    self.assertIn(tls_fingerprint, clientcerts)
+    self.assertIn(tls_next_fingerprint, clientcerts)
+    # rotate (simulate cron)
+    subprocess.check_output((rotate))
+    self.assertFalse(os.path.exists(fingerprint))
+    # reprocess and check relay node
+    self.slapos('node', 'instance', '--only', relay_node.getId())
+    self.assertTrue(os.path.exists(fingerprint))
+    with open(fingerprint) as f:
+      self.assertEqual(f.read().split('=', 1)[1].strip(), tls_next_fingerprint)
+    with open(next_fingerprint) as f:
+      tls_next_next_fingerprint = f.read().split('=', 1)[1].strip()
+    # reprocess and check relay cluster and server
+    self.slapos(
+      'node', 'instance', '--only', self.relay_cluster.getId(),
+      # slapproxy does not bang on sub-instance connection parameter change
+      # but real slapos master should
+      '--force',
+    )
+    self.slapos(
+      'node', 'instance', '--only', server.getId(),
+      # slapproxy does not bang on sub-instance connection parameter change
+      # but real slapos master should
+      '--force',
+    )
+    with open(relay_clientcerts) as f:
+      clientcerts = f.read()
+    self.assertNotIn(tls_fingerprint, clientcerts)
+    self.assertIn(tls_next_fingerprint, clientcerts)
+    self.assertIn(tls_next_next_fingerprint, clientcerts)
+
 
 class CustomOutbound(E2ETestCase):
   instance_max_retry = 4
