@@ -901,6 +901,17 @@ def core_network(config, publish, shared_list):
         shared['_'] = json.dumps(shared['_'])
         return shared
 
+    def remove_invalid_character(shared):
+        ref = shared['slave_reference']
+        new_ref = []
+        for c in s:
+          if not c.isalnum() and c not in '-_':
+            new_ref.append('-')
+          else:
+            new_ref.append(c)
+        shared['slave_reference'] = ''.join(new_ref)
+        return shared
+
     def parse_sim_param(shared):
         p = shared['_']
         p.setdefault('imsi', p.get('plmn', '') + p.get('msin', ''))
@@ -934,6 +945,7 @@ def core_network(config, publish, shared_list):
         return shared
 
     shared_list = map(load_param, shared_list)
+    shared_list = map(remove_invalid_character, shared_list)
     shared_list = map(parse_sim_param, shared_list)
     shared_list = sorted(shared_list, key=lambda x: x['_'].get('imsi',''))
     shared_list = check_dup(shared_list)
