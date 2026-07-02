@@ -275,6 +275,7 @@
       root_sequence_index: {{ cell.root_sequence_index }},
       inactivity_timer: {{ cell.inactivity_timer }},
       ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
+      sr_period: {{ cell.sr_period }},
 {%-   if 'tti_bundling' in cell %}
 {%-     if 'snr_threshold' in cell.tti_bundling %}
       tti_bundling: {
@@ -340,16 +341,28 @@
     }},
     sp_config: 7,
 {%- endif %}
-{%- set n_rb_dl = J(jlte_n_rb_dl(cell.bandwidth)) %}
+{%- if 'n_rb_dl' in cell %}
+{%-   set n_rb_dl = cell.n_rb_dl %}
+{%- else %}
+{%-   set n_rb_dl = J(jlte_n_rb_dl(cell.bandwidth)) %}
+{%- endif %}
     n_rb_dl: {{ n_rb_dl }},
+{%- if 'n_rb_ul' in cell %}
+    n_rb_ul: {{ cell.n_rb_ul }},
+{%- endif %}
     si_coderate: {{ 0.30  if n_rb_dl == 6  else 0.20 }},
     pdsch_dedicated: {
       p_a: {{ {4: -6, 2: -3}.get(ru.n_antenna_dl, 0) }},
       p_b: -1,
     },
+{%- if "fixed_mcs" in cell %}
+    pusch_mcs: {{ cell.fixed_mcs }},
+    pdsch_mcs: {{ cell.fixed_mcs }},
+{%- endif %}
     pdcch_format:       {{  1   if n_rb_dl == 6  else 2 }},
     prach_config_index: {{  15  if n_rb_dl == 6  else 4 }},
     initial_cqi:        {{  5   if n_rb_dl == 6  else 3 }},
+    phr_link_adaptation: {{ cell.phr_link_adaptation |tojson }},
     pucch_dedicated: {
       n1_pucch_sr_count: 11,
 {#- for CA with 2 cells it is possible to use PUCCH 1b CS ack/nack #}
@@ -624,7 +637,6 @@
     pusch_msg3_mcs: 0,
     dl_256qam: true,
     ul_64qam: true,
-    sr_period: 20,
 {%-     if ors %}
     mac_config: {
        ul_max_harq_tx: 5,
@@ -779,7 +791,12 @@
         band:         {{ cell.nr_band }},
         dl_nr_arfcn:  {{ cell.dl_nr_arfcn }},
         ul_nr_arfcn:  {{ cell.ul_nr_arfcn }},
+{%-     if 'n_rb_dl' in cell and 'n_rb_ul' in cell %}
+        n_rb_dl:    {{ cell.n_rb_dl }},
+        n_rb_ul:    {{ cell.n_rb_ul }},
+{%-     else %}
         bandwidth:    {{ cell.bandwidth }},
+{%-     endif %}
         subcarrier_spacing: {{ cell.subcarrier_spacing }},
 {%-     if not cell.get('amarisoft_ssb_computation', false) %}
         ssb_nr_arfcn:   {{ cell.ssb_nr_arfcn }},
@@ -788,6 +805,7 @@
         root_sequence_index: {{ cell.root_sequence_index }},
         inactivity_timer: {{ cell.inactivity_timer }},
         ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
+        sr_period: {{ cell.sr_period }},
         cipher_algo_pref: [
 {%-   for algo in cell.get('cipher_algo_pref', []) -%}
           {{ {'NEA1 (Snow 3G)': 1, 'NEA2 (128 bit AES)': 2, 'NEA3 (ZUC)': 3}[algo] }}, 
@@ -1004,17 +1022,37 @@
 {%-     endif %}
         },
         pdsch: {
+{%-     if "fixed_mcs" in cell %}
+          mcs: {{ cell.fixed_mcs }},
+{%-     endif %}
 {%-     if ru.ru_type == "sunwave" %}
           k0: 0,
           k1: [ 8, 7, 7, 6, 5, 4, 12, 11 ],
 {%-     endif %}
         },
         pusch: {
+{%-     if "fixed_mcs" in cell %}
+          mcs: {{ cell.fixed_mcs }},
+{%-     endif %}
+          phr_link_adaptation: {{ cell.phr_link_adaptation |tojson }},
+{%-     if cell.get('enable_ul_su_mimo', False) %}
+          max_rank: {{ ru.n_antenna_ul }},
+{%-     endif %}
 {%-     if ru.ru_type == "sunwave" %}
           k2: 4,
           msg3_k2: 7,
 {%-     endif %}
         },
+{%-     if cell.get('enable_ul_su_mimo', False) %}
+        srs: {
+          resource_auto: {
+            codebook: {
+              resource_type: "periodic",
+              period: 80, /* in slots */
+            }
+          }
+        },
+{%-     endif %}
         drb_config: "{{ B('%s-drb.cfg' % cell_ref) }}",
 {%-     if "redcap_ue" in cell and "allow" in cell.redcap_ue and cell.redcap_ue.allow %}
         redcap_ue: {
@@ -1065,7 +1103,6 @@
     intra_freq_reselection: true,
     q_rx_lev_min: -70,
     q_qual_min: -20,
-    sr_period: 40,
     prach: {
       msg1_subcarrier_spacing: 30,
       msg1_fdm: 1,
