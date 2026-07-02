@@ -1074,12 +1074,11 @@ def core_network(config, publish, shared_list):
                         sim_ipv6(sim, ip=ipv6)
                         force_ipv6_list.append(ipv6)
                 # Allocate fixed IPv4
-                i = 2
+                i = 0
                 for sim in sorted(sim_list, key=lambda x: x['imsi']):
                     if sim_ip(sim):
                         continue
                     ip = str(first_addr + i)
-                    print("JHGD force_ip_list = {}, ip = {}".format(repr(force_ip_list), repr(ip)))
                     while ip in force_ip_list:
                         i += 1
                         ip = str(first_addr + i)
