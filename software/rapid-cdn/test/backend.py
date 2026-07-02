@@ -75,6 +75,12 @@ class TestHandler(BaseHTTPRequestHandler):
   # Special verb for internal usage
   def do_REMOVE(self):
     config = self.configuration.pop(self.path, None)
+    # also drop any variant configs registered for this path, so a test that
+    # registered several Vary variants is fully cleaned with a single REMOVE
+    for k in [
+        k for k in list(self.configuration)
+        if isinstance(k, tuple) and len(k) == 2 and k[0] == self.path]:
+      self.configuration.pop(k, None)
     if config is None:
       self.send_response(204)
       self.end_headers()
@@ -90,26 +96,54 @@ class TestHandler(BaseHTTPRequestHandler):
     incoming_headers = http.client.HTTPMessage()
     config_header = 'X-Config-'
     config_header_header = 'X-Config-Reply-Header-'
+    config_header_vary_key = 'X-Config-Vary-Key'
+    config_header_vary_value = 'X-Config-Vary-Value'
+    vary_key = self.headers.get(config_header_vary_key)
+    vary_value = self.headers.get(config_header_vary_value)
     for header_name, header_value in self.headers.items():
       if header_name.startswith(config_header_header):
         incoming_headers.add_header(
           header_name[len(config_header_header):], header_value)
+      elif header_name in (config_header_vary_key, config_header_vary_value):
+        # variant selector — stored as the configuration's dict key, not as
+        # part of the response config itself
+        continue
       elif header_name.startswith(config_header):
         config[header_name[len(config_header):]] = header_value
     if 'X-Config-Body' not in self.headers:
       config['Body'] = self.rfile.read(int(self.headers.get(
         'Content-Length', '0')))
     if self.headers.get('X-Config-Global', '0') == '1':
-      path = '*'
+      base_path = '*'
     else:
-      path = self.path
+      base_path = self.path
+    if vary_key is not None and vary_value is not None:
+      # For multi-header variants (e.g. Vary: Accept-Encoding, Accept-Language)
+      # both headers carry comma-separated lists of equal length:
+      #   X-Config-Vary-Key:   Accept-Encoding, Accept-Language
+      #   X-Config-Vary-Value: gzip, en
+      # For a single-header variant the value may itself contain commas
+      # (e.g. an expected request header `Accept-Encoding: br, gzip, deflate`),
+      # so we only split when the key contains a comma.
+      if ',' in vary_key:
+        vary_key_list = [k.strip() for k in vary_key.split(',')]
+        vary_value_list = [v.strip() for v in vary_value.split(',')]
+        assert len(vary_key_list) == len(vary_value_list), \
+          'X-Config-Vary-Key / X-Config-Vary-Value length mismatch'
+      else:
+        vary_key_list = [vary_key]
+        vary_value_list = [vary_value]
+      variant = tuple(sorted(zip(vary_key_list, vary_value_list)))
+      key = (base_path, variant)
+    else:
+      key = base_path
     self.send_response(201)
     self.send_header("Content-Type", "application/json")
-    self.configuration[path] = {
+    self.configuration[key] = {
       'headers': incoming_headers,
       'configuration': config
     }
-    reply = {path: dict(self.configuration[path])}
+    reply = {str(key): dict(self.configuration[key])}
     response = json.dumps(
       reply, indent=2, cls=ConfigurationReplyEncoder).encode()
     self.send_header('Content-Length', len(response))
@@ -160,8 +194,21 @@ class TestHandler(BaseHTTPRequestHandler):
         },
         indent=2).encode()
 
-    config = self.configuration.get(
-      self.path, self.configuration.get('*', None))
+    # Variant lookup: any (path, ((k1, v1), (k2, v2), ...)) entry whose every
+    # (k, v) pair matches the corresponding request header is a candidate;
+    # the most-specific candidate (largest variant tuple) wins over the
+    # path's plain (and the '*' global) config.
+    candidates = [
+      k for k in list(self.configuration)
+      if isinstance(k, tuple) and len(k) == 2 and k[0] == self.path
+      and all(self.headers.get(kk) == vv for kk, vv in k[1])
+    ]
+    if candidates:
+      candidates.sort(key=lambda k: len(k[1]), reverse=True)
+      config = self.configuration[candidates[0]]
+    else:
+      config = self.configuration.get(
+        self.path, self.configuration.get('*', None))
     if config is None:
       self.send_response(404)
       response = generateDefaultResponse()
