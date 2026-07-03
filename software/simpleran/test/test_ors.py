@@ -42,8 +42,25 @@ setUpModule, ORSTestCase = makeModuleSetUpAndTestCaseClass(
 core_network_param_dict = {
     'testing': True,
     'lte_mock': True,
-    'core_network_plmn': '00102',
+    "core_network_plmn": "00102",
+    "network_name": "TEST",
+    "network_short_name": "TEST",
+    "pdn1": {
+        "apn_list": [
+            "pdn1apn1",
+            "pdn1apn2"
+        ],
+        "qci": 3
+    },
+    "pdn2": {
+        "apn_list": [
+            "pdn2apn1"
+        ],
+        "qci": 6,
+        "ims": True
+    }
 }
+
 rf_info = {
     "sdr_map": {
       "0": {
@@ -397,7 +414,25 @@ class TestCoreNetworkParameters(ORSTestCase):
 
     conf = load_yaml_conf(self.slap, 'mme')
 
-    self.assertEqual(conf['plmn'], core_network_param_dict['core_network_plmn'])
+    param = core_network_param_dict
+    self.assertEqual(conf['plmn'], param['core_network_plmn'])
+    self.assertEqual(conf['network_name'], param['network_name'])
+    self.assertEqual(conf['network_short_name'], param['network_short_name'])
+    # Check APN and QCI's
+    for pdn_id in ['pdn1', 'pdn2']:
+        for pdn in conf['pdn_list']:
+            if param[pdn_id]['apn_list'][0] in pdn['access_point_name']:
+                break
+        for apn in param[pdn_id]['apn_list']:
+            self.assertIn(apn, pdn['access_point_name'])
+        for apn in pdn['access_point_name']:
+            self.assertIn(apn, param[pdn_id]['apn_list'])
+        self.assertEqual(param[pdn_id]['qci'], pdn['erabs'][0]['qci'])
+    # Check IMS PDN
+    for pdn in conf['pdn_list']:
+        if param['pdn2']['apn_list'][0] in pdn['access_point_name']:
+            break
+    self.assertIn('p_cscf_addr', pdn)
 
 def test_monitor_gadget_url(self):
   parameters = json.loads(self.computer_partition.getConnectionParameterDict()['_'])
@@ -483,7 +518,15 @@ class TestSimCard(ORSTestCase):
     cls._updateSlaposResource(
       os.path.join(
         cls.slap._instance_root, default_instance.getId()),
-      tun={"ipv4_network": str(cls.tun_network)}
+      tun={
+        "ipv4_network": str(cls.tun_network),
+        'ipv4_addr': '192.168.10.1',
+        'ipv4_gateway': '',
+        'ipv4_netmask': '255.255.128.0',
+        'ipv6_addr': '2001:db8::1',
+        'ipv6_netmask': 'ffff:ffff:ffff:fe00::',
+        'ipv6_network': '2001:db8::1/55',
+      }
     )
     cls.requestSlaveInstance()
     return default_instance
@@ -493,11 +536,11 @@ class TestSimCard(ORSTestCase):
       cls.requestSlaveInstanceWithId(i)
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'_': json.dumps({
-      'testing': True,
-      'lte_mock': True,
-      'fixed_ips': cls.fixed_ips
-    })}
+    params = {}
+    params.update(core_network_param_dict)
+    params['pdn1']['fixed_ips'] = cls.fixed_ips
+    params['pdn2']['fixed_ips'] = cls.fixed_ips
+    return {'_': json.dumps(params)}
   @classmethod
   def getInstanceSoftwareType(cls):
     return "core-network"
@@ -539,13 +582,17 @@ class TestSimCard(ORSTestCase):
       p = json.loads(p['_'])
       self.assertIn('info', p)
       if self.fixed_ips:
-        self.assertIn('ipv4', p)
+        pdn1_name = core_network_param_dict["pdn1"]["apn_list"][0]
+        pdn2_name = core_network_param_dict["pdn1"]["apn_list"][0]
+        self.assertIn(f'{pdn1_name}-ipv4-addr', p)
+        self.assertIn(f'{pdn2_name}-ipv4-addr', p)
         if self.nb_sim_cards + 2 > self.tun_network.size:
-          self.assertEqual(p['ipv4'], "Too many SIM for the IPv4 network")
+          self.assertEqual(p[f'{pdn1_name}-ipv4-addr'],
+                           "Too many SIM for the IPv4 network")
         else:
           ip = str(first_ip + 2 + i)
-          self.assertEqual(p['ipv4'], ip)
-          self.assertEqual(conf['ue_db'][i]['pdn_list'][0]['access_point_name'], "internet")
+          self.assertEqual(p[f'{pdn1_name}-ipv4-addr'], ip)
+          self.assertEqual(conf['ue_db'][i]['pdn_list'][0]['access_point_name'], pdn1_name)
           self.assertTrue(conf['ue_db'][i]['pdn_list'][0]['default'])
           self.assertEqual(conf['ue_db'][i]['pdn_list'][0]['ipv4_addr'], ip)
 

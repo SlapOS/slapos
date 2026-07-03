@@ -1,40 +1,13 @@
 {%- set fixed_ip = slapparameter_dict.fixed_ips %}
 
 {% set part_list = [] -%}
-{%- for s in sim_list %}
-{%    set publish_section_title = 'publish-%s' % s.slave_reference %}
-{%    do part_list.append(publish_section_title) %}
-[{{ publish_section_title }}]
+{%- for section in publish_section_list %}
+{%    do part_list.append(section['title']) %}
+[{{ section['title'] }}]
 recipe = slapos.cookbook:publish.serialised
--slave-reference = {{ s.slave_reference }}
-{%- if 'error' in s %}
-error = {{ s.error }}
-{%- elif s.get('disable_sim', '') == 'Disable SIM' %}
-info = Your SIM was disabled, you can enable it back by updating it's parameter.
-{%- else %}
-info = Your SIM card has been attached to service  {{ slap_configuration['instance-title'] }}.
-plmn         = {{ s.get('plmn', 'No PLMN defined'        ) }}
-msin         = {{ s.get('msin', 'No MSIN defined'        ) }}
-imsi         = {{ s.get('imsi', 'No IMSI defined'        ) }}
-impi         = {{ s.get('impi', 'No IMPI defined'        ) }}
-impu         = {{ s.get('impu', 'No IMPU defined'        ) }}
-secret-key   = {{ s.get('k'   , 'No Secret Key defined'  ) }}
-operator-key = {{ s.get('opc' , 'No Operator Key defined') }}
-{%-     if fixed_ip %}
-ipv4 = {{ s.ip }}
-{%-     endif %}
-{%- endif %}
-{%- endfor %}
-
-{%- for s in dns_list %}
-{%    set publish_section_title = 'publish-%s' % s.slave_reference %}
-{%    do part_list.append(publish_section_title) %}
-[{{ publish_section_title }}]
-recipe = slapos.cookbook:publish.serialised
--slave-reference = {{ s.slave_reference }}
-domain = {{ s.subdomain }}.{{ s.get('domain', slapparameter_dict.get('local_domain', '')) }}
-ip = {{ s.get('ip', '') }}
-info = DNS entry has been attached to service {{ slap_configuration['instance-title'] }}.
+{%-   for param in section['publish'] %}
+{{ param }} = {{ section['publish'][param] }}
+{%-   endfor %}
 {%- endfor %}
 
 [buildout]
@@ -42,24 +15,29 @@ parts =
   directory
   mme-config
   mme-service
+{%- if slapparameter_dict.get('ims_pdn') %}
   ims-config
+  ims-service
+  publish-ims-config
+  ws-ims-websocket-promise
+  ws-ims-nginx-launcher
+  ws-ims-nginx-graceful
+{%- endif %}
   mt-call-config
   publish-mme-config
-  publish-ims-config
   publish-mt-call-config
   publish-ue-db-config
-  ims-service
   monitor-base
   check-interface-up.py
   publish-connection-information
   ws-mme-websocket-promise
   ws-mme-nginx-launcher
   ws-mme-nginx-graceful
-  ws-ims-websocket-promise
-  ws-ims-nginx-launcher
-  ws-ims-nginx-graceful
 # Don't add these sections during unit tests as there is no TUN IPv4 available
 {% if not slapparameter_dict.testing %}
+{%-  if slapparameter_dict.get('ims_pdn') %}
+  ims-mms-listen-promise
+{%-  endif%}
 {%-  for i in range(slapparameter_dict.iperf3) %}
   iperf-service-{{ i }}
   iperf-{{ i }}-listen-promise
@@ -77,6 +55,13 @@ extends = {{ monitor_template }}
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
+
+[myslap]
+# NOTE we don't query slapos.cookbook:slapconfiguration the second time because
+# slapparameter_dict is potentially modified with defaults.
+slapparameter_dict = {{ dumps(slapparameter_dict) }}
+slap_configuration = {{ dumps(slap_configuration) }}
+sim_list = {{ dumps(sim_list) }}
 
 [monitor-httpd-conf-parameter]
 httpd-include-file = {{ buildout_directory }}/etc/httpd-include-file.conf
@@ -119,7 +104,6 @@ inline =
   #!/bin/sh
   # Amarisoft init scripts
   sudo -n {{ amarisoft['dir'] }}/init-mme;
-  rm -f ${directory:var}/lte_ue.db;
   # Print hardware and software info in info-log
   cat >> ${:info-log} << EOF
 
@@ -168,7 +152,6 @@ inline =
   #!/bin/sh
   # Amarisoft init scripts
   sudo -n {{ amarisoft['dir'] }}/init-mme;
-  rm -f ${directory:var}/lte_ue.db;
   # Print hardware and software info in info-log
   cat >> ${:info-log} << EOF
 
@@ -238,10 +221,8 @@ extensions = jinja2.ext.do
 extra-context =
 context =
   section directory directory
-  raw slap_configuration {{ json_module.dumps(slap_configuration) }}
-  raw slapparameter_dict {{ json_module.dumps(slap_configuration.configuration) }}
-  raw gtp_addr_v6 {{ my_ipv6 }}
-  raw gtp_addr_v4 {{ lan_ipv4 }}
+  key slap_configuration myslap:slap_configuration
+  key slapparameter_dict myslap:slapparameter_dict
   import json_module json
   import  netaddr netaddr
   key ifup_empty mme-ifup-empty:wrapper-path
@@ -273,7 +254,7 @@ link-binary = ${mt-call-config:output}
 url = {{ ue_db_template }}
 output = ${directory:etc}/ue_db.cfg
 extra-context =
-  raw sim_list {{ json_module.dumps(sim_list) }}
+  key sim_list myslap:sim_list
 
 [publish-ue-db-config]
 <= publish-config-base
@@ -290,6 +271,13 @@ extra-context =
 <= publish-config-base
 link-binary = ${mme-config:output}
 
+[ims-mms-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = ims-mms-port-listening.py
+config-host = {{ slapparameter_dict.default_pdn.ipv4 }}
+config-port = 1111
+
 {% if slapparameter_dict.get("local_domain", '') %}
 [dnsmasq-config]
 recipe = slapos.recipe.template:jinja2
@@ -301,8 +289,8 @@ context =
   import json_module json
   import netaddr netaddr
   section directory directory
-  raw slap_configuration {{ json_module.dumps(slap_configuration) }}
-  raw slapparameter_dict {{ json_module.dumps(slap_configuration.configuration) }}
+  key slap_configuration myslap:slap_configuration
+  key slapparameter_dict myslap:slapparameter_dict
 
 [dnsmasq-service]
 recipe = slapos.cookbook:wrapper
@@ -451,19 +439,22 @@ recipe = slapos.cookbook:publish.serialised
 {{ p }} = {{ publish[p] }}
 {%- endfor %}
 {%- if slapparameter_dict.websocket_url_ipv6 %}
-URL.websocket-hostname = {{ slapparameter_dict.mme_com_addr }}
-URL.websocket-port = {{ slapparameter_dict.mme_com_ws_port }}
+URL.websocket-mme-hostname = {{ slapparameter_dict.mme_com_addr }}
+URL.websocket-mme-port = {{ slapparameter_dict.mme_com_ws_port }}
+URL.websocket-ims-hostname = {{ slapparameter_dict.ims_com_addr }}
+URL.websocket-ims-port = {{ slapparameter_dict.ims_com_ws_port }}
 {%- else %}
-URL.websocket-hostname = ${ws-mme-frontend-urlparse:hostname}
-URL.websocket-port = ${ws-mme-frontend-urlparse:port}
-URL.mme-websocket-password = ${ws-mme-websocket-password:passwd}
+URL.websocket-mme-hostname = ${ws-mme-frontend-urlparse:hostname}
+URL.websocket-mme-port = ${ws-mme-frontend-urlparse:port}
+URL.websocket-mme-password = ${ws-mme-websocket-password:passwd}
+URL.websocket-ims-hostname = ${ws-ims-frontend-urlparse:hostname}
+URL.websocket-ims-port = ${ws-ims-frontend-urlparse:port}
+URL.websocket-ims-password = ${ws-ims-websocket-password:passwd}
 {%- endif %}
 {%- if not slapparameter_dict.websocket_url_ipv6 %}
 URL.websocket-amarisoft-gui = https://tech-academy.amarisoft.com/web-gui/
 {%- endif %}
 NETWORK.core-network-ipv6 = {{ my_ipv6 }}
-NETWORK.core-network-ipv4 = {{ lan_ipv4 }}
-NETWORK.core-network-mac= {{ mac }}
 AMARISOFT.version = {{ amarisoft['version_cn'] }}
 AMARISOFT.host-id = {{ amarisoft['ltemme_host_id'] }}
 AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
