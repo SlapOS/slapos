@@ -1,6 +1,29 @@
 Changelog
 =========
 
+Version 1.0.494 (2026-07-03)
+-------------
+
+* Experimental feature only: add support for Inter Core Network Handover
+* More configuration option for PDN list, each of the two supported PDN can be configured:
+  - Configurable APN list
+  - Both PDN IP's can be fixed, as well as forced for each SIM
+  - Expert only: configurable IPv4 / IPv6 address start and end
+  - Possibilty to deactive IMS
+* Configurable sr_period
+* MCS can now be set to a fixed value
+* Publish IMS Websocket
+* Support Single User MIMO, allowing multiple uplink layers for a single UE for high uplink throughput
+* Add option to disable PHR Link Adaptation
+* Support forcing the PUSCH and PDSCH MCS to a fixed value
+* Update Amarisoft to 2026-06-25
+* Support Ipv4 route lists in SIM Cards parameters
+* Update MME configuration to match Amarisoft latest release
+* Add promise to check IMS is running
+* Fix SSB Computation issue with N79
+* Remove SDR Busy promise
+* Bug fixes from previous release
+
 Version 1.0.489 (2026-06-01)
 -------------
 

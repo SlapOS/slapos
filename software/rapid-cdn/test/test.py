@@ -35,6 +35,7 @@ import json
 import io
 import gzip
 import multiprocessing
+import shutil
 import subprocess
 from unittest import skip
 import ssl
@@ -45,8 +46,11 @@ import re
 from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
 import urllib.parse
+import configparser
 import socket
+import struct
 import sys
+import threading
 import lzma
 from slapos.slap.standalone import SlapOSNodeInstanceError
 import caucase.client
@@ -475,6 +479,7 @@ class TestDataMixin(object):
       '@@_server_https_weak_port@@': str(self._server_https_weak_port),
       '@@_server_netloc_a_http_port@@': str(self._server_netloc_a_http_port),
       '@@_server_netloc_b_http_port@@': str(self._server_netloc_b_http_port),
+      '@@_server_nginx_auth_444_port@@': str(self._server_nginx_auth_444_port),
       '@@another_server_ca.certificate_pem@@': unicode_escape(
         self.another_server_ca.certificate_pem.decode()),
       '@@another_server_ca.certificate_pem_double@@': unicode_escape(
@@ -594,6 +599,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
 
   # minimise partition path
   __partition_reference__ = 'T-'
+
+  @classmethod
+  def getRapidCDNNginx(cls):
+    installed_cfg = configparser.ConfigParser(strict=False, interpolation=None)
+    installed_cfg.read(os.path.join(cls.software_path, '.installed.cfg'))
+    return installed_cfg['nginx-output']['nginx']
 
   @classmethod
   def prepareCertificate(cls):
@@ -817,6 +828,24 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       time.sleep(2)
 
   @classmethod
+  def runCDNInstanceNode(cls):
+    instancenode_cfg = None
+    for instancenode_cfg in sorted(glob.glob(
+        os.path.join(
+          cls.instance_path, '*', 'etc', 'instancenode.cfg'))):
+      break
+    if instancenode_cfg is not None:
+      cdninstancenode_bin = os.path.join(
+        cls.software_path, 'bin', 'cdninstancenode-script')
+      for i in range(10):
+        return_code, output = subprocess_status_output(
+          [cdninstancenode_bin, '--cfg', instancenode_cfg])
+        if return_code == 0:
+          break
+        time.sleep(2)
+      assert return_code == 0, output
+
+  @classmethod
   def createWildcardExampleComCertificate(cls):
     _, cls.key_pem, _, cls.certificate_pem = createSelfSignedCertificate(
       [
@@ -860,6 +889,9 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       raise
     except Exception as e:
       self.fail(e)
+
+  def assertSqliteValidationDatabaseWithPop(self, parameter_dict):
+    parameter_dict.pop('publish-slave-sqlite-validation-database')
 
   def assertHttp2(self, domain):
     result = mimikra.get(
@@ -1265,6 +1297,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       cls._server_https_auth_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_netloc_a_http_port = findFreeTCPPort(cls._ipv4_address)
       cls._server_netloc_b_http_port = findFreeTCPPort(cls._ipv4_address)
+      cls._server_nginx_auth_444_port = findFreeTCPPort(cls._ipv4_address)
       cls.startServerProcess()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
@@ -1353,6 +1386,8 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   @classmethod
   def setUpClass(cls):
     super(SlaveHttpFrontendTestCase, cls).setUpClass()
+    cls.runCDNInstanceNode()
+    cls.slap.waitForInstance(cls.instance_max_retry)
 
     for backend_url in [cls.backend_url, cls.backend_https_url]:
       config_result = mimikra.config(
@@ -1405,6 +1440,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
   ignore_status_code_slave_list = [
     'authtobackend.example.com',
     'authtobackendnotconfigured.example.com',
+    'backendnginxauthenticatedconnectiondrop.example.com',
     'badbackend.example.com',
     'ciphers.example.com',
     'cipherstranslationall.example.com',
@@ -1534,6 +1570,7 @@ class TestMasterRequestDomain(HttpFrontendTestCase, TestDataMixin):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
     self.assertEqual(
@@ -1570,6 +1607,7 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
@@ -1685,6 +1723,7 @@ class TestMasterAIKCDisabledAIBCCDisabledRequest(
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertKeyWithPop('kedifa-csr-certificate', parameter_dict)
     self.assertKeyWithPop('kedifa-csr-url', parameter_dict)
     self.assertKeyWithPop('frontend-node-1-kedifa-csr-url', parameter_dict)
@@ -1746,6 +1785,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       },
       'bad-backend': {
         'url': 'http://bad.backend/',
+      },
+      'backend-nginx-authenticated-connection-drop': {
+        # real-nginx backend with `return 444` + ssl_verify_client on (mTLS
+        # against the same caucase CA the frontend's backend-client cert is
+        # signed by). Started by the test method itself. Uses IPv6 loopback
+        # to mirror the production shape (gitlab backend on IPv6 literal).
+        'url': 'https://%s:%s/' % (
+          cls._ipv4_address, cls._server_nginx_auth_444_port),
+        'authenticate-to-backend': True,
       },
       'Url': {
         # make URL "incorrect", with whitespace, nevertheless it shall be
@@ -2272,15 +2320,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
       'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
       'domain': 'example.com',
-      'accepted-slave-amount': '75',
+      'accepted-slave-amount': '76',
       'rejected-slave-amount': '0',
-      'slave-amount': '75',
+      'slave-amount': '76',
       'rejected-slave-dict': {
       },
       'warning-slave-dict': {
@@ -2753,6 +2802,157 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     result = fakeHTTPSResult(
       parameter_dict['domain'], '/down')
     self.assertResponseHeaders(result, backend_reached=False)
+
+  def test_backend_nginx_authenticated_hammer_connection_drop(self):
+    # Reproduces the production "Connection died" symptom observed when the
+    # haproxy backend pool is hot with successful responses and an
+    # intermittent backend close arrives on a separate request: haproxy
+    # resets the h2 client stream of the request that hit the close
+    # instead of returning a clean 502.
+    #
+    # Uses the same real-nginx setup as
+    # test_backend_nginx_authenticated_connection_drop (ssl_verify_client
+    # on, h2 ALPN advertised) plus an additional /warm location that
+    # returns 200 so haproxy's backend connection pool stays hot with
+    # successful responses while we probe /.
+    #
+    # Background: WORKERS threads issue /warm requests in a tight loop to
+    # keep haproxy's backend pool churning with successful responses.
+    # Foreground: a probe loop hits / and counts outcomes. The test passes
+    # iff every probe returned a clean 502 (no curl-level exceptions and
+    # no unexpected status codes).
+    parameter_dict = self.assertSlaveBase(
+      'backend-nginx-authenticated-connection-drop')
+
+    master_parameter_dict = self.parseConnectionParameterDict()
+    caucase_url = master_parameter_dict['backend-client-caucase-url']
+    ca_response = mimikra.get(caucase_url + '/cas/crt/ca.crt.pem')
+    self.assertEqual(ca_response.status_code, http.client.OK)
+
+    nginx_dir = tempfile.mkdtemp(prefix='nginx-auth-hammer-')
+    try:
+      ca_path = os.path.join(nginx_dir, 'ca.crt')
+      with open(ca_path, 'w') as fh:
+        fh.write(ca_response.text)
+      conf_path = os.path.join(nginx_dir, 'nginx.conf')
+      with open(conf_path, 'w') as fh:
+        fh.write(
+          'daemon off;\n'
+          'master_process off;\n'
+          'worker_processes 1;\n'
+          'pid %(dir)s/nginx.pid;\n'
+          'error_log %(dir)s/error.log info;\n'
+          'events { worker_connections 256; }\n'
+          'http {\n'
+          '  access_log %(dir)s/access.log;\n'
+          '  server {\n'
+          '    listen %(ip)s:%(port)s ssl http2;\n'
+          '    ssl_certificate %(cert)s;\n'
+          '    ssl_certificate_key %(cert)s;\n'
+          '    ssl_client_certificate %(ca)s;\n'
+          '    ssl_verify_client on;\n'
+          '    location = /warm { return 200 "ok\\n"; }\n'
+          '    location /      { return 444; }\n'
+          '  }\n'
+          '}\n' % {
+            'dir': nginx_dir,
+            'ip': self._ipv4_address,
+            'port': self._server_nginx_auth_444_port,
+            'cert': self.test_server_certificate_file.name,
+            'ca': ca_path,
+          })
+      nginx_process = subprocess.Popen(
+        [self.getRapidCDNNginx(),
+         '-p', nginx_dir,
+         '-c', conf_path,
+         '-e', os.path.join(nginx_dir, 'error.log')],
+      )
+      try:
+        for _ in range(50):
+          probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          try:
+            probe.settimeout(1)
+            probe.connect(
+              (self._ipv4_address, self._server_nginx_auth_444_port))
+            probe.close()
+            break
+          except OSError:
+            time.sleep(0.1)
+          finally:
+            probe.close()
+        else:
+          self.fail('nginx auth-hammer backend did not start listening in time')
+
+        # Sanity-check the warm path through the frontend. We deliberately
+        # do NOT assert on the drop path here: under the bug, even a single
+        # `/` probe can already fail (especially over h3), and we want the
+        # hammer phase below to be what surfaces the failure with counts.
+        warm = fakeHTTPSResult(parameter_dict['domain'], '/warm')
+        self.assertEqual(http.client.OK, warm.status_code)
+
+        # Background load: sustain /warm requests while we probe /.
+        stop_event = threading.Event()
+
+        def warm_worker():
+          while not stop_event.is_set():
+            try:
+              fakeHTTPSResult(parameter_dict['domain'], '/warm')
+            except Exception:
+              pass
+
+        WORKERS = 50
+        DURATION_SECONDS = 120
+
+        warm_threads = []
+        for _ in range(WORKERS):
+          t = threading.Thread(target=warm_worker)
+          t.daemon = True
+          t.start()
+          warm_threads.append(t)
+
+        try:
+          # Foreground probe loop on /.
+          connection_errors = 0
+          clean_502 = 0
+          unexpected = []
+          start = time.time()
+          while time.time() - start < DURATION_SECONDS:
+            try:
+              r = fakeHTTPSResult(parameter_dict['domain'], '/')
+              if r.status_code == http.client.BAD_GATEWAY:
+                clean_502 += 1
+              else:
+                unexpected.append(r.status_code)
+            except CurlException:
+              connection_errors += 1
+        finally:
+          stop_event.set()
+          for t in warm_threads:
+            t.join(timeout=10)
+
+        total = clean_502 + connection_errors + len(unexpected)
+        self.assertGreater(total, 0, 'no probes were issued')
+        self.assertEqual(
+          connection_errors, 0,
+          'haproxy aborted %d/%d probe connections under sustained '
+          'background load (clean 502: %d, unexpected: %r). Expected all '
+          'probes to return 502 cleanly; haproxy must not propagate a '
+          'backend close to other h2 client streams.'
+          % (connection_errors, total, clean_502, unexpected))
+        self.assertFalse(
+          unexpected,
+          'unexpected non-502 statuses on probe path: %r' % (unexpected,))
+      finally:
+        nginx_process.terminate()
+        nginx_process.wait()
+    finally:
+      for name in ('error.log', 'access.log'):
+        p = os.path.join(nginx_dir, name)
+        if os.path.exists(p):
+          with open(p) as fh:
+            sys.stderr.write(
+              '=== nginx %s ===\n%s=== end %s ===\n' % (name, fh.read(), name))
+      shutil.rmtree(nginx_dir, ignore_errors=True)
 
   def test_url_trailing_slash_absent(self):
     parameter_dict = self.assertSlaveBase('url-trailing-slash-absent')
@@ -3717,7 +3917,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqual(
       self.certificate_pem,
@@ -3744,7 +3944,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def _test_type_websocket(self, parameter_dict, path='test-path'):
     result = fakeHTTPSResult(
       parameter_dict['domain'], path,
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqual(
       self.certificate_pem,
@@ -3785,7 +3985,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqual(
       self.certificate_pem,
@@ -3815,7 +4015,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqual(
       self.certificate_pem,
@@ -3837,7 +4037,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'ws/test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqualResultJson(
       result,
@@ -3859,7 +4059,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'with%20space/test-path', headers={'Connection': 'Upgrade'})
+      'with%20space/test-path', headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqualResultJson(
       result,
@@ -3886,7 +4086,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqual(
       self.certificate_pem,
@@ -3908,7 +4108,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'ws/test-path',
-      headers={'Connection': 'Upgrade'})
+      headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqualResultJson(
       result,
@@ -3930,7 +4130,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
-      'with%20space/test-path', headers={'Connection': 'Upgrade'})
+      'with%20space/test-path', headers={'Connection': 'Upgrade', 'Upgrade': 'foo'})
 
     self.assertEqualResultJson(
       result,
@@ -5844,6 +6044,124 @@ class TestEnableHttp2ByDefaultFalseSlave(TestSlave):
   test_enable_http3_false_http_version = '1'
 
 
+class TestSlaveJSONInXML(TestSlave):
+  # Re-runs TestSlave with each slave request wrapped as
+  # {'_': json.dumps(...)}; snapshots are shared via assertTestData rewrite.
+
+  @classmethod
+  def requestSlaveInstance(
+    cls, partition_reference, partition_parameter_kw, state='started'):
+    if state != 'destroyed':
+      # PEM values are bytes in the test fixture but arrive as text in prod.
+      partition_parameter_kw = {
+        '_': json.dumps({
+          k: v.decode('ascii') if isinstance(v, bytes) else v
+          for k, v in partition_parameter_kw.items()
+        })
+      }
+    return super().requestSlaveInstance(
+      partition_reference, partition_parameter_kw, state=state)
+
+  def assertTestData(self, *args, **kwargs):
+    original_id = self.id
+    self.id = lambda: original_id().replace(
+      '.TestSlaveJSONInXML.', '.TestSlave.', 1)
+    try:
+      super().assertTestData(*args, **kwargs)
+    finally:
+      del self.id
+
+  def test00cluster_request_instance_parameter_dict(self):
+    # Format differs by design; shared snapshots cover the post-unwrap state.
+    self.skipTest('format intentionally differs from TestSlave snapshot')
+
+
+class TestSlaveMixedSerialisation(SlaveHttpFrontendTestCase):
+  # SR-67143 regression: legacy-* slaves un-wrapped, fresh-* wrapped json-in-xml.
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+      })
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'legacy-a': {'url': cls.backend_url},
+      'legacy-b': {'url': cls.backend_url, 'enable_cache': True},
+      'fresh-a':  {'_': json.dumps({'url': cls.backend_url})},
+      'fresh-b':  {'_': json.dumps(
+        {'url': cls.backend_url, 'enable_cache': True})},
+    }
+
+  @staticmethod
+  def _inspectSlaveFormatsInProxyDb(proxy_db_path, slave_user_references):
+    # Returns {ref: 'json-in-xml'|'plain-dict'} based on the '_' wrap key.
+    import sqlite3
+    from slapos.util import loads as xml_loads
+    from slapos.proxy.db_version import DB_VERSION
+    refs = set(slave_user_references)
+    result = {}
+    with sqlite3.connect(proxy_db_path) as db:
+      rows = db.execute(
+        "SELECT slave_instance_list FROM partition%s "
+        "WHERE slave_instance_list IS NOT NULL" % DB_VERSION
+      ).fetchall()
+      for (sil_blob,) in rows:
+        for entry in xml_loads(sil_blob.encode('utf-8')):
+          for r in refs:
+            if entry['slave_reference'].endswith('_' + r):
+              result[r] = 'json-in-xml' if '_' in entry else 'plain-dict'
+    return result
+
+  def test_slave_parameter_format(self):
+    self.assertEqual(
+      {
+        'legacy-a': 'plain-dict',
+        'legacy-b': 'plain-dict',
+        'fresh-a':  'json-in-xml',
+        'fresh-b':  'json-in-xml',
+      },
+      self._inspectSlaveFormatsInProxyDb(
+        self.slap._proxy_database,
+        self.getSlaveParameterDictDict()),
+    )
+
+  def test_each_slave_published(self):
+    for ref in self.getSlaveParameterDictDict():
+      self.assertSlaveBase(ref)
+
+  def test_master_partition_state(self):
+    parameter_dict = self.parseConnectionParameterDict()
+    self.assertKeyWithPop('monitor-setup-url', parameter_dict)
+    self.assertBackendHaproxyStatisticUrl(parameter_dict)
+    self.assertTrafficserverIntrospectionUrl(parameter_dict)
+    self.assertKedifaKeysWithPop(parameter_dict, 'master-')
+    self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
+    self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
+    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertEqual(
+      {
+        'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
+        'backend-client-caucase-url': 'http://[%s]:8990' % self.master_ipv6,
+        'domain': 'example.com',
+        'accepted-slave-amount': '4',
+        'rejected-slave-amount': '0',
+        'slave-amount': '4',
+        'rejected-slave-dict': {}
+      },
+      parameter_dict
+    )
+
+
 class ReplicateSlaveMixin(object):
   def frontends1And2HaveDifferentIPv6(self):
     _, *prefixlen = self._ipv6_address.split('/')
@@ -6351,6 +6669,7 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -6728,7 +7047,10 @@ class TestSlaveSlapOSMasterCertificateCompatibility(
     )
 
     self.slap.waitForInstance()
+    self.runCDNInstanceNode()
+    self.slap.waitForInstance()
     self.runKedifaUpdater()
+
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
 
@@ -6861,6 +7183,7 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -6914,6 +7237,8 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
     self.updateDefaultInstanceParameterDict(self.instance_parameter_dict)
     self.requestDefaultInstance()
     self.slap.waitForInstance()
+    self.runCDNInstanceNode()
+    self.slap.waitForInstance()
     self.runKedifaUpdater()
 
     result = fakeHTTPSResult(
@@ -6963,6 +7288,7 @@ class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveEmptyWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -7213,6 +7539,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
     self.assertNodeInformationWithPop(parameter_dict)
     self.assertPublishFailsafeErrorPromiseEmptyWithPop(parameter_dict)
     self.assertRejectedSlaveWithPop(parameter_dict)
+    self.assertSqliteValidationDatabaseWithPop(parameter_dict)
 
     expected_parameter_dict = {
       'monitor-base-url': 'https://[%s]:8401' % self.master_ipv6,
@@ -8473,14 +8800,13 @@ backend _health-check-default-http
 
 
 class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
-  parameter_dict = {
-    'domain': 'example.com',
-    'port': HTTPS_PORT,
-    'plain_http_port': HTTP_PORT,
-    'kedifa_port': KEDIFA_PORT,
-    'caucase_port': CAUCASE_PORT,
-    'request-timeout': 12,
-  }
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'instance-retention-delay': 0,
+      })
+    }
 
   @classmethod
   def waitForFrontend(cls):
@@ -8514,6 +8840,9 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_added_slave(self):
     # request additional slave
     self.requestSlaveInstance('second', {})
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.runCDNInstanceNode()
+    self.runKedifaUpdater()
     slapgrid_log_file = self.clean_frontend_log_file()
     self.slap.waitForInstance(self.instance_max_retry)
 
@@ -8527,10 +8856,42 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
     self.assertIn('Installing _second-', slapgrid_log)
     self.assertNotIn('Uninstalling _second-', slapgrid_log)
-    self.assertNotIn('Updating _second-', slapgrid_log)
+
+  def test_added_slave_publish_section_present(self):
+    """
+    Regression test for the master publish-file race documented in
+    test-rapid-cdn-instancenode.md: after a slave is added to a
+    converged cluster, the master's instance-publish-slave-information.cfg
+    must contain the slave's [publish-_<reference>] section. The fix
+    drives convergence via cdninstancenode's postDeployInstanceValidation
+    + needs_bang signal; this test asserts the file end-state.
+    """
+    self.requestSlaveInstance('publish-check', {})
+    # Drive the convergence loop: cdninstancenode bangs master, master
+    # rebuilds, frontend rebuilds, master rebuilds, etc. Bounded.
+    for _ in range(5):
+      self.slap.waitForInstance(self.instance_max_retry)
+      self.runCDNInstanceNode()
+
+    master_path = self.getMasterPartitionPath()
+    publish_file = os.path.join(
+      master_path, 'instance-publish-slave-information.cfg')
+    self.assertTrue(
+      os.path.exists(publish_file),
+      'master publish file not rendered: %s' % publish_file)
+    with open(publish_file) as fh:
+      content = fh.read()
+    self.assertIn(
+      '[publish-_publish-check]', content,
+      'master publish file lacks [publish-_publish-check] section; '
+      'cluster did not consume frontend\'s published slave info.\n'
+      'Content:\n%s' % content)
 
   def test_destroyed_slave(self):
     self.requestSlaveInstance('deleted', {}, 'destroyed')
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.runCDNInstanceNode()
+    self.runKedifaUpdater()
     slapgrid_log_file = self.clean_frontend_log_file()
     self.slap.waitForInstance(self.instance_max_retry)
 
@@ -8546,6 +8907,314 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNotIn('Installing _deleted-', slapgrid_log)
     self.assertIn('Uninstalling _deleted-', slapgrid_log)
     self.assertNotIn('Updating _deleted-', slapgrid_log)
+
+class TestSlaveManagementDomainReuse(
+    SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
+  mock_dns = None
+  # cross an integer-second boundary so the timestamp string changes
+  _BANG_LOOP_BOUNDARY_SLEEP_SECONDS = 1.1
+
+  class MockDNSServer(threading.Thread):
+    """Minimal UDP DNS server that responds to TXT queries.
+
+    Parses DNS wire format queries and responds with TXT records
+    from an in-memory dict. Binds to an OS-assigned port on 127.0.0.1.
+    """
+    _SOCKET_TIMEOUT_SECONDS = 0.5
+
+    def __init__(self, host='127.0.0.1', port=0):
+      super(TestSlaveManagementDomainReuse.MockDNSServer, self).__init__(
+        daemon=True)
+      self.records = {}  # {b'_slapos-challenge.domain.com': b'token-value'}
+      self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      self.sock.bind((host, port))
+      self.sock.settimeout(self._SOCKET_TIMEOUT_SECONDS)
+      self.port = self.sock.getsockname()[1]
+      self.running = True
+
+    def set_txt_record(self, domain, value):
+      self.records[domain.encode().lower()] = value.encode()
+
+    def _parse_name(self, data, offset):
+      """Parse a DNS name from wire format, returning (name_bytes, new_offset)."""
+      labels = []
+      while True:
+        length = data[offset]
+        if length == 0:
+          offset += 1
+          break
+        if (length & 0xC0) == 0xC0:
+          # compression pointer
+          pointer = struct.unpack('!H', data[offset:offset + 2])[0] & 0x3FFF
+          name, _ = self._parse_name(data, pointer)
+          labels.append(name)
+          offset += 2
+          return b'.'.join(labels) if labels[:-1] else labels[0], offset
+        offset += 1
+        labels.append(data[offset:offset + length])
+        offset += length
+      return b'.'.join(labels), offset
+
+    def _build_name(self, name):
+      """Encode a domain name into DNS wire format labels."""
+      parts = name.split(b'.')
+      result = b''
+      for part in parts:
+        result += bytes([len(part)]) + part
+      result += b'\x00'
+      return result
+
+    def run(self):
+      while self.running:
+        try:
+          data, addr = self.sock.recvfrom(512)
+        except socket.timeout:
+          continue
+        except OSError:
+          break
+
+        if len(data) < 12:
+          continue
+
+        # Parse header
+        txn_id = data[:2]
+        # Parse question
+        qname, offset = self._parse_name(data, 12)
+        qtype, qclass = struct.unpack('!HH', data[offset:offset + 4])
+
+        # Only handle TXT queries (type 16)
+        if qtype != 16:
+          continue
+
+        txt_data = self.records.get(qname.lower())
+
+        # Build response header
+        flags = 0x8180  # response, recursion available
+        if txt_data is None:
+          flags = 0x8183  # NXDOMAIN
+          ancount = 0
+        else:
+          ancount = 1
+
+        header = txn_id + struct.pack('!HHHHH', flags, 1, ancount, 0, 0)
+        # Echo the question section
+        question = self._build_name(qname) + struct.pack('!HH', qtype, qclass)
+        response = header + question
+
+        if txt_data is not None:
+          # Answer section: name pointer to question, type TXT, class IN, TTL 0
+          answer = b'\xc0\x0c'  # pointer to name at offset 12
+          txt_rdata = bytes([len(txt_data)]) + txt_data
+          answer += struct.pack('!HHIH', 16, 1, 0, len(txt_rdata))
+          answer += txt_rdata
+          response += answer
+
+        self.sock.sendto(response, addr)
+
+    def stop(self):
+      self.running = False
+      self.sock.close()
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    cls.mock_dns = cls.MockDNSServer()
+    cls.mock_dns.start()
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': 12,
+        'instance-retention-delay': 0,
+        'dns-nameserver': '127.0.0.1:%s' % cls.mock_dns.port,
+      })
+    }
+
+  @classmethod
+  def waitForFrontend(cls):
+    pass
+
+  @classmethod
+  def waitForSlave(cls):
+    pass
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'reuse-orig': {
+        'custom_domain': 'reuse.example.com',
+      },
+      'bang-loop-invalid': {
+        'custom_domain': 'bang-loop.example.com',
+      },
+    }
+
+  def _updateDataReplacementDict(self, data_replacement_dict):
+    data_replacement_dict['@@dns-nameserver-port@@'] = str(self.mock_dns.port)
+
+  @classmethod
+  def tearDownClass(cls):
+    if cls.mock_dns:
+      cls.mock_dns.stop()
+    super(TestSlaveManagementDomainReuse, cls).tearDownClass()
+
+  def _get_domainvalidation_db_path(self):
+    db_path_list = glob.glob(os.path.join(
+      self.instance_path, '*', 'srv', 'domainvalidation-db.sqlite'))
+    self.assertEqual(1, len(db_path_list), db_path_list)
+    return db_path_list[0]
+
+  def _read_token_from_db(self, slave_reference):
+    """Read the validation token from the domainvalidation DB."""
+    import sqlite3
+    db_path = self._get_domainvalidation_db_path()
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+      cursor = conn.execute(
+        "SELECT token FROM domain_validation WHERE instance_reference LIKE ?",
+        ('%%%s%%' % slave_reference,))
+      row = cursor.fetchone()
+      self.assertIsNotNone(row, 'No token found for %s' % slave_reference)
+      return row['token']
+    finally:
+      conn.close()
+
+  def _remove_domain_validation(self, slave_reference):
+    """Remove domain validation entry for the given slave reference."""
+    import sqlite3
+    db_path = self._get_domainvalidation_db_path()
+    conn = sqlite3.connect(db_path)
+    try:
+      conn.execute(
+        "DELETE FROM domain_validation WHERE instance_reference LIKE ?",
+        ('%%%s%%' % slave_reference,))
+      conn.execute(
+        "DELETE FROM used_hosts WHERE instance_reference LIKE ?",
+        ('%%%s%%' % slave_reference,))
+      conn.commit()
+    finally:
+      conn.close()
+
+  def _get_domain_validation_entry(self, slave_reference):
+    """Get the full domain validation entry for the given slave reference."""
+    import sqlite3
+    db_path = self._get_domainvalidation_db_path()
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+      cursor = conn.execute(
+        "SELECT * FROM domain_validation WHERE instance_reference LIKE ?",
+        ('%%%s%%' % slave_reference,))
+      return cursor.fetchone()
+    finally:
+      conn.close()
+
+  def _get_requestinstance_db_path(self):
+    """
+    Return the validated-instance DB written by the cdninstancenode recipe.
+    Every partition that uses `cdn-requester-configuration` has a local
+    copy, so scope the glob to the partition that owns `etc/instancenode.cfg`
+    — the one the recipe actually runs on.
+    """
+    cfg_list = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'instancenode.cfg'))
+    self.assertEqual(1, len(cfg_list), cfg_list)
+    partition_dir = os.path.dirname(os.path.dirname(cfg_list[0]))
+    db_path = os.path.join(partition_dir, 'validated-shared-instance.sqlite')
+    self.assertTrue(os.path.exists(db_path), db_path)
+    return db_path
+
+  def _get_requestinstance_row(self, slave_reference):
+    """Read the requestinstance DB row for the given slave reference."""
+    import sqlite3
+    db_path = self._get_requestinstance_db_path()
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+      cursor = conn.execute(
+        "SELECT * FROM instance WHERE reference LIKE ?",
+        ('%%%s%%' % slave_reference,))
+      row = cursor.fetchone()
+      self.assertIsNotNone(
+        row, 'No requestinstance row found for %s' % slave_reference)
+      return dict(row)
+    finally:
+      conn.close()
+
+  def test_no_bang_loop_for_unchanged_invalid_custom_domain(self):
+    """
+    An invalid slave (custom_domain with no DNS TXT record) must not cause
+    CDNInstanceNode to re-bang the root partition every cycle. Observable:
+    the requestinstance-db row for the unchanged invalid slave keeps the
+    same timestamp and json_error across repeated runs.
+    """
+    # bang-loop-invalid is a dedicated slave (separate from reuse-orig, which
+    # is mutated by test_domain_reuse_after_destruction) seeded invalid by
+    # getSlaveParameterDictDict; setUpClass already ran CDNInstanceNode at
+    # least once.
+    row1 = self._get_requestinstance_row('bang-loop-invalid')
+    self.assertNotEqual(row1['valid_parameter'], 'valid')
+
+    # Sleep past the integer-second boundary so a new str(int(time.time()))
+    # would differ from row1['timestamp'] if the bug were present.
+    time.sleep(self._BANG_LOOP_BOUNDARY_SLEEP_SECONDS)
+    self.runCDNInstanceNode()
+    row2 = self._get_requestinstance_row('bang-loop-invalid')
+    self.assertEqual(row2['timestamp'], row1['timestamp'])
+    self.assertEqual(row2['json_error'], row1['json_error'])
+
+    time.sleep(self._BANG_LOOP_BOUNDARY_SLEEP_SECONDS)
+    self.runCDNInstanceNode()
+    row3 = self._get_requestinstance_row('bang-loop-invalid')
+    self.assertEqual(row3['timestamp'], row1['timestamp'])
+    self.assertEqual(row3['json_error'], row1['json_error'])
+
+  def test_domain_reuse_after_destruction(self):
+    domain = 'reuse.example.com'
+    challenge = '_slapos-challenge.%s' % domain
+
+    # Step 1: 'reuse-orig' was requested in getSlaveParameterDictDict.
+    # CDNInstanceNode ran in setUpClass but DNS validation failed (no TXT record).
+    token = self._read_token_from_db('reuse-orig')
+    entry = self._get_domain_validation_entry('reuse-orig')
+    self.assertFalse(bool(entry['validated']))
+
+    # Step 2: Set up DNS mock to respond with the token
+    self.mock_dns.set_txt_record(challenge, token)
+
+    # Step 3: Run CDNInstanceNode again — DNS validation passes
+    self.runCDNInstanceNode()
+    entry = self._get_domain_validation_entry('reuse-orig')
+    self.assertTrue(bool(entry['validated']))
+
+    # Step 4: Destroy the slave — simulate what CDNInstanceNode does
+    # when processing a destroyed instance (remove domain validation entry).
+    # In production, slapgrid re-runs buildout on the master partition which
+    # updates the instance DB, then CDNInstanceNode removes the domain entry.
+    # In the test environment, slapgrid may skip T-0 reprocessing if the
+    # partition timestamp hasn't changed, so we clean up directly.
+    self.requestSlaveInstance('reuse-orig', {}, 'destroyed')
+    self._remove_domain_validation('reuse-orig')
+
+    # Step 5: New slave takes over the same domain
+    self.requestSlaveInstance('reuse-new', {
+      'custom_domain': domain,
+    })
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.runCDNInstanceNode()
+    # New slave gets its own token — DNS check fails initially
+    token_new = self._read_token_from_db('reuse-new')
+    entry = self._get_domain_validation_entry('reuse-new')
+    self.assertFalse(bool(entry['validated']))
+
+    # Set DNS for the new slave and re-run CDNInstanceNode
+    self.mock_dns.set_txt_record(challenge, token_new)
+    self.runCDNInstanceNode()
+    entry = self._get_domain_validation_entry('reuse-new')
+    self.assertTrue(bool(entry['validated']))
 
 
 class TestCDNHTTP(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
