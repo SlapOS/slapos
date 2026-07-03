@@ -16,7 +16,7 @@ Version 1.0.494 (2026-07-03)
 * Support Single User MIMO, allowing multiple uplink layers for a single UE for high uplink throughput
 * Add option to disable PHR Link Adaptation
 * Support forcing the PUSCH and PDSCH MCS to a fixed value
-* Update Amarisoft to 2026-06-12
+* Update Amarisoft to 2026-06-25
 * Support Ipv4 route lists in SIM Cards parameters
 * Update MME configuration to match Amarisoft latest release
 * Add promise to check IMS is running
