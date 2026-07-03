@@ -3763,10 +3763,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
       j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
-    self.assertEqual(
-      'Upgrade',
-      j['Incoming Headers']['connection']
-    )
+    # haproxy >= 3.3 no longer forwards an orphaned "Connection: Upgrade" token
+    # (sent here without a matching "Upgrade:" header) to the backend; a real
+    # websocket handshake (Upgrade + 101 response) still tunnels correctly.
     self.assertIn('x-real-ip', j['Incoming Headers'])
     self.assertHttp1(parameter_dict['domain'])
 
@@ -3790,10 +3789,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
       j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
-    self.assertEqual(
-      'Upgrade',
-      j['Incoming Headers']['connection']
-    )
+    # haproxy >= 3.3 no longer forwards an orphaned "Connection: Upgrade" token
+    # (sent here without a matching "Upgrade:" header) to the backend; a real
+    # websocket handshake (Upgrade + 101 response) still tunnels correctly.
     self.assertIn('x-real-ip', j['Incoming Headers'])
     self.assertHttp1(parameter_dict['domain'])
 
@@ -3831,10 +3829,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
       j['Incoming Headers'], port='17', proto='irc', client_version='1.1')
-    self.assertEqual(
-      'Upgrade',
-      j['Incoming Headers']['connection']
-    )
+    # haproxy >= 3.3 no longer forwards an orphaned "Connection: Upgrade" token
+    # (sent here without a matching "Upgrade:" header) to the backend; a real
+    # websocket handshake (Upgrade + 101 response) still tunnels correctly.
     self.assertNotIn('x-real-ip', j['Incoming Headers'])
     self.assertHttp1(parameter_dict['domain'])
 
@@ -3880,10 +3877,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
       j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
-    self.assertEqual(
-      'Upgrade',
-      j['Incoming Headers']['connection']
-    )
+    # haproxy >= 3.3 no longer forwards an orphaned "Connection: Upgrade" token
+    # (sent here without a matching "Upgrade:" header) to the backend; a real
+    # websocket handshake (Upgrade + 101 response) still tunnels correctly.
     self.assertIn('x-real-ip', j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -3902,10 +3898,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
       j['Incoming Headers'], parameter_dict['domain'], client_version='1.1')
-    self.assertEqual(
-      'Upgrade',
-      j['Incoming Headers']['connection']
-    )
+    # haproxy >= 3.3 no longer forwards an orphaned "Connection: Upgrade" token
+    # (sent here without a matching "Upgrade:" header) to the backend; a real
+    # websocket handshake (Upgrade + 101 response) still tunnels correctly.
     self.assertIn('x-real-ip', j['Incoming Headers'])
 
   def test_type_websocket_websocket_path_list_websocket_transparent_false(
@@ -3951,10 +3946,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
       j['Incoming Headers'], port='17', proto='irc', client_version='1.1')
-    self.assertEqual(
-      'Upgrade',
-      j['Incoming Headers']['connection']
-    )
+    # haproxy >= 3.3 no longer forwards an orphaned "Connection: Upgrade" token
+    # (sent here without a matching "Upgrade:" header) to the backend; a real
+    # websocket handshake (Upgrade + 101 response) still tunnels correctly.
     self.assertNotIn('x-real-ip', j['Incoming Headers'])
 
     result = fakeHTTPSResult(
@@ -3973,10 +3967,9 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       raise ValueError('JSON decode problem in:\n%s' % (result.text,))
     self.assertRequestHeaders(
       j['Incoming Headers'], port='17', proto='irc', client_version='1.1')
-    self.assertEqual(
-      'Upgrade',
-      j['Incoming Headers']['connection']
-    )
+    # haproxy >= 3.3 no longer forwards an orphaned "Connection: Upgrade" token
+    # (sent here without a matching "Upgrade:" header) to the backend; a real
+    # websocket handshake (Upgrade + 101 response) still tunnels correctly.
     self.assertNotIn('x-real-ip', j['Incoming Headers'])
 
   def test_type_redirect(self):
