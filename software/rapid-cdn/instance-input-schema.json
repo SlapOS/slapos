@@ -37,6 +37,25 @@
       "description": "Globally enable HTTP3 protocol. Can be precisely set on each node by -frontend-i-config-enable-http3",
       "type": "boolean"
     },
+    "enforced-compression": {
+      "default": "gzip",
+      "title": "Cluster Default Enforced Compression",
+      "description": "Cluster-wide default for enforced-compression. When a client sends no Accept-Encoding header or Accept-Encoding: *, the frontend substitutes it with the canonical form for this encoding before forwarding to the backend. Slaves that set their own enforced-compression override this default. Set to 'none' to disable the substitution by default.",
+      "enum": [
+        "none",
+        "deflate",
+        "gzip",
+        "br",
+        "zstd"
+      ],
+      "type": "string"
+    },
+    "normalize-accept-encoding": {
+      "default": true,
+      "title": "Cluster Default Normalise Accept-Encoding",
+      "description": "Cluster-wide default for normalize-accept-encoding. When enabled, the frontend collapses the client's Accept-Encoding into a small canonical set before forwarding to the backend, so cached responses keyed on Vary: Accept-Encoding collapse into a handful of variants instead of one per browser. Slaves that set their own normalize-accept-encoding override this default.",
+      "type": "boolean"
+    },
     "http3-port": {
       "default": 443,
       "title": "Real advertised HTTP3 port",
