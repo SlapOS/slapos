@@ -112,7 +112,6 @@ class PostfixTestCase(SlapOSInstanceTestCase):
   def test_postfix(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     host = parameter_dict["imap-smtp-ipv6"]
-
     try:
       server = smtplib.SMTP(host, int(parameter_dict["smtp-port"]), timeout=10)
       server.quit()
