@@ -16,6 +16,11 @@ Keep the naming in instance profiles:
 Changelog (CHANGES.rst)
 =======================
 
+**Every merge request or commit that changes functionality must update
+this changelog in the same commit/MR**: add an entry under the
+``Unreleased`` heading. Non-functional changes — internal refactoring,
+tests, documentation — need no entry.
+
 ``CHANGES.rst`` is a functional changelog for CDN operators and users: each entry is a short, audience-tagged note (``[operator]`` / ``[user]``) about a behaviour or parameter change. Purely internal/developer changes are omitted.
 
 The style is adapted from `Keep a Changelog <https://keepachangelog.com/en/1.1.0/>`_ and `Common Changelog <https://github.com/vweevers/common-changelog>`_, with these project-specific rules:
