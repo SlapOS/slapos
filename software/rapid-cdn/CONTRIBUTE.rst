@@ -49,3 +49,20 @@ A SlapOS Software Release is a tag of the ``1.0`` branch, named ``1.0.<latest>+1
 3. Commit and push to ``master``, then run ``update-rc`` and ``release-sr`` as usual; the tag freezes this file as-is.
 
 The one condition to respect: no other ``1.0.x`` tag is created between steps 1 and 3 (the numbering is shared across all Software Releases). If one is, bump the heading to match the real tag before releasing.
+
+Review checklist
+----------------
+
+When reviewing a merge request, check its changelog impact:
+
+* **Coverage** — every operator- or user-facing change in the MR has a ``CHANGES.rst`` entry under ``Unreleased``; internal/developer-only changes have none.
+* **Functional only** — entries describe behaviour or parameter changes, not refactors, tests, or build/dependency plumbing.
+* **Single audience** — each entry is tagged ``[operator]`` **or** ``[user]``; a change affecting both is split into a separate ``[operator]`` entry and ``[user]`` entry.
+* **Right audience** — operator ↔ ``instance-input-schema.json`` / ``instance-output-schema.json``; user ↔ ``instance-slave-input-schema.json`` / ``instance-slave-output-schema.json`` or served-traffic behaviour. (Beware: a real user/operator effect may be missing its schema change — judge by impact, not only by files touched.)
+* **Breaking** — breaking changes are prefixed ``**Breaking:**`` and listed first in their section.
+* **Precise** — exact parameter names are given, with migration guidance whenever a parameter or behaviour is added, changed, or removed.
+* **Net effect** — the entry states the net result, not a commit-by-commit story; a change that reverts an earlier one references the release it reverts.
+* **History, not deployment** — the wording is about the Software Release itself; no references to deployment or to the CDN clusters.
+* **Unreleased** — the entry sits under ``Unreleased`` with no version number (the number is assigned only at release).
+* **References** — the entry cites the merge request and commit(s) as ``lab.nexedi.com`` links.
+* **Renders** — the file is valid reStructuredText and has no BOM (it is an upstream nexedi/slapos file).
