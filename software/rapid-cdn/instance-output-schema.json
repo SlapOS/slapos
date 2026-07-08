@@ -1,13 +1,55 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Values returned by Rapid.CDN instanciation",
+  "type": "object",
+  "additionalProperties": false,
   "properties": {
+    "domain": {
+      "description": "Base domain used by the instance",
+      "type": "string"
+    },
+    "slave-amount": {
+      "description": "Total amount of Slaves allocated to the Instance (include blocked ones)",
+      "type": "integer"
+    },
     "accepted-slave-amount": {
       "description": "Amount of Slaves allocated to the Instance which are deployed",
       "type": "integer"
     },
-    "domain": {
-      "description": "Base domain used by the instance",
+    "rejected-slave-amount": {
+      "description": "Rejected Amount of Slaves allocated to the Instance which are not deployed",
+      "type": "integer"
+    },
+    "rejected-slave-dict": {
+      "description": "Dict of slaves which were rejected. Keys are slave references, values are lists of errors on slaves.",
+      "type": "object"
+    },
+    "rejected-slave-url": {
+      "description": "URL exposing the list of rejected slaves.",
+      "type": "string"
+    },
+    "publish-failsafe-error-promise-url": {
+      "description": "URL exposing failsafe publication errors of the slaves.",
+      "type": "string"
+    },
+    "publish-slave-sqlite-validation-database": {
+      "description": "URL to the sqlite database used to validate the published slave list.",
+      "type": "string"
+    },
+    "warning-list": {
+      "description": "List of warnings found during the request.",
+      "type": "array"
+    },
+    "warning-slave-dict": {
+      "description": "Dict of slaves which got warnings. Keys are slave references, values are lists of warnings on slaves.",
+      "type": "object"
+    },
+    "monitor-base-url": {
+      "description": "Base url for monitor",
+      "type": "string"
+    },
+    "monitor-setup-url": {
+      "description": "URL to setup the monitor in a monitoring client",
       "type": "string"
     },
     "master-key-generate-auth-url": {
@@ -18,70 +60,47 @@
       "description": "URL to PUT PEM bundle of main certificate and key",
       "type": "string"
     },
-    "monitor-base-url": {
-      "description": "Base url for monitor",
-      "type": "string"
-    },
-    "monitor-password": {
-      "description": "Password to access the monitor",
-      "type": "string"
-    },
-    "monitor-url": {
-      "description": "Url of Monitor (opml)",
-      "type": "string"
-    },
-    "monitor-user": {
-      "description": "User to access the monitor",
-      "type": "string"
-    },
-    "rejected-slave-amount": {
-      "description": "Rejected Amount of Slaves allocated to the Instance which are not deployed",
-      "type": "integer"
-    },
-    "rejected-slave-dict": {
-      "description": "Dict of slaves which were rejected. Keys are slave references, values are lists of errors on slaves.",
-      "type": "array"
-    },
-    "slave-amount": {
-      "description": "Total amount of Slaves allocated to the Instance (include blocked ones)",
-      "type": "integer"
-    },
-    "kedifa-csr-url": {
-      "description": "URL on which KeDiFa publishes its CSR sent to caucase.",
-      "type": "string"
-    },
-    "kedifa-csr-certificate": {
-      "description": "Certificate used to serve data on kedifa-csr-url.",
-      "type": "string"
-    },
     "kedifa-caucase-url": {
       "description": "Url to caucase used by KeDiFa.",
       "type": "string"
     },
-    "frontend-node-N-kedifa-csr-url": {
-      "description": "URL on which frontend node number N publishes its Kedifa CSR sent to caucase.",
+    "kedifa-csr-url": {
+      "description": "URL on which KeDiFa publishes its CSR sent to caucase. Published only when automatic internal kedifa caucase CSR is disabled.",
       "type": "string"
     },
-    "frontend-node-N-backend-client-csr-url": {
-      "description": "URL on which frontend node number N publishes its Backend Client CSR sent to caucase.",
+    "kedifa-csr-certificate": {
+      "description": "Certificate used to serve data on kedifa-csr-url. Published only when automatic internal kedifa caucase CSR is disabled.",
       "type": "string"
-    },
-    "frontend-node-N-csr-certificate": {
-      "description": "Certificate used to serve data on CSRs.",
-      "type": "string"
-    },
-    "warning-slave-dict": {
-      "description": "Dict of slaves which got warnings. Keys are slave references, values are lists of warnings on slaves.",
-      "type": "array"
-    },
-    "warning-list": {
-      "description": "List of warning found during the request.",
-      "type": "array"
     },
     "backend-client-caucase-url": {
       "description": "URL to caucase used by authentication to the backend.",
       "type": "string"
     }
   },
-  "type": "object"
+  "patternProperties": {
+    "^frontend-node-[0-9]+-backend-haproxy-statistic-url$": {
+      "description": "URL on which frontend node number N publishes the backend HAProxy statistics.",
+      "type": "string"
+    },
+    "^frontend-node-[0-9]+-node-information-json$": {
+      "description": "JSON describing frontend node number N.",
+      "type": "string"
+    },
+    "^frontend-node-[0-9]+-trafficserver-introspection-url$": {
+      "description": "URL on which frontend node number N exposes Traffic Server introspection.",
+      "type": "string"
+    },
+    "^frontend-node-[0-9]+-kedifa-csr-url$": {
+      "description": "URL on which frontend node number N publishes its Kedifa CSR sent to caucase. Published only when automatic internal kedifa caucase CSR is disabled.",
+      "type": "string"
+    },
+    "^frontend-node-[0-9]+-backend-client-csr-url$": {
+      "description": "URL on which frontend node number N publishes its Backend Client CSR sent to caucase. Published only when automatic internal backend client caucase CSR is disabled.",
+      "type": "string"
+    },
+    "^frontend-node-[0-9]+-csr-certificate$": {
+      "description": "Certificate used to serve data on the CSR URLs of frontend node number N. Published only when automatic internal CSR is disabled.",
+      "type": "string"
+    }
+  }
 }

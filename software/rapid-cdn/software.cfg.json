@@ -15,7 +15,7 @@
       "description": "",
       "index": 2,
       "request": "instance-frontend-input-schema.json",
-      "response": "instance-output-schema.json",
+      "response": "instance-frontend-node-output-schema.json",
       "title": "Custom Personal",
       "software-type": "single-custom-personal"
     },
