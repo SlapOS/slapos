@@ -2,14 +2,10 @@
 rapid-cdn Changelog
 ===================
 
-A functional changelog for CDN operators and users. Each change below is
-its own section, tagged with the audience it affects — **[operator]**,
-**[user]**, or **[operator, user]**.
+A functional changelog for CDN operators (**[operator]**) and users
+(**[user]**).
 
-Purely internal / developer changes are omitted, as are releases with no
-functional change. Entries describe net changes (not commit history) and
-cite the commit(s) — and, for grouped work, the merge request — that
-produced them. The changelog covers releases from 1.0.377 onward.
+The changelog covers releases from 1.0.377 onward.
 
 Unreleased
 --------------------
@@ -36,7 +32,7 @@ node removes it. ``dns-nameserver`` now accepts a comma-separated list
 in which each entry may pin an explicit resolver port (``ip:port`` or
 ``[ipv6]:port``, default 53) — a bare host still works unchanged.
 
-(!1975, 226820cb0, 3f4a3e520, ed411f684)
+(`!1975 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/1975>`__, `226820cb0 <https://lab.nexedi.com/nexedi/slapos/-/commit/226820cb0>`__, `3f4a3e520 <https://lab.nexedi.com/nexedi/slapos/-/commit/3f4a3e520>`__, `ed411f684 <https://lab.nexedi.com/nexedi/slapos/-/commit/ed411f684>`__)
 
 Dedicated monitoring-interface URL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,7 +42,7 @@ The cluster gained a dedicated ``monitor-interface-url`` parameter on
 the frontend input schema (it already existed on the cluster and kedifa
 schemas). Its default, on all three, was updated from
 ``https://monitor.app.officejs.com`` to
-``https://monitor.app.officejs.com/#page=ojsm_landing``. (40e3afe24)
+``https://monitor.app.officejs.com/#page=ojsm_landing``. (`40e3afe24 <https://lab.nexedi.com/nexedi/slapos/-/commit/40e3afe24>`__)
 
 Explicit slave parameter serialisation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,7 +52,7 @@ In ``software.cfg.json`` the shared slave software types
 ``custom-personal-slave`` and ``default-slave`` now declare
 ``serialisation: xml`` explicitly, while the cluster itself stays on
 ``json-in-xml``. This governs how slave request parameters are encoded.
-(5b0560583)
+(`5b0560583 <https://lab.nexedi.com/nexedi/slapos/-/commit/5b0560583>`__)
 
 1.0.469 (2026-03-06)
 --------------------
@@ -84,7 +80,7 @@ the boolean-style slave parameters (they remain string-typed):
 ``health-check-failover-ssl-proxy-verify``, ``https-only``,
 ``prefer-gzip-encoding-to-backend``, ``ssl-proxy-verify``,
 ``strict-transport-security-preload``, and
-``strict-transport-security-sub-domains``. (8871f2053)
+``strict-transport-security-sub-domains``. (`8871f2053 <https://lab.nexedi.com/nexedi/slapos/-/commit/8871f2053>`__)
 
 Reliable parameter passing to frontend nodes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,7 +92,7 @@ The indexed per-frontend parameter, previously restricted to
 Operators can now pass any per-frontend config key through to a specific
 frontend node (for example ``ram-cache-size`` or
 ``expert-backend-allow-downgrade-ssl``), not only the RAM cache size.
-(e650ac64e)
+(`e650ac64e <https://lab.nexedi.com/nexedi/slapos/-/commit/e650ac64e>`__)
 
 1.0.464 (2026-02-05)
 --------------------
@@ -108,7 +104,7 @@ JSON schemas upgraded to the latest draft
 All parameter schemas were moved from JSON Schema ``draft-07`` to
 ``draft/2020-12`` (the ``$schema`` declaration). Parameter names and
 meanings are unchanged, but validation tooling and editor forms may
-behave differently. (707bc5b7b)
+behave differently. (`707bc5b7b <https://lab.nexedi.com/nexedi/slapos/-/commit/707bc5b7b>`__)
 
 1.0.446 (2025-10-21)
 --------------------
@@ -121,7 +117,7 @@ Because some Apache TrafficServer settings only take effect on restart,
 changing the affected cluster parameters now triggers a TrafficServer
 service restart. The ``request-timeout`` parameter (title "HTTP Request
 timeout in seconds") is documented with this warning; expect a brief
-service restart when you change it. (8eff44b0b)
+service restart when you change it. (`8eff44b0b <https://lab.nexedi.com/nexedi/slapos/-/commit/8eff44b0b>`__)
 
 1.0.427 (2025-07-24)
 --------------------
@@ -136,4 +132,4 @@ health checks now always use HTTP/1.0. rapid-cdn sends no Host header on
 health-check requests, which HTTP/1.1 origins (e.g. nginx) answered with
 status 400 — marking healthy backends as down. If you set
 ``health-check-http-version``, drop it: the parameter no longer exists.
-(4c036fdc3)
+(`4c036fdc3 <https://lab.nexedi.com/nexedi/slapos/-/commit/4c036fdc3>`__)
