@@ -145,7 +145,8 @@ Each test directory contains:
 
 ## Commit Messages
 
-- Do **not** mention Claude, Anthropic, or any AI tool in commit messages or trailers (no `Co-Authored-By: Claude` lines).
+- Never credit a specific AI product or vendor (Claude, Anthropic, Claude Code, …) anywhere in a commit — no `Co-Authored-By: Claude …` trailer, no "Generated with Claude Code" link, no vendor name in the body.
+- If an AI-assistance trailer is wanted, use only the generic form: `Co-Authored-By: AI agent <ai-agent@noreply>`.
 - Commits should reflect the work itself, not the tools used to produce it.
 - Format: `<module-or-area>: <description starting with lowercase verb>`
 - Examples: `instancenode: skip error() for...`, `rapid-cdn: add access to...`
