@@ -1119,6 +1119,13 @@ validated-instance-db-path = {{ instance_parameter_dict["validated-instance-db-p
 domain-validation-db-path = ${directory:srv}/domainvalidation-db.sqlite
 openssl = {{ software_parameter_dict['openssl'] }}
 instance-retention-delay = {{ slapparameter_dict['instance-retention-delay'] | string }}
+# Rendered here as static text (a cluster parameter) rather than referenced
+# from the template as ${slap-configuration:configuration.dns-nameserver}.
+# slap-configuration carries a per-request "timestamp" option, so referencing
+# it would fold that timestamp into [cdn-instance-node]'s buildout signature;
+# every master bang would then uninstall and reinstall instancenode.cfg,
+# leaving a window where the per-minute cron finds the file missing.
+dns-nameserver = {{ slapparameter_dict['dns-nameserver'] }}
 # Resolves to the rendered output of [instance-publish-slave-information]
 # below — both run on the master partition, so ${buildout:directory} is
 # shared. Cdninstancenode reads this file to detect when the master has
