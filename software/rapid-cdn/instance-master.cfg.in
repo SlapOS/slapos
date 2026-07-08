@@ -1119,6 +1119,9 @@ validated-instance-db-path = {{ instance_parameter_dict["validated-instance-db-p
 domain-validation-db-path = ${directory:srv}/domainvalidation-db.sqlite
 openssl = {{ software_parameter_dict['openssl'] }}
 instance-retention-delay = {{ slapparameter_dict['instance-retention-delay'] | string }}
+# Static text, not ${slap-configuration:...}: its timestamp changes each bang
+# and would make buildout delete and rewrite instancenode.cfg under the cron.
+dns-nameserver = {{ slapparameter_dict['dns-nameserver'] }}
 # Resolves to the rendered output of [instance-publish-slave-information]
 # below — both run on the master partition, so ${buildout:directory} is
 # shared. Cdninstancenode reads this file to detect when the master has
