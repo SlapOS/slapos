@@ -30,8 +30,8 @@
           },
           "default": []
         },
-        "custom-inbound-certificate": {
-          "$ref": "./instance-cluster-input-schema.json#/definitions/custom-inbound-certificate"
+        "inbound-ca-certificate": {
+          "$ref": "./instance-cluster-input-schema.json#/definitions/inbound-ca-certificate"
         }
       }
     }
