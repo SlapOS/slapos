@@ -159,6 +159,8 @@ Commit messages, MR comments, MR descriptions, branch names visible to others �
 - Keep code identifiers (class names, file paths, commit SHAs, line numbers, MR numbers) — those are precise.
 - Cut adjectives. Cut filler ("simply", "just", "actually", "essentially"). Short sentences.
 - Reviewers across the Nexedi org include non-native English speakers; plain prose is clearer and reduces back-and-forth on review.
+- **Lead with the point. No preamble.** The first sentence states the finding, answer, or decision. No "Thanks for flagging", "Great question", "Just to clarify", "After investigation it appears that…", and no scene-setting before the substance. Start with "This is a random failure; the cause is X." not "Thanks for flagging — after some digging it turns out that…". Openers like these read as verbose corporate filler; Nexedi reviewers stop reading after the first few words.
+- No sign-off pleasantries and no AI-attribution footers ("posted by …") on technical replies.
 
 ## Code Style
 
