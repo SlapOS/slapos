@@ -225,12 +225,18 @@ class TestBalancerPorts(ERP5InstanceTestCase):
     process_info, = (p for p in all_process_info if p['name'].startswith('haproxy-'))
     haproxy_master_process = psutil.Process(process_info['pid'])
     haproxy_worker_process, = haproxy_master_process.children()
+    # haproxy >= 3.3 shards each listener into one accept socket per thread
+    # (SO_REUSEPORT), so deduplicate by listening address to count the distinct
+    # bound endpoints rather than the per-thread socket multiplicity.
     self.assertEqual(
         sorted([socket.AF_INET] * 4 + [socket.AF_INET6] * 2),
         sorted(
-            c.family
-            for c in haproxy_worker_process.connections()
-            if c.status == 'LISTEN'
+            family
+            for family, _laddr in {
+                (c.family, c.laddr)
+                for c in haproxy_worker_process.connections()
+                if c.status == 'LISTEN'
+            }
         ))
 
 
@@ -304,12 +310,17 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
     process_info, = (p for p in all_process_info if p['name'].startswith('haproxy'))
     haproxy_master_process = psutil.Process(process_info['pid'])
     haproxy_worker_process, = haproxy_master_process.children()
+    # haproxy >= 3.3 shards each listener into one accept socket per thread
+    # (SO_REUSEPORT); deduplicate by listening address to count distinct endpoints.
     self.assertEqual(
         sorted([socket.AF_INET, socket.AF_INET6]),
         sorted(
-            c.family
-            for c in haproxy_worker_process.connections()
-            if c.status == 'LISTEN'
+            family
+            for family, _laddr in {
+                (c.family, c.laddr)
+                for c in haproxy_worker_process.connections()
+                if c.status == 'LISTEN'
+            }
         ))
 
 
