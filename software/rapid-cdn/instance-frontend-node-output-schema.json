@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Values returned by Rapid.CDN single frontend node instanciation",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "slave-instance-information-list": {
+      "description": "JSON list with the information of the slaves served by the frontend node. Published only when extra slave instances are configured.",
+      "type": "string"
+    },
+    "monitor-base-url": {
+      "description": "Base url for monitor",
+      "type": "string"
+    },
+    "kedifa-csr-url": {
+      "description": "URL on which the frontend node publishes its Kedifa CSR sent to caucase.",
+      "type": "string"
+    },
+    "backend-client-csr-url": {
+      "description": "URL on which the frontend node publishes its Backend Client CSR sent to caucase.",
+      "type": "string"
+    },
+    "csr-certificate": {
+      "description": "Certificate used to serve data on the CSR URLs.",
+      "type": "string"
+    },
+    "backend-haproxy-statistic-url": {
+      "description": "URL exposing the backend HAProxy statistics of the frontend node.",
+      "type": "string"
+    },
+    "trafficserver-introspection-url": {
+      "description": "URL exposing Traffic Server introspection of the frontend node.",
+      "type": "string"
+    },
+    "node-information-json": {
+      "description": "JSON describing the frontend node.",
+      "type": "string"
+    }
+  }
+}
