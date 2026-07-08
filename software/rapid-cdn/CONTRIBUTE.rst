@@ -49,3 +49,28 @@ A SlapOS Software Release is a tag of the ``1.0`` branch, named ``1.0.<latest>+1
 3. Commit and push to ``master``, then run ``update-rc`` and ``release-sr`` as usual; the tag freezes this file as-is.
 
 The one condition to respect: no other ``1.0.x`` tag is created between steps 1 and 3 (the numbering is shared across all Software Releases). If one is, bump the heading to match the real tag before releasing.
+
+Review checklist
+================
+
+Copy the block below into the merge request description. GitLab renders
+the ``- [ ]`` lines as tick-able checkboxes (a task list), and shows a
+progress counter on the MR:
+
+.. code-block:: markdown
+
+   ### Review checklist
+
+   - [ ] **Tests** — every feature or bug fix is covered by a test
+   - [ ] **Changelog** — `CHANGES.rst` is updated under `Unreleased`, and:
+     - [ ] *Coverage* — every operator/user-facing change has an entry; internal/dev-only has none
+     - [ ] *Functional only* — behaviour/parameter changes, not refactors, tests or build plumbing
+     - [ ] *Single audience* — each entry is `[operator]` **or** `[user]`; a both-affecting change is split in two
+     - [ ] *Right audience* — operator ↔ `instance-input`/`-output-schema.json`; user ↔ `instance-slave-*-schema.json` or served-traffic (judge by impact, not only files touched)
+     - [ ] *Breaking* — prefixed `**Breaking:**` and listed first in its section
+     - [ ] *Precise* — exact parameter names, with migration guidance
+     - [ ] *Net effect* — net result, not commit-by-commit; a revert references the release it undoes
+     - [ ] *History, not deployment* — no references to deployment or the CDN clusters
+     - [ ] *Unreleased* — no version number (assigned only at release)
+     - [ ] *References* — merge request and commit `lab.nexedi.com` links
+     - [ ] *Renders* — valid reStructuredText, no BOM
