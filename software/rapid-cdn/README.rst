@@ -509,3 +509,27 @@ websocket
 ~~~~~~~~~
 
 All frontends are websocket aware now, and ``type:websocket`` parameter became optional. It's required if support for ``websocket-path-list`` or ``websocket-transparent`` is required.
+
+Changelog (CHANGES.rst)
+-----------------------
+
+``CHANGES.rst`` is a functional changelog for CDN operators and users: each entry is a short, audience-tagged note (``[operator]`` / ``[user]``) about a behaviour or parameter change. Purely internal/developer changes are omitted.
+
+Keeping the ``Unreleased`` section
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The top of ``CHANGES.rst`` always carries an ``Unreleased`` heading. While developing on the ``master`` branch, add your entry under ``Unreleased`` in the *same commit or merge request* as the change itself. Do **not** write a version number: the release number is not known until the release is cut.
+
+Turning ``Unreleased`` into a version
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A SlapOS Software Release is a tag of the ``1.0`` branch, named ``1.0.<latest>+1``, so the number is only fixed at release time. Neither ``update-rc`` (master → 1.0) nor ``release-sr`` (the tagging script) edits this file, and commits are only made on ``master`` — therefore the version heading is written by hand on ``master`` as the final commit before releasing:
+
+1. Compute the next version (the same rule ``release-sr`` uses)::
+
+     git tag | grep -E '^1\.0\.[0-9]+$' | sort -t. -k3,3n | tail -1   # latest; add 1
+
+2. Rename ``Unreleased`` to ``1.0.<n> (YYYY-MM-DD)`` and add a fresh, empty ``Unreleased`` heading on top.
+3. Commit and push to ``master``, then run ``update-rc`` and ``release-sr`` as usual; the tag freezes this file as-is.
+
+The one condition to respect: no other ``1.0.x`` tag is created between steps 1 and 3 (the numbering is shared across all Software Releases). If one is, bump the heading to match the real tag before releasing.
