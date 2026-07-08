@@ -199,14 +199,14 @@ server {
     # rendering the service borderline unusable. Let's try this
     # simple approach to get rid of the dumbest crawlers.
     # Inspired from: https://her.esy.fun/posts/0031-how-i-protect-my-forgejo-instance-from-ai-web-crawlers/index.html
-    {% set bot_prevention_cookie_nginx_var = cfg('bot_prevention_cookie_name') | replace('-', '_') %}
+    {% set bot_prevention_cookie_name = cfg('bot_prevention_cookie_name') | replace('-', '_') %}
 
     # Allow the git command line using https URLs
     if ($http_user_agent ~* "git/|git-lfs/") {
           set $bypass_cookie 1;
     }
     # Bypass the blocker page when the cookie is set
-    if ($cookie_{{ bot_prevention_cookie_nginx_var }} = "{{ cfg('bot_prevention_cookie_value') }}") {
+    if ($cookie_{{ bot_prevention_cookie_name }} = "{{ cfg('bot_prevention_cookie_value') }}") {
           set $bypass_cookie 1;
     }
     # Set cookie and redirect transparently
