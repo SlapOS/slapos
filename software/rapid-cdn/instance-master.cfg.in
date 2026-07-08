@@ -1189,6 +1189,7 @@ parts =
   master-key-generate-auth-url-ready-promise-anomaly
   master-key-download-url-ready-promise-anomaly
   master-introspection-frontend
+  cdn-instance-node
   cdn-instance-node-cron
   logrotate-entry-cdn-requester
 {%- for part in part_list %}
