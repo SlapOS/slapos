@@ -70,7 +70,6 @@ progress counter on the MR:
      - [ ] *Breaking* — prefixed `**Breaking:**` and listed first in its section
      - [ ] *Precise* — exact parameter names, with migration guidance
      - [ ] *Net effect* — net result, not commit-by-commit; a revert references the release it undoes
-     - [ ] *History, not deployment* — no references to deployment or the CDN clusters
      - [ ] *Unreleased* — no version number (assigned only at release)
      - [ ] *References* — merge request and commit `lab.nexedi.com` links
      - [ ] *Renders* — valid reStructuredText, no BOM
