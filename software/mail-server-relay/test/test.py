@@ -249,8 +249,8 @@ class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
 
   def getRelayCertificatePathDict(self, relay):
     return {
-      "default-cert": self.partitionPath(relay, 'etc', 'postfix', 'ssl', 'postfix.crt'),
-      "default-key": self.partitionPath(relay, 'etc', 'postfix', 'ssl', 'postfix.key'),
+      "default-bundle": self.partitionPath(
+        relay, 'etc', 'postfix', 'ssl', 'postfix.bundle.pem'),
       "inbound-bundle": self.partitionPath(
         relay, 'etc', 'postfix', 'inbound', 'ssl', 'postfix-inbound.bundle.pem'
       ),
@@ -262,7 +262,9 @@ class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
       return f.read()
 
   @staticmethod
-  def pemToDer(certificate_pem):
+  def pemToDer(pem):
+    PEM_HEADER = "-----BEGIN CERTIFICATE-----"
+    certificate_pem = pem[pem.find(PEM_HEADER):]
     return ssl.PEM_cert_to_DER_cert(certificate_pem.strip())
 
   def getRelayHost(self, cluster=None):
@@ -312,8 +314,7 @@ class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
   def generateCertificate(cls, fqdn):
     openssl = shutil.which("openssl") or "/usr/bin/openssl"
     with tempfile.TemporaryDirectory() as tempdir:
-      cert = os.path.join(tempdir, "cert.pem")
-      key = os.path.join(tempdir, "key.pem")
+      bundle = os.path.join(tempdir, "bundle")
       subprocess.check_call(
         [
           openssl,
@@ -330,25 +331,19 @@ class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
           "-addext",
           "subjectAltName=DNS:%s" % fqdn,
           "-keyout",
-          key,
+          bundle,
           "-out",
-          cert,
+          bundle,
         ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
       )
-      with open(cert) as cert_file, open(key) as key_file:
-        cert_pem = cert_file.read()
-        key_pem = key_file.read()
-        return {
-          "cert": cert_pem,
-          "key": key_pem,
-          "bundle": key_pem + cert_pem,
-        }
+      with open(bundle) as f:
+        return f.read()
 
-  def assertCustomCertificateWritten(self, path_dict, certificate):
+  def assertCustomCertificateWritten(self, path_dict, certificate_bundle):
     self.assertEqual(
-      certificate["bundle"].encode().strip(),
+      certificate_bundle.encode().strip(),
       self.readFile(path_dict["inbound-bundle"]).strip(),
     )
 
@@ -357,16 +352,16 @@ class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
     path_dict = self.getRelayCertificatePathDict(relay)
 
     self.assertServedInboundCertificate(
-      self.readFile(path_dict["default-cert"]).decode()
+      self.readFile(path_dict["default-bundle"]).decode()
     )
 
     valid_certificate = self.generateCertificate(self.relay_fqdn)
-    cluster = self.requestClusterAndWait(valid_certificate["bundle"])
+    cluster = self.requestClusterAndWait(valid_certificate)
     relay = self.getRelayPartition()
     path_dict = self.getRelayCertificatePathDict(relay)
 
     self.assertCustomCertificateWritten(path_dict, valid_certificate)
-    self.assertServedInboundCertificate(valid_certificate["cert"], cluster)
+    self.assertServedInboundCertificate(valid_certificate, cluster)
 
   def test_custom_inbound_certificate_on_initial_request(self):
     relay_name = "relay-custom-cert-initial"
@@ -376,13 +371,13 @@ class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
       "custom-inbound-certificate-initial",
       relay_name,
       relay_fqdn,
-      valid_certificate["bundle"],
+      valid_certificate,
     )
     relay = self.getRelayPartition(relay_fqdn)
     path_dict = self.getRelayCertificatePathDict(relay)
 
     self.assertCustomCertificateWritten(path_dict, valid_certificate)
-    self.assertServedInboundCertificate(valid_certificate["cert"], cluster)
+    self.assertServedInboundCertificate(valid_certificate, cluster)
 
 
 class ProxyMapDuplicateDomainTestCase(SlapOSInstanceTestCase):
