@@ -1195,7 +1195,7 @@ def core_network(config, publish, shared_list):
 
     for dns in dns_list:
         publish_section = {}
-        publish_section['title'] = f'publish-{dns['slave_reference']}'
+        publish_section['title'] = f"publish-{dns['slave_reference']}"
         p = {}
         p['-slave-reference'] = dns['slave_reference']
         p['domain'] = f"{dns['subdomain']}.{dns.get('domain', config.get('local_domain', ''))}"
