@@ -229,3 +229,13 @@ class TestGitlab(SlapOSInstanceTestCase):
         ).status_code,
         404,
       )
+
+  def test_bot_protection(self):
+    # If no anti-bot cookie, it returns an error
+    resp = requests.get(self.backend_url, verify=False)
+    self.assertEqual(resp.status_code, requests.codes.bad_request)
+    cookie_value = re.search("bot_prevention_secret=(.*?);", resp.text)[1]
+    # With anti-bot cookie, we get the page
+    resp = requests.get(self.backend_url, verify=False, cookies={"bot_prevention_seret": cookie_value})
+    self.assertEqual(resp.status_code, requests.codes.ok)
+    # Test that some urls don't need cookie
