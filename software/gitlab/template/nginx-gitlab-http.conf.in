@@ -202,6 +202,7 @@ server {
     proxy_hide_header Set-Cookie;
 
     add_header Cache-Control "max-age=31536000, public, immutable, s-maxage=31536000" always;
+    add_header Vary Accept-Encoding;
 
     proxy_set_header    Host                $http_host;
     proxy_set_header    X-Real-IP           $remote_addr;
