@@ -242,6 +242,32 @@ server {
     proxy_pass  http://gitlab-workhorse;
   }
 
+  # Add header Vary Accept-Encoding which is not present by default in gitlab for raw urls
+  location ~ ^/.+/-/raw/ {
+    if ($request_method = OPTIONS ) {
+        add_header Allow "GET, OPTIONS";
+        add_header Content-Type text/plain;
+        add_header 'Access-Control-Allow-Origin' $http_origin;
+        add_header Access-Control-Allow-Headers "Origin, X-Requested-With, Authorization, Content-Type, Accept";
+        return 200;
+    }
+
+    add_header Vary Accept-Encoding;
+
+    proxy_cache off;
+    proxy_set_header    Host                $http_host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    {% if cfg_https %}
+    proxy_set_header    X-Forwarded-Ssl     on;
+    {% endif %}
+    proxy_set_header    X-Forwarded-For     $trusted_remote_addr;
+    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
+    proxy_set_header    Upgrade             $http_upgrade;
+    proxy_set_header    Connection          $connection_upgrade_gitlab_ssl;
+
+    proxy_pass  http://gitlab-workhorse;
+  }
+
   location ~ ^/(assets)/ {
     proxy_cache off;
     proxy_pass  http://gitlab-workhorse;
