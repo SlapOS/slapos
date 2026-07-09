@@ -75,28 +75,6 @@
       "title": "Expert only: SSB Position Bitmap",
       "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap"
     },
-    "sr_period": {
-      "title": "Scheduling Request Period",
-      "description": "Scheduling Request periodicity. 0 means no Sheduling Request configuration.",
-      "enum": [
-        0, 
-        1, 
-        2, 
-        4, 
-        5, 
-        8, 
-        10,
-        16,
-        20,
-        40,
-        80,
-        160,
-        320,
-        640
-      ],
-      "type": "integer",
-      "default": 40
-    },
     "cipher_algo_pref": {
       "$ref": "cell/nr/input-schema.json#/properties/cipher_algo_pref"
     },
@@ -106,11 +84,11 @@
     "subcarrier_spacing": {
       "$ref": "cell/nr/input-schema.json#/properties/subcarrier_spacing"
     },
-    "trs_presence": {
-      "$ref": "cell/nr/input-schema.json#/properties/trs_presence"
+    "latency_parameter": {
+      "$ref": "cell/nr/input-schema.json#/properties/latency_parameter"
     },
-    "uss": {
-      "$ref": "cell/nr/input-schema.json#/properties/uss"
+    "pusch_mapping_type": {
+      "$ref": "cell/nr/input-schema.json#/properties/pusch_mapping_type"
     },
     "prach_config_index": {
       "$ref": "cell/nr/input-schema.json#/properties/prach_config_index"

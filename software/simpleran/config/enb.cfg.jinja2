@@ -282,7 +282,9 @@
       root_sequence_index: {{ cell.root_sequence_index }},
       inactivity_timer: {{ cell.inactivity_timer }},
       ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
+{%-   if 'sr_period' in cell %}
       sr_period: {{ cell.sr_period }},
+{%-   endif %}
 {%-   if 'tti_bundling' in cell %}
 {%-     if 'snr_threshold' in cell.tti_bundling %}
       tti_bundling: {
@@ -812,7 +814,16 @@
         root_sequence_index: {{ cell.root_sequence_index }},
         inactivity_timer: {{ cell.inactivity_timer }},
         ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
-        sr_period: {{ cell.sr_period }},
+        sr_period: {{ cell.get('latency_parameter', {}).get('sr_period', 40) }},
+{%-   if 'rx_to_tx_latency' in cell.get('latency_parameter', {}) %}
+        rx_to_tx_latency: {{ cell.latency_parameter.rx_to_tx_latency }},
+{%-   endif %}
+{%-   if 'k_min' in cell.get('latency_parameter', {}) %}
+        k_min: {{ cell.latency_parameter.k_min }},
+{%-   endif %}
+{%-   if 'simultaneous_sr_csi' in cell.get('latency_parameter', {}) %}
+        simultaneous_sr_csi: {{ cell.latency_parameter.simultaneous_sr_csi | tojson }},
+{%-   endif %}
         cipher_algo_pref: [
 {%-   for algo in cell.get('cipher_algo_pref', []) -%}
           {{ {'NEA1 (Snow 3G)': 1, 'NEA2 (128 bit AES)': 2, 'NEA3 (ZUC)': 3}[algo] }}, 
@@ -841,9 +852,6 @@
         {#- NOTE: NR + LTE Dual Connectivity is setup via EN-DC only - via en_dc_scg_cell_list.
                   nr_dc_scg_cell_list sets up NR+NR Dual Connectivity #}
         // tune NR parameters for the cell
-{%-     if cell.trs_presence == "False" %}
-{%-       do disable_trs.update({'': true}) %}
-{%-     endif %}
 {%-     set tdd = (cell.rf_mode == 'tdd') %}
 {%-     if tdd and 'pattern1' in cell.tdd_ul_dl_config %}
          tdd_ul_dl_config: {
@@ -966,15 +974,23 @@
 {%-     endif %}
         csi_rs: {
           resource_auto: {
-            nzp_csi_rs_period: 80,
-{%-     if disable_trs[''] %}
+{%-     for param in cell.get('csi_rs', {}).get('resource_auto', {}) %}
+            {{ param }}: {{ cell.csi_rs.resource_auto.get(param) | tojson }},
+{%-     endfor %}
+          nzp_csi_rs_period: {{ cell.get('latency_parameter', {}).get('csi_srs_period', 80) }},
+{%-     if 'trs_presence' in cell.get('latency_parameter', {}) %}
+            trs_presence: {{ cell.latency_parameter.trs_presence |tojson }},
+{%-     elif disable_trs[''] %}
             trs_presence: false,
 {%-     endif %}
           },
           csi_report_config: [
             {
               report_config_type: "periodic",
-              period: 80,
+              period: {{ cell.get('latency_parameter', {}).get('csi_srs_period', 80) }},
+{%-     for param in cell.get('csi_rs', {}).get('csi_report_config', {}) %}
+              {{ param }}: {{ cell.csi_rs.csi_report_config.get(param) | tojson }},
+{%-     endfor %}
             },
           ],
         },
@@ -1001,14 +1017,14 @@
             duration: 1,
           },
 {%-     endif %}
-{%-     if "uss" in cell %}
+{%-     if 'uss' in cell.get('latency_parameter', {}) %}
           uss: {
-            n_candidates: [ {{ cell.uss.n_candidates.n_candidates_1 }},
-                            {{ cell.uss.n_candidates.n_candidates_2 }},
-                            {{ cell.uss.n_candidates.n_candidates_4 }},
-                            {{ cell.uss.n_candidates.n_candidates_8 }},
-                            {{ cell.uss.n_candidates.n_candidates_16 }}],
-{%-       if cell.uss.dci_0_1_and_1_1 %}
+            n_candidates: [ {{ cell.latency_parameter.uss.n_candidates.n_candidates_1 }},
+                            {{ cell.latency_parameter.uss.n_candidates.n_candidates_2 }},
+                            {{ cell.latency_parameter.uss.n_candidates.n_candidates_4 }},
+                            {{ cell.latency_parameter.uss.n_candidates.n_candidates_8 }},
+                            {{ cell.latency_parameter.uss.n_candidates.n_candidates_16 }}],
+{%-       if cell.latency_parameter.uss.dci_0_1_and_1_1 %}
             dci_0_1_and_1_1: true,
 {%-       else %}
             dci_0_1_and_1_1: false,
@@ -1038,6 +1054,7 @@
 {%-     endif %}
         },
         pusch: {
+          mapping_type: {{ cell.get('pusch_mapping_type', 'typeA') | tojson }},
 {%-     if "fixed_mcs_uplink" in cell %}
           mcs: {{ cell.fixed_mcs_uplink }},
 {%-     endif %}
@@ -1148,17 +1165,11 @@
       si_mcs: 6,
     },
     pucch: {
-{%- if len(icell_dict_nr) >= 2  %}
-      pucch_group_hopping: "neither",
-      hopping_id: -1, /* -1 = n_cell_id */
-{%- endif %}
       p0_nominal: -96,
       resource_auto: {
       }
     },
     pusch: {
-      mapping_type: "typeA",
-      n_symb: 14,
       dmrs_add_pos: 1,
       dmrs_type: 1,
       dmrs_max_len: 1,

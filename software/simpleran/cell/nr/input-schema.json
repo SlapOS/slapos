@@ -32,7 +32,10 @@
             "DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink",
             "DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink",
             "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink",
-            "DDDSU      (2.5ms, 3DL/1UL), S-slot=10DL:2GP:2UL, reduced latency"
+            "DDDSU      (2.5ms, 2DL/2UL), S-slot=6DL:4GP:4UL, reduced latency, balanced downlink and uplink",
+            "DSUUU      (2.5ms, 1DL/3UL), S-slot=6DL:2GP:4UL, reduced latency, high uplink, no TRS",
+            "DSUUU      (2.5ms, 1DL/3UL), S-slot=9DL:4GP:1UL, reduced latency, high uplink",
+            "DS         (1ms, 1DL/0UL), S-slot=0DL:2GP:12UL, minimum latency, balanced downlink and uplink, no TRS"
           ]
         },
         {
@@ -96,11 +99,114 @@
       "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
       "default": 1
     },
-    "trs_presence": {
-      "default": true,
-      "title": "Expert only: TRS Presence",
-      "description": "Expert only: Add NZP CSI-RS resources for TRS.",
-      "type": "boolean"
+    "latency_parameter": {
+      "title": "Latency Parameters",
+      "description": "Parameters useful for tuning latency",
+      "type": "object",
+      "properties": {
+        "uss": {
+          "title": "Expert only: PDCCH UE Search Space",
+          "type": "object",
+          "required": [
+            "n_candidates",
+            "dci_0_1_and_1_1"
+          ],
+          "additionalProperties": false,
+          "description": "Expert only: PDCCH UE dedicated search space configuration defined in RRC PDCCH-Config. Default value depends on TDD configuration, see generated configuration file in Monitor App as a reference",
+          "properties": {
+            "n_candidates": {
+              "title": "Number of Candidates List",
+              "description": "Mandatory for the DL BWP #0. nrofCandidates parameters for each aggregation level (1, 2, 4, 8, 16).",
+              "type": "object",
+              "required": [
+                "n_candidates_1",
+                "n_candidates_2",
+                "n_candidates_4",
+                "n_candidates_8",
+                "n_candidates_16"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "n_candidates_1": {
+                  "title": "Number of Candidates for aggregation level 1",
+                  "$ref": "#/$defs/n_candidates"
+                },
+                "n_candidates_2": {
+                  "title": "Number of Candidates for aggregation level 2",
+                  "$ref": "#/$defs/n_candidates"
+                },
+                "n_candidates_4": {
+                  "title": "Number of Candidates for aggregation level 4",
+                  "$ref": "#/$defs/n_candidates"
+                },
+                "n_candidates_8": {
+                  "title": "Number of Candidates for aggregation level 8",
+                  "$ref": "#/$defs/n_candidates"
+                },
+                "n_candidates_16": {
+                  "title": "Number of Candidates for aggregation level 16",
+                  "$ref": "#/$defs/n_candidates"
+                }
+              }
+            },
+            "dci_0_1_and_1_1": {
+              "title": "DCI 0_1 and DCI 1_1",
+              "description": "It defines whether DCI 0_1 and 1_1 are used for PDCCH in the search space. It is relevant only if css is false.",
+              "type": "boolean"
+            }
+          }
+        },
+        "sr_period": {
+          "title": "Scheduling Request Period",
+          "description": "Scheduling Request periodicity. 0 means no Sheduling Request configuration.",
+          "enum": [
+            0,
+            1,
+            2,
+            4,
+            5,
+            8,
+            10,
+            16,
+            20,
+            40,
+            80,
+            160,
+            320,
+            640
+          ],
+          "type": "integer"
+        },
+        "k_min": {
+          "title": "Minimum k value",
+          "description": "Minimum value for PDSCH k1 and PUSCH k2 and msg3_k2 (range: 1 to 16)",
+          "type": "integer"
+        },
+        "rx_to_tx_latency": {
+          "title": "RX to TX Latency",
+          "description": "Minimum allowed latency in slots between RX and TX. Its range is from 2 slots to 4ms (The default value depends on subcarrier spacing). If the latency is too high, the gNB scheduler may not be able to use all the PDSCH transmission occasions with subcarrier spacings larger or equal to 30 kHz. Increasing the value will improve performances, especially in case of radio frontend underflows. If LTE and NB-IoT cells are present on the RF port, only 4ms is allowed.",
+          "type": "integer"
+        },
+        "trs_presence": {
+          "title": "Expert only: TRS Presence",
+          "description": "Expert only: Add NZP CSI-RS resources for TRS.",
+          "type": "boolean"
+        },
+        "csi_srs_period": {
+          "title": "Expert only: CSI SRS Period",
+          "description": "Expert only: Period for NZP CSI-RS resources, in slots.",
+          "type": "integer"
+        }
+      }
+    },
+    "pusch_mapping_type": {
+      "title": "PUSCH Mapping type",
+      "description": "Select the mapping type for the full UL slots",
+      "enum": [
+        "typeA",
+        "typeB"
+      ],
+      "type": "string"
     },
     "prach_config_index": {
       "title": "Expert only: Prach Config Index",
@@ -117,58 +223,6 @@
         60,
         120
       ]
-    },
-    "uss": {
-      "title": "Expert only: PDCCH UE Search Space",
-      "type": "object",
-      "required": [
-        "n_candidates",
-        "dci_0_1_and_1_1"
-      ],
-      "additionalProperties": false,
-      "description": "Expert only: PDCCH UE dedicated search space configuration defined in RRC PDCCH-Config. Default value depends on TDD configuration, see generated configuration file in Monitor App as a reference",
-      "properties": {
-        "n_candidates": {
-          "title": "Number of Candidates List",
-          "description": "Mandatory for the DL BWP #0. nrofCandidates parameters for each aggregation level (1, 2, 4, 8, 16).",
-          "type": "object",
-          "required": [
-            "n_candidates_1",
-            "n_candidates_2",
-            "n_candidates_4",
-            "n_candidates_8",
-            "n_candidates_16"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "n_candidates_1": {
-              "title": "Number of Candidates for aggregation level 1",
-              "$ref": "#/$defs/n_candidates"
-            },
-            "n_candidates_2": {
-              "title": "Number of Candidates for aggregation level 2",
-              "$ref": "#/$defs/n_candidates"
-            },
-            "n_candidates_4": {
-              "title": "Number of Candidates for aggregation level 4",
-              "$ref": "#/$defs/n_candidates"
-            },
-            "n_candidates_8": {
-              "title": "Number of Candidates for aggregation level 8",
-              "$ref": "#/$defs/n_candidates"
-            },
-            "n_candidates_16": {
-              "title": "Number of Candidates for aggregation level 16",
-              "$ref": "#/$defs/n_candidates"
-            }
-          }
-        },
-        "dci_0_1_and_1_1": {
-          "title": "DCI 0_1 and DCI 1_1",
-          "description": "It defines whether DCI 0_1 and 1_1 are used for PDCCH in the search space. It is relevant only if css is false.",
-          "type": "boolean"
-        }
-      }
     },
     "cipher_algo_pref": {
       "title": "Preferred Cipher algorithms",
