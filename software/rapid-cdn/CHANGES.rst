@@ -20,6 +20,28 @@ Unreleased
 
 Changes on ``master`` since 1.0.495 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.495...master>`__).
 
+HAProxy upgraded to the 3.4 LTS branch (3.4.2)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The bundled HAProxy moved from the 3.2 to the 3.4 LTS branch (3.4.2),
+with its regex engine switched from the end-of-life PCRE1 to PCRE2.
+Served-traffic behaviour is preserved across the upgrade (see the
+accompanying user entry on backend SSL verification).
+(`!2132 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2132>`__)
+
+Backend SSL verification kept chain-only on HAProxy 3.4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+For slaves using ``authenticate-to-backend``, chain-only backend
+certificate verification is preserved on HAProxy 3.4: the verified
+backend now sets ``no-sni-auto``. HAProxy >= 3.3 otherwise enables
+automatic SNI and, under ``verify required``, matches it against the
+backend certificate's names, which would take the backend down. No
+slave configuration change is required.
+(`!2132 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2132>`__)
+
 1.0.495 (2026-07-09)
 --------------------
 
