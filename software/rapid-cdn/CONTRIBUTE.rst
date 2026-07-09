@@ -34,19 +34,20 @@ The style is adapted from `Keep a Changelog <https://keepachangelog.com/en/1.1.0
 Keeping the ``Unreleased`` section
 ----------------------------------
 
-The top of ``CHANGES.rst`` always carries an ``Unreleased`` heading. While developing on the ``master`` branch, add your entry under ``Unreleased`` in the *same commit or merge request* as the change itself. Do **not** write a version number: the release number is not known until the release is cut.
+On the ``master`` branch the top of ``CHANGES.rst`` carries an ``Unreleased`` heading (re-added right after each release — see below). While developing, add your entry under ``Unreleased`` in the *same commit or merge request* as the change itself. Do **not** write a version number: the release number is not known until the release is cut.
 
 Turning ``Unreleased`` into a version
 -------------------------------------
 
-A SlapOS Software Release is a tag of the ``1.0`` branch, named ``1.0.<latest>+1``, so the number is only fixed at release time. Neither ``update-rc`` (master → 1.0) nor ``release-sr`` (the tagging script) edits this file, and commits are only made on ``master`` — therefore the version heading is written by hand on ``master`` as the final commit before releasing:
+A SlapOS Software Release is a tag of the ``1.0`` branch, named ``1.0.<latest>+1``, so the number is only fixed at release time. Neither ``update-rc`` (master → 1.0) nor ``release-sr`` (the tagging script) edits this file, and commits are only made on ``master`` — therefore the version heading is written by hand on ``master`` as the final commit before releasing. The tag must **not** carry an ``Unreleased`` section, so the fresh stub is added back only *after* the tag is cut, as a separate commit:
 
 1. Compute the next version (the same rule ``release-sr`` uses)::
 
      git tag | grep -E '^1\.0\.[0-9]+$' | sort -t. -k3,3n | tail -1   # latest; add 1
 
-2. Rename ``Unreleased`` to ``1.0.<n> (YYYY-MM-DD)``, add a tag link line under it, and add a fresh, empty ``Unreleased`` heading on top. (The release table of contents is generated automatically by the ``.. contents::`` directive — no manual list to update.)
-3. Commit and push to ``master``, then run ``update-rc`` and ``release-sr`` as usual; the tag freezes this file as-is.
+2. Rename ``Unreleased`` to ``1.0.<n> (YYYY-MM-DD)`` and add a tag link line under it, leaving the entries beneath. Do **not** add a new ``Unreleased`` heading yet — the tag must not contain one. (The release table of contents is generated automatically by the ``.. contents::`` directive — no manual list to update.)
+3. Commit and push to ``master``, then run ``update-rc`` and ``release-sr`` as usual; the tag freezes this file as-is, with ``1.0.<n>`` on top and no ``Unreleased`` section.
+4. Once the tag is pushed, add a fresh, empty ``Unreleased`` heading back on top of ``CHANGES.rst`` on ``master`` (comparing since ``1.0.<n>``), as its own commit. This restores the development stub without polluting the released tag.
 
 The one condition to respect: no other ``1.0.x`` tag is created between steps 1 and 3 (the numbering is shared across all Software Releases). If one is, bump the heading to match the real tag before releasing.
 
