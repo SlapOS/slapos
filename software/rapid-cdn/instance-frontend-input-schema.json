@@ -74,6 +74,25 @@
       "description": "Globally enable HTTP3 protocol. Can be precisely set on each node by -frontend-i-config-enable-http3",
       "type": "boolean"
     },
+    "enforced-compression": {
+      "default": "gzip",
+      "title": "Enforced Compression",
+      "description": "When the client sends no Accept-Encoding header or Accept-Encoding: *, the frontend substitutes it with the canonical form for this encoding before forwarding to the backend. Inherited from the cluster-level enforced-compression default; individual slaves may override.",
+      "enum": [
+        "none",
+        "deflate",
+        "gzip",
+        "br",
+        "zstd"
+      ],
+      "type": "string"
+    },
+    "normalize-accept-encoding": {
+      "default": true,
+      "title": "Normalise Accept-Encoding for Backend",
+      "description": "Default applied to slaves that did not set their own normalize-accept-encoding. When enabled, the frontend collapses Accept-Encoding into a small canonical set before forwarding to the backend. Inherited from the cluster-level default; individual slaves may override.",
+      "type": "boolean"
+    },
     "expert-backend-allow-downgrade-ssl": {
       "title": "Expert Backend Allow Downgrade SSL",
       "description": "Allow SSL downgrade for backend connections (expert setting).",
@@ -193,6 +212,26 @@
     "slave-kedifa-information": {
       "title": "Slave KeDiFa Information",
       "description": "JSON string containing KeDiFa configuration information for each slave instance.",
+      "type": "string"
+    },
+    "error-page-sync-url": {
+      "title": "Error Page Sync URL",
+      "description": "URL for polling the error page manifest (token embedded in path).",
+      "type": "string"
+    },
+    "error-page-base-url": {
+      "title": "Error Page Base URL",
+      "description": "Base URL for downloading haproxy error page files (token embedded in path).",
+      "type": "string"
+    },
+    "error-page-certificate": {
+      "title": "Error Page Manager TLS Certificate",
+      "description": "PEM certificate of the error page manager for SSL verification.",
+      "type": "string"
+    },
+    "shared-error-page-information": {
+      "title": "Shared Error Page Information",
+      "description": "JSON dict mapping shared instance references to their error page upload URLs.",
       "type": "string"
     },
     "trafficserver-introspection-port": {

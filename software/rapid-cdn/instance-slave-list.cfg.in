@@ -88,9 +88,14 @@ context =
 {%-   for key in ['https-only', 'websocket-transparent'] %}
 {%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'true')).lower() in TRUE_VALUES) %}
 {%-   endfor %}
-{%-   for key in ['enable_cache', 'disable-no-cache-request', 'disable-via-header', 'prefer-gzip-encoding-to-backend', 'strict-transport-security-sub-domains', 'strict-transport-security-preload'] %}
+{#- Fall back to the cluster-level normalize-accept-encoding default when the slave didn't pick one. Slave value (if present) wins. #}
+{%-   do slave_instance.__setitem__('normalize-accept-encoding', ('' ~ slave_instance.get('normalize-accept-encoding', configuration['normalize-accept-encoding'])).lower() in TRUE_VALUES) %}
+{%-   for key in ['enable_cache', 'disable-no-cache-request', 'disable-via-header', 'strict-transport-security-sub-domains', 'strict-transport-security-preload'] %}
 {%-     do slave_instance.__setitem__(key, ('' ~ slave_instance.get(key, 'false')).lower() in TRUE_VALUES) %}
 {%-   endfor %}
+{%-   if 'enforced-compression' not in slave_instance or slave_instance['enforced-compression'] == '' %}
+{%-     do slave_instance.__setitem__('enforced-compression', configuration['enforced-compression']) %}
+{%-   endif %}
 {%-   for key in ['disabled-cookie-list'] %}
 {%-     do slave_instance.__setitem__(key, slave_instance.get(key, '').split()) %}
 {%-   endfor %}
@@ -488,6 +493,61 @@ inline =
 
 output = ${:file}
 
+##<Error page updater>
+{%- set error_page_sync_url = configuration.get('error-page-sync-url', '') %}
+{%- set error_page_base_url = configuration.get('error-page-base-url', '') %}
+{%- set error_page_certificate = configuration.get('error-page-certificate', '') %}
+{%- set error_pages_dir = frontend_haproxy_configuration['error-pages-dir'] %}
+
+[error-page-ca-cert]
+recipe = slapos.recipe.build
+certificate-content = {{ dumps(error_page_certificate) }}
+output = {{ directory['etc'] }}/error-page-ca.crt
+init =
+  import os
+  content = options['certificate-content']
+  if content:
+    os.makedirs(os.path.dirname(options['output']), exist_ok=True)
+    with open(options['output'], 'w') as f:
+      f.write(content)
+  elif not os.path.exists(options['output']):
+    open(options['output'], 'w').close()
+
+[error-page-updater-config]
+recipe = slapos.recipe.build
+output = {{ directory['etc'] }}/error-page-updater.json
+sync-url = {{ error_page_sync_url }}
+base-url = {{ error_page_base_url }}
+ca-cert-file = {{ directory['etc'] }}/error-page-ca.crt
+log-file = {{ directory['log'] }}/error-page-updater.log
+error-pages-dir = {{ error_pages_dir }}
+builtin-dir = {{ software_parameter_dict['error_pages_builtin_dir'] }}
+state-file = {{ directory['srv'] }}/error-page-updater-state.json
+on-update = {{ frontend_haproxy_configuration['frontend-graceful-command'] }} && {{ backend_haproxy_configuration['graceful-command'] }}
+init =
+  import json, os
+  config = {
+    'sync_url': options['sync-url'],
+    'base_url': options['base-url'],
+    'ca_cert_file': options['ca-cert-file'],
+    'log_file': options['log-file'],
+    'error_pages_dir': options['error-pages-dir'],
+    'builtin_dir': options['builtin-dir'],
+    'state_file': options['state-file'],
+    'on_update': options['on-update'],
+  }
+  os.makedirs(os.path.dirname(options['output']), exist_ok=True)
+  with open(options['output'], 'w') as f:
+    json.dump(config, f)
+
+[error-page-updater]
+recipe = slapos.cookbook:wrapper
+command-line = {{ software_parameter_dict['bin_directory'] }}/rapid-cdn-error-page-updater
+  {{ directory['etc'] }}/error-page-updater.json
+wrapper-path = {{ directory['service'] }}/error-page-updater
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+##</Error page updater>
+
 ##<Frontend haproxy>
 [frontend-haproxy-slave-list]
 dict = {{ dumps(frontend_slave_dict) }}
@@ -603,6 +663,9 @@ extends =
 parts +=
     kedifa-updater
     kedifa-updater-run
+    error-page-ca-cert
+    error-page-updater-config
+    error-page-updater
     frontend-haproxy-configuration
     backend-haproxy-configuration
     promise-key-download-url-ready

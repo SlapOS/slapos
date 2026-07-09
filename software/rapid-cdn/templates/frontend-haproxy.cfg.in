@@ -8,6 +8,7 @@ global
   # master-worker is compatible with foreground with process management
   master-worker
   expose-experimental-directives
+  tune.bufsize 65536
   tune.http.logurilen 16384
   log {{ configuration['log-socket'] }} len 65535 local0
 
@@ -22,6 +23,11 @@ defaults
   retries 3
   timeout tunnel 1h
   default-server init-addr last,libc,none
+{%- if configuration.get('error-pages-dir') %}
+{%-   for code in ['400', '408', '500', '502', '503', '504'] %}
+  errorfile {{ code }} {{ configuration['error-pages-dir'] }}/cluster/{{ code }}.http
+{%-   endfor %}
+{%- endif %}
 
 {%- set SCHEME_PREFIX_MAPPING = { 'http': 'backend-http-info', 'https': 'backend-https-info'} %}
 
@@ -127,8 +133,31 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
   http-request del-header Cache-Control
   http-request del-header Pragma
 {%-           endif %}
-{%-           if slave_instance['prefer-gzip-encoding-to-backend'] %}
-  http-request set-header Accept-Encoding gzip if { hdr(Accept-Encoding) -m sub gzip }
+{%-           set ENFORCED_COMPRESSION_AE = {
+        'deflate': 'deflate',
+        'gzip': 'gzip, deflate',
+        'br': 'br, gzip, deflate',
+        'zstd': 'zstd, br, gzip, deflate',
+      } %}
+{%-           if slave_instance['enforced-compression'] != 'none' %}
+  # When the client sent no Accept-Encoding or sent the wildcard `*`,
+  # substitute the canonical form for the shared instance's
+  # enforced-compression setting. See README "Enforced
+  # Accept-Encoding compression".
+  http-request set-header Accept-Encoding "{{ ENFORCED_COMPRESSION_AE[slave_instance['enforced-compression']] }}" if !{ req.hdr_cnt(Accept-Encoding) -m int gt 0 }
+  http-request set-header Accept-Encoding "{{ ENFORCED_COMPRESSION_AE[slave_instance['enforced-compression']] }}" if { req.fhdr(Accept-Encoding) -m str * }
+{%-           endif %}
+{%-           if slave_instance['normalize-accept-encoding'] %}
+  # Collapse the client's Accept-Encoding to one of four canonical
+  # forms (deflate / gzip,deflate / br,gzip,deflate / zstd,br,gzip,
+  # deflate) before forwarding to the origin. ACLs match the original
+  # (pre-rewrite) value via req.orig_ae. See README "Accept-Encoding
+  # normalization" for the full mapping table and design notes.
+  http-request set-var(req.orig_ae) req.fhdr(Accept-Encoding)
+  http-request set-header Accept-Encoding "zstd, br, gzip, deflate" if { var(req.orig_ae) -m sub zstd }
+  http-request set-header Accept-Encoding "br, gzip, deflate" if !{ var(req.orig_ae) -m sub zstd } { var(req.orig_ae) -m sub br }
+  http-request set-header Accept-Encoding "gzip, deflate" if !{ var(req.orig_ae) -m sub zstd } !{ var(req.orig_ae) -m sub br } { var(req.orig_ae) -m sub gzip }
+  http-request set-header Accept-Encoding "deflate" if !{ var(req.orig_ae) -m sub zstd } !{ var(req.orig_ae) -m sub br } !{ var(req.orig_ae) -m sub gzip } { var(req.orig_ae) -m sub deflate }
 {%-           endif %}
 {%-           if slave_instance['type'] == 'notebook' %}
 {#-             In haproxy world type:notebook is simple type:websocket with default parameters #}
@@ -190,7 +219,7 @@ backend BACKEND_NOT_FOUND
   http-after-response set-header Date %[date(),http_date] if ! { res.hdr(Date) -m found }
   # setup Via
   http-after-response add-header Via "%HV rapid-cdn-frontend-{{ configuration['node-id'] }}-{{ configuration['version-hash'] }}"
-  errorfile 503 {{ configuration['not-found-file'] }}
+  errorfile 503 {{ configuration['error-pages-dir'] }}/cluster/404.http
 {%- if HTTP3  %}
   http-after-response set-header alt-svc "h3=\":{{ configuration['http3-port'] }}\"; ma=3600"
   {#- Ask Chromium to use HTTP3 #}
