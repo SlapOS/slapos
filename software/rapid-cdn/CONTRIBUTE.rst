@@ -27,7 +27,7 @@ The style is adapted from `Keep a Changelog <https://keepachangelog.com/en/1.1.0
 
 * Group by **audience**, not by change type: tag every entry ``[operator]`` or ``[user]``, one audience per entry. When a change affects both, write a separate ``[operator]`` entry and a ``[user]`` entry (repeating shared context is fine) so each reader follows only their own.
 * Mark a breaking change with a bold ``**Breaking:**`` prefix, and list breaking entries first within their section.
-* Cite the relevant merge request(s) as links (to lab.nexedi.com) after each entry. You can cite relevant commit(s) they same way, but watch out for rebasing.
+* Cite the relevant merge request(s) as links (to lab.nexedi.com) after each entry. Prefer merge requests over commits: an MR link survives rebases and carries the review discussion. Cite commits only when the change reached ``master`` without an MR.
 * Link each version heading to its tag on lab.nexedi.com, and ``Unreleased`` to the compare against the last release.
 * rapid-cdn is not Semantically Versioned: it ships with the shared, monotonic SlapOS ``1.0.<n>`` release tags, and releases with no rapid-cdn change are omitted.
 
@@ -72,5 +72,5 @@ progress counter on the MR:
      - [ ] *Precise* — exact parameter names, with migration guidance
      - [ ] *Net effect* — net result, not commit-by-commit; a revert references the release it undoes
      - [ ] *Unreleased* — no version number (assigned only at release)
-     - [ ] *References* — merge request and commit `lab.nexedi.com` links
+     - [ ] *References* — `lab.nexedi.com` merge request links (commits only when there is no MR)
      - [ ] *Renders* — valid reStructuredText, no BOM
