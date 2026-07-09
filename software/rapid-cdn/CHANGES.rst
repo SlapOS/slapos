@@ -18,7 +18,12 @@ Releases
 Unreleased
 --------------------
 
-Changes on ``master`` since 1.0.469 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.469...master>`__).
+Changes on ``master`` since 1.0.495 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.495...master>`__).
+
+1.0.495 (2026-07-09)
+--------------------
+
+Tag `1.0.495 <https://lab.nexedi.com/nexedi/slapos/-/tags/1.0.495>`__.
 
 Error Page Manager software type
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
