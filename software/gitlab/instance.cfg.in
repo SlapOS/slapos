@@ -86,6 +86,7 @@ context =
     raw prometheus_location         ${prometheus:location}
     raw redis_binprefix             ${redis:location}/bin
     raw ruby_location               ${bundler-4gitlab:ruby-location}
+    raw slapos_kill_bin             ${buildout:bin-directory}/slapos-kill
     raw tar_location                ${tar:location}
     raw watcher                     ${watcher:output}
     raw xnice_repository_location   ${xnice-repository:location}

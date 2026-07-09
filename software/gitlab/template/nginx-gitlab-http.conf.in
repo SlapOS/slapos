@@ -44,7 +44,6 @@ map $http_upgrade $connection_upgrade_gitlab_ssl {
 
 limit_req_zone $trusted_remote_addr zone=downloadarchive:10m rate={{ cfg('nginx_download_archive_rate_limit') }}r/m;
 
-
 server {
   listen [{{ backend_info.host }}]:{{ backend_info.port }}{% if cfg_https %} ssl http2{% endif %};
 
@@ -202,6 +201,7 @@ server {
     proxy_hide_header Set-Cookie;
 
     add_header Cache-Control "max-age=31536000, public, immutable, s-maxage=31536000" always;
+    add_header Vary Accept-Encoding;
 
     proxy_set_header    Host                $http_host;
     proxy_set_header    X-Real-IP           $remote_addr;
@@ -255,6 +255,9 @@ server {
     root {{ gitlab_work.location }}/public;
     internal;
   }
+
+  # If there are custom configs.
+  include {{ nginx.custom }}/*.conf;
 
 }
 
