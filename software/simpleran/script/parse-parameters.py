@@ -1,4 +1,4 @@
-import json, netaddr, netifaces, math, socket, subprocess, time
+import json, netaddr, netifaces, math, socket, re, subprocess, time
 from copy import deepcopy
 
 """
@@ -20,15 +20,6 @@ Outputs:
 
 """
 
-NR_TDD_CONFIG_MAP = {
-    'DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default'                      : 0,
-    'DDDSUUDDDD (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, same ratios as default'       : 1,
-    'DDDSUUUUDD (5ms,   5DL/4UL), S-slot=6DL:4GP:4UL, balanced downlink and uplink' : 2,
-    'DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink'                 : 3,
-    'DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink': 4,
-    'DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink' : 5,
-    'DDDSU      (2.5ms, 3DL/1UL), S-slot=10DL:2GP:2UL, reduced latency'             : 6,
-}
 LTE_TDD_CONFIG_MAP = {
     '[Configuration 0] DSUUUDSUUU (5ms,  2DL/6UL), S-slot=10DL:2GP:2UL, maximum uplink'              : 0,
     '[Configuration 1] DSUUDDSUUD (5ms,  4DL/4UL), S-slot=10DL:2GP:2UL, balanced downlink and uplink': 1,
@@ -37,6 +28,113 @@ LTE_TDD_CONFIG_MAP = {
     '[Configuration 4] DSUUDDDDDD (10ms, 7DL/2UL), S-slot=10DL:2GP:2UL, high downlink'               : 4,
     '[Configuration 5] DSUDDDDDDD (10ms, 8DL/1UL), S-slot=10DL:2GP:2UL, maximum downlink'            : 5,
     '[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink'                 : 6,
+}
+NR_TDD_CONFIG_MAP = {
+    'DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default': {
+        'pattern1': '5ms 2UL 7DL S=4UL:6DL',
+    },
+    'DDDSUUDDDD (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, same ratios as default': {
+        'pattern1': '3ms 2UL 3DL S=4UL:6DL',
+        'pattern2': '2ms 0UL 4DL S=0UL:0DL',
+        'prach_config_index': 156,
+    },
+    'DDDSUUUUDD (5ms,   5DL/4UL), S-slot=6DL:4GP:4UL, balanced downlink and uplink': {
+        'pattern1': '4ms 4UL 3DL S=4UL:6DL',
+        'pattern2': '1ms 0UL 2DL S=0UL:0DL',
+        'prach_config_index': 156,
+    },
+    'DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink': {
+        'pattern1': '5ms 6UL 3DL S=10UL:2DL',
+    },
+    'DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink': {
+        'pattern1': '5ms 7UL 2DL S=4UL:6DL',
+        'latency_parameter': {
+            'trs_presence': False,
+        },
+    },
+    'DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink' : {
+        'pattern1': '5ms 8UL 1DL S=2UL:10DL',
+        'latency_parameter': {
+            'uss': {
+                'n_candidates': {
+                    'n_candidates_1': 0,
+                    'n_candidates_2': 8,
+                    'n_candidates_4': 0,
+                    'n_candidates_8': 0,
+                    'n_candidates_16': 0,
+                },
+                'dci_0_1_and_1_1': True,
+            },
+            'trs_presence': False,
+        },
+    },
+    'DDDSU      (2.5ms, 2DL/2UL), S-slot=6DL:4GP:4UL, reduced latency, balanced downlink and uplink': {
+        'pattern1': '2.5ms 2UL 2DL S=4UL:6DL',
+        'latency_parameter': {
+            'sr_period': 5,
+            'k_min': 2,
+            'rx_to_tx_latency': 4,
+        },
+    },
+    'DSUUU      (2.5ms, 1DL/3UL), S-slot=6DL:4GP:4UL, reduced latency, high uplink, no TRS': {
+        'pattern1': '2.5ms 3UL 1DL S=4UL:6DL',
+        'latency_parameter': {
+            'uss': {
+                'n_candidates': {
+                    'n_candidates_1': 0,
+                    'n_candidates_2': 8,
+                    'n_candidates_4': 0,
+                    'n_candidates_8': 0,
+                    'n_candidates_16': 0,
+                },
+                'dci_0_1_and_1_1': True,
+            },
+            'trs_presence': False,
+            'sr_period': 5,
+            'k_min': 2,
+            'rx_to_tx_latency': 4,
+        },
+    },
+    'DSUUU      (2.5ms, 1DL/3UL), S-slot=9DL:4GP:1UL, reduced latency, high uplink': {
+        'pattern1': '2.5ms 3UL 1DL S=1UL:9DL',
+        'latency_parameter': {
+            'sr_period': 5,
+            'k_min': 2,
+            'rx_to_tx_latency': 4,
+        },
+    },
+    'DS         (1ms, 1DL/0UL), S-slot=0DL:2GP:12UL, minimum latency, balanced downlink and uplink, no TRS': {
+        'pattern1': '1ms 0UL 1DL S=12UL:0DL',
+        'latency_parameter': {
+            'uss': {
+                'n_candidates': {
+                    'n_candidates_1': 0,
+                    'n_candidates_2': 8,
+                    'n_candidates_4': 0,
+                    'n_candidates_8': 0,
+                    'n_candidates_16': 0,
+                },
+                'dci_0_1_and_1_1': True,
+            },
+            'trs_presence': False,
+            'sr_period': 2,
+            'k_min': 2,
+            'rx_to_tx_latency': 4,
+            'csi_srs_period': 40,
+            'simultaneous_sr_csi': True,
+        },
+        'pusch_mapping_type': 'typeB',
+        'csi_rs': {
+          'resource_auto' : {
+            'exclude_slot_ssb': False,
+            'exclude_slot_sib1': False,
+          },
+          'csi_report_config': {
+              'report_quantity': "CRI_RI_PMI_CQI",
+          },
+        },
+        'prach_config_index': 128,
+    },
 }
 
 # Get serial number of this ORS
@@ -513,6 +611,33 @@ def ors_radio(config, publish, shared_list):
         if config[c]['cell_type'] == 'gNB' and config[c]['nr_band'] == 79:
             config[c]['amarisoft_ssb_computation'] = True
 
+        if config[c]['cell_type'] == 'gNB':
+            if type(config[c]['tdd_ul_dl_config']) is dict:
+                publish['radio'].setdefault('tdd-ul-dl-config',      {})[c] = config[c]['tdd_ul_dl_config']
+            else:
+                regex = '([0-9.]+)ms ([0-9]+)UL ([0-9]+)DL S=([0-9]+)UL:([0-9]+)DL'
+
+                nr_tdd_config = NR_TDD_CONFIG_MAP[config[c]['tdd_ul_dl_config']]
+                tdd_ul_dl_config = {}
+                for pattern in ['pattern1', 'pattern2']:
+                    if pattern not in nr_tdd_config:
+                        break
+                    period, ul_slots, dl_slots, ul_symbols, dl_symbols = re.search(regex, nr_tdd_config[pattern]).groups()
+                    period, ul_slots, dl_slots, ul_symbols, dl_symbols = \
+                      float(period), int(ul_slots), int(dl_slots), int(ul_symbols), int(dl_symbols)
+                    tdd_ul_dl_config[pattern] = {
+                        'period': period,
+                        'ul_slots': ul_slots,
+                        'dl_slots': dl_slots,
+                        'ul_symbols': ul_symbols,
+                        'dl_symbols': dl_symbols,
+                    }
+                config[c]['tdd_ul_dl_config'] = tdd_ul_dl_config
+                for param in nr_tdd_config:
+                    if param in ['index', 'pattern1', 'pattern2']:
+                        continue
+                    config[c].setdefault(param, nr_tdd_config[param])
+
     def configure_cpu():
         if options['sbc-model'] == 'LE-37SU7':
             config['cpu_core_list'] = [0, 2]
@@ -553,26 +678,6 @@ def ors_radio(config, publish, shared_list):
                     else:
                         nb_ul_slot = (p1['ul_slots'] + p1['ul_symbols']/14) * p1['period'] / 5
                         nb_dl_slot = (p1['dl_slots'] + p1['dl_symbols']/14) * p1['period'] / 5
-                else:
-                    nr_tdd_config = NR_TDD_CONFIG_MAP[tdd_config]
-                    nb_ul_slot = {
-                        0: 2 + 4/14,
-                        1: 2 + 4/14,
-                        2: 4 + 4/14,
-                        3: 6 + 10/14,
-                        4: 7 + 4/14,
-                        5: 8 + 2/14,
-                        6: 2 + 2/14,
-                    }[nr_tdd_config]
-                    nb_dl_slot = {
-                        0: 7 + 6/14,
-                        1: 7 + 6/14,
-                        2: 5 + 6/14,
-                        3: 3 + 2/14,
-                        4: 2 + 6/14,
-                        5: 1 + 10/14,
-                        6: 6 + 10/14,
-                    }[nr_tdd_config]
             elif config[c]['rf_mode'] == 'fdd':
                 nb_ul_slot = 10
                 nb_dl_slot = 10
