@@ -187,6 +187,11 @@ recipe  = slapos.cookbook:mkdirectory
 secrets = ${directory:var}/secrets
 mode    = 0700
 
+[bot-prevention-cookie]
+recipe = slapos.cookbook:generate.password
+bytes = 32
+storage-path = ${secrets:secrets}/bot_prevention_cookie
+
 [gitaly-dir]
 recipe  = slapos.cookbook:mkdirectory
 gitaly  = ${directory:var}/gitaly
@@ -307,6 +312,7 @@ context-extra =
     section gitlab_work             gitlab-work
     section gitlab_workhorse        gitlab-workhorse
     section prometheus              prometheus
+    key     bot_prevention_secret   bot-prevention-cookie:passwd
 
 [gitaly-config.toml]
 <= etc-template

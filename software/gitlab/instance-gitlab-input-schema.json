@@ -196,18 +196,6 @@
       "description": "A space separated list of ip or network to deny to ngnix. If a IP is added here the client will recieve 403 response",
       "type": "string"
     },
-    "bot_prevention_cookie_name": {
-      "title": "Bot prevention cookie name",
-      "description": "Name of the cookie used to bypass the bot prevention page. Browsers without this cookie are shown a page that sets it before reloading. This cookie is not needed for machine-friendly pages (/raw, feeds, /archive, etc)",
-      "type": "string",
-      "default": "bot_prevention_cookie"
-    },
-    "bot_prevention_cookie_value": {
-      "title": "Bot prevention cookie value",
-      "description": "Value of the cookie used to bypass the bot prevention page.",
-      "type": "string",
-      "default": "1"
-    },
     "postgresql_max_connections": {
       "title": "Postgresql max connextions",
       "description": "Postgresql max connextions",
