@@ -388,6 +388,18 @@ class OrsTestCase(SlapOSInstanceTestCase):
     self.login_imap("anonymous@example.com", "whatever-password")
     self.login_imap("another@example.com", "different-password")
 
+  def test_demo_disable_auth_allows_smtp_sending(self):
+    parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()["_"]
+    )
+    host = parameter_dict["imap-smtp-ipv6"]
+    smtp_port = int(parameter_dict["smtp-port"])
+    from_addr = "anonymous@example.com"
+    to_addr = "another@example.com"
+    with smtplib.SMTP(host, smtp_port, timeout=10) as smtp:
+      smtp.starttls()
+      smtp.login(from_addr, "whatever-password")
+      smtp.sendmail(from_addr, [to_addr], "Subject: Hello")
   def test_demo_disable_auth_is_rejected_on_default_software_type(self):
     partition_reference = "default-demo-rejected"
     try:
