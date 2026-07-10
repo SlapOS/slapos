@@ -375,7 +375,7 @@ bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
   raw email_size_limit_bytes {{ slapparameter_dict['email-size-limit'] * 1024 * 1024 }}
   raw postfix_log_path $${:log-file}
-  key sender_login_map postfix-sender-login-map:location
+  key sender_login_map postfix-sender-login-map:lookup-table
   key bin_directory directory:bin
   key usr_directory postfix-directory:usr
   key queue_directory postfix-directory:var-spool
@@ -431,15 +431,28 @@ context =
   key bogofilter_spool bogofilter-directory:spool
 {% endif %}
 
+{% if demo_disable_auth -%}
 [postfix-sender-login-map]
-recipe = slapos.recipe.template:jinja2
 recipe = slapos.recipe.build
 location = $${postfix-directory:etc}/sender_login_map
+lookup-table = pcre:$${:location}
+mail-domains = {{ dumps(mail_domains) }}
+install =
+  with open(location, 'w') as f:
+    for domain in options['mail-domains']:
+      f.write('/([^@]+)@%(domain)s/ $(1)@%(domain)s\n' % {'domain': domain})
+
+{%- else %}
+[postfix-sender-login-map]
+recipe = slapos.recipe.build
+location = $${postfix-directory:etc}/sender_login_map
+lookup-table = texthash:$${:location}
 account-entries = $${dovecot-passwords:account-entries}
 install =
   with open(location, 'w') as f:
     for address in options['account-entries']:
       f.write('%(address)s %(address)s\n' % {'address': address})
+{%- endif %}
 
 [outbound-relay-info]
 <= instance-parameters
