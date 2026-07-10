@@ -20,6 +20,18 @@ Unreleased
 
 Changes on ``master`` since 1.0.495 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.495...master>`__).
 
+Software Release installable from its canonical URL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+1.0.495 cannot be installed from its canonical URL: the builtin error
+pages introduced with the Error Page Manager were copied with a
+filesystem command, which fails when the profile is fetched over
+HTTP(S) — as binarization and production nodes do. They are now
+fetched with the standard download recipe. Deploy from the release
+carrying this fix; local-checkout builds (CI, development) were never
+affected. (`!2145 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2145>`__)
+
 1.0.495 (2026-07-09)
 --------------------
 
