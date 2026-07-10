@@ -67,7 +67,7 @@ smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
 smtpd_sasl_auth_enable = yes
 
-smtpd_sender_login_maps = texthash:{{ sender_login_map }}
+smtpd_sender_login_maps = {{ sender_login_map }}
 smtpd_sender_restrictions =
   # ensure only authenticated senders may use their sender address,
   # and authenticated senders may only the sender address they own.
