@@ -20,6 +20,18 @@ Unreleased
 
 Changes on ``master`` since 1.0.496 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.496...master>`__).
 
+Accurate instance output schemas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The instance output (``response``) schemas now match what instances
+publish. The kedifa output schema, previously an empty stub, now
+describes its published values. A new
+``instance-frontend-node-output-schema.json`` documents the
+single-frontend (``single-custom-personal``) software type, which
+previously referenced the cluster schema by mistake.
+(`!2141 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2141>`__)
+
 1.0.496 (2026-07-13)
 --------------------
 
