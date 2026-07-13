@@ -11632,6 +11632,17 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
       time.sleep(2)
 
 
+class TestSoftwareReleaseServedFromURL(unittest.TestCase):
+  # XXX not for merge: assert the Software Release was built from a remote
+  # URL (the checkout served over HTTP) and not from a local filesystem
+  # path -- i.e. that the URL-based build mechanism is actually in effect.
+  def test_software_release_is_remote(self):
+    url = SlapOSInstanceTestCase.getSoftwareURL()
+    self.assertEqual(
+      urllib.parse.urlparse(url).scheme[:4], 'http',
+      'Software Release is not built from a remote URL: %r' % (url,))
+
+
 if __name__ == '__main__':
   class HTTP6Server(backend.ThreadedHTTPServer):
     address_family = socket.AF_INET6
