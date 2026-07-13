@@ -33,6 +33,27 @@ Fixed a bug introduced in 1.0.495 that made the Software Release
 uninstallable from a URL (the builtin error pages were copied with a
 filesystem command). (`!2145 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2145>`__)
 
+Accurate instance output schemas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The instance output (``response``) schemas now match what instances
+publish. ``instance-output-schema.json`` gains the previously
+undocumented ``monitor-setup-url``, ``rejected-slave-url``,
+``publish-failsafe-error-promise-url``,
+``publish-slave-sqlite-validation-database`` and the per-node
+``frontend-node-N-backend-haproxy-statistic-url``,
+``frontend-node-N-node-information-json`` and
+``frontend-node-N-trafficserver-introspection-url`` keys; drops the
+never-published ``monitor-url``, ``monitor-user`` and
+``monitor-password``; and types the ``rejected-slave-dict`` and
+``warning-slave-dict`` values as objects. The kedifa output schema,
+previously an empty stub, now describes its published values. A new
+``instance-frontend-node-output-schema.json`` documents the
+single-frontend (``single-custom-personal``) software type, which
+previously referenced the cluster schema by mistake.
+(`!2141 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2141>`__)
+
 1.0.495 (2026-07-09)
 --------------------
 
