@@ -20,6 +20,14 @@ Unreleased
 
 Changes on ``master`` since 1.0.495 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.495...master>`__).
 
+Fixed URL installation of builtin error pages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+Fixed a bug introduced in 1.0.495 that made the Software Release
+uninstallable from a URL (the builtin error pages were copied with a
+filesystem command). (`!2145 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2145>`__)
+
 1.0.495 (2026-07-09)
 --------------------
 
