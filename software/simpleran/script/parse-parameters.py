@@ -1195,10 +1195,10 @@ def core_network(config, publish, shared_list):
 
     for dns in dns_list:
         publish_section = {}
-        publish_section['title'] = f'publish-{dns.slave_reference}'
+        publish_section['title'] = f"publish-{dns['slave_reference']}"
         p = {}
-        p['-slave-reference'] = dns.slave_reference
-        p['domain'] = f"{dns.subdomain}.{dns.get('domain', slapparameter_dict.get('local_domain', ''))}"
+        p['-slave-reference'] = dns['slave_reference']
+        p['domain'] = f"{dns['subdomain']}.{dns.get('domain', config.get('local_domain', ''))}"
         p['ip'] = dns.get('ip', '')
         p['info'] = f"DNS entry has been attached to service {slap_configuration['instance-title']}."
         publish_section['publish'] = p

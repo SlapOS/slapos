@@ -15,10 +15,18 @@ Releases
    :depth: 1
    :backlinks: none
 
-Unreleased
+1.0.496 (2026-07-13)
 --------------------
 
-Changes on ``master`` since 1.0.495 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.495...master>`__).
+Tag `1.0.496 <https://lab.nexedi.com/nexedi/slapos/-/tags/1.0.496>`__.
+
+Fixed URL installation of builtin error pages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+Fixed a bug introduced in 1.0.495 that made the Software Release
+uninstallable from a URL (the builtin error pages were copied with a
+filesystem command). (`!2145 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2145>`__)
 
 1.0.495 (2026-07-09)
 --------------------
@@ -114,6 +122,33 @@ HTTP/3 clients are fixed with haproxy L7 retries, returning a clean 502
 instead of aborting the client stream.
 
 (`c28d7aa47 <https://lab.nexedi.com/nexedi/slapos/-/commit/c28d7aa47>`__, `fcc8f9ecf <https://lab.nexedi.com/nexedi/slapos/-/commit/fcc8f9ecf>`__, `06f1879ed <https://lab.nexedi.com/nexedi/slapos/-/commit/06f1879ed>`__, `73545ea74 <https://lab.nexedi.com/nexedi/slapos/-/commit/73545ea74>`__, `92953c99f <https://lab.nexedi.com/nexedi/slapos/-/commit/92953c99f>`__)
+
+Accept-Encoding normalisation and enforced compression
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+Two new cluster parameters, each overridable per slave:
+``normalize-accept-encoding`` (default ``true``) collapses the
+client's ``Accept-Encoding`` into a small canonical set before
+forwarding, so responses cached with ``Vary: Accept-Encoding`` keep a
+handful of variants instead of one per browser (the trafficserver
+per-URL variant cap was raised from 5 to 32 to match);
+``enforced-compression`` (default ``gzip``; ``none``, ``deflate``,
+``gzip``, ``br``, ``zstd``) substitutes a canonical encoding when the
+client sends no ``Accept-Encoding`` or ``Accept-Encoding: *``. Set
+``enforced-compression: none`` for backends whose clients cannot
+decompress. (`!2118 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2118>`__)
+
+Compression by default for non-negotiating clients
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+Clients that send no ``Accept-Encoding`` header or send
+``Accept-Encoding: *`` now receive gzip-compressed responses by
+default. Shared instances gained ``normalize-accept-encoding`` and
+``enforced-compression`` parameters to tune this per site; set
+``enforced-compression: none`` on your slave if your clients cannot
+handle compressed content. (`!2118 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2118>`__)
 
 1.0.469 (2026-03-06)
 --------------------

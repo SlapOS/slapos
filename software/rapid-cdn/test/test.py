@@ -26,6 +26,7 @@
 ##############################################################################
 
 import backend
+from checkout_server import CheckoutHTTPServer
 import glob
 import os
 from recurls import Recurls, CurlException
@@ -73,12 +74,27 @@ from slapos.testing.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
+# fixed: the software directory is md5(url), a changing port would force
+# a full rebuild every run; no collision, the IP is per-test-partition
+CHECKOUT_SERVER_PORT = 11090
+
 if __name__ == '__main__':
   SlapOSInstanceTestCase = object
 else:
-  setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+  checkout_server = CheckoutHTTPServer(
     os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+      os.path.join(os.path.dirname(__file__), '..', '..', '..')),
+    os.environ['SLAPOS_TEST_IPV4'], CHECKOUT_SERVER_PORT)
+  _setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
+    checkout_server.url + '/software/rapid-cdn/software.cfg',
+    software_id='rapid-cdn')
+
+  def setUpModule():
+    checkout_server.start()
+    _setUpModule()
+
+  def tearDownModule():
+    checkout_server.stop()
 
 # ports chosen to not collide with test systems
 HTTP_PORT = 11080
