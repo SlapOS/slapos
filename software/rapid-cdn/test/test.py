@@ -1269,6 +1269,34 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       parsed_parameter_dict[key] = value
     return parsed_parameter_dict
 
+  def assertConnectionParametersMatchSchema(
+    self, parameter_dict, schema_filename):
+    """Assert every published connection parameter is described by the
+    software type's output (response) schema.
+
+    This is a key-set check, not a value-type check: the published values
+    are serialised strings, so validating their JSON-schema types would
+    false-fail. What matters is that the schema stays an exhaustive,
+    accurate description of what the instance actually publishes -- so any
+    undocumented key (schema drift) fails the test.
+    """
+    with open(
+      os.path.join(
+        os.path.dirname(__file__), '..', schema_filename)) as fh:
+      schema = json.load(fh)
+    literal_key_set = set(schema.get('properties', {}))
+    pattern_list = [
+      re.compile(p) for p in schema.get('patternProperties', {})]
+    undocumented_key_list = sorted(
+      key for key in parameter_dict
+      if key not in literal_key_set
+      and not any(pattern.match(key) for pattern in pattern_list))
+    self.assertEqual(
+      [],
+      undocumented_key_list,
+      'Published connection parameters %r are not described by %s' % (
+        undocumented_key_list, schema_filename))
+
   def getMasterPartitionPath(self):
     return [
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
@@ -1276,9 +1304,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         os.path.join(q, 'etc', 'nginx-master-introspection.conf'))][0]
 
   def parseConnectionParameterDict(self):
-    return self.parseParameterDict(
+    parameter_dict = self.parseParameterDict(
       self.requestDefaultInstance().getConnectionParameterDict()
     )
+    self.assertConnectionParametersMatchSchema(
+      parameter_dict, 'instance-output-schema.json')
+    return parameter_dict
 
   @classmethod
   def waitForMethod(cls, name, method):
@@ -1546,11 +1577,14 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
           slave_instance.getConnectionParameterDict()
 
   def parseSlaveParameterDict(self, key):
-    return self.parseParameterDict(
+    parameter_dict = self.parseParameterDict(
       self.slave_connection_parameter_dict_dict[
         key
       ]
     )
+    self.assertConnectionParametersMatchSchema(
+      parameter_dict, 'instance-slave-output-schema.json')
+    return parameter_dict
 
   def assertSlaveBase(
     self, reference, expected_parameter_dict=None, hostname=None):
