@@ -1,6 +1,40 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Input Parameters",
+  "description": "Values returned by Rapid.CDN KeDiFa instanciation",
   "type": "object",
-  "additionalProperties": true
+  "additionalProperties": false,
+  "properties": {
+    "slave-kedifa-information": {
+      "description": "JSON mapping each slave reference to its KeDiFa access information.",
+      "type": "string"
+    },
+    "caucase-url": {
+      "description": "URL to caucase used by KeDiFa.",
+      "type": "string"
+    },
+    "master-key-generate-auth-url": {
+      "description": "URL to GET once auth for master-key-upload-url",
+      "type": "string"
+    },
+    "master-key-upload-url": {
+      "description": "URL to PUT PEM bundle of main certificate and key",
+      "type": "string"
+    },
+    "master-key-download-url": {
+      "description": "URL to GET the PEM bundle of main certificate and key",
+      "type": "string"
+    },
+    "kedifa-csr-url": {
+      "description": "URL on which KeDiFa publishes its CSR sent to caucase.",
+      "type": "string"
+    },
+    "csr-certificate": {
+      "description": "Certificate used to serve data on kedifa-csr-url.",
+      "type": "string"
+    },
+    "monitor-base-url": {
+      "description": "Base url for monitor",
+      "type": "string"
+    }
+  }
 }
