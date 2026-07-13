@@ -15,10 +15,10 @@ Releases
    :depth: 1
    :backlinks: none
 
-Unreleased
+1.0.496 (2026-07-13)
 --------------------
 
-Changes on ``master`` since 1.0.495 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.495...master>`__).
+Tag `1.0.496 <https://lab.nexedi.com/nexedi/slapos/-/tags/1.0.496>`__.
 
 Fixed URL installation of builtin error pages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
