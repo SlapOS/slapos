@@ -480,6 +480,38 @@ class TestDataMixin(object):
   def _updateDataReplacementDict(self, data_replacement_dict):
     pass
 
+  def _getMasterRequestSectionOptionDict(self, section):
+    option_dict = {}
+    current = None
+    with open(
+      os.path.join(self.getMasterPartitionPath(), 'instance-master.cfg')
+    ) as fh:
+      for line in fh:
+        section_match = re.match(r'^\[(?P<name>[^\]]+)\]\s*$', line)
+        if section_match:
+          current = section_match.group('name')
+          continue
+        if current == section:
+          option_match = re.match(
+            r'^(?P<key>[^=\s]+)\s*=\s*(?P<value>.*)$', line)
+          if option_match:
+            option_dict[option_match.group('key')] = \
+              option_match.group('value').strip()
+    return option_dict
+
+  def test_error_page_manager_request_sla(self):
+    # error-page-manager must be requested with an SLA (at least
+    # computer_guid), like kedifa and the frontend nodes, so the master
+    # does not allocate it to a random node (bug #20260713-98E804). By
+    # default it lands on the master's computer, same as kedifa.
+    error_page_manager = self._getMasterRequestSectionOptionDict(
+      'request-error-page-manager')
+    kedifa = self._getMasterRequestSectionOptionDict('request-kedifa')
+    self.assertIn('sla-computer_guid', error_page_manager)
+    self.assertEqual(
+      error_page_manager['sla-computer_guid'],
+      kedifa['sla-computer_guid'])
+
   def test00cluster_request_instance_parameter_dict(self):
     # test00 name chosen to be run just after setup
     cluster_request_parameter_list = []
