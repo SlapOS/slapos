@@ -26,7 +26,6 @@
 ##############################################################################
 
 import backend
-from checkout_server import CheckoutHTTPServer
 import glob
 import os
 from recurls import Recurls, CurlException
@@ -74,27 +73,12 @@ from slapos.testing.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
-# fixed: the software directory is md5(url), a changing port would force
-# a full rebuild every run; no collision, the IP is per-test-partition
-CHECKOUT_SERVER_PORT = 11090
-
 if __name__ == '__main__':
   SlapOSInstanceTestCase = object
 else:
-  checkout_server = CheckoutHTTPServer(
+  setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-      os.path.join(os.path.dirname(__file__), '..', '..', '..')),
-    os.environ['SLAPOS_TEST_IPV4'], CHECKOUT_SERVER_PORT)
-  _setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    checkout_server.url + '/software/rapid-cdn/software.cfg',
-    software_id='rapid-cdn')
-
-  def setUpModule():
-    checkout_server.start()
-    _setUpModule()
-
-  def tearDownModule():
-    checkout_server.stop()
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 # ports chosen to not collide with test systems
 HTTP_PORT = 11080
@@ -11618,6 +11602,17 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
           'restart -- hash-existing-files on the EPM wrapper does not '
           'cover builtin HTMLs.' % (code, self._builtin_path, marker))
       time.sleep(2)
+
+
+class TestSoftwareReleaseServedFromURL(unittest.TestCase):
+  # XXX not for merge: assert the Software Release was built from a remote
+  # URL (the checkout served over HTTP) and not from a local filesystem
+  # path -- i.e. that the URL-based build mechanism is actually in effect.
+  def test_software_release_is_remote(self):
+    url = SlapOSInstanceTestCase.getSoftwareURL()
+    self.assertEqual(
+      urllib.parse.urlparse(url).scheme[:4], 'http',
+      'Software Release is not built from a remote URL: %r' % (url,))
 
 
 if __name__ == '__main__':
