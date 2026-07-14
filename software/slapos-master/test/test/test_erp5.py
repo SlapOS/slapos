@@ -222,9 +222,14 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
       and p['name'].startswith('haproxy-')
     )
     haproxy_process = psutil.Process(process_info['pid'])
-    self.assertEqual([socket.AF_INET, socket.AF_INET], [
-        c.family for c in haproxy_process.connections() if c.status == 'LISTEN'
-    ])
+    # haproxy >= 3.3 shards each listener into one accept socket per thread
+    # (SO_REUSEPORT); deduplicate by listening address to count distinct endpoints.
+    self.assertEqual([socket.AF_INET, socket.AF_INET], sorted(
+        family for family, _laddr in {
+            (c.family, c.laddr)
+            for c in haproxy_process.connections() if c.status == 'LISTEN'
+        }
+    ))
 
 
 class TestZopeNodeParameterOverride(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
