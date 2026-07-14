@@ -401,6 +401,14 @@ Roles and access
   in the shared-instance connection parameters. Can write and reset
   502, 503, and 504 for their own site to override cluster default.
 
+Allocation
+----------
+
+The Error Page Manager partition is by default requested on the same
+computer as the master frontend partition. By adding to the request a
+key ``-sla-error-page-manager-computer_guid`` it is possible to place it
+on another computer, e.g. ``-sla-error-page-manager-computer_guid: couscous``.
+
 Supported error codes
 ---------------------
 
