@@ -141,6 +141,10 @@ context =
 {%- if not sla_computer_kedifa_key in slapparameter_dict %}
 {%-   do slapparameter_dict.__setitem__(sla_computer_kedifa_key, '${slap-connection:computer-id}') %}
 {%- endif %}
+{%- set sla_computer_error_page_manager_key = '-sla-error-page-manager-computer_guid' %}
+{%- if not sla_computer_error_page_manager_key in slapparameter_dict %}
+{%-   do slapparameter_dict.__setitem__(sla_computer_error_page_manager_key, '${slap-connection:computer-id}') %}
+{%- endif %}
 {#- Here we request individually each frontend. #}
 {#- The presence of sla parameters is checked and added if found #}
 {%- set NODE_DEFAULT_KEY_VALUE = {
@@ -572,6 +576,13 @@ software-url = ${slap-connection:software-release-url}
 software-type = error-page-manager
 name = error-page-manager
 return = sync-url base-url operator-url url certificate shared-error-page-information monitor-base-url
+{%- set sla_error_page_manager_key = "-sla-error-page-manager-" %}
+{%- set sla_error_page_manager_key_length = sla_error_page_manager_key | length %}
+{%- for key in list(slapparameter_dict.keys()) %}
+{%-   if key.startswith(sla_error_page_manager_key) %}
+sla-{{ key[sla_error_page_manager_key_length:] }} = {{ slapparameter_dict.pop(key) }}
+{%-   endif %}
+{%- endfor %}
 
 [rejected-slave-information]
 rejected-slave-dict = {{ dumps(rejected_slave_dict) }}

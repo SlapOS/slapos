@@ -20,6 +20,15 @@ Unreleased
 
 Changes on ``master`` since 1.0.496 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.496...master>`__).
 
+Error Page Manager allocation SLA
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The ``error-page-manager`` partition is now requested with an SLA,
+defaulting to the master's computer, instead of being allocated to a
+random node.
+(`!2150 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2150>`__)
+
 Accurate instance output schemas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
