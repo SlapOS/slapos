@@ -30,7 +30,7 @@ import shutil
 import subprocess
 import tempfile
 
-from slapos.testing.testcase import installSoftwareUrlList, makeModuleSetUpAndTestCaseClass
+from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
 software_release_url = os.path.abspath(
   os.path.join(os.path.dirname(__file__), '..', 'test.cfg'))
@@ -62,12 +62,14 @@ class TestMariaDB(InstanceTestCase):
       skip_test_list = [
         'spider',            # fail if 'failed to retrieve the MAC address'.
         'mysqld--help-aria', # fail if 'failed to retrieve the MAC address'.
-        'mysqldump-header',  # fail with our -DDEFAULT_CHARSET=utf8 build.
         'ssl_autoverify',    # fail without Net/SSLeay.pm.
+        'main.mariadb-migrate-config-file',   # fail since Mariadb 11.8.8, for unknown reasons, but we do not use this tool.
+        'sys_vars.session_track_system_variables_basic',  # fixed in next version ( https://github.com/MariaDB/server/commit/1f56d9c3feeeca82661cbe57cb628207c8b186f8. )
       ]
       result = subprocess.run(
         ['./mtr', '--parallel=10', '--force', '--max-test-fail=40', '--mem',
          '--skip-test=(%s)' % ('|'.join(skip_test_list))],
         capture_output=True,
+        text=True,
       )
       self.assertEqual(result.returncode, 0, result.stdout)
