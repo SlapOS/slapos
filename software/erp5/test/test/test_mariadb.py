@@ -796,44 +796,49 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
     except (AssertionError, KeyError):
       self.fail('Replica is in bad state:\n%r' % replica_status)
 
-  def checkDataReplication(self, primary, *replicas):
+  def checkDataReplication(self, primary, *replicas, step=1):
     cnx = self.getDatabaseConnection(primary)
     with contextlib.closing(cnx):
       with cnx.cursor() as cursor:
-        cursor.execute(
-            """
-            CREATE TABLE test_replication (
-              col1 CHAR(10)
-            )
-            """)
-        cursor.execute(
-            """
-            INSERT INTO test_replication VALUES ("a"), ("b")
-            """)
+        if step == 1:
+          cursor.execute(
+              """
+              CREATE TABLE test_replication (
+                id INT NOT NULL AUTO_INCREMENT,
+                col1 CHAR(10),
+                PRIMARY KEY (id)
+              )
+              """)
+          cursor.execute(
+              """
+              INSERT INTO test_replication (col1) VALUES ("a"), ("b")
+              """)
+        else:
+          cursor.execute(
+              """
+              INSERT INTO test_replication (col1) VALUES ("c"), ("d")
+              """)
         cnx.commit()
-    cnx = self.getDatabaseConnection(primary)
-    with contextlib.closing(cnx):
-      with cnx.cursor() as cursor:
-        cursor.execute(
-            """
-            SELECT * FROM test_replication
-            """)
-        self.assertEqual((('a',), ('b',)), cursor.fetchall())
-    time.sleep(2)
-    for replica in replicas:
-      for i in range(7):
-        if self.checkReplicaState(replica) == 0:
-          break
-        time.sleep((i + 1) ** 2)
-      cnx = self.getDatabaseConnection(replica)
+
+    def check_table_content(server):
+      expected = ((1, 'a'), (2, 'b')) if step == 1 else ((1, 'a'), (2, 'b'), (3, 'c'), (4, 'd'))
+      cnx = self.getDatabaseConnection(server)
       with contextlib.closing(cnx):
         with cnx.cursor() as cursor:
           cursor.execute(
               """
               SELECT * FROM test_replication
               """)
-          self.assertEqual((('a',), ('b',)), cursor.fetchall())
+          self.assertEqual(expected, cursor.fetchall())
 
+    check_table_content(primary)
+    time.sleep(2)
+    for replica in replicas:
+      for i in range(7):
+        if self.checkReplicaState(replica) == 0:
+          break
+        time.sleep((i + 1) ** 2)
+      check_table_content(replica)
 
 class TestMariaDBReplication(MariaDBReplicationTestCase):
   def checkReplication(self, caucased=True, bootstrap=None, backups=1, **kw):
@@ -933,9 +938,14 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
     self.assertFalse(ok)
     self.assertIn("Mariadb is not in replica mode", message)
     # Check replication promise does not bang
-    self.waitForMariadb() # if a bang occured, this would raise
+    self.waitForMariadb() # if a bang occurred, this would raise
     # Update replica parameters into a primary, fixing the promise
     self.requestPrimary(name='replica', caucased=False)
+
+    # create a second replica, from the replica now promoted as primary
+    second_replica = self.requestReplica(replica, caucased=False, name='second_replica')
+    self.checkReplicaState(second_replica)
+    self.checkDataReplication(replica, second_replica, step=2)
 
   def test_mariabackup_mroonga_backup_and_incremental_backup(self):
     # Request primary Mariadb
