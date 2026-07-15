@@ -420,7 +420,10 @@ output = $${directory:script}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh -e
   export MAIL_CONFIG=$${inbound-postfix-directory:etc}
-  ${postfix:location}/usr/sbin/postfix reload
+  {
+    date;
+    ${postfix:location}/usr/sbin/postfix reload;
+  } >> $${directory:var-log}/inbound_postfix_reload.log 2>&1
 
 [inbound-postfix-smtp-promise]
 <= monitor-promise-base
@@ -856,7 +859,10 @@ output = $${directory:script}/$${:_buildout_section_name_}
 inline =
   #!/bin/sh -e
   export MAIL_CONFIG=$${outbound-postfix-directory:etc}
-  ${postfix:location}/usr/sbin/postfix reload
+  {
+    date;
+    ${postfix:location}/usr/sbin/postfix reload;
+  } >> $${directory:var-log}/outbound_postfix_reload.log 2>&1
 
 [outbound-postfix-submission-promise]
 <= monitor-promise-base
