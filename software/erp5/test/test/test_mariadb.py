@@ -796,27 +796,27 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
     except (AssertionError, KeyError):
       self.fail('Replica is in bad state:\n%r' % replica_status)
 
-  def checkDataReplication(self, primary, *replicas):
+  def checkDataReplication(self, primary, *replicas, table_name="test_replication"):
     cnx = self.getDatabaseConnection(primary)
     with contextlib.closing(cnx):
       with cnx.cursor() as cursor:
         cursor.execute(
-            """
-            CREATE TABLE test_replication (
+            f"""
+            CREATE TABLE {table_name} (
               col1 CHAR(10)
             )
             """)
         cursor.execute(
-            """
-            INSERT INTO test_replication VALUES ("a"), ("b")
+            f"""
+            INSERT INTO {table_name} VALUES ("a"), ("b")
             """)
         cnx.commit()
     cnx = self.getDatabaseConnection(primary)
     with contextlib.closing(cnx):
       with cnx.cursor() as cursor:
         cursor.execute(
-            """
-            SELECT * FROM test_replication
+            f"""
+            SELECT * FROM {table_name}
             """)
         self.assertEqual((('a',), ('b',)), cursor.fetchall())
     time.sleep(2)
@@ -829,8 +829,8 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
       with contextlib.closing(cnx):
         with cnx.cursor() as cursor:
           cursor.execute(
-              """
-              SELECT * FROM test_replication
+              f"""
+              SELECT * FROM {table_name}
               """)
           self.assertEqual((('a',), ('b',)), cursor.fetchall())
 
@@ -933,9 +933,14 @@ class TestMariaDBReplication(MariaDBReplicationTestCase):
     self.assertFalse(ok)
     self.assertIn("Mariadb is not in replica mode", message)
     # Check replication promise does not bang
-    self.waitForMariadb() # if a bang occured, this would raise
+    self.waitForMariadb() # if a bang occurred, this would raise
     # Update replica parameters into a primary, fixing the promise
     self.requestPrimary(name='replica', caucased=False)
+
+    # create a second replica, from the replica now promoted as primary
+    second_replica = self.requestReplica(replica, caucased=False, name='second_replica')
+    self.checkReplicaState(second_replica)
+    self.checkDataReplication(replica, second_replica, table_name="second_test_replication")
 
   def test_mariabackup_mroonga_backup_and_incremental_backup(self):
     # Request primary Mariadb
