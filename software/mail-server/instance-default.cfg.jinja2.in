@@ -429,6 +429,7 @@ context =
   raw postfix_log_path $${:log-file}
   key sender_login_map postfix-sender-login-map:location
   key bin_directory directory:bin
+  key etc_directory postfix-directory:etc
   key usr_directory postfix-directory:usr
   key queue_directory postfix-directory:var-spool
   key data_directory postfix-directory:var-lib
