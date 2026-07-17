@@ -207,7 +207,7 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
         sorted([socket.AF_INET] * 4 + [socket.AF_INET6] * 2),
         sorted(
             c.family
-            for c in apache_process.connections()
+            for c in apache_process.net_connections()
             if c.status == 'LISTEN'
         ))
 
@@ -227,7 +227,7 @@ class TestApacheBalancerPorts(ERP5InstanceTestCase):
     self.assertEqual([socket.AF_INET, socket.AF_INET], sorted(
         family for family, _laddr in {
             (c.family, c.laddr)
-            for c in haproxy_process.connections() if c.status == 'LISTEN'
+            for c in haproxy_process.net_connections() if c.status == 'LISTEN'
         }
     ))
 

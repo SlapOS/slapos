@@ -386,7 +386,7 @@ class TestBalancerPorts(ERP5InstanceTestCase):
             family
             for family, _laddr in {
                 (c.family, c.laddr)
-                for c in haproxy_worker_process.connections()
+                for c in haproxy_worker_process.net_connections()
                 if c.status == 'LISTEN'
             }
         ))
@@ -546,7 +546,7 @@ class TestDisableTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMix
             family
             for family, _laddr in {
                 (c.family, c.laddr)
-                for c in haproxy_worker_process.connections()
+                for c in haproxy_worker_process.net_connections()
                 if c.status == 'LISTEN'
             }
         ))

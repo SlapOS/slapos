@@ -586,7 +586,7 @@ class TestHTTP(BalancerTestCase):
 
       # check that we have an open file for the ip connection
       self.assertTrue([
-          c for c in psutil.Process(os.getpid()).connections()
+          c for c in psutil.Process(os.getpid()).net_connections()
           if c.status == 'ESTABLISHED' and c.raddr.ip == parsed_url.hostname
           and c.raddr.port == parsed_url.port
       ])
@@ -658,13 +658,13 @@ class TestServerTLSEmbeddedCaucase(BalancerTestCase):
       certificate_after_renewal = self._getServerCertificate(
         balancer_parsed_url.hostname,
         balancer_parsed_url.port)
-      if certificate_after_renewal.not_valid_before > certificate_before_renewal.not_valid_before:
+      if certificate_after_renewal.not_valid_before_utc > certificate_before_renewal.not_valid_before_utc:
         break
       time.sleep(.5)
 
     self.assertGreater(
-      certificate_after_renewal.not_valid_before,
-      certificate_before_renewal.not_valid_before,
+      certificate_after_renewal.not_valid_before_utc,
+      certificate_before_renewal.not_valid_before_utc,
     )
 
     # requests are served properly after certificate renewal
