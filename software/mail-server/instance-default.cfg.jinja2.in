@@ -643,7 +643,7 @@ inline =
   # Called by imapsieve when a message is moved TO the Junk folder.
   USER="$$1"
   BOGODIR="$${bogofilter-directory:spool}/$$USER"
-  [ -d "$$BOGODIR" ] || exit 0
+  mkdir -p "$$BOGODIR"
   ${bogofilter:location}/bin/bogofilter -e -Ns -d "$$BOGODIR"
 
 [bogofilter-learn-ham-script]
@@ -655,7 +655,7 @@ inline =
   # Called by imapsieve when a message is moved FROM the Junk folder.
   USER="$$1"
   BOGODIR="$${bogofilter-directory:spool}/$$USER"
-  [ -d "$$BOGODIR" ] || exit 0
+  mkdir -p "$$BOGODIR"
   ${bogofilter:location}/bin/bogofilter -e -Sn -d "$$BOGODIR"
 
 [bogofilter-sieve-spam-filter]
