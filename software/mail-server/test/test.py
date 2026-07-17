@@ -290,7 +290,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     host = parameter_dict["imap-smtp-ipv6"]
     smtp_port = int(parameter_dict["smtp-port"])
     imap_port = int(parameter_dict["imap-port"])
-    to_addr = "testmail@example.com"
+    to_addr = "TestMail@Example.Com"
     from_addr = "unknown@unknown.domain"
     password = "password123"
 
@@ -329,6 +329,21 @@ class PostfixTestCase(SlapOSInstanceTestCase):
         headers,
         "X-Bogosity header missing, bogofilter did not process the message",
       )
+      self.assertTrue(os.path.exists(
+        os.path.join(
+          self.computer_partition_root_path,
+          "bogofilter",
+          to_addr.lower(),
+          "wordlist.db",
+        )
+      ))
+      self.assertFalse(os.path.exists(
+        os.path.join(
+          self.computer_partition_root_path,
+          "bogofilter",
+          to_addr,
+        )
+      ))
     except AssertionError:
       raise
     except Exception as e:
@@ -348,6 +363,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     host = parameter_dict["imap-smtp-ipv6"]
     imap_port = int(parameter_dict["imap-port"])
     address = "testmail@bogofilter-test.example.com"
+    login_address = "TestMail@Bogofilter-Test.Example.Com"
     password = "password123"
     wordlist_path = os.path.join(
       self.computer_partition_root_path,
@@ -368,7 +384,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     imap = imaplib.IMAP4(host, imap_port, timeout=10)
     try:
       imap.starttls(ssl_context=self._get_ssl_context())
-      imap.login(address, password)
+      imap.login(login_address, password)
       result, _ = imap.create("Junk")
       self.assertEqual(result, "OK")
       result, _ = imap.append("INBOX", None, None, msg.as_bytes())
@@ -399,6 +415,13 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       0,
       "Moving a message to Junk did not train bogofilter",
     )
+    self.assertFalse(os.path.exists(
+      os.path.join(
+        self.computer_partition_root_path,
+        "bogofilter",
+        login_address,
+      )
+    ))
 
 
 class OrsTestCase(SlapOSInstanceTestCase):
