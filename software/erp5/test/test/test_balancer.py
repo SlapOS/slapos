@@ -354,7 +354,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
         requests.codes.service_unavailable)
     error_log_file = self.computer_partition_root_path / 'var' / 'log' / 'apache-error.log'
     error_line = error_log_file.read_text().splitlines()[-1]
-    self.assertIn('backend default has no server available!', error_line)
+    self.assertIn('backend backend_default has no server available!', error_line)
     # this log also include a timestamp
     self.assertRegex(error_line, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
 
@@ -463,7 +463,7 @@ class TestBalancer(BalancerTestCase):
       raise
     self.assertEqual(socat_process.poll(), 0)
     # output is a csv
-    self.assertIn(b'\ndefault,BACKEND,', output)
+    self.assertIn(b'\nbackend_default,BACKEND,', output)
 
 
 class TestTestRunnerEntryPoints(BalancerTestCase):
@@ -586,7 +586,7 @@ class TestHTTP(BalancerTestCase):
 
       # check that we have an open file for the ip connection
       self.assertTrue([
-          c for c in psutil.Process(os.getpid()).connections()
+          c for c in psutil.Process(os.getpid()).net_connections()
           if c.status == 'ESTABLISHED' and c.raddr.ip == parsed_url.hostname
           and c.raddr.port == parsed_url.port
       ])
@@ -658,13 +658,13 @@ class TestServerTLSEmbeddedCaucase(BalancerTestCase):
       certificate_after_renewal = self._getServerCertificate(
         balancer_parsed_url.hostname,
         balancer_parsed_url.port)
-      if certificate_after_renewal.not_valid_before > certificate_before_renewal.not_valid_before:
+      if certificate_after_renewal.not_valid_before_utc > certificate_before_renewal.not_valid_before_utc:
         break
       time.sleep(.5)
 
     self.assertGreater(
-      certificate_after_renewal.not_valid_before,
-      certificate_before_renewal.not_valid_before,
+      certificate_after_renewal.not_valid_before_utc,
+      certificate_before_renewal.not_valid_before_utc,
     )
 
     # requests are served properly after certificate renewal

@@ -471,7 +471,7 @@ class TestHTTP(BalancerTestCase):
 
       # check that we have an open file for the ip connection
       self.assertTrue([
-          c for c in psutil.Process(os.getpid()).connections()
+          c for c in psutil.Process(os.getpid()).net_connections()
           if c.status == 'ESTABLISHED' and c.raddr.ip == parsed_url.hostname
           and c.raddr.port == parsed_url.port
       ])
