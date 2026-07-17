@@ -354,7 +354,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
         requests.codes.service_unavailable)
     error_log_file = self.computer_partition_root_path / 'var' / 'log' / 'apache-error.log'
     error_line = error_log_file.read_text().splitlines()[-1]
-    self.assertIn('backend default has no server available!', error_line)
+    self.assertIn('backend backend_default has no server available!', error_line)
     # this log also include a timestamp
     self.assertRegex(error_line, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
 
@@ -463,7 +463,7 @@ class TestBalancer(BalancerTestCase):
       raise
     self.assertEqual(socat_process.poll(), 0)
     # output is a csv
-    self.assertIn(b'\ndefault,BACKEND,', output)
+    self.assertIn(b'\nbackend_default,BACKEND,', output)
 
 
 class TestTestRunnerEntryPoints(BalancerTestCase):
