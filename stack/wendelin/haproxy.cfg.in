@@ -233,12 +233,12 @@ listen {{ name }}
   http-request replace-path ^(/+VirtualHostBase/+[^/]+/+[^/]+)/+VirtualHostRoot/+{% if outer_prefix %}{{ outer_prefix }}($|/.*){% else %}(.*){% endif %} \1/{{ inner_prefix.strip('/') }}/VirtualHostRoot/{% if outer_prefix %}_vh_{{ outer_prefix.replace('/', '/_vh_') }}{% endif %}\2
 {%  endfor %}
 
-  use_backend {{ frontend['backend-name'] }}
+  use_backend backend_{{ frontend['backend-name'] }}
 {% endfor %}
 
 
 {% for name, backend in sorted(six.iteritems(parameter_dict['backend-dict'])) %}
-backend {{ name }}
+backend backend_{{ name }}
   cookie SERVERID rewrite
   http-request set-header X-Balancer-Current-Cookie SERVERID
 
