@@ -146,6 +146,54 @@
       "type": "integer",
       "default": 16
     },
+    "gitaly_catfile_cache_size": {
+      "title": "Git cat-file cache size",
+      "description": "Number of 'git cat-file' processes kept around for re-use. Default value: 200.",
+      "type": "integer",
+      "default": 200
+    },
+    "gitaly_rate_limiting": {
+      "title": "Gitaly rate limiting",
+      "description": "Rate limiting some important gitaly task to a specified amount per second. Default value is 0, disabled.",
+      "type": "integer",
+      "default": 0
+    },
+    "gitaly_pack_objects_cache": {
+      "title": "Enable git pack-objects cache in gitaly",
+      "description": "Enable git pack-objects cache in gitaly to cache a short rolling window of Git fetch responses. This can reduce server load when your server receives lots of CI fetch traffic.",
+      "type": "boolean",
+      "default": false
+    },
+    "gitaly_pack_objects_cache_max_age": {
+      "title": "Git pack-objects cache max age in minutes",
+      "description": "Git pack-objects cache entries older than this get evicted and removed from disk by gitlay. Default is to gitlab default value (5 min).",
+      "type": "integer",
+      "default": 0
+    },
+    "gitaly_concurrency_find_commit": {
+      "title": "Gitaly simultaneous FindCommit per repository",
+      "description": "Gitaly simultaneous FindCommit per repository (git cat-file, ...). Default is 0 for disabled",
+      "type": "integer",
+      "default": 0
+    },
+    "gitaly_concurrency_find_commit_max_queue_size": {
+      "title": "Gitaly FindCommit max queue size",
+      "description": "Gitaly FindCommit process max queue size",
+      "type": "integer",
+      "default": 50
+    },
+    "gitaly_concurrency_find_commit_max_queue_wait": {
+      "title": "Gitaly FindCommit max queue wait",
+      "description": "Gitaly FindCommit max time in seconds to wait in a queue before rejected",
+      "type": "integer",
+      "default": 5
+    },
+    "gitaly_daily_maintenance": {
+      "title": "Gitaly dailly maintenance time slots",
+      "description": "Daily maintenance designates time slots to run daily to optimize and maintain enabled storages. Default: 22h 45min duration 60min",
+      "type": "string",
+      "default": "22 45 60"
+    },
     "nginx_worker_processes": {
       "title": "Nginx worker processes",
       "description": "Nginx worker processes amount",
