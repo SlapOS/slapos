@@ -206,6 +206,8 @@ inline =
 {% set mail_domains = slapparameter_dict['mail-domains'] %}
 {% set cluster_fqdns = slapparameter_dict['cluster-fqdns'] %}
 {% set proxy_map = slapparameter_dict['proxy-map'] %}
+{% set dmarc = slapparameter_dict['dmarc'] %}
+{% set dmarc_enable = dmarc['enable'] %}
 {% set greylisting = slapparameter_dict['greylisting'] %}
 {% set greylisting_enable = greylisting['enable'] %}
 {% set greylisting_delay = greylisting['greylisting-delay'] %}
@@ -293,6 +295,12 @@ content =
   smtpd_restriction_classes =
     spf_passed
 
+{% if dmarc_enable %}
+  smtpd_milters = inet:127.0.0.1:$${opendmarc-service:port}
+  milter_default_action = accept
+  milter_protocol = 6
+{% endif %}
+
   spf_passed =
     permit
 
@@ -361,6 +369,35 @@ url = ${policyd_spf.jinja2.conf:target}
 output = $${inbound-postfix-directory:etc}/policyd-spf.conf
 context =
 
+{% if dmarc_enable %}
+[opendmarc-conf]
+recipe = slapos.recipe.template
+output = $${inbound-postfix-directory:etc}/opendmarc.conf
+inline =
+  AuthservID HOSTNAME
+  Background false
+  DNSTimeout 5
+  FailureReports false
+  PidFile $${directory:run}/opendmarc.pid
+  RejectFailures true
+  RequiredHeaders true
+  Socket inet:$${opendmarc-service:port}@[127.0.0.1]
+  SoftwareHeader false
+  SPFSelfValidate true
+  Syslog false
+  UserID $${userinfo:pw-name}:$${userinfo:gr-name}
+
+[opendmarc-service]
+recipe = slapos.cookbook:wrapper
+port = 10024
+command-line =
+  ${opendmarc:location}/sbin/opendmarc
+    -c $${opendmarc-conf:output}
+wrapper-path = $${directory:service}/opendmarc
+depends =
+  $${opendmarc-conf:recipe}
+{% endif %}
+
 {% if greylisting_enable %}
 [postgrey-service]
 recipe = slapos.cookbook:wrapper
@@ -416,9 +453,15 @@ hash-files =
   $${inbound-postfix-internal-sender-access:output}
   $${inbound-postfix-wrapper:output}
   $${policyd-spf-conf:output}
+{% if dmarc_enable %}
+  $${opendmarc-conf:output}
+{% endif %}
 depends =
   $${inbound-postfix-certificate-reload:recipe}
   $${policyd-spf-conf:recipe}
+{% if dmarc_enable %}
+  $${opendmarc-service:recipe}
+{% endif %}
 {% if greylisting_enable %}
   $${postgrey-service:recipe}
 {% endif %}
@@ -504,6 +547,15 @@ config-port = $${inbound-postfix-main.cf:smtp-port}
 config-certificate-der-path = $${inbound-custom-certificate-der:location}
 {%- endif %}
 
+{% if dmarc_enable %}
+[opendmarc-listen-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = opendmarc_listen.py
+config-host = 127.0.0.1
+config-port = $${opendmarc-service:port}
+{% endif %}
+
 [inbound-postfix]
 recipe = slapos.recipe.build
 init =
@@ -517,6 +569,9 @@ depends =
   $${inbound-custom-certificate-expiration-promise:recipe}
   $${inbound-custom-certificate-served-promise:recipe}
 {%- endif %}
+{% if dmarc_enable %}
+  $${opendmarc-listen-promise:recipe}
+{% endif %}
   $${inbound-postfix-shell-env:recipe}
 
 [inbound-logrotate-entry-postfix]
