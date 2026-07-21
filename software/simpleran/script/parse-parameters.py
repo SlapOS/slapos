@@ -418,6 +418,8 @@ def ors_radio(config, publish, shared_list):
 
         # TX Gain, TX Power Offset, Range
         def round_float(f):
+            if f is None:
+                return
             return round(float(f) * 1000) / 1000
         tx_power_params = defaults['tx_power'][sdr_info['version'] >= 4]
         #       Compute TX Gain and TX Power dBm
@@ -431,9 +433,9 @@ def ors_radio(config, publish, shared_list):
         #       Prepare published TX Power
         if tx_gain == None:
             tx_gain  = 0
-            tx_power = 'Radio board unknown, please set tx_gain manually'
+            tx_power = 'Power to TX Gain conversion unavailable, please set tx_gain manually'
         elif tx_power_dbm == None:
-            tx_power = 'Radio board unknown, cannot predict output power'
+            tx_power = None
         else:
             tx_power_mw = 10 ** ( tx_power_dbm / 10 )
             if tx_power_mw < 0.01:
@@ -445,7 +447,7 @@ def ors_radio(config, publish, shared_list):
         #       Compute TX Power offset
         if rf_info['flavour'] == 'ORSBRUTE':
             tx_power_offset = DEFAULTS['ORSBRUTE']['tx_power_offset']
-        if sdr_info['model'] == 'ORSMAX':
+        elif sdr_info['model'] == 'ORSMAX':
             tx_power_offset = DEFAULTS['ORSMAX']['tx_power_offset']
         else:
             tx_power_offset = round_float(
@@ -456,7 +458,8 @@ def ors_radio(config, publish, shared_list):
         config[c]['tx_gain'] = tx_gain
         config[c]['range'] = defaults['range']
         publish['hardware'].setdefault('range', {})[c] = defaults['range']
-        publish['power'].setdefault('tx-power', {})[c] = tx_power
+        if tx_power:
+            publish['power'].setdefault('tx-power', {})[c] = tx_power
         publish['power'].setdefault('tx-gain', {})[c] = f'{tx_gain} dB'
         publish['power'].setdefault('rx-gain', {})[c] = f"{config[c]['rx_gain']} dB"
 

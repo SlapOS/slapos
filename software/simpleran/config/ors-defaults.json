@@ -36,6 +36,67 @@
       }
     ]
   },
+  "N77-BRUTE-3800-3900": {
+    "range": "3800MHz - 3900 MHz",
+    "lte_frequency": 0,
+    "bandwidth": "20 MHz",
+    "lte_band": 0,
+    "nr_frequency": 3850,
+    "nr_bandwidth": "50 MHz",
+    "nr_band": 77,
+    "ssb_pos_bitmap": "10000000",
+    "rf_mode": "tdd",
+    "tx_power": [
+      {
+        "coeff": null,
+        "min": 0,
+        "max": 0
+      },
+      {
+        "coeff": null,
+        "min": 0,
+        "max": 0
+      }
+    ]
+  },
+  "B41-BRUTE-2530-2550": {
+    "range": "2530MHz - 2550MHz",
+    "lte_frequency": 2540,
+    "bandwidth": "20 MHz",
+    "lte_band": 41,
+    "nr_frequency": 2540,
+    "nr_bandwidth": "50 MHz",
+    "nr_band": 41,
+    "ssb_pos_bitmap": "10000000",
+    "rf_mode": "tdd",
+    "tx_power": [
+      {
+        "coeff": null
+      },
+      {
+        "coeff": null
+      }
+    ]
+  },
+  "B8-BRUTE-947-960": {
+    "range": "947MHz - 960MHz",
+    "lte_frequency": 953.5,
+    "bandwidth": "10 MHz",
+    "lte_band": 8,
+    "nr_frequency": 953.5,
+    "nr_bandwidth": "10 MHz",
+    "nr_band": 8,
+    "ssb_pos_bitmap": "1000",
+    "rf_mode": "fdd",
+    "tx_power": [
+      {
+        "coeff": null
+      },
+      {
+        "coeff": null
+      }
+    ]
+  },
   "B28": {
     "range": "758MHz - 803MHz",
     "lte_frequency": 792,
