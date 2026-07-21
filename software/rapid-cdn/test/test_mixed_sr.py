@@ -36,8 +36,8 @@ frontend nodes are still on an OLD release.
 
 Each test brings up a single cluster where the control plane and
 ``caddy-frontend-1`` run the NEW software release under test (the local
-checkout) while ``caddy-frontend-2`` runs an OLD software release. The supported
-mixed-SR window has a lower bound, so there are two concepts:
+checkout) while ``caddy-frontend-2`` runs an OLD software release. There are
+three concepts:
 
 * SERVES (1.0.496) -- an OLD frontend recent enough to share the current
   master<->frontend parameter contract instantiates and serves traffic (with a
@@ -47,6 +47,11 @@ mixed-SR window has a lower bound, so there are two concepts:
   after 1.0.469); its input schema has ``additionalProperties: false`` and
   rejects them, so the OLD frontend cannot instantiate. This pins the lower
   bound of the supported window.
+* FIXED (1.0.469 + patch) -- the same OLD release with the proposed fix applied
+  (relax the sub-instance input schemas to ``additionalProperties: true``, see
+  ``PATCH_FILENAME``) now instantiates in the mixed cluster. The patch is
+  applied to a checkout materialised from the tag at test time (see
+  ``_materialisePatchedCheckout``), so the fix stays a single visible file.
 
 Bump the pinned tags as releases advance (same convention as
 ``software/theia/test/upgrade_tests.py``).
@@ -56,6 +61,9 @@ import glob
 import http.client
 import json
 import os
+import shutil
+import subprocess
+import unittest
 
 from slapos.slap.standalone import SlapOSNodeInstanceError
 from slapos.testing.testcase import installSoftwareUrlList
@@ -71,15 +79,68 @@ REJECTED_SOFTWARE_RELEASE_URL = (
   'https://lab.nexedi.com/nexedi/slapos/raw/1.0.469'
   '/software/rapid-cdn/software.cfg')
 
+# The FIXED release is 1.0.469 with the schema-relaxation patch applied. Its
+# source can't be a tag URL (a URL can't be patched), so it is materialised at
+# test time: a checkout is extracted from the tag and patched with the committed
+# file below. Requires the tag to be present in the git clone.
+FIXED_SOFTWARE_RELEASE_TAG = '1.0.469'
+PATCH_FILENAME = 'rapid-cdn-1.0.469-relax-subinstance-schemas.patch'
+_REPO_ROOT = os.path.abspath(os.path.join(
+  os.path.dirname(__file__), os.pardir, os.pardir, os.pardir))
+_PATCH_PATH = os.path.join(os.path.dirname(__file__), PATCH_FILENAME)
+_PATCHED_CHECKOUT_DIR = os.path.join(
+  os.path.realpath(os.environ.get(
+    'SLAPOS_TEST_WORKING_DIR', os.path.join(os.getcwd(), '.slapos'))),
+  'rapid-cdn-1.0.469-patched')
+FIXED_SOFTWARE_RELEASE_URL = os.path.join(
+  _PATCHED_CHECKOUT_DIR, 'software', 'rapid-cdn', 'software.cfg')
+
+
+def _fixedSoftwareReleaseTagAvailable():
+  try:
+    subprocess.check_call(
+      ['git', '-C', _REPO_ROOT, 'rev-parse', '--verify', '--quiet',
+       FIXED_SOFTWARE_RELEASE_TAG + '^{commit}'],
+      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+  except (OSError, subprocess.CalledProcessError):
+    return False
+  return True
+
+
+def _materialisePatchedCheckout():
+  """Extract the FIXED tag with ``git archive`` and apply the committed patch,
+  yielding a full, patched on-disk checkout to build the FIXED release from."""
+  if os.path.exists(_PATCHED_CHECKOUT_DIR):
+    shutil.rmtree(_PATCHED_CHECKOUT_DIR)
+  os.makedirs(_PATCHED_CHECKOUT_DIR)
+  archive = subprocess.Popen(
+    ['git', '-C', _REPO_ROOT, 'archive', FIXED_SOFTWARE_RELEASE_TAG],
+    stdout=subprocess.PIPE)
+  try:
+    subprocess.check_call(
+      ['tar', '-x', '-C', _PATCHED_CHECKOUT_DIR], stdin=archive.stdout)
+  finally:
+    archive.stdout.close()
+    archive.wait()
+  if archive.returncode != 0:
+    raise subprocess.CalledProcessError(archive.returncode, 'git archive')
+  # git apply rejects the extracted absolute paths (not a repo), so use patch
+  subprocess.check_call(
+    ['patch', '-p1', '-d', _PATCHED_CHECKOUT_DIR, '-i', _PATCH_PATH])
+
 
 def setUpModule():
+  software_url_list = [
+    test.SlapOSInstanceTestCase.getSoftwareURL(),
+    SERVES_SOFTWARE_RELEASE_URL,
+    REJECTED_SOFTWARE_RELEASE_URL,
+  ]
+  if _fixedSoftwareReleaseTagAvailable():
+    _materialisePatchedCheckout()
+    software_url_list.append(FIXED_SOFTWARE_RELEASE_URL)
   installSoftwareUrlList(
     test.SlapOSInstanceTestCase,
-    [
-      test.SlapOSInstanceTestCase.getSoftwareURL(),
-      SERVES_SOFTWARE_RELEASE_URL,
-      REJECTED_SOFTWARE_RELEASE_URL,
-    ],
+    software_url_list,
     debug=test.SlapOSInstanceTestCase._debug,
   )
 
@@ -271,6 +332,31 @@ class _MixedFrontendRejectedTestMixin(_MixedFrontendSoftwareReleaseMixin):
     self.assertEqual(1, len(self._frontendHaproxyCfgList()))
 
 
+class _MixedFrontendFixedTestMixin(_MixedFrontendSoftwareReleaseMixin):
+  """The OLD frontend, patched to relax its sub-instance input schema
+  (``additionalProperties: true``, per the forum proposal), now instantiates in
+  the mixed cluster. A lighter check than SERVES: it asserts the patched OLD
+  frontend builds -- i.e. no longer hits the schema rejection -- without driving
+  live traffic."""
+
+  def test_patched_old_frontend_instantiates(self):
+    ipv6_collision = not self.frontends1And2HaveDifferentIPv6()
+    # frontend-2 (patched OLD) started, NEW frontend-1 stopped to avoid the
+    # single-IPv4 clash; a stopped frontend can leave a red promise, tolerated
+    # unless the frontends also collide on IPv6.
+    self._requestMixedCluster('stopped', 'started')
+    try:
+      self.slap.waitForInstance(self.instance_max_retry)
+    except Exception:
+      if ipv6_collision:
+        raise
+
+    # Both frontends rendered their configuration -> the patched OLD frontend
+    # built, where the unpatched one is rejected (see the REJECTED test).
+    self.assertEqual(2, len(self._frontendHaproxyCfgList()))
+    self._assertControlPlaneRunsNewSoftwareRelease()
+
+
 class TestMixedFrontendSoftwareRelease1_0_496(
     _MixedFrontendServesTestMixin,
     test.SlaveHttpFrontendTestCase, test.ReplicateSlaveMixin):
@@ -288,6 +374,23 @@ class TestMixedFrontendSoftwareReleaseRejected1_0_469(
     _MixedFrontendRejectedTestMixin,
     test.SlaveHttpFrontendTestCase, test.ReplicateSlaveMixin):
   old_software_release_url = REJECTED_SOFTWARE_RELEASE_URL
+  instance_parameter_dict = {
+    'domain': 'example.com',
+    'port': test.HTTPS_PORT,
+    'plain_http_port': test.HTTP_PORT,
+    'kedifa_port': test.KEDIFA_PORT,
+    'caucase_port': test.CAUCASE_PORT,
+  }
+
+
+@unittest.skipUnless(
+  _fixedSoftwareReleaseTagAvailable(),
+  'git tag %s not available in the checkout, cannot build the patched release'
+  % FIXED_SOFTWARE_RELEASE_TAG)
+class TestMixedFrontendSoftwareReleaseFixed1_0_469(
+    _MixedFrontendFixedTestMixin,
+    test.SlaveHttpFrontendTestCase, test.ReplicateSlaveMixin):
+  old_software_release_url = FIXED_SOFTWARE_RELEASE_URL
   instance_parameter_dict = {
     'domain': 'example.com',
     'port': test.HTTPS_PORT,
