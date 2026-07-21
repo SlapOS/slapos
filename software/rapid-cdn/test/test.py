@@ -2961,17 +2961,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             'Bad Request', result_verb.text, verb)
         elif self.max_http_version == '3':
           self.assertIsNotNone(exception)
-          self.assertEqual(exception.command_returncode, 95)
-          # XXX: Ignore command_error comparision
-          #      see https://github.com/curl/curl/issues/20195
+          # A refused CONNECT over HTTP/3 races between the h3 layer
+          # reporting the error (95) and the connection dropping while
+          # receiving (56); the message is likewise unstable (curl #20195).
+          self.assertIn(exception.command_returncode, (56, 95))
         elif self.max_http_version == '2':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 92)
-          self.assertEqual(
-            exception.command_error,
-            f'curl: (92) QUIC: connection to {TEST_IP} port '
-            f'{HTTPS_PORT} refused\n'
-          )
+          # curl races between reporting the refused QUIC connection and
+          # falling back to HTTP/2 where the stream is reset; both exit 92
+          # but the message differs, so it is not asserted (curl #20195).
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
@@ -5253,17 +5252,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             'Bad Request', result_verb.text, verb)
         elif self.max_http_version == '3':
           self.assertIsNotNone(exception)
-          self.assertEqual(exception.command_returncode, 95)
-          # XXX: Ignore command_error comparision
-          #      see https://github.com/curl/curl/issues/20195
+          # A refused CONNECT over HTTP/3 races between the h3 layer
+          # reporting the error (95) and the connection dropping while
+          # receiving (56); the message is likewise unstable (curl #20195).
+          self.assertIn(exception.command_returncode, (56, 95))
         elif self.max_http_version == '2':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 92)
-          self.assertEqual(
-            exception.command_error,
-            f'curl: (92) QUIC: connection to {TEST_IP} port '
-            f'{HTTPS_PORT} refused\n'
-          )
+          # curl races between reporting the refused QUIC connection and
+          # falling back to HTTP/2 where the stream is reset; both exit 92
+          # but the message differs, so it is not asserted (curl #20195).
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
