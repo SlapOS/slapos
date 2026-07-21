@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Values returned by Rapid.CDN KeDiFa instanciation",
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "slave-kedifa-information": {
       "description": "JSON mapping each slave reference to its KeDiFa access information.",
