@@ -48,5 +48,5 @@
       "default": 4000
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }
