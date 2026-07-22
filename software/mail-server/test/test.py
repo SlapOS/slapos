@@ -76,7 +76,8 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       "_": json.dumps(
         {
           "mail-domains": [
-            "example.com"
+            "example.com",
+            "bogofilter-test.example.com",
           ],
           "inbound-relay": {"enable": False},
           "test-account": True,  # Enable test account creation
@@ -289,7 +290,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     host = parameter_dict["imap-smtp-ipv6"]
     smtp_port = int(parameter_dict["smtp-port"])
     imap_port = int(parameter_dict["imap-port"])
-    to_addr = "testmail@example.com"
+    to_addr = "TestMail@Example.Com"
     from_addr = "unknown@unknown.domain"
     password = "password123"
 
@@ -328,6 +329,21 @@ class PostfixTestCase(SlapOSInstanceTestCase):
         headers,
         "X-Bogosity header missing, bogofilter did not process the message",
       )
+      self.assertTrue(os.path.exists(
+        os.path.join(
+          self.computer_partition_root_path,
+          "bogofilter",
+          to_addr.lower(),
+          "wordlist.db",
+        )
+      ))
+      self.assertFalse(os.path.exists(
+        os.path.join(
+          self.computer_partition_root_path,
+          "bogofilter",
+          to_addr,
+        )
+      ))
     except AssertionError:
       raise
     except Exception as e:
@@ -338,6 +354,74 @@ class PostfixTestCase(SlapOSInstanceTestCase):
           imap.logout()
         except Exception:
           pass
+
+  def test_bogofilter_trains_first_message_moved_to_junk(self):
+    """Moving mail to Junk creates and trains a new per-user database."""
+    parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()["_"]
+    )
+    host = parameter_dict["imap-smtp-ipv6"]
+    imap_port = int(parameter_dict["imap-port"])
+    address = "testmail@bogofilter-test.example.com"
+    login_address = "TestMail@Bogofilter-Test.Example.Com"
+    password = "password123"
+    wordlist_path = os.path.join(
+      self.computer_partition_root_path,
+      "bogofilter",
+      address,
+      "wordlist.db",
+    )
+    self.assertFalse(
+      os.path.exists(wordlist_path),
+      "Test account unexpectedly already has a bogofilter database",
+    )
+
+    msg = MIMEText("A unique message to train as spam")
+    msg["Subject"] = "Bogofilter spam training test"
+    msg["From"] = "sender@example.net"
+    msg["To"] = address
+
+    imap = imaplib.IMAP4(host, imap_port, timeout=10)
+    try:
+      imap.starttls(ssl_context=self._get_ssl_context())
+      imap.login(login_address, password)
+      result, _ = imap.create("Junk")
+      self.assertEqual(result, "OK")
+      result, _ = imap.append("INBOX", None, None, msg.as_bytes())
+      self.assertEqual(result, "OK")
+      result, _ = imap.select("INBOX")
+      self.assertEqual(result, "OK")
+      result, msg_ids = imap.search(None, "ALL")
+      self.assertEqual(result, "OK")
+      message_id = msg_ids[0].split()[-1]
+      result, _ = imap._simple_command("MOVE", message_id, "Junk")
+      self.assertEqual(result, "OK")
+    finally:
+      try:
+        imap.logout()
+      except Exception:
+        pass
+
+    for _ in range(20):
+      if os.path.exists(wordlist_path) and os.path.getsize(wordlist_path) > 0:
+        break
+      time.sleep(0.5)
+    self.assertTrue(
+      os.path.exists(wordlist_path),
+      "Moving a message to Junk did not create a bogofilter database",
+    )
+    self.assertGreater(
+      os.path.getsize(wordlist_path),
+      0,
+      "Moving a message to Junk did not train bogofilter",
+    )
+    self.assertFalse(os.path.exists(
+      os.path.join(
+        self.computer_partition_root_path,
+        "bogofilter",
+        login_address,
+      )
+    ))
 
 
 class OrsTestCase(SlapOSInstanceTestCase):
