@@ -1,0 +1,44 @@
+diff --git a/software/rapid-cdn/buildout.hash.cfg b/software/rapid-cdn/buildout.hash.cfg
+index a206248e6..f0dd81b19 100644
+--- a/software/rapid-cdn/buildout.hash.cfg
++++ b/software/rapid-cdn/buildout.hash.cfg
+@@ -138,7 +138,7 @@ md5sum = 538bead9635d6149144b9579a829f4e0
+ 
+ [instance-kedifa-input-schema.json]
+ filename = instance-kedifa-input-schema.json
+-md5sum = 527e885f48f5b9250c2be866a16fad68
++md5sum = b53e04398abe198848e1fc87f4ccc1d2
+ 
+ [instance-kedifa-output-schema.json]
+ filename = instance-kedifa-output-schema.json
+@@ -150,7 +150,7 @@ md5sum = 072531d07421b87170a4ad443ba82a58
+ 
+ [instance-frontend-input-schema.json]
+ filename = instance-frontend-input-schema.json
+-md5sum = 4e8d7bfba9d0148e8bec0698ea42fc49
++md5sum = 6f97563d918562754010f9550d159542
+ 
+ [instance-output-schema.json]
+ filename = instance-output-schema.json
+diff --git a/software/rapid-cdn/instance-frontend-input-schema.json b/software/rapid-cdn/instance-frontend-input-schema.json
+index 416672959..0c472f4c6 100644
+--- a/software/rapid-cdn/instance-frontend-input-schema.json
++++ b/software/rapid-cdn/instance-frontend-input-schema.json
+@@ -195,5 +195,5 @@
+       "default": 23433
+     }
+   },
+-  "additionalProperties": false
++  "additionalProperties": true
+ }
+diff --git a/software/rapid-cdn/instance-kedifa-input-schema.json b/software/rapid-cdn/instance-kedifa-input-schema.json
+index 949a3ed47..560c957f1 100644
+--- a/software/rapid-cdn/instance-kedifa-input-schema.json
++++ b/software/rapid-cdn/instance-kedifa-input-schema.json
+@@ -59,5 +59,5 @@
+       "default": 4000
+     }
+   },
+-  "additionalProperties": false
++  "additionalProperties": true
+ }
