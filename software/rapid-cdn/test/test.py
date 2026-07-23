@@ -11347,6 +11347,109 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
     self.assertIn('shared-error-page-information', conn)
     self.assertNotIn('slave-error-page-information', conn)
 
+  # --- resilience / scalability (bug #20260722-9BC510) ------------------------
+
+  def _epm_host_port(self):
+    parsed = urllib.parse.urlparse(self.sync_url)
+    return parsed.hostname, parsed.port
+
+  def _open_stalled_connection(self):
+    """Open a TLS connection, complete the handshake, then send only a partial
+    request and never finish it.
+
+    This reproduces the established-but-idle connection the 2026-07-22 incident
+    found the manager blocked in ``read()`` on: the peer completed the
+    handshake, then its further bytes (and its FIN/RST) never arrived.
+    """
+    host, port = self._epm_host_port()
+    client_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    client_ctx.check_hostname = False
+    client_ctx.verify_mode = ssl.CERT_NONE
+    raw = socket.create_connection((host, port), timeout=30)
+    tls = client_ctx.wrap_socket(raw, server_hostname=None)
+    # A request line with no terminating CRLF: the server starts reading a
+    # request but can never complete one, so its handler blocks in read.
+    tls.sendall(b'GET /sync/')
+    return tls
+
+  def test_stalled_client_does_not_wedge_manager(self):
+    """A stalled/half-open client must not block the whole manager.
+
+    Regression for bug #20260722-9BC510: on the old single-threaded HTTPServer
+    a single established connection whose peer stopped sending wedged the
+    service permanently and filled the listen backlog.  The threaded caucase
+    WSGI server keeps /sync responsive while such connections are held open.
+    """
+    stalled = []
+    try:
+      # More than the old listen backlog (5), to also cover the backlog-fill
+      # part of the incident.
+      for _ in range(10):
+        stalled.append(self._open_stalled_connection())
+
+      ok = 0
+      begin = time.time()
+      while time.time() - begin < 30:
+        result = mimikra.get(
+          self.sync_url, verify=self._EPM_CERT_FILE, timeout=10)
+        self.assertEqual(
+          result.status_code, 200,
+          'sync returned %s while %d clients were stalled'
+          % (result.status_code, len(stalled)))
+        ok += 1
+        if ok >= 5:
+          break
+      self.assertGreaterEqual(
+        ok, 5,
+        'sync did not stay responsive while clients were stalled '
+        '(only %d successful probes)' % ok)
+    finally:
+      for tls in stalled:
+        try:
+          tls.close()
+        except Exception:
+          pass
+
+  def test_concurrent_sync_requests(self):
+    """Many simultaneous /sync clients are all served without error.
+
+    Proves the manager serves connections concurrently (threaded server) rather
+    than one-at-a-time as the old single-threaded HTTPServer did.
+    """
+    WORKERS = 20
+    DURATION_SECONDS = 10
+    stop_event = threading.Event()
+    counters = {'ok': 0, 'err': 0}
+    lock = threading.Lock()
+
+    def worker():
+      while not stop_event.is_set():
+        try:
+          r = mimikra.get(
+            self.sync_url, verify=self._EPM_CERT_FILE, timeout=30)
+          with lock:
+            counters['ok' if r.status_code == 200 else 'err'] += 1
+        except Exception:
+          with lock:
+            counters['err'] += 1
+
+    threads = [threading.Thread(target=worker) for _ in range(WORKERS)]
+    for t in threads:
+      t.daemon = True
+      t.start()
+    try:
+      time.sleep(DURATION_SECONDS)
+    finally:
+      stop_event.set()
+      for t in threads:
+        t.join(timeout=60)
+
+    self.assertGreater(counters['ok'], 0, 'no successful concurrent /sync')
+    self.assertEqual(
+      counters['err'], 0,
+      'concurrent /sync produced %d errors (ok=%d)'
+      % (counters['err'], counters['ok']))
+
 
 class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
   """Regression test: EPM detects a shared ref added after initial startup.
