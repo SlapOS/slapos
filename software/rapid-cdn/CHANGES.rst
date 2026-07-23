@@ -20,6 +20,18 @@ Unreleased
 
 Changes on ``master`` since 1.0.496 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.496...master>`__).
 
+Node schemas accept unknown parameters for mixed-release clusters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The frontend, kedifa and error-page-manager input schemas, and the
+cluster/kedifa/error-page-manager output schemas, now allow additional
+properties. A node running an older release can then be requested by a newer
+master (or the reverse) without failing parameter validation, so the master
+instance can be upgraded first and frontend nodes one at a time, with fast
+rollback. The operator-facing cluster input schema stays strict.
+(`!2154 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2154>`__)
+
 Error Page Manager allocation SLA
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
