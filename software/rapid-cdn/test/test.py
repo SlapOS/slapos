@@ -410,6 +410,9 @@ class TestDataMixin(object):
       # can't be sure regarding its presence
       'frontend_haproxy_configuration_last_state',
       'validate_configuration_state_signature',
+      # atomic-write temporary of the state signatures above, present only
+      # in the window between write and rename, so racy to assert
+      '.tmp',
       # run by cron from time to time
       'monitor/monitor-collect.pid',
       # no control regarding if it would or not be running
