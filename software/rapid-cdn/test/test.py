@@ -10596,6 +10596,100 @@ class TestHaproxyFormat(unittest.TestCase):
     self.assertEqual(body, html)
 
 
+class TestErrorPageSeed(unittest.TestCase):
+  """Unit tests for the buildout seed (software.error_page_seed_main)."""
+
+  SHARED_CODES = ['502', '503', '504']
+
+  @classmethod
+  def setUpClass(cls):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+      '_software_src_seed',
+      os.path.normpath(os.path.join(
+        os.path.dirname(__file__), '..', 'software.py')))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    cls._mod = mod
+
+  def _seed(self, error_pages_dir, builtin_dir, shared_references):
+    config = {
+      'error_pages_dir': error_pages_dir,
+      'builtin_dir': builtin_dir,
+      'shared_references': shared_references,
+    }
+    config_path = os.path.join(builtin_dir, '..', 'seed.json')
+    with open(config_path, 'w') as f:
+      json.dump(config, f)
+    old_argv = sys.argv
+    sys.argv = ['rapid-cdn-error-page-seed', config_path]
+    try:
+      self._mod.error_page_seed_main()
+    finally:
+      sys.argv = old_argv
+
+  def _make_builtins(self, builtin_dir):
+    os.makedirs(builtin_dir)
+    for code in ['400', '404', '408', '500', '502', '503', '504']:
+      with open(os.path.join(builtin_dir, code + '.html'), 'w') as f:
+        f.write('<html>builtin %s</html>' % code)
+
+  def test_seed_creates_cluster_files_and_fallback_symlinks(self):
+    tmp = tempfile.mkdtemp()
+    try:
+      builtin_dir = os.path.join(tmp, 'builtin')
+      error_pages_dir = os.path.join(tmp, 'error-pages')
+      self._make_builtins(builtin_dir)
+      self._seed(error_pages_dir, builtin_dir, ['slave-a', 'slave-b'])
+
+      # cluster defaults are real files wrapped in the haproxy envelope
+      for code in ['400', '404', '408', '500', '502', '503', '504']:
+        path = os.path.join(error_pages_dir, 'cluster', code + '.http')
+        self.assertTrue(os.path.isfile(path) and not os.path.islink(path))
+        with open(path) as f:
+          self.assertTrue(f.read().startswith('HTTP/1.0 %s ' % code))
+
+      # every slave gets a fallback symlink to the cluster page, for the
+      # per-slave codes only
+      for ref in ['slave-a', 'slave-b']:
+        for code in self.SHARED_CODES:
+          link = os.path.join(error_pages_dir, 'shared', ref, code + '.http')
+          self.assertTrue(os.path.islink(link), '%s should be a symlink' % link)
+          self.assertEqual(
+            os.readlink(link), os.path.join('..', '..', 'cluster', code + '.http'))
+          # the symlink resolves to the cluster file
+          self.assertTrue(os.path.isfile(link))
+        # no per-slave file for cluster-only codes
+        self.assertFalse(os.path.exists(
+          os.path.join(error_pages_dir, 'shared', ref, '404.http')))
+    finally:
+      shutil.rmtree(tmp)
+
+  def test_seed_is_idempotent_and_keeps_real_overrides(self):
+    tmp = tempfile.mkdtemp()
+    try:
+      builtin_dir = os.path.join(tmp, 'builtin')
+      error_pages_dir = os.path.join(tmp, 'error-pages')
+      self._make_builtins(builtin_dir)
+      self._seed(error_pages_dir, builtin_dir, ['slave-a'])
+
+      # Simulate the updater having installed a real override.
+      override = os.path.join(error_pages_dir, 'shared', 'slave-a', '503.http')
+      os.unlink(override)
+      with open(override, 'w') as f:
+        f.write('HTTP/1.0 503 Service Unavailable\r\n\r\nreal override')
+
+      # Re-seeding must not clobber the real override, and leaves symlinks alone.
+      self._seed(error_pages_dir, builtin_dir, ['slave-a'])
+      self.assertFalse(os.path.islink(override))
+      with open(override) as f:
+        self.assertIn('real override', f.read())
+      self.assertTrue(os.path.islink(
+        os.path.join(error_pages_dir, 'shared', 'slave-a', '502.http')))
+    finally:
+      shutil.rmtree(tmp)
+
+
 class TestErrorPageUpdaterOnUpdate(unittest.TestCase):
   """Unit tests for the on_update command in instance-slave-list.cfg.in.
 
@@ -10819,17 +10913,30 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
 
   # --- sync / manifest --------------------------------------------------------
 
-  def test_sync_returns_manifest_with_all_default_files(self):
-    result = self._get(self.sync_url)
-    self.assertEqual(result.status_code, 200)
-    manifest = json.loads(result.text)
+  def test_sync_manifest_lists_cluster_files_and_only_real_overrides(self):
+    """Manifest carries the cluster defaults plus only real per-slave overrides."""
+    manifest = json.loads(self._get(self.sync_url).text)
     self.assertIsInstance(manifest, dict)
     for code in self.SUPPORTED_CODES:
       self.assertIn('cluster/%s.http' % code, manifest,
-                    'manifest missing default/%s.http' % code)
-    for code in self.SHARED_CODES:
-      key = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
-      self.assertIn(key, manifest, 'manifest missing %s' % key)
+                    'manifest missing cluster/%s.http' % code)
+    self.assertEqual(
+      [k for k in manifest if k.startswith('shared/')], [],
+      'no shared file must be published while no slave overrides a page')
+
+    # A real override shows up, and only for that slave+code.
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    key = 'shared/%s/503.http' % self.TEST_SLAVE_REF
+    try:
+      self.assertEqual(
+        self._put(upload_base + '503', '<html>o</html>').status_code, 204)
+      manifest = json.loads(self._get(self.sync_url).text)
+      self.assertEqual(
+        [k for k in manifest if k.startswith('shared/')], [key])
+    finally:
+      self._delete(upload_base + '503')
+    manifest = json.loads(self._get(self.sync_url).text)
+    self.assertNotIn(key, manifest)
 
   # --- default pages ----------------------------------------------------------
 
@@ -10930,21 +11037,21 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
     self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
     self.assertNotIn(custom_html, result.text)
 
-  def test_operator_change_propagates_to_slave_haproxy_file(self):
-    """Operator override of a slave-eligible code updates the slave file."""
+  def test_operator_change_updates_cluster_file_not_per_slave(self):
+    """An operator page lands in the cluster file, not in a per-slave file."""
     code = '502'
     op_html = '<html><body>Operator 502</body></html>'
     op_url = self.operator_url + code
-
-    self._put(op_url, op_html)
-
-    # Slave has no override, so its haproxy file should use operator HTML
-    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertEqual(result.status_code, 200)
-    self.assertIn(op_html, result.text)
-
-    self._delete(op_url)
+    try:
+      self._put(op_url, op_html)
+      cluster = self._get('%s/cluster/%s.http' % (self.base_url, code))
+      self.assertEqual(cluster.status_code, 200)
+      self.assertIn(op_html, cluster.text)
+      shared = self._get(
+        '%s/shared/%s/%s.http' % (self.base_url, self.TEST_SLAVE_REF, code))
+      self.assertEqual(shared.status_code, 404)
+    finally:
+      self._delete(op_url)
 
   # --- slave ------------------------------------------------------------------
 
@@ -10975,48 +11082,52 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
                        'slave upload of code %s should be rejected' % code)
 
   def test_slave_override_takes_precedence_over_operator(self):
-    """Slave-specific HTML overrides the operator default for that slave."""
+    """A slave override wins in its own file; removing it drops the file."""
     code = '504'
     upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
     op_url = self.operator_url + code
     op_html = '<html><body>Op 504</body></html>'
     slave_html = '<html><body>Slave 504</body></html>'
+    shared_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    try:
+      self._put(op_url, op_html)
+      self._put(upload_base + code, slave_html)
 
-    self._put(op_url, op_html)
-    self._put(upload_base + code, slave_html)
+      result = self._get('%s/%s' % (self.base_url, shared_path))
+      self.assertEqual(result.status_code, 200)
+      self.assertIn(slave_html, result.text)
+      self.assertNotIn(op_html, result.text)
 
-    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertEqual(result.status_code, 200)
-    self.assertIn(slave_html, result.text)
-    self.assertNotIn(op_html, result.text)
+      # Removing the override drops the per-slave file; the operator page is
+      # then served from the cluster fallback.
+      self._delete(upload_base + code)
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, shared_path)).status_code, 404)
+      cluster = self._get('%s/cluster/%s.http' % (self.base_url, code))
+      self.assertIn(op_html, cluster.text)
+    finally:
+      self._delete(upload_base + code)
+      self._delete(op_url)
 
-    # After slave deletes override, operator HTML is restored
-    self._delete(upload_base + code)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertEqual(result.status_code, 200)
-    self.assertIn(op_html, result.text)
-
-    # Cleanup operator
-    self._delete(op_url)
-
-  def test_slave_delete_reverts_to_operator_html(self):
-    """Slave DELETE falls back to operator HTML if one exists."""
+  def test_slave_delete_removes_file_operator_served_from_cluster(self):
+    """Slave DELETE removes its file; the operator page comes from cluster."""
     code = '502'
     upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
     op_url = self.operator_url + code
     op_html = '<html><body>Op fallback 502</body></html>'
     slave_html = '<html><body>Slave 502</body></html>'
+    shared_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    try:
+      self._put(op_url, op_html)
+      self._put(upload_base + code, slave_html)
+      self._delete(upload_base + code)
 
-    self._put(op_url, op_html)
-    self._put(upload_base + code, slave_html)
-    self._delete(upload_base + code)
-
-    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertIn(op_html, result.text)
-
-    self._delete(op_url)
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, shared_path)).status_code, 404)
+      cluster = self._get('%s/cluster/%s.http' % (self.base_url, code))
+      self.assertIn(op_html, cluster.text)
+    finally:
+      self._delete(op_url)
 
   # --- authentication ---------------------------------------------------------
 
@@ -11039,24 +11150,27 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
 
   # --- operator delete reverts slave file to builtin --------------------------
 
-  def test_operator_delete_reverts_slave_haproxy_file_to_builtin(self):
-    """Operator DELETE reverts slave haproxy file to built-in when slave has no override."""
+  def test_operator_delete_reverts_cluster_file_to_builtin(self):
+    """Operator DELETE reverts the cluster file to builtin."""
     code = '503'
     op_html = '<html><body>Operator 503 revert test</body></html>'
     op_url = self.operator_url + code
-    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    cluster_path = 'cluster/%s.http' % code
+    shared_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
 
     self._put(op_url, op_html)
-
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertIn(op_html, result.text)
+    self.assertIn(op_html, self._get('%s/%s' % (self.base_url, cluster_path)).text)
+    self.assertEqual(
+      self._get('%s/%s' % (self.base_url, shared_path)).status_code, 404)
 
     self._delete(op_url)
 
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    result = self._get('%s/%s' % (self.base_url, cluster_path))
     self.assertEqual(result.status_code, 200)
     self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
     self.assertNotIn(op_html, result.text)
+    self.assertEqual(
+      self._get('%s/%s' % (self.base_url, shared_path)).status_code, 404)
 
   # --- cluster-only codes -----------------------------------------------------
 
@@ -11090,27 +11204,33 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
     upload_url = self.slave_info[self.TEST_SLAVE_REF]['upload-url'] + code
     haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
 
-    self._put(op_url, op_html)
-    self._put(upload_url, slave_html)
+    cluster_path = 'cluster/%s.http' % code
+    try:
+      self._put(op_url, op_html)
+      self._put(upload_url, slave_html)
 
-    # Slave override wins
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertIn(slave_html, result.text)
-    self.assertNotIn(op_html, result.text)
+      # Slave override wins, in its own file.
+      result = self._get('%s/%s' % (self.base_url, haproxy_path))
+      self.assertIn(slave_html, result.text)
+      self.assertNotIn(op_html, result.text)
 
-    # DELETE slave override: operator page is served
-    self._delete(upload_url)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertIn(op_html, result.text)
-    self.assertNotIn(slave_html, result.text)
+      # DELETE slave override: its file disappears, operator served from cluster.
+      self._delete(upload_url)
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, haproxy_path)).status_code, 404)
+      self.assertIn(
+        op_html, self._get('%s/%s' % (self.base_url, cluster_path)).text)
 
-    # DELETE operator: built-in is served
-    self._delete(op_url)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertEqual(result.status_code, 200)
-    self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
-    self.assertNotIn(op_html, result.text)
-    self.assertNotIn(slave_html, result.text)
+      # DELETE operator: cluster reverts to builtin.
+      self._delete(op_url)
+      result = self._get('%s/%s' % (self.base_url, cluster_path))
+      self.assertEqual(result.status_code, 200)
+      self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
+      self.assertNotIn(op_html, result.text)
+      self.assertNotIn(slave_html, result.text)
+    finally:
+      self._delete(upload_url)
+      self._delete(op_url)
 
   # --- slave override isolation -----------------------------------------------
 
@@ -11123,22 +11243,25 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
     upload_url_a = self.slave_info[self.TEST_SLAVE_REF]['upload-url'] + code
     haproxy_path_a = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
     haproxy_path_b = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF_2, code)
+    try:
+      self._put(op_url, op_html)
+      self._put(upload_url_a, slave_a_html)
 
-    self._put(op_url, op_html)
-    self._put(upload_url_a, slave_a_html)
+      # Slave-A has its own override file.
+      result = self._get('%s/%s' % (self.base_url, haproxy_path_a))
+      self.assertIn(slave_a_html, result.text)
+      self.assertNotIn(op_html, result.text)
 
-    # Slave-A has its own override
-    result = self._get('%s/%s' % (self.base_url, haproxy_path_a))
-    self.assertIn(slave_a_html, result.text)
-    self.assertNotIn(op_html, result.text)
-
-    # Slave-B has no override — gets operator HTML
-    result = self._get('%s/%s' % (self.base_url, haproxy_path_b))
-    self.assertIn(op_html, result.text)
-    self.assertNotIn(slave_a_html, result.text)
-
-    self._delete(upload_url_a)
-    self._delete(op_url)
+      # Slave-B has no override: no per-slave file; it uses the cluster page,
+      # which carries the operator HTML and never slave-A's.
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, haproxy_path_b)).status_code, 404)
+      cluster = self._get('%s/cluster/%s.http' % (self.base_url, code))
+      self.assertIn(op_html, cluster.text)
+      self.assertNotIn(slave_a_html, cluster.text)
+    finally:
+      self._delete(upload_url_a)
+      self._delete(op_url)
 
   # --- '#'-prefix header reservation ------------------------------------------
 
@@ -11333,8 +11456,10 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
 
     reset_resp = self._post_form(upload_base, {'action': f'reset_{code}'})
     self.assertEqual(reset_resp.status_code, 200)
+    # Reset removes the per-slave override entirely; the slave falls back to
+    # the cluster page, so its own file is gone.
     served = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertNotIn(body, served.text)
+    self.assertEqual(served.status_code, 404)
 
   def test_shared_web_ui_rejects_wrong_token(self):
     """POST with an invalid shared token must be 401."""
@@ -11366,6 +11491,94 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
       self.requestDefaultInstance().getConnectionParameterDict()['_'])
     self.assertIn('shared-error-page-information', conn)
     self.assertNotIn('slave-error-page-information', conn)
+
+  # --- resilience / scalability -----------------------------------------------
+
+  def _epm_host_port(self):
+    parsed = urllib.parse.urlparse(self.sync_url)
+    return parsed.hostname, parsed.port
+
+  def _open_stalled_connection(self):
+    """Open a TLS connection, complete the handshake, then send a partial
+    request and never finish it -- an established-but-idle connection."""
+    host, port = self._epm_host_port()
+    client_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    client_ctx.check_hostname = False
+    client_ctx.verify_mode = ssl.CERT_NONE
+    raw = socket.create_connection((host, port), timeout=30)
+    tls = client_ctx.wrap_socket(raw, server_hostname=None)
+    # A request line with no terminating CRLF: the server starts reading a
+    # request but can never complete one, so its handler blocks in read.
+    tls.sendall(b'GET /sync/')
+    return tls
+
+  def test_stalled_client_does_not_wedge_manager(self):
+    """A stalled client must not block the manager: /sync stays responsive
+    while stalled connections are held open."""
+    stalled = []
+    try:
+      # More than the old listen backlog of 5.
+      for _ in range(10):
+        stalled.append(self._open_stalled_connection())
+
+      ok = 0
+      begin = time.time()
+      while time.time() - begin < 30:
+        result = mimikra.get(
+          self.sync_url, verify=self._EPM_CERT_FILE, timeout=10)
+        self.assertEqual(
+          result.status_code, 200,
+          'sync returned %s while %d clients were stalled'
+          % (result.status_code, len(stalled)))
+        ok += 1
+        if ok >= 5:
+          break
+      self.assertGreaterEqual(
+        ok, 5,
+        'sync did not stay responsive while clients were stalled '
+        '(only %d successful probes)' % ok)
+    finally:
+      for tls in stalled:
+        try:
+          tls.close()
+        except Exception:
+          pass
+
+  def test_concurrent_sync_requests(self):
+    """Many simultaneous /sync clients are all served concurrently without error."""
+    WORKERS = 20
+    DURATION_SECONDS = 10
+    stop_event = threading.Event()
+    counters = {'ok': 0, 'err': 0}
+    lock = threading.Lock()
+
+    def worker():
+      while not stop_event.is_set():
+        try:
+          r = mimikra.get(
+            self.sync_url, verify=self._EPM_CERT_FILE, timeout=30)
+          with lock:
+            counters['ok' if r.status_code == 200 else 'err'] += 1
+        except Exception:
+          with lock:
+            counters['err'] += 1
+
+    threads = [threading.Thread(target=worker) for _ in range(WORKERS)]
+    for t in threads:
+      t.daemon = True
+      t.start()
+    try:
+      time.sleep(DURATION_SECONDS)
+    finally:
+      stop_event.set()
+      for t in threads:
+        t.join(timeout=60)
+
+    self.assertGreater(counters['ok'], 0, 'no successful concurrent /sync')
+    self.assertEqual(
+      counters['err'], 0,
+      'concurrent /sync produced %d errors (ok=%d)'
+      % (counters['err'], counters['ok']))
 
 
 class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
@@ -11479,19 +11692,23 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
     # Cleanup
     self._delete(self.slave_info[self.SLAVE_B_REF]['upload-url'] + '503')
 
-  def test_new_slave_inherits_operator_override(self):
-    """Slave-B added after EPM startup inherits operator override, not built-in."""
+  def test_new_slave_uses_cluster_page_until_it_overrides(self):
+    """Slave-B added after EPM startup has no per-slave file; it serves the
+    cluster page (operator override) until it uploads its own."""
     code = '503'
     op_html = '<html><body>Operator 503 for new-slave inheritance test</body></html>'
     op_url = self.operator_url + code
+    shared_path = 'shared/%s/%s.http' % (self.SLAVE_B_REF, code)
 
     self._put(op_url, op_html)
     try:
-      haproxy_path = 'shared/%s/%s.http' % (self.SLAVE_B_REF, code)
-      result = self._get('%s/%s' % (self.base_url, haproxy_path))
-      self.assertEqual(result.status_code, 200)
-      self.assertIn(op_html, result.text,
-                    'New slave should inherit operator override, not built-in default')
+      # No per-slave file is materialised for the new slave; the operator page
+      # it will serve lives in the cluster file (its frontend fallback).
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, shared_path)).status_code, 404)
+      self.assertIn(
+        op_html,
+        self._get('%s/cluster/%s.http' % (self.base_url, code)).text)
     finally:
       self._delete(op_url)
 
