@@ -286,6 +286,21 @@ class AtsMixin(object):
       fh.write(''.join(self._hack_ats_original_records_config))
     self._hack_ats_restart()
 
+  def _waitForCached(self, domain, path, source_ip, body, timeout=10):
+    # ATS commits the cache write asynchronously, so a fixed sleep races it
+    # under load. Wait for the Age header (proof of a cache hit) while the
+    # backend still returns 200, so these reads are harmless.
+    begin = time.time()
+    while True:
+      result = fakeHTTPSResult(domain, path, source_ip=source_ip)
+      if 'Age' in result.headers:
+        self.assertEqual(result.status_code, http.client.OK)
+        self.assertEqual(result.text, body)
+        return
+      if time.time() - begin > timeout:
+        self.fail('Frontend did not cache %r within %ss' % (path, timeout))
+      time.sleep(0.5)
+
   def _hack_ats_restart(self):
     for process_info in self.callSupervisorMethod('getAllProcessInfo'):
       if process_info['name'].startswith(
@@ -5530,6 +5545,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # backend returns something correctly
     configureResult('200', body_200)
     checkResult(http.client.OK, body_200)
+    self._waitForCached(parameter_dict['domain'], path, source_ip, body_200)
 
     configureResult('502', body_502)
     time.sleep(1)
@@ -9699,6 +9715,8 @@ backend _health-check-default-http
     # ...and cached result, also in order to store it in the cache
     configureResult('200', body_200)
     checkResult(http.client.OK, body_200)
+    self._waitForCached(
+      parameter_dict['domain'], cached_path, source_ip, body_200)
 
     # start replying with bad status code
     result = mimikra.config(
