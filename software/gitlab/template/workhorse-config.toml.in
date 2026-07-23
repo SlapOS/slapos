@@ -1,0 +1,24 @@
+alt_document_root = '{{ document_root }}'
+# shutdown_timeout = "60s"
+# trusted_cidrs_for_x_forwarded_for = []
+# trusted_cidrs_for_propagation = []
+
+[redis]
+URL = "unix://{{ redis_socket }}"
+
+[metadata]
+  zip_reader_limit_bytes = 104857600
+
+[image_resizer]
+  max_scaler_procs = 4 # Recommendation: CPUs / 2
+  max_filesize = 250000
+
+#[[listeners]]
+#  network = "tcp"
+#  addr = "127.0.0.1:3443"
+#
+#[listeners.tls]
+#  certificate = "/path/to/certificate"
+#  key = "/path/to/private/key"
+#  min_version = "tls1.2"
+#  max_version = "tls1.3"
