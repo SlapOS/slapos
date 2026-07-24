@@ -42,7 +42,7 @@ command-line = '{{ buildout_bin_directory }}/caucased'
   --user-auto-approve-count    '{{ user_auto_approve_count }}'
   --lock-auto-approve-count
   {% if service_crt_validity != None %} --service-crt-validity '{{ service_crt_validity }}' {%- endif %}
-  {% if user_crt_validity != None %} --user-crt-validity '{{ user_crt_validity=None }}' {%- endif %}
+  {% if user_crt_validity != None %} --user-crt-validity '{{ user_crt_validity }}' {%- endif %}
 
 {% if promise -%}
 [{{ prefix }}-promise]
