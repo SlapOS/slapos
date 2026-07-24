@@ -167,9 +167,14 @@ def _haproxy_format(code, html):
   return header + html
 
 
+# Bounds the TLS handshake and every socket read/write so a stalled client is
+# reaped. Above a normal request, below the updater's 60 s /sync poll.
+EPM_SOCKET_TIMEOUT = 30
+
+
 def error_page_manager_main():
   import hashlib
-  import http.server
+  import http.client
   import json
   import logging
   import os
@@ -177,6 +182,9 @@ def error_page_manager_main():
   import ssl
   import sys
   import threading
+  import urllib.parse
+  from wsgiref.simple_server import make_server
+  from caucase.http import ThreadingWSGIServer, CaucaseWSGIRequestHandler
 
   with open(sys.argv[1]) as f:
     config = json.load(f)
@@ -224,32 +232,35 @@ def error_page_manager_main():
 
   def _refresh_haproxy_file(slot, code):
     if slot == 'cluster':
+      # Always published: every frontend falls back to the cluster page.
       haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'cluster')
-    else:
-      haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared', slot)
-    os.makedirs(haproxy_dir, exist_ok=True)
-    haproxy_path = os.path.join(haproxy_dir, f'{code}.http')
-
-    if slot == 'cluster':
+      haproxy_path = os.path.join(haproxy_dir, f'{code}.http')
       html = _read_html(os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html'))
-    else:
-      html = _read_html(os.path.join(ERROR_PAGES_DIR, 'shared', slot, f'{code}.html'))
       if html is None:
-        html = _read_html(os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html'))
+        html = _read_html(os.path.join(BUILTIN_DIR, f'{code}.html'))
+      os.makedirs(haproxy_dir, exist_ok=True)
+      with open(haproxy_path, 'w', encoding='utf-8') as f:
+        f.write(_haproxy_format(code, html))
+      return
 
+    # Publish a per-slave file only when the slave overrides this code;
+    # otherwise the frontend falls back to the cluster page. Keeps the manifest
+    # O(overrides), not O(shared instances).
+    haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared', slot)
+    haproxy_path = os.path.join(haproxy_dir, f'{code}.http')
+    html = _read_html(os.path.join(ERROR_PAGES_DIR, 'shared', slot, f'{code}.html'))
     if html is None:
-      html = _read_html(os.path.join(BUILTIN_DIR, f'{code}.html'))
-
+      if os.path.isfile(haproxy_path):
+        os.unlink(haproxy_path)
+      return
+    os.makedirs(haproxy_dir, exist_ok=True)
     with open(haproxy_path, 'w', encoding='utf-8') as f:
       f.write(_haproxy_format(code, html))
 
   def _refresh_all_for_code(code):
+    # Operator pages only feed the cluster default; per-slave overrides are
+    # independent of it, so an operator edit no longer touches the shared files.
     _refresh_haproxy_file('cluster', code)
-    shared_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared')
-    if os.path.isdir(shared_dir):
-      for ref in os.listdir(shared_dir):
-        if code in SHARED_CODES:
-          _refresh_haproxy_file(ref, code)
 
   def _build_manifest():
     manifest = {}
@@ -340,88 +351,87 @@ def error_page_manager_main():
       SHARED_CODES,
       os.path.join(ERROR_PAGES_DIR, 'shared', ref))
 
-  class Handler(http.server.BaseHTTPRequestHandler):
-    protocol_version = 'HTTP/1.1'
+  # Served by the threaded WSGI server below: each request runs in its own
+  # thread, so one stalled client cannot block the others.
+  def _parse_path(path):
+    parts = path.lstrip('/').split('/', 2)
+    section = parts[0] if parts else ''
+    token = parts[1] if len(parts) > 1 else ''
+    rest = parts[2] if len(parts) > 2 else ''
+    return section, token, rest
 
-    def log_message(self, fmt, *args):
-      logger.info(fmt % args)
+  def application(environ, start_response):
+    method = environ['REQUEST_METHOD']
+    path = environ.get('PATH_INFO', '') or ''
+    section, token, rest = _parse_path(path)
 
-    def _send(self, code, body, content_type='text/plain'):
+    def send(code, body, content_type='text/plain'):
       if isinstance(body, str):
         body = body.encode()
-      self.send_response(code)
-      self.send_header('Content-Type', content_type)
-      self.send_header('Content-Length', len(body))
-      self.end_headers()
-      self.wfile.write(body)
+      start_response(
+        '%d %s' % (code, http.client.responses.get(code, 'Unknown')),
+        [
+          ('Content-Type', content_type),
+          ('Content-Length', str(len(body))),
+        ])
+      return [body]
 
-    def _send_json(self, data, code=200):
-      self._send(code, json.dumps(data), 'application/json')
+    def send_json(data, code=200):
+      return send(code, json.dumps(data), 'application/json')
 
-    def _read_body(self):
-      length = int(self.headers.get('Content-Length', 0))
+    def read_body():
+      try:
+        length = int(environ.get('CONTENT_LENGTH') or 0)
+      except (TypeError, ValueError):
+        length = 0
       if length > 2 * 1024 * 1024:  # 2 MB limit
         return None
-      return self.rfile.read(length).decode('utf-8', errors='replace')
+      data = environ['wsgi.input'].read(length) if length > 0 else b''
+      return data.decode('utf-8', errors='replace')
 
-    def _parse_path(self):
-      parts = self.path.lstrip('/').split('/', 2)
-      section = parts[0] if parts else ''
-      token = parts[1] if len(parts) > 1 else ''
-      rest = parts[2] if len(parts) > 2 else ''
-      return section, token, rest
-
-    def do_GET(self):
-      section, token, rest = self._parse_path()
+    if method == 'GET':
       if section == 'sync':
         if token != READ_TOKEN:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         with _lock:
-          self._send_json(_build_manifest())
+          return send_json(_build_manifest())
       elif section == 'haproxy':
         if token != READ_TOKEN:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         full = os.path.normpath(
           os.path.join(ERROR_PAGES_DIR, 'haproxy', rest))
         if not full.startswith(ERROR_PAGES_DIR + os.sep + 'haproxy' + os.sep):
-          self._send(403, 'Forbidden')
-          return
+          return send(403, 'Forbidden')
         if not os.path.isfile(full):
-          self._send(404, 'Not found')
-          return
+          return send(404, 'Not found')
         with open(full, 'rb') as f:
-          self._send(200, f.read(), 'application/octet-stream')
+          return send(200, f.read(), 'application/octet-stream')
       elif section == 'operator':
         if token != OPERATOR_TOKEN:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         if not rest:
-          self._send(200, _operator_web_ui(), 'text/html')
+          return send(200, _operator_web_ui(), 'text/html')
         elif rest in SUPPORTED_CODES:
           op_file = os.path.join(ERROR_PAGES_DIR, 'operator', f'{rest}.html')
-          self._send(200, _read_html(op_file) or '', 'text/html')
+          return send(200, _read_html(op_file) or '', 'text/html')
         else:
-          self._send(404, 'Unknown code')
+          return send(404, 'Unknown code')
       elif section == 'shared':
         ref = SHARED_TOKEN_MAP.get(token)
         if ref is None:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         if not rest:
-          self._send(200, _shared_web_ui(ref), 'text/html')
+          return send(200, _shared_web_ui(ref), 'text/html')
         elif rest in SHARED_CODES:
           shared_file = os.path.join(
             ERROR_PAGES_DIR, 'shared', ref, f'{rest}.html')
-          self._send(200, _read_html(shared_file) or '', 'text/html')
+          return send(200, _read_html(shared_file) or '', 'text/html')
         else:
-          self._send(404, 'Unknown code')
+          return send(404, 'Unknown code')
       else:
-        self._send(404, 'Not found')
+        return send(404, 'Not found')
 
-    def do_POST(self):
-      section, token, rest = self._parse_path()
+    elif method == 'POST':
       if section == 'operator' and token == OPERATOR_TOKEN:
         valid_codes = SUPPORTED_CODES
         source_dir = os.path.join(ERROR_PAGES_DIR, 'operator')
@@ -434,20 +444,16 @@ def error_page_manager_main():
         def _refresh(code):
           _refresh_haproxy_file(ref, code)
       else:
-        self._send(401, 'Unauthorized')
-        return
-      import urllib.parse
-      body = self._read_body()
+        return send(401, 'Unauthorized')
+      body = read_body()
       if body is None:
-        self._send(413, 'Too large')
-        return
+        return send(413, 'Too large')
       params = urllib.parse.parse_qs(body, keep_blank_values=True)
       action = params.get('action', [''])[0]
       if action.startswith('save_'):
         code = action[5:]
         if code not in valid_codes:
-          self._send(400, 'Unknown code')
-          return
+          return send(400, 'Unknown code')
         html = params.get(f'html_{code}', [''])[0]
         with _lock:
           os.makedirs(source_dir, exist_ok=True)
@@ -457,8 +463,7 @@ def error_page_manager_main():
       elif action.startswith('reset_'):
         code = action[6:]
         if code not in valid_codes:
-          self._send(400, 'Unknown code')
-          return
+          return send(400, 'Unknown code')
         with _lock:
           source_file = os.path.join(source_dir, f'{code}.html')
           if os.path.exists(source_file):
@@ -468,112 +473,112 @@ def error_page_manager_main():
       # same UX (the form is shown again after submission) while keeping a
       # plain 200 response that integrates cleanly with non-browser HTTP
       # clients (curl-based test runners stumble on 3xx + TLS close).
-      target = self.path.rsplit('/', 1)[0] + '/'
-      body = (
+      target = path.rsplit('/', 1)[0] + '/'
+      return send(
+        200,
         b'<!DOCTYPE html><html><head>'
         b'<meta http-equiv="refresh" content="0; url=' + target.encode() +
-        b'"></head><body>Done.</body></html>')
-      self._send(200, body, 'text/html; charset=utf-8')
+        b'"></head><body>Done.</body></html>',
+        'text/html; charset=utf-8')
 
-    def do_PUT(self):
-      section, token, rest = self._parse_path()
+    elif method == 'PUT':
       if section == 'operator':
         if token != OPERATOR_TOKEN:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         code = rest
         if code not in SUPPORTED_CODES:
-          self._send(400, 'Unknown code')
-          return
-        html = self._read_body()
+          return send(400, 'Unknown code')
+        html = read_body()
         if html is None:
-          self._send(413, 'Too large')
-          return
+          return send(413, 'Too large')
         with _lock:
           os.makedirs(os.path.join(ERROR_PAGES_DIR, 'operator'), exist_ok=True)
           with open(os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html'), 'w') as f:
             f.write(html)
           _refresh_all_for_code(code)
-        self._send(204, '')
+        return send(204, '')
       elif section == 'shared':
         ref = SHARED_TOKEN_MAP.get(token)
         if ref is None:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         code = rest
         if code not in SHARED_CODES:
-          self._send(
+          return send(
             400,
             f'Shared instances may only set: {", ".join(SHARED_CODES)}')
-          return
-        html = self._read_body()
+        html = read_body()
         if html is None:
-          self._send(413, 'Too large')
-          return
+          return send(413, 'Too large')
         with _lock:
           shared_dir = os.path.join(ERROR_PAGES_DIR, 'shared', ref)
           os.makedirs(shared_dir, exist_ok=True)
           with open(os.path.join(shared_dir, f'{code}.html'), 'w') as f:
             f.write(html)
           _refresh_haproxy_file(ref, code)
-        self._send(204, '')
+        return send(204, '')
       else:
-        self._send(404, 'Not found')
+        return send(404, 'Not found')
 
-    def do_DELETE(self):
-      section, token, rest = self._parse_path()
+    elif method == 'DELETE':
       if section == 'operator':
         if token != OPERATOR_TOKEN:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         code = rest
         if code not in SUPPORTED_CODES:
-          self._send(400, 'Unknown code')
-          return
+          return send(400, 'Unknown code')
         with _lock:
           op_file = os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html')
           if os.path.exists(op_file):
             os.unlink(op_file)
           _refresh_all_for_code(code)
-        self._send(204, '')
+        return send(204, '')
       elif section == 'shared':
         ref = SHARED_TOKEN_MAP.get(token)
         if ref is None:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         code = rest
         if code not in SHARED_CODES:
-          self._send(
+          return send(
             400,
             f'Shared instances may only set: {", ".join(SHARED_CODES)}')
-          return
         with _lock:
           shared_file = os.path.join(
             ERROR_PAGES_DIR, 'shared', ref, f'{code}.html')
           if os.path.exists(shared_file):
             os.unlink(shared_file)
           _refresh_haproxy_file(ref, code)
-        self._send(204, '')
+        return send(204, '')
       else:
-        self._send(404, 'Not found')
+        return send(404, 'Not found')
 
-  class HTTPServerIPv6(http.server.HTTPServer):
-    address_family = socket.AF_INET6
+    else:
+      return send(404, 'Not found')
 
   with _lock:
     for code in SUPPORTED_CODES:
       _refresh_haproxy_file('cluster', code)
-    for ref in set(SHARED_TOKEN_MAP.values()):
-      for code in SHARED_CODES:
-        _refresh_haproxy_file(ref, code)
+    # Re-publish only slaves that already have an override on disk from a
+    # previous run; the rest are never materialised.
+    shared_source_dir = os.path.join(ERROR_PAGES_DIR, 'shared')
+    if os.path.isdir(shared_source_dir):
+      for ref in os.listdir(shared_source_dir):
+        for code in SHARED_CODES:
+          _refresh_haproxy_file(ref, code)
   logger.info('Initialized haproxy error files')
 
   ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
   ctx.load_cert_chain(CERTIFICATE, KEY)
-  server = HTTPServerIPv6((IP, PORT), Handler)
-  server.socket = ctx.wrap_socket(server.socket, server_side=True)
+
+  # Wrap the listening socket before bind/activate, as kedifa does:
+  # ThreadingWSGIServer is built with bind_and_activate=False for this.
+  socket.setdefaulttimeout(EPM_SOCKET_TIMEOUT)
+  httpd = make_server(
+    IP, PORT, application, ThreadingWSGIServer, CaucaseWSGIRequestHandler)
+  httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
+  httpd.server_bind()
+  httpd.server_activate()
   logger.info('Error Page Manager listening on [%s]:%s', IP, PORT)
-  server.serve_forever()
+  httpd.serve_forever()
 
 
 def error_page_updater_main():
@@ -648,6 +653,16 @@ def error_page_updater_main():
         with open(dst, 'w', encoding='utf-8') as f:
           f.write(_haproxy_format(code, html))
 
+  def _restore_fallback_symlink(rel_path):
+    # A reset drops the override from the manifest, but backend-haproxy still
+    # names the path -- restore the fallback symlink instead of deleting.
+    local_path = os.path.join(ERROR_PAGES_DIR, rel_path)
+    code_http = rel_path.rsplit('/', 1)[-1]
+    if os.path.lexists(local_path):
+      os.unlink(local_path)
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    os.symlink(os.path.join('..', '..', 'cluster', code_http), local_path)
+
   def poll_once(ctx):
     try:
       manifest_data = _get(SYNC_URL, ctx)
@@ -661,7 +676,10 @@ def error_page_updater_main():
 
     for rel_path, remote_sha in manifest.items():
       local_path = os.path.join(ERROR_PAGES_DIR, rel_path)
-      local_sha = _sha256(local_path) if os.path.isfile(local_path) else None
+      # A fallback symlink counts as absent, so an override replaces it and we
+      # never hash the cluster content as if it were this slave's.
+      local_sha = _sha256(local_path) if (
+        os.path.isfile(local_path) and not os.path.islink(local_path)) else None
 
       if local_sha == remote_sha and state.get(rel_path) == remote_sha:
         continue
@@ -674,6 +692,10 @@ def error_page_updater_main():
         continue
 
       os.makedirs(os.path.dirname(local_path), exist_ok=True)
+      # Replace the fallback symlink with a real file; unlink first so we don't
+      # write through the symlink onto the shared cluster page.
+      if os.path.islink(local_path):
+        os.unlink(local_path)
       with open(local_path, 'wb') as f:
         f.write(data)
       state[rel_path] = remote_sha
@@ -682,11 +704,15 @@ def error_page_updater_main():
 
     for rel_path in list(state.keys()):
       if rel_path not in manifest:
-        local_path = os.path.join(ERROR_PAGES_DIR, rel_path)
-        if os.path.isfile(local_path):
-          os.unlink(local_path)
+        if rel_path.startswith('shared/') and rel_path.endswith('.http'):
+          _restore_fallback_symlink(rel_path)
+          logger.info('Reverted %s to cluster fallback', rel_path)
+        else:
+          local_path = os.path.join(ERROR_PAGES_DIR, rel_path)
+          if os.path.isfile(local_path):
+            os.unlink(local_path)
+          logger.info('Removed %s (no longer in manifest)', rel_path)
         del state[rel_path]
-        logger.info('Removed %s (no longer in manifest)', rel_path)
         changed = True
 
     _save_state(state)
@@ -703,3 +729,41 @@ def error_page_updater_main():
     except Exception as e:
       logger.error('Unexpected error in poll loop: %s', e)
     time.sleep(POLL_INTERVAL)
+
+
+def error_page_seed_main():
+  # Buildout seed run before backend-haproxy validates: it names
+  # shared/<ref>/<code>.http for every slave and won't start if one is missing,
+  # so create the cluster defaults and a fallback symlink per slave.
+  import glob
+  import json
+  import os
+  import sys
+
+  with open(sys.argv[1]) as f:
+    config = json.load(f)
+
+  error_pages_dir = config['error_pages_dir']
+  builtin_dir = config['builtin_dir']
+  shared_references = config['shared_references']
+  shared_codes = ['502', '503', '504']
+
+  cluster_dir = os.path.join(error_pages_dir, 'cluster')
+  os.makedirs(cluster_dir, exist_ok=True)
+  for src in glob.glob(os.path.join(builtin_dir, '*.html')):
+    code = os.path.splitext(os.path.basename(src))[0]
+    dst = os.path.join(cluster_dir, code + '.http')
+    if not os.path.exists(dst):
+      with open(src, encoding='utf-8') as f:
+        html = f.read()
+      with open(dst, 'w', encoding='utf-8') as f:
+        f.write(_haproxy_format(code, html))
+
+  for ref in shared_references:
+    ref_dir = os.path.join(error_pages_dir, 'shared', ref)
+    os.makedirs(ref_dir, exist_ok=True)
+    for code in shared_codes:
+      link = os.path.join(ref_dir, code + '.http')
+      # Don't clobber a real override or symlink the updater may have installed.
+      if not os.path.lexists(link):
+        os.symlink(os.path.join('..', '..', 'cluster', code + '.http'), link)
