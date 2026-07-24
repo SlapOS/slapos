@@ -11644,6 +11644,26 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
       'concurrent /sync produced %d errors (ok=%d)'
       % (counters['err'], counters['ok']))
 
+  def test_stalled_connection_is_reaped(self):
+    """The server closes a stalled connection (its socket timeout reaps it)
+    rather than holding it open forever."""
+    tls = self._open_stalled_connection()
+    try:
+      # Bound must exceed the server's EPM_SOCKET_TIMEOUT (30 s), with CI
+      # headroom. A server close => recv returns b'' / raises SSL/reset; a
+      # client-side timeout would mean the server never reaped it.
+      tls.settimeout(90)
+      try:
+        reaped = tls.recv(64) == b''
+      except socket.timeout:
+        reaped = False
+      except (ssl.SSLError, OSError):
+        reaped = True
+      self.assertTrue(
+        reaped, 'server did not close the stalled connection within 90 s')
+    finally:
+      tls.close()
+
 
 class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
   """Regression test: EPM detects a shared ref added after initial startup.
