@@ -102,12 +102,15 @@ class Failsafe(object):
       if os.path.exists(error_status_file):
         # last run failed, so need to reinstall
         self.install()
+      else:
+        super(Failsafe, self).update()
 
   def uninstall(name, options):
     error_status_file = options.get('-error-status-file')
     if error_status_file is not None:
       if os.path.exists(error_status_file):
         os.unlink(error_status_file)
+    super(Failsafe, self).uninstall()
 
 
 class RecipeFailsafe(Failsafe, Recipe):
