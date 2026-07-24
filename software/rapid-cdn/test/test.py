@@ -10690,6 +10690,37 @@ class TestErrorPageSeed(unittest.TestCase):
       shutil.rmtree(tmp)
 
 
+class TestErrorPageAtomicWrite(unittest.TestCase):
+  """Unit test for software._atomic_write (manager publishes atomically)."""
+
+  @classmethod
+  def setUpClass(cls):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+      '_software_src_atomic',
+      os.path.normpath(os.path.join(
+        os.path.dirname(__file__), '..', 'software.py')))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    cls._atomic_write = staticmethod(mod._atomic_write)
+
+  def test_writes_complete_file_and_leaves_no_tmp(self):
+    tmp = tempfile.mkdtemp()
+    try:
+      path = os.path.join(tmp, '503.http')
+      self._atomic_write(path, 'first')
+      with open(path) as f:
+        self.assertEqual(f.read(), 'first')
+      # Overwriting replaces atomically and completely.
+      self._atomic_write(path, 'second-longer')
+      with open(path) as f:
+        self.assertEqual(f.read(), 'second-longer')
+      # No partial/leftover temp file is ever left behind.
+      self.assertEqual(os.listdir(tmp), ['503.http'])
+    finally:
+      shutil.rmtree(tmp)
+
+
 class TestErrorPagePrune(unittest.TestCase):
   """Unit tests for software._prune_removed_shared_overrides."""
 

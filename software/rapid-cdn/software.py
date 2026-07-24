@@ -172,6 +172,16 @@ def _haproxy_format(code, html):
 EPM_SOCKET_TIMEOUT = 30
 
 
+def _atomic_write(path, text):
+  """Write text then rename into place, so a concurrent /sync or /haproxy read
+  never observes a partial file (os.replace is atomic on POSIX)."""
+  import os
+  tmp = path + '.tmp'
+  with open(tmp, 'w', encoding='utf-8') as f:
+    f.write(text)
+  os.replace(tmp, path)
+
+
 def _prune_removed_shared_overrides(error_pages_dir, active_references):
   """Remove per-slave override files for slaves no longer in the shared list.
 
@@ -257,8 +267,7 @@ def error_page_manager_main():
       if html is None:
         html = _read_html(os.path.join(BUILTIN_DIR, f'{code}.html'))
       os.makedirs(haproxy_dir, exist_ok=True)
-      with open(haproxy_path, 'w', encoding='utf-8') as f:
-        f.write(_haproxy_format(code, html))
+      _atomic_write(haproxy_path, _haproxy_format(code, html))
       return
 
     # Publish a per-slave file only when the slave overrides this code;
@@ -272,14 +281,15 @@ def error_page_manager_main():
         os.unlink(haproxy_path)
       return
     os.makedirs(haproxy_dir, exist_ok=True)
-    with open(haproxy_path, 'w', encoding='utf-8') as f:
-      f.write(_haproxy_format(code, html))
+    _atomic_write(haproxy_path, _haproxy_format(code, html))
 
   def _build_manifest():
     manifest = {}
     haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy')
     for dirpath, _, filenames in os.walk(haproxy_dir):
       for fname in filenames:
+        if not fname.endswith('.http'):
+          continue  # skip a transient .tmp from an atomic write
         full = os.path.join(dirpath, fname)
         rel = os.path.relpath(full, haproxy_dir)
         sha = _sha256(full)
