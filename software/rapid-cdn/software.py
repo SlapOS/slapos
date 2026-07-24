@@ -172,6 +172,23 @@ def _haproxy_format(code, html):
 EPM_SOCKET_TIMEOUT = 30
 
 
+def _prune_removed_shared_overrides(error_pages_dir, active_references):
+  """Remove per-slave override files for slaves no longer in the shared list.
+
+  The shared list is already retention-resolved upstream, so a slave absent
+  from it is gone for good and its override can be dropped at once.
+  """
+  import os
+  import shutil
+  for base in ('shared', os.path.join('haproxy', 'shared')):
+    directory = os.path.join(error_pages_dir, base)
+    if not os.path.isdir(directory):
+      continue
+    for ref in os.listdir(directory):
+      if ref not in active_references:
+        shutil.rmtree(os.path.join(directory, ref), ignore_errors=True)
+
+
 def error_page_manager_main():
   import hashlib
   import http.client
@@ -552,8 +569,11 @@ def error_page_manager_main():
   with _lock:
     for code in SUPPORTED_CODES:
       _publish_haproxy_file('cluster', code)
-    # Re-publish only slaves that already have an override on disk from a
-    # previous run; the rest are never materialised.
+    # Drop overrides of slaves removed from the shared list, then re-publish
+    # the survivors that still have an override on disk; the rest are never
+    # materialised.
+    _prune_removed_shared_overrides(
+      ERROR_PAGES_DIR, set(SHARED_TOKEN_MAP.values()))
     shared_source_dir = os.path.join(ERROR_PAGES_DIR, 'shared')
     if os.path.isdir(shared_source_dir):
       for ref in os.listdir(shared_source_dir):

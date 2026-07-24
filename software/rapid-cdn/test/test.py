@@ -10690,6 +10690,39 @@ class TestErrorPageSeed(unittest.TestCase):
       shutil.rmtree(tmp)
 
 
+class TestErrorPagePrune(unittest.TestCase):
+  """Unit tests for software._prune_removed_shared_overrides."""
+
+  @classmethod
+  def setUpClass(cls):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+      '_software_src_prune',
+      os.path.normpath(os.path.join(
+        os.path.dirname(__file__), '..', 'software.py')))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    cls._prune = staticmethod(mod._prune_removed_shared_overrides)
+
+  def test_removed_slave_pruned_active_kept(self):
+    tmp = tempfile.mkdtemp()
+    try:
+      for ref in ('a', 'b'):
+        for base in ('shared', os.path.join('haproxy', 'shared')):
+          d = os.path.join(tmp, base, ref)
+          os.makedirs(d)
+          open(os.path.join(d, '503.http'), 'w').close()
+      self._prune(tmp, {'a'})
+      self.assertTrue(os.path.isdir(os.path.join(tmp, 'shared', 'a')))
+      self.assertTrue(
+        os.path.isdir(os.path.join(tmp, 'haproxy', 'shared', 'a')))
+      self.assertFalse(os.path.isdir(os.path.join(tmp, 'shared', 'b')))
+      self.assertFalse(
+        os.path.isdir(os.path.join(tmp, 'haproxy', 'shared', 'b')))
+    finally:
+      shutil.rmtree(tmp)
+
+
 class TestErrorPageUpdaterOnUpdate(unittest.TestCase):
   """Unit tests for the on_update command in instance-slave-list.cfg.in.
 
