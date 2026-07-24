@@ -625,7 +625,10 @@ inline =
   # Arg 1: per-user bogofilter DB directory
   # Arg 2: sender address
   # Arg 3: recipient address
-  BOGODIR="$$1"
+  BOGODIR_ROOT=$$(dirname "$$1")
+  USER=$$(basename "$$1")
+  USER=$$(printf '%s' "$$USER" | tr '[:upper:]' '[:lower:]')
+  BOGODIR="$$BOGODIR_ROOT/$$USER"
   SENDER="$$2"
   RECIPIENT="$$3"
   MAIL_CONFIG=$${postfix-directory:etc} ; export MAIL_CONFIG
@@ -641,9 +644,9 @@ mode = 755
 inline =
   #!/bin/sh
   # Called by imapsieve when a message is moved TO the Junk folder.
-  USER="$$1"
+  USER=$$(printf '%s' "$$1" | tr '[:upper:]' '[:lower:]')
   BOGODIR="$${bogofilter-directory:spool}/$$USER"
-  [ -d "$$BOGODIR" ] || exit 0
+  mkdir -p "$$BOGODIR"
   ${bogofilter:location}/bin/bogofilter -e -Ns -d "$$BOGODIR"
 
 [bogofilter-learn-ham-script]
@@ -653,9 +656,9 @@ mode = 755
 inline =
   #!/bin/sh
   # Called by imapsieve when a message is moved FROM the Junk folder.
-  USER="$$1"
+  USER=$$(printf '%s' "$$1" | tr '[:upper:]' '[:lower:]')
   BOGODIR="$${bogofilter-directory:spool}/$$USER"
-  [ -d "$$BOGODIR" ] || exit 0
+  mkdir -p "$$BOGODIR"
   ${bogofilter:location}/bin/bogofilter -e -Sn -d "$$BOGODIR"
 
 [bogofilter-sieve-spam-filter]
