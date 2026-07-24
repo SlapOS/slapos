@@ -9,15 +9,6 @@ die() {
     exit 1
 }
 
-# run psql on gitlab db
-psql() {
-    {{ psql_bin }}  \
-        -h {{ pgsql['pgdata-directory'] }}  \
-        -U {{ pgsql.superuser }}            \
-        -d {{ pgsql.dbname }}               \
-        "$@"
-}
-
 # 1. what to do when instance is initially setup
 # see
 #   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/recipes/database_migrations.rb
@@ -27,7 +18,7 @@ psql() {
 # ( first quering PG several times waiting a bit till postgresql is started and ready )
 tpgwait=5
 while true; do
-    pgtables="$(psql -c '\d' 2>&1)" && break
+    pgtables="$({{ psql_bin }} -c '\d' 2>&1)" && break
     tpgwait=$(( $tpgwait - 1 ))
     test $tpgwait = 0 && die "pg query problem"
     echo "I: PostgreSQL is not ready (yet ?); will retry $tpgwait times..." 1>&2
@@ -36,9 +27,9 @@ done
 echo "I: PostgreSQL ready." 1>&2
 
 # make sure pg_trgm extension is enabled for gitlab db
-psql -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'   || die "pg_trgm setup failed"
+{{ psql_bin }} -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'   || die "pg_trgm setup failed"
 
-psql -c 'CREATE EXTENSION IF NOT EXISTS btree_gist;'  || die "btree_gist setup failed"
+{{ psql_bin }} -c 'CREATE EXTENSION IF NOT EXISTS btree_gist;'  || die "btree_gist setup failed"
 
 if echo "$pgtables" | grep -q '^Did not find any relations' ; then
     $RAKE gitlab:setup RAILS_ENV=production force=yes || die "initial db setup failed"
@@ -54,11 +45,31 @@ fi
 #
 # Assets compilation is handled at instance deployment time. We do everything else here.
 
-# XXX - Fix for For gitlab 15
-# migration crash with 'check constraint "check_70f294ef54" is violated by some row'
-# https://gitlab.com/gitlab-org/gitlab/-/merge_requests/112765#note_1395472875
-OATID=$(psql -AXqtc 'SELECT id FROM oauth_access_tokens WHERE expires_in IS NULL LIMIT 1;')
-test -n "$OATID" && psql -c 'UPDATE oauth_access_tokens SET expires_in = '86400' WHERE id = $OATID;'
+# XXX - Run migration for gitlab 16.1.8 first
+gitlab_location={{ gitlab_work.location }}/db
+db_migration_location={{ gitlab_work.location }}/../gitlab-16.1.8/db
+restore_db() {
+  if [ -L "$gitlab_location/db" ]; then
+    rm -f $gitlab_location/db
+  fi
+
+  if [ -d "$gitlab_location/db.orig" ]; then
+    mv $gitlab_location/db.orig $gitlab_location/db
+  fi
+}
+pre_migration16_ok={{ var_dir }}/gitlab-16.1.8-pre-migration-ok
+if [ ! -f "$pre_migration16_ok" ]; then
+  trap restore_db EXIT INT TERM
+
+  mv $gitlab_location/db $gitlab_location/db.orig
+  ln -s $gitlab_location/../gitlab-16.1.8/db $gitlab_location/db
+
+  # run migrations for gitlab 16.1.8
+  migrate_log="{{ log_dir }}/db-migrate-16.1.8-`date +%s`.log"
+  $RAKE db:migrate >$migrate_log 2>&1  || die "db:migrate failed"
+  restore_db
+  touch $pre_migration16_ok
+fi
 
 # make sure all migrations are up
 migrate_log="{{ log_dir }}/db-migrate-`date +%s`.log"
@@ -67,8 +78,6 @@ $RAKE db:migrate >$migrate_log 2>&1  || die "db:migrate failed"
 # if it was a no-op "migration" - we don't need info about that - only keep
 # logs of actual migration run.
 test -s $migrate_log || rm $migrate_log
-
-touch {{ var_dir }}/gitlab_db_ok
 
 # clear cache
 $RAKE cache:clear   || die "cache:clear failed"
