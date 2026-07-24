@@ -64,7 +64,7 @@
     },
     "instance-retention-delay": {
       "default": 7776000,
-      "description": "Seconds to keep a disappeared instance before removing it. Default is 90 days (7776000 seconds). 0 means immediate removal.",
+      "description": "Seconds to keep a disappeared shared instance before removing it. Default is 90 days (7776000 seconds). 0 means immediate removal.",
       "title": "Instance Retention Delay",
       "type": "integer"
     },
