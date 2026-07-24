@@ -570,6 +570,7 @@ config-monitor-httpd-port = !py!{{ error_page_manager_partition_monitor_httpd_po
 config-error-page-manager-port = {{ dumps(slapparameter_dict['error-page-manager-port']) }}
 {%- endif %}
 config-shared-list = {{ dumps(authorized_slave_list) }}
+config-instance-retention-delay = {{ dumps(slapparameter_dict['instance-retention-delay']) }}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 
 software-url = ${slap-connection:software-release-url}
