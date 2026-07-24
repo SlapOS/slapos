@@ -20,6 +20,16 @@ Unreleased
 
 Changes on ``master`` since 1.0.496 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.496...master>`__).
 
+Error Page Manager is resilient and scales to many shared instances
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The ``error-page-manager`` now handles each request in its own thread with a
+socket timeout, so a stalled client no longer wedges it, and it publishes a
+per-slave page only where a slave overrides one, so ``/sync`` cost scales with
+the number of overrides rather than the number of shared instances.
+(`!2159 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2159>`__)
+
 Node schemas accept unknown parameters for mixed-release clusters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
