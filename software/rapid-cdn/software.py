@@ -590,7 +590,8 @@ def error_page_manager_main():
       _publish_haproxy_file('cluster', code)
     # Drop overrides of slaves removed from the shared list, then re-publish
     # the survivors that still have an override on disk; the rest are never
-    # materialised.
+    # materialised. Runs only at startup -- the wrapper restarts the manager on
+    # every shared-list change (config JSON is in its hash-existing-files).
     _prune_removed_shared_overrides(
       ERROR_PAGES_DIR, set(SHARED_TOKEN_MAP.values()))
     shared_source_dir = os.path.join(ERROR_PAGES_DIR, 'shared')
