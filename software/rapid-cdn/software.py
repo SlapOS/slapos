@@ -191,6 +191,7 @@ def _prune_removed_shared_overrides(error_pages_dir, active_references):
   """
   import os
   import shutil
+  pruned = set()
   for base in ('shared', os.path.join('haproxy', 'shared')):
     directory = os.path.join(error_pages_dir, base)
     if not os.path.isdir(directory):
@@ -198,6 +199,8 @@ def _prune_removed_shared_overrides(error_pages_dir, active_references):
     for ref in os.listdir(directory):
       if ref not in active_references:
         shutil.rmtree(os.path.join(directory, ref), ignore_errors=True)
+        pruned.add(ref)
+  return pruned
 
 
 def error_page_manager_main():
@@ -592,14 +595,20 @@ def error_page_manager_main():
     # the survivors that still have an override on disk; the rest are never
     # materialised. Runs only at startup -- the wrapper restarts the manager on
     # every shared-list change (config JSON is in its hash-existing-files).
-    _prune_removed_shared_overrides(
+    pruned = _prune_removed_shared_overrides(
       ERROR_PAGES_DIR, set(SHARED_TOKEN_MAP.values()))
     shared_source_dir = os.path.join(ERROR_PAGES_DIR, 'shared')
     if os.path.isdir(shared_source_dir):
       for ref in os.listdir(shared_source_dir):
         for code in SHARED_CODES:
           _publish_haproxy_file(ref, code)
-  logger.info('Initialized haproxy error files')
+    published = sum(
+      1 for _, _, fs in os.walk(
+        os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared'))
+      for f in fs if f.endswith('.http'))
+  logger.info(
+    'Initialized error pages: %d shared slaves, %d overrides published, '
+    '%d removed slaves pruned', len(SHARED_TOKEN_MAP), published, len(pruned))
 
   ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
   ctx.load_cert_chain(CERTIFICATE, KEY)
@@ -607,8 +616,14 @@ def error_page_manager_main():
   # Wrap the listening socket before bind/activate, as kedifa does:
   # ThreadingWSGIServer is built with bind_and_activate=False for this.
   socket.setdefaulttimeout(EPM_SOCKET_TIMEOUT)
+
+  class _LoggingWSGIServer(ThreadingWSGIServer):
+    # Log handler and file-write exceptions to the manager log, not just stderr.
+    def handle_error(self, request, client_address):
+      logger.exception('Error handling request from %s', client_address[0])
+
   httpd = make_server(
-    IP, PORT, application, ThreadingWSGIServer, CaucaseWSGIRequestHandler)
+    IP, PORT, application, _LoggingWSGIServer, CaucaseWSGIRequestHandler)
   httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
   httpd.server_bind()
   httpd.server_activate()
