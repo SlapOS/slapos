@@ -12,7 +12,9 @@
   backup_period=None,
   bind=None,
   base_port=None,
-  promise=True
+  promise=True,
+  service_crt_validity=None,
+  user_crt_validity=None
 ) -%}
 [{{ prefix }}-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -39,6 +41,8 @@ command-line = '{{ buildout_bin_directory }}/caucased'
   --service-auto-approve-count '{{ service_auto_approve_count }}'
   --user-auto-approve-count    '{{ user_auto_approve_count }}'
   --lock-auto-approve-count
+  {% if service_crt_validity != None %} --service-crt-validity '{{ service_crt_validity }}' {%- endif %}
+  {% if user_crt_validity != None %} --user-crt-validity '{{ user_crt_validity=None }}' {%- endif %}
 
 {% if promise -%}
 [{{ prefix }}-promise]
