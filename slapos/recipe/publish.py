@@ -64,7 +64,7 @@ class Recipe(GenericSlapRecipe):
     return self.setConnectionDict(publish_dict, slave_reference)
 
   def update(self):
-    if len(self._extend_set) > 0:
+    if len(self._extend_set) > 1:
       # if this part extends other parts the update has to run, as changes to
       # extended parts are not tracked during update
       return super(Recipe, self).update()
