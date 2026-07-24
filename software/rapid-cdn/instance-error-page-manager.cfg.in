@@ -134,6 +134,7 @@ key = ${error-page-manager-certificate:key}
 log-file = ${directory:log}/error-page-manager.log
 error-pages-dir = ${directory:error-pages}
 builtin-dir = {{ software_parameter_dict['error_pages_builtin_dir'] }}
+retention-delay = {{ slapparameter_dict.get('instance-retention-delay', 7776000) }}
 operator-token-file = ${operator-token:file}
 read-token-file = ${read-token:file}
 shared-references = {{ slapparameter_dict['shared-list'] | map(attribute='slave_reference') | join(' ') }}
@@ -150,6 +151,7 @@ init =
     'log_file': options['log-file'],
     'error_pages_dir': options['error-pages-dir'],
     'builtin_dir': options['builtin-dir'],
+    'retention_delay': int(options['retention-delay']),
     'read_token_file': options['read-token-file'],
     'operator_token_file': options['operator-token-file'],
     'shared_token_files': [[ref, os.path.join(token_dir, ref)] for ref in refs],

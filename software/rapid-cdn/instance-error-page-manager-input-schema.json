@@ -41,6 +41,12 @@
       "type": "integer",
       "default": 24000
     },
+    "instance-retention-delay": {
+      "title": "Instance Retention Delay",
+      "description": "Seconds to keep a disappeared shared instance's error page override before removing it. 0 means immediate removal.",
+      "type": "integer",
+      "default": 7776000
+    },
     "rotate-num": {
       "title": "Rotate Number",
       "description": "Number of log files to keep before rotation.",
