@@ -1180,7 +1180,7 @@ instance-db-path = {{ instance_parameter_dict["instance-db-path"] }}
 validated-instance-db-path = {{ instance_parameter_dict["validated-instance-db-path"] }}
 domain-validation-db-path = ${directory:srv}/domainvalidation-db.sqlite
 openssl = {{ software_parameter_dict['openssl'] }}
-instance-retention-delay = {{ slapparameter_dict['instance-retention-delay'] | string }}
+instance-retention-delay = {{ dumps(slapparameter_dict['instance-retention-delay']) }}
 dns-nameserver = {{ slapparameter_dict['dns-nameserver'] }}
 # Resolves to the rendered output of [instance-publish-slave-information]
 # below — both run on the master partition, so ${buildout:directory} is
