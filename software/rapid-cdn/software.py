@@ -245,6 +245,9 @@ def error_page_manager_main():
   SHARED_CODES = ['502', '503', '504']
 
   _lock = threading.Lock()
+  # Cached /sync manifest, rebuilt lazily only after a write marks it dirty, so
+  # steady-state polling does not re-walk and re-hash the tree under _lock.
+  _manifest_state = {'dirty': True, 'manifest': {}}
 
   def _read_html(path):
     if os.path.isfile(path):
@@ -259,6 +262,7 @@ def error_page_manager_main():
       return hashlib.sha256(f.read()).hexdigest()
 
   def _publish_haproxy_file(slot, code):
+    _manifest_state['dirty'] = True  # published set changes; drop the cache
     if slot == 'cluster':
       # Always published: every frontend falls back to the cluster page.
       haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'cluster')
@@ -284,6 +288,8 @@ def error_page_manager_main():
     _atomic_write(haproxy_path, _haproxy_format(code, html))
 
   def _build_manifest():
+    if not _manifest_state['dirty']:
+      return _manifest_state['manifest']
     manifest = {}
     haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy')
     for dirpath, _, filenames in os.walk(haproxy_dir):
@@ -295,6 +301,8 @@ def error_page_manager_main():
         sha = _sha256(full)
         if sha:
           manifest[rel] = sha
+    _manifest_state['manifest'] = manifest
+    _manifest_state['dirty'] = False
     return manifest
 
   def _render_web_ui(codes, source_dir):
