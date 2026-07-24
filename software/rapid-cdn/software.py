@@ -145,6 +145,11 @@ _EPM_CODE_DESCRIPTIONS = {
   '504': 'Backend connection was established but did not produce a response in time.',
 }
 
+# Shared by the manager and the buildout seed to avoid drift. SHARED_CODES are
+# the codes a shared instance may override (503-family); the rest are cluster-only.
+_EPM_SUPPORTED_CODES = ['400', '404', '408', '500', '502', '503', '504']
+_EPM_SHARED_CODES = ['502', '503', '504']
+
 
 def _haproxy_format(code, html):
   reason = _EPM_HTTP_REASONS[code]
@@ -244,8 +249,8 @@ def error_page_manager_main():
     for shared_reference, token_file in config['shared_token_files']
   }
 
-  SUPPORTED_CODES = ['400', '404', '408', '500', '502', '503', '504']
-  SHARED_CODES = ['502', '503', '504']
+  SUPPORTED_CODES = _EPM_SUPPORTED_CODES
+  SHARED_CODES = _EPM_SHARED_CODES
 
   _lock = threading.Lock()
   # Cached /sync manifest, rebuilt lazily only after a write marks it dirty, so
@@ -799,8 +804,10 @@ def error_page_seed_main():
   error_pages_dir = config['error_pages_dir']
   builtin_dir = config['builtin_dir']
   shared_references = config['shared_references']
-  shared_codes = ['502', '503', '504']
+  shared_codes = _EPM_SHARED_CODES
 
+  # Seeding the cluster builtins overlaps the updater's _ensure_builtins; both
+  # are idempotent (only create what is missing), so running either is safe.
   cluster_dir = os.path.join(error_pages_dir, 'cluster')
   os.makedirs(cluster_dir, exist_ok=True)
   for src in glob.glob(os.path.join(builtin_dir, '*.html')):
