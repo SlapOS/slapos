@@ -11,6 +11,39 @@ parts =
   publish-connection-information
   inbound-postfix
   outbound-postfix
+  postfix-certificate-rotation
+
+
+# Input Parameters
+# ----------------
+
+{# defensive code just in case -#}
+{% set instance_title = '-'.join(instance_title.splitlines()) -%}
+
+{% set mail_domains = slapparameter_dict['mail-domains'] -%}
+{% set cluster_fqdns = slapparameter_dict['cluster-fqdns'] -%}
+{% set proxy_map = slapparameter_dict['proxy-map'] -%}
+{% set greylisting = slapparameter_dict['greylisting'] -%}
+{% set greylisting_enable = greylisting['enable'] -%}
+{% set greylisting_delay = greylisting['greylisting-delay'] -%}
+{% set fqdn = slapparameter_dict.get('fqdn', instance_title) -%}
+
+[monitor-instance-parameter]
+password = {{ slapparameter_dict['monitor-password'] }}
+
+[input.load]
+recipe = slapos.recipe.build
+fqdn = {{ dumps(fqdn) }}
+init =
+  # force-load dumped values: buildout only loads dumped values
+  # when they are directly get-ed or getitem-ed, not when they
+  # are substituted by $-syntax.
+  for k in options:
+    options[k] = options[k]
+
+
+# Output Parameters
+# -----------------
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
@@ -20,23 +53,16 @@ submission-port = $${outbound-postfix-main.cf:submission-port}
 smtp-ipv6 = {{ ipv6 }}
 # todo: publishes internal ip instead of external
 dns-entries =
-  {% for domain in slapparameter_dict['mail-domains'] -%}
+  {% for domain in mail_domains -%}
   {{ domain['name'] }} MX 10 {{ ipv4 }}
   {% endfor %}
--depends = $${publish-certificate-fingerprints:recipe}
+tls-fingerprints = $${postfix-certificate:tls-fingerprints}
+pinnedpubkey = $${postfix-certificate:pinnedpubkey}
+keystore-url = $${inbound-keystore-promise:url}
 
-[publish-certificate-fingerprints]
-recipe = slapos.recipe.build
-fingerprint = $${postfix-certificate:fingerprint}
-update =
-  # Hack: update publish dict once fingerprint has been generated
-  publish = self.buildout['publish-connection-information']
-  with open(options['fingerprint']) as f:
-    # publish a list to allow for future fingerprint rotation
-    publish['tls-fingerprints'] = [f.read().split('=', 1)[1].strip()]
 
-[monitor-instance-parameter]
-password = {{ slapparameter_dict['monitor-password'] }}
+# Directories and information
+# ---------------------------
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -68,28 +94,297 @@ data = $${directory:var-lib}/postgrey
 recipe = slapos.cookbook:userinfo
 
 
+# Generic Macros
+# --------------
+
+[macro.sys-path-add-egg]
+recipe = slapos.recipe.build
+eggs = $${missing_option_eggs:error}
+egg-paths =
+  $${buildout:develop-eggs-directory}
+  $${buildout:eggs-directory}
+init =
+  import zc.buildout
+  import pkg_resources
+  zc.buildout.easy_install.install(
+    [e.strip() for e in options['eggs'].splitlines()],
+    dest=None,
+    working_set=pkg_resources.working_set,
+    path=[p.strip() for p in options['egg-paths'].splitlines()]
+  )
+
+
 # Postfix Relay Certificates
 # --------------------------
 
 [postfix-certificate]
-recipe = plone.recipe.command
-stop-on-error = true
+recipe = slapos.recipe.build
+ssl = $${directory:postfix-ssl}
+make-cert = ${certificate-make-new:output}
+to-der = ${certificate-to-der:output}
+to-pinnedpubkey = ${certificate-to-pinnedpubkey:output}
 name = postfix
-key-file = $${directory:postfix-ssl}/$${:name}.key
-cert-file = $${directory:postfix-ssl}/$${:name}.crt
-fingerprint = $${directory:postfix-ssl}/$${:name}.digest
-bundle = $${directory:postfix-ssl}/$${:name}.bundle.pem
-openssl = ${openssl:location}/bin/openssl
-# Consider using public-key fingerprint instead of whole certificate fingerprint
-command =
-  test -e $${:bundle} || { \
-    $${:openssl} req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
-      -keyout $${:key-file} -out $${:cert-file}; \
-    $${:openssl} x509 -noout -fingerprint -sha256 -in $${:cert-file} \
-      > $${:fingerprint}; \
-    cat $${:key-file} $${:cert-file} > $${:bundle}; \
-  }
-update-command = $${:command}
+init =
+  import os, subprocess
+  # Inputs
+  ssl = options['ssl']
+  make_cert = options['make-cert']
+  to_der = options['to-der']
+  to_pinnedpubkey = options['to-pinnedpubkey']
+  prefix = os.path.join(ssl, options['name'])
+  prefixes = prefix, prefix + '.next'
+  bundle, next_bundle = (p + '.bundle.pem' for p in prefixes)
+  fingerprint, next_fingerprint = (p + '.fingerprint' for p in prefixes)
+  der = prefix + '.der'
+  pinnedpubkey = prefix + '.pinnedpubkey'
+  # Certificate initialization or rotation
+  # Rotation is requested periodically by deleting the current fingerprint
+  if not os.path.exists(fingerprint):
+    if os.path.exists(next_fingerprint):
+      # Rotate
+      os.replace(next_bundle, bundle)
+      os.replace(next_fingerprint, fingerprint)
+    elif not os.path.exists(bundle):
+      # Initialize
+      os.makedirs(ssl, 0o0777, exist_ok=True) # like slapos.recipe.mkdirectory
+      subprocess.check_call((make_cert, bundle, fingerprint))
+    else: # BBB if os.path.exists(bundle)
+      # BBB: rename pre-upgrade fingerprint file
+      os.replace(prefix + '.digest', fingerprint)
+    # Convert current certificate to DER
+    subprocess.check_call((to_der, bundle, der))
+    # Compute pinnedpubkey of current certificate
+    subprocess.check_call((to_pinnedpubkey, bundle, pinnedpubkey))
+    # Create next certificate
+    subprocess.check_call((make_cert, next_bundle, next_fingerprint))
+  # Outputs
+  options['bundle'] = bundle
+  options['fingerprint'] = fingerprint
+  options['der'] = der
+  tls_fingerprints = []
+  for path in (fingerprint, next_fingerprint):
+    with open(path) as f:
+      tls_fingerprints.append(f.read().split('=', 1)[1].strip())
+  options['tls-fingerprints'] = tls_fingerprints
+  with open(pinnedpubkey) as f:
+    options['pinnedpubkey'] = 'sha256//' + f.read().strip()
+
+[postfix-certificate-rotate]
+recipe = slapos.recipe.template:jinja2
+output = $${buildout:bin-directory}/$${:_buildout_section_name_}
+context =
+  import json json
+  section options slap-connection
+{% raw -%}
+inline =
+  #!/bin/sh -e
+  rm -f $${postfix-certificate:fingerprint}
+  ${slapos-partition-bang:bang} \
+    {{ repr(json.dumps(options)) }} \
+    'certificate rotation'
+{%- endraw %}
+
+[postfix-certificate-rotation]
+recipe = slapos.cookbook:cron.d
+name = $${:_buildout_section_name_}
+cron-entries = $${cron:cron-entries}
+time = weekly
+command = $${postfix-certificate-rotate:output}
+depends =
+  $${cron-service:recipe}
+  $${outbound-postfix-reload:recipe}
+  $${inbound-keystore-haproxy-reload:recipe}
+
+
+# Postfix Custom Inbound Certificate
+# ----------------------------------
+
+[sys-path-add-certifi]
+<= macro.sys-path-add-egg
+eggs = certifi
+
+[inbound-keystore-ca-certificates]
+recipe = slapos.recipe.build
+depends = $${sys-path-add-certifi:recipe}
+inbound-ca = {{ dumps(slapparameter_dict.get('inbound-ca-certificate')) }}
+location = $${inbound-postfix-directory:ssl}/ca.pem
+init =
+  import certifi
+  if options['inbound-ca']:
+    options['ca-file'] = location
+  else:
+    options['ca-file'] = certifi.where()
+    options['location'] = ''
+install =
+  if options['inbound-ca']:
+    with open(location, 'w') as f:
+      f.write(options['inbound-ca'])
+
+[inbound-keystore-haproxy.cfg]
+recipe = slapos.recipe.template:jinja2
+url = ${stack-haproxy-default-backend-config:target}
+output = $${directory:etc}/haproxy.cfg
+context =
+  key content :content
+  key pidfile :pidfile
+pidfile = $${directory:run}/haproxy.pid
+port = 4000
+bind = {{ ipv6 }}:$${:port}
+crt = $${postfix-certificate:bundle}
+ca = $${inbound-keystore-ca-certificates:ca-file}
+content =
+  listen keystore
+    log global
+    bind $${:bind} ssl crt $${:crt} ca-file $${:ca} verify required
+    mode http
+    option httplog
+    server keystore unix@$${inbound-keystore:socket-path}
+    tcp-request content reject if !{ ssl_c_s_dn(CN) -m str {{ repr(fqdn) }} }
+
+[inbound-keystore-haproxy]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:service}/$${:_buildout_section_name_}
+socket-path =  $${directory:run}/haproxy.sock
+keystore-port = $${inbound-keystore-haproxy.cfg:port}
+command-line =
+  ${haproxy:location}/sbin/haproxy
+    -W
+    -S $${:socket-path},level,operator
+    -f $${inbound-keystore-haproxy.cfg:output}
+hash-files = $${inbound-keystore-haproxy.cfg:output}
+
+[inbound-keystore-haproxy-reload]
+# Reload haproxy every time buildout is processed
+# in case of self-signed certificate rotation
+recipe = slapos.recipe.template:jinja2
+output = $${directory:scripts}/haproxy-reload
+url = ${stack-haproxy-reload-script:target}
+context =
+  key python_executable buildout:executable
+  key admin_socket_path inbound-keystore-haproxy:socket-path
+
+[inbound-keystore-initial-certificate]
+recipe = slapos.recipe.build
+bundle = $${inbound-postfix-directory:ssl}/postfix-inbound.bundle.pem
+der = $${inbound-postfix-directory:ssl}/postfix-inbound.converted.der
+self-signed-bundle = $${postfix-certificate:bundle}
+to-der = ${certificate-to-der:output}
+init = options['location'] = ''
+install =
+  import os, shutil, subprocess
+  bundle = options['bundle']
+  if not os.path.exists(bundle):
+    # Only initialize before the first custom certificate is pushed to keystore
+    shutil.copyfile(options['self-signed-bundle'], bundle + '.tmp')
+    os.replace(bundle + '.tmp', bundle)
+  der = options['der']
+  if not os.path.exists(der):
+    # Convert to DER form
+    subprocess.check_call((options['to-der'], bundle, der))
+
+[inbound-keystore-haproxy-promise]
+<= monitor-promise-base
+name = haproxy_listening.py
+promise = check_socket_listening
+config-port = $${inbound-keystore-haproxy:keystore-port}
+config-host = {{ ipv6 }}
+depends = $${inbound-keystore-haproxy-reload:recipe}
+
+[inbound-keystore]
+recipe = slapos.recipe.template:jinja2
+output = $${directory:services}/$${:_buildout_section_name_}
+socket-path = $${directory:run}/$${:_buildout_section_name_}.sock
+bundle-path = $${inbound-keystore-initial-certificate:bundle}
+der-path = $${inbound-keystore-initial-certificate:der}
+ca-path = $${inbound-keystore-ca-certificates:ca-file}
+to-der = ${certificate-to-der:output}
+context =
+  key socket_path :socket-path
+  key bundle_path :bundle-path
+  key ca_path :ca-path
+  key der_path :der-path
+  raw python ${eggs:py}
+  key reload inbound-postfix-reload:output
+  key fqdn input.load:fqdn
+  key to_der :to-der
+{% raw -%}
+inline =
+  #!{{ python }}
+  import os, socket, socketserver, subprocess
+  from datetime import datetime, timezone
+  from http import server
+  from cryptography import x509
+  from cryptography.x509.verification import (
+    PolicyBuilder, Store, VerificationError
+  )
+  from cryptography.exceptions import UnsupportedAlgorithm
+  from cryptography.hazmat.primitives.serialization import load_pem_private_key
+  class Server(socketserver.TCPServer):
+    allow_reuse_address = 1 # for tests, HTTPServer in stdlib sets it too
+    address_family = socket.AF_UNIX
+  class KeyStoreHandler(server.BaseHTTPRequestHandler):
+    def address_string(self):
+      return str(self.client_address)
+    def bad(self, message):
+        self.send_response(400)
+        self.end_headers()
+        self.wfile.write(message.encode())
+    def do_PUT(self):
+      bundle = self.rfile.read(int(self.headers['Content-Length']))
+      # Verify bundle
+      try:
+        leaf, *intermediates = x509.load_pem_x509_certificates(bundle)
+        key = load_pem_private_key(bundle, None)
+      except ValueError:
+        return self.bad("Not a valid cert/key PEM bundle")
+      except UnsupportedAlgorithm:
+        return self.bad("Unsupported algorithm")
+      # Verify key and leaf certificate match
+      if leaf.public_key() != key.public_key():
+        return self.bad("Certificate and key do not match")
+      # Load trusted CA(s)
+      with open({{ repr(ca_path) }}, 'rb') as f:
+        ca_pems = f.read()
+      store = Store(x509.load_pem_x509_certificates(ca_pems))
+      # Verify certificate
+      builder = PolicyBuilder().store(store).time(datetime.now(timezone.utc))
+      verifier = builder.build_server_verifier(x509.DNSName({{ repr(fqdn) }}))
+      try:
+        verifier.verify(leaf, intermediates)
+      except VerificationError as e:
+        return self.bad("Invalid certificate (%s)" % e)
+      # Store certificate bundle
+      bundle_path = {{ repr(bundle_path) }}
+      tmp_bundle_path = bundle_path + '.tmp'
+      with open(tmp_bundle_path, 'wb') as f:
+        f.write(bundle)
+      os.replace(tmp_bundle_path, bundle_path)
+      # Reload inbound postfix
+      if subprocess.call(({{ repr(reload) }},)):
+        return self.bad("Failed to reload Postfix")
+      # Convert to DER form - failure is less critical
+      to_der = {{ repr(to_der) }}
+      if subprocess.call((to_der, bundle_path, {{ repr(der_path) }})):
+        return self.bad("Failed to convert to DER form used by promise")
+      # Report success
+      self.send_response(200)
+      self.end_headers()
+  socket_path = {{ repr(socket_path) }}
+  try:
+    os.unlink(socket_path)
+  except FileNotFoundError:
+    pass
+  Server(socket_path, KeyStoreHandler).serve_forever()
+{%- endraw %}
+
+[inbound-keystore-promise]
+<= monitor-promise-base
+name = keystore_listening.py
+promise = check_socket_listening
+config-pathname = $${inbound-keystore:socket-path}
+host = $${inbound-keystore-haproxy-promise:config-host}
+port = $${inbound-keystore-haproxy-promise:config-port}
+url = https://[$${:host}]:$${:port}
 
 
 # Postfix macros
@@ -146,14 +441,13 @@ recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
 log-file = $${missing_option_log-file:error}
 postfix-directory = $${missing_option_postfix-directory:error}
-fqdn = {{ dumps(slapparameter_dict.get('fqdn', instance_title)) }}
 context =
   section directory directory
   section postfix_directory $${:postfix-directory}
   key content :content
   key mail_owner userinfo:pw-name
   key setgid_group userinfo:gr-name
-  key server_fqdn :fqdn
+  key server_fqdn input.load:fqdn
   raw xz_utils_location ${xz-utils:location}
   raw postfix_location ${postfix:location}
   raw postfix_log_path $${:log-file}
@@ -203,13 +497,6 @@ inline =
 # Postfix Transport Information
 # -----------------------------
 
-{% set mail_domains = slapparameter_dict['mail-domains'] %}
-{% set cluster_fqdns = slapparameter_dict['cluster-fqdns'] %}
-{% set proxy_map = slapparameter_dict['proxy-map'] %}
-{% set greylisting = slapparameter_dict['greylisting'] %}
-{% set greylisting_enable = greylisting['enable'] %}
-{% set greylisting_delay = greylisting['greylisting-delay'] %}
-
 [internal-postfix-transport]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_transport.in:target}
@@ -237,45 +524,7 @@ output = $${inbound-postfix-directory:etc}/master.cf
 port = $${inbound-postfix-main.cf:smtp-port}
 content =
   policyd-spf  unix  -       n       n       -       0       spawn
-    user=$${userinfo:pw-name} argv=${spf-engine:bin-directory}/policyd-spf $${policyd-spf-conf:output}
-
-{% set custom_inbound_certificate = slapparameter_dict.get('custom-inbound-certificate') -%}
-
-{% if custom_inbound_certificate -%}
-[inbound-custom-certificate-bundle]
-recipe = slapos.recipe.template
-output = $${inbound-postfix-directory:ssl}/custom.bundle.pem
-inline ={{ custom_inbound_certificate | indent }}
-{% endif %}
-
-[inbound-postfix-certificate]
-recipe = slapos.recipe.build
-bundle = $${inbound-postfix-directory:ssl}/postfix-inbound.bundle.pem
-# Always install self-signed cert, even when inbound uses custom cert
-self-signed-bundle = $${postfix-certificate:bundle}
-{% if custom_inbound_certificate -%}
-selected-bundle = $${inbound-custom-certificate-bundle:output}
-{% else -%}
-selected-bundle = $${:self-signed-bundle}
-{% endif %}
-init = options['location'] = ''
-install =
-  import os
-  import shutil
-  shutil.copyfile(options['selected-bundle'], options['bundle'] + '.tmp')
-  os.replace(options['bundle'] + '.tmp', options['bundle'])
-
-[inbound-postfix-certificate-reload]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${directory:service}/inbound-postfix-certificate-reload
-command-line =
-  /bin/sh -c
-  "${postfix:location}/usr/sbin/postfix -c $${inbound-postfix-directory:etc} status >/dev/null 2>&1 \
-    && ${postfix:location}/usr/sbin/postfix -c $${inbound-postfix-directory:etc} reload; \
-    exec /bin/sleep infinity"
-hash-files =
-  $${inbound-postfix-main.cf:output}
-  $${inbound-postfix-certificate:bundle}
+    user=$${userinfo:pw-name} argv=${eggs:bin-directory}/policyd-spf $${policyd-spf-conf:output}
 
 [inbound-postfix-main.cf]
 <= macro.postfix-main.cf
@@ -329,7 +578,7 @@ content =
   transport_maps = texthash:$${internal-postfix-transport:output}
 
   # Server TLS parameters
-  smtpd_tls_chain_files = $${inbound-postfix-certificate:bundle}
+  smtpd_tls_chain_files = $${inbound-keystore:bundle-path}
   smtpd_tls_security_level = may
 
   # Client TLS parameters
@@ -349,11 +598,6 @@ inline =
   {%- for domain in mail_domains %}
   {{ domain['name'] }} REJECT Inbound relay refuses internal sender domains
   {%- endfor %}
-
-[inbound-postfix-wrapper]
-<= macro.postfix-wrapper
-etc = $${inbound-postfix-directory:etc}
-spool-pid = $${inbound-postfix-directory:spool-pid}
 
 [policyd-spf-conf]
 recipe = slapos.recipe.template:jinja2
@@ -401,6 +645,11 @@ inline =
 {% endfor %}
 {% endif %}
 
+[inbound-postfix-wrapper]
+<= macro.postfix-wrapper
+etc = $${inbound-postfix-directory:etc}
+spool-pid = $${inbound-postfix-directory:spool-pid}
+
 [inbound-postfix-service]
 recipe = slapos.cookbook:wrapper
 command-line = $${inbound-postfix-wrapper:output}
@@ -410,19 +659,32 @@ pidfile = $${directory:run}/inbound_postfix.pid
 environment =
   MAIL_CONFIG=$${inbound-postfix-directory:etc}
   SASL_CONF_PATH=$${inbound-postfix-directory:etc}
-hash-files =
+# Restart postfix on instance upgrade
+hash-existing-files =
+  ${buildout:directory}/buildout.cfg
+depends =
+  # Reload postfix on buildout run
+  $${inbound-postfix-reload:recipe}
+  # Pull dependent configuration and services
   $${inbound-postfix-main.cf:output}
   $${inbound-postfix-master.cf:output}
-  $${inbound-postfix-internal-sender-access:output}
-  $${inbound-postfix-wrapper:output}
-  $${policyd-spf-conf:output}
-depends =
-  $${inbound-postfix-certificate-reload:recipe}
   $${policyd-spf-conf:recipe}
-{% if greylisting_enable %}
+  {%- if greylisting_enable %}
   $${postgrey-service:recipe}
-{% endif %}
+  {%- endif %}
+  # Rotate logs periodically
   $${inbound-logrotate-entry-postfix:recipe}
+
+[inbound-postfix-reload]
+recipe = slapos.recipe.template
+output = $${directory:script}/$${:_buildout_section_name_}
+inline =
+  #!/bin/sh -e
+  export MAIL_CONFIG=$${inbound-postfix-directory:etc}
+  {
+    date;
+    ${postfix:location}/usr/sbin/postfix reload;
+  } >> $${directory:var-log}/inbound_postfix_reload.log 2>&1
 
 [inbound-postfix-smtp-promise]
 <= monitor-promise-base
@@ -431,92 +693,27 @@ name = inbound_smtp_listen.py
 config-host = {{ ipv6 }}
 config-port = $${inbound-postfix-main.cf:smtp-port}
 
-{% if custom_inbound_certificate -%}
-[inbound-custom-certificate-expiration-promise]
-<= monitor-promise-base
-promise = check_command_execute
-name = inbound_custom_certificate_not_expired.py
-config-command =
-  ${openssl:location}/bin/openssl x509 -checkend 432000 -noout \
-    -in $${inbound-custom-certificate-bundle:output}
-config-bang-on-failure = false
-
-[inbound-custom-certificate-der]
-recipe = slapos.recipe.build
-pem-path = $${inbound-custom-certificate-bundle:output}
-location = $${inbound-postfix-directory:ssl}/custom.converted.der
-install =
-  import ssl
-  with open(options['pem-path']) as f:
-    certificate_pem = f.read()
-  certificate_begin = "-----BEGIN CERTIFICATE-----"
-  certificate_end = "-----END CERTIFICATE-----"
-  begin = certificate_pem.index(certificate_begin)
-  end = certificate_pem.index(certificate_end, begin) + len(certificate_end)
-  certificate_der = ssl.PEM_cert_to_DER_cert(certificate_pem[begin:end])
-  with open(location, 'wb') as f:
-    f.write(certificate_der)
-
-[inbound-custom-certificate-served-sense]
-recipe = slapos.recipe.template
-output = $${directory:script}/check-inbound-custom-certificate-served.py
-inline =
-  import smtplib
-  import ssl
-  import sys
-
-  from zope.interface import implementer
-  from slapos.grid.promise import interface
-  from slapos.grid.promise.generic import GenericPromise
-
-  @implementer(interface.IPromise)
-  class RunPromise(GenericPromise):
-    def sense(self):
-      host = self.getConfig('host')
-      port = int(self.getConfig('port'))
-      certificate_der_path = self.getConfig('certificate-der-path')
-      with open(certificate_der_path, 'rb') as f:
-        expected_certificate_der = f.read()
-
-      ssl_context = ssl.create_default_context()
-      ssl_context.check_hostname = False
-      ssl_context.verify_mode = ssl.CERT_NONE
-
-      with smtplib.SMTP(host, port, timeout=10) as smtp:
-        smtp.ehlo()
-        smtp.starttls(context=ssl_context)
-        served_certificate_der = smtp.sock.getpeercert(binary_form=True)
-
-      if served_certificate_der == expected_certificate_der:
-        self.logger.info(
-          "Postfix serves the current custom inbound certificate")
-      else:
-        self.logger.error(
-          "Postfix does not serve the configured custom inbound certificate")
-
-[inbound-custom-certificate-served-promise]
+[inbound-postfix-certificate-served-promise]
 recipe = slapos.cookbook:promise.plugin
 eggs = slapos.core
-file = $${inbound-custom-certificate-served-sense:output}
+file = ${check-smtpd-certificate:output}
 output = $${directory:plugins}/inbound_custom_certificate_served.py
+config-service-name = Inbound postfix
 config-host = {{ ipv6 }}
 config-port = $${inbound-postfix-main.cf:smtp-port}
-config-certificate-der-path = $${inbound-custom-certificate-der:location}
-{%- endif %}
+config-certificate-der-path = $${inbound-keystore:der-path}
+
 
 [inbound-postfix]
 recipe = slapos.recipe.build
 init =
   ""
 depends =
-  $${inbound-postfix-certificate:recipe}
   $${inbound-postfix-service:recipe}
+  $${inbound-keystore-promise:recipe}
   $${postfix-wrappers:depends}
   $${inbound-postfix-smtp-promise:recipe}
-{%- if custom_inbound_certificate %}
-  $${inbound-custom-certificate-expiration-promise:recipe}
-  $${inbound-custom-certificate-served-promise:recipe}
-{%- endif %}
+  $${inbound-postfix-certificate-served-promise:recipe}
   $${inbound-postfix-shell-env:recipe}
 
 [inbound-logrotate-entry-postfix]
@@ -696,8 +893,7 @@ content =
   sender_dependent_default_transport_maps = texthash:$${outbound-postfix-sender-transport:output}
 
   # Server TLS parameters
-  smtpd_tls_cert_file = $${postfix-certificate:cert-file}
-  smtpd_tls_key_file = $${postfix-certificate:key-file}
+  smtpd_tls_chain_files = $${postfix-certificate:bundle}
   # always require TLS
   smtpd_tls_security_level = encrypt
   # Ask for client certificate but do not require it
@@ -840,27 +1036,38 @@ pidfile = $${directory:run}/outbound_postfix.pid
 environment =
   MAIL_CONFIG=$${outbound-postfix-directory:etc}
   SASL_CONF_PATH=$${outbound-postfix-directory:etc}
-hash-files =
+# Restart postfix on instance upgrade
+hash-existing-files =
+  ${buildout:directory}/buildout.cfg
+depends =
+  # Reload postfix on buildout run
+  $${outbound-postfix-reload:recipe}
+  # Pull dependent configuration and services
   $${outbound-postfix-main.cf:output}
   $${outbound-postfix-master.cf:output}
-  $${outbound-postfix-wrapper:output}
-{%- for host in sorted_sender_hosts %}
-  $${outbound-postfix-sender-access-{{ loop.index }}:output}
-{%- endfor %}
-{%- if sorted_sender_hosts %}
-  $${outbound-postfix-client-sender-access:output}
-{%- endif %}
-{%- if password_auth_domains %}
-  $${outbound-postfix-smtpd-sasl-conf:output}
-  $${outbound-postfix-sender-login-map:output}
-  $${outbound-postfix-sasldb:sasldb-path}
-{%- endif %}
-{%- if fingerprint_auth_backends %}
-  $${outbound-postfix-backend-clientcerts:output}
-  $${outbound-postfix-backend-tls-policy-map:output}
-{%- endif %}
-depends =
+  # Rotate logs periodically
   $${outbound-logrotate-entry-postfix:recipe}
+
+[outbound-postfix-reload]
+recipe = slapos.recipe.template
+output = $${directory:script}/$${:_buildout_section_name_}
+inline =
+  #!/bin/sh -e
+  export MAIL_CONFIG=$${outbound-postfix-directory:etc}
+  {
+    date;
+    ${postfix:location}/usr/sbin/postfix reload;
+  } >> $${directory:var-log}/outbound_postfix_reload.log 2>&1
+
+[outbound-postfix-certificate-served-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs = slapos.core
+file = ${check-smtpd-certificate:output}
+output = $${directory:plugins}/outbound_certificate_served.py
+config-service-name = Outbound postfix
+config-host = {{ ipv6 }}
+config-port = $${outbound-postfix-main.cf:submission-port}
+config-certificate-der-path = $${postfix-certificate:der}
 
 [outbound-postfix-submission-promise]
 <= monitor-promise-base
@@ -876,6 +1083,7 @@ init =
 depends =
   $${outbound-postfix-service:recipe}
   $${postfix-wrappers:depends}
+  $${outbound-postfix-certificate-served-promise:recipe}
   $${outbound-postfix-submission-promise:recipe}
   $${outbound-postfix-shell-env:recipe}
 
