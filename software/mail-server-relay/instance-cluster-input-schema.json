@@ -97,9 +97,9 @@
         }
       }
     },
-    "custom-inbound-certificate": {
-      "title": "Custom Inbound Certificate",
-      "description": "PEM encoded private key followed by the certificate chain to use for inbound SMTP TLS on this relay.",
+    "inbound-ca-certificate": {
+      "title": "Inbound CA Certificate",
+      "description": "PEM encoded root certificate to use for inbound SMTP TLS on this relay.",
       "textarea": true,
       "type": "string",
       "minLength": 1
@@ -162,8 +162,8 @@
             "config": {
               "$ref": "#/definitions/relay-config"
             },
-            "custom-inbound-certificate": {
-              "$ref": "#/definitions/custom-inbound-certificate"
+            "inbound-ca-certificate": {
+              "$ref": "#/definitions/inbound-ca-certificate"
             }
           }
         }
