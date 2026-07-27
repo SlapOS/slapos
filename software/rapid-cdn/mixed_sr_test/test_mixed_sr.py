@@ -49,7 +49,7 @@ from test import fakeHTTPSResult
 
 
 OLD_SOFTWARE_RELEASE_URL = (
-  'https://lab.nexedi.com/nexedi/slapos/raw/1.0.469'
+  'https://lab.nexedi.com/nexedi/slapos/-/raw/1.0.469'
   '/software/rapid-cdn/software.cfg')
 
 # Hotfix specific to 1.0.469, which was before this mix-sr test
