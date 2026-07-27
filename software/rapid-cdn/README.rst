@@ -409,6 +409,20 @@ computer as the master frontend partition. By adding to the request a
 key ``-sla-error-page-manager-computer_guid`` it is possible to place it
 on another computer, e.g. ``-sla-error-page-manager-computer_guid: couscous``.
 
+Access model
+------------
+
+The EPM is an internal control-plane endpoint reachable only from the
+cluster frontends and the master, over TLS.  Authorisation is by
+capability token in the URL path -- a read token (``/sync``,
+``/haproxy``), an operator token, and one per shared instance -- each a
+``secrets.token_urlsafe(32)`` value delivered to its holder as a SlapOS
+connection parameter (the same model kedifa uses for its key URLs).
+There is no CSRF token on the operator/shared web forms: they are not
+exposed to untrusted browsers, and the tokens are the sole credential.
+Because tokens live in URLs they can appear in logs and ``Referer``
+headers; treat them as cluster-internal secrets, not user credentials.
+
 Supported error codes
 ---------------------
 
@@ -573,6 +587,13 @@ Custom error page HTML and multi language support
 Each uploaded page is a complete, self-contained HTML document.  The
 EPM wraps it in a minimal HTTP/1.0 response envelope that HAProxy
 requires; there is no server-side templating.
+
+Leading ``#``-prefixed lines at the very top of an uploaded page are
+**reserved** (for future response-header support) and are silently
+stripped before wrapping; the ``Content-Length`` reflects the
+post-strip body.  Stripping stops at the first non-``#`` line (a blank
+line counts), so keep page content below any such header lines, or omit
+them entirely.
 
 As the result languages can be shipped in the same file and let the
 visitor's browser pick the right one with a small piece of inline JavaScript.
