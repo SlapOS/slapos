@@ -313,12 +313,26 @@ def error_page_manager_main():
     _manifest_state['dirty'] = False
     return manifest
 
-  def _render_web_ui(codes, source_dir):
+  def _render_web_ui(codes, source_dir, values=None, message=None,
+                     message_kind='error', error_code=None):
+    def _esc(s):
+      return s.replace('&', '&amp;').replace('<', '&lt;')
     rows = ''
     for code in codes:
-      source_file = os.path.join(source_dir, f'{code}.html')
-      html = (_read_html(source_file) or '').replace(
-        '&', '&amp;').replace('<', '&lt;')
+      stored_raw = _read_html(os.path.join(source_dir, f'{code}.html')) or ''
+      # Prefer the just-submitted value when re-rendering after a POST, so the
+      # operator's other unsaved edits are not lost; fall back to what is stored.
+      if values is not None and code in values:
+        displayed_raw = values[code]
+      else:
+        displayed_raw = stored_raw
+      html = _esc(displayed_raw)
+      # data-stored carries the on-disk baseline: the script compares each
+      # field's current value against it, so a still-unsaved field stays yellow
+      # after another field is saved, an emptied field turns red, and Restore can
+      # bring the saved content back. Escaped for a double-quoted attribute.
+      stored_attr = _esc(stored_raw).replace('"', '&quot;')
+      error_attr = ' data-error="1"' if code == error_code else ''
       reason = _EPM_HTTP_REASONS[code]
       desc = _EPM_CODE_DESCRIPTIONS[code]
       rows += f'''
@@ -328,12 +342,16 @@ def error_page_manager_main():
             <div class="code-reason">{reason}</div>
             <div class="code-desc">{desc}</div>
           </td>
-          <td><textarea name="html_{code}" rows="6">{html}</textarea></td>
+          <td><textarea name="html_{code}" rows="6" data-stored="{stored_attr}"{error_attr}>{html}</textarea></td>
           <td>
             <button type="submit" name="action" value="save_{code}">Save</button>
-            <button type="submit" name="action" value="reset_{code}">Reset</button>
+            <button type="button" class="js-restore"
+                    title="Discard unsaved edits and restore the saved content">Restore</button>
+            <button type="submit" name="action" value="reset_{code}"
+                    title="Remove the override and fall back to the default page">Reset</button>
           </td>
         </tr>'''
+    banner = f'<div class="banner {message_kind}">{message}</div>' if message else ''
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -358,14 +376,24 @@ def error_page_manager_main():
     textarea {{ width: 100%; min-height: 6rem; font-family: monospace;
                 font-size: .85rem; border: 1px solid #dde; border-radius: 4px;
                 padding: .4rem; resize: both; }}
+    /* Field-state cues driven by the dirty-tracking script: an unsaved edit is
+       yellow; emptying a field (which cannot be saved) is red. */
+    textarea.dirty {{ background: #fff8d6; border-color: #e6d47a; }}
+    textarea.error {{ background: #fde2e0; border-color: #d98b86; }}
     button {{ padding: .3rem .8rem; border: none; border-radius: 4px;
               cursor: pointer; margin: .15rem 0; }}
     button[value^="save"] {{ background: #4a90d9; color: #fff; }}
     button[value^="reset"] {{ background: #e0e4ea; color: #333; }}
+    button.js-restore {{ background: #eef1f5; color: #333; }}
+    .banner {{ padding: .6rem 1rem; border-radius: 6px; margin-bottom: 1.25rem;
+               font-size: .9rem; }}
+    .banner.error {{ background: #fdecec; color: #a12622; border: 1px solid #f3c2c0; }}
+    .banner.ok {{ background: #eaf6ec; color: #256a30; border: 1px solid #bfe3c5; }}
   </style>
 </head>
 <body>
   <h1>Error Page Manager</h1>
+  {banner}
   <form method="post">
     <table>
       <thead><tr>
@@ -377,6 +405,46 @@ def error_page_manager_main():
       </tbody>
     </table>
   </form>
+  <script>
+    // Per-field state, compared against data-stored (the on-disk baseline, not
+    // the value the page happened to load with): an unsaved non-empty change is
+    // yellow, emptying a field is red (an empty page cannot be saved). Saving
+    // one field re-renders with its baseline updated, so it goes clean while the
+    // other still-unsaved fields keep their colour. Restore puts the saved
+    // content back; a beforeunload guard warns about leaving with unsaved edits.
+    (function () {{
+      var form = document.querySelector('form');
+      var areas = Array.prototype.slice.call(form.querySelectorAll('textarea'));
+      var submitting = false;
+      function changed(t) {{ return t.value !== (t.getAttribute('data-stored') || ''); }}
+      function evaluate(t) {{
+        var c = changed(t);
+        var empty = t.value.trim() === '';
+        // Keep the server's empty-save error until the field is edited again.
+        var forced = t.getAttribute('data-error') === '1' && !c;
+        t.classList.toggle('error', (c && empty) || forced);
+        t.classList.toggle('dirty', c && !empty);
+      }}
+      areas.forEach(function (t) {{
+        evaluate(t);  // reflect the server-rendered state on load
+        t.addEventListener('input', function () {{ evaluate(t); }});
+      }});
+      Array.prototype.forEach.call(
+        form.querySelectorAll('.js-restore'), function (b) {{
+          b.addEventListener('click', function () {{
+            var t = b.closest('tr').querySelector('textarea');
+            t.value = t.getAttribute('data-stored') || '';
+            t.removeAttribute('data-error');
+            evaluate(t);
+          }});
+        }});
+      form.addEventListener('submit', function () {{ submitting = true; }});
+      window.addEventListener('beforeunload', function (e) {{
+        if (submitting) return;
+        if (areas.some(changed)) {{ e.preventDefault(); e.returnValue = ''; }}
+      }});
+    }})();
+  </script>
 </body>
 </html>'''
 
@@ -489,16 +557,32 @@ def error_page_manager_main():
         return send(413, 'Too large')
       params = urllib.parse.parse_qs(body, keep_blank_values=True)
       action = params.get('action', [''])[0]
+      # Every textarea is submitted with the form; keep them to re-render the
+      # page with the operator's edits intact when a save is rejected.
+      submitted = {
+        c: params[f'html_{c}'][0]
+        for c in valid_codes if f'html_{c}' in params}
+      message = None
       if action.startswith('save_'):
         code = action[5:]
         if code not in valid_codes:
           return send(400, 'Unknown code')
-        html = params.get(f'html_{code}', [''])[0]
+        html = submitted.get(code, '')
+        if not html.strip():
+          # Saving an empty body would silently blank the page; refuse it, mark
+          # the field red, and point at Reset (remove the override) or Restore
+          # (bring the saved content back).
+          return send(400, _render_web_ui(
+            valid_codes, source_dir, submitted,
+            f'{code}: an empty page cannot be saved. Use Reset to remove the '
+            'override, or Restore to bring the saved content back.',
+            error_code=code), 'text/html')
         with _lock:
           os.makedirs(source_dir, exist_ok=True)
           with open(os.path.join(source_dir, f'{code}.html'), 'w') as f:
             f.write(html)
           _refresh(code)
+        message = f'Saved the {code} page.'
       elif action.startswith('reset_'):
         code = action[6:]
         if code not in valid_codes:
@@ -508,17 +592,15 @@ def error_page_manager_main():
           if os.path.exists(source_file):
             os.unlink(source_file)
           _refresh(code)
-      # Browsers expect POST-redirect-GET; the meta refresh achieves the
-      # same UX (the form is shown again after submission) while keeping a
-      # plain 200 response that integrates cleanly with non-browser HTTP
-      # clients (curl-based test runners stumble on 3xx + TLS close).
-      target = path.rsplit('/', 1)[0] + '/'
-      return send(
-        200,
-        b'<!DOCTYPE html><html><head>'
-        b'<meta http-equiv="refresh" content="0; url=' + target.encode() +
-        b'"></head><body>Done.</body></html>',
-        'text/html; charset=utf-8')
+        # This code has no stored page any more; show it cleared while keeping
+        # whatever the operator typed into the other fields.
+        submitted[code] = ''
+        message = f'Reset the {code} page to the default.'
+      # Re-render the form with the submitted values rather than reloading a
+      # fresh GET: saving or resetting one code must never discard edits the
+      # operator has typed into the other codes' fields.
+      return send(200, _render_web_ui(
+        valid_codes, source_dir, submitted, message, 'ok'), 'text/html')
 
     elif method == 'PUT':
       if section == 'operator':
@@ -530,6 +612,9 @@ def error_page_manager_main():
         html = read_body()
         if html is None:
           return send(413, 'Too large')
+        if not html.strip():
+          return send(
+            400, 'An empty page cannot be saved; DELETE to remove the override.')
         with _lock:
           os.makedirs(os.path.join(ERROR_PAGES_DIR, 'operator'), exist_ok=True)
           with open(os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html'), 'w') as f:
@@ -548,6 +633,9 @@ def error_page_manager_main():
         html = read_body()
         if html is None:
           return send(413, 'Too large')
+        if not html.strip():
+          return send(
+            400, 'An empty page cannot be saved; DELETE to remove the override.')
         with _lock:
           shared_dir = os.path.join(ERROR_PAGES_DIR, 'shared', ref)
           os.makedirs(shared_dir, exist_ok=True)
