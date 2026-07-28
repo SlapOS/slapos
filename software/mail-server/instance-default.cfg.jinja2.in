@@ -883,10 +883,10 @@ url = https://[$${:ip}]:$${:https-port}/
 error-log = $${directory:httpd-log}/error.log
 access-log = $${directory:httpd-log}/access.log
 log-dir = $${directory:httpd-log}
-php-ini-dir = $${directory:php-ini-dir}
 cert-file = $${ca-directory:certs}/httpd.crt
 key-file = $${ca-directory:certs}/httpd.key
 apache-config-dir = $${directory:apache.d}
+fpm-socket-path = $${directory:run}/php-fpm.sock
 
 [instance-parameter]
 document-root = $${apache-php-configuration:document-root}
