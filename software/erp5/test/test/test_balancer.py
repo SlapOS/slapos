@@ -1016,8 +1016,19 @@ class TestClientTLS(BalancerTestCase):
       process.terminate()
       process.wait()
 
-      with self.assertRaisesRegex(Exception, 'certificate revoked'):
-        _make_request()
+      # The balancer reloads the updated CRL asynchronously, so the revoked
+      # certificate may still be accepted for a short while. Retry until the
+      # balancer rejects it.
+      for _ in range(60):
+        try:
+          _make_request()
+        except Exception as e:
+          self.assertIn('certificate revoked', str(e))
+          break
+        time.sleep(1)
+      else:
+        self.fail(
+            'Balancer did not reject revoked certificate after CRL update')
 
 
 class TestPathBasedRouting(BalancerTestCase):
