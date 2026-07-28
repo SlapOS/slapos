@@ -382,6 +382,15 @@ context =
 {%-   endif %}
 {%- endfor %}
 {%- do authorized_slave_list.sort(key=operator_module.itemgetter('slave_reference')) %}
+{#- Redirect slaves never proxy a backend, so they can never emit a 5xx to
+    override; keep them out of the error-page-manager shared-list so no unusable
+    upload URL is advertised for them. #}
+{%- set epm_shared_list = [] %}
+{%- for authorized_slave in authorized_slave_list %}
+{%-   if authorized_slave.get('type') != 'redirect' %}
+{%-     do epm_shared_list.append(authorized_slave) %}
+{%-   endif %}
+{%- endfor %}
 
 [monitor-instance-parameter]
 monitor-httpd-port = {{ master_partition_monitor_monitor_httpd_port }}
@@ -569,7 +578,7 @@ config-monitor-httpd-port = !py!{{ error_page_manager_partition_monitor_httpd_po
 {%- if 'error-page-manager-port' in slapparameter_dict %}
 config-error-page-manager-port = {{ dumps(slapparameter_dict['error-page-manager-port']) }}
 {%- endif %}
-config-shared-list = {{ dumps(authorized_slave_list) }}
+config-shared-list = {{ dumps(epm_shared_list) }}
 config-cluster-identification = {{ instance_parameter_dict['root-instance-title'] }}
 
 software-url = ${slap-connection:software-release-url}
