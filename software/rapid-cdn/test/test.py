@@ -11855,6 +11855,113 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
       upload_base, {'action': 'save_404', 'html_404': '<html/>'})
     self.assertEqual(result.status_code, 400)
 
+  # --- empty save is rejected (use Reset to remove) ---------------------------
+
+  def test_operator_put_empty_body_is_rejected(self):
+    """Operator PUT with an empty/whitespace body is 400, and stores nothing."""
+    code = '503'
+    op_url = self.operator_url + code
+    self._delete(op_url)
+    try:
+      for empty in ('', '   \n\t '):
+        result = self._put(op_url, empty)
+        self.assertEqual(result.status_code, 400)
+        self.assertIn('DELETE', result.text)
+      # nothing was stored
+      self.assertEqual(self._get(op_url).text, '')
+    finally:
+      self._delete(op_url)
+
+  def test_shared_put_empty_body_is_rejected(self):
+    """Slave PUT with an empty body is 400 and publishes no per-slave file."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    code = '503'
+    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    self._delete(upload_base + code)
+    try:
+      result = self._put(upload_base + code, '')
+      self.assertEqual(result.status_code, 400)
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, haproxy_path)).status_code, 404)
+    finally:
+      self._delete(upload_base + code)
+
+  def test_shared_web_ui_save_empty_is_rejected(self):
+    """An empty Save from the shared web UI is refused and points at Reset."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    code = '503'
+    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    self._post_form(upload_base, {'action': f'reset_{code}'})
+    result = self._post_form(
+      upload_base, {'action': f'save_{code}', f'html_{code}': ''})
+    self.assertEqual(result.status_code, 400)
+    self.assertIn('Reset', result.text)
+    self.assertEqual(
+      self._get('%s/%s' % (self.base_url, haproxy_path)).status_code, 404)
+
+  def test_operator_web_ui_save_empty_is_rejected(self):
+    """An empty Save from the operator web UI is refused and points at Reset."""
+    code = '503'
+    op_url = self.operator_url + code
+    self._delete(op_url)
+    try:
+      result = self._post_form(
+        self.operator_url, {'action': f'save_{code}', f'html_{code}': '   '})
+      self.assertEqual(result.status_code, 400)
+      self.assertIn('Reset', result.text)
+      self.assertEqual(self._get(op_url).text, '')
+    finally:
+      self._delete(op_url)
+
+  # --- saving/resetting one code keeps the other codes' edits -----------------
+
+  def test_shared_web_ui_save_one_preserves_other_edits(self):
+    """Saving one code must not discard edits typed into the other codes."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    for c in self.SHARED_CODES:
+      self._post_form(upload_base, {'action': f'reset_{c}'})
+    try:
+      resp = self._post_form(upload_base, {
+        'action': 'save_502',
+        'html_502': 'SAVED-502-MARKER',
+        'html_503': 'UNSAVED-503-MARKER',
+        'html_504': 'UNSAVED-504-MARKER',
+      })
+      self.assertEqual(resp.status_code, 200)
+      # the other codes' edits survive in the re-rendered form
+      self.assertIn('UNSAVED-503-MARKER', resp.text)
+      self.assertIn('UNSAVED-504-MARKER', resp.text)
+      # only 502 was persisted; the merely-edited 503/504 were not
+      served = self._get(
+        '%s/shared/%s/502.http' % (self.base_url, self.TEST_SLAVE_REF))
+      self.assertIn('SAVED-502-MARKER', served.text)
+      for code in ('503', '504'):
+        served = self._get(
+          '%s/shared/%s/%s.http' % (self.base_url, self.TEST_SLAVE_REF, code))
+        self.assertEqual(served.status_code, 404)
+    finally:
+      self._post_form(upload_base, {'action': 'reset_502'})
+
+  def test_shared_web_ui_reset_one_preserves_other_edits(self):
+    """Resetting one code must not discard edits typed into the other codes."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    try:
+      self._post_form(
+        upload_base, {'action': 'save_502', 'html_502': 'TO-BE-RESET'})
+      resp = self._post_form(upload_base, {
+        'action': 'reset_502',
+        'html_502': 'TYPED-502-DISCARDED',
+        'html_503': 'KEEP-503-MARKER',
+      })
+      self.assertEqual(resp.status_code, 200)
+      self.assertIn('KEEP-503-MARKER', resp.text)
+      served = self._get(
+        '%s/shared/%s/502.http' % (self.base_url, self.TEST_SLAVE_REF))
+      self.assertEqual(served.status_code, 404)
+    finally:
+      self._post_form(upload_base, {'action': 'reset_502'})
+      self._post_form(upload_base, {'action': 'reset_503'})
+
   # --- /shared/ vs /slave/ rename verification --------------------------------
 
   def test_legacy_slave_url_is_404(self):
