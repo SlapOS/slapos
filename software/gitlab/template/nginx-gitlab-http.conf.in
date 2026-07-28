@@ -44,7 +44,6 @@ map $http_upgrade $connection_upgrade_gitlab_ssl {
 
 limit_req_zone $trusted_remote_addr zone=downloadarchive:10m rate={{ cfg('nginx_download_archive_rate_limit') }}r/m;
 
-
 server {
   listen [{{ backend_info.host }}]:{{ backend_info.port }}{% if cfg_https %} ssl http2{% endif %};
 
@@ -105,7 +104,7 @@ server {
   ## HSTS Config
   ## https://www.nginx.com/blog/http-strict-transport-security-hsts-and-nginx/
   {% if int(cfg("nginx_hsts_max_age")) > 0 -%}
-  {%   if '{{ cfg("nginx_hsts_include_subdomains") }}' == 'true' -%}
+  {%   if cfg_bool("nginx_hsts_include_subdomains") == 'true' -%}
   add_header Strict-Transport-Security "max-age={{ cfg('nginx_hsts_max_age') }}; includeSubDomains"
   {%   else -%}
   add_header Strict-Transport-Security "max-age={{ cfg('nginx_hsts_max_age') }}";
@@ -120,7 +119,7 @@ server {
   add_header 'Access-Control-Allow-Origin' {{ cfg('nginx_header_allow_origin') }};
   add_header 'Access-Control-Allow-Credentials' true;
   #{{ 'gzip off;' if cfg_https else ''}}
-  {% if '{{ cfg("nginx_gzip_enabled") }}' == 'true' -%}
+  {% if cfg_bool("nginx_gzip_enabled") == 'true' -%}
   gzip on;
   gzip_static on;
   gzip_comp_level 2;
@@ -130,7 +129,7 @@ server {
   gzip_min_length 10240;
   gzip_proxied no-cache no-store private expired auth;
   gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/json application/xml application/rss+xml;
-  {% endif -%}
+  {%- endif %}
 
   ## https://github.com/gitlabhq/gitlabhq/issues/694
   ## Some requests take more than 30 seconds.
@@ -202,6 +201,7 @@ server {
     proxy_hide_header Set-Cookie;
 
     add_header Cache-Control "max-age=31536000, public, immutable, s-maxage=31536000" always;
+    add_header Vary Accept-Encoding;
 
     proxy_set_header    Host                $http_host;
     proxy_set_header    X-Real-IP           $remote_addr;
@@ -255,6 +255,9 @@ server {
     root {{ gitlab_work.location }}/public;
     internal;
   }
+
+  # If there are custom configs.
+  include {{ nginx.custom }}/*.conf;
 
 }
 
