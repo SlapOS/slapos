@@ -313,12 +313,17 @@ def error_page_manager_main():
     _manifest_state['dirty'] = False
     return manifest
 
-  def _render_web_ui(codes, source_dir):
+  def _render_web_ui(codes, source_dir, values=None, message=None,
+                     message_kind='error'):
     rows = ''
     for code in codes:
-      source_file = os.path.join(source_dir, f'{code}.html')
-      html = (_read_html(source_file) or '').replace(
-        '&', '&amp;').replace('<', '&lt;')
+      # Prefer the just-submitted value when re-rendering after a POST, so the
+      # operator's other unsaved edits are not lost; fall back to what is stored.
+      if values is not None and code in values:
+        raw = values[code]
+      else:
+        raw = _read_html(os.path.join(source_dir, f'{code}.html')) or ''
+      html = raw.replace('&', '&amp;').replace('<', '&lt;')
       reason = _EPM_HTTP_REASONS[code]
       desc = _EPM_CODE_DESCRIPTIONS[code]
       rows += f'''
@@ -334,6 +339,7 @@ def error_page_manager_main():
             <button type="submit" name="action" value="reset_{code}">Reset</button>
           </td>
         </tr>'''
+    banner = f'<div class="banner {message_kind}">{message}</div>' if message else ''
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -362,10 +368,15 @@ def error_page_manager_main():
               cursor: pointer; margin: .15rem 0; }}
     button[value^="save"] {{ background: #4a90d9; color: #fff; }}
     button[value^="reset"] {{ background: #e0e4ea; color: #333; }}
+    .banner {{ padding: .6rem 1rem; border-radius: 6px; margin-bottom: 1.25rem;
+               font-size: .9rem; }}
+    .banner.error {{ background: #fdecec; color: #a12622; border: 1px solid #f3c2c0; }}
+    .banner.ok {{ background: #eaf6ec; color: #256a30; border: 1px solid #bfe3c5; }}
   </style>
 </head>
 <body>
   <h1>Error Page Manager</h1>
+  {banner}
   <form method="post">
     <table>
       <thead><tr>
@@ -489,11 +500,23 @@ def error_page_manager_main():
         return send(413, 'Too large')
       params = urllib.parse.parse_qs(body, keep_blank_values=True)
       action = params.get('action', [''])[0]
+      # Every textarea is submitted with the form; keep them to re-render the
+      # page with the operator's edits intact when a save is rejected.
+      submitted = {
+        c: params[f'html_{c}'][0]
+        for c in valid_codes if f'html_{c}' in params}
       if action.startswith('save_'):
         code = action[5:]
         if code not in valid_codes:
           return send(400, 'Unknown code')
-        html = params.get(f'html_{code}', [''])[0]
+        html = submitted.get(code, '')
+        if not html.strip():
+          # Saving an empty body would silently blank the page; refuse it and
+          # point at Reset, which is the explicit way to remove an override.
+          return send(400, _render_web_ui(
+            valid_codes, source_dir, submitted,
+            f'{code}: an empty page cannot be saved. '
+            'Use Reset to remove the override.'), 'text/html')
         with _lock:
           os.makedirs(source_dir, exist_ok=True)
           with open(os.path.join(source_dir, f'{code}.html'), 'w') as f:
@@ -530,6 +553,9 @@ def error_page_manager_main():
         html = read_body()
         if html is None:
           return send(413, 'Too large')
+        if not html.strip():
+          return send(
+            400, 'An empty page cannot be saved; DELETE to remove the override.')
         with _lock:
           os.makedirs(os.path.join(ERROR_PAGES_DIR, 'operator'), exist_ok=True)
           with open(os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html'), 'w') as f:
@@ -548,6 +574,9 @@ def error_page_manager_main():
         html = read_body()
         if html is None:
           return send(413, 'Too large')
+        if not html.strip():
+          return send(
+            400, 'An empty page cannot be saved; DELETE to remove the override.')
         with _lock:
           shared_dir = os.path.join(ERROR_PAGES_DIR, 'shared', ref)
           os.makedirs(shared_dir, exist_ok=True)

@@ -11845,6 +11845,64 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
       upload_base, {'action': 'save_404', 'html_404': '<html/>'})
     self.assertEqual(result.status_code, 400)
 
+  # --- empty save is rejected (use Reset to remove) ---------------------------
+
+  def test_operator_put_empty_body_is_rejected(self):
+    """Operator PUT with an empty/whitespace body is 400, and stores nothing."""
+    code = '503'
+    op_url = self.operator_url + code
+    self._delete(op_url)
+    try:
+      for empty in ('', '   \n\t '):
+        result = self._put(op_url, empty)
+        self.assertEqual(result.status_code, 400)
+        self.assertIn('DELETE', result.text)
+      # nothing was stored
+      self.assertEqual(self._get(op_url).text, '')
+    finally:
+      self._delete(op_url)
+
+  def test_shared_put_empty_body_is_rejected(self):
+    """Slave PUT with an empty body is 400 and publishes no per-slave file."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    code = '503'
+    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    self._delete(upload_base + code)
+    try:
+      result = self._put(upload_base + code, '')
+      self.assertEqual(result.status_code, 400)
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, haproxy_path)).status_code, 404)
+    finally:
+      self._delete(upload_base + code)
+
+  def test_shared_web_ui_save_empty_is_rejected(self):
+    """An empty Save from the shared web UI is refused and points at Reset."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    code = '503'
+    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    self._post_form(upload_base, {'action': f'reset_{code}'})
+    result = self._post_form(
+      upload_base, {'action': f'save_{code}', f'html_{code}': ''})
+    self.assertEqual(result.status_code, 400)
+    self.assertIn('Reset', result.text)
+    self.assertEqual(
+      self._get('%s/%s' % (self.base_url, haproxy_path)).status_code, 404)
+
+  def test_operator_web_ui_save_empty_is_rejected(self):
+    """An empty Save from the operator web UI is refused and points at Reset."""
+    code = '503'
+    op_url = self.operator_url + code
+    self._delete(op_url)
+    try:
+      result = self._post_form(
+        self.operator_url, {'action': f'save_{code}', f'html_{code}': '   '})
+      self.assertEqual(result.status_code, 400)
+      self.assertIn('Reset', result.text)
+      self.assertEqual(self._get(op_url).text, '')
+    finally:
+      self._delete(op_url)
+
   # --- /shared/ vs /slave/ rename verification --------------------------------
 
   def test_legacy_slave_url_is_404(self):
