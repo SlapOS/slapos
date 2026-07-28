@@ -16,6 +16,7 @@ parts =
   dovecot-promise
   postfix-promise
   apache-httpd-promise
+  php-fpm-promise
   publish-shared
 {% if request_dns['enable'] %}
   request-dns-entry
@@ -847,6 +848,12 @@ depends =
   $${lamp-apache-httpd-conf:recipe}
   $${php.ini-conf:recipe}
 
+[php-fpm-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${php-fpm-wrapper:wrapper-path}
+wrapper-path = $${directory:services}/php-fpm
+hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
+
 [apache-graceful]
 recipe = slapos.recipe.template
 output = $${directory:script}/apache-httpd-graceful
@@ -907,6 +914,14 @@ context =
   section instance_dict instance-parameter
 extensions = jinja2.ext.do
 
+[php-fpm-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${template-php-fpm.conf:target}
+output = $${directory:php-ini-dir}/php-fpm.conf
+context =
+  section instance_dict instance-parameter
+extensions = jinja2.ext.do
+
 [php-bin]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:bin}/php
@@ -943,6 +958,18 @@ name = apache-httpd-port-listening.py
 config-host = $${apache-php-configuration:ip}
 config-port = $${apache-php-configuration:https-port}
 depends = $${apache-php-service:recipe}
+
+[php-fpm-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/php-fpm-wrapper
+command-line = "${apache-php:location}/sbin/php-fpm" -y $${php-fpm-conf:output} -c $${php.ini-conf:output} -F
+
+[php-fpm-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = fpm-socket-listening.py
+config-pathname = $${apache-php-configuration:fpm-socket-path}
+depends = $${php-fpm-service:recipe}
 
 [request-frontend]
 <= monitor-frontend
