@@ -178,6 +178,11 @@ backend {{ slave_instance['slave_reference'] }}-{{ scheme }}
 {%-       endif %}
 
 backend {{ slave_instance['slave_reference'] }}-{{ scheme }}-failover
+{%-       if configuration.get('error-pages-dir') %}
+  errorfile 502 {{ configuration['error-pages-dir'] }}/shared/{{ slave_instance['slave_reference'] }}/502.http
+  errorfile 503 {{ configuration['error-pages-dir'] }}/shared/{{ slave_instance['slave_reference'] }}/503.http
+  errorfile 504 {{ configuration['error-pages-dir'] }}/shared/{{ slave_instance['slave_reference'] }}/504.http
+{%-       endif %}
 {%-       set hostname = info_dict['health-check-failover-hostname'] %}
 {%-       set port = info_dict['health-check-failover-port'] %}
 {%-       set query = info_dict['health-check-failover-query'] %}
