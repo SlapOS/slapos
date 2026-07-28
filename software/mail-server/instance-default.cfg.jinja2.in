@@ -851,7 +851,7 @@ depends =
 [php-fpm-service]
 recipe = slapos.cookbook:wrapper
 command-line = $${php-fpm-wrapper:wrapper-path}
-wrapper-path = $${directory:services}/php-fpm
+wrapper-path = $${directory:service}/php-fpm
 hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
 
 [apache-graceful]
@@ -900,6 +900,15 @@ document-root = $${apache-php-configuration:document-root}
 backend-url = $${apache-php-configuration:url}
 php-bin = ${apache-php:location}/bin/php
 php-ini = $${php.ini-conf:output}
+fpm-socket-path = $${apache-php-configuration:fpm-socket-path}
+
+#Default php-fpm.conf parameters
+#See https://www.php.net/manual/en/install.fpm.configuration.php
+pm = dynamic
+pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
 
 [php.ini-configuration]
 tmp-dir = $${directory:tmp-php}
@@ -1111,4 +1120,3 @@ error-dict = $${dovecot-passwords:error-dict}
 {% if request_dns['enable'] %}
 domain = $${request-dns-entry:connection-domain}
 {% endif %}
-
