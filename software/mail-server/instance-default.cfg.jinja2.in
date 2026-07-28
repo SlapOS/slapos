@@ -16,6 +16,7 @@ parts =
   dovecot-promise
   postfix-promise
   apache-httpd-promise
+  php-fpm-promise
   publish-shared
 {% if request_dns['enable'] %}
   request-dns-entry
@@ -847,6 +848,12 @@ depends =
   $${lamp-apache-httpd-conf:recipe}
   $${php.ini-conf:recipe}
 
+[php-fpm-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${php-fpm-wrapper:wrapper-path}
+wrapper-path = $${directory:service}/php-fpm
+hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
+
 [apache-graceful]
 recipe = slapos.recipe.template
 output = $${directory:script}/apache-httpd-graceful
@@ -883,16 +890,25 @@ url = https://[$${:ip}]:$${:https-port}/
 error-log = $${directory:httpd-log}/error.log
 access-log = $${directory:httpd-log}/access.log
 log-dir = $${directory:httpd-log}
-php-ini-dir = $${directory:php-ini-dir}
 cert-file = $${ca-directory:certs}/httpd.crt
 key-file = $${ca-directory:certs}/httpd.key
 apache-config-dir = $${directory:apache.d}
+fpm-socket-path = $${directory:run}/php-fpm.sock
 
 [instance-parameter]
 document-root = $${apache-php-configuration:document-root}
 backend-url = $${apache-php-configuration:url}
 php-bin = ${apache-php:location}/bin/php
 php-ini = $${php.ini-conf:output}
+fpm-socket-path = $${apache-php-configuration:fpm-socket-path}
+
+#Default php-fpm.conf parameters
+#See https://www.php.net/manual/en/install.fpm.configuration.php
+pm = dynamic
+pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
 
 [php.ini-configuration]
 tmp-dir = $${directory:tmp-php}
@@ -904,6 +920,14 @@ url = ${template-php.ini:target}
 output = $${directory:php-ini-dir}/php.ini
 context =
   section apache_parameter_dict php.ini-configuration
+  section instance_dict instance-parameter
+extensions = jinja2.ext.do
+
+[php-fpm-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${template-php-fpm.conf:target}
+output = $${directory:php-ini-dir}/php-fpm.conf
+context =
   section instance_dict instance-parameter
 extensions = jinja2.ext.do
 
@@ -943,6 +967,18 @@ name = apache-httpd-port-listening.py
 config-host = $${apache-php-configuration:ip}
 config-port = $${apache-php-configuration:https-port}
 depends = $${apache-php-service:recipe}
+
+[php-fpm-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/php-fpm-wrapper
+command-line = "${apache-php:location}/sbin/php-fpm" -y $${php-fpm-conf:output} -c $${php.ini-conf:output} -F
+
+[php-fpm-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = fpm-socket-listening.py
+config-pathname = $${apache-php-configuration:fpm-socket-path}
+depends = $${php-fpm-service:recipe}
 
 [request-frontend]
 <= monitor-frontend
@@ -1084,4 +1120,3 @@ error-dict = $${dovecot-passwords:error-dict}
 {% if request_dns['enable'] %}
 domain = $${request-dns-entry:connection-domain}
 {% endif %}
-
