@@ -1618,14 +1618,20 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     return parameter_dict
 
   def assertSlaveBase(
-    self, reference, expected_parameter_dict=None, hostname=None):
+    self, reference, expected_parameter_dict=None, hostname=None,
+    error_page=True):
     if expected_parameter_dict is None:
       expected_parameter_dict = {}
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.current_generate_auth, self.current_upload_url = \
         self.assertKedifaKeysWithPop(parameter_dict, '')
-    self.assertKeyWithPop('error-page-upload-url', parameter_dict)
+    # Redirect slaves never proxy a backend, so the master does not advertise a
+    # per-slave error-page upload URL for them.
+    if error_page:
+      self.assertKeyWithPop('error-page-upload-url', parameter_dict)
+    else:
+      self.assertNotIn('error-page-upload-url', parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     if hostname is None:
       hostname = reference.replace('_', '').replace('-', '').lower()
@@ -4586,7 +4592,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNotIn('x-real-ip', j['Incoming Headers'])
 
   def test_type_redirect(self):
-    parameter_dict = self.assertSlaveBase('type-redirect')
+    parameter_dict = self.assertSlaveBase('type-redirect', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4628,7 +4634,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_type_redirect_custom_domain(self):
     parameter_dict = self.assertSlaveBase(
-      'type-redirect-custom_domain', hostname='customdomaintyperedirect')
+      'type-redirect-custom_domain', hostname='customdomaintyperedirect',
+      error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4652,7 +4659,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result, via=False, backend_reached=False)
 
   def test_type_redirect_to_standard_port(self):
-    parameter_dict = self.assertSlaveBase('type-redirect-to-standard-port')
+    parameter_dict = self.assertSlaveBase(
+      'type-redirect-to-standard-port', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4693,7 +4701,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result, via=False, backend_reached=False, alt_svc=False)
 
   def test_type_redirect_path(self):
-    parameter_dict = self.assertSlaveBase('type-redirect-path')
+    parameter_dict = self.assertSlaveBase('type-redirect-path', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4737,7 +4745,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # A trailing slash on the configured URL must not change the redirect
     # target (the trailing slash is stripped before the path is prepended,
     # so no double slash appears in the Location header).
-    parameter_dict = self.assertSlaveBase('type-redirect-path-trailing-slash')
+    parameter_dict = self.assertSlaveBase(
+      'type-redirect-path-trailing-slash', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4770,7 +4779,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_type_redirect_path_custom_domain(self):
     parameter_dict = self.assertSlaveBase(
       'type-redirect-path-custom_domain',
-      hostname='customdomaintyperedirectpath')
+      hostname='customdomaintyperedirectpath', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4794,7 +4803,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result, via=False, backend_reached=False)
 
   def test_type_redirect_path_to_standard_port(self):
-    parameter_dict = self.assertSlaveBase('type-redirect-path-to-standard-port')
+    parameter_dict = self.assertSlaveBase(
+      'type-redirect-path-to-standard-port', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -7107,6 +7117,56 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
                       'Custom slave 503 did not propagate to backend haproxy within 90 s')
       self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
       self.assertIn(custom_html, result.text)
+    finally:
+      mimikra.delete(upload_url + '503', verify=cert_file.name)
+      os.unlink(cert_file.name)
+
+  def test_urlless_slave_override_falls_back_to_cluster_page(self):
+    """A slave with no URL cannot override its 5xx page (documented limit).
+
+    A shared instance requested without a 'url' has no backend, so haproxy
+    generates its 503 from a section that carries only the cluster errorfile
+    (there is nothing to attach a per-slave errorfile to).  Uploading a
+    per-slave override therefore has no effect and the cluster page is served.
+    This is intentional -- see README "Per-slave error pages require a backend".
+    """
+    upload_url = self.parseSlaveParameterDict(
+      'empty-no-https-only')['error-page-upload-url']
+    domain = self.parseSlaveParameterDict('empty-no-https-only')['domain']
+
+    computer = self.slap._slap.registerComputer('local')
+    epm_cert_pem = None
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      raw = partition.getInstanceParameterDict().get('_', {})
+      inner = json.loads(raw) if isinstance(raw, str) else raw
+      if isinstance(inner, dict) and 'error-page-certificate' in inner:
+        epm_cert_pem = inner['error-page-certificate']
+        break
+    self.assertIsNotNone(epm_cert_pem, 'EPM certificate not found in partition params')
+
+    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
+    cert_file.write(epm_cert_pem.encode())
+    cert_file.close()
+
+    custom_html = '<html><body>Custom url-less slave 503 override</body></html>'
+    try:
+      result = mimikra.put(upload_url + '503', data=custom_html,
+                           verify=cert_file.name)
+      self.assertEqual(result.status_code, 204)
+
+      # Give the updater more than one poll cycle to propagate (if it ever
+      # would), then assert the override is NOT served -- the cluster page is.
+      time.sleep(70)
+      result = fakeHTTPResult(domain, 'test-path')
+      self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
+      self.assertNotIn(
+        custom_html, result.text,
+        'url-less slave override unexpectedly served; per-slave overrides '
+        'must require a backend')
+      # It is the EPM cluster page (multilingual switcher), not a raw haproxy body.
+      self.assertIn('<section data-lang="en"', result.text)
     finally:
       mimikra.delete(upload_url + '503', verify=cert_file.name)
       os.unlink(cert_file.name)
@@ -10887,6 +10947,262 @@ class TestErrorPageUpdaterOnUpdate(unittest.TestCase):
         'ON_UPDATE command should be called exactly once when changes are detected')
     finally:
       shutil.rmtree(tmpdir)
+
+
+class TestErrorPageSlaveOverride(SlaveHttpFrontendTestCase):
+  """End-to-end per-slave error-page overrides across slave permutations.
+
+  A shared instance uploads a custom page and the test provokes the matching
+  haproxy-generated error, asserting the custom page is served:
+
+  * plain non-cached backend, unreachable -> 503
+  * plain non-cached backend, empty reply -> 502
+  * slow non-cached backend -> 504
+  * health-check failover, primary and failover both down -> 503
+  * cached (enable_cache) backend unreachable -> 503
+
+  502 and 503 are emitted immediately by the backend haproxy.  A slow-origin 504
+  would otherwise race the frontend, which times out on the cluster
+  request-timeout and would emit its own (cluster-page) 504.  The slow slave
+  makes the outcome deterministic purely through parameters -- no profile change:
+  it sets its own request-timeout below the cluster's so the backend times out
+  first, and backend-connect-retries 0 so the response-timeout retry does not
+  push the backend's 504 past the frontend budget.
+
+  Plus: a redirect slave is not offered an upload URL.
+  """
+  request_timeout = 6
+  # The slow slave gives up on its origin well before the frontend (which uses
+  # the cluster request_timeout), so its per-slave 504 reaches the client first.
+  _slow_slave_timeout = 2
+  _slow_stall = request_timeout + 3
+
+  # These slaves intentionally emit 5xx (that is what the overrides cover), so
+  # waitForSlave must not treat their >=500 replies as a setup failure.
+  ignore_status_code_slave_list = \
+      SlaveHttpFrontendTestCase.ignore_status_code_slave_list + [
+        'ovplain.example.com',
+        'ovreset.example.com',
+        'ovslow.example.com',
+        'ovfailover.example.com',
+        'ovcached.example.com',
+      ]
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': cls.request_timeout,
+      })
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    reset_url = 'http://%s:%s/' % (cls._ipv4_address, cls._reset_port)
+    slow_url = 'http://%s:%s/' % (cls._ipv4_address, cls._slow_port)
+    return {
+      # unreachable origin -> haproxy 503
+      'ov-plain': {'url': 'http://bad.backend/'},
+      # origin accepts then closes with no reply -> haproxy 502
+      'ov-reset': {'url': reset_url},
+      # origin stalls; a per-slave request-timeout below the cluster's (plus no
+      # retries) makes the backend emit the 504 before the frontend does
+      'ov-slow': {
+        'url': slow_url,
+        'request-timeout': cls._slow_slave_timeout,
+        'backend-connect-retries': 0,
+      },
+      # primary and failover both unreachable -> 503 from the failover backend
+      'ov-failover': {
+        'url': 'http://bad.backend/',
+        'health-check': 'true',
+        'health-check-failover-url': 'http://bad.failover.backend/',
+      },
+      # cached instance, unreachable origin -> 503 through trafficserver
+      'ov-cached': {'enable_cache': 'true', 'url': 'http://bad.backend/'},
+      # redirect never proxies a backend, so it must not be offered an override
+      'ov-redirect': {'type': 'redirect', 'url': 'http://dest.example.com/'},
+    }
+
+  # --- raw TCP backend to provoke a haproxy 502 ------------------------------
+
+  @classmethod
+  def _startRawBackend(cls, port, handler):
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    srv.bind((cls._ipv4_address, port))
+    srv.listen(50)
+
+    def loop():
+      while True:
+        try:
+          conn, _ = srv.accept()
+        except OSError:
+          return
+        threading.Thread(target=handler, args=(conn,), daemon=True).start()
+
+    threading.Thread(target=loop, daemon=True).start()
+    return srv
+
+  @staticmethod
+  def _resetHandler(conn):
+    # Read the request then close without any reply: haproxy sees an empty
+    # response and (after its retries) emits a 502.
+    try:
+      conn.recv(65536)
+    except OSError:
+      pass
+    finally:
+      conn.close()
+
+  @classmethod
+  def _slowHandler(cls, conn):
+    # Accept and stall past the slave's request-timeout so haproxy emits a 504.
+    try:
+      conn.recv(65536)
+      time.sleep(cls._slow_stall)
+    except OSError:
+      pass
+    finally:
+      conn.close()
+
+  @classmethod
+  def startServerProcess(cls):
+    super().startServerProcess()
+    cls._reset_port = findFreeTCPPort(cls._ipv4_address)
+    cls._slow_port = findFreeTCPPort(cls._ipv4_address)
+    cls._raw_backend_list = [
+      cls._startRawBackend(cls._reset_port, cls._resetHandler),
+      cls._startRawBackend(cls._slow_port, cls._slowHandler),
+    ]
+
+  @classmethod
+  def stopServerProcess(cls):
+    for srv in getattr(cls, '_raw_backend_list', []):
+      try:
+        srv.close()
+      except OSError:
+        pass
+    super().stopServerProcess()
+
+  # --- EPM certificate + upload helpers --------------------------------------
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    epm_cert_pem = None
+    computer = cls.slap._slap.registerComputer('local')
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      raw = partition.getInstanceParameterDict().get('_', {})
+      inner = json.loads(raw) if isinstance(raw, str) else raw
+      if isinstance(inner, dict) and 'error-page-certificate' in inner:
+        epm_cert_pem = inner['error-page-certificate']
+        break
+    assert epm_cert_pem is not None, 'EPM certificate not found'
+    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
+    cert_file.write(epm_cert_pem.encode())
+    cert_file.close()
+    cls._epm_cert_file = cert_file.name
+
+  @classmethod
+  def tearDownClass(cls):
+    if getattr(cls, '_epm_cert_file', None) and os.path.exists(cls._epm_cert_file):
+      os.unlink(cls._epm_cert_file)
+    super().tearDownClass()
+
+  def _assertOverrideServed(self, ref, code, scheme='https'):
+    """Upload a per-slave override for `code`, provoke it, assert it is served."""
+    upload_url = self.parseSlaveParameterDict(ref)['error-page-upload-url']
+    domain = self.parseSlaveParameterDict(ref)['domain']
+    fetch = fakeHTTPSResult if scheme == 'https' else fakeHTTPResult
+    marker = 'CUSTOM-%s-%s-OVERRIDE' % (ref, code)
+    custom_html = '<html><body>%s</body></html>' % marker
+    try:
+      result = mimikra.put(
+        upload_url + code, data=custom_html, verify=self._epm_cert_file)
+      self.assertEqual(204, result.status_code)
+
+      deadline = time.time() + 120
+      last = ''
+      while time.time() < deadline:
+        result = fetch(domain, 'test-path')
+        last = result.text
+        if marker in result.text:
+          self.assertEqual(int(code), result.status_code)
+          return
+        time.sleep(5)
+      self.fail(
+        'per-slave %s override for %r never served; last body:\n%s'
+        % (code, ref, last[:2000]))
+    finally:
+      mimikra.delete(upload_url + code, verify=self._epm_cert_file)
+
+  # --- serving tests ---------------------------------------------------------
+
+  def test_plain_backend_503_override_served(self):
+    self._assertOverrideServed('ov-plain', '503')
+
+  def test_reset_backend_502_override_served(self):
+    self._assertOverrideServed('ov-reset', '502')
+
+  def test_slow_backend_504_override_served(self):
+    self._assertOverrideServed('ov-slow', '504')
+
+  def test_failover_backend_503_override_served(self):
+    self._assertOverrideServed('ov-failover', '503')
+
+  def test_cached_backend_503_override_served(self):
+    self._assertOverrideServed('ov-cached', '503')
+
+  # --- redirect + config-level coverage --------------------------------------
+
+  def test_redirect_slave_has_no_upload_url(self):
+    """A redirect slave can never emit a 5xx, so it gets no upload URL."""
+    parameter_dict = self.parseSlaveParameterDict('ov-redirect')
+    self.assertNotIn('error-page-upload-url', parameter_dict)
+
+  # Shared-instance backends are named after the slave_reference, which the
+  # SlapOS proxy prefixes with an underscore (e.g. request key ov-plain ->
+  # backend _ov-plain-http), so error files live under shared/_ov-plain/.
+  def _backendHaproxyConfigWithSlaves(self):
+    for path in glob.glob(os.path.join(
+        self.instance_path, '*', 'etc', 'backend-haproxy.cfg')):
+      with open(path) as fh:
+        text = fh.read()
+      if 'backend _ov-plain-http' in text:
+        return text
+    self.fail('no backend-haproxy.cfg carrying the test slaves was found')
+
+  def _backendBlock(self, config, header_regexp):
+    match = re.search(
+      r'(?m)^(%s)\n((?:[ \t].*\n|\n)*)' % header_regexp, config)
+    self.assertIsNotNone(
+      match, 'backend block %r not found' % header_regexp)
+    return match.group(2)
+
+  def test_backend_config_wires_per_slave_errorfiles(self):
+    """Every shared code is wired on the primary and the failover backend.
+
+    A static complement to the serving tests: it confirms 502/503/504 are all
+    referenced on both the primary and the failover backend section, including
+    the failover section that the serving tests reach only for 503.
+    """
+    config = self._backendHaproxyConfigWithSlaves()
+    primary = self._backendBlock(config, r'backend _ov-plain-http')
+    failover = self._backendBlock(
+      config, r'backend _ov-failover\S*-failover')
+    for code in ('502', '503', '504'):
+      self.assertIn('/shared/_ov-plain/%s.http' % code, primary,
+                    'primary backend missing errorfile %s' % code)
+      self.assertIn('/shared/_ov-failover/%s.http' % code, failover,
+                    'failover backend missing errorfile %s' % code)
 
 
 class TestErrorPageManager(SlapOSInstanceTestCase):
