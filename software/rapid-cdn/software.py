@@ -505,6 +505,7 @@ def error_page_manager_main():
       submitted = {
         c: params[f'html_{c}'][0]
         for c in valid_codes if f'html_{c}' in params}
+      message = None
       if action.startswith('save_'):
         code = action[5:]
         if code not in valid_codes:
@@ -522,6 +523,7 @@ def error_page_manager_main():
           with open(os.path.join(source_dir, f'{code}.html'), 'w') as f:
             f.write(html)
           _refresh(code)
+        message = f'Saved the {code} page.'
       elif action.startswith('reset_'):
         code = action[6:]
         if code not in valid_codes:
@@ -531,17 +533,15 @@ def error_page_manager_main():
           if os.path.exists(source_file):
             os.unlink(source_file)
           _refresh(code)
-      # Browsers expect POST-redirect-GET; the meta refresh achieves the
-      # same UX (the form is shown again after submission) while keeping a
-      # plain 200 response that integrates cleanly with non-browser HTTP
-      # clients (curl-based test runners stumble on 3xx + TLS close).
-      target = path.rsplit('/', 1)[0] + '/'
-      return send(
-        200,
-        b'<!DOCTYPE html><html><head>'
-        b'<meta http-equiv="refresh" content="0; url=' + target.encode() +
-        b'"></head><body>Done.</body></html>',
-        'text/html; charset=utf-8')
+        # This code has no stored page any more; show it cleared while keeping
+        # whatever the operator typed into the other fields.
+        submitted[code] = ''
+        message = f'Reset the {code} page to the default.'
+      # Re-render the form with the submitted values rather than reloading a
+      # fresh GET: saving or resetting one code must never discard edits the
+      # operator has typed into the other codes' fields.
+      return send(200, _render_web_ui(
+        valid_codes, source_dir, submitted, message, 'ok'), 'text/html')
 
     elif method == 'PUT':
       if section == 'operator':

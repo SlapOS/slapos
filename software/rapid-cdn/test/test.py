@@ -11903,6 +11903,55 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
     finally:
       self._delete(op_url)
 
+  # --- saving/resetting one code keeps the other codes' edits -----------------
+
+  def test_shared_web_ui_save_one_preserves_other_edits(self):
+    """Saving one code must not discard edits typed into the other codes."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    for c in self.SHARED_CODES:
+      self._post_form(upload_base, {'action': f'reset_{c}'})
+    try:
+      resp = self._post_form(upload_base, {
+        'action': 'save_502',
+        'html_502': 'SAVED-502-MARKER',
+        'html_503': 'UNSAVED-503-MARKER',
+        'html_504': 'UNSAVED-504-MARKER',
+      })
+      self.assertEqual(resp.status_code, 200)
+      # the other codes' edits survive in the re-rendered form
+      self.assertIn('UNSAVED-503-MARKER', resp.text)
+      self.assertIn('UNSAVED-504-MARKER', resp.text)
+      # only 502 was persisted; the merely-edited 503/504 were not
+      served = self._get(
+        '%s/shared/%s/502.http' % (self.base_url, self.TEST_SLAVE_REF))
+      self.assertIn('SAVED-502-MARKER', served.text)
+      for code in ('503', '504'):
+        served = self._get(
+          '%s/shared/%s/%s.http' % (self.base_url, self.TEST_SLAVE_REF, code))
+        self.assertEqual(served.status_code, 404)
+    finally:
+      self._post_form(upload_base, {'action': 'reset_502'})
+
+  def test_shared_web_ui_reset_one_preserves_other_edits(self):
+    """Resetting one code must not discard edits typed into the other codes."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    try:
+      self._post_form(
+        upload_base, {'action': 'save_502', 'html_502': 'TO-BE-RESET'})
+      resp = self._post_form(upload_base, {
+        'action': 'reset_502',
+        'html_502': 'TYPED-502-DISCARDED',
+        'html_503': 'KEEP-503-MARKER',
+      })
+      self.assertEqual(resp.status_code, 200)
+      self.assertIn('KEEP-503-MARKER', resp.text)
+      served = self._get(
+        '%s/shared/%s/502.http' % (self.base_url, self.TEST_SLAVE_REF))
+      self.assertEqual(served.status_code, 404)
+    finally:
+      self._post_form(upload_base, {'action': 'reset_502'})
+      self._post_form(upload_base, {'action': 'reset_503'})
+
   # --- /shared/ vs /slave/ rename verification --------------------------------
 
   def test_legacy_slave_url_is_404(self):
