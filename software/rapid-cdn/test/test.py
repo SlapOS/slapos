@@ -11205,7 +11205,113 @@ class TestErrorPageSlaveOverride(SlaveHttpFrontendTestCase):
                     'failover backend missing errorfile %s' % code)
 
 
-class TestErrorPageManager(SlapOSInstanceTestCase):
+class ErrorPageManagerClientMixin:
+  """Shared setUp/tearDown and HTTPS client helpers for the error-page-manager
+  partition test cases.
+
+  Every EPM-partition test (TestErrorPageManager and the NewSlave/RemovedSlave/
+  BuiltinChange/Scale regression cases) requests a standalone
+  ``error-page-manager`` instance, reads its published connection parameters,
+  persists the self-signed certificate to a temp file for TLS verification, and
+  polls ``/sync`` until the manager's HTTPS server answers.  This mixin hoists
+  that boilerplate plus the small HTTPS client helpers, leaving each test case
+  with only its own partition reference, monitor port, shared-list and tests.
+
+  Mix in *before* SlapOSInstanceTestCase so ``tearDownClass``'s ``super()``
+  chain reaches the base class:
+
+      class TestX(ErrorPageManagerClientMixin, SlapOSInstanceTestCase): ...
+  """
+
+  SUPPORTED_CODES = ['400', '404', '408', '500', '502', '503', '504']
+  SHARED_CODES = ['502', '503', '504']
+  _EPM_CERT_FILE = None
+
+  @classmethod
+  def _setUpErrorPageManagerClient(cls, timeout=120):
+    """Read published params, persist the cert, and wait for the HTTPS server.
+
+    Sets ``cls.sync_url`` / ``base_url`` / ``operator_url`` / ``slave_info`` /
+    ``_epm_base`` and ``cls._EPM_CERT_FILE``.  ``timeout`` bounds the readiness
+    poll -- widen it for large shared-lists, whose manager builds a big token
+    map at startup.  All four connection keys are always published, so
+    ``slave_info`` is ``{}`` when the shared-list is empty.
+    """
+    conn = json.loads(
+      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
+    cls.sync_url = conn['sync-url']
+    cls.base_url = conn['base-url']
+    cls.operator_url = conn['operator-url']
+    cls.slave_info = json.loads(conn['shared-error-page-information'])
+
+    # Write self-signed cert to a temp file for TLS verification.
+    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
+    cert_file.write(conn['certificate'].encode())
+    cert_file.close()
+    cls._EPM_CERT_FILE = cert_file.name
+
+    # Extract the scheme+host base URL (strips the /sync/TOKEN suffix).
+    parsed = urllib.parse.urlparse(cls.sync_url)
+    cls._epm_base = '%s://%s' % (parsed.scheme, parsed.netloc)
+
+    # Wait for the error-page-manager HTTPS server to be ready.
+    begin = time.time()
+    while True:
+      try:
+        if mimikra.get(
+            cls.sync_url, verify=cls._EPM_CERT_FILE).status_code == 200:
+          break
+      except Exception:
+        pass
+      if time.time() - begin > timeout:
+        raise TimeoutError(
+          'error-page-manager did not start within %s s' % timeout)
+      time.sleep(2)
+
+  @classmethod
+  def tearDownClass(cls):
+    if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
+      os.unlink(cls._EPM_CERT_FILE)
+    super().tearDownClass()
+
+  # --- HTTPS client helpers ---------------------------------------------------
+
+  def _get(self, url):
+    return mimikra.get(url, verify=self._EPM_CERT_FILE)
+
+  def _put(self, url, body):
+    return mimikra.put(url, data=body, verify=self._EPM_CERT_FILE)
+
+  def _delete(self, url):
+    return mimikra.delete(url, verify=self._EPM_CERT_FILE)
+
+  def _post_form(self, url, form_dict):
+    body = urllib.parse.urlencode(form_dict).encode('utf-8')
+    return mimikra.post(
+      url, data=body,
+      headers=d2h({'Content-Type': 'application/x-www-form-urlencoded'}),
+      verify=self._EPM_CERT_FILE, allow_redirects=False, http3=False)
+
+  def _epm_host_port(self):
+    parsed = urllib.parse.urlparse(self.sync_url)
+    return parsed.hostname, parsed.port
+
+  def _open_stalled_connection(self):
+    """Open a TLS connection, complete the handshake, then send a partial
+    request and never finish it -- an established-but-idle connection."""
+    host, port = self._epm_host_port()
+    client_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    client_ctx.check_hostname = False
+    client_ctx.verify_mode = ssl.CERT_NONE
+    raw = socket.create_connection((host, port), timeout=30)
+    tls = client_ctx.wrap_socket(raw, server_hostname=None)
+    # A request line with no terminating CRLF: the server starts reading a
+    # request but can never complete one, so its handler blocks in read.
+    tls.sendall(b'GET /sync/')
+    return tls
+
+
+class TestErrorPageManager(ErrorPageManagerClientMixin, SlapOSInstanceTestCase):
   """Tests for the error-page-manager partition.
 
   Verifies that:
@@ -11217,12 +11323,9 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
 
   __partition_reference__ = 'EPM'
 
-  SUPPORTED_CODES = ['400', '404', '408', '500', '502', '503', '504']
-  SHARED_CODES = ['502', '503', '504']
   TEST_SLAVE_REF = 'test-slave-1'
   TEST_SLAVE_REF_2 = 'test-slave-2'
   _EPM_MONITOR_PORT = 25000
-  _EPM_CERT_FILE = None
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -11244,52 +11347,7 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    conn = json.loads(
-      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
-    cls.sync_url = conn['sync-url']
-    cls.base_url = conn['base-url']
-    cls.operator_url = conn['operator-url']
-    cls.slave_info = json.loads(conn['shared-error-page-information'])
-
-    # Write self-signed cert to a temp file for TLS verification
-    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
-    cert_file.write(conn['certificate'].encode())
-    cert_file.close()
-    cls._EPM_CERT_FILE = cert_file.name
-
-    # Extract the scheme+host base URL (strips /sync/TOKEN suffix)
-    parsed = urllib.parse.urlparse(cls.sync_url)
-    cls._epm_base = '%s://%s' % (parsed.scheme, parsed.netloc)
-
-    # Wait for the error page manager HTTPS server to be ready
-    begin = time.time()
-    while True:
-      try:
-        result = mimikra.get(cls.sync_url, verify=cls._EPM_CERT_FILE)
-        if result.status_code == 200:
-          break
-      except Exception:
-        pass
-      if time.time() - begin > 120:
-        raise TimeoutError('error-page-manager did not start within 120 s')
-      time.sleep(2)
-
-  @classmethod
-  def tearDownClass(cls):
-    if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
-      os.unlink(cls._EPM_CERT_FILE)
-    super().tearDownClass()
-
-  # --- helpers ----------------------------------------------------------------
-
-  def _get(self, url):
-    return mimikra.get(url, verify=self._EPM_CERT_FILE)
-
-  def _put(self, url, body):
-    return mimikra.put(url, data=body, verify=self._EPM_CERT_FILE)
-
-  def _delete(self, url):
-    return mimikra.delete(url, verify=self._EPM_CERT_FILE)
+    cls._setUpErrorPageManagerClient()
 
   # --- sync / manifest --------------------------------------------------------
 
@@ -11813,13 +11871,6 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
                        'shared web UI must not expose cluster-only code %s'
                        % code)
 
-  def _post_form(self, url, form_dict):
-    body = urllib.parse.urlencode(form_dict).encode('utf-8')
-    return mimikra.post(
-      url, data=body,
-      headers=d2h({'Content-Type': 'application/x-www-form-urlencoded'}),
-      verify=self._EPM_CERT_FILE, allow_redirects=False, http3=False)
-
   def test_shared_web_ui_post_save_and_reset(self):
     """Save/Reset buttons from the shared web UI work end-to-end."""
     upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
@@ -11981,24 +12032,6 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
 
   # --- resilience / scalability -----------------------------------------------
 
-  def _epm_host_port(self):
-    parsed = urllib.parse.urlparse(self.sync_url)
-    return parsed.hostname, parsed.port
-
-  def _open_stalled_connection(self):
-    """Open a TLS connection, complete the handshake, then send a partial
-    request and never finish it -- an established-but-idle connection."""
-    host, port = self._epm_host_port()
-    client_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    client_ctx.check_hostname = False
-    client_ctx.verify_mode = ssl.CERT_NONE
-    raw = socket.create_connection((host, port), timeout=30)
-    tls = client_ctx.wrap_socket(raw, server_hostname=None)
-    # A request line with no terminating CRLF: the server starts reading a
-    # request but can never complete one, so its handler blocks in read.
-    tls.sendall(b'GET /sync/')
-    return tls
-
   def test_stalled_client_does_not_wedge_manager(self):
     """A stalled client must not block the manager: /sync stays responsive
     while stalled connections are held open."""
@@ -12088,7 +12121,8 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
       tls.close()
 
 
-class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
+class TestErrorPageManagerNewSlave(
+    ErrorPageManagerClientMixin, SlapOSInstanceTestCase):
   """Regression test: EPM detects a shared ref added after initial startup.
 
   Bug: SHARED_TOKEN_MAP is built once at process start.  When buildout adds a
@@ -12104,7 +12138,6 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
   SLAVE_A_REF = 'ns-slave-a'
   SLAVE_B_REF = 'ns-slave-b'
   _EPM_MONITOR_PORT = 25100
-  _EPM_CERT_FILE = None
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -12123,28 +12156,7 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    conn = json.loads(
-      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
-    cls.sync_url = conn['sync-url']
-    parsed = urllib.parse.urlparse(cls.sync_url)
-    cls._epm_base = '%s://%s' % (parsed.scheme, parsed.netloc)
-
-    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
-    cert_file.write(conn['certificate'].encode())
-    cert_file.close()
-    cls._EPM_CERT_FILE = cert_file.name
-
-    begin = time.time()
-    while True:
-      try:
-        result = mimikra.get(cls.sync_url, verify=cls._EPM_CERT_FILE)
-        if result.status_code == 200:
-          break
-      except Exception:
-        pass
-      if time.time() - begin > 120:
-        raise TimeoutError('EPM (new-slave test) did not start within 120 s')
-      time.sleep(2)
+    cls._setUpErrorPageManagerClient()
 
     # Add slave-B: simulates adding a slave after the EPM is already running.
     # This triggers the bug we're testing (SLAVE_TOKEN_MAP not refreshed).
@@ -12166,21 +12178,6 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
     cls.base_url = conn['base-url']
     cls.operator_url = conn['operator-url']
     cls.slave_info = json.loads(conn['shared-error-page-information'])
-
-  @classmethod
-  def tearDownClass(cls):
-    if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
-      os.unlink(cls._EPM_CERT_FILE)
-    super().tearDownClass()
-
-  def _get(self, url):
-    return mimikra.get(url, verify=self._EPM_CERT_FILE)
-
-  def _put(self, url, body):
-    return mimikra.put(url, data=body, verify=self._EPM_CERT_FILE)
-
-  def _delete(self, url):
-    return mimikra.delete(url, verify=self._EPM_CERT_FILE)
 
   def test_new_slave_token_accepted(self):
     """Slave-B added after EPM startup can upload error pages (204, not 401).
@@ -12220,7 +12217,8 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
       self._delete(op_url)
 
 
-class TestErrorPageManagerRemovedSlave(SlapOSInstanceTestCase):
+class TestErrorPageManagerRemovedSlave(
+    ErrorPageManagerClientMixin, SlapOSInstanceTestCase):
   """A shared instance's override is dropped once the slave leaves the list.
 
   The shared list is retention-resolved by the master, so a ref that is gone
@@ -12233,7 +12231,6 @@ class TestErrorPageManagerRemovedSlave(SlapOSInstanceTestCase):
   KEEP_REF = 'rs-slave-keep'
   REMOVED_REF = 'rs-slave-removed'
   _EPM_MONITOR_PORT = 25102
-  _EPM_CERT_FILE = None
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -12255,33 +12252,12 @@ class TestErrorPageManagerRemovedSlave(SlapOSInstanceTestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    conn = json.loads(
-      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
-    cls.sync_url = conn['sync-url']
-    cls.base_url = conn['base-url']
-    slave_info = json.loads(conn['shared-error-page-information'])
-
-    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
-    cert_file.write(conn['certificate'].encode())
-    cert_file.close()
-    cls._EPM_CERT_FILE = cert_file.name
-
-    begin = time.time()
-    while True:
-      try:
-        if mimikra.get(
-            cls.sync_url, verify=cls._EPM_CERT_FILE).status_code == 200:
-          break
-      except Exception:
-        pass
-      if time.time() - begin > 120:
-        raise TimeoutError('EPM (removed-slave test) did not start within 120 s')
-      time.sleep(2)
+    cls._setUpErrorPageManagerClient()
 
     cls._removed_path = 'shared/%s/503.http' % cls.REMOVED_REF
 
     # The removed slave uploads a custom page while it still exists.
-    upload_url = slave_info[cls.REMOVED_REF]['upload-url'] + '503'
+    upload_url = cls.slave_info[cls.REMOVED_REF]['upload-url'] + '503'
     if mimikra.put(
         upload_url, data='<html>bye</html>',
         verify=cls._EPM_CERT_FILE).status_code != 204:
@@ -12307,12 +12283,6 @@ class TestErrorPageManagerRemovedSlave(SlapOSInstanceTestCase):
     cls.sync_url = conn['sync-url']
     cls.base_url = conn['base-url']
 
-  @classmethod
-  def tearDownClass(cls):
-    if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
-      os.unlink(cls._EPM_CERT_FILE)
-    super().tearDownClass()
-
   def test_removed_slave_override_is_pruned(self):
     manifest = json.loads(
       mimikra.get(self.sync_url, verify=self._EPM_CERT_FILE).text)
@@ -12323,7 +12293,8 @@ class TestErrorPageManagerRemovedSlave(SlapOSInstanceTestCase):
     self.assertEqual(served.status_code, 404)
 
 
-class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
+class TestErrorPageManagerBuiltinChange(
+    ErrorPageManagerClientMixin, SlapOSInstanceTestCase):
   """Regression test: EPM restarts when a builtin HTML changes.
 
   Bug: hash-existing-files originally watched only buildout.cfg and the EPM
@@ -12343,7 +12314,6 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
   _CODE = '503'
   _MARKER = '<!-- EPMBC builtin-change marker -->'
   _EPM_MONITOR_PORT = 25101
-  _EPM_CERT_FILE = None
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -12362,28 +12332,7 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    conn = json.loads(
-      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
-    cls.sync_url = conn['sync-url']
-    cls.base_url = conn['base-url']
-
-    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
-    cert_file.write(conn['certificate'].encode())
-    cert_file.close()
-    cls._EPM_CERT_FILE = cert_file.name
-
-    begin = time.time()
-    while True:
-      try:
-        result = mimikra.get(cls.sync_url, verify=cls._EPM_CERT_FILE)
-        if result.status_code == 200:
-          break
-      except Exception:
-        pass
-      if time.time() - begin > 120:
-        raise TimeoutError(
-          'EPM (builtin-change test) did not start within 120 s')
-      time.sleep(2)
+    cls._setUpErrorPageManagerClient()
 
     # Locate the builtin HTML directory used by the EPM.  The path is stored
     # in the EPM config JSON written by error-page-manager-config.
@@ -12405,8 +12354,7 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
           f.write(cls._original_builtin)
       except Exception:
         pass
-    if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
-      os.unlink(cls._EPM_CERT_FILE)
+    # The mixin's tearDownClass (reached via super()) unlinks the cert file.
     super().tearDownClass()
 
   def _get_cluster_http(self, code):
