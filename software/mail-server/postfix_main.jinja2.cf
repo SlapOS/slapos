@@ -8,6 +8,7 @@ mail_spool_directory = {{ spool_directory }}
 html_directory = no
 manpage_directory = {{ postfix_location }}/usr/local/man
 sample_directory = {{ postfix_location }}/etc/postfix
+meta_directory = {{ etc_directory }}
 readme_directory = no
 sendmail_path = {{ bin_directory }}/sendmail
 newaliases_path = {{ bin_directory }}/newaliases
@@ -54,8 +55,7 @@ smtp_tls_security_level = may
 
 smtp_tls_chain_files = {{ postfix_certificate['bundle'] }}
 
-smtpd_tls_cert_file = {{ postfix_certificate['cert-file'] }}
-smtpd_tls_key_file = {{ postfix_certificate['key-file'] }}
+smtpd_tls_chain_files = {{ postfix_certificate['bundle'] }}
 smtpd_tls_security_level = encrypt
 {%- if instance['inbound-relay']['enable'] %}
 smtpd_tls_ask_ccert = yes
