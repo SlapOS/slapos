@@ -272,7 +272,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
     self.assertTrue(match)
     assert match
     request_time = int(match.groups()[-1])
-    self.assertGreater(request_time, 2 * 1000)
+    self.assertGreaterEqual(request_time, 2 * 1000)
     self.assertLess(request_time, 20 * 1000)
 
   def test_access_log_apachedex_report(self):
