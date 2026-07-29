@@ -208,37 +208,21 @@ def _prune_removed_shared_overrides(error_pages_dir, active_references):
   return pruned
 
 
-def error_page_manager_main():
+def _make_error_page_application(config, logger=None):
+  """Build the error-page-manager WSGI application from a config dict.
+
+  Split out of error_page_manager_main() so the routing/auth/publish logic is
+  unit-testable with a fake environ (no partition, no TLS socket). Runs the
+  startup pre-bake + prune (idempotent) so the returned app is ready to serve,
+  and logs the init summary when a logger is given.
+  """
   import hashlib
   import http.client
   import json
-  import logging
   import os
-  import socket
-  import ssl
-  import sys
   import threading
   import urllib.parse
-  from wsgiref.simple_server import make_server
-  from caucase.http import ThreadingWSGIServer, CaucaseWSGIRequestHandler
 
-  with open(sys.argv[1]) as f:
-    config = json.load(f)
-
-  logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(message)s',
-    handlers=[
-      logging.FileHandler(config['log_file']),
-      logging.StreamHandler(sys.stdout),
-    ],
-  )
-  logger = logging.getLogger('error-page-manager')
-
-  IP = config['ip']
-  PORT = config['port']
-  CERTIFICATE = config['certificate']
-  KEY = config['key']
   ERROR_PAGES_DIR = os.path.normpath(config['error_pages_dir'])
   BUILTIN_DIR = os.path.normpath(config['builtin_dir'])
 
@@ -699,41 +683,22 @@ def error_page_manager_main():
       1 for _, _, fs in os.walk(
         os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared'))
       for f in fs if f.endswith('.http'))
-  logger.info(
-    'Initialized error pages: %d shared slaves, %d overrides published, '
-    '%d removed slaves pruned', len(SHARED_TOKEN_MAP), published, len(pruned))
+  if logger is not None:
+    logger.info(
+      'Initialized error pages: %d shared slaves, %d overrides published, '
+      '%d removed slaves pruned', len(SHARED_TOKEN_MAP), published, len(pruned))
 
-  ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-  ctx.load_cert_chain(CERTIFICATE, KEY)
-
-  # Wrap the listening socket before bind/activate, as kedifa does:
-  # ThreadingWSGIServer is built with bind_and_activate=False for this.
-  socket.setdefaulttimeout(EPM_SOCKET_TIMEOUT)
-
-  class _LoggingWSGIServer(ThreadingWSGIServer):
-    # Log handler and file-write exceptions to the manager log, not just stderr.
-    def handle_error(self, request, client_address):
-      logger.exception('Error handling request from %s', client_address[0])
-
-  httpd = make_server(
-    IP, PORT, application, _LoggingWSGIServer, CaucaseWSGIRequestHandler)
-  httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
-  httpd.server_bind()
-  httpd.server_activate()
-  logger.info('Error Page Manager listening on [%s]:%s', IP, PORT)
-  httpd.serve_forever()
+  return application
 
 
-def error_page_updater_main():
-  import hashlib
+def error_page_manager_main():
   import json
   import logging
-  import os
+  import socket
   import ssl
-  import subprocess
   import sys
-  import time
-  import urllib.request
+  from wsgiref.simple_server import make_server
+  from caucase.http import ThreadingWSGIServer, CaucaseWSGIRequestHandler
 
   with open(sys.argv[1]) as f:
     config = json.load(f)
@@ -746,7 +711,47 @@ def error_page_updater_main():
       logging.StreamHandler(sys.stdout),
     ],
   )
-  logger = logging.getLogger('error-page-updater')
+  logger = logging.getLogger('error-page-manager')
+
+  application = _make_error_page_application(config, logger=logger)
+
+  ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+  ctx.load_cert_chain(config['certificate'], config['key'])
+
+  # Wrap the listening socket before bind/activate, as kedifa does:
+  # ThreadingWSGIServer is built with bind_and_activate=False for this.
+  socket.setdefaulttimeout(EPM_SOCKET_TIMEOUT)
+
+  class _LoggingWSGIServer(ThreadingWSGIServer):
+    # Log handler and file-write exceptions to the manager log, not just stderr.
+    def handle_error(self, request, client_address):
+      logger.exception('Error handling request from %s', client_address[0])
+
+  httpd = make_server(
+    config['ip'], config['port'], application,
+    _LoggingWSGIServer, CaucaseWSGIRequestHandler)
+  httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
+  httpd.server_bind()
+  httpd.server_activate()
+  logger.info(
+    'Error Page Manager listening on [%s]:%s', config['ip'], config['port'])
+  httpd.serve_forever()
+
+
+def _make_error_page_updater(config, logger):
+  """Build the updater's pollable helpers from a config dict.
+
+  Split out of error_page_updater_main() so poll_once / restore_fallback_symlink
+  can be unit-tested directly against a stub /sync server, rather than the loop's
+  logic being mirrored in the test. Returns a namespace of callables; main()
+  drives poll_once in its while-loop and runs ON_UPDATE when it reports a change.
+  """
+  import hashlib
+  import json
+  import os
+  import ssl
+  import urllib.request
+  from types import SimpleNamespace
 
   SYNC_URL = config['sync_url']
   BASE_URL = config['base_url']
@@ -754,8 +759,6 @@ def error_page_updater_main():
   ERROR_PAGES_DIR = config['error_pages_dir']
   BUILTIN_DIR = config['builtin_dir']
   STATE_FILE = config['state_file']
-  ON_UPDATE = config['on_update']
-  POLL_INTERVAL = 60
 
   def _sha256(path):
     with open(path, 'rb') as f:
@@ -864,12 +867,46 @@ def error_page_updater_main():
     _save_state(state)
     return changed
 
-  _ensure_builtins()
-  ctx = _make_ssl_ctx()
-  logger.info('Error Page Updater started, polling %s every %ss', SYNC_URL, POLL_INTERVAL)
+  return SimpleNamespace(
+    poll_once=poll_once,
+    make_ssl_ctx=_make_ssl_ctx,
+    ensure_builtins=_ensure_builtins,
+    restore_fallback_symlink=_restore_fallback_symlink,
+  )
+
+
+def error_page_updater_main():
+  import json
+  import logging
+  import subprocess
+  import sys
+  import time
+
+  with open(sys.argv[1]) as f:
+    config = json.load(f)
+
+  logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s',
+    handlers=[
+      logging.FileHandler(config['log_file']),
+      logging.StreamHandler(sys.stdout),
+    ],
+  )
+  logger = logging.getLogger('error-page-updater')
+
+  ON_UPDATE = config['on_update']
+  POLL_INTERVAL = 60
+
+  updater = _make_error_page_updater(config, logger)
+  updater.ensure_builtins()
+  ctx = updater.make_ssl_ctx()
+  logger.info(
+    'Error Page Updater started, polling %s every %ss',
+    config['sync_url'], POLL_INTERVAL)
   while True:
     try:
-      if poll_once(ctx):
+      if updater.poll_once(ctx):
         logger.info('Pages changed, triggering haproxy reload')
         subprocess.call(ON_UPDATE, shell=True)
     except Exception as e:
