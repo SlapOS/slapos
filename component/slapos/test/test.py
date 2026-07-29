@@ -63,7 +63,10 @@ extends-cache = {extends_cache}
 
 _, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     profile_cfg,
-    shared_part_list=[])
+    shared_part_list=[],
+    # profile_cfg is generated here, outside the served checkout, so it cannot
+    # be built from an URL like the other Software Releases.
+    serve_software_release_from_url=False)
 
 def setUpModule():
   utils.launchBuildout(

@@ -123,7 +123,9 @@ class E2ETestCase(SlapOSInstanceTestCase):
   def requestMailServer(cls, domain, state, extra=None):
     param_dict = {
       "mail-domains": [domain],
-      "inbound-relay": {"relay-sr-url": RELAY_SR},
+      # the mail server requests the relay SR from its own process, so this
+      # must be the URL the SR was built from, not a local path.
+      "inbound-relay": {"relay-sr-url": cls.getSoftwareURL()},
       "test-account": True,
     }
     if extra:
