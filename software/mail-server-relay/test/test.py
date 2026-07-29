@@ -450,3 +450,95 @@ class ProxyMapDuplicateDomainTestCase(SlapOSInstanceTestCase):
                   "Error should mention the duplicate domain")
     self.assertIn("appears in multiple proxies", error_text.lower(),
                   "Error should indicate domain appears in multiple proxies")
+
+class DMARCRelayConfigMixin:
+  def getRelayPartitionPathList(self):
+    partition_prefix = self.computer_partition.getId().rsplit('-', 1)[0] + '-'
+    return sorted(
+      os.path.join(self.slap.instance_directory, cp.getId())
+      for cp in self.slap.computer.getComputerPartitionList()
+      if (
+        cp.getState() == 'started' and
+        cp.getType() == 'relay' and
+        cp.getId().startswith(partition_prefix)
+      )
+    )
+
+  def getRelayInfoList(self):
+    relay_info_list = []
+    for partition_path in self.getRelayPartitionPathList():
+      with open(os.path.join(partition_path, 'etc', 'postfix', 'inbound', 'main.cf')) as fh:
+        main_cf = fh.read()
+      relay_info_list.append({
+        'main_cf': main_cf,
+        'opendmarc_conf': os.path.join(
+          partition_path, 'etc', 'postfix', 'inbound', 'opendmarc.conf'),
+        'opendmarc_service': os.path.join(
+          partition_path, 'etc', 'service', 'opendmarc'),
+      })
+    self.assertTrue(relay_info_list, 'Expected at least one started relay partition')
+    return relay_info_list
+
+
+class DMARCEnabledRelayConfigTestCase(DMARCRelayConfigMixin, PostfixTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    parameter_dict = json.loads(super().getInstanceParameterDict()['_'])
+    parameter_dict['default-relay-config']['dmarc'] = {'enable': True}
+    return {'_': json.dumps(parameter_dict)}
+
+  def test_opendmarc_is_enabled_in_postfix(self):
+    for relay_info in self.getRelayInfoList():
+      self.assertIn('smtpd_milters = inet:127.0.0.1:10024', relay_info['main_cf'])
+      self.assertIn('milter_default_action = accept', relay_info['main_cf'])
+      self.assertIn('milter_protocol = 6', relay_info['main_cf'])
+
+  def test_opendmarc_wrapper_and_config_are_created(self):
+    for relay_info in self.getRelayInfoList():
+      self.assertTrue(os.path.exists(relay_info['opendmarc_service']))
+      with open(relay_info['opendmarc_conf']) as fh:
+        config = fh.read()
+      self.assertIn('RejectFailures true', config)
+      self.assertIn('SPFSelfValidate true', config)
+
+
+class DMARCDisabledRelayConfigTestCase(DMARCRelayConfigMixin, PostfixTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    parameter_dict = json.loads(super().getInstanceParameterDict()['_'])
+    parameter_dict['default-relay-config']['dmarc'] = {'enable': False}
+    return {'_': json.dumps(parameter_dict)}
+
+  def test_opendmarc_is_not_enabled_in_postfix(self):
+    for relay_info in self.getRelayInfoList():
+      self.assertNotIn('smtpd_milters = inet:127.0.0.1:10024', relay_info['main_cf'])
+      self.assertNotIn('milter_default_action = accept', relay_info['main_cf'])
+
+  def test_opendmarc_wrapper_is_not_created(self):
+    for relay_info in self.getRelayInfoList():
+      self.assertFalse(os.path.exists(relay_info['opendmarc_service']))
+
+
+class DMARCPerRelayOverrideTestCase(DMARCRelayConfigMixin, PostfixTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    parameter_dict = json.loads(super().getInstanceParameterDict()['_'])
+    parameter_dict['default-relay-config']['dmarc'] = {'enable': True}
+    parameter_dict['topology']['relay-bar']['config']['dmarc'] = {'enable': False}
+    return {'_': json.dumps(parameter_dict)}
+
+  def test_dmarc_can_be_disabled_on_one_relay(self):
+    relay_info_list = self.getRelayInfoList()
+    enabled_relay_count = 0
+    disabled_relay_count = 0
+    for relay_info in relay_info_list:
+      if 'smtpd_milters = inet:127.0.0.1:10024' in relay_info['main_cf']:
+        enabled_relay_count += 1
+        self.assertTrue(os.path.exists(relay_info['opendmarc_service']))
+        self.assertTrue(os.path.exists(relay_info['opendmarc_conf']))
+      else:
+        disabled_relay_count += 1
+        self.assertFalse(os.path.exists(relay_info['opendmarc_service']))
+        self.assertFalse(os.path.exists(relay_info['opendmarc_conf']))
+    self.assertEqual(enabled_relay_count, 1)
+    self.assertEqual(disabled_relay_count, 1)
