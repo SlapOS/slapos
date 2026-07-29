@@ -546,6 +546,37 @@ command-line = {{ software_parameter_dict['bin_directory'] }}/rapid-cdn-error-pa
   {{ directory['etc'] }}/error-page-updater.json
 wrapper-path = {{ directory['service'] }}/error-page-updater
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+{%- set shared_reference_list = [] %}
+{%- for slave_reference in backend_slave_dict %}
+{%-   do shared_reference_list.append(backend_slave_dict[slave_reference]['slave_reference']) %}
+{%- endfor %}
+[error-page-seed-config]
+recipe = slapos.recipe.build
+output = {{ directory['etc'] }}/error-page-seed.json
+error-pages-dir = {{ error_pages_dir }}
+builtin-dir = {{ software_parameter_dict['error_pages_builtin_dir'] }}
+# Slave references are haproxy backend names, hence space-free: pass them
+# space-separated and split in the init script.
+shared-references = {{ shared_reference_list | join(' ') }}
+init =
+  import json, os
+  config = {
+    'error_pages_dir': options['error-pages-dir'],
+    'builtin_dir': options['builtin-dir'],
+    'shared_references': options['shared-references'].split(),
+  }
+  os.makedirs(os.path.dirname(options['output']), exist_ok=True)
+  with open(options['output'], 'w') as f:
+    json.dump(config, f)
+
+[error-page-seed]
+# Seed cluster defaults + a fallback symlink per slave before backend-haproxy
+# validates a config that names shared/<ref>/<code>.http for every slave.
+recipe = plone.recipe.command
+command = {{ software_parameter_dict['bin_directory'] }}/rapid-cdn-error-page-seed ${error-page-seed-config:output}
+update-command = ${:command}
+stop-on-error = true
 ##</Error page updater>
 
 ##<Frontend haproxy>
@@ -666,6 +697,8 @@ parts +=
     error-page-ca-cert
     error-page-updater-config
     error-page-updater
+    error-page-seed-config
+    error-page-seed
     frontend-haproxy-configuration
     backend-haproxy-configuration
     promise-key-download-url-ready
