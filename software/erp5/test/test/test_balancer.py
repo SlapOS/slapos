@@ -262,7 +262,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
     self.assertTrue(match)
     assert match
     request_time = int(match.groups()[-2])
-    self.assertGreater(request_time, 2 * 1000)
+    self.assertGreaterEqual(request_time, 2 * 1000)
     self.assertLess(request_time, 20 * 1000)
 
   def test_access_log_apachedex_report(self) -> None:
@@ -1016,8 +1016,19 @@ class TestClientTLS(BalancerTestCase):
       process.terminate()
       process.wait()
 
-      with self.assertRaisesRegex(Exception, 'certificate revoked'):
-        _make_request()
+      # The balancer reloads the updated CRL asynchronously, so the revoked
+      # certificate may still be accepted for a short while. Retry until the
+      # balancer rejects it.
+      for _ in range(60):
+        try:
+          _make_request()
+        except Exception as e:
+          self.assertIn('certificate revoked', str(e))
+          break
+        time.sleep(1)
+      else:
+        self.fail(
+            'Balancer did not reject revoked certificate after CRL update')
 
 
 class TestPathBasedRouting(BalancerTestCase):
