@@ -10,9 +10,12 @@ parts =
   certificate-authority
   logrotate-entry-apache
   promise
+  fpm-promise
 
   php.ini-conf
+  php-fpm-conf
   apache-php-service
+  php-fpm-service
   publish-connection-information
   lamp-apache-httpd
   {{ parameter_dict['application-part-list'] }}
@@ -101,6 +104,12 @@ depends =
   ${copy-application:recipe}
   ${apache-graceful:recipe}
 
+[php-fpm-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${php-fpm-wrapper:wrapper-path}
+wrapper-path = ${directory:services}/php-fpm
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
 [copy-application]
 recipe = plone.recipe.command
 command = if [ -z "$(ls -A ${directory:www})" ]; then
@@ -139,10 +148,10 @@ url = https://[${:ip}]:${:port}/
 error-log = ${directory:httpd-log}/error.log
 access-log = ${directory:httpd-log}/access.log
 log-dir = ${directory:httpd-log}
-php-ini-dir = ${directory:php-ini-dir}
 cert-file = ${ca-directory:certs}/httpd.crt
 key-file = ${ca-directory:certs}/httpd.key
 apache-config-dir = ${directory:apache.d}
+fpm-socket-path = ${directory:run}/php-fpm.sock
 
 [lamp-apache-httpd]
 recipe = slapos.recipe.template:jinja2
@@ -195,6 +204,19 @@ context =
   section instance_dict instance-parameter
 extensions = jinja2.ext.do
 
+[php-fpm-conf]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['template-php-fpm.conf'] }}
+output = ${directory:php-ini-dir}/php-fpm.conf
+context =
+  section instance_dict instance-parameter
+extensions = jinja2.ext.do
+
+[php-fpm-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/php-fpm-wrapper
+command-line = "{{ parameter_dict['apache-php-location'] }}/sbin/php-fpm" -y ${php-fpm-conf:output} -c ${php.ini-conf:output} -F
+
 [instance-parameter]
 db-user = ${mariadb-urlparse:username}
 db-password = ${mariadb-urlparse:password}
@@ -205,6 +227,7 @@ document-root = ${apache-php-configuration:default-document-root}
 backend-url = ${apache-php-configuration:url}
 php-bin = {{ parameter_dict['apache-php-location'] }}/bin/php
 php-ini = ${php.ini-conf:output}
+fpm-socket-path  = ${apache-php-configuration:fpm-socket-path}
 
 #Defaut php.ini parameters
 #They have been set in file php.ini.in
@@ -218,6 +241,14 @@ php.session.cookie_secure = True
 php.max_execution_time = 1800
 php.max_input_time = 3600
 php.max_file_uploads = 100
+
+#Default php-fpm.conf parameters
+#See https://www.php.net/manual/en/install.fpm.configuration.php
+pm = dynamic
+pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
 
 [php-bin]
 recipe = slapos.cookbook:wrapper
@@ -265,6 +296,12 @@ promise = check_socket_listening
 name = apache-httpd-port-listening.py
 config-host = ${apache-php-configuration:ip}
 config-port = ${apache-php-configuration:port}
+
+[fpm-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = fpm-socket-listening.py
+config-pathname = ${apache-php-configuration:fpm-socket-path}
 
 [slap-parameter]
 {% for key, value in slapparameter_dict.items() -%}
