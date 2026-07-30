@@ -162,75 +162,39 @@ class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
   smtp_timeout = 60
 
   @classmethod
-  def getInstanceSoftwareType(cls):
-    return 'cluster'
-
-  @classmethod
-  def makeParameterDict(
-      cls,
-      custom_inbound_certificate=None,
-      relay_name=None,
-      relay_fqdn=None,
-  ):
+  def makeParameterDict(cls, inbound_ca=None):
     relay_config = {
-      "fqdn": relay_fqdn or cls.relay_fqdn,
+      "fqdn": cls.relay_fqdn,
     }
-    if custom_inbound_certificate is not None:
-      relay_config["custom-inbound-certificate"] = custom_inbound_certificate
+    if inbound_ca is not None:
+      relay_config['config'] = {'inbound-ca-certificate': inbound_ca}
     return {
       "_": json.dumps({
         "topology": {
-          relay_name or cls.relay_name: relay_config,
+          cls.relay_name: relay_config,
         },
       })
     }
 
   @classmethod
-  def getInstanceParameterDict(cls):
-    return cls.makeParameterDict()
-
-  def requestCluster(self, custom_inbound_certificate=None):
-    return self.slap.request(
-      software_release=self.getSoftwareURL(),
-      partition_reference=self.__partition_reference__,
-      partition_parameter_kw=self.makeParameterDict(custom_inbound_certificate),
+  def requestDefaultInstance(cls, state='started', inbound_ca=None):
+    cls.cluster = cluster = cls.slap.request(
+      software_release=cls.getSoftwareURL(),
+      partition_reference=cls.relay_name,
+      partition_parameter_kw=cls.makeParameterDict(inbound_ca),
       software_type='cluster',
-      state='started',
+      state=state,
     )
-
-  def requestClusterAndWait(self, custom_inbound_certificate=None):
-    self.requestCluster(custom_inbound_certificate)
-    for _ in range(2):
-      self.waitForInstance()
-    return self.requestCluster(custom_inbound_certificate)
-
-  def requestStandaloneClusterAndWait(
-      self,
-      partition_reference,
-      relay_name,
-      relay_fqdn,
-      custom_inbound_certificate,
-  ):
-    def requester():
-      return self.slap.request(
-        software_release=self.getSoftwareURL(),
-        partition_reference=partition_reference,
-        partition_parameter_kw=self.makeParameterDict(
-          custom_inbound_certificate,
-          relay_name=relay_name,
-          relay_fqdn=relay_fqdn,
-        ),
-        software_type='cluster',
-        state='started',
-      )
-    requester()
-    self.waitForInstance()
-    self.waitForInstance()
-    return requester()
+    return cluster
 
   @classmethod
   def partitionPath(cls, cp, *paths):
     return os.path.join(cls.slap.instance_directory, cp.getId(), *paths)
+
+  @classmethod
+  def slapos(cls, *args):
+    return subprocess.call((
+      cls.slap._slapos_bin, *args,  '--cfg', cls.slap._slapos_config))
 
   def getRelayPartition(self, relay_fqdn=None):
     expected_fqdn_line = "myhostname = %s" % (relay_fqdn or self.relay_fqdn)
@@ -247,18 +211,16 @@ class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
       "Could not find relay partition for %s" % (relay_fqdn or self.relay_fqdn)
     )
 
-  def getRelayCertificatePathDict(self, relay):
-    return {
-      "default-bundle": self.partitionPath(
-        relay, 'etc', 'postfix', 'ssl', 'postfix.bundle.pem'),
-      "inbound-bundle": self.partitionPath(
-        relay, 'etc', 'postfix', 'inbound', 'ssl', 'postfix-inbound.bundle.pem'
-      ),
-    }
+  def getRelayCertPaths(self, relay):
+    prefix = self.partitionPath(relay, 'etc', 'postfix')
+    return (
+      os.path.join(prefix, 'ssl', 'postfix.bundle.pem'),
+      os.path.join(prefix, 'inbound', 'ssl', 'postfix-inbound.bundle.pem'),
+    )
 
   @staticmethod
-  def readFile(path):
-    with open(path, "rb") as f:
+  def readFile(path, mode='rb'):
+    with open(path, mode) as f:
       return f.read()
 
   @staticmethod
@@ -287,8 +249,8 @@ class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
       smtp.starttls(context=ssl_context)
       return smtp.sock.getpeercert(binary_form=True)
 
-  def assertServedInboundCertificate(self, expected_certificate_pem, cluster=None):
-    expected_certificate_der = self.pemToDer(expected_certificate_pem)
+  def assertServedInboundCertificate(self, pempath, cluster=None):
+    expected_certificate_der = self.pemToDer(self.readFile(pempath, 'r'))
     deadline = time.time() + self.smtp_timeout
     last_certificate_der = None
     last_error = None
@@ -300,7 +262,6 @@ class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
           return
       except Exception as e:
         last_error = e
-
       if time.time() >= deadline:
         if last_error is not None:
           raise AssertionError(
@@ -310,74 +271,137 @@ class CustomInboundCertificateTestCase(SlapOSInstanceTestCase):
         self.assertEqual(expected_certificate_der, last_certificate_der)
       time.sleep(2)
 
+  def assertCertFileContentEqual(self, *paths):
+    self.assertEqual(*(self.readFile(p).strip() for p in paths))
+
   @classmethod
-  def generateCertificate(cls, fqdn):
-    openssl = shutil.which("openssl") or "/usr/bin/openssl"
+  def generateCACertificate(cls, fqdn, ca, ca_key):
+    openssl = shutil.which('openssl') or '/usr/bin/openssl'
+    subprocess.check_call(
+      [
+        openssl,
+        'req', '-x509',
+        '-newkey', 'rsa:2048', '-noenc',
+        '-days', '30',
+        '-sha256',
+        '-extensions', 'v3_ca', 
+        '-subj', '/CN=Root CA for %s' % fqdn,
+        '-addext', 'keyUsage=critical,digitalSignature,keyCertSign',
+        '-keyout', ca_key, '-out', ca,
+      ],
+      stdout=subprocess.DEVNULL,
+      stderr=subprocess.DEVNULL,
+    )
+
+  @classmethod
+  def generateLeafCertificate(cls, fqdn, ca, ca_key, leaf_bundle):
+    openssl = shutil.which('openssl') or '/usr/bin/openssl'
     with tempfile.TemporaryDirectory() as tempdir:
-      bundle = os.path.join(tempdir, "bundle")
-      subprocess.check_call(
+      csr = os.path.join(tempdir, 'csr')
+      x = subprocess.call(
         [
           openssl,
-          "req",
-          "-x509",
-          "-newkey",
-          "rsa:2048",
-          "-nodes",
-          "-days",
-          "30",
-          "-sha256",
-          "-subj",
-          "/CN=%s" % fqdn,
-          "-addext",
-          "subjectAltName=DNS:%s" % fqdn,
-          "-keyout",
-          bundle,
-          "-out",
-          bundle,
+          'req',
+          '-newkey', 'rsa:2048', '-noenc',
+          '-sha256',
+          '-subj', '/CN=%s' % fqdn,
+          '-addext', 'subjectAltName=DNS:%s' % fqdn,
+          '-keyout', leaf_bundle, '-out', csr,
         ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
       )
-      with open(bundle) as f:
-        return f.read()
+      leaf = os.path.join(tempdir, 'leaf')
+      subprocess.check_call(
+        [
+          openssl,
+          'x509', '-req',
+          '-days', '30',
+          '-sha256',
+          '-copy_extensions', 'copyall',
+          '-CA', ca,
+          '-CAkey', ca_key,
+          '-in', csr,
+          '-out', leaf,
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+      )
+      with open(leaf) as f:
+        leaf = f.read()
+      with open(leaf_bundle, 'a') as f:
+        f.write(leaf)
 
-  def assertCustomCertificateWritten(self, path_dict, certificate_bundle):
-    self.assertEqual(
-      certificate_bundle.encode().strip(),
-      self.readFile(path_dict["inbound-bundle"]).strip(),
+  def pushCertificate(self, url, leaf, pinnedpubkey):
+    curl = shutil.which('curl') or '/usr/bin/curl'
+    return subprocess.call(
+      [
+        curl,
+        '-T', leaf,
+        '-E', leaf,
+        '-k', '--pinnedpubkey', pinnedpubkey,
+        url,
+      ],
+      stdout=subprocess.DEVNULL,
+      stderr=subprocess.DEVNULL,
     )
 
   def test_custom_inbound_certificate_lifecycle(self):
-    relay = self.getRelayPartition()
-    path_dict = self.getRelayCertificatePathDict(relay)
+    with tempfile.TemporaryDirectory() as tempdir:
+      ca = os.path.join(tempdir, 'ca.pem')
+      ca_key = os.path.join(tempdir, 'ca_key.pem')
+      leaf_bundle = os.path.join(tempdir, 'leaf.bundle.pem')
+      badname_bundle = os.path.join(tempdir, 'badname.bundle.pem')
+      badca = os.path.join(tempdir, 'badca.pem')
+      badca_key = os.path.join(tempdir, 'badca_key.pem')
+      bad_bundle = os.path.join(tempdir, 'bad.bundle.pem')
 
-    self.assertServedInboundCertificate(
-      self.readFile(path_dict["default-bundle"]).decode()
-    )
+      relay = self.getRelayPartition()
+      conn = json.loads(relay.getConnectionParameterDict()['_'])
+      url = conn['keystore-url']
+      pinnedpubkey = conn['pinnedpubkey']
 
-    valid_certificate = self.generateCertificate(self.relay_fqdn)
-    cluster = self.requestClusterAndWait(valid_certificate)
-    relay = self.getRelayPartition()
-    path_dict = self.getRelayCertificatePathDict(relay)
+      self.generateCACertificate(self.relay_fqdn, ca, ca_key)
+      self.generateLeafCertificate(self.relay_fqdn, ca, ca_key, leaf_bundle)
+      self.generateLeafCertificate('bad.domain', ca, ca_key, badname_bundle)
+      self.generateCACertificate('bad.ca', badca, badca_key)
+      self.generateLeafCertificate(self.relay_fqdn, badca, badca_key, bad_bundle)
 
-    self.assertCustomCertificateWritten(path_dict, valid_certificate)
-    self.assertServedInboundCertificate(valid_certificate, cluster)
+      # Check initial state
+      default_bundle, inbound_bundle = self.getRelayCertPaths(relay)
+      self.assertCertFileContentEqual(default_bundle, inbound_bundle)
+      self.assertServedInboundCertificate(default_bundle)
 
-  def test_custom_inbound_certificate_on_initial_request(self):
-    relay_name = "relay-custom-cert-initial"
-    relay_fqdn = "custom-inbound-initial.relay.lan"
-    valid_certificate = self.generateCertificate(relay_fqdn)
-    cluster = self.requestStandaloneClusterAndWait(
-      "custom-inbound-certificate-initial",
-      relay_name,
-      relay_fqdn,
-      valid_certificate,
-    )
-    relay = self.getRelayPartition(relay_fqdn)
-    path_dict = self.getRelayCertificatePathDict(relay)
+      # Try pushing certificate not signed by default CAs
+      retcode = self.pushCertificate(url, leaf_bundle, pinnedpubkey)
+      self.assertIn(retcode, (55, 56)) # haproxy resets connection due to bad CA
+      self.assertCertFileContentEqual(default_bundle, inbound_bundle)
 
-    self.assertCustomCertificateWritten(path_dict, valid_certificate)
-    self.assertServedInboundCertificate(valid_certificate, cluster)
+      # Customize CA
+      ca_pem = self.readFile(ca, 'r')
+      self.requestDefaultInstance(inbound_ca=ca_pem)
+      for _ in range(2):
+       self.waitForInstance()
+
+      # Try pushing certificate not signed by custom CA
+      retcode = self.pushCertificate(url, bad_bundle, pinnedpubkey)
+      self.assertIn(retcode, (55, 56)) # haproxy resets connection due to bad CA
+      self.assertCertFileContentEqual(default_bundle, inbound_bundle)
+
+      # Try pushing certificate signed by custom CA but with wrong name
+      retcode = self.pushCertificate(url, badname_bundle, pinnedpubkey)
+      self.assertEqual(retcode, 92) # haproxy resets connection due to bad name
+      self.assertCertFileContentEqual(default_bundle, inbound_bundle)
+
+      # Push valid certificate
+      retcode = self.pushCertificate(url, leaf_bundle, pinnedpubkey)
+      self.assertEqual(retcode, 0) # ok
+      self.assertCertFileContentEqual(leaf_bundle, inbound_bundle)
+      self.assertServedInboundCertificate(leaf_bundle)
+      self.assertEqual(
+        self.slapos('node', 'promise'),
+        0,
+      )
 
 
 class ProxyMapDuplicateDomainTestCase(SlapOSInstanceTestCase):
