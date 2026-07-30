@@ -466,10 +466,15 @@ class DMARCRelayConfigMixin:
         main_cf = fh.read()
       relay_info_list.append({
         'main_cf': main_cf,
+        'authentication_header_checks': os.path.join(
+          partition_path, 'etc', 'postfix', 'inbound',
+          'authentication_header_checks'),
         'opendmarc_conf': os.path.join(
           partition_path, 'etc', 'postfix', 'inbound', 'opendmarc.conf'),
         'opendmarc_service': os.path.join(
           partition_path, 'etc', 'service', 'opendmarc'),
+        'policyd_spf_conf': os.path.join(
+          partition_path, 'etc', 'postfix', 'inbound', 'policyd-spf.conf'),
       })
     self.assertTrue(relay_info_list, 'Expected at least one started relay partition')
     return relay_info_list
@@ -487,6 +492,10 @@ class DMARCEnabledRelayConfigTestCase(DMARCRelayConfigMixin, PostfixTestCase):
       self.assertIn('smtpd_milters = inet:127.0.0.1:10024', relay_info['main_cf'])
       self.assertIn('milter_default_action = accept', relay_info['main_cf'])
       self.assertIn('milter_protocol = 6', relay_info['main_cf'])
+      self.assertRegex(
+        relay_info['main_cf'],
+        r'header_checks = pcre:.*/authentication_header_checks',
+      )
 
   def test_opendmarc_wrapper_and_config_are_created(self):
     for relay_info in self.getRelayInfoList():
@@ -494,7 +503,21 @@ class DMARCEnabledRelayConfigTestCase(DMARCRelayConfigMixin, PostfixTestCase):
       with open(relay_info['opendmarc_conf']) as fh:
         config = fh.read()
       self.assertIn('RejectFailures true', config)
-      self.assertIn('SPFSelfValidate true', config)
+      self.assertIn('SPFIgnoreResults false', config)
+      self.assertIn('SPFSelfValidate false', config)
+      self.assertIn('TrustedAuthservIDs HOSTNAME', config)
+
+  def test_authentication_results_are_local_and_trusted(self):
+    for relay_info in self.getRelayInfoList():
+      with open(relay_info['policyd_spf_conf']) as fh:
+        policyd_spf_config = fh.read()
+      self.assertIn('Header_Type = AR', policyd_spf_config)
+      self.assertIn('Authserv_Id = HOSTNAME', policyd_spf_config)
+
+      with open(relay_info['authentication_header_checks']) as fh:
+        header_checks = fh.read()
+      self.assertIn('/^Authentication-Results:/ IGNORE', header_checks)
+      self.assertIn('/^Received-SPF:/ IGNORE', header_checks)
 
 
 class DMARCDisabledRelayConfigTestCase(DMARCRelayConfigMixin, PostfixTestCase):
@@ -508,10 +531,12 @@ class DMARCDisabledRelayConfigTestCase(DMARCRelayConfigMixin, PostfixTestCase):
     for relay_info in self.getRelayInfoList():
       self.assertNotIn('smtpd_milters = inet:127.0.0.1:10024', relay_info['main_cf'])
       self.assertNotIn('milter_default_action = accept', relay_info['main_cf'])
+      self.assertNotIn('header_checks =', relay_info['main_cf'])
 
   def test_opendmarc_wrapper_is_not_created(self):
     for relay_info in self.getRelayInfoList():
       self.assertFalse(os.path.exists(relay_info['opendmarc_service']))
+      self.assertFalse(os.path.exists(relay_info['authentication_header_checks']))
 
 
 class DMARCPerRelayOverrideTestCase(DMARCRelayConfigMixin, PostfixTestCase):

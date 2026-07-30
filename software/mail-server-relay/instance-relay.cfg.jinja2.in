@@ -329,6 +329,10 @@ content =
   smtpd_milters = inet:127.0.0.1:$${opendmarc-service:port}
   milter_default_action = accept
   milter_protocol = 6
+
+  # Do not let remote senders forge authentication results. Postfix does not
+  # apply header_checks to policyd-spf's PREPEND result, so milters can trust it.
+  header_checks = pcre:$${inbound-postfix-authentication-header-checks:output}
 {% endif %}
 
   spf_passed =
@@ -395,6 +399,13 @@ output = $${inbound-postfix-directory:etc}/policyd-spf.conf
 context =
 
 {% if dmarc_enable %}
+[inbound-postfix-authentication-header-checks]
+recipe = slapos.recipe.template
+output = $${inbound-postfix-directory:etc}/authentication_header_checks
+inline =
+  /^Authentication-Results:/ IGNORE
+  /^Received-SPF:/ IGNORE
+
 [opendmarc-conf]
 recipe = slapos.recipe.template
 output = $${inbound-postfix-directory:etc}/opendmarc.conf
@@ -408,8 +419,10 @@ inline =
   RequiredHeaders true
   Socket inet:$${opendmarc-service:port}@[127.0.0.1]
   SoftwareHeader false
-  SPFSelfValidate true
+  SPFIgnoreResults false
+  SPFSelfValidate false
   Syslog false
+  TrustedAuthservIDs HOSTNAME
   UserID $${userinfo:pw-name}:$${userinfo:gr-name}
 
 [opendmarc-service]
@@ -488,6 +501,7 @@ depends =
   $${inbound-postfix-master.cf:output}
   $${policyd-spf-conf:recipe}
 {% if dmarc_enable %}
+  $${inbound-postfix-authentication-header-checks:recipe}
   $${opendmarc-service:recipe}
 {% endif %}
   {%- if greylisting_enable %}

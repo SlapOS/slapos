@@ -1213,6 +1213,32 @@ class DMARC(E2ETestCase):
     self.assertIn('dmarc', err.lower())
     self.check_not_in_inbox(self.mail_server, msg_body, wait_time=5)
 
+  def test_dmarc_ignores_forged_authentication_results(self):
+    msg_body = "This inbound email has a forged DKIM result."
+    message = (
+      f"Authentication-Results: {socket.gethostname()};\n"
+      " dkim=pass header.d=google.com header.s=forged\n"
+      "From: Spoofed Sender <spoofed@google.com>\n"
+      f"To: {self.mail_server.testmail}\n"
+      "Subject: Forged Authentication-Results\n"
+      "\n"
+      f"{msg_body}"
+    )
+    with smtplib.SMTP(**self.relay_inbound) as smtp:
+      with self.assertRaises(smtplib.SMTPDataError) as raised:
+        smtp.sendmail(
+          from_addr="testmail@spf-always-pass.messwithdns.test.rapid.space",
+          to_addrs=[self.mail_server.testmail],
+          msg=message,
+        )
+
+    self.assertGreaterEqual(raised.exception.smtp_code, 500)
+    error = raised.exception.smtp_error
+    if isinstance(error, bytes):
+      error = error.decode('utf-8', 'replace')
+    self.assertIn('dmarc', error.lower())
+    self.check_not_in_inbox(self.mail_server, msg_body, wait_time=5)
+
 
 class CustomOutbound(E2ETestCase):
   instance_max_retry = 4
