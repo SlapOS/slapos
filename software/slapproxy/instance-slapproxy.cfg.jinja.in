@@ -142,7 +142,7 @@ command-line =
     -f $${haproxy.cfg:output}
 hash-files = $${haproxy.cfg:output}
 ipv6 = $${haproxy.cfg:ipv6}
-slapproxy-url = http://[$${:ipv6}]:$${haproxy.cfg:slapproxy-port}
+slapproxy-url = https://[$${:ipv6}]:$${haproxy.cfg:slapproxy-port}
 monitor.app-url = https://[$${:ipv6}]:$${haproxy.cfg:monitor.app-port}
 
 
