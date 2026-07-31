@@ -24,46 +24,40 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from setuptools import setup, find_packages
 
-import functools
-import http.server
-import threading
+version = '0.0.1.dev0'
+name = 'slapos.test.rapid-cdn-mixed-sr'
+with open("README.md") as f:
+  long_description = f.read()
 
-
-class _QuietRequestHandler(http.server.SimpleHTTPRequestHandler):
-  def log_message(self, format, *args):
-    pass
-
-
-class CheckoutHTTPServer:
-  """Serve a source checkout over HTTP, so a Software Release builds the
-  way production consumes it — ${:_profile_base_location_} is a URL, not
-  a directory."""
-
-  def __init__(self, directory, ip, port):
-    self._directory = directory
-    self._ip = ip
-    self._port = port
-    self._server = None
-    self._thread = None
-
-  @property
-  def url(self):
-    return 'http://%s:%s' % (self._ip, self._port)
-
-  def start(self):
-    self._server = http.server.ThreadingHTTPServer(
-      (self._ip, self._port),
-      functools.partial(_QuietRequestHandler, directory=self._directory))
-    self._thread = threading.Thread(
-      target=self._server.serve_forever, daemon=True)
-    self._thread.start()
-
-  def stop(self):
-    if self._server is None:
-      return
-    self._server.shutdown()
-    self._server.server_close()
-    self._thread.join()
-    self._server = None
-    self._thread = None
+setup(name=name,
+      version=version,
+      description="Mixed software-release test for SlapOS' Rapid.CDN",
+      long_description=long_description,
+      long_description_content_type='text/markdown',
+      maintainer="Nexedi",
+      maintainer_email="info@nexedi.com",
+      url="https://lab.nexedi.com/nexedi/slapos",
+      packages=find_packages(),
+      install_requires=[
+        'slapos.core',
+        'slapos.cookbook',
+        'slapos.libnetworkcache',
+        'beautifulsoup4',
+        'erp5.util',
+        'furl',
+        'requests >= 2.20.0',  # needed for recent SSL certificate fixes
+        'urllib3 >= 1.24',  # needed for recent SSL certificate fixes
+        # ipaddress is patching IPAddress so IPv6 in SSL certificates
+        # match works
+        'ipaddress >= 1.0.22',
+        'requests-toolbelt',
+        'supervisor',
+        # caucase needed to connect to the KeDiFa caucase
+        'caucase',
+        'cryptography',
+      ],
+      zip_safe=True,
+      test_suite='test_mixed_sr',
+      )

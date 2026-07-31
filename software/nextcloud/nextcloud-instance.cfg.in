@@ -83,6 +83,7 @@ output = ${directory:scripts}/nextcloud-install
 context =
   section parameter_dict   instance-parameter
   section nextcloud_apps   nextcloud-apps
+  raw composer_bin {{ composer_bin }}
 depends =
   ${service-redis:recipe}
   ${redis-promise:recipe}

@@ -4,6 +4,9 @@
 extends =
   ${monitor2-template:output}
   ${template-logrotate-base:output}
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
 parts =
   cron-entry-logrotate
   directory
@@ -16,6 +19,7 @@ parts =
   dovecot-promise
   postfix-promise
   apache-httpd-promise
+  php-fpm-promise
   publish-shared
 {% if request_dns['enable'] %}
   request-dns-entry
@@ -32,11 +36,12 @@ parts =
   bogofilter-sieve-report-ham
 {% endif %}
   request-relays
+  postfix-certificate-rotation
 
 
-eggs-directory = ${buildout:eggs-directory}
-develop-eggs-directory = ${buildout:develop-eggs-directory}
-offline = true
+# Directories and information
+# ---------------------------
+
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -62,32 +67,6 @@ php-ini-dir = $${:etc}/php
 tmp-php = $${:tmp}/php
 tmp-upload = $${:tmp}/upload
 www = $${:srv}/www/
-
-[ca-directory]
-recipe = slapos.cookbook:mkdirectory
-root = $${directory:srv}/ssl
-requests = $${:root}/requests
-private = $${:root}/private
-certs = $${:root}/certs
-newcerts = $${:root}/newcerts
-crl = $${:root}/crl
-
-[certificate-authority]
-recipe = slapos.cookbook:certificate_authority
-openssl-binary = ${openssl:location}/bin/openssl
-ca-dir = $${ca-directory:root}
-requests-directory = $${ca-directory:requests}
-wrapper = $${directory:bin}/certificate_authority
-ca-private = $${ca-directory:private}
-ca-certs = $${ca-directory:certs}
-ca-newcerts = $${ca-directory:newcerts}
-ca-crl = $${ca-directory:crl}
-
-[certificate-authority-service]
-recipe = slapos.cookbook:wrapper
-command-line = $${certificate-authority:wrapper}
-wrapper-path = $${directory:services}/certificate_authority
-hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
 
 [userinfo]
 recipe = slapos.cookbook:userinfo
@@ -124,6 +103,112 @@ custom-outbound-relay-sasl = {{ dumps(custom_outbound_sasl) }}
 automatic-outbound-relay = {{ dumps(auto_outbound) }}
 
 
+# Mail Certificate
+# ----------------
+
+[postfix-certificate]
+recipe = slapos.recipe.build
+ssl = $${postfix-directory:ssl}
+make-cert = ${certificate-make-new:output}
+to-der = ${certificate-to-der:output}
+name = postfix-backend
+init =
+  import os, subprocess
+  # Inputs
+  ssl = options['ssl']
+  make_cert = options['make-cert']
+  to_der = options['to-der']
+  prefix = os.path.join(ssl, options['name'])
+  prefixes = prefix, prefix + '.next'
+  bundle, next_bundle = (p + '.bundle.pem' for p in prefixes)
+  fingerprint, next_fingerprint = (p + '.fingerprint' for p in prefixes)
+  der = prefix + '.der'
+  # Certificate initialization or rotation
+  # Rotation is requested periodically by deleting the current fingerprint
+  if not os.path.exists(fingerprint):
+    if os.path.exists(next_fingerprint):
+      # Rotate
+      os.replace(next_bundle, bundle)
+      os.replace(next_fingerprint, fingerprint)
+    elif not os.path.exists(bundle):
+      # Initialize
+      os.makedirs(ssl, 0o0777, exist_ok=True) # like slapos.recipe.mkdirectory
+      subprocess.check_call((make_cert, bundle, fingerprint))
+    else: # BBB if os.path.exists(bundle)
+      # BBB: rename pre-upgrade fingerprint file
+      os.replace(prefix + '.digest', fingerprint)
+    # Convert current certificate to DER
+    subprocess.check_call((to_der, bundle, der))
+    # Create next certificate
+    subprocess.check_call((make_cert, next_bundle, next_fingerprint))
+  # Outputs
+  options['bundle'] = bundle
+  options['fingerprint'] = fingerprint
+  options['der'] = der
+  tls_fingerprints = []
+  for path in (fingerprint, next_fingerprint):
+    with open(path) as f:
+      tls_fingerprints.append(f.read().split('=', 1)[1].strip())
+  options['tls-fingerprints'] = tls_fingerprints
+
+[postfix-certificate-rotate]
+recipe = slapos.recipe.template:jinja2
+output = $${buildout:bin-directory}/$${:_buildout_section_name_}
+context =
+  import json json
+  section options slap-connection
+{% raw -%}
+inline =
+  #!/bin/sh -e
+  rm -f $${postfix-certificate:fingerprint}
+  ${slapos-partition-bang:bang} \
+    {{ repr(json.dumps(options)) }} \
+    'certificate rotation'
+{%- endraw %}
+
+[postfix-certificate-rotation]
+recipe = slapos.cookbook:cron.d
+name = $${:_buildout_section_name_}
+cron-entries = $${cron:cron-entries}
+time = weekly
+command = $${postfix-certificate-rotate:output}
+depends =
+  $${cron-service:recipe}
+  $${postfix-reload:recipe}
+  $${dovecot-reload:recipe}
+  $${postfix-certificate-served-promise:recipe}
+
+
+# Web Certificate
+# ---------------
+
+[ca-directory]
+recipe = slapos.cookbook:mkdirectory
+root = $${directory:srv}/ssl
+requests = $${:root}/requests
+private = $${:root}/private
+certs = $${:root}/certs
+newcerts = $${:root}/newcerts
+crl = $${:root}/crl
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = ${openssl:location}/bin/openssl
+ca-dir = $${ca-directory:root}
+requests-directory = $${ca-directory:requests}
+wrapper = $${directory:bin}/certificate_authority
+ca-private = $${ca-directory:private}
+ca-certs = $${ca-directory:certs}
+ca-newcerts = $${ca-directory:newcerts}
+ca-crl = $${ca-directory:crl}
+
+[certificate-authority-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${certificate-authority:wrapper}
+wrapper-path = $${directory:services}/certificate_authority
+hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
+
+
 # Dovecot IMAP server
 # -------------------
 
@@ -157,8 +242,8 @@ context =
   raw postfix_dovecot_lmtp $${postfix-directory:spool-private}/dovecot-lmtp
   raw postfix_dovecot_quota $${postfix-directory:spool-private}/dovecot-quota
   raw dovecot_log_path $${:log-file}
-  key ssl_cert postfix-certificate:cert-file
-  key ssl_key postfix-certificate:key-file
+  key ssl_cert postfix-certificate:bundle
+  key ssl_key postfix-certificate:bundle
   raw dovecot_plugin_dir ${dovecot-pigeonhole:location}/lib/dovecot
   key sendmail_path wrapper-sendmail:wrapper-path
   key bogofilter_enable :bogofilter-enable
@@ -292,13 +377,24 @@ hash-files =
 depends =
   $${logrotate-entry-dovecot:recipe}
 
+[dovecot-reload]
+recipe = slapos.recipe.template
+output = $${directory:scripts}/$${:_buildout_section_name_}
+inline =
+  #!/bin/sh
+  ${dovecot-pigeonhole:location}/sbin/dovecot \
+    -c $${dovecot-conf:output} \
+    reload
+
 [dovecot-promise]
 <= monitor-promise-base
 promise = check_socket_listening
 name = imap_listen.py
 config-host = {{ ipv6 }}
 config-port = $${dovecot-conf:imap-port}
-depends = $${dovecot-service:recipe}
+depends =
+  $${dovecot-service:recipe}
+  $${dovecot-reload:recipe}
 
 [logrotate-entry-dovecot]
 <= logrotate-entry-base
@@ -335,37 +431,6 @@ spool-public = $${:var-spool}/public
 spool-saved = $${:var-spool}/saved
 spool-trace = $${:var-spool}/trace
 
-[postfix-certificate]
-recipe = plone.recipe.command
-stop-on-error = true
-name = postfix-backend
-key-file = $${postfix-directory:ssl}/$${:name}.key
-cert-file = $${postfix-directory:ssl}/$${:name}.crt
-fingerprint = $${postfix-directory:ssl}/$${:name}.digest
-bundle = $${postfix-directory:ssl}/$${:name}.bundle.pem
-openssl = ${openssl:location}/bin/openssl
-command =
-  test -e $${:key-file} || { \
-    $${:openssl} req -newkey rsa -batch -new -sha256 -x509 -days 3650 -nodes \
-      -keyout $${:key-file} -out $${:cert-file}; \
-    $${:openssl} x509 -noout -fingerprint -sha256 -in $${:cert-file} \
-      > $${:fingerprint}; \
-    cat $${:key-file} $${:cert-file} > $${:bundle}; \
-  }
-update-command = $${:command}
-
-[postfix-certificate-fingerprints]
-recipe = slapos.recipe.build
-fingerprint = $${postfix-certificate:fingerprint}
-init =
-  try:
-    with open(options['fingerprint']) as f:
-      # publish a list to allow for future fingerprint rotation
-      options['tls-fingerprints'] = [f.read().split('=', 1)[1].strip()]
-  except FileNotFoundError:
-    # set invalid value to defer error and get as much work done now as possible
-    options['tls-fingerprints'] = None
-
 [postfix-conf-main]
 recipe = slapos.recipe.template:jinja2
 url = ${postfix_main.jinja2.cf:target}
@@ -375,8 +440,9 @@ bogofilter-enable = {{ dumps(slapparameter_dict['bogofilter']['enable']) }}
 context =
   raw email_size_limit_bytes {{ slapparameter_dict['email-size-limit'] * 1024 * 1024 }}
   raw postfix_log_path $${:log-file}
-  key sender_login_map postfix-sender-login-map:location
+  key sender_login_map postfix-sender-login-map:lookup-table
   key bin_directory directory:bin
+  key etc_directory postfix-directory:etc
   key usr_directory postfix-directory:usr
   key queue_directory postfix-directory:var-spool
   key data_directory postfix-directory:var-lib
@@ -431,15 +497,28 @@ context =
   key bogofilter_spool bogofilter-directory:spool
 {% endif %}
 
+{% if demo_disable_auth -%}
 [postfix-sender-login-map]
-recipe = slapos.recipe.template:jinja2
 recipe = slapos.recipe.build
 location = $${postfix-directory:etc}/sender_login_map
+lookup-table = pcre:$${:location}
+mail-domains = {{ dumps(mail_domains) }}
+install =
+  with open(location, 'w') as f:
+    for domain in options['mail-domains']:
+      f.write('/([^@]+)@%(domain)s/ $(1)@%(domain)s\n' % {'domain': domain})
+
+{%- else %}
+[postfix-sender-login-map]
+recipe = slapos.recipe.build
+location = $${postfix-directory:etc}/sender_login_map
+lookup-table = texthash:$${:location}
 account-entries = $${dovecot-passwords:account-entries}
 install =
   with open(location, 'w') as f:
     for address in options['account-entries']:
       f.write('%(address)s %(address)s\n' % {'address': address})
+{%- endif %}
 
 [outbound-relay-info]
 <= instance-parameters
@@ -512,6 +591,13 @@ hash-files =
 depends =
   $${postfix-symlinks-libexec:recipe}
   $${logrotate-entry-postfix:recipe}
+  $${postfix-reload:recipe}
+
+[postfix-reload]
+recipe = slapos.cookbook:wrapper
+command-line =
+  ${postfix:location}/usr/sbin/postfix -c $${postfix-directory:etc} reload
+wrapper-path = $${directory:script}/postfix-reload
 
 [postfix-service-master]
 < = base-wrapper
@@ -528,6 +614,16 @@ depends =
   $${postfix-service:recipe}
   $${postfix-service-master:recipe}
   $${postfix-wrappers:depends}
+
+[postfix-certificate-served-promise]
+recipe = slapos.cookbook:promise.plugin
+eggs = slapos.core
+file = ${check-smtpd-certificate:output}
+output = $${directory:plugins}/outbound_certificate_served.py
+config-service-name = Postfix
+config-host = {{ ipv6 }}
+config-port = {{ smtp_port }}
+config-certificate-der-path = $${postfix-certificate:der}
 
 [base-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -625,7 +721,10 @@ inline =
   # Arg 1: per-user bogofilter DB directory
   # Arg 2: sender address
   # Arg 3: recipient address
-  BOGODIR="$$1"
+  BOGODIR_ROOT=$$(dirname "$$1")
+  USER=$$(basename "$$1")
+  USER=$$(printf '%s' "$$USER" | tr '[:upper:]' '[:lower:]')
+  BOGODIR="$$BOGODIR_ROOT/$$USER"
   SENDER="$$2"
   RECIPIENT="$$3"
   MAIL_CONFIG=$${postfix-directory:etc} ; export MAIL_CONFIG
@@ -641,9 +740,9 @@ mode = 755
 inline =
   #!/bin/sh
   # Called by imapsieve when a message is moved TO the Junk folder.
-  USER="$$1"
+  USER=$$(printf '%s' "$$1" | tr '[:upper:]' '[:lower:]')
   BOGODIR="$${bogofilter-directory:spool}/$$USER"
-  [ -d "$$BOGODIR" ] || exit 0
+  mkdir -p "$$BOGODIR"
   ${bogofilter:location}/bin/bogofilter -e -Ns -d "$$BOGODIR"
 
 [bogofilter-learn-ham-script]
@@ -653,9 +752,9 @@ mode = 755
 inline =
   #!/bin/sh
   # Called by imapsieve when a message is moved FROM the Junk folder.
-  USER="$$1"
+  USER=$$(printf '%s' "$$1" | tr '[:upper:]' '[:lower:]')
   BOGODIR="$${bogofilter-directory:spool}/$$USER"
-  [ -d "$$BOGODIR" ] || exit 0
+  mkdir -p "$$BOGODIR"
   ${bogofilter:location}/bin/bogofilter -e -Sn -d "$$BOGODIR"
 
 [bogofilter-sieve-spam-filter]
@@ -847,6 +946,12 @@ depends =
   $${lamp-apache-httpd-conf:recipe}
   $${php.ini-conf:recipe}
 
+[php-fpm-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${php-fpm-wrapper:wrapper-path}
+wrapper-path = $${directory:service}/php-fpm
+hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
+
 [apache-graceful]
 recipe = slapos.recipe.template
 output = $${directory:script}/apache-httpd-graceful
@@ -883,16 +988,25 @@ url = https://[$${:ip}]:$${:https-port}/
 error-log = $${directory:httpd-log}/error.log
 access-log = $${directory:httpd-log}/access.log
 log-dir = $${directory:httpd-log}
-php-ini-dir = $${directory:php-ini-dir}
 cert-file = $${ca-directory:certs}/httpd.crt
 key-file = $${ca-directory:certs}/httpd.key
 apache-config-dir = $${directory:apache.d}
+fpm-socket-path = $${directory:run}/php-fpm.sock
 
 [instance-parameter]
 document-root = $${apache-php-configuration:document-root}
 backend-url = $${apache-php-configuration:url}
 php-bin = ${apache-php:location}/bin/php
 php-ini = $${php.ini-conf:output}
+fpm-socket-path = $${apache-php-configuration:fpm-socket-path}
+
+#Default php-fpm.conf parameters
+#See https://www.php.net/manual/en/install.fpm.configuration.php
+pm = dynamic
+pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
 
 [php.ini-configuration]
 tmp-dir = $${directory:tmp-php}
@@ -904,6 +1018,14 @@ url = ${template-php.ini:target}
 output = $${directory:php-ini-dir}/php.ini
 context =
   section apache_parameter_dict php.ini-configuration
+  section instance_dict instance-parameter
+extensions = jinja2.ext.do
+
+[php-fpm-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${template-php-fpm.conf:target}
+output = $${directory:php-ini-dir}/php-fpm.conf
+context =
   section instance_dict instance-parameter
 extensions = jinja2.ext.do
 
@@ -943,6 +1065,18 @@ name = apache-httpd-port-listening.py
 config-host = $${apache-php-configuration:ip}
 config-port = $${apache-php-configuration:https-port}
 depends = $${apache-php-service:recipe}
+
+[php-fpm-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/php-fpm-wrapper
+command-line = "${apache-php:location}/sbin/php-fpm" -y $${php-fpm-conf:output} -c $${php.ini-conf:output} -F
+
+[php-fpm-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = fpm-socket-listening.py
+config-pathname = $${apache-php-configuration:fpm-socket-path}
+depends = $${php-fpm-service:recipe}
 
 [request-frontend]
 <= monitor-frontend
@@ -1002,7 +1136,7 @@ config-name = {{ mail_domain }}
 config-mail-server-host = {{ ipv6 }}
 config-mail-server-port = {{ dumps(smtp_port) }}
 config-authentication = fingerprint
-config-fingerprints = $${postfix-certificate-fingerprints:tls-fingerprints}
+config-fingerprints = $${postfix-certificate:tls-fingerprints}
 {% if inbound_relay['enable'] %}
 recipe = slapos.cookbook:request.serialised
 return =
@@ -1084,4 +1218,3 @@ error-dict = $${dovecot-passwords:error-dict}
 {% if request_dns['enable'] %}
 domain = $${request-dns-entry:connection-domain}
 {% endif %}
-

@@ -26,6 +26,8 @@ tmp = ${buildout:directory}/tmp
   base_port=base_port,
   backup_dir='${directory:srv-backup-caucased}' if backup_period else None,
   backup_period=backup_period,
+  service_crt_validity=slapparameter_dict.get('service-crt-validity'),
+  user_crt_validity=slapparameter_dict.get('user-crt-validity'),
 ) }}
 
 [publish]

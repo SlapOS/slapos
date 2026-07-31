@@ -128,6 +128,7 @@ EOF
 # Install some nextcloud apps
 {%for app_name, app_location in nextcloud_apps.items() %}
   cp -a {{ app_location }} {{ parameter_dict['nextcloud'] }}/apps/{{ app_name }}
+  [ -f {{ parameter_dict['nextcloud'] }}/apps/{{ app_name }}/composer.json ] && pushd {{ parameter_dict['nextcloud'] }}/apps/{{ app_name }} && {{ composer_bin }} install --no-dev && popd
   php_cmd {{ parameter_dict['nextcloud'] }}/occ app:enable {{ app_name }}
 {%endfor%}
 

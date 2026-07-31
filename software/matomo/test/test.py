@@ -60,12 +60,12 @@ class MatomoTestCase(SlapOSInstanceTestCase):
   def test_matomo_dir(self):
     self.assertEqual(os.path.isfile(self.matomo_path),False)
 
-  #Check deployement matomo works
+  #Check deployment matomo works
   def test_matomo_url_get(self):
     resp = requests.get(self.connection_parameters['backend-url'], verify=False)
     self.assertEqual(requests.codes.ok, resp.status_code)
 
-  #Check deployement moniter works
+  #Check deployment monitor works
   def test_monitor_url_get(self):
     resp = requests.get(self.connection_parameters['monitor-setup-url'], verify=False)
     self.assertEqual(requests.codes.ok, resp.status_code)
@@ -88,7 +88,7 @@ class MatomoTestCase(SlapOSInstanceTestCase):
       ['matomo'])
     self.assertEqual(
       tree.xpath('//input[@name="password"]/@value'),
-      [self.db_info.password])
+      ['**********'])
     self.assertEqual(
       tree.xpath('//input[@name="host"]/@value'),
       [f'{self._ipv4_address}:2099']

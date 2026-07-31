@@ -241,5 +241,5 @@
       "default": 23433
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

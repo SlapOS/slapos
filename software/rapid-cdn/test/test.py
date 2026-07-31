@@ -26,7 +26,6 @@
 ##############################################################################
 
 import backend
-from checkout_server import CheckoutHTTPServer
 import glob
 import os
 from recurls import Recurls, CurlException
@@ -74,27 +73,12 @@ from slapos.testing.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
-# fixed: the software directory is md5(url), a changing port would force
-# a full rebuild every run; no collision, the IP is per-test-partition
-CHECKOUT_SERVER_PORT = 11090
-
 if __name__ == '__main__':
   SlapOSInstanceTestCase = object
 else:
-  checkout_server = CheckoutHTTPServer(
+  setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
-      os.path.join(os.path.dirname(__file__), '..', '..', '..')),
-    os.environ['SLAPOS_TEST_IPV4'], CHECKOUT_SERVER_PORT)
-  _setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    checkout_server.url + '/software/rapid-cdn/software.cfg',
-    software_id='rapid-cdn')
-
-  def setUpModule():
-    checkout_server.start()
-    _setUpModule()
-
-  def tearDownModule():
-    checkout_server.stop()
+        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 # ports chosen to not collide with test systems
 HTTP_PORT = 11080
@@ -302,6 +286,21 @@ class AtsMixin(object):
       fh.write(''.join(self._hack_ats_original_records_config))
     self._hack_ats_restart()
 
+  def _waitForCached(self, domain, path, source_ip, body, timeout=10):
+    # ATS commits the cache write asynchronously, so a fixed sleep races it
+    # under load. Wait for the Age header (proof of a cache hit) while the
+    # backend still returns 200, so these reads are harmless.
+    begin = time.time()
+    while True:
+      result = fakeHTTPSResult(domain, path, source_ip=source_ip)
+      if 'Age' in result.headers:
+        self.assertEqual(result.status_code, http.client.OK)
+        self.assertEqual(result.text, body)
+        return
+      if time.time() - begin > timeout:
+        self.fail('Frontend did not cache %r within %ss' % (path, timeout))
+      time.sleep(0.5)
+
   def _hack_ats_restart(self):
     for process_info in self.callSupervisorMethod('getAllProcessInfo'):
       if process_info['name'].startswith(
@@ -410,6 +409,8 @@ class TestDataMixin(object):
       # can't be sure regarding its presence
       'frontend_haproxy_configuration_last_state',
       'validate_configuration_state_signature',
+      # atomic-write temp, present only between write and rename
+      '.tmp',
       # run by cron from time to time
       'monitor/monitor-collect.pid',
       # no control regarding if it would or not be running
@@ -479,6 +480,36 @@ class TestDataMixin(object):
 
   def _updateDataReplacementDict(self, data_replacement_dict):
     pass
+
+  def _getMasterRequestSectionOptionDict(self, section):
+    option_dict = {}
+    current = None
+    with open(
+      os.path.join(self.getMasterPartitionPath(), 'instance-master.cfg')
+    ) as fh:
+      for line in fh:
+        section_match = re.match(r'^\[(?P<name>[^\]]+)\]\s*$', line)
+        if section_match:
+          current = section_match.group('name')
+          continue
+        if current == section:
+          option_match = re.match(
+            r'^(?P<key>[^=\s]+)\s*=\s*(?P<value>.*)$', line)
+          if option_match:
+            option_dict[option_match.group('key')] = \
+              option_match.group('value').strip()
+    return option_dict
+
+  def test_error_page_manager_request_sla(self):
+    # Without an SLA the master allocates error-page-manager to a random
+    # node; it must be pinned like kedifa (bug #20260713-98E804).
+    error_page_manager = self._getMasterRequestSectionOptionDict(
+      'request-error-page-manager')
+    kedifa = self._getMasterRequestSectionOptionDict('request-kedifa')
+    self.assertIn('sla-computer_guid', error_page_manager)
+    self.assertEqual(
+      error_page_manager['sla-computer_guid'],
+      kedifa['sla-computer_guid'])
 
   def test00cluster_request_instance_parameter_dict(self):
     # test00 name chosen to be run just after setup
@@ -1269,6 +1300,34 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       parsed_parameter_dict[key] = value
     return parsed_parameter_dict
 
+  def assertConnectionParametersMatchSchema(
+    self, parameter_dict, schema_filename):
+    """Assert every published connection parameter is described by the
+    software type's output (response) schema.
+
+    This is a key-set check, not a value-type check: the published values
+    are serialised strings, so validating their JSON-schema types would
+    false-fail. What matters is that the schema stays an exhaustive,
+    accurate description of what the instance actually publishes -- so any
+    undocumented key (schema drift) fails the test.
+    """
+    with open(
+      os.path.join(
+        os.path.dirname(__file__), '..', schema_filename)) as fh:
+      schema = json.load(fh)
+    literal_key_set = set(schema.get('properties', {}))
+    pattern_list = [
+      re.compile(p) for p in schema.get('patternProperties', {})]
+    undocumented_key_list = sorted(
+      key for key in parameter_dict
+      if key not in literal_key_set
+      and not any(pattern.match(key) for pattern in pattern_list))
+    self.assertEqual(
+      [],
+      undocumented_key_list,
+      'Published connection parameters %r are not described by %s' % (
+        undocumented_key_list, schema_filename))
+
   def getMasterPartitionPath(self):
     return [
       q for q in glob.glob(os.path.join(self.instance_path, '*',))
@@ -1276,9 +1335,12 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         os.path.join(q, 'etc', 'nginx-master-introspection.conf'))][0]
 
   def parseConnectionParameterDict(self):
-    return self.parseParameterDict(
+    parameter_dict = self.parseParameterDict(
       self.requestDefaultInstance().getConnectionParameterDict()
     )
+    self.assertConnectionParametersMatchSchema(
+      parameter_dict, 'instance-output-schema.json')
+    return parameter_dict
 
   @classmethod
   def waitForMethod(cls, name, method):
@@ -1546,11 +1608,14 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
           slave_instance.getConnectionParameterDict()
 
   def parseSlaveParameterDict(self, key):
-    return self.parseParameterDict(
+    parameter_dict = self.parseParameterDict(
       self.slave_connection_parameter_dict_dict[
         key
       ]
     )
+    self.assertConnectionParametersMatchSchema(
+      parameter_dict, 'instance-slave-output-schema.json')
+    return parameter_dict
 
   def assertSlaveBase(
     self, reference, expected_parameter_dict=None, hostname=None):
@@ -2913,17 +2978,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             'Bad Request', result_verb.text, verb)
         elif self.max_http_version == '3':
           self.assertIsNotNone(exception)
-          self.assertEqual(exception.command_returncode, 95)
-          # XXX: Ignore command_error comparision
-          #      see https://github.com/curl/curl/issues/20195
+          # A refused CONNECT over HTTP/3 races between the h3 layer
+          # reporting the error (95) and the connection dropping while
+          # receiving (56); the message is likewise unstable (curl #20195).
+          self.assertIn(exception.command_returncode, (56, 95))
         elif self.max_http_version == '2':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 92)
-          self.assertEqual(
-            exception.command_error,
-            f'curl: (92) QUIC: connection to {TEST_IP} port '
-            f'{HTTPS_PORT} refused\n'
-          )
+          # curl races between reporting the refused QUIC connection and
+          # falling back to HTTP/2 where the stream is reset; both exit 92
+          # but the message differs, so it is not asserted (curl #20195).
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
@@ -5205,17 +5269,16 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
             'Bad Request', result_verb.text, verb)
         elif self.max_http_version == '3':
           self.assertIsNotNone(exception)
-          self.assertEqual(exception.command_returncode, 95)
-          # XXX: Ignore command_error comparision
-          #      see https://github.com/curl/curl/issues/20195
+          # A refused CONNECT over HTTP/3 races between the h3 layer
+          # reporting the error (95) and the connection dropping while
+          # receiving (56); the message is likewise unstable (curl #20195).
+          self.assertIn(exception.command_returncode, (56, 95))
         elif self.max_http_version == '2':
           self.assertIsNotNone(exception)
           self.assertEqual(exception.command_returncode, 92)
-          self.assertEqual(
-            exception.command_error,
-            f'curl: (92) QUIC: connection to {TEST_IP} port '
-            f'{HTTPS_PORT} refused\n'
-          )
+          # curl races between reporting the refused QUIC connection and
+          # falling back to HTTP/2 where the stream is reset; both exit 92
+          # but the message differs, so it is not asserted (curl #20195).
         else:
           self.assertEqual(
             http.client.NOT_FOUND, result_verb.status_code, verb)
@@ -5484,6 +5547,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # backend returns something correctly
     configureResult('200', body_200)
     checkResult(http.client.OK, body_200)
+    self._waitForCached(parameter_dict['domain'], path, source_ip, body_200)
 
     configureResult('502', body_502)
     time.sleep(1)
@@ -9653,6 +9717,8 @@ backend _health-check-default-http
     # ...and cached result, also in order to store it in the cache
     configureResult('200', body_200)
     checkResult(http.client.OK, body_200)
+    self._waitForCached(
+      parameter_dict['domain'], cached_path, source_ip, body_200)
 
     # start replying with bad status code
     result = mimikra.config(

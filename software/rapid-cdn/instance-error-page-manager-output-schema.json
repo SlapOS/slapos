@@ -32,5 +32,6 @@
       "title": "Monitor Base URL",
       "type": "string"
     }
-  }
+  },
+  "additionalProperties": true
 }

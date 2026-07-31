@@ -397,7 +397,7 @@ class TestListenInPartition(GrafanaTestCase):
   def test_grafana_listen(self):
     self.assertEqual(
         [
-            c.laddr for c in self.process_dict['grafana'].connections()
+            c.laddr for c in self.process_dict['grafana'].net_connections()
             if c.status == 'LISTEN'
         ],
         [(self.computer_partition_ipv6_address, 8180)],
@@ -406,7 +406,7 @@ class TestListenInPartition(GrafanaTestCase):
   def test_influxdb_listen(self):
     self.assertEqual(
         sorted([
-            c.laddr for c in self.process_dict['influxdb'].connections()
+            c.laddr for c in self.process_dict['influxdb'].net_connections()
             if c.status == 'LISTEN'
         ]),
         sorted([
@@ -418,7 +418,7 @@ class TestListenInPartition(GrafanaTestCase):
   def test_telegraf_listen(self):
     self.assertEqual(
         [
-            c.laddr for c in self.process_dict['telegraf'].connections()
+            c.laddr for c in self.process_dict['telegraf'].net_connections()
             if c.status == 'LISTEN'
         ],
         [],
@@ -427,7 +427,7 @@ class TestListenInPartition(GrafanaTestCase):
   def test_loki_listen(self):
     self.assertEqual(
         sorted([
-            c.laddr for c in self.process_dict['loki-service'].connections()
+            c.laddr for c in self.process_dict['loki-service'].net_connections()
             if c.status == 'LISTEN'
         ]),
         sorted([
@@ -439,7 +439,7 @@ class TestListenInPartition(GrafanaTestCase):
   def test_fluent_bit_listen(self):
     self.assertEqual(
         sorted([
-            c.laddr for c in self.process_dict['fluent-bit'].connections()
+            c.laddr for c in self.process_dict['fluent-bit'].net_connections()
             if c.status == 'LISTEN'
         ]),
         [

@@ -64,7 +64,7 @@ class Recipe(GenericSlapRecipe):
     return self.setConnectionDict(publish_dict, slave_reference)
 
   def update(self):
-    if len(self._extend_set) > 0:
+    if len(self._extend_set) > 1:
       # if this part extends other parts the update has to run, as changes to
       # extended parts are not tracked during update
       return super(Recipe, self).update()
@@ -102,12 +102,15 @@ class Failsafe(object):
       if os.path.exists(error_status_file):
         # last run failed, so need to reinstall
         self.install()
+      else:
+        super(Failsafe, self).update()
 
   def uninstall(name, options):
     error_status_file = options.get('-error-status-file')
     if error_status_file is not None:
       if os.path.exists(error_status_file):
         os.unlink(error_status_file)
+    super(Failsafe, self).uninstall()
 
 
 class RecipeFailsafe(Failsafe, Recipe):

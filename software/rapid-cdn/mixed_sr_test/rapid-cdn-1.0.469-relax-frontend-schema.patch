@@ -1,0 +1,18 @@
+Relax the frontend input schema of a compiled rapid-cdn 1.0.469 software release
+so a newer master can request its frontend node in a mixed-release cluster
+(the master sends parameters, e.g. the error-page-manager options, that landed
+after 1.0.469 and that additionalProperties:false would reject).
+
+Applied in place to the already-compiled software release -- whose schema files
+sit at the software-release root -- not to the source checkout: this models an
+operator hotfixing a deployed release for fast rollback.
+
+--- a/instance-frontend-input-schema.json
++++ b/instance-frontend-input-schema.json
+@@ -195,5 +195,5 @@
+       "default": 23433
+     }
+   },
+-  "additionalProperties": false
++  "additionalProperties": true
+ }

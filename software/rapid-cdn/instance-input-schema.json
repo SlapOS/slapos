@@ -288,6 +288,11 @@
       "description": "Computer GUID for SLA instance (indexed).",
       "title": "SLA N Computer GUID",
       "type": "string"
+    },
+    "^-sla-error-page-manager-computer_guid$": {
+      "description": "Computer GUID for the error-page-manager partition SLA.",
+      "title": "Error Page Manager SLA Computer GUID",
+      "type": "string"
     }
   },
   "additionalProperties": false,
