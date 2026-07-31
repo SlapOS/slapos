@@ -13,6 +13,8 @@
     'with-max-rlimit-nofile',
     with_max_rlimit_nofile_enable_default.lower() in ('true', 'yes'))
 %}
+{% set sqlite_dict = slapparameter_dict.get('sqlite', {}) -%}
+{% set use_sqlite = sqlite_dict.get('enable', False) and 'mariadb' not in slapparameter_dict -%}
 {% set test_runner_enabled = slapparameter_dict.get('test-runner', {}).get('enabled', True) -%}
 {% set test_runner_node_count = slapparameter_dict.get('test-runner', {}).get('node-count', 3) -%}
 {% set test_runner_extra_database_count = slapparameter_dict.get('test-runner', {}).get('extra-database-count', 3) -%}
@@ -133,6 +135,20 @@ config-command = ${balancer-updated-caucase-url:path}
 
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{% if use_sqlite -%}
+{{ request('sqlite', 'sqlite', 'sqlite',
+  {
+    'db-path': sqlite_dict.get('db-path', ''),
+    'test-database-amount': test_runner_total_database_count,
+  },
+  {
+    'db-path': True,
+    'test-db-path-list': False,
+    'monitor-base-url': False,
+  },
+  key_config={'monitor-passwd': 'monitor-htpasswd:passwd'},
+) }}
+{% else -%}
 {# Notes on max-connection-count: On a standard ERP5, each transaction
    can have 4 connections to mariadb: activities, catalog, deferred and
    transactionless. Count 5 to have some headroom. Multiply by the total
@@ -160,6 +176,7 @@ config-command = ${balancer-updated-caucase-url:path}
   },
   key_config={'monitor-passwd': 'monitor-htpasswd:passwd'},
 ) }}
+{% endif -%}
 {% if has_posftix -%}
 {{   request('smtp', 'postfix', 'smtp', {'tcpv4-port': 2025, 'smtpd-sasl-user': 'erp5@nowhere'}, key_config={'smtpd-sasl-password': 'publish-early:smtpd-sasl-password', 'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {%- else %}
@@ -252,8 +269,17 @@ config-inituser-password-hashed = ${publish-early:inituser-password-hashed}
 config-kumofs-url = ${request-memcached-persistent:connection-url}
 config-memcached-url = ${request-memcached-volatile:connection-url}
 config-monitor-passwd = ${monitor-htpasswd:passwd}
+{% if use_sqlite -%}
+config-sqlite-db-path = ${request-sqlite:connection-db-path}
+config-sqlite-test-db-path-list = ${request-sqlite:connection-test-db-path-list}
+config-mysql-test-url-list = {{ dumps([]) }}
+config-mysql-url-list = {{ dumps([]) }}
+{% else -%}
+config-sqlite-db-path =
+config-sqlite-test-db-path-list = {{ dumps([]) }}
 config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-mysql-url-list = ${request-mariadb:connection-database-list}
+{% endif -%}
 config-python-hash-seed = {{ dumps(slapparameter_dict.get('python-hash-seed', '')) }}
 config-site-id = {{ dumps(site_id) }}
 config-smtp-url = ${request-smtp:connection-url}

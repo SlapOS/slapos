@@ -209,6 +209,18 @@ extra-context =
 import-list =
     file caucase context:caucase-jinja2-library
 
+[dynamic-template-sqlite-parameters]
+<= default-dynamic-template-parameters
+sqlite3-location = {{ sqlite3_location }}
+
+[dynamic-template-sqlite]
+<= jinja2-template-base
+url = {{ template_sqlite }}
+filename = instance-sqlite.cfg
+extra-context =
+    key buildout_directory buildout:directory
+    section parameter_dict dynamic-template-sqlite-parameters
+
 # Keep a section for backward compatibility for removed types
 # Once the section is removed, ghost instances will keep failing until
 # garbage collection be implemented.
@@ -247,6 +259,7 @@ default = dynamic-template-erp5:output
 kumofs = dynamic-template-kumofs:output
 caucase = dynamic-template-caucase:output
 mariadb = dynamic-template-mariadb:output
+sqlite = dynamic-template-sqlite:output
 balancer = dynamic-template-balancer:output
 postfix = dynamic-template-postfix:output
 zodb-zeo = dynamic-template-zeo:output
