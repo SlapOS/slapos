@@ -791,8 +791,29 @@ class TestNodeMonitoring(SlapOSInstanceTestCase):
   def getInstanceSoftwareType(cls):
     return 'default'
 
-  def test_node_monitoring_instance(self):
-    pass
+  def getPromiseContent(self, name):
+    with open(
+        os.path.join(
+          self.computer_partition_root_path, 'etc', 'plugin', name)) as fh:
+      return fh.read()
+
+  def test_free_disk_space_promise(self):
+    # the promise the monitor stack no longer installs in every instance is
+    # installed here, as free disk space is the node's responsibility
+    promise_content = self.getPromiseContent('check-free-disk-space.py')
+    self.assertIn(
+      "from slapos.promise.plugin.check_free_disk_space import RunPromise",
+      promise_content)
+    # no threshold, so the promise falls back to 5% of the disk size
+    self.assertNotIn("'threshold'", promise_content)
+
+  def test_disk_space_promise(self):
+    # the per-partition and predictive promise is unaffected
+    promise_content = self.getPromiseContent('check-disk-space.py')
+    self.assertIn(
+      "from slapos.promise.plugin.check_free_disk_space import RunPromise",
+      promise_content)
+    self.assertIn("'threshold': '0.08'", promise_content)
 
 
 class TestNodeMonitoringRe6stCertificate(SlapOSInstanceTestCase):

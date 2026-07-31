@@ -104,7 +104,6 @@ parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 parameter-list =
   raw monitor-user ${monitor-instance-parameter:username}
   htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
-  file min-free-disk-MB ${promise-check-free-disk-space:config-threshold-file}
   ${monitor-instance-parameter:instance-configuration}
 
 promise-output-file = ${directory:monitor}/monitor-bootstrap-status
@@ -414,13 +413,6 @@ config-status-file = ${monitor-conf-parameters:promise-output-file}
 promise = check_partition_deployment_state
 name = buildout-${slap-connection:partition-id}-status.py
 config-monitor-url = ${monitor-instance-parameter:monitor-base-url}
-
-[promise-check-free-disk-space]
-<= monitor-promise-base
-promise = check_free_disk_space
-name = check-free-disk-space.py
-config-collectordb = ${monitor-instance-parameter:collector-db}
-config-threshold-file = ${directory:etc}/min-free-disk-size
 
 [macro.cron-with-promise]
 recipe = slapos.recipe.build
