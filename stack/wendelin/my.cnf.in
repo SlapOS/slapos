@@ -71,7 +71,14 @@ loose_innodb_change_buffering = none
 {% if log_bin -%}
 log_bin = {{ log_bin }}
 {% set binlog_expire_days = parameter_dict['binlog-expire-days'] -%}
-{% if binlog_expire_days > 0 %}expire_logs_days = {{ binlog_expire_days }}{% endif %}
+{% if binlog_expire_days > 0 -%}
+expire_logs_days = {{ binlog_expire_days }}
+# Since mariadb 11.4, binlogs are not purged unless a minimum amount
+# of replicas are connected, which by default is 1.
+# See https://jira.mariadb.org/browse/MDEV-34504
+slave_connections_needed_for_purge = 0
+{%- endif %}
+
 server_id = {{ parameter_dict['server-id'] }}
 # Note: increases writes on replica (it writes to relay log and to database as
 # usual, but then also to binlog), but with the advantage of allowing such node
