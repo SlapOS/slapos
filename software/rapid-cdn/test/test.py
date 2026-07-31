@@ -1618,14 +1618,20 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     return parameter_dict
 
   def assertSlaveBase(
-    self, reference, expected_parameter_dict=None, hostname=None):
+    self, reference, expected_parameter_dict=None, hostname=None,
+    error_page=True):
     if expected_parameter_dict is None:
       expected_parameter_dict = {}
     parameter_dict = self.parseSlaveParameterDict(reference)
     self.assertLogAccessUrlWithPop(parameter_dict)
     self.current_generate_auth, self.current_upload_url = \
         self.assertKedifaKeysWithPop(parameter_dict, '')
-    self.assertKeyWithPop('error-page-upload-url', parameter_dict)
+    # Redirect slaves never proxy a backend, so the master does not advertise a
+    # per-slave error-page upload URL for them.
+    if error_page:
+      self.assertKeyWithPop('error-page-upload-url', parameter_dict)
+    else:
+      self.assertNotIn('error-page-upload-url', parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     if hostname is None:
       hostname = reference.replace('_', '').replace('-', '').lower()
@@ -4586,7 +4592,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertNotIn('x-real-ip', j['Incoming Headers'])
 
   def test_type_redirect(self):
-    parameter_dict = self.assertSlaveBase('type-redirect')
+    parameter_dict = self.assertSlaveBase('type-redirect', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4628,7 +4634,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
 
   def test_type_redirect_custom_domain(self):
     parameter_dict = self.assertSlaveBase(
-      'type-redirect-custom_domain', hostname='customdomaintyperedirect')
+      'type-redirect-custom_domain', hostname='customdomaintyperedirect',
+      error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4652,7 +4659,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result, via=False, backend_reached=False)
 
   def test_type_redirect_to_standard_port(self):
-    parameter_dict = self.assertSlaveBase('type-redirect-to-standard-port')
+    parameter_dict = self.assertSlaveBase(
+      'type-redirect-to-standard-port', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4693,7 +4701,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result, via=False, backend_reached=False, alt_svc=False)
 
   def test_type_redirect_path(self):
-    parameter_dict = self.assertSlaveBase('type-redirect-path')
+    parameter_dict = self.assertSlaveBase('type-redirect-path', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4737,7 +4745,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     # A trailing slash on the configured URL must not change the redirect
     # target (the trailing slash is stripped before the path is prepended,
     # so no double slash appears in the Location header).
-    parameter_dict = self.assertSlaveBase('type-redirect-path-trailing-slash')
+    parameter_dict = self.assertSlaveBase(
+      'type-redirect-path-trailing-slash', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4770,7 +4779,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def test_type_redirect_path_custom_domain(self):
     parameter_dict = self.assertSlaveBase(
       'type-redirect-path-custom_domain',
-      hostname='customdomaintyperedirectpath')
+      hostname='customdomaintyperedirectpath', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -4794,7 +4803,8 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result, via=False, backend_reached=False)
 
   def test_type_redirect_path_to_standard_port(self):
-    parameter_dict = self.assertSlaveBase('type-redirect-path-to-standard-port')
+    parameter_dict = self.assertSlaveBase(
+      'type-redirect-path-to-standard-port', error_page=False)
 
     result = fakeHTTPSResult(
       parameter_dict['domain'],
@@ -7107,6 +7117,56 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
                       'Custom slave 503 did not propagate to backend haproxy within 90 s')
       self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
       self.assertIn(custom_html, result.text)
+    finally:
+      mimikra.delete(upload_url + '503', verify=cert_file.name)
+      os.unlink(cert_file.name)
+
+  def test_urlless_slave_override_falls_back_to_cluster_page(self):
+    """A slave with no URL cannot override its 5xx page (documented limit).
+
+    A shared instance requested without a 'url' has no backend, so haproxy
+    generates its 503 from a section that carries only the cluster errorfile
+    (there is nothing to attach a per-slave errorfile to).  Uploading a
+    per-slave override therefore has no effect and the cluster page is served.
+    This is intentional -- see README "Per-slave error pages require a backend".
+    """
+    upload_url = self.parseSlaveParameterDict(
+      'empty-no-https-only')['error-page-upload-url']
+    domain = self.parseSlaveParameterDict('empty-no-https-only')['domain']
+
+    computer = self.slap._slap.registerComputer('local')
+    epm_cert_pem = None
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      raw = partition.getInstanceParameterDict().get('_', {})
+      inner = json.loads(raw) if isinstance(raw, str) else raw
+      if isinstance(inner, dict) and 'error-page-certificate' in inner:
+        epm_cert_pem = inner['error-page-certificate']
+        break
+    self.assertIsNotNone(epm_cert_pem, 'EPM certificate not found in partition params')
+
+    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
+    cert_file.write(epm_cert_pem.encode())
+    cert_file.close()
+
+    custom_html = '<html><body>Custom url-less slave 503 override</body></html>'
+    try:
+      result = mimikra.put(upload_url + '503', data=custom_html,
+                           verify=cert_file.name)
+      self.assertEqual(result.status_code, 204)
+
+      # Give the updater more than one poll cycle to propagate (if it ever
+      # would), then assert the override is NOT served -- the cluster page is.
+      time.sleep(70)
+      result = fakeHTTPResult(domain, 'test-path')
+      self.assertEqual(http.client.SERVICE_UNAVAILABLE, result.status_code)
+      self.assertNotIn(
+        custom_html, result.text,
+        'url-less slave override unexpectedly served; per-slave overrides '
+        'must require a backend')
+      # It is the EPM cluster page (multilingual switcher), not a raw haproxy body.
+      self.assertIn('<section data-lang="en"', result.text)
     finally:
       mimikra.delete(upload_url + '503', verify=cert_file.name)
       os.unlink(cert_file.name)
@@ -10596,6 +10656,164 @@ class TestHaproxyFormat(unittest.TestCase):
     self.assertEqual(body, html)
 
 
+class TestErrorPageSeed(unittest.TestCase):
+  """Unit tests for the buildout seed (software.error_page_seed_main)."""
+
+  SHARED_CODES = ['502', '503', '504']
+
+  @classmethod
+  def setUpClass(cls):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+      '_software_src_seed',
+      os.path.normpath(os.path.join(
+        os.path.dirname(__file__), '..', 'software.py')))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    cls._mod = mod
+
+  def _seed(self, error_pages_dir, builtin_dir, shared_references):
+    config = {
+      'error_pages_dir': error_pages_dir,
+      'builtin_dir': builtin_dir,
+      'shared_references': shared_references,
+    }
+    config_path = os.path.join(builtin_dir, '..', 'seed.json')
+    with open(config_path, 'w') as f:
+      json.dump(config, f)
+    old_argv = sys.argv
+    sys.argv = ['rapid-cdn-error-page-seed', config_path]
+    try:
+      self._mod.error_page_seed_main()
+    finally:
+      sys.argv = old_argv
+
+  def _make_builtins(self, builtin_dir):
+    os.makedirs(builtin_dir)
+    for code in ['400', '404', '408', '500', '502', '503', '504']:
+      with open(os.path.join(builtin_dir, code + '.html'), 'w') as f:
+        f.write('<html>builtin %s</html>' % code)
+
+  def test_seed_creates_cluster_files_and_fallback_symlinks(self):
+    tmp = tempfile.mkdtemp()
+    try:
+      builtin_dir = os.path.join(tmp, 'builtin')
+      error_pages_dir = os.path.join(tmp, 'error-pages')
+      self._make_builtins(builtin_dir)
+      self._seed(error_pages_dir, builtin_dir, ['slave-a', 'slave-b'])
+
+      # cluster defaults are real files wrapped in the haproxy envelope
+      for code in ['400', '404', '408', '500', '502', '503', '504']:
+        path = os.path.join(error_pages_dir, 'cluster', code + '.http')
+        self.assertTrue(os.path.isfile(path) and not os.path.islink(path))
+        with open(path) as f:
+          self.assertTrue(f.read().startswith('HTTP/1.0 %s ' % code))
+
+      # every slave gets a fallback symlink to the cluster page, for the
+      # per-slave codes only
+      for ref in ['slave-a', 'slave-b']:
+        for code in self.SHARED_CODES:
+          link = os.path.join(error_pages_dir, 'shared', ref, code + '.http')
+          self.assertTrue(os.path.islink(link), '%s should be a symlink' % link)
+          self.assertEqual(
+            os.readlink(link), os.path.join('..', '..', 'cluster', code + '.http'))
+          # the symlink resolves to the cluster file
+          self.assertTrue(os.path.isfile(link))
+        # no per-slave file for cluster-only codes
+        self.assertFalse(os.path.exists(
+          os.path.join(error_pages_dir, 'shared', ref, '404.http')))
+    finally:
+      shutil.rmtree(tmp)
+
+  def test_seed_is_idempotent_and_keeps_real_overrides(self):
+    tmp = tempfile.mkdtemp()
+    try:
+      builtin_dir = os.path.join(tmp, 'builtin')
+      error_pages_dir = os.path.join(tmp, 'error-pages')
+      self._make_builtins(builtin_dir)
+      self._seed(error_pages_dir, builtin_dir, ['slave-a'])
+
+      # Simulate the updater having installed a real override.
+      override = os.path.join(error_pages_dir, 'shared', 'slave-a', '503.http')
+      os.unlink(override)
+      with open(override, 'w') as f:
+        f.write('HTTP/1.0 503 Service Unavailable\r\n\r\nreal override')
+
+      # Re-seeding must not clobber the real override, and leaves symlinks alone.
+      self._seed(error_pages_dir, builtin_dir, ['slave-a'])
+      self.assertFalse(os.path.islink(override))
+      with open(override) as f:
+        self.assertIn('real override', f.read())
+      self.assertTrue(os.path.islink(
+        os.path.join(error_pages_dir, 'shared', 'slave-a', '502.http')))
+    finally:
+      shutil.rmtree(tmp)
+
+
+class TestErrorPageAtomicWrite(unittest.TestCase):
+  """Unit test for software._atomic_write (manager publishes atomically)."""
+
+  @classmethod
+  def setUpClass(cls):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+      '_software_src_atomic',
+      os.path.normpath(os.path.join(
+        os.path.dirname(__file__), '..', 'software.py')))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    cls._atomic_write = staticmethod(mod._atomic_write)
+
+  def test_writes_complete_file_and_leaves_no_tmp(self):
+    tmp = tempfile.mkdtemp()
+    try:
+      path = os.path.join(tmp, '503.http')
+      self._atomic_write(path, 'first')
+      with open(path) as f:
+        self.assertEqual(f.read(), 'first')
+      # Overwriting replaces atomically and completely.
+      self._atomic_write(path, 'second-longer')
+      with open(path) as f:
+        self.assertEqual(f.read(), 'second-longer')
+      # No partial/leftover temp file is ever left behind.
+      self.assertEqual(os.listdir(tmp), ['503.http'])
+    finally:
+      shutil.rmtree(tmp)
+
+
+class TestErrorPagePrune(unittest.TestCase):
+  """Unit tests for software._prune_removed_shared_overrides."""
+
+  @classmethod
+  def setUpClass(cls):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+      '_software_src_prune',
+      os.path.normpath(os.path.join(
+        os.path.dirname(__file__), '..', 'software.py')))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    cls._prune = staticmethod(mod._prune_removed_shared_overrides)
+
+  def test_removed_slave_pruned_active_kept(self):
+    tmp = tempfile.mkdtemp()
+    try:
+      for ref in ('a', 'b'):
+        for base in ('shared', os.path.join('haproxy', 'shared')):
+          d = os.path.join(tmp, base, ref)
+          os.makedirs(d)
+          open(os.path.join(d, '503.http'), 'w').close()
+      self._prune(tmp, {'a'})
+      self.assertTrue(os.path.isdir(os.path.join(tmp, 'shared', 'a')))
+      self.assertTrue(
+        os.path.isdir(os.path.join(tmp, 'haproxy', 'shared', 'a')))
+      self.assertFalse(os.path.isdir(os.path.join(tmp, 'shared', 'b')))
+      self.assertFalse(
+        os.path.isdir(os.path.join(tmp, 'haproxy', 'shared', 'b')))
+    finally:
+      shutil.rmtree(tmp)
+
+
 class TestErrorPageUpdaterOnUpdate(unittest.TestCase):
   """Unit tests for the on_update command in instance-slave-list.cfg.in.
 
@@ -10731,7 +10949,369 @@ class TestErrorPageUpdaterOnUpdate(unittest.TestCase):
       shutil.rmtree(tmpdir)
 
 
-class TestErrorPageManager(SlapOSInstanceTestCase):
+class TestErrorPageSlaveOverride(SlaveHttpFrontendTestCase):
+  """End-to-end per-slave error-page overrides across slave permutations.
+
+  A shared instance uploads a custom page and the test provokes the matching
+  haproxy-generated error, asserting the custom page is served:
+
+  * plain non-cached backend, unreachable -> 503
+  * plain non-cached backend, empty reply -> 502
+  * slow non-cached backend -> 504
+  * health-check failover, primary and failover both down -> 503
+  * cached (enable_cache) backend unreachable -> 503
+
+  502 and 503 are emitted immediately by the backend haproxy.  A slow-origin 504
+  would otherwise race the frontend, which times out on the cluster
+  request-timeout and would emit its own (cluster-page) 504.  The slow slave
+  makes the outcome deterministic purely through parameters -- no profile change:
+  it sets its own request-timeout below the cluster's so the backend times out
+  first, and backend-connect-retries 0 so the response-timeout retry does not
+  push the backend's 504 past the frontend budget.
+
+  Plus: a redirect slave is not offered an upload URL.
+  """
+  request_timeout = 6
+  # The slow slave gives up on its origin well before the frontend (which uses
+  # the cluster request_timeout), so its per-slave 504 reaches the client first.
+  _slow_slave_timeout = 2
+  _slow_stall = request_timeout + 3
+
+  # These slaves intentionally emit 5xx (that is what the overrides cover), so
+  # waitForSlave must not treat their >=500 replies as a setup failure.
+  ignore_status_code_slave_list = \
+      SlaveHttpFrontendTestCase.ignore_status_code_slave_list + [
+        'ovplain.example.com',
+        'ovreset.example.com',
+        'ovslow.example.com',
+        'ovfailover.example.com',
+        'ovcached.example.com',
+      ]
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': cls.request_timeout,
+      })
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    reset_url = 'http://%s:%s/' % (cls._ipv4_address, cls._reset_port)
+    slow_url = 'http://%s:%s/' % (cls._ipv4_address, cls._slow_port)
+    return {
+      # unreachable origin -> haproxy 503
+      'ov-plain': {'url': 'http://bad.backend/'},
+      # origin accepts then closes with no reply -> haproxy 502
+      'ov-reset': {'url': reset_url},
+      # origin stalls; a per-slave request-timeout below the cluster's (plus no
+      # retries) makes the backend emit the 504 before the frontend does
+      'ov-slow': {
+        'url': slow_url,
+        'request-timeout': cls._slow_slave_timeout,
+        'backend-connect-retries': 0,
+      },
+      # primary and failover both unreachable -> 503 from the failover backend
+      'ov-failover': {
+        'url': 'http://bad.backend/',
+        'health-check': 'true',
+        'health-check-failover-url': 'http://bad.failover.backend/',
+      },
+      # cached instance, unreachable origin -> 503 through trafficserver
+      'ov-cached': {'enable_cache': 'true', 'url': 'http://bad.backend/'},
+      # redirect never proxies a backend, so it must not be offered an override
+      'ov-redirect': {'type': 'redirect', 'url': 'http://dest.example.com/'},
+    }
+
+  # --- raw TCP backend to provoke a haproxy 502 ------------------------------
+
+  @classmethod
+  def _startRawBackend(cls, port, handler):
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    srv.bind((cls._ipv4_address, port))
+    srv.listen(50)
+
+    def loop():
+      while True:
+        try:
+          conn, _ = srv.accept()
+        except OSError:
+          return
+        threading.Thread(target=handler, args=(conn,), daemon=True).start()
+
+    threading.Thread(target=loop, daemon=True).start()
+    return srv
+
+  @staticmethod
+  def _resetHandler(conn):
+    # Read the request then close without any reply: haproxy sees an empty
+    # response and (after its retries) emits a 502.
+    try:
+      conn.recv(65536)
+    except OSError:
+      pass
+    finally:
+      conn.close()
+
+  @classmethod
+  def _slowHandler(cls, conn):
+    # Accept and stall past the slave's request-timeout so haproxy emits a 504.
+    try:
+      conn.recv(65536)
+      time.sleep(cls._slow_stall)
+    except OSError:
+      pass
+    finally:
+      conn.close()
+
+  @classmethod
+  def startServerProcess(cls):
+    super().startServerProcess()
+    cls._reset_port = findFreeTCPPort(cls._ipv4_address)
+    cls._slow_port = findFreeTCPPort(cls._ipv4_address)
+    cls._raw_backend_list = [
+      cls._startRawBackend(cls._reset_port, cls._resetHandler),
+      cls._startRawBackend(cls._slow_port, cls._slowHandler),
+    ]
+
+  @classmethod
+  def stopServerProcess(cls):
+    for srv in getattr(cls, '_raw_backend_list', []):
+      try:
+        srv.close()
+      except OSError:
+        pass
+    super().stopServerProcess()
+
+  # --- EPM certificate + upload helpers --------------------------------------
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    epm_cert_pem = None
+    computer = cls.slap._slap.registerComputer('local')
+    for partition in computer.getComputerPartitionList():
+      if partition.getState() == 'destroyed':
+        continue
+      raw = partition.getInstanceParameterDict().get('_', {})
+      inner = json.loads(raw) if isinstance(raw, str) else raw
+      if isinstance(inner, dict) and 'error-page-certificate' in inner:
+        epm_cert_pem = inner['error-page-certificate']
+        break
+    assert epm_cert_pem is not None, 'EPM certificate not found'
+    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
+    cert_file.write(epm_cert_pem.encode())
+    cert_file.close()
+    cls._epm_cert_file = cert_file.name
+
+  @classmethod
+  def tearDownClass(cls):
+    if getattr(cls, '_epm_cert_file', None) and os.path.exists(cls._epm_cert_file):
+      os.unlink(cls._epm_cert_file)
+    super().tearDownClass()
+
+  def _assertOverrideServed(self, ref, code, scheme='https'):
+    """Upload a per-slave override for `code`, provoke it, assert it is served."""
+    upload_url = self.parseSlaveParameterDict(ref)['error-page-upload-url']
+    domain = self.parseSlaveParameterDict(ref)['domain']
+    fetch = fakeHTTPSResult if scheme == 'https' else fakeHTTPResult
+    marker = 'CUSTOM-%s-%s-OVERRIDE' % (ref, code)
+    custom_html = '<html><body>%s</body></html>' % marker
+    try:
+      result = mimikra.put(
+        upload_url + code, data=custom_html, verify=self._epm_cert_file)
+      self.assertEqual(204, result.status_code)
+
+      deadline = time.time() + 120
+      last = ''
+      while time.time() < deadline:
+        result = fetch(domain, 'test-path')
+        last = result.text
+        if marker in result.text:
+          self.assertEqual(int(code), result.status_code)
+          return
+        time.sleep(5)
+      self.fail(
+        'per-slave %s override for %r never served; last body:\n%s'
+        % (code, ref, last[:2000]))
+    finally:
+      mimikra.delete(upload_url + code, verify=self._epm_cert_file)
+
+  # --- serving tests ---------------------------------------------------------
+
+  def test_plain_backend_503_override_served(self):
+    self._assertOverrideServed('ov-plain', '503')
+
+  def test_reset_backend_502_override_served(self):
+    self._assertOverrideServed('ov-reset', '502')
+
+  def test_slow_backend_504_override_served(self):
+    self._assertOverrideServed('ov-slow', '504')
+
+  def test_failover_backend_503_override_served(self):
+    self._assertOverrideServed('ov-failover', '503')
+
+  def test_cached_backend_503_override_served(self):
+    self._assertOverrideServed('ov-cached', '503')
+
+  # --- redirect + config-level coverage --------------------------------------
+
+  def test_redirect_slave_has_no_upload_url(self):
+    """A redirect slave can never emit a 5xx, so it gets no upload URL."""
+    parameter_dict = self.parseSlaveParameterDict('ov-redirect')
+    self.assertNotIn('error-page-upload-url', parameter_dict)
+
+  # Shared-instance backends are named after the slave_reference, which the
+  # SlapOS proxy prefixes with an underscore (e.g. request key ov-plain ->
+  # backend _ov-plain-http), so error files live under shared/_ov-plain/.
+  def _backendHaproxyConfigWithSlaves(self):
+    for path in glob.glob(os.path.join(
+        self.instance_path, '*', 'etc', 'backend-haproxy.cfg')):
+      with open(path) as fh:
+        text = fh.read()
+      if 'backend _ov-plain-http' in text:
+        return text
+    self.fail('no backend-haproxy.cfg carrying the test slaves was found')
+
+  def _backendBlock(self, config, header_regexp):
+    match = re.search(
+      r'(?m)^(%s)\n((?:[ \t].*\n|\n)*)' % header_regexp, config)
+    self.assertIsNotNone(
+      match, 'backend block %r not found' % header_regexp)
+    return match.group(2)
+
+  def test_backend_config_wires_per_slave_errorfiles(self):
+    """Every shared code is wired on the primary and the failover backend.
+
+    A static complement to the serving tests: it confirms 502/503/504 are all
+    referenced on both the primary and the failover backend section, including
+    the failover section that the serving tests reach only for 503.
+    """
+    config = self._backendHaproxyConfigWithSlaves()
+    primary = self._backendBlock(config, r'backend _ov-plain-http')
+    failover = self._backendBlock(
+      config, r'backend _ov-failover\S*-failover')
+    for code in ('502', '503', '504'):
+      self.assertIn('/shared/_ov-plain/%s.http' % code, primary,
+                    'primary backend missing errorfile %s' % code)
+      self.assertIn('/shared/_ov-failover/%s.http' % code, failover,
+                    'failover backend missing errorfile %s' % code)
+
+
+class ErrorPageManagerClientMixin:
+  """Shared setUp/tearDown and HTTPS client helpers for the error-page-manager
+  partition test cases.
+
+  Every EPM-partition test (TestErrorPageManager and the NewSlave/RemovedSlave/
+  BuiltinChange/Scale regression cases) requests a standalone
+  ``error-page-manager`` instance, reads its published connection parameters,
+  persists the self-signed certificate to a temp file for TLS verification, and
+  polls ``/sync`` until the manager's HTTPS server answers.  This mixin hoists
+  that boilerplate plus the small HTTPS client helpers, leaving each test case
+  with only its own partition reference, monitor port, shared-list and tests.
+
+  Mix in *before* SlapOSInstanceTestCase so ``tearDownClass``'s ``super()``
+  chain reaches the base class:
+
+      class TestX(ErrorPageManagerClientMixin, SlapOSInstanceTestCase): ...
+  """
+
+  SUPPORTED_CODES = ['400', '404', '408', '500', '502', '503', '504']
+  SHARED_CODES = ['502', '503', '504']
+  _EPM_CERT_FILE = None
+
+  @classmethod
+  def _setUpErrorPageManagerClient(cls, timeout=120):
+    """Read published params, persist the cert, and wait for the HTTPS server.
+
+    Sets ``cls.sync_url`` / ``base_url`` / ``operator_url`` / ``slave_info`` /
+    ``_epm_base`` and ``cls._EPM_CERT_FILE``.  ``timeout`` bounds the readiness
+    poll -- widen it for large shared-lists, whose manager builds a big token
+    map at startup.  All four connection keys are always published, so
+    ``slave_info`` is ``{}`` when the shared-list is empty.
+    """
+    conn = json.loads(
+      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
+    cls.sync_url = conn['sync-url']
+    cls.base_url = conn['base-url']
+    cls.operator_url = conn['operator-url']
+    cls.slave_info = json.loads(conn['shared-error-page-information'])
+
+    # Write self-signed cert to a temp file for TLS verification.
+    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
+    cert_file.write(conn['certificate'].encode())
+    cert_file.close()
+    cls._EPM_CERT_FILE = cert_file.name
+
+    # Extract the scheme+host base URL (strips the /sync/TOKEN suffix).
+    parsed = urllib.parse.urlparse(cls.sync_url)
+    cls._epm_base = '%s://%s' % (parsed.scheme, parsed.netloc)
+
+    # Wait for the error-page-manager HTTPS server to be ready.
+    begin = time.time()
+    while True:
+      try:
+        if mimikra.get(
+            cls.sync_url, verify=cls._EPM_CERT_FILE).status_code == 200:
+          break
+      except Exception:
+        pass
+      if time.time() - begin > timeout:
+        raise TimeoutError(
+          'error-page-manager did not start within %s s' % timeout)
+      time.sleep(2)
+
+  @classmethod
+  def tearDownClass(cls):
+    if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
+      os.unlink(cls._EPM_CERT_FILE)
+    super().tearDownClass()
+
+  # --- HTTPS client helpers ---------------------------------------------------
+
+  def _get(self, url):
+    return mimikra.get(url, verify=self._EPM_CERT_FILE)
+
+  def _put(self, url, body):
+    return mimikra.put(url, data=body, verify=self._EPM_CERT_FILE)
+
+  def _delete(self, url):
+    return mimikra.delete(url, verify=self._EPM_CERT_FILE)
+
+  def _post_form(self, url, form_dict):
+    body = urllib.parse.urlencode(form_dict).encode('utf-8')
+    return mimikra.post(
+      url, data=body,
+      headers=d2h({'Content-Type': 'application/x-www-form-urlencoded'}),
+      verify=self._EPM_CERT_FILE, allow_redirects=False, http3=False)
+
+  def _epm_host_port(self):
+    parsed = urllib.parse.urlparse(self.sync_url)
+    return parsed.hostname, parsed.port
+
+  def _open_stalled_connection(self):
+    """Open a TLS connection, complete the handshake, then send a partial
+    request and never finish it -- an established-but-idle connection."""
+    host, port = self._epm_host_port()
+    client_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    client_ctx.check_hostname = False
+    client_ctx.verify_mode = ssl.CERT_NONE
+    raw = socket.create_connection((host, port), timeout=30)
+    tls = client_ctx.wrap_socket(raw, server_hostname=None)
+    # A request line with no terminating CRLF: the server starts reading a
+    # request but can never complete one, so its handler blocks in read.
+    tls.sendall(b'GET /sync/')
+    return tls
+
+
+class TestErrorPageManager(ErrorPageManagerClientMixin, SlapOSInstanceTestCase):
   """Tests for the error-page-manager partition.
 
   Verifies that:
@@ -10743,12 +11323,9 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
 
   __partition_reference__ = 'EPM'
 
-  SUPPORTED_CODES = ['400', '404', '408', '500', '502', '503', '504']
-  SHARED_CODES = ['502', '503', '504']
   TEST_SLAVE_REF = 'test-slave-1'
   TEST_SLAVE_REF_2 = 'test-slave-2'
   _EPM_MONITOR_PORT = 25000
-  _EPM_CERT_FILE = None
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -10770,66 +11347,34 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    conn = json.loads(
-      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
-    cls.sync_url = conn['sync-url']
-    cls.base_url = conn['base-url']
-    cls.operator_url = conn['operator-url']
-    cls.slave_info = json.loads(conn['shared-error-page-information'])
-
-    # Write self-signed cert to a temp file for TLS verification
-    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
-    cert_file.write(conn['certificate'].encode())
-    cert_file.close()
-    cls._EPM_CERT_FILE = cert_file.name
-
-    # Extract the scheme+host base URL (strips /sync/TOKEN suffix)
-    parsed = urllib.parse.urlparse(cls.sync_url)
-    cls._epm_base = '%s://%s' % (parsed.scheme, parsed.netloc)
-
-    # Wait for the error page manager HTTPS server to be ready
-    begin = time.time()
-    while True:
-      try:
-        result = mimikra.get(cls.sync_url, verify=cls._EPM_CERT_FILE)
-        if result.status_code == 200:
-          break
-      except Exception:
-        pass
-      if time.time() - begin > 120:
-        raise TimeoutError('error-page-manager did not start within 120 s')
-      time.sleep(2)
-
-  @classmethod
-  def tearDownClass(cls):
-    if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
-      os.unlink(cls._EPM_CERT_FILE)
-    super().tearDownClass()
-
-  # --- helpers ----------------------------------------------------------------
-
-  def _get(self, url):
-    return mimikra.get(url, verify=self._EPM_CERT_FILE)
-
-  def _put(self, url, body):
-    return mimikra.put(url, data=body, verify=self._EPM_CERT_FILE)
-
-  def _delete(self, url):
-    return mimikra.delete(url, verify=self._EPM_CERT_FILE)
+    cls._setUpErrorPageManagerClient()
 
   # --- sync / manifest --------------------------------------------------------
 
-  def test_sync_returns_manifest_with_all_default_files(self):
-    result = self._get(self.sync_url)
-    self.assertEqual(result.status_code, 200)
-    manifest = json.loads(result.text)
+  def test_sync_manifest_lists_cluster_files_and_only_real_overrides(self):
+    """Manifest carries the cluster defaults plus only real per-slave overrides."""
+    manifest = json.loads(self._get(self.sync_url).text)
     self.assertIsInstance(manifest, dict)
     for code in self.SUPPORTED_CODES:
       self.assertIn('cluster/%s.http' % code, manifest,
-                    'manifest missing default/%s.http' % code)
-    for code in self.SHARED_CODES:
-      key = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
-      self.assertIn(key, manifest, 'manifest missing %s' % key)
+                    'manifest missing cluster/%s.http' % code)
+    self.assertEqual(
+      [k for k in manifest if k.startswith('shared/')], [],
+      'no shared file must be published while no slave overrides a page')
+
+    # A real override shows up, and only for that slave+code.
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    key = 'shared/%s/503.http' % self.TEST_SLAVE_REF
+    try:
+      self.assertEqual(
+        self._put(upload_base + '503', '<html>o</html>').status_code, 204)
+      manifest = json.loads(self._get(self.sync_url).text)
+      self.assertEqual(
+        [k for k in manifest if k.startswith('shared/')], [key])
+    finally:
+      self._delete(upload_base + '503')
+    manifest = json.loads(self._get(self.sync_url).text)
+    self.assertNotIn(key, manifest)
 
   # --- default pages ----------------------------------------------------------
 
@@ -10930,21 +11475,21 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
     self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
     self.assertNotIn(custom_html, result.text)
 
-  def test_operator_change_propagates_to_slave_haproxy_file(self):
-    """Operator override of a slave-eligible code updates the slave file."""
+  def test_operator_change_updates_cluster_file_not_per_slave(self):
+    """An operator page lands in the cluster file, not in a per-slave file."""
     code = '502'
     op_html = '<html><body>Operator 502</body></html>'
     op_url = self.operator_url + code
-
-    self._put(op_url, op_html)
-
-    # Slave has no override, so its haproxy file should use operator HTML
-    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertEqual(result.status_code, 200)
-    self.assertIn(op_html, result.text)
-
-    self._delete(op_url)
+    try:
+      self._put(op_url, op_html)
+      cluster = self._get('%s/cluster/%s.http' % (self.base_url, code))
+      self.assertEqual(cluster.status_code, 200)
+      self.assertIn(op_html, cluster.text)
+      shared = self._get(
+        '%s/shared/%s/%s.http' % (self.base_url, self.TEST_SLAVE_REF, code))
+      self.assertEqual(shared.status_code, 404)
+    finally:
+      self._delete(op_url)
 
   # --- slave ------------------------------------------------------------------
 
@@ -10975,48 +11520,52 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
                        'slave upload of code %s should be rejected' % code)
 
   def test_slave_override_takes_precedence_over_operator(self):
-    """Slave-specific HTML overrides the operator default for that slave."""
+    """A slave override wins in its own file; removing it drops the file."""
     code = '504'
     upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
     op_url = self.operator_url + code
     op_html = '<html><body>Op 504</body></html>'
     slave_html = '<html><body>Slave 504</body></html>'
+    shared_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    try:
+      self._put(op_url, op_html)
+      self._put(upload_base + code, slave_html)
 
-    self._put(op_url, op_html)
-    self._put(upload_base + code, slave_html)
+      result = self._get('%s/%s' % (self.base_url, shared_path))
+      self.assertEqual(result.status_code, 200)
+      self.assertIn(slave_html, result.text)
+      self.assertNotIn(op_html, result.text)
 
-    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertEqual(result.status_code, 200)
-    self.assertIn(slave_html, result.text)
-    self.assertNotIn(op_html, result.text)
+      # Removing the override drops the per-slave file; the operator page is
+      # then served from the cluster fallback.
+      self._delete(upload_base + code)
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, shared_path)).status_code, 404)
+      cluster = self._get('%s/cluster/%s.http' % (self.base_url, code))
+      self.assertIn(op_html, cluster.text)
+    finally:
+      self._delete(upload_base + code)
+      self._delete(op_url)
 
-    # After slave deletes override, operator HTML is restored
-    self._delete(upload_base + code)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertEqual(result.status_code, 200)
-    self.assertIn(op_html, result.text)
-
-    # Cleanup operator
-    self._delete(op_url)
-
-  def test_slave_delete_reverts_to_operator_html(self):
-    """Slave DELETE falls back to operator HTML if one exists."""
+  def test_slave_delete_removes_file_operator_served_from_cluster(self):
+    """Slave DELETE removes its file; the operator page comes from cluster."""
     code = '502'
     upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
     op_url = self.operator_url + code
     op_html = '<html><body>Op fallback 502</body></html>'
     slave_html = '<html><body>Slave 502</body></html>'
+    shared_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    try:
+      self._put(op_url, op_html)
+      self._put(upload_base + code, slave_html)
+      self._delete(upload_base + code)
 
-    self._put(op_url, op_html)
-    self._put(upload_base + code, slave_html)
-    self._delete(upload_base + code)
-
-    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertIn(op_html, result.text)
-
-    self._delete(op_url)
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, shared_path)).status_code, 404)
+      cluster = self._get('%s/cluster/%s.http' % (self.base_url, code))
+      self.assertIn(op_html, cluster.text)
+    finally:
+      self._delete(op_url)
 
   # --- authentication ---------------------------------------------------------
 
@@ -11039,24 +11588,27 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
 
   # --- operator delete reverts slave file to builtin --------------------------
 
-  def test_operator_delete_reverts_slave_haproxy_file_to_builtin(self):
-    """Operator DELETE reverts slave haproxy file to built-in when slave has no override."""
+  def test_operator_delete_reverts_cluster_file_to_builtin(self):
+    """Operator DELETE reverts the cluster file to builtin."""
     code = '503'
     op_html = '<html><body>Operator 503 revert test</body></html>'
     op_url = self.operator_url + code
-    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    cluster_path = 'cluster/%s.http' % code
+    shared_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
 
     self._put(op_url, op_html)
-
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertIn(op_html, result.text)
+    self.assertIn(op_html, self._get('%s/%s' % (self.base_url, cluster_path)).text)
+    self.assertEqual(
+      self._get('%s/%s' % (self.base_url, shared_path)).status_code, 404)
 
     self._delete(op_url)
 
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
+    result = self._get('%s/%s' % (self.base_url, cluster_path))
     self.assertEqual(result.status_code, 200)
     self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
     self.assertNotIn(op_html, result.text)
+    self.assertEqual(
+      self._get('%s/%s' % (self.base_url, shared_path)).status_code, 404)
 
   # --- cluster-only codes -----------------------------------------------------
 
@@ -11090,27 +11642,33 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
     upload_url = self.slave_info[self.TEST_SLAVE_REF]['upload-url'] + code
     haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
 
-    self._put(op_url, op_html)
-    self._put(upload_url, slave_html)
+    cluster_path = 'cluster/%s.http' % code
+    try:
+      self._put(op_url, op_html)
+      self._put(upload_url, slave_html)
 
-    # Slave override wins
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertIn(slave_html, result.text)
-    self.assertNotIn(op_html, result.text)
+      # Slave override wins, in its own file.
+      result = self._get('%s/%s' % (self.base_url, haproxy_path))
+      self.assertIn(slave_html, result.text)
+      self.assertNotIn(op_html, result.text)
 
-    # DELETE slave override: operator page is served
-    self._delete(upload_url)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertIn(op_html, result.text)
-    self.assertNotIn(slave_html, result.text)
+      # DELETE slave override: its file disappears, operator served from cluster.
+      self._delete(upload_url)
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, haproxy_path)).status_code, 404)
+      self.assertIn(
+        op_html, self._get('%s/%s' % (self.base_url, cluster_path)).text)
 
-    # DELETE operator: built-in is served
-    self._delete(op_url)
-    result = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertEqual(result.status_code, 200)
-    self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
-    self.assertNotIn(op_html, result.text)
-    self.assertNotIn(slave_html, result.text)
+      # DELETE operator: cluster reverts to builtin.
+      self._delete(op_url)
+      result = self._get('%s/%s' % (self.base_url, cluster_path))
+      self.assertEqual(result.status_code, 200)
+      self.assertTrue(result.text.startswith('HTTP/1.0 %s ' % code))
+      self.assertNotIn(op_html, result.text)
+      self.assertNotIn(slave_html, result.text)
+    finally:
+      self._delete(upload_url)
+      self._delete(op_url)
 
   # --- slave override isolation -----------------------------------------------
 
@@ -11123,22 +11681,25 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
     upload_url_a = self.slave_info[self.TEST_SLAVE_REF]['upload-url'] + code
     haproxy_path_a = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
     haproxy_path_b = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF_2, code)
+    try:
+      self._put(op_url, op_html)
+      self._put(upload_url_a, slave_a_html)
 
-    self._put(op_url, op_html)
-    self._put(upload_url_a, slave_a_html)
+      # Slave-A has its own override file.
+      result = self._get('%s/%s' % (self.base_url, haproxy_path_a))
+      self.assertIn(slave_a_html, result.text)
+      self.assertNotIn(op_html, result.text)
 
-    # Slave-A has its own override
-    result = self._get('%s/%s' % (self.base_url, haproxy_path_a))
-    self.assertIn(slave_a_html, result.text)
-    self.assertNotIn(op_html, result.text)
-
-    # Slave-B has no override — gets operator HTML
-    result = self._get('%s/%s' % (self.base_url, haproxy_path_b))
-    self.assertIn(op_html, result.text)
-    self.assertNotIn(slave_a_html, result.text)
-
-    self._delete(upload_url_a)
-    self._delete(op_url)
+      # Slave-B has no override: no per-slave file; it uses the cluster page,
+      # which carries the operator HTML and never slave-A's.
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, haproxy_path_b)).status_code, 404)
+      cluster = self._get('%s/cluster/%s.http' % (self.base_url, code))
+      self.assertIn(op_html, cluster.text)
+      self.assertNotIn(slave_a_html, cluster.text)
+    finally:
+      self._delete(upload_url_a)
+      self._delete(op_url)
 
   # --- '#'-prefix header reservation ------------------------------------------
 
@@ -11310,13 +11871,6 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
                        'shared web UI must not expose cluster-only code %s'
                        % code)
 
-  def _post_form(self, url, form_dict):
-    body = urllib.parse.urlencode(form_dict).encode('utf-8')
-    return mimikra.post(
-      url, data=body,
-      headers=d2h({'Content-Type': 'application/x-www-form-urlencoded'}),
-      verify=self._EPM_CERT_FILE, allow_redirects=False, http3=False)
-
   def test_shared_web_ui_post_save_and_reset(self):
     """Save/Reset buttons from the shared web UI work end-to-end."""
     upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
@@ -11333,8 +11887,10 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
 
     reset_resp = self._post_form(upload_base, {'action': f'reset_{code}'})
     self.assertEqual(reset_resp.status_code, 200)
+    # Reset removes the per-slave override entirely; the slave falls back to
+    # the cluster page, so its own file is gone.
     served = self._get('%s/%s' % (self.base_url, haproxy_path))
-    self.assertNotIn(body, served.text)
+    self.assertEqual(served.status_code, 404)
 
   def test_shared_web_ui_rejects_wrong_token(self):
     """POST with an invalid shared token must be 401."""
@@ -11349,6 +11905,113 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
     result = self._post_form(
       upload_base, {'action': 'save_404', 'html_404': '<html/>'})
     self.assertEqual(result.status_code, 400)
+
+  # --- empty save is rejected (use Reset to remove) ---------------------------
+
+  def test_operator_put_empty_body_is_rejected(self):
+    """Operator PUT with an empty/whitespace body is 400, and stores nothing."""
+    code = '503'
+    op_url = self.operator_url + code
+    self._delete(op_url)
+    try:
+      for empty in ('', '   \n\t '):
+        result = self._put(op_url, empty)
+        self.assertEqual(result.status_code, 400)
+        self.assertIn('DELETE', result.text)
+      # nothing was stored
+      self.assertEqual(self._get(op_url).text, '')
+    finally:
+      self._delete(op_url)
+
+  def test_shared_put_empty_body_is_rejected(self):
+    """Slave PUT with an empty body is 400 and publishes no per-slave file."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    code = '503'
+    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    self._delete(upload_base + code)
+    try:
+      result = self._put(upload_base + code, '')
+      self.assertEqual(result.status_code, 400)
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, haproxy_path)).status_code, 404)
+    finally:
+      self._delete(upload_base + code)
+
+  def test_shared_web_ui_save_empty_is_rejected(self):
+    """An empty Save from the shared web UI is refused and points at Reset."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    code = '503'
+    haproxy_path = 'shared/%s/%s.http' % (self.TEST_SLAVE_REF, code)
+    self._post_form(upload_base, {'action': f'reset_{code}'})
+    result = self._post_form(
+      upload_base, {'action': f'save_{code}', f'html_{code}': ''})
+    self.assertEqual(result.status_code, 400)
+    self.assertIn('Reset', result.text)
+    self.assertEqual(
+      self._get('%s/%s' % (self.base_url, haproxy_path)).status_code, 404)
+
+  def test_operator_web_ui_save_empty_is_rejected(self):
+    """An empty Save from the operator web UI is refused and points at Reset."""
+    code = '503'
+    op_url = self.operator_url + code
+    self._delete(op_url)
+    try:
+      result = self._post_form(
+        self.operator_url, {'action': f'save_{code}', f'html_{code}': '   '})
+      self.assertEqual(result.status_code, 400)
+      self.assertIn('Reset', result.text)
+      self.assertEqual(self._get(op_url).text, '')
+    finally:
+      self._delete(op_url)
+
+  # --- saving/resetting one code keeps the other codes' edits -----------------
+
+  def test_shared_web_ui_save_one_preserves_other_edits(self):
+    """Saving one code must not discard edits typed into the other codes."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    for c in self.SHARED_CODES:
+      self._post_form(upload_base, {'action': f'reset_{c}'})
+    try:
+      resp = self._post_form(upload_base, {
+        'action': 'save_502',
+        'html_502': 'SAVED-502-MARKER',
+        'html_503': 'UNSAVED-503-MARKER',
+        'html_504': 'UNSAVED-504-MARKER',
+      })
+      self.assertEqual(resp.status_code, 200)
+      # the other codes' edits survive in the re-rendered form
+      self.assertIn('UNSAVED-503-MARKER', resp.text)
+      self.assertIn('UNSAVED-504-MARKER', resp.text)
+      # only 502 was persisted; the merely-edited 503/504 were not
+      served = self._get(
+        '%s/shared/%s/502.http' % (self.base_url, self.TEST_SLAVE_REF))
+      self.assertIn('SAVED-502-MARKER', served.text)
+      for code in ('503', '504'):
+        served = self._get(
+          '%s/shared/%s/%s.http' % (self.base_url, self.TEST_SLAVE_REF, code))
+        self.assertEqual(served.status_code, 404)
+    finally:
+      self._post_form(upload_base, {'action': 'reset_502'})
+
+  def test_shared_web_ui_reset_one_preserves_other_edits(self):
+    """Resetting one code must not discard edits typed into the other codes."""
+    upload_base = self.slave_info[self.TEST_SLAVE_REF]['upload-url']
+    try:
+      self._post_form(
+        upload_base, {'action': 'save_502', 'html_502': 'TO-BE-RESET'})
+      resp = self._post_form(upload_base, {
+        'action': 'reset_502',
+        'html_502': 'TYPED-502-DISCARDED',
+        'html_503': 'KEEP-503-MARKER',
+      })
+      self.assertEqual(resp.status_code, 200)
+      self.assertIn('KEEP-503-MARKER', resp.text)
+      served = self._get(
+        '%s/shared/%s/502.http' % (self.base_url, self.TEST_SLAVE_REF))
+      self.assertEqual(served.status_code, 404)
+    finally:
+      self._post_form(upload_base, {'action': 'reset_502'})
+      self._post_form(upload_base, {'action': 'reset_503'})
 
   # --- /shared/ vs /slave/ rename verification --------------------------------
 
@@ -11367,8 +12030,99 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
     self.assertIn('shared-error-page-information', conn)
     self.assertNotIn('slave-error-page-information', conn)
 
+  # --- resilience / scalability -----------------------------------------------
 
-class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
+  def test_stalled_client_does_not_wedge_manager(self):
+    """A stalled client must not block the manager: /sync stays responsive
+    while stalled connections are held open."""
+    stalled = []
+    try:
+      # More than the old listen backlog of 5.
+      for _ in range(10):
+        stalled.append(self._open_stalled_connection())
+
+      ok = 0
+      begin = time.time()
+      while time.time() - begin < 30:
+        result = mimikra.get(
+          self.sync_url, verify=self._EPM_CERT_FILE, timeout=10)
+        self.assertEqual(
+          result.status_code, 200,
+          'sync returned %s while %d clients were stalled'
+          % (result.status_code, len(stalled)))
+        ok += 1
+        if ok >= 5:
+          break
+      self.assertGreaterEqual(
+        ok, 5,
+        'sync did not stay responsive while clients were stalled '
+        '(only %d successful probes)' % ok)
+    finally:
+      for tls in stalled:
+        try:
+          tls.close()
+        except Exception:
+          pass
+
+  def test_concurrent_sync_requests(self):
+    """Many simultaneous /sync clients are all served concurrently without error."""
+    WORKERS = 20
+    DURATION_SECONDS = 10
+    stop_event = threading.Event()
+    counters = {'ok': 0, 'err': 0}
+    lock = threading.Lock()
+
+    def worker():
+      while not stop_event.is_set():
+        try:
+          r = mimikra.get(
+            self.sync_url, verify=self._EPM_CERT_FILE, timeout=30)
+          with lock:
+            counters['ok' if r.status_code == 200 else 'err'] += 1
+        except Exception:
+          with lock:
+            counters['err'] += 1
+
+    threads = [threading.Thread(target=worker) for _ in range(WORKERS)]
+    for t in threads:
+      t.daemon = True
+      t.start()
+    try:
+      time.sleep(DURATION_SECONDS)
+    finally:
+      stop_event.set()
+      for t in threads:
+        t.join(timeout=60)
+
+    self.assertGreater(counters['ok'], 0, 'no successful concurrent /sync')
+    self.assertEqual(
+      counters['err'], 0,
+      'concurrent /sync produced %d errors (ok=%d)'
+      % (counters['err'], counters['ok']))
+
+  def test_stalled_connection_is_reaped(self):
+    """The server closes a stalled connection (its socket timeout reaps it)
+    rather than holding it open forever."""
+    tls = self._open_stalled_connection()
+    try:
+      # Bound must exceed the server's EPM_SOCKET_TIMEOUT (30 s), with CI
+      # headroom. A server close => recv returns b'' / raises SSL/reset; a
+      # client-side timeout would mean the server never reaped it.
+      tls.settimeout(90)
+      try:
+        reaped = tls.recv(64) == b''
+      except socket.timeout:
+        reaped = False
+      except (ssl.SSLError, OSError):
+        reaped = True
+      self.assertTrue(
+        reaped, 'server did not close the stalled connection within 90 s')
+    finally:
+      tls.close()
+
+
+class TestErrorPageManagerNewSlave(
+    ErrorPageManagerClientMixin, SlapOSInstanceTestCase):
   """Regression test: EPM detects a shared ref added after initial startup.
 
   Bug: SHARED_TOKEN_MAP is built once at process start.  When buildout adds a
@@ -11384,7 +12138,6 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
   SLAVE_A_REF = 'ns-slave-a'
   SLAVE_B_REF = 'ns-slave-b'
   _EPM_MONITOR_PORT = 25100
-  _EPM_CERT_FILE = None
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -11403,28 +12156,7 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    conn = json.loads(
-      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
-    cls.sync_url = conn['sync-url']
-    parsed = urllib.parse.urlparse(cls.sync_url)
-    cls._epm_base = '%s://%s' % (parsed.scheme, parsed.netloc)
-
-    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
-    cert_file.write(conn['certificate'].encode())
-    cert_file.close()
-    cls._EPM_CERT_FILE = cert_file.name
-
-    begin = time.time()
-    while True:
-      try:
-        result = mimikra.get(cls.sync_url, verify=cls._EPM_CERT_FILE)
-        if result.status_code == 200:
-          break
-      except Exception:
-        pass
-      if time.time() - begin > 120:
-        raise TimeoutError('EPM (new-slave test) did not start within 120 s')
-      time.sleep(2)
+    cls._setUpErrorPageManagerClient()
 
     # Add slave-B: simulates adding a slave after the EPM is already running.
     # This triggers the bug we're testing (SLAVE_TOKEN_MAP not refreshed).
@@ -11447,21 +12179,6 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
     cls.operator_url = conn['operator-url']
     cls.slave_info = json.loads(conn['shared-error-page-information'])
 
-  @classmethod
-  def tearDownClass(cls):
-    if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
-      os.unlink(cls._EPM_CERT_FILE)
-    super().tearDownClass()
-
-  def _get(self, url):
-    return mimikra.get(url, verify=self._EPM_CERT_FILE)
-
-  def _put(self, url, body):
-    return mimikra.put(url, data=body, verify=self._EPM_CERT_FILE)
-
-  def _delete(self, url):
-    return mimikra.delete(url, verify=self._EPM_CERT_FILE)
-
   def test_new_slave_token_accepted(self):
     """Slave-B added after EPM startup can upload error pages (204, not 401).
 
@@ -11479,24 +12196,105 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
     # Cleanup
     self._delete(self.slave_info[self.SLAVE_B_REF]['upload-url'] + '503')
 
-  def test_new_slave_inherits_operator_override(self):
-    """Slave-B added after EPM startup inherits operator override, not built-in."""
+  def test_new_slave_uses_cluster_page_until_it_overrides(self):
+    """Slave-B added after EPM startup has no per-slave file; it serves the
+    cluster page (operator override) until it uploads its own."""
     code = '503'
     op_html = '<html><body>Operator 503 for new-slave inheritance test</body></html>'
     op_url = self.operator_url + code
+    shared_path = 'shared/%s/%s.http' % (self.SLAVE_B_REF, code)
 
     self._put(op_url, op_html)
     try:
-      haproxy_path = 'shared/%s/%s.http' % (self.SLAVE_B_REF, code)
-      result = self._get('%s/%s' % (self.base_url, haproxy_path))
-      self.assertEqual(result.status_code, 200)
-      self.assertIn(op_html, result.text,
-                    'New slave should inherit operator override, not built-in default')
+      # No per-slave file is materialised for the new slave; the operator page
+      # it will serve lives in the cluster file (its frontend fallback).
+      self.assertEqual(
+        self._get('%s/%s' % (self.base_url, shared_path)).status_code, 404)
+      self.assertIn(
+        op_html,
+        self._get('%s/cluster/%s.http' % (self.base_url, code)).text)
     finally:
       self._delete(op_url)
 
 
-class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
+class TestErrorPageManagerRemovedSlave(
+    ErrorPageManagerClientMixin, SlapOSInstanceTestCase):
+  """A shared instance's override is dropped once the slave leaves the list.
+
+  The shared list is retention-resolved by the master, so a ref that is gone
+  from it is destroyed for good; on the config change the EPM restarts and
+  prunes the override at startup.
+  """
+
+  __partition_reference__ = 'EPMRS'
+
+  KEEP_REF = 'rs-slave-keep'
+  REMOVED_REF = 'rs-slave-removed'
+  _EPM_MONITOR_PORT = 25102
+
+  @classmethod
+  def getInstanceSoftwareType(cls):
+    return 'error-page-manager'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'monitor-password': 'test-monitor-password',
+        'monitor-httpd-port': cls._EPM_MONITOR_PORT,
+        'shared-list': [
+          {'slave_reference': cls.KEEP_REF},
+          {'slave_reference': cls.REMOVED_REF},
+        ],
+      }),
+    }
+
+  @classmethod
+  def setUpClass(cls):
+    super().setUpClass()
+    cls._setUpErrorPageManagerClient()
+
+    cls._removed_path = 'shared/%s/503.http' % cls.REMOVED_REF
+
+    # The removed slave uploads a custom page while it still exists.
+    upload_url = cls.slave_info[cls.REMOVED_REF]['upload-url'] + '503'
+    if mimikra.put(
+        upload_url, data='<html>bye</html>',
+        verify=cls._EPM_CERT_FILE).status_code != 204:
+      raise RuntimeError('could not upload removed slave override')
+    manifest = json.loads(
+      mimikra.get(cls.sync_url, verify=cls._EPM_CERT_FILE).text)
+    if cls._removed_path not in manifest:
+      raise RuntimeError('override was not published before removal')
+
+    # Drop the slave from the shared list; the EPM restarts on the config
+    # change and prunes it at startup.
+    cls._instance_parameter_dict = {
+      '_': json.dumps({
+        'monitor-password': 'test-monitor-password',
+        'monitor-httpd-port': cls._EPM_MONITOR_PORT,
+        'shared-list': [{'slave_reference': cls.KEEP_REF}],
+      }),
+    }
+    cls.requestDefaultInstance()
+    cls.waitForInstance()
+    conn = json.loads(
+      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
+    cls.sync_url = conn['sync-url']
+    cls.base_url = conn['base-url']
+
+  def test_removed_slave_override_is_pruned(self):
+    manifest = json.loads(
+      mimikra.get(self.sync_url, verify=self._EPM_CERT_FILE).text)
+    self.assertNotIn(self._removed_path, manifest)
+    served = mimikra.get(
+      '%s/%s' % (self.base_url, self._removed_path),
+      verify=self._EPM_CERT_FILE)
+    self.assertEqual(served.status_code, 404)
+
+
+class TestErrorPageManagerBuiltinChange(
+    ErrorPageManagerClientMixin, SlapOSInstanceTestCase):
   """Regression test: EPM restarts when a builtin HTML changes.
 
   Bug: hash-existing-files originally watched only buildout.cfg and the EPM
@@ -11516,7 +12314,6 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
   _CODE = '503'
   _MARKER = '<!-- EPMBC builtin-change marker -->'
   _EPM_MONITOR_PORT = 25101
-  _EPM_CERT_FILE = None
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -11535,28 +12332,7 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
-    conn = json.loads(
-      cls.requestDefaultInstance().getConnectionParameterDict()['_'])
-    cls.sync_url = conn['sync-url']
-    cls.base_url = conn['base-url']
-
-    cert_file = tempfile.NamedTemporaryFile(suffix='.crt', delete=False)
-    cert_file.write(conn['certificate'].encode())
-    cert_file.close()
-    cls._EPM_CERT_FILE = cert_file.name
-
-    begin = time.time()
-    while True:
-      try:
-        result = mimikra.get(cls.sync_url, verify=cls._EPM_CERT_FILE)
-        if result.status_code == 200:
-          break
-      except Exception:
-        pass
-      if time.time() - begin > 120:
-        raise TimeoutError(
-          'EPM (builtin-change test) did not start within 120 s')
-      time.sleep(2)
+    cls._setUpErrorPageManagerClient()
 
     # Locate the builtin HTML directory used by the EPM.  The path is stored
     # in the EPM config JSON written by error-page-manager-config.
@@ -11578,8 +12354,7 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
           f.write(cls._original_builtin)
       except Exception:
         pass
-    if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
-      os.unlink(cls._EPM_CERT_FILE)
+    # The mixin's tearDownClass (reached via super()) unlinks the cert file.
     super().tearDownClass()
 
   def _get_cluster_http(self, code):
