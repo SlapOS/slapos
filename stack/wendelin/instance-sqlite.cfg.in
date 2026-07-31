@@ -1,0 +1,73 @@
+{# Dedicated partition that owns a sqlite database file used as ERP5 catalog. #}
+{# It runs no server: it just creates the database file location and publishes #}
+{# its path, so the zope partitions on the same computer can open it directly. #}
+
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set default_db_path = buildout_directory ~ '/srv/sqlite/erp5.db' -%}
+{% set db_path = slapparameter_dict.get('db-path') or default_db_path -%}
+{% set db_dir = '/'.join(db_path.rstrip('/').split('/')[:-1]) -%}
+{% set db_basename = db_path.rsplit('/', 1)[-1] -%}
+{% set db_stem = db_basename.rsplit('.', 1)[0] if '.' in db_basename else db_basename -%}
+{% set db_ext = ('.' + db_basename.rsplit('.', 1)[1]) if '.' in db_basename else '' -%}
+{% set test_database_amount = slapparameter_dict.get('test-database-amount', 0) -%}
+{% set test_db_path_list = [] -%}
+{% for i in range(test_database_amount) -%}
+{%   do test_db_path_list.append(db_dir ~ '/' ~ db_stem ~ '_test_' ~ i ~ db_ext) -%}
+{% endfor -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+log = ${:var}/log
+plugin = ${:etc}/plugin
+run = ${:var}/run
+services = ${:etc}/run
+srv = ${buildout:directory}/srv
+tmp = ${buildout:directory}/tmp
+var = ${buildout:directory}/var
+sqlite-dir = {{ db_dir }}
+
+[{{ section('sqlite-db-init') }}]
+recipe = plone.recipe.command
+stop-on-error = true
+db-path = {{ db_path }}
+test-db-path-list = {{ dumps(test_db_path_list) }}
+command =
+  mkdir -p "${directory:sqlite-dir}"
+  for f in ${:db-path} {{ ' '.join(test_db_path_list) }} ; do
+    test -f "$f" || : > "$f"
+  done
+update-command = ${:command}
+
+[{{ section('sqlite-db-promise') }}]
+<= monitor-promise-base
+promise = check_command_execute
+name = ${:_buildout_section_name_}.py
+config-command = test -f ${sqlite-db-init:db-path}
+
+[{{ section('promise-check-computer-memory') }}]
+<= monitor-promise-base
+promise = check_command_execute
+name = check-computer-memory.py
+config-command = "{{ parameter_dict['check-computer-memory-binary'] }}" -db ${monitor-instance-parameter:collector-db} --threshold "{{ slapparameter_dict['computer-memory-percent-threshold'] }}" --unit percent
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+db-path = ${sqlite-db-init:db-path}
+test-db-path-list = ${sqlite-db-init:test-db-path-list}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+
+[monitor-instance-parameter]
+monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-port = 2196
+monitor-title = {{ slapparameter_dict['name'] }}
+password = {{ slapparameter_dict['monitor-passwd'] }}
+
+[buildout]
+extends =
+  {{ template_monitor }}
+parts +=
+  {{ part_list | join('\n  ') }}
+  publish
