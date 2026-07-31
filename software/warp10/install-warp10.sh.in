@@ -1,0 +1,59 @@
+#!/bin/sh
+
+set -eu
+
+WARP10_HOME={{ warp10_home }}
+WARP10_CONFIG_DIR=${WARP10_HOME}/etc/conf.d
+JAVA_HOME={{ java_home }}
+WARP10_HOST={{ warp10_host }}
+WARP10_PORT={{ warp10_port }}
+
+
+##
+## Set JAVA_HOME
+##
+sed -i -e "s@^#JAVA_HOME=.*@JAVA_HOME=${JAVA_HOME}@" "${WARP10_HOME}/etc/warp10-env.sh"
+
+##
+## Bootstrap Warp 10
+##
+"${WARP10_HOME}/bin/warp10.sh" init standalone
+
+##
+## Modify start script to run java process in foreground with exec
+##
+sed -i -e 's/\&$//g' "${WARP10_HOME}/bin/warp10.sh"
+
+##
+## Configure host and port, enable TokenWarpScriptExtension
+##
+sed -i -e 's|^#warpscript.extension.sensision|warpscript.extension.sensision|g' "${WARP10_CONFIG_DIR}/99-init.conf"
+{
+  echo "standalone.host = ${WARP10_HOST}"
+  echo "standalone.port = ${WARP10_PORT}"
+  echo 'warpscript.extension.token = io.warp10.script.ext.token.TokenWarpScriptExtension'
+  echo 'debug.capability = false'
+} > "${WARP10_CONFIG_DIR}/99-slapos.conf"
+
+##
+## Generate demo tokens
+##
+tokens=$("${WARP10_HOME}"/bin/warp10.sh tokengen "${WARP10_HOME}/tokens/demo-tokengen.mc2" 2>/dev/null)
+READ_TOKEN=$(echo "${tokens}" | grep '"token"' | tail -1 | sed -e 's/.*" : "//' -e 's/".*//')
+WRITE_TOKEN=$(echo "${tokens}" | grep '"token"' | head -1 | sed -e 's/.*" : "//' -e 's/".*//')
+##
+## Generate read/write token for sensision for a period of 100 years. We use 'sensision' as application name.
+## Define token as MACROCONFIG key for runner script
+##
+tokens=$("${WARP10_HOME}"/bin/warp10.sh tokengen "${WARP10_HOME}/tokens/sensision-tokengen.mc2" 2>/dev/null)
+SENSISION_READ_TOKEN=$(echo "${tokens}" | grep '"token"' | tail -1 | sed -e 's/.*" : "//' -e 's/".*//')
+SENSISION_WRITE_TOKEN=$(echo "${tokens}" | grep '"token"' | head -1 | sed -e 's/.*" : "//' -e 's/".*//')
+echo "sensisionReadToken@/sensision=${SENSISION_READ_TOKEN}" >> "${WARP10_CONFIG_DIR}"/99-sensision-secrets.conf
+echo "sensisionWriteToken@/sensision=${SENSISION_WRITE_TOKEN}" >> "${WARP10_CONFIG_DIR}"/99-sensision-secrets.conf
+
+{
+  echo "${READ_TOKEN}"
+  echo "${WRITE_TOKEN}"
+  echo "${SENSISION_READ_TOKEN}"
+  echo "${SENSISION_WRITE_TOKEN}"
+} > "${WARP10_HOME}/tokens/tokens.txt"
