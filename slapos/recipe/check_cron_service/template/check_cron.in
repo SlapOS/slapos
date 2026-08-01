@@ -1,0 +1,11 @@
+CRON_LOG="%(cron_log)s"
+
+if [ -z $CRON_LOG ]; then
+  echo "No cron.log specified." >&2
+  exit 3
+fi
+
+cat $CRON_LOG | grep "ERROR" > /dev/null
+
+# If there has an error,
+# Report it to somewhere?
