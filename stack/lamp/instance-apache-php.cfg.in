@@ -210,7 +210,10 @@ url = {{ parameter_dict['template-php-fpm.conf'] }}
 output = ${directory:php-ini-dir}/php-fpm.conf
 context =
   section instance_dict instance-parameter
+  section php_environment php-environment
 extensions = jinja2.ext.do
+
+[php-environment]
 
 [php-fpm-wrapper]
 recipe = slapos.cookbook:wrapper

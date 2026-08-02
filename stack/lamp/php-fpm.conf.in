@@ -5,3 +5,6 @@ pm.max_children = {{ instance_dict['pm.max_children'] }}
 pm.start_servers = {{ instance_dict['pm.start_servers'] }}
 pm.min_spare_servers = {{ instance_dict['pm.min_spare_servers'] }}
 pm.max_spare_servers = {{ instance_dict['pm.max_spare_servers'] }}
+{% for key, value in php_environment.items() %}
+env[{{ key }}] = "{{ value }}"
+{% endfor %}
