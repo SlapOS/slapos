@@ -1121,6 +1121,7 @@ class ZopeTestMixin(ZopeSkinsMixin, CrontabMixin):
 
   def test_activity_processing(self):
     def wait_for_activities(max_retries):
+      count = None
       for retry in range(max_retries):
         time.sleep(10)
         resp = requests.get(
