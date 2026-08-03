@@ -71,7 +71,7 @@ from cryptography.x509.oid import NameOID
 
 from slapos.testing.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-from slapos.testing.utils import findFreeTCPPort
+from slapos.testing.utils import findFreeTCPPortRange
 from slapos.testing.utils import getPromisePluginParameterDict
 if __name__ == '__main__':
   SlapOSInstanceTestCase = object
@@ -1451,14 +1451,20 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     try:
       cls.createWildcardExampleComCertificate()
       cls.prepareCertificate()
-      # find ports once to be able startServerProcess many times
-      cls._server_http_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_https_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_https_weak_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_https_auth_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_netloc_a_http_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_netloc_b_http_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_nginx_auth_444_port = findFreeTCPPort(cls._ipv4_address)
+      # find ports once to be able startServerProcess many times.
+      # Allocate a consecutive range so the ports are guaranteed distinct:
+      # separate findFreeTCPPort calls can return the same port, which then
+      # makes a later server bind fail with "Address already in use".
+      base_port = findFreeTCPPortRange(cls._ipv4_address, 7)
+      (
+        cls._server_http_port,
+        cls._server_https_port,
+        cls._server_https_weak_port,
+        cls._server_https_auth_port,
+        cls._server_netloc_a_http_port,
+        cls._server_netloc_b_http_port,
+        cls._server_nginx_auth_444_port,
+      ) = range(base_port, base_port + 7)
       cls.startServerProcess()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
@@ -11130,8 +11136,12 @@ class TestErrorPageSlaveOverride(SlaveHttpFrontendTestCase):
   @classmethod
   def startServerProcess(cls):
     super().startServerProcess()
-    cls._reset_port = findFreeTCPPort(cls._ipv4_address)
-    cls._slow_port = findFreeTCPPort(cls._ipv4_address)
+    # allocate the two extra backend ports as a consecutive range: separate
+    # findFreeTCPPort calls can return the same port, which then makes the
+    # second raw backend fail to bind.
+    _reset_slow_base = findFreeTCPPortRange(cls._ipv4_address, 2)
+    cls._reset_port, cls._slow_port = (
+      _reset_slow_base, _reset_slow_base + 1)
     cls._raw_backend_list = [
       cls._startRawBackend(cls._reset_port, cls._resetHandler),
       cls._startRawBackend(cls._slow_port, cls._slowHandler),
