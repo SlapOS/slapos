@@ -26,7 +26,40 @@ fi
 find $BACKUP_DIR -maxdepth 1 -type f \
   \( -name $(basename $CHAIN_DIR) -o -name $(basename $CHAIN_DIR).gz \) -delete
 qmpbackup_backup="$qmpbackup backup --compress --target $BACKUP_DIR --include {{ disk['device'] }}"
-$qmpbackup_backup --level auto &> $log
+
+# qmpbackup --level auto only ever appends increments, and a guest which
+# rewrites its disk makes them sum up to more than the image itself, so restart
+# the chain with a full backup once it grew too big
+level=auto
+{%- if rolling_full_permille | int > 0 %}
+full_time=$(find $CHAIN_DIR -maxdepth 1 -type f -name 'FULL-*.qcow2' -printf '%T@\n' 2> /dev/null | cut -d. -f 1 | sort -n | tail -n 1)
+if [ x"$full_time" != x"" ] ; then
+  chain_size=$(du -s --block-size=1 $CHAIN_DIR | cut -f 1)
+  # empty for a disk image which is not a file, and then the chain is compared
+  # with nothing, so keep appending increments
+  image_size=$(du -s --block-size=1 {{ disk_path }} | cut -f 1)
+  if [ x"$image_size" != x"" ] \
+    && [ $(($chain_size * 1000)) -gt $(($image_size * {{ rolling_full_permille | int }})) ] ; then
+    # a full backup is transferred to the pull backup server in whole and kept
+    # there as an increment, so do not roll more often than it keeps them
+    if [ $(($(date +%s) - $full_time)) -ge {{ rolling_full_interval | int }} ] ; then
+      level=full
+      # the new full backup has to fit next to the disk image, which the chain
+      # is already bigger than, so make room for it before it is written, also
+      # for the partial files of previously failed backups
+      find $CHAIN_DIR -type f -delete
+      echo "Rolling full backup, as backup chain of $chain_size bytes exceeded" \
+        "{{ rolling_full_permille | int / 1000 }} times the disk image of $image_size bytes"
+    else
+      echo "Keeping incremental backup, as backup chain of $chain_size bytes" \
+        "exceeded {{ rolling_full_permille | int / 1000 }} times the disk image" \
+        "of $image_size bytes, but the full backup is younger than" \
+        "{{ rolling_full_interval | int }} seconds"
+    fi
+  fi
+fi
+{%- endif %}
+$qmpbackup_backup --level $level &> $log
 RESULT=$?
 cat $log
 if [ $RESULT -ne 0 ] ; then
