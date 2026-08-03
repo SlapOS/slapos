@@ -105,12 +105,14 @@ class Failsafe(object):
       else:
         super(Failsafe, self).update()
 
+  # Registered as a zc.buildout.uninstall entry point, so buildout calls this
+  # as a plain function with (name, options) -- there is no 'self'. It only has
+  # to drop the error-status-file; buildout removes the tracked paths itself.
   def uninstall(name, options):
     error_status_file = options.get('-error-status-file')
     if error_status_file is not None:
       if os.path.exists(error_status_file):
         os.unlink(error_status_file)
-    super(Failsafe, self).uninstall()
 
 
 class RecipeFailsafe(Failsafe, Recipe):

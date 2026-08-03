@@ -71,7 +71,6 @@ from cryptography.x509.oid import NameOID
 
 from slapos.testing.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-from slapos.testing.utils import findFreeTCPPort
 from slapos.testing.utils import getPromisePluginParameterDict
 if __name__ == '__main__':
   SlapOSInstanceTestCase = object
@@ -97,6 +96,28 @@ TEST_IP = os.environ['SLAPOS_TEST_IPV4']
 
 def unicode_escape(s):
   return s.encode('unicode_escape').decode()
+
+
+def findFreeTCPPortList(ip, count):
+  """Return a list of `count` distinct free TCP ports on `ip`.
+
+  A plain findFreeTCPPort() closes its probe socket before returning, so calling
+  it several times in a row can hand back the same port more than once; binding
+  a later server to that duplicate port then fails with "Address already in
+  use". Keeping every probe socket open until all ports have been picked
+  guarantees the returned ports are distinct.
+  """
+  socket_list = []
+  try:
+    for _ in range(count):
+      s = socket.socket(
+        socket.AF_INET6 if ':' in ip else socket.AF_INET, socket.SOCK_STREAM)
+      s.bind((ip, 0))
+      socket_list.append(s)
+    return [s.getsockname()[1] for s in socket_list]
+  finally:
+    for s in socket_list:
+      s.close()
 
 
 # comes from https://stackoverflow.com/a/21788372/9256748
@@ -1396,14 +1417,19 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     try:
       cls.createWildcardExampleComCertificate()
       cls.prepareCertificate()
-      # find ports once to be able startServerProcess many times
-      cls._server_http_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_https_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_https_weak_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_https_auth_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_netloc_a_http_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_netloc_b_http_port = findFreeTCPPort(cls._ipv4_address)
-      cls._server_nginx_auth_444_port = findFreeTCPPort(cls._ipv4_address)
+      # find ports once to be able startServerProcess many times.
+      # Allocate them together so they are guaranteed distinct: separate
+      # findFreeTCPPort calls can return the same port, which then makes a
+      # later server bind fail with "Address already in use".
+      (
+        cls._server_http_port,
+        cls._server_https_port,
+        cls._server_https_weak_port,
+        cls._server_https_auth_port,
+        cls._server_netloc_a_http_port,
+        cls._server_netloc_b_http_port,
+        cls._server_nginx_auth_444_port,
+      ) = findFreeTCPPortList(cls._ipv4_address, 7)
       cls.startServerProcess()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
