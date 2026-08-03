@@ -31,6 +31,20 @@ device = ide0-hd0
 # unsupported disk-type {{ disk_type }}
 {%- endif %}
 
+# qmpbackup >= 0.63 stores the backup chain in a directory named after the
+# disk image file, previous versions used the qemu node name (virtual1)
+[backup-chain]
+directory = ${directory:backup}/virtual.${slap-parameter:disk-format}
+
+{#- the exporter compares with integer arithmetic only, so scale the ratio #}
+{%- set rolling_full_permille = (slapparameter_dict.get('backup-rolling-full-ratio', 1.5) | float * 1000) | round | int %}
+{#- rdiff-backup interval of the pull backup server, which can also be
+    expressed as an amount of backups, like 3B, and then says nothing about
+    the time an increment is kept #}
+{%- set retention = slapparameter_dict.get('remove-backup-older-than', '2W') | string %}
+{%- set retention_multiplier_dict = {'s': 1, 'm': 60, 'h': 3600, 'D': 86400, 'W': 604800, 'M': 2592000, 'Y': 31536000} %}
+{%- set rolling_full_interval = (retention[:-1] | int(0)) * retention_multiplier_dict.get(retention[-1:], 0) or 2 * 604800 %}
+
 [backup-info]
 file = ${directory:var}/backup-in-progress
 
@@ -51,9 +65,13 @@ context =
     section buildout buildout
     key qmp_socket_path kvm-parameter-dict:qmp-socket-path
     key backup_info backup-info:file
+    key backup_chain_directory backup-chain:directory
+    key disk_path kvm-parameter-dict:disk-path
     section disk disk
     raw qmpbackup {{ qmpbackup }}
     raw backup_signature {{ backup_signature }}
+    raw rolling_full_permille {{ rolling_full_permille }}
+    raw rolling_full_interval {{ rolling_full_interval }}
 
 # Extends publish section with resilient parameters
 [publish-connection-information]
@@ -74,7 +92,7 @@ password = {{ slapparameter_dict['monitor-password'] }}
 [check-backup-directory]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/check-backup-directory
-command-line = {{ flock }} --conflict-exit-code 0 --nonblock --no-fork ${backup-info:file} {{ check_backup_directory }} ${directory:backup}/virtual1 ${directory:tmp} ${backup-info:file}
+command-line = {{ flock }} --conflict-exit-code 0 --nonblock --no-fork ${backup-info:file} {{ check_backup_directory }} ${backup-chain:directory} ${directory:tmp} ${backup-info:file}
 
 [check-backup-directory-promise]
 # Check that disk image is not corrupted
