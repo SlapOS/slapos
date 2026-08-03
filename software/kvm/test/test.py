@@ -754,10 +754,15 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
   instance_max_retry = 20
 
   disk_type = 'virtio'
+  extra_parameter_dict = {}
 
   @classmethod
   def getInstanceParameterDict(cls):
-    parameter_dict = {}
+    # the backup chain of a VM which barely allocated its disk image is much
+    # bigger than the image, so rolling full backups would kick in during the
+    # tests which are not about them
+    parameter_dict = {'backup-rolling-full-ratio': 0}
+    parameter_dict.update(cls.extra_parameter_dict)
     if cls.disk_type != 'virtio':
       parameter_dict['disk-type'] = cls.disk_type
     return {'_': json.dumps(parameter_dict)}
@@ -788,7 +793,8 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
     partial_recover=False,
     empty_backup_recover=False,
     migrated_old=False,
-    recovered_not_ready=False
+    recovered_not_ready=False,
+    rolling_full=False
   ):
     take_over_text = 'Post take-over or post qmpbackup upgrade cleanup'
     if post_take_over:
@@ -820,6 +826,18 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
       self.assertIn(recovered_not_ready_text, status_text)
     else:
       self.assertNotIn(recovered_not_ready_text, status_text)
+
+    rolling_full_text = 'Rolling full backup, as increments of'
+    if rolling_full:
+      self.assertIn(rolling_full_text, status_text)
+      # the exporter deletes the chain before the full backup replacing it is
+      # written, so the partition never holds both
+      started_text = 'Started backup transaction'
+      self.assertIn(started_text, status_text)
+      self.assertLess(
+        status_text.index(rolling_full_text), status_text.index(started_text))
+    else:
+      self.assertNotIn(rolling_full_text, status_text)
 
 
 def awaitBackup(equeue_file):
@@ -1195,6 +1213,42 @@ class TestInstanceResilientBackupExporterMigratePre063(
       backup_uuid = fh.read()
     self.assertEqual(
       ['qmpbackup-%s' % (backup_uuid,)], self.getBitmapList())
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterRollingFull(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  rolling_ratio = 0.01
+  extra_parameter_dict = {'backup-rolling-full-ratio': rolling_ratio}
+
+  def test(self):
+    self.initialBackup()
+    full = glob.glob(self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))[0]
+    # a chain without increments is a full backup on its own, replacing it
+    # would not save any space
+    status_text = self.call_exporter()
+    self.assertExporterStatus(status_text)
+    increment_list = glob.glob(
+      self.getKvmExportPartitionBackupPath('INC-*.qcow2'))
+    self.assertEqual(1, len(increment_list))
+    self.assertGreater(
+      sum(os.path.getsize(increment) for increment in increment_list),
+      self.rolling_ratio * os.path.getsize(full))
+    equeue_file = self.getPartitionPath(
+      'kvm-import', 'var', 'log', 'equeue.log')
+    with open(equeue_file, 'w') as fh:
+      fh.write('')
+    status_text = self.call_exporter()
+    awaitBackup(equeue_file)
+    self.assertExporterStatus(status_text, rolling_full=True)
+    full_list = glob.glob(
+      self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))
+    self.assertEqual(1, len(full_list))
+    self.assertNotEqual(full, full_list[0])
+    self.assertEqual(
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
+      0)
+    self.assertImported()
 
 
 @skipUnlessKvm

@@ -26,7 +26,32 @@ fi
 find $BACKUP_DIR -maxdepth 1 -type f \
   \( -name $(basename $CHAIN_DIR) -o -name $(basename $CHAIN_DIR).gz \) -delete
 qmpbackup_backup="$qmpbackup backup --compress --target $BACKUP_DIR --include {{ disk['device'] }}"
-$qmpbackup_backup --level auto &> $log
+
+level=auto
+# qmpbackup --level auto only ever appends increments, and a guest which
+# rewrites its disk makes them sum up to more than the image itself, so start
+# a new chain once the increments outgrew the full backup they follow
+{%- if rolling_full_permille | int > 0 %}
+full_size=$(find $CHAIN_DIR -maxdepth 1 -type f -name 'FULL-*.qcow2' -printf '%T@ %s\n' 2> /dev/null | sort -n | tail -n 1 | cut -d' ' -f 2)
+if [ x"$full_size" = x"" ] ; then
+  full_size=0
+fi
+increment_size=0
+for size in $(find $CHAIN_DIR -maxdepth 1 -type f -name 'INC-*.qcow2' -printf '%s\n' 2> /dev/null) ; do
+  increment_size=$(($increment_size + $size))
+done
+if [ $(($increment_size * 1000)) -gt $(($full_size * {{ rolling_full_permille | int }})) ] ; then
+  level=full
+  # the partition is not sized for the chain and a second full backup, so
+  # make room before that full backup is written, also for the partial files
+  # of previously failed backups
+  find $CHAIN_DIR -type f -delete
+  echo "Rolling full backup, as increments of $increment_size bytes exceeded" \
+    "{{ rolling_full_permille | int / 1000 }} times the full backup of" \
+    "$full_size bytes"
+fi
+{%- endif %}
+$qmpbackup_backup --level $level &> $log
 RESULT=$?
 cat $log
 if [ $RESULT -ne 0 ] ; then

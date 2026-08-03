@@ -48,6 +48,12 @@
           "description": "Remove all the backups in PBS that are older than specified value. It should be rdiff-backup-compatible.",
           "type": "string",
           "default": "2W"
+        },
+        "backup-rolling-full-ratio": {
+          "title": "Ratio to roll a full backup",
+          "description": "Create a full backup instead of an incremental one as soon as the increments after the last full backup sum up to more than this multiple of that full backup. Use 0 to always create incremental backups.",
+          "type": "number",
+          "default": 0.5
         }
       }
     }
