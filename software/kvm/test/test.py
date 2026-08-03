@@ -241,7 +241,7 @@ class KvmMixin:
   @classmethod
   def getKvmExportPartitionBackupPath(cls, *paths):
     return cls.getPartitionPath(
-      'kvm-export', 'srv', 'backup', 'kvm', 'virtual1', *paths)
+      'kvm-export', 'srv', 'backup', 'kvm', 'virtual.qcow2', *paths)
 
   @classmethod
   def getAuthenticatedUrl(cls, connection_parameter_dict, prefix='',
@@ -901,7 +901,7 @@ class TestInstanceResilientBackupImporter(
     destination_qcow2 = os.path.join(
       self.importer_partition, 'srv', 'virtual.qcow2')
     destination_backup = os.path.join(
-      self.importer_partition, 'srv', 'backup', 'kvm', 'virtual1')
+      self.importer_partition, 'srv', 'backup', 'kvm', 'virtual.qcow2')
     # sanity check - no export/import happened yet
     self.assertFalse(os.path.exists(self.getKvmExportPartitionBackupPath()))
     self.call_exporter()
@@ -1172,6 +1172,78 @@ class TestInstanceResilientBackupExporterOldStyleMigration(
       len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
       0)
     self.assertExporterStatus(status_text, migrated_old=True)
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterMigratePre063(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  # qmpbackup before 0.63 named the backup chain directory and the bitmap after
+  # the qemu node name, so simulate what such version left in the partition
+  old_bitmap = 'qmpbackup-virtual1-8a1050f7-cabd-4e29-a825-742e5eecdfea'
+
+  def getQemuImgPath(self):
+    with open(
+      glob.glob(os.path.join(
+          self.slap._instance_root, '*', 'etc', 'kvm_raw.json'))[0]) as fh:
+      return json.load(fh)['qemu-img-path']
+
+  def getBitmapList(self):
+    image_info = json.loads(subprocess.check_output([
+      self.getQemuImgPath(), 'info', '--output', 'json', '--force-share',
+      self.getPartitionPath('kvm-export', 'srv', 'virtual.qcow2')]))
+    return [
+      bitmap['name'] for bitmap in image_info.get(
+        'format-specific', {}).get('data', {}).get('bitmaps', [])]
+
+  def test(self):
+    backup_path = self.getPartitionPath('kvm-export', 'srv', 'backup', 'kvm')
+    old_chain_path = os.path.join(backup_path, 'virtual1')
+    os.mkdir(old_chain_path)
+    old_file_list = [
+      os.path.join(old_chain_path, 'FULL-1750000000-virtual1.qcow2'),
+      os.path.join(old_chain_path, 'INC-1750000001-virtual1.qcow2'),
+      os.path.join(backup_path, 'virtual.qcow2.config'),
+      # without dropping the uuid the backup would be requested incremental
+      os.path.join(backup_path, 'uuid'),
+    ]
+    for old_file in old_file_list:
+      with open(old_file, 'w') as fh:
+        fh.write('')
+    # the image is only writable with the VM stopped
+    self.requestDefaultInstance(state='stopped')
+    self.waitForInstanceWithPropagation()
+    subprocess.check_call([
+      self.getQemuImgPath(), 'bitmap', '--add',
+      self.getPartitionPath('kvm-export', 'srv', 'virtual.qcow2'),
+      self.old_bitmap])
+    self.requestDefaultInstance(state='started')
+    self.waitForInstanceWithPropagation()
+
+    status_text = self.call_exporter()
+    self.assertExporterStatus(status_text, migrated_old=True)
+    self.assertEqual(
+      len(glob.glob(self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
+      0)
+    self.assertFalse(os.path.exists(old_chain_path))
+    for old_file in old_file_list:
+      self.assertFalse(os.path.exists(old_file))
+    # the next backup is incremental, which the migrated bitmap allows
+    status_text = self.call_exporter()
+    self.assertExporterStatus(status_text)
+    self.assertEqual(
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
+      1)
+
+    # the stopped VM flushes the bitmaps to the image
+    self.requestDefaultInstance(state='stopped')
+    self.waitForInstanceWithPropagation()
+    with open(os.path.join(backup_path, 'uuid')) as fh:
+      backup_uuid = fh.read()
+    self.assertEqual(
+      ['qmpbackup-%s' % (backup_uuid,)], self.getBitmapList())
 
 
 @skipUnlessKvm
