@@ -83,6 +83,12 @@ context =
     raw cache_type_v  {{ slapparameter_dict.get('cache-type-v') }}
     raw ctx {{ slapparameter_dict.get('ctx') }}
     raw embedding {{ slapparameter_dict.get('embedding') }}
+    raw dry_multiplier {{ slapparameter_dict.get('dry-multiplier') }}
+    raw temp {{ slapparameter_dict.get('temp') }}
+    raw top_p {{ slapparameter_dict.get('top-p') }}
+    raw top_k {{ slapparameter_dict.get('top-k') }}
+    raw min_p {{ slapparameter_dict.get('min-p') }}
+    raw reasoning_budget {{ slapparameter_dict.get('reasoning-budget') }}
     raw repo_id {{ slapparameter_dict.get('hf_repo_id') }}
 
 [llamacpp-service]
