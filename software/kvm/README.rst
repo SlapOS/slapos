@@ -114,6 +114,23 @@ Updating boot-image-url-select
    * ``instance-kvm-input-schema.json``
    * ``instance-kvm-cluster-input-schema.json``
 
+Rolling full backup
+~~~~~~~~~~~~~~~~~~~
+
+A resilient instance backs up the disk image with qmpbackup: one full backup,
+then only incremental ones. A guest which rewrites its disk over and over makes
+those increments sum up to more than the disk image itself, so the exporter
+replaces the whole chain with a new full backup as soon as it grew bigger than
+``backup-rolling-full-ratio`` times the disk image, but not more often than
+``remove-backup-older-than``, as the pull backup server keeps the replaced chain
+for that long.
+
+The chain is deleted before the new full backup is written, so that the new full
+backup needs no additional space in the partition. If it fails, the partition is
+left with a partial backup, which the next run of the exporter replaces with a
+full one; until then, the clone and the pull backup server are the only place
+with a restorable backup.
+
 Migration to modern external-disk parameter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
