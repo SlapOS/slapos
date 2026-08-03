@@ -197,6 +197,7 @@ software-type = pull-backup
 <= request-pbs-common
 name = PBS ({{namebase}} / {{id}})
 config-monitor-title = PBS ${slap-connection:computer-id}-{{namebase}}-{{id}}
+sla-retention_delay = 14.0
 {% for key, value in six.iteritems(monitor_dict) -%}
 config-{{ key }} = {{ value }}
 {% endfor -%}
