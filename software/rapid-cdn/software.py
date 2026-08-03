@@ -145,6 +145,11 @@ _EPM_CODE_DESCRIPTIONS = {
   '504': 'Backend connection was established but did not produce a response in time.',
 }
 
+# Shared by the manager and the buildout seed to avoid drift. SHARED_CODES are
+# the codes a shared instance may override (503-family); the rest are cluster-only.
+_EPM_SUPPORTED_CODES = ['400', '404', '408', '500', '502', '503', '504']
+_EPM_SHARED_CODES = ['502', '503', '504']
+
 
 def _haproxy_format(code, html):
   reason = _EPM_HTTP_REASONS[code]
@@ -167,34 +172,57 @@ def _haproxy_format(code, html):
   return header + html
 
 
-def error_page_manager_main():
-  import hashlib
-  import http.server
-  import json
-  import logging
+# Bounds the TLS handshake and every socket read/write so a stalled client is
+# reaped. Above a normal request, below the updater's 60 s /sync poll.
+EPM_SOCKET_TIMEOUT = 30
+
+
+def _atomic_write(path, text):
+  """Write text then rename into place, so a concurrent /sync or /haproxy read
+  never observes a partial file (os.replace is atomic on POSIX)."""
   import os
-  import socket
-  import ssl
-  import sys
+  tmp = path + '.tmp'
+  with open(tmp, 'w', encoding='utf-8') as f:
+    f.write(text)
+  os.replace(tmp, path)
+
+
+def _prune_removed_shared_overrides(error_pages_dir, active_references):
+  """Remove per-slave override files for slaves no longer in the shared list.
+
+  The shared list (authorized_slave_list) is already retention-resolved by the
+  master, so a slave absent from it is gone for good and its override is
+  dropped at once.
+  """
+  import os
+  import shutil
+  pruned = set()
+  for base in ('shared', os.path.join('haproxy', 'shared')):
+    directory = os.path.join(error_pages_dir, base)
+    if not os.path.isdir(directory):
+      continue
+    for ref in os.listdir(directory):
+      if ref not in active_references:
+        shutil.rmtree(os.path.join(directory, ref), ignore_errors=True)
+        pruned.add(ref)
+  return pruned
+
+
+def _make_error_page_application(config, logger=None):
+  """Build the error-page-manager WSGI application from a config dict.
+
+  Split out of error_page_manager_main() so the routing/auth/publish logic is
+  unit-testable with a fake environ (no partition, no TLS socket). Runs the
+  startup pre-bake + prune (idempotent) so the returned app is ready to serve,
+  and logs the init summary when a logger is given.
+  """
+  import hashlib
+  import http.client
+  import json
+  import os
   import threading
+  import urllib.parse
 
-  with open(sys.argv[1]) as f:
-    config = json.load(f)
-
-  logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(message)s',
-    handlers=[
-      logging.FileHandler(config['log_file']),
-      logging.StreamHandler(sys.stdout),
-    ],
-  )
-  logger = logging.getLogger('error-page-manager')
-
-  IP = config['ip']
-  PORT = config['port']
-  CERTIFICATE = config['certificate']
-  KEY = config['key']
   ERROR_PAGES_DIR = os.path.normpath(config['error_pages_dir'])
   BUILTIN_DIR = os.path.normpath(config['builtin_dir'])
 
@@ -205,10 +233,13 @@ def error_page_manager_main():
     for shared_reference, token_file in config['shared_token_files']
   }
 
-  SUPPORTED_CODES = ['400', '404', '408', '500', '502', '503', '504']
-  SHARED_CODES = ['502', '503', '504']
+  SUPPORTED_CODES = _EPM_SUPPORTED_CODES
+  SHARED_CODES = _EPM_SHARED_CODES
 
   _lock = threading.Lock()
+  # Cached /sync manifest, rebuilt lazily only after a write marks it dirty, so
+  # steady-state polling does not re-walk and re-hash the tree under _lock.
+  _manifest_state = {'dirty': True, 'manifest': {}}
 
   def _read_html(path):
     if os.path.isfile(path):
@@ -222,53 +253,70 @@ def error_page_manager_main():
     with open(path, 'rb') as f:
       return hashlib.sha256(f.read()).hexdigest()
 
-  def _refresh_haproxy_file(slot, code):
+  def _publish_haproxy_file(slot, code):
+    _manifest_state['dirty'] = True  # published set changes; drop the cache
     if slot == 'cluster':
+      # Always published: every frontend falls back to the cluster page.
       haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'cluster')
-    else:
-      haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared', slot)
-    os.makedirs(haproxy_dir, exist_ok=True)
-    haproxy_path = os.path.join(haproxy_dir, f'{code}.http')
-
-    if slot == 'cluster':
+      haproxy_path = os.path.join(haproxy_dir, f'{code}.http')
       html = _read_html(os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html'))
-    else:
-      html = _read_html(os.path.join(ERROR_PAGES_DIR, 'shared', slot, f'{code}.html'))
       if html is None:
-        html = _read_html(os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html'))
+        html = _read_html(os.path.join(BUILTIN_DIR, f'{code}.html'))
+      os.makedirs(haproxy_dir, exist_ok=True)
+      _atomic_write(haproxy_path, _haproxy_format(code, html))
+      return
 
+    # Publish a per-slave file only when the slave overrides this code;
+    # otherwise the frontend falls back to the cluster page. Keeps the manifest
+    # O(overrides), not O(shared instances).
+    haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared', slot)
+    haproxy_path = os.path.join(haproxy_dir, f'{code}.http')
+    html = _read_html(os.path.join(ERROR_PAGES_DIR, 'shared', slot, f'{code}.html'))
     if html is None:
-      html = _read_html(os.path.join(BUILTIN_DIR, f'{code}.html'))
-
-    with open(haproxy_path, 'w', encoding='utf-8') as f:
-      f.write(_haproxy_format(code, html))
-
-  def _refresh_all_for_code(code):
-    _refresh_haproxy_file('cluster', code)
-    shared_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared')
-    if os.path.isdir(shared_dir):
-      for ref in os.listdir(shared_dir):
-        if code in SHARED_CODES:
-          _refresh_haproxy_file(ref, code)
+      if os.path.isfile(haproxy_path):
+        os.unlink(haproxy_path)
+      return
+    os.makedirs(haproxy_dir, exist_ok=True)
+    _atomic_write(haproxy_path, _haproxy_format(code, html))
 
   def _build_manifest():
+    if not _manifest_state['dirty']:
+      return _manifest_state['manifest']
     manifest = {}
     haproxy_dir = os.path.join(ERROR_PAGES_DIR, 'haproxy')
     for dirpath, _, filenames in os.walk(haproxy_dir):
       for fname in filenames:
+        if not fname.endswith('.http'):
+          continue  # skip a transient .tmp from an atomic write
         full = os.path.join(dirpath, fname)
         rel = os.path.relpath(full, haproxy_dir)
         sha = _sha256(full)
         if sha:
           manifest[rel] = sha
+    _manifest_state['manifest'] = manifest
+    _manifest_state['dirty'] = False
     return manifest
 
-  def _render_web_ui(codes, source_dir):
+  def _render_web_ui(codes, source_dir, values=None, message=None,
+                     message_kind='error', error_code=None):
+    def _esc(s):
+      return s.replace('&', '&amp;').replace('<', '&lt;')
     rows = ''
     for code in codes:
-      source_file = os.path.join(source_dir, f'{code}.html')
-      html = (_read_html(source_file) or '').replace(
-        '&', '&amp;').replace('<', '&lt;')
+      stored_raw = _read_html(os.path.join(source_dir, f'{code}.html')) or ''
+      # Prefer the just-submitted value when re-rendering after a POST, so the
+      # operator's other unsaved edits are not lost; fall back to what is stored.
+      if values is not None and code in values:
+        displayed_raw = values[code]
+      else:
+        displayed_raw = stored_raw
+      html = _esc(displayed_raw)
+      # data-stored carries the on-disk baseline: the script compares each
+      # field's current value against it, so a still-unsaved field stays yellow
+      # after another field is saved, an emptied field turns red, and Restore can
+      # bring the saved content back. Escaped for a double-quoted attribute.
+      stored_attr = _esc(stored_raw).replace('"', '&quot;')
+      error_attr = ' data-error="1"' if code == error_code else ''
       reason = _EPM_HTTP_REASONS[code]
       desc = _EPM_CODE_DESCRIPTIONS[code]
       rows += f'''
@@ -278,12 +326,16 @@ def error_page_manager_main():
             <div class="code-reason">{reason}</div>
             <div class="code-desc">{desc}</div>
           </td>
-          <td><textarea name="html_{code}" rows="6">{html}</textarea></td>
+          <td><textarea name="html_{code}" rows="6" data-stored="{stored_attr}"{error_attr}>{html}</textarea></td>
           <td>
             <button type="submit" name="action" value="save_{code}">Save</button>
-            <button type="submit" name="action" value="reset_{code}">Reset</button>
+            <button type="button" class="js-restore"
+                    title="Discard unsaved edits and restore the saved content">Restore</button>
+            <button type="submit" name="action" value="reset_{code}"
+                    title="Remove the override and fall back to the default page">Reset</button>
           </td>
         </tr>'''
+    banner = f'<div class="banner {message_kind}">{message}</div>' if message else ''
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -308,14 +360,24 @@ def error_page_manager_main():
     textarea {{ width: 100%; min-height: 6rem; font-family: monospace;
                 font-size: .85rem; border: 1px solid #dde; border-radius: 4px;
                 padding: .4rem; resize: both; }}
+    /* Field-state cues driven by the dirty-tracking script: an unsaved edit is
+       yellow; emptying a field (which cannot be saved) is red. */
+    textarea.dirty {{ background: #fff8d6; border-color: #e6d47a; }}
+    textarea.error {{ background: #fde2e0; border-color: #d98b86; }}
     button {{ padding: .3rem .8rem; border: none; border-radius: 4px;
               cursor: pointer; margin: .15rem 0; }}
     button[value^="save"] {{ background: #4a90d9; color: #fff; }}
     button[value^="reset"] {{ background: #e0e4ea; color: #333; }}
+    button.js-restore {{ background: #eef1f5; color: #333; }}
+    .banner {{ padding: .6rem 1rem; border-radius: 6px; margin-bottom: 1.25rem;
+               font-size: .9rem; }}
+    .banner.error {{ background: #fdecec; color: #a12622; border: 1px solid #f3c2c0; }}
+    .banner.ok {{ background: #eaf6ec; color: #256a30; border: 1px solid #bfe3c5; }}
   </style>
 </head>
 <body>
   <h1>Error Page Manager</h1>
+  {banner}
   <form method="post">
     <table>
       <thead><tr>
@@ -327,6 +389,46 @@ def error_page_manager_main():
       </tbody>
     </table>
   </form>
+  <script>
+    // Per-field state, compared against data-stored (the on-disk baseline, not
+    // the value the page happened to load with): an unsaved non-empty change is
+    // yellow, emptying a field is red (an empty page cannot be saved). Saving
+    // one field re-renders with its baseline updated, so it goes clean while the
+    // other still-unsaved fields keep their colour. Restore puts the saved
+    // content back; a beforeunload guard warns about leaving with unsaved edits.
+    (function () {{
+      var form = document.querySelector('form');
+      var areas = Array.prototype.slice.call(form.querySelectorAll('textarea'));
+      var submitting = false;
+      function changed(t) {{ return t.value !== (t.getAttribute('data-stored') || ''); }}
+      function evaluate(t) {{
+        var c = changed(t);
+        var empty = t.value.trim() === '';
+        // Keep the server's empty-save error until the field is edited again.
+        var forced = t.getAttribute('data-error') === '1' && !c;
+        t.classList.toggle('error', (c && empty) || forced);
+        t.classList.toggle('dirty', c && !empty);
+      }}
+      areas.forEach(function (t) {{
+        evaluate(t);  // reflect the server-rendered state on load
+        t.addEventListener('input', function () {{ evaluate(t); }});
+      }});
+      Array.prototype.forEach.call(
+        form.querySelectorAll('.js-restore'), function (b) {{
+          b.addEventListener('click', function () {{
+            var t = b.closest('tr').querySelector('textarea');
+            t.value = t.getAttribute('data-stored') || '';
+            t.removeAttribute('data-error');
+            evaluate(t);
+          }});
+        }});
+      form.addEventListener('submit', function () {{ submitting = true; }});
+      window.addEventListener('beforeunload', function (e) {{
+        if (submitting) return;
+        if (areas.some(changed)) {{ e.preventDefault(); e.returnValue = ''; }}
+      }});
+    }})();
+  </script>
 </body>
 </html>'''
 
@@ -340,252 +442,263 @@ def error_page_manager_main():
       SHARED_CODES,
       os.path.join(ERROR_PAGES_DIR, 'shared', ref))
 
-  class Handler(http.server.BaseHTTPRequestHandler):
-    protocol_version = 'HTTP/1.1'
+  # Served by the threaded WSGI server below: each request runs in its own
+  # thread, so one stalled client cannot block the others.
+  def _parse_path(path):
+    parts = path.lstrip('/').split('/', 2)
+    section = parts[0] if parts else ''
+    token = parts[1] if len(parts) > 1 else ''
+    rest = parts[2] if len(parts) > 2 else ''
+    return section, token, rest
 
-    def log_message(self, fmt, *args):
-      logger.info(fmt % args)
+  def application(environ, start_response):
+    method = environ['REQUEST_METHOD']
+    path = environ.get('PATH_INFO', '') or ''
+    section, token, rest = _parse_path(path)
 
-    def _send(self, code, body, content_type='text/plain'):
+    def send(code, body, content_type='text/plain'):
       if isinstance(body, str):
         body = body.encode()
-      self.send_response(code)
-      self.send_header('Content-Type', content_type)
-      self.send_header('Content-Length', len(body))
-      self.end_headers()
-      self.wfile.write(body)
+      start_response(
+        '%d %s' % (code, http.client.responses.get(code, 'Unknown')),
+        [
+          ('Content-Type', content_type),
+          ('Content-Length', str(len(body))),
+        ])
+      return [body]
 
-    def _send_json(self, data, code=200):
-      self._send(code, json.dumps(data), 'application/json')
+    def send_json(data, code=200):
+      return send(code, json.dumps(data), 'application/json')
 
-    def _read_body(self):
-      length = int(self.headers.get('Content-Length', 0))
+    def read_body():
+      try:
+        length = int(environ.get('CONTENT_LENGTH') or 0)
+      except (TypeError, ValueError):
+        length = 0
       if length > 2 * 1024 * 1024:  # 2 MB limit
         return None
-      return self.rfile.read(length).decode('utf-8', errors='replace')
+      data = environ['wsgi.input'].read(length) if length > 0 else b''
+      return data.decode('utf-8', errors='replace')
 
-    def _parse_path(self):
-      parts = self.path.lstrip('/').split('/', 2)
-      section = parts[0] if parts else ''
-      token = parts[1] if len(parts) > 1 else ''
-      rest = parts[2] if len(parts) > 2 else ''
-      return section, token, rest
-
-    def do_GET(self):
-      section, token, rest = self._parse_path()
+    if method == 'GET':
       if section == 'sync':
         if token != READ_TOKEN:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         with _lock:
-          self._send_json(_build_manifest())
+          return send_json(_build_manifest())
       elif section == 'haproxy':
         if token != READ_TOKEN:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         full = os.path.normpath(
           os.path.join(ERROR_PAGES_DIR, 'haproxy', rest))
         if not full.startswith(ERROR_PAGES_DIR + os.sep + 'haproxy' + os.sep):
-          self._send(403, 'Forbidden')
-          return
+          return send(403, 'Forbidden')
         if not os.path.isfile(full):
-          self._send(404, 'Not found')
-          return
+          return send(404, 'Not found')
         with open(full, 'rb') as f:
-          self._send(200, f.read(), 'application/octet-stream')
+          return send(200, f.read(), 'application/octet-stream')
       elif section == 'operator':
         if token != OPERATOR_TOKEN:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         if not rest:
-          self._send(200, _operator_web_ui(), 'text/html')
+          return send(200, _operator_web_ui(), 'text/html')
         elif rest in SUPPORTED_CODES:
           op_file = os.path.join(ERROR_PAGES_DIR, 'operator', f'{rest}.html')
-          self._send(200, _read_html(op_file) or '', 'text/html')
+          return send(200, _read_html(op_file) or '', 'text/html')
         else:
-          self._send(404, 'Unknown code')
+          return send(404, 'Unknown code')
       elif section == 'shared':
         ref = SHARED_TOKEN_MAP.get(token)
         if ref is None:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         if not rest:
-          self._send(200, _shared_web_ui(ref), 'text/html')
+          return send(200, _shared_web_ui(ref), 'text/html')
         elif rest in SHARED_CODES:
           shared_file = os.path.join(
             ERROR_PAGES_DIR, 'shared', ref, f'{rest}.html')
-          self._send(200, _read_html(shared_file) or '', 'text/html')
+          return send(200, _read_html(shared_file) or '', 'text/html')
         else:
-          self._send(404, 'Unknown code')
+          return send(404, 'Unknown code')
       else:
-        self._send(404, 'Not found')
+        return send(404, 'Not found')
 
-    def do_POST(self):
-      section, token, rest = self._parse_path()
+    elif method == 'POST':
       if section == 'operator' and token == OPERATOR_TOKEN:
         valid_codes = SUPPORTED_CODES
         source_dir = os.path.join(ERROR_PAGES_DIR, 'operator')
         def _refresh(code):
-          _refresh_all_for_code(code)
+          _publish_haproxy_file('cluster', code)
       elif section == 'shared' and SHARED_TOKEN_MAP.get(token) is not None:
         ref = SHARED_TOKEN_MAP[token]
         valid_codes = SHARED_CODES
         source_dir = os.path.join(ERROR_PAGES_DIR, 'shared', ref)
         def _refresh(code):
-          _refresh_haproxy_file(ref, code)
+          _publish_haproxy_file(ref, code)
       else:
-        self._send(401, 'Unauthorized')
-        return
-      import urllib.parse
-      body = self._read_body()
+        return send(401, 'Unauthorized')
+      body = read_body()
       if body is None:
-        self._send(413, 'Too large')
-        return
+        return send(413, 'Too large')
       params = urllib.parse.parse_qs(body, keep_blank_values=True)
       action = params.get('action', [''])[0]
+      # Every textarea is submitted with the form; keep them to re-render the
+      # page with the operator's edits intact when a save is rejected.
+      submitted = {
+        c: params[f'html_{c}'][0]
+        for c in valid_codes if f'html_{c}' in params}
+      message = None
       if action.startswith('save_'):
         code = action[5:]
         if code not in valid_codes:
-          self._send(400, 'Unknown code')
-          return
-        html = params.get(f'html_{code}', [''])[0]
+          return send(400, 'Unknown code')
+        html = submitted.get(code, '')
+        if not html.strip():
+          # Saving an empty body would silently blank the page; refuse it, mark
+          # the field red, and point at Reset (remove the override) or Restore
+          # (bring the saved content back).
+          return send(400, _render_web_ui(
+            valid_codes, source_dir, submitted,
+            f'{code}: an empty page cannot be saved. Use Reset to remove the '
+            'override, or Restore to bring the saved content back.',
+            error_code=code), 'text/html')
         with _lock:
           os.makedirs(source_dir, exist_ok=True)
           with open(os.path.join(source_dir, f'{code}.html'), 'w') as f:
             f.write(html)
           _refresh(code)
+        message = f'Saved the {code} page.'
       elif action.startswith('reset_'):
         code = action[6:]
         if code not in valid_codes:
-          self._send(400, 'Unknown code')
-          return
+          return send(400, 'Unknown code')
         with _lock:
           source_file = os.path.join(source_dir, f'{code}.html')
           if os.path.exists(source_file):
             os.unlink(source_file)
           _refresh(code)
-      # Browsers expect POST-redirect-GET; the meta refresh achieves the
-      # same UX (the form is shown again after submission) while keeping a
-      # plain 200 response that integrates cleanly with non-browser HTTP
-      # clients (curl-based test runners stumble on 3xx + TLS close).
-      target = self.path.rsplit('/', 1)[0] + '/'
-      body = (
-        b'<!DOCTYPE html><html><head>'
-        b'<meta http-equiv="refresh" content="0; url=' + target.encode() +
-        b'"></head><body>Done.</body></html>')
-      self._send(200, body, 'text/html; charset=utf-8')
+        # This code has no stored page any more; show it cleared while keeping
+        # whatever the operator typed into the other fields.
+        submitted[code] = ''
+        message = f'Reset the {code} page to the default.'
+      # Re-render the form with the submitted values rather than reloading a
+      # fresh GET: saving or resetting one code must never discard edits the
+      # operator has typed into the other codes' fields.
+      return send(200, _render_web_ui(
+        valid_codes, source_dir, submitted, message, 'ok'), 'text/html')
 
-    def do_PUT(self):
-      section, token, rest = self._parse_path()
+    elif method == 'PUT':
       if section == 'operator':
         if token != OPERATOR_TOKEN:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         code = rest
         if code not in SUPPORTED_CODES:
-          self._send(400, 'Unknown code')
-          return
-        html = self._read_body()
+          return send(400, 'Unknown code')
+        html = read_body()
         if html is None:
-          self._send(413, 'Too large')
-          return
+          return send(413, 'Too large')
+        if not html.strip():
+          return send(
+            400, 'An empty page cannot be saved; DELETE to remove the override.')
         with _lock:
           os.makedirs(os.path.join(ERROR_PAGES_DIR, 'operator'), exist_ok=True)
           with open(os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html'), 'w') as f:
             f.write(html)
-          _refresh_all_for_code(code)
-        self._send(204, '')
+          _publish_haproxy_file('cluster', code)
+        return send(204, '')
       elif section == 'shared':
         ref = SHARED_TOKEN_MAP.get(token)
         if ref is None:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         code = rest
         if code not in SHARED_CODES:
-          self._send(
+          return send(
             400,
             f'Shared instances may only set: {", ".join(SHARED_CODES)}')
-          return
-        html = self._read_body()
+        html = read_body()
         if html is None:
-          self._send(413, 'Too large')
-          return
+          return send(413, 'Too large')
+        if not html.strip():
+          return send(
+            400, 'An empty page cannot be saved; DELETE to remove the override.')
         with _lock:
           shared_dir = os.path.join(ERROR_PAGES_DIR, 'shared', ref)
           os.makedirs(shared_dir, exist_ok=True)
           with open(os.path.join(shared_dir, f'{code}.html'), 'w') as f:
             f.write(html)
-          _refresh_haproxy_file(ref, code)
-        self._send(204, '')
+          _publish_haproxy_file(ref, code)
+        return send(204, '')
       else:
-        self._send(404, 'Not found')
+        return send(404, 'Not found')
 
-    def do_DELETE(self):
-      section, token, rest = self._parse_path()
+    elif method == 'DELETE':
       if section == 'operator':
         if token != OPERATOR_TOKEN:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         code = rest
         if code not in SUPPORTED_CODES:
-          self._send(400, 'Unknown code')
-          return
+          return send(400, 'Unknown code')
         with _lock:
           op_file = os.path.join(ERROR_PAGES_DIR, 'operator', f'{code}.html')
           if os.path.exists(op_file):
             os.unlink(op_file)
-          _refresh_all_for_code(code)
-        self._send(204, '')
+          _publish_haproxy_file('cluster', code)
+        return send(204, '')
       elif section == 'shared':
         ref = SHARED_TOKEN_MAP.get(token)
         if ref is None:
-          self._send(401, 'Unauthorized')
-          return
+          return send(401, 'Unauthorized')
         code = rest
         if code not in SHARED_CODES:
-          self._send(
+          return send(
             400,
             f'Shared instances may only set: {", ".join(SHARED_CODES)}')
-          return
         with _lock:
           shared_file = os.path.join(
             ERROR_PAGES_DIR, 'shared', ref, f'{code}.html')
           if os.path.exists(shared_file):
             os.unlink(shared_file)
-          _refresh_haproxy_file(ref, code)
-        self._send(204, '')
+          _publish_haproxy_file(ref, code)
+        return send(204, '')
       else:
-        self._send(404, 'Not found')
+        return send(404, 'Not found')
 
-  class HTTPServerIPv6(http.server.HTTPServer):
-    address_family = socket.AF_INET6
+    else:
+      return send(404, 'Not found')
 
   with _lock:
     for code in SUPPORTED_CODES:
-      _refresh_haproxy_file('cluster', code)
-    for ref in set(SHARED_TOKEN_MAP.values()):
-      for code in SHARED_CODES:
-        _refresh_haproxy_file(ref, code)
-  logger.info('Initialized haproxy error files')
+      _publish_haproxy_file('cluster', code)
+    # Drop overrides of slaves removed from the shared list, then re-publish
+    # the survivors that still have an override on disk; the rest are never
+    # materialised. Runs only at startup -- the wrapper restarts the manager on
+    # every shared-list change (config JSON is in its hash-existing-files).
+    pruned = _prune_removed_shared_overrides(
+      ERROR_PAGES_DIR, set(SHARED_TOKEN_MAP.values()))
+    shared_source_dir = os.path.join(ERROR_PAGES_DIR, 'shared')
+    if os.path.isdir(shared_source_dir):
+      for ref in os.listdir(shared_source_dir):
+        for code in SHARED_CODES:
+          _publish_haproxy_file(ref, code)
+    published = sum(
+      1 for _, _, fs in os.walk(
+        os.path.join(ERROR_PAGES_DIR, 'haproxy', 'shared'))
+      for f in fs if f.endswith('.http'))
+  if logger is not None:
+    logger.info(
+      'Initialized error pages: %d shared slaves, %d overrides published, '
+      '%d removed slaves pruned', len(SHARED_TOKEN_MAP), published, len(pruned))
 
-  ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-  ctx.load_cert_chain(CERTIFICATE, KEY)
-  server = HTTPServerIPv6((IP, PORT), Handler)
-  server.socket = ctx.wrap_socket(server.socket, server_side=True)
-  logger.info('Error Page Manager listening on [%s]:%s', IP, PORT)
-  server.serve_forever()
+  return application
 
 
-def error_page_updater_main():
-  import hashlib
+def error_page_manager_main():
   import json
   import logging
-  import os
+  import socket
   import ssl
-  import subprocess
   import sys
-  import time
-  import urllib.request
+  from wsgiref.simple_server import make_server
+  from caucase.http import ThreadingWSGIServer, CaucaseWSGIRequestHandler
 
   with open(sys.argv[1]) as f:
     config = json.load(f)
@@ -598,7 +711,47 @@ def error_page_updater_main():
       logging.StreamHandler(sys.stdout),
     ],
   )
-  logger = logging.getLogger('error-page-updater')
+  logger = logging.getLogger('error-page-manager')
+
+  application = _make_error_page_application(config, logger=logger)
+
+  ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+  ctx.load_cert_chain(config['certificate'], config['key'])
+
+  # Wrap the listening socket before bind/activate, as kedifa does:
+  # ThreadingWSGIServer is built with bind_and_activate=False for this.
+  socket.setdefaulttimeout(EPM_SOCKET_TIMEOUT)
+
+  class _LoggingWSGIServer(ThreadingWSGIServer):
+    # Log handler and file-write exceptions to the manager log, not just stderr.
+    def handle_error(self, request, client_address):
+      logger.exception('Error handling request from %s', client_address[0])
+
+  httpd = make_server(
+    config['ip'], config['port'], application,
+    _LoggingWSGIServer, CaucaseWSGIRequestHandler)
+  httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
+  httpd.server_bind()
+  httpd.server_activate()
+  logger.info(
+    'Error Page Manager listening on [%s]:%s', config['ip'], config['port'])
+  httpd.serve_forever()
+
+
+def _make_error_page_updater(config, logger):
+  """Build the updater's pollable helpers from a config dict.
+
+  Split out of error_page_updater_main() so poll_once / restore_fallback_symlink
+  can be unit-tested directly against a stub /sync server, rather than the loop's
+  logic being mirrored in the test. Returns a namespace of callables; main()
+  drives poll_once in its while-loop and runs ON_UPDATE when it reports a change.
+  """
+  import hashlib
+  import json
+  import os
+  import ssl
+  import urllib.request
+  from types import SimpleNamespace
 
   SYNC_URL = config['sync_url']
   BASE_URL = config['base_url']
@@ -606,8 +759,6 @@ def error_page_updater_main():
   ERROR_PAGES_DIR = config['error_pages_dir']
   BUILTIN_DIR = config['builtin_dir']
   STATE_FILE = config['state_file']
-  ON_UPDATE = config['on_update']
-  POLL_INTERVAL = 60
 
   def _sha256(path):
     with open(path, 'rb') as f:
@@ -648,6 +799,19 @@ def error_page_updater_main():
         with open(dst, 'w', encoding='utf-8') as f:
           f.write(_haproxy_format(code, html))
 
+  def _restore_fallback_symlink(rel_path):
+    # A reset drops the override from the manifest, but backend-haproxy still
+    # names the path -- restore the fallback symlink instead of deleting.
+    local_path = os.path.join(ERROR_PAGES_DIR, rel_path)
+    code_http = rel_path.rsplit('/', 1)[-1]
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    # Swap in atomically so a concurrent haproxy reload never sees it missing.
+    tmp_path = local_path + '.tmp'
+    if os.path.lexists(tmp_path):
+      os.unlink(tmp_path)
+    os.symlink(os.path.join('..', '..', 'cluster', code_http), tmp_path)
+    os.replace(tmp_path, local_path)
+
   def poll_once(ctx):
     try:
       manifest_data = _get(SYNC_URL, ctx)
@@ -661,7 +825,10 @@ def error_page_updater_main():
 
     for rel_path, remote_sha in manifest.items():
       local_path = os.path.join(ERROR_PAGES_DIR, rel_path)
-      local_sha = _sha256(local_path) if os.path.isfile(local_path) else None
+      # A fallback symlink counts as absent, so an override replaces it and we
+      # never hash the cluster content as if it were this slave's.
+      local_sha = _sha256(local_path) if (
+        os.path.isfile(local_path) and not os.path.islink(local_path)) else None
 
       if local_sha == remote_sha and state.get(rel_path) == remote_sha:
         continue
@@ -674,32 +841,114 @@ def error_page_updater_main():
         continue
 
       os.makedirs(os.path.dirname(local_path), exist_ok=True)
-      with open(local_path, 'wb') as f:
+      # Write then atomically replace (over the fallback symlink or a previous
+      # file), so a concurrent haproxy reload never validates a partial file.
+      tmp_path = local_path + '.tmp'
+      with open(tmp_path, 'wb') as f:
         f.write(data)
+      os.replace(tmp_path, local_path)
       state[rel_path] = remote_sha
       logger.info('Updated %s', rel_path)
       changed = True
 
     for rel_path in list(state.keys()):
       if rel_path not in manifest:
-        local_path = os.path.join(ERROR_PAGES_DIR, rel_path)
-        if os.path.isfile(local_path):
-          os.unlink(local_path)
+        if rel_path.startswith('shared/') and rel_path.endswith('.http'):
+          _restore_fallback_symlink(rel_path)
+          logger.info('Reverted %s to cluster fallback', rel_path)
+        else:
+          local_path = os.path.join(ERROR_PAGES_DIR, rel_path)
+          if os.path.isfile(local_path):
+            os.unlink(local_path)
+          logger.info('Removed %s (no longer in manifest)', rel_path)
         del state[rel_path]
-        logger.info('Removed %s (no longer in manifest)', rel_path)
         changed = True
 
     _save_state(state)
     return changed
 
-  _ensure_builtins()
-  ctx = _make_ssl_ctx()
-  logger.info('Error Page Updater started, polling %s every %ss', SYNC_URL, POLL_INTERVAL)
+  return SimpleNamespace(
+    poll_once=poll_once,
+    make_ssl_ctx=_make_ssl_ctx,
+    ensure_builtins=_ensure_builtins,
+    restore_fallback_symlink=_restore_fallback_symlink,
+  )
+
+
+def error_page_updater_main():
+  import json
+  import logging
+  import subprocess
+  import sys
+  import time
+
+  with open(sys.argv[1]) as f:
+    config = json.load(f)
+
+  logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s',
+    handlers=[
+      logging.FileHandler(config['log_file']),
+      logging.StreamHandler(sys.stdout),
+    ],
+  )
+  logger = logging.getLogger('error-page-updater')
+
+  ON_UPDATE = config['on_update']
+  POLL_INTERVAL = 60
+
+  updater = _make_error_page_updater(config, logger)
+  updater.ensure_builtins()
+  ctx = updater.make_ssl_ctx()
+  logger.info(
+    'Error Page Updater started, polling %s every %ss',
+    config['sync_url'], POLL_INTERVAL)
   while True:
     try:
-      if poll_once(ctx):
+      if updater.poll_once(ctx):
         logger.info('Pages changed, triggering haproxy reload')
         subprocess.call(ON_UPDATE, shell=True)
     except Exception as e:
       logger.error('Unexpected error in poll loop: %s', e)
     time.sleep(POLL_INTERVAL)
+
+
+def error_page_seed_main():
+  # Buildout seed run before backend-haproxy validates: it names
+  # shared/<ref>/<code>.http for every slave and won't start if one is missing,
+  # so create the cluster defaults and a fallback symlink per slave.
+  import glob
+  import json
+  import os
+  import sys
+
+  with open(sys.argv[1]) as f:
+    config = json.load(f)
+
+  error_pages_dir = config['error_pages_dir']
+  builtin_dir = config['builtin_dir']
+  shared_references = config['shared_references']
+  shared_codes = _EPM_SHARED_CODES
+
+  # Seeding the cluster builtins overlaps the updater's _ensure_builtins; both
+  # are idempotent (only create what is missing), so running either is safe.
+  cluster_dir = os.path.join(error_pages_dir, 'cluster')
+  os.makedirs(cluster_dir, exist_ok=True)
+  for src in glob.glob(os.path.join(builtin_dir, '*.html')):
+    code = os.path.splitext(os.path.basename(src))[0]
+    dst = os.path.join(cluster_dir, code + '.http')
+    if not os.path.exists(dst):
+      with open(src, encoding='utf-8') as f:
+        html = f.read()
+      with open(dst, 'w', encoding='utf-8') as f:
+        f.write(_haproxy_format(code, html))
+
+  for ref in shared_references:
+    ref_dir = os.path.join(error_pages_dir, 'shared', ref)
+    os.makedirs(ref_dir, exist_ok=True)
+    for code in shared_codes:
+      link = os.path.join(ref_dir, code + '.http')
+      # Don't clobber a real override or symlink the updater may have installed.
+      if not os.path.lexists(link):
+        os.symlink(os.path.join('..', '..', 'cluster', code + '.http'), link)

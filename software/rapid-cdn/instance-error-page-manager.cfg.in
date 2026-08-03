@@ -163,6 +163,10 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['bin_directory'] }}/rapid-cdn-error-page-manager
   ${error-page-manager-config:output}
 wrapper-path = ${directory:service}/error-page-manager
+# The config output MUST stay listed here: the manager refreshes the token map
+# and prunes removed slaves' overrides only at startup, so it relies on
+# slapos.cookbook:wrapper restarting it whenever the shared-list (hence this
+# JSON) changes. Tested by TestErrorPageManager{NewSlave,RemovedSlave}.
 hash-existing-files =
   ${buildout:directory}/software_release/buildout.cfg
   ${error-page-manager-config:output}
