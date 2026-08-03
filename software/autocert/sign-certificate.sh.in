@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Sign a single certificate for the first time (if not exists yet)
+BASE_DIR={{ base_directory }}
+
+sign_cert() {
+  BASE_DOMAIN=$1
+  DOMAINS=$2
+  if [ -s "$BASE_DIR/certs/$BASE_DOMAIN/fullchain.pem" ]; then
+    exit 0;
+  fi
+  {{ flock_bin }} -n $BASE_DIR/lock {{ dehydrated_wrapper }} --cron --no-lock --domain "$DOMAINS"
+}
+
+{% for domain_string in domain_list -%}
+sign_cert {{ domain_string.split(' ')[0] }} "{{ domain_string }}"
+{% endfor -%}
