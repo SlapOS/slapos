@@ -17,6 +17,8 @@
 {% set test_runner_random_activity_priority = slapparameter_dict['test-runner-random-activity-priority'] -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
 {% set zope_expect_backingup_zodb = slapparameter_dict['zope-expect-backingup-zodb'] -%}
+{% set sqlite_db_path = slapparameter_dict.get('sqlite-db-path', '') -%}
+{% set use_sqlite = bool(sqlite_db_path) -%}
 {% if webdav -%}
 {%   set timerserver_interval = 0 -%}
 {% else -%}
@@ -264,12 +266,16 @@ once = ${:output}_done
 ip = {{ ipv4 }}
 site-id = {{ site_id }}
 {% if site_id -%}
-mysql-url = {{ slapparameter_dict['mysql-url-list'][0] }}
 inituser = {{ slapparameter_dict['inituser-login'] }}
+{% if use_sqlite -%}
+sql-connection-string = {{ sqlite_db_path }}
+{% else -%}
+mysql-url = {{ slapparameter_dict['mysql-url-list'][0] }}
 {%  set mysql = urllib_parse.urlsplit(slapparameter_dict['mysql-url-list'][0]) -%}
 {%  set mysql_db = mysql.path.split('/')[1] -%}
 sql-connection-string = {{ '%s@erp5-catalog-0:%s %s %s' % (
     mysql_db, mysql.port, mysql.username, mysql.password) }}
+{% endif -%}
 bt5 = {{ slapparameter_dict['bt5'] }}
 bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
 id-store-interval = {{ dumps(slapparameter_dict['id-store-interval']) }}
@@ -442,6 +448,7 @@ post = test ! -s {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} || {{ bin_direc
      ) }}
 {% endfor -%}
 
+{% if not use_sqlite -%}
 [{{ section("watch_activities") }}]
 <= userhosts-wrapper-base
 environment +=
@@ -451,6 +458,7 @@ wrapper-path = ${buildout:bin-directory}/${:_buildout_section_name_}
 
 [{{ section("wait_activities") }}]
 <= watch_activities
+{% endif -%}
 
 {% if test_runner_enabled and test_runner_node_count -%}
 {% for _ in range(test_runner_node_count) %}
@@ -503,18 +511,24 @@ wrapped-command-line = ${runTestSuite:wrapper-path}
 wrapper-path = ${buildout:bin-directory}/runTestSuite
 
 {%   set connection_string_list = [] -%}
-{%   for url in slapparameter_dict['mysql-test-url-list'] -%}
-{%     set parsed_url = urllib_parse.urlparse(url) -%}
-{%     do connection_string_list.append(
-         '%s@%s:%s %s %s' % (
-           parsed_url.path.lstrip('/'),
-           parsed_url.hostname,
-           parsed_url.port,
-           parsed_url.username,
-           parsed_url.password,
-         ),
-       ) -%}
-{%   endfor -%}
+{%   if use_sqlite -%}
+{%     for path in slapparameter_dict.get('sqlite-test-db-path-list', []) -%}
+{%       do connection_string_list.append(path) -%}
+{%     endfor -%}
+{%   else -%}
+{%     for url in slapparameter_dict['mysql-test-url-list'] -%}
+{%       set parsed_url = urllib_parse.urlparse(url) -%}
+{%       do connection_string_list.append(
+           '%s@%s:%s %s %s' % (
+             parsed_url.path.lstrip('/'),
+             parsed_url.hostname,
+             parsed_url.port,
+             parsed_url.username,
+             parsed_url.password,
+           ),
+         ) -%}
+{%     endfor -%}
+{%   endif -%}
 [run-test-common]
 < = run-common
 environment-extra =
