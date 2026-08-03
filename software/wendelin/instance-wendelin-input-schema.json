@@ -407,6 +407,10 @@
       ],
       "type": "object"
     },
+    "sqlite": {
+      "description": "Use sqlite (file-backed) as the catalog backend instead of mariadb. Has effect only when `mariadb` is not explicitly set; mariadb wins when both are provided.",
+      "$ref": "./instance-sqlite-schema.json"
+    },
     "zodb-zeo": {
       "description": "Common settings ZEO servers",
       "additionalProperties": false,
