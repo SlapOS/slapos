@@ -241,7 +241,7 @@ class KvmMixin:
   @classmethod
   def getKvmExportPartitionBackupPath(cls, *paths):
     return cls.getPartitionPath(
-      'kvm-export', 'srv', 'backup', 'kvm', 'virtual1', *paths)
+      'kvm-export', 'srv', 'backup', 'kvm', 'virtual.qcow2', *paths)
 
   @classmethod
   def getAuthenticatedUrl(cls, connection_parameter_dict, prefix='',
@@ -901,7 +901,7 @@ class TestInstanceResilientBackupImporter(
     destination_qcow2 = os.path.join(
       self.importer_partition, 'srv', 'virtual.qcow2')
     destination_backup = os.path.join(
-      self.importer_partition, 'srv', 'backup', 'kvm', 'virtual1')
+      self.importer_partition, 'srv', 'backup', 'kvm', 'virtual.qcow2')
     # sanity check - no export/import happened yet
     self.assertFalse(os.path.exists(self.getKvmExportPartitionBackupPath()))
     self.call_exporter()
@@ -1172,6 +1172,13 @@ class TestInstanceResilientBackupExporterOldStyleMigration(
       len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
       0)
     self.assertExporterStatus(status_text, migrated_old=True)
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterPre063Migration(
+  TestInstanceResilientBackupExporterOldStyleMigration):
+  # qmpbackup before 0.63 named the chain directory after the qemu node name
+  old_backup_name = 'virtual1'
 
 
 @skipUnlessKvm
