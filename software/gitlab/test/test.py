@@ -170,14 +170,22 @@ class TestGitlab(SlapOSInstanceTestCase):
     gitlab_rails_bin = self.computer_partition_root_path / 'bin' / 'gitlab-rails'
 
     expiration_date = (datetime.now() + timedelta(days=4)).strftime("%Y-%m-%d")
-    subprocess.check_call(
-      (gitlab_rails_bin,
+    create_token_command = (
+      gitlab_rails_bin,
       'runner',
       "user = User.find(1);" \
       "token = user.personal_access_tokens.create(scopes: [:api], name: 'Root token', expires_at: '%s');" \
       "token.set_token('SLurtnxPscPsU-SDm4oN');" \
-      "token.save!" % expiration_date),
-    )
+      "token.save!" % expiration_date)
+    # The root user (id 1) is seeded asynchronously while gitlab starts, so just
+    # after the instance is ready User.find(1) can still raise RecordNotFound.
+    # Retry until the user exists.
+    for _ in range(10):
+      if subprocess.call(create_token_command) == 0:
+        break
+      time.sleep(3)
+    else:
+      subprocess.check_call(create_token_command)
 
     client_certificate = self.getManagedResource('client_certificate', CaucaseCertificate)
     with requests.Session() as session:
