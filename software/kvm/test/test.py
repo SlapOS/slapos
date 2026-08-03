@@ -54,6 +54,8 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.slap.standalone import SlapOSNodeCommandError
 from slapos.testing.utils import findFreeTCPPort
 
+import kvm_testing
+
 # To be in sync with component/vm-img/debian.cfg
 DEFAULT_IMAGE_ISONAME = 'debian-13.3.0-amd64-netinst.iso'
 DEFAULT_IMAGE_TITLE = 'Debian Trixie 13 netinst x86_64'
@@ -153,45 +155,16 @@ class KVMTestCase(InstanceTestCase):
     return image_list
 
   @classmethod
-  def _findTopLevelPartitionPath(cls, path: str):
-    index = 0
-    while True:
-      index = path.find(os.path.sep, index) + len(os.path.sep)
-      top_path = path[:index]
-      if os.path.exists(os.path.join(top_path, '.slapos-resource')):
-        return top_path
-      if index == -1:
-        return None
-
-  @classmethod
-  def _updateSlaposResource(cls, partition_path, **kw):
-    with open(os.path.join(partition_path, '.slapos-resource'), 'r+') as f:
-      resource = json.load(f)
-      resource.update(kw)
-      f.seek(0)
-      f.truncate()
-      json.dump(resource, f, indent=2)
-
-  @classmethod
   def formatPartitions(cls):
     super().formatPartitions()
-
-    # steal tap from top level partition
-    instance_directory = cls.slap.instance_directory
-    top_partition_path = cls._findTopLevelPartitionPath(instance_directory)
-
-    with open(os.path.join(top_partition_path, '.slapos-resource')) as f:
-      top_resource = json.load(f)
-
-    for partition in os.listdir(instance_directory):
-      if not partition.startswith(cls.__partition_reference__):
-        continue
-
-      partition_path = os.path.join(instance_directory, partition)
-      cls._updateSlaposResource(partition_path, tap=top_resource['tap'])
+    kvm_testing.stealTopLevelTap(
+      cls.slap.instance_directory, cls.__partition_reference__)
 
 
-class KvmMixin:
+class KvmMixin(kvm_testing.KvmPartitionMixin):
+  # the kvm tests always request the same software release
+  match_software_url = True
+
   def assertPromiseFailsInDir(self, partition_directory, promise):
     monitor_run_promise = os.path.join(
       partition_directory, 'software_release', 'bin',
@@ -216,50 +189,9 @@ class KvmMixin:
     return self.assertPromiseFailsInDir(partition_directory, promise)
 
   @classmethod
-  def getPartitionIdByType(cls, instance_type):
-    software_url = cls.getSoftwareURL()
-    for computer_partition in cls.slap.computer.getComputerPartitionList():
-      try:
-        partition_url = computer_partition.\
-          getSoftwareRelease()._software_release
-        partition_type = computer_partition.getType()
-      except (
-        slapos.slap.exception.NotFoundError,
-        slapos.slap.exception.ResourceNotReady
-      ):
-        partition_url = 'NA'
-        partition_type = 'NA'
-      if partition_url == software_url and partition_type == instance_type:
-        return computer_partition.getId()
-    raise Exception("Partition type %s not found" % instance_type)
-
-  @classmethod
-  def getPartitionPath(cls, instance_type='kvm-export', *paths):
-    return os.path.join(
-      cls.slap._instance_root, cls.getPartitionIdByType(instance_type), *paths)
-
-  @classmethod
   def getKvmExportPartitionBackupPath(cls, *paths):
     return cls.getPartitionPath(
       'kvm-export', 'srv', 'backup', 'kvm', 'virtual.qcow2', *paths)
-
-  @classmethod
-  def getAuthenticatedUrl(cls, connection_parameter_dict, prefix='',
-                          additional=False):
-    parsed_url = urlparse(
-      connection_parameter_dict['%surl%s' % (
-        prefix, '-additional' if additional else '')])
-    return parsed_url._replace(
-      netloc='{}:{}@[{}]:{}'.format(
-        connection_parameter_dict['%susername' % prefix],
-        connection_parameter_dict['%spassword' % prefix],
-        parsed_url.hostname,
-        parsed_url.port,
-      )).geturl()
-
-  def getConnectionParameterDictJson(self):
-    return json.loads(
-      self.computer_partition.getConnectionParameterDict()['_'])
 
   def getProcessInfo(self, kvm_additional_hash_file_list=None):
     if kvm_additional_hash_file_list is None:
@@ -524,10 +456,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
     # START: mock .slapos-resource with tap.ipv4_addr
     # needed for netconfig.sh
     partition_path = str(self.computer_partition_root_path)
-    top_partition_path = self._findTopLevelPartitionPath(partition_path)
-
-    with open(os.path.join(top_partition_path, '.slapos-resource')) as f:
-      top_tap = json.load(f)['tap']
+    top_tap = kvm_testing.getTopLevelTap(partition_path)
 
     if top_tap['ipv4_addr'] == '':
       top_tap.update({
@@ -537,7 +466,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
         "ipv4_network": "10.0.0.0"
       })
 
-    self._updateSlaposResource(partition_path, tap=top_tap)
+    kvm_testing.updateResource(partition_path, tap=top_tap)
 
     self.waitForInstanceWithForce()
     # END: mock .slapos-resource with tap.ipv4_addr
@@ -2702,7 +2631,7 @@ class ExternalDiskMixin(KvmMixin):
         os.mkdir(partition_store)
         partition_store_list.append(partition_store)
 
-      cls._updateSlaposResource(
+      kvm_testing.updateResource(
         partition_path,
         external_storage_list=partition_store_list,
       )
