@@ -46,7 +46,7 @@ fi
 # Assets compilation is handled at instance deployment time. We do everything else here.
 
 # XXX - Run migration for gitlab 16.1.8 first
-gitlab_location={{ gitlab_work.location }}/db
+gitlab_location={{ gitlab_work.location }}
 db_migration_location={{ gitlab_work.location }}/../gitlab-16.1.8/db
 restore_db() {
   if [ -L "$gitlab_location/db" ]; then
