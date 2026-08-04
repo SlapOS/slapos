@@ -20,6 +20,19 @@ Unreleased
 
 Changes on ``master`` since 1.0.496 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.496...master>`__).
 
+Free disk space is no longer checked per partition
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The ``check-free-disk-space.py`` promise is gone from every partition. Free
+disk space is a node-level concern: on a full node the promise used to fail in
+every partition at once, flooding operators with tickets for instance trees
+that were not at fault. The promise moved to the node monitoring instance
+(``software/monitor``, ``default`` software type), where it keeps failing below
+5% of the disk size. Make sure each node running frontends has a monitoring
+instance.
+(`!2167 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2167>`__)
+
 Node schemas accept unknown parameters for mixed-release clusters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
