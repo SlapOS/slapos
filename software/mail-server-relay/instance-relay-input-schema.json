@@ -29,9 +29,6 @@
             "$ref": "./instance-cluster-input-schema.json#/definitions/fqdn"
           },
           "default": []
-        },
-        "custom-inbound-certificate": {
-          "$ref": "./instance-cluster-input-schema.json#/definitions/custom-inbound-certificate"
         }
       }
     }
