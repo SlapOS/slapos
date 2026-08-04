@@ -1,0 +1,14 @@
+{
+  "name": "ERP5 MCP Server",
+  "description": "ERP5 MCP Server with HAProxy TLS frontend",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "ERP5 MCP server instance",
+      "request": "instance-input-schema.json",
+      "index": 0
+    }
+  }
+}
