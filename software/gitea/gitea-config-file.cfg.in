@@ -1,0 +1,158 @@
+; see https://docs.gitea.io/en-us/config-cheat-sheet/ for additional documentation.
+
+APP_NAME = Gitea Nexedi TODO
+;RUN_USER = git
+; Either "dev", "prod" or "test", default is "dev"
+RUN_MODE = prod
+
+
+# If you don’t want the web installer to be able to write the config file at all, it is also possible to make the config file read-only for the gitea user (owner/group root:root, mode 0660), and set INSTALL_LOCK = true. In that case all database configuration details must be set beforehand in the config file, as well as the SECRET_KEY and INTERNAL_TOKEN values. See the command line documentation for information on using gitea generate secret INTERNAL_TOKEN.
+
+
+
+[repository]
+ROOT = {{ gitea['repositories-dir'] }}
+#ACCESS_CONTROL_ALLOW_ORIGIN =
+#DEFAULT_REPO_UNITS = repo.code,repo.releases,repo.issues,repo.pulls,repo.wiki
+
+[repository.local]
+; Path for local repository copy. Defaults to `tmp/local-repo`
+LOCAL_COPY_PATH = tmp/local-repo
+; Path for local wiki copy. Defaults to `tmp/local-wiki`
+LOCAL_WIKI_PATH = tmp/local-wiki
+
+[cors]
+# TODO
+ENABLED=false
+
+[server]
+; The protocol the server listens on. One of 'http', 'https', 'unix' or 'fcgi'.
+PROTOCOL = https
+DOMAIN = {{ gitea['domain'] }}
+;ROOT_URL = %(PROTOCOL)s://%(DOMAIN)s:%(HTTP_PORT)s/
+ROOT_URL = %(PROTOCOL)s://%(DOMAIN)s/
+
+HTTP_ADDR = [{{ gitea['ipv6'] }}]
+HTTP_PORT = {{ gitea['port'] }}
+DISABLE_SSH = true
+CERT_FILE = {{ gitea['ssl-cert-file'] }}
+KEY_FILE = {{ gitea['ssl-key-file'] }}
+STATIC_ROOT_PATH = {{ gitea['static-root-path'] }}
+ENABLE_GZIP = true
+
+[database]
+DB_TYPE = postgres
+HOST = {{ postgresql['pgdata-directory'] }}
+NAME = {{ postgresql['dbname'] }}
+USER = {{ postgresql['superuser'] }}
+PASSWD = {{ postgresql['password'] }}
+
+
+[security]
+; !!CHANGE THIS TO KEEP YOUR USER DATA SAFE!!
+SECRET_KEY = !#@FDEWREWR&*(
+; How long to remember that a user is logged in before requiring relogin (in days)
+LOGIN_REMEMBER_DAYS = 7
+COOKIE_USERNAME = gitea_awesome
+COOKIE_REMEMBER_NAME = gitea_incredible
+; Reverse proxy authentication header name of user name
+REVERSE_PROXY_AUTHENTICATION_USER = X-WEBAUTH-USER
+REVERSE_PROXY_AUTHENTICATION_EMAIL = X-WEBAUTH-EMAIL
+; The minimum password length for new Users
+MIN_PASSWORD_LENGTH = 6
+; Set to true to allow users to import local server paths
+IMPORT_LOCAL_PATHS = false
+; Set to true to prevent all users (including admin) from creating custom git hooks
+DISABLE_GIT_HOOKS = false
+; Set to false to allow pushes to gitea repositories despite having an incomplete environment - NOT RECOMMENDED
+ONLY_ALLOW_PUSH_IF_GITEA_ENVIRONMENT_SET = true
+;Comma separated list of character classes required to pass minimum complexity.
+;If left empty or no valid values are specified, the default values ("lower,upper,digit,spec") will be used.
+;Use "off" to disable checking.
+#PASSWORD_COMPLEXITY = lower,upper,digit,spec
+# XXX easier while testing
+PASSWORD_COMPLEXITY = off
+
+; Password Hash algorithm, either "pbkdf2", "argon2", "scrypt" or "bcrypt"
+PASSWORD_HASH_ALGO = pbkdf2
+; Set false to allow JavaScript to read CSRF cookie
+CSRF_COOKIE_HTTP_ONLY = true
+
+
+[mailer]
+ENABLED = false
+; Buffer length of channel, keep it as it is if you don't know what it is.
+SEND_BUFFER_LEN = 100
+; Prefix displayed before subject in mail
+SUBJECT_PREFIX =
+; Mail server
+; Gmail: smtp.gmail.com:587
+; QQ: smtp.qq.com:465
+; Note, if the port ends with "465", SMTPS will be used. Using STARTTLS on port 587 is recommended per RFC 6409. If the server supports STARTTLS it will always be used.
+HOST =
+; Disable HELO operation when hostnames are different.
+DISABLE_HELO =
+; Custom hostname for HELO operation, if no value is provided, one is retrieved from system.
+HELO_HOSTNAME =
+; Do not verify the certificate of the server. Only use this for self-signed certificates
+SKIP_VERIFY =
+; Use client certificate
+USE_CERTIFICATE = false
+CERT_FILE = custom/mailer/cert.pem
+KEY_FILE = custom/mailer/key.pem
+; Should SMTP connection use TLS
+IS_TLS_ENABLED = false
+; Mail from address, RFC 5322. This can be just an email address, or the `"Name" <email@example.com>` format
+FROM =
+; Mailer user name and password
+USER =
+; Use PASSWD = `your password` for quoting if you use special characters in the password.
+PASSWD =
+; Send mails as plain text
+SEND_AS_PLAIN_TEXT = false
+; Set Mailer Type (either SMTP, sendmail or dummy to just send to the log)
+MAILER_TYPE = smtp
+; Specify an alternative sendmail binary
+SENDMAIL_PATH = sendmail
+; Specify any extra sendmail arguments
+SENDMAIL_ARGS =
+; Timeout for Sendmail
+SENDMAIL_TIMEOUT = 5m
+
+
+
+[log]
+ROOT_PATH = {{ gitea['logs-dir'] }}
+; TODO
+MODE = console,file
+
+[git]
+PATH = {{ gitea['git-bin'] }}
+
+# XXX what is this ?
+; Disables highlight of added and removed changes
+DISABLE_DIFF_HIGHLIGHT = false
+
+
+[i18n]
+LANGS = en-US
+NAMES = English
+
+
+
+[U2F]
+; NOTE: THE DEFAULT VALUES HERE WILL NEED TO BE CHANGED
+; Two Factor authentication with security keys
+; https://developers.yubico.com/U2F/App_ID.html
+;APP_ID = http://localhost:3000/
+; Comma seperated list of trusted facets
+;TRUSTED_FACETS = http://localhost:3000/
+
+
+[other]
+SHOW_FOOTER_BRANDING = false
+; Show version information about Gitea and Go in the footer
+SHOW_FOOTER_VERSION = true
+; Show template execution time in the footer
+SHOW_FOOTER_TEMPLATE_LOAD_TIME = true
+
