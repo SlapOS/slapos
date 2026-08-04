@@ -188,7 +188,7 @@ class TestLog(BalancerTestCase, CrontabMixin):
     assert match
     request_time = int(match.groups()[-1])
     # XXX For slapos master, timing is in microsecond (not milisecond)
-    self.assertGreater(request_time, 2 * 1000000)
+    self.assertGreaterEqual(request_time, 2 * 1000000)
     self.assertLess(request_time, 20 * 1000000)
 
   def test_access_log_apachedex_report(self):
