@@ -105,6 +105,11 @@ class Failsafe(object):
       else:
         super(Failsafe, self).update()
 
+  # staticmethod so that, referenced as the zc.buildout.uninstall entry point
+  # RecipeFailsafe.uninstall, it stays a plain function on Python 2 too;
+  # otherwise it is an unbound method and buildout's uninstaller(name, options)
+  # call fails with a TypeError.
+  @staticmethod
   def uninstall(name, options):
     error_status_file = options.get('-error-status-file')
     if error_status_file is not None:
