@@ -80,7 +80,7 @@ class TestSlapOSNodeBuild(SlapOSInstanceTestCase):
   def test(self):
     slapos_executable = os.path.join(build_directory, 'bin', 'slapos')
     self.assertTrue(os.access(slapos_executable, os.X_OK))
-    self.assertIn('Python 3.9', subprocess.check_output(
+    self.assertIn('Python 3.11', subprocess.check_output(
       [slapos_executable, '--version'],
       universal_newlines = True
     ))
