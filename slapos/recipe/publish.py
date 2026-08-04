@@ -110,7 +110,6 @@ class Failsafe(object):
     if error_status_file is not None:
       if os.path.exists(error_status_file):
         os.unlink(error_status_file)
-    super(Failsafe, self).uninstall()
 
 
 class RecipeFailsafe(Failsafe, Recipe):
