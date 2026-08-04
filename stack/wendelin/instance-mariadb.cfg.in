@@ -362,6 +362,7 @@ context =
   key bin_directory directory:bin
   key tmp_directory directory:tmp
   key mariadb_backup_directory directory:mariabackup
+  key mariadb_socket my-cnf-parameters:socket
   key logical_backup_enabled :logical-backup-enabled
   raw python_executable {{ parameter_dict['python-executable'] }}
   raw full_backup_retention_days {{ physical_backup['retention-days'] }}
