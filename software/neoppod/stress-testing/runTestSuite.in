@@ -78,7 +78,24 @@ def main():
 offline = true
 relative-paths = true
 """)
-    Buildout('buildout.cfg', ()).bootstrap(None)
+    buildout = Buildout('buildout.cfg', ())
+    if six.PY2:
+      # WKRD: Commit 83efe25bf70f92cccb848ad04de8647cd1a9b3d5 broke buildout
+      #       bootstrap under Python 2. This is legacy so let's just hack by
+      #       forcing to reinstall some eggs to make them available in the
+      #       guest VM.
+      buildout.offline = False
+      from zc.buildout.easy_install import Installer
+      Installer_make_env = Installer._make_env.__func__
+      def _make_env(self):
+        Installer._make_env = Installer_make_env
+        env = self._make_env()
+        for egg in 'setuptools', 'pip', 'wheel':
+          dist, = env._distmap.pop(egg)
+          self._versions[dist.key] = dist.version
+        return env
+      Installer._make_env = _make_env
+    buildout.bootstrap(None)
     os.write(fd, b"""\
 extends = {{parameter_dict['profile_base_location']}}/stress.cfg
 develop-eggs-directory = {{buildout['develop-eggs-directory']}}
