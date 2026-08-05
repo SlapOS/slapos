@@ -20,6 +20,16 @@ Unreleased
 
 Changes on ``master`` since 1.0.496 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.496...master>`__).
 
+Per-slave error pages cover failover and skip redirect slaves
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+A per-slave 502/503/504 override is now also served when a request falls
+through to the health-check failover backend. Redirect slaves, which never
+proxy a backend and cannot emit these errors, are no longer offered an
+error-page upload URL.
+(`!2159 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2159>`__)
+
 Error Page Manager is resilient and scales to many shared instances
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**

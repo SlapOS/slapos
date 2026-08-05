@@ -475,6 +475,28 @@ Supported error codes
      - CDN Operator, Shared instance user
 
 
+Per-slave overrides require a backend
+-------------------------------------
+
+A shared instance's 502/503/504 override is attached to the HAProxy
+backend built from its ``url`` / ``https-url``.  Two configurations
+therefore have no backend to attach it to, so their 5xx is always the
+cluster (operator) page and a per-slave override has no effect:
+
+* A shared instance requested **without a backend URL** (no ``url`` and
+  no ``https-url``).  It has no origin to fail, so its 503 is emitted
+  from a section that carries only the cluster errorfile.  If you need a
+  custom page for such a site, set it as the CDN Operator (cluster)
+  page, or give the instance a backend URL.
+* A shared instance of ``type: redirect``.  It only issues an HTTP
+  redirect and never proxies a backend, so it can never emit a 5xx; it
+  is not offered an ``error-page-upload-url`` at all.
+
+Overrides do apply when the primary backend is down and traffic falls
+over to a ``health-check-failover-url``, and for cached
+(``enable_cache``) instances.
+
+
 Web management interface
 ------------------------
 
