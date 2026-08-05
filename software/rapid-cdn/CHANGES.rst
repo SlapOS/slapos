@@ -20,6 +20,26 @@ Unreleased
 
 Changes on ``master`` since 1.0.496 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.496...master>`__).
 
+Error page editor refuses empty saves and preserves edits
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The operator error-page console no longer blanks a served page when an empty
+body is submitted: an empty Save (or API PUT) is rejected, pointing at Reset
+(or DELETE) to remove an override. Saving one code also keeps the edits typed
+into the other codes' fields instead of discarding them.
+(`!2159 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2159>`__)
+
+Error page editor refuses empty saves and preserves edits
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+The per-slave error-page editor no longer blanks a served page when an empty
+body is submitted: an empty Save (or API PUT) is rejected, pointing at Reset
+(or DELETE) to remove an override. Saving one code also keeps the edits typed
+into the other codes' fields instead of discarding them.
+(`!2159 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2159>`__)
+
 Per-slave error pages cover failover and skip redirect slaves
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[user]**
