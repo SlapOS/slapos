@@ -32,6 +32,12 @@
           "type": "integer",
           "default": 20
         },
+        "disable-local-software": {
+          "title": "Disable local software",
+          "description": "This will disable local software folder and slapos node software usage, the theia will use read-only software release from the /srv/slapgrid",
+          "type": "boolean",
+          "default": false
+        },
         "forward-slapos-frontend-requests": {
           "title": "Forward Frontend Requests in the Embedded SlapOS",
           "description": "Embedded SlapOS instance by default forwards frontend requests as shared instances attached to the Theia instance, so that HTTP frontends can be allocated for services. This behavior can be disabled, in that case frontends will not be allocated.",

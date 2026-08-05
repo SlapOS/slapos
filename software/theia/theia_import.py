@@ -37,6 +37,7 @@ def main():
   parser.add_argument('--files', action='append')
   parser.add_argument('--exitfile', required=True)
   parser.add_argument('--errorfile', required=True)
+  parser.add_argument('--disable_software_restoration', action='store_true')
   args = parser.parse_args()
 
   TheiaImport(args)()
@@ -59,6 +60,7 @@ class TheiaImport(object):
     self.files = args.files
     self.exit_file = args.exitfile
     self.error_file = args.errorfile
+    self.disable_software_restoration = args.disable_software_restoration
     configp = configparser.ConfigParser()
     configp.read(cfg)
     self.proxy_db = configp.get('slapproxy', 'database_uri')
@@ -273,18 +275,21 @@ class TheiaImport(object):
     for f in glob.glob(os.path.join(conf_dir, '*')):
       os.remove(f)
 
-    self.log('Prune shared parts')
-    self.slapos('node', 'prune')
+    if self.disable_software_restoration:
+      self.log('Software restauration is disabled, skip it')
+    else:
+      self.log('Prune shared parts')
+      self.slapos('node', 'prune')
 
-    self.log('Build Software Releases')
-    for i in range(3):
-      try:
-        self.slapos('node', 'software', '--garbage-collect', '--logfile', self.sr_log)
-      except subprocess.CalledProcessError:
-        if i == 2:
-          raise
-      else:
-        break
+      self.log('Build Software Releases')
+      for i in range(3):
+        try:
+          self.slapos('node', 'software', '--garbage-collect', '--logfile', self.sr_log)
+        except subprocess.CalledProcessError:
+          if i == 2:
+            raise
+        else:
+          break
 
     self.log('Remove old custom instance scripts')
     partitions_glob = os.path.join(self.instance_dir, 'slappart*')

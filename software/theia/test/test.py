@@ -594,6 +594,66 @@ class TestTheiaSharedPath(TheiaTestCase):
     self.assertIn(self.bogus_path, shared_parts_list)
 
 
+class TestTheiaDisableLocalSoftware(TheiaTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'disable-local-software': True}
+
+  def test_standalone_script_disables_software_compilation(self):
+    # The standalone is started in instance_only mode and uses
+    # /opt/slapgrid as software root instead of compiling software locally.
+    with open(self.getPath('bin', 'slapos-standalone-script')) as f:
+      standalone_script = f.read()
+    self.assertIn('instance_only=True', standalone_script)
+    self.assertIn("software_root='/opt/slapgrid'", standalone_script)
+
+  def test_slapos_cfg_software_root_is_opt_slapgrid(self):
+    slapos_cfg = configparser.ConfigParser()
+    slapos_cfg.read(self.getPath('srv', 'runner', 'etc', 'slapos.cfg'))
+    self.assertEqual('/opt/slapgrid', slapos_cfg.get('slapos', 'software_root'))
+
+  def test_no_software_service(self):
+    # The slapos-node-software service must not be registered when
+    # software compilation is disabled.
+    with open(self.getPath('srv', 'runner', 'etc', 'supervisord.conf')) as f:
+      supervisord_conf = f.read()
+    self.assertNotIn('slapos-node-software', supervisord_conf)
+    self.assertIn('slapos-node-instance', supervisord_conf)
+
+  def test_no_local_software_directory(self):
+    # No software is compiled in the runner.
+    self.assertFalse(os.path.exists(self.getPath('srv', 'runner', 'software')))
+
+
+class TestTheiaWithLocalSoftware(TheiaTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'disable-local-software': False}
+
+  def test_standalone_script_does_not_disable_software_compilation(self):
+    # The standalone is started with instance_only=False and compiles
+    # software locally in the runner.
+    with open(self.getPath('bin', 'slapos-standalone-script')) as f:
+      standalone_script = f.read()
+    self.assertIn('instance_only=False', standalone_script)
+    self.assertIn(
+      "software_root='%s'" % self.getPath('srv', 'runner', 'software'),
+      standalone_script,
+    )
+
+  def test_software_service_present(self):
+    # The slapos-node-software service must be registered when software
+    # compilation is enabled.
+    with open(self.getPath('srv', 'runner', 'etc', 'supervisord.conf')) as f:
+      supervisord_conf = f.read()
+    self.assertIn('slapos-node-software', supervisord_conf)
+    self.assertIn('slapos-node-instance', supervisord_conf)
+
+  def test_local_software_directory(self):
+    # The software is compiled in the runner.
+    self.assertTrue(os.path.exists(self.getPath('srv', 'runner', 'software')))
+
+
 class ResilientTheiaMixin(object):
   @classmethod
   def setUpClass(cls):
@@ -785,3 +845,12 @@ class TestTheiaResilientTakeOver(ResilientTheiaMixin, TheiaTestCase):
                      os.listdir(self.getPartitionPath(
                        'import', 'var', 'run'
                      )))
+
+
+class TestTheiaResilientDisableLocalSoftware(ResilientTheiaMixin, TestTheiaDisableLocalSoftware):
+  def test_import_script_skips_software_restoration(self):
+    # The software is expected to be provided externally in /opt/slapgrid,
+    # so the import script must not recompile it.
+    with open(self.getPartitionPath('import', 'bin', 'theia-import-script')) as f:
+      import_script = f.read()
+    self.assertIn('--disable_software_restoration', import_script)
