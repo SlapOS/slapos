@@ -15,6 +15,11 @@ Releases
    :depth: 1
    :backlinks: none
 
+Unreleased
+--------------------
+
+Changes on ``master`` since 1.0.501 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.501...master>`__).
+
 1.0.501 (2026-08-07)
 --------------------
 
