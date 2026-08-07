@@ -38,7 +38,13 @@ import time
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-  pass
+  def handle_error(self, request, client_address):
+    # Clients (frontend health checks such as /warm, and the tests
+    # themselves) routinely drop the connection while a response is still
+    # being written. The resulting ConnectionResetError / BrokenPipeError is
+    # expected here and must not spam a traceback to stderr.
+    if not isinstance(sys.exc_info()[1], (ConnectionResetError, BrokenPipeError)):
+      super().handle_error(request, client_address)
 
 
 class ConfigurationReplyEncoder(json.JSONEncoder):
@@ -64,6 +70,12 @@ class TestHandler(BaseHTTPRequestHandler):
   }
 
   log_message = logging.getLogger(__name__ + '.TestHandler').info
+
+  def log_request(self, *args, **kwargs):
+    # Do not log every served request: the frontend polls health-check paths
+    # (e.g. /warm) constantly, which would flood the test output. Genuine
+    # errors still go through log_error/log_message.
+    pass
 
   def wfile_write(self, *args, **kwargs):
     try:

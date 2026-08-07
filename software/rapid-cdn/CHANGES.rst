@@ -15,10 +15,50 @@ Releases
    :depth: 1
    :backlinks: none
 
-Unreleased
+1.0.501 (2026-08-07)
 --------------------
 
-Changes on ``master`` since 1.0.496 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.496...master>`__).
+Tag `1.0.501 <https://lab.nexedi.com/nexedi/slapos/-/tags/1.0.501>`__.
+
+Error page editor refuses empty saves and preserves edits
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The operator error-page console no longer blanks a served page when an empty
+body is submitted: an empty Save (or API PUT) is rejected, pointing at Reset
+(or DELETE) to remove an override. Saving one code also keeps the edits typed
+into the other codes' fields instead of discarding them.
+(`!2159 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2159>`__)
+
+Error page editor refuses empty saves and preserves edits
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+The per-slave error-page editor no longer blanks a served page when an empty
+body is submitted: an empty Save (or API PUT) is rejected, pointing at Reset
+(or DELETE) to remove an override. Saving one code also keeps the edits typed
+into the other codes' fields instead of discarding them.
+(`!2159 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2159>`__)
+
+Per-slave error pages cover failover and skip redirect slaves
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+A per-slave 502/503/504 override is now also served when a request falls
+through to the health-check failover backend. Redirect slaves, which never
+proxy a backend and cannot emit these errors, are no longer offered an
+error-page upload URL.
+(`!2159 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2159>`__)
+
+Error Page Manager is resilient and scales to many shared instances
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The ``error-page-manager`` now handles each request in its own thread with a
+socket timeout, so a stalled client no longer wedges it, and it publishes a
+per-slave page only where a slave overrides one, so ``/sync`` cost scales with
+the number of overrides rather than the number of shared instances.
+(`!2159 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2159>`__)
 
 Node schemas accept unknown parameters for mixed-release clusters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
