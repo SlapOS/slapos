@@ -15,10 +15,10 @@ Releases
    :depth: 1
    :backlinks: none
 
-Unreleased
+1.0.501 (2026-08-07)
 --------------------
 
-Changes on ``master`` since 1.0.496 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.496...master>`__).
+Tag `1.0.501 <https://lab.nexedi.com/nexedi/slapos/-/tags/1.0.501>`__.
 
 Error page editor refuses empty saves and preserves edits
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
