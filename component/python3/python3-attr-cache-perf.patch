@@ -1,0 +1,147 @@
+From dccb7701b0b980b2a4b78a3c277343e774cc77ac Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Mon, 10 Aug 2026 15:22:00 +0900
+Subject: [PATCH] [3.13] Keep type attribute cache for custom mro() of real
+ bases
+
+Backport of the main branch change.
+
+type_mro_modified() unconditionally disabled the type attribute cache
+for any type whose metaclass implements a custom mro() method.  Disable
+the cache only when the custom mro() injects an entry that is not
+reachable through tp_bases, since only such entries escape the
+tp_subclasses-based version-tag invalidation that the cache depends on.
+
+This restores fast attribute access for metaclasses like ExtensionClass
+whose mro() only concatenates the MROs of the real bases.
+---
+ Lib/test/test_metaclass.py                    | 48 +++++++++++++++++++
+ ...-09-00-00.gh-issue-XXXXX.is_superclass.rst |  8 ++++
+ Objects/typeobject.c                          | 38 ++++++++++++++-
+ 3 files changed, 92 insertions(+), 2 deletions(-)
+ create mode 100644 Misc/NEWS.d/next/Core_and_Builtins/2026-08-10-09-00-00.gh-issue-XXXXX.is_superclass.rst
+
+diff --git a/Lib/test/test_metaclass.py b/Lib/test/test_metaclass.py
+index 07a333f98fa..7059769ae58 100644
+--- a/Lib/test/test_metaclass.py
++++ b/Lib/test/test_metaclass.py
+@@ -281,6 +281,54 @@
+     >>> WeirdClass.value
+     3
+ 
++Test that the attribute cache is kept when a custom mro() only
++concatenates the real bases (like ExtensionClass does), since every MRO
++entry is then still reachable through __bases__.
++
++    >>> import _testcapi
++    >>> class Base:
++    ...     value = 1
++    ...
++    >>> class Meta(type):
++    ...     def mro(cls):
++    ...         mro = [cls]
++    ...         for base in cls.__bases__:
++    ...             for entry in base.__mro__:
++    ...                 if entry not in mro:
++    ...                     mro.append(entry)
++    ...         return tuple(mro)
++    ...
++    >>> class Good(Base, metaclass=Meta):
++    ...     pass
++    ...
++    >>> Good.__mro__ == (Good, Base, object)
++    True
++    >>> _testcapi.type_assign_version(Good)
++    1
++    >>> _testcapi.type_get_version(Good) != 0
++    True
++    >>> Base.value = 2
++    >>> Good.value
++    2
++
++A custom mro() that injects a type not reachable through __bases__ must
++still disable the cache.
++
++    >>> class Meta(type):
++    ...     def mro(cls):
++    ...         return (cls, Base, object)
++    ...
++    >>> class Bad(metaclass=Meta):
++    ...     pass
++    ...
++    >>> Bad.__mro__ == (Bad, Base, object)
++    True
++    >>> _testcapi.type_assign_version(Bad)
++    0
++    >>> Base.value = 3
++    >>> Bad.value
++    3
++
+ """
+ 
+ import sys
+diff --git a/Objects/typeobject.c b/Objects/typeobject.c
+index 714288bc415..e2c45855bd0 100644
+--- a/Objects/typeobject.c
++++ b/Objects/typeobject.c
+@@ -1066,6 +1066,28 @@ PyType_Modified(PyTypeObject *type)
+ static int
+ is_subtype_with_mro(PyObject *a_mro, PyTypeObject *a, PyTypeObject *b);
+ 
++// Return true if `super` is reachable from `sub` through `tp_bases`,
++// as opposed to a type merely injected into the MRO by a custom `mro()`
++// implementation.  Only entries reachable through `tp_bases` are covered by
++// the version-tag invalidation that type_modified_unlocked() propagates
++// through `tp_subclasses`.
++static int
++is_superclass(PyTypeObject *super, PyTypeObject *sub)
++{
++    PyObject *bases = lookup_tp_bases(sub);
++    if (bases == NULL) {
++        return 0;
++    }
++    Py_ssize_t n = PyTuple_GET_SIZE(bases);
++    for (Py_ssize_t i = 0; i < n; i++) {
++        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
++        if (base == super || is_superclass(super, base)) {
++            return 1;
++        }
++    }
++    return 0;
++}
++
+ static void
+ type_mro_modified(PyTypeObject *type, PyObject *bases) {
+     /*
+@@ -1075,7 +1097,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
+ 
+        Unset HAVE_VERSION_TAG and VALID_VERSION_TAG if the type
+        has a custom MRO that includes a type which is not officially
+-       super type, or if the type implements its own mro() method.
++       a super type (i.e. not reachable through tp_bases).
+ 
+        Called from mro_internal, which will subsequently be called on
+        each subclass when their mro is recursively updated.
+@@ -1102,7 +1124,19 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
+         Py_DECREF(mro_meth);
+         Py_DECREF(type_mro_meth);
+         if (custom_mro) {
+-            goto clear;
++            // Disable the cache if a custom mro() injected an entry that is
++            // not reachable through tp_bases; see is_superclass().
++            PyObject *mro = lookup_tp_mro(type);
++            if (mro == NULL) {
++                goto clear;
++            }
++            Py_ssize_t mro_size = PyTuple_GET_SIZE(mro);
++            for (Py_ssize_t m = 0; m < mro_size; m++) {
++                PyTypeObject *entry = _PyType_CAST(PyTuple_GET_ITEM(mro, m));
++                if (entry != type && !is_superclass(entry, type)) {
++                    goto clear;
++                }
++            }
+         }
+     }
+     n = PyTuple_GET_SIZE(bases);
+-- 
+2.39.5
