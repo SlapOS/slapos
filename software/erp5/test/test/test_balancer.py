@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import functools
 import ipaddress
@@ -700,7 +701,7 @@ class TestServerTLSCSRTemplateParameter(TestServerTLSExternalCaucase):
 
     # Add all IPs of the computer in SubjectAlternativeName, we don't
     # know what will be the IP of the balancer partition.
-    with sqlite3.connect(cls.slap._proxy_database) as db:
+    with contextlib.closing(sqlite3.connect(cls.slap._proxy_database)) as db:
       ip_address_list = [
         x509.IPAddress(ipaddress.ip_address(r)) for (r, ) in db.execute(
           f"SELECT address FROM partition_network{DB_VERSION}").fetchall()
@@ -908,7 +909,7 @@ class TestServerTLSProvidedCertificate(BalancerTestCase):
     server_certificate = cls.getManagedResource('server_certificate', CaucaseCertificate)
     # Add all IPs of the computer in SubjectAlternativeName, we don't
     # know what will be the IP of the balancer partition.
-    with sqlite3.connect(cls.slap._proxy_database) as db:
+    with contextlib.closing(sqlite3.connect(cls.slap._proxy_database)) as db:
       ip_address_list = [
         x509.IPAddress(ipaddress.ip_address(r)) for (r, ) in db.execute(
           f"SELECT address FROM partition_network{DB_VERSION}").fetchall()

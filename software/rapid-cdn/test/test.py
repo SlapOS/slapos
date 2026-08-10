@@ -7340,12 +7340,13 @@ class TestSlaveMixedSerialisation(SlaveHttpFrontendTestCase):
   @staticmethod
   def _inspectSlaveFormatsInProxyDb(proxy_db_path, slave_user_references):
     # Returns {ref: 'json-in-xml'|'plain-dict'} based on the '_' wrap key.
+    import contextlib
     import sqlite3
     from slapos.util import loads as xml_loads
     from slapos.proxy.db_version import DB_VERSION
     refs = set(slave_user_references)
     result = {}
-    with sqlite3.connect(proxy_db_path) as db:
+    with contextlib.closing(sqlite3.connect(proxy_db_path)) as db:
       rows = db.execute(
         "SELECT slave_instance_list FROM partition%s "
         "WHERE slave_instance_list IS NOT NULL" % DB_VERSION

@@ -26,6 +26,7 @@
 ##############################################################################
 from __future__ import unicode_literals
 
+import contextlib
 import errno
 import json
 import os
@@ -693,14 +694,14 @@ class TestTheiaFrontendForwarding(TheiaSyncMixin, ResilientTheiaTestCase):
     query = "SELECT rowid, partition_reference FROM forwarded_partition_request%s" % DB_VERSION
 
     # Check that theia0 forwards frontend requests
-    with sqlite3.connect(self.getPartitionPath('export', proxy_relpath)) as db:
+    with contextlib.closing(sqlite3.connect(self.getPartitionPath('export', proxy_relpath))) as db:
       rows = db.execute(query).fetchall()
       self.assertIn("slappart0_HTML5AS frontend", (row[1] for row in rows))
 
     # Check that theia1 does not forward frontend requests
     # i.e that there were no new insertions in the database since it was cloned
     # by ensuring the rowids are still the same
-    with sqlite3.connect(self.getPartitionPath('import', proxy_relpath)) as db:
+    with contextlib.closing(sqlite3.connect(self.getPartitionPath('import', proxy_relpath))) as db:
       self.assertEqual(db.execute(query).fetchall(), rows)
 
   def _doTakeover(self):

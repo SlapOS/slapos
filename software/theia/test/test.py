@@ -27,6 +27,7 @@
 from __future__ import unicode_literals
 
 import configparser
+import contextlib
 import json
 import logging
 import socket
@@ -296,7 +297,7 @@ class TestTheia(TheiaTestCase):
       # Note: prefixlen-theia = prefixlen-sr-testing + 16
       raise unittest.SkipTest('IPv6 range too small: %s' % self._ipv6_address)
 
-    with sqlite3.connect(proxy_path) as db:
+    with contextlib.closing(sqlite3.connect(proxy_path)) as db:
       rows = db.execute(query).fetchall()
       partitions = set(p for p, _ in rows)
       ipv6 = set(addr for _, addr in rows if netaddr.valid_ipv6(addr))
@@ -439,10 +440,10 @@ class TestTheiaForwardFrontendRequestsEnabled(TheiaTestCase):
     return {"autorun": "user-controlled"} # we interact with slapos in this test
 
   def _getRequestedInstanceList(self, query):
-    with sqlite3.connect(os.path.join(
+    with contextlib.closing(sqlite3.connect(os.path.join(
         self.computer_partition_root_path,
         'srv/runner/var/proxy.db',
-    )) as db:
+    ))) as db:
       return [row[0] for row in db.execute(query).fetchall()]
 
   def getRequestedInstanceList(self):
