@@ -524,12 +524,15 @@ url = {{ mariadb['mariadb-background-template'] }}
 shebang =
   #!{{ bash }}
   set -euo pipefail
+environ =
+  GRN_PLUGINS_PATH='${my-cnf-parameters:groonga-plugins-path}'
 context =
   key shebang :shebang
   key mariadb_socket my-cnf-parameters:socket
   key defaults_file my-cnf:output
   key foreground_script :foreground-script
   raw extra_options --skip-networking
+  key environ :environ
 foreground-script =
   mariadb="${binary-wrap-mariadb:wrapper-path}"
   mariadb_upgrade="${binary-wrap-mariadb-upgrade:wrapper-path}"
