@@ -136,7 +136,8 @@ echo "Restoring gitlab data..."
 sed -ie "s/connection.execute('TRUNCATE schema_migrations')\s*$/connection.execute('TRUNCATE schema_migrations') if connection.table_exists? 'schema_migrations'/g" $gitlab_work/lib/tasks/gitlab/db.rake
 
 cd $git_backup_directory
-PATH=$bin_location:$go_work_bin:$git_location/bin:$PATH gitlab-backup restore -vupok -go HEAD
+log_file=$var_location/log/gitlab-backup-restore.log
+PATH=$bin_location:$go_work_bin:$git_location/bin:$PATH gitlab-backup restore -vupok -go HEAD &> $log_file
 
 echo "Checking gitlab promises..."
 echo "[info] Not all promises are checked!"
