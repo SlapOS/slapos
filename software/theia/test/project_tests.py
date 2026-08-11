@@ -522,8 +522,9 @@ class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
     output = subprocess.check_output(
       (gitlab_rails_bin, 'runner', "user = User.find(1); user.password = 'nexedi4321'; user.password_confirmation = 'nexedi4321'; user.save!"),
       universal_newlines=True)
+    expiration_date = (datetime.now() + timedelta(days=4)).strftime("%Y-%m-%d")
     output = subprocess.check_output(
-      (gitlab_rails_bin, 'runner', "user = User.find(1); token = user.personal_access_tokens.create(scopes: [:api], name: 'Root token'); token.set_token('SLurtnxPscPsU-SDm4oN'); token.save!"),
+      (gitlab_rails_bin, 'runner', "user = User.find(1); token = user.personal_access_tokens.create(scopes: [:api], name: 'Root token', expires_at: '%s'); token.set_token('SLurtnxPscPsU-SDm4oN'); token.save!" % expiration_date),
       universal_newlines=True)
 
     # Create a new project
