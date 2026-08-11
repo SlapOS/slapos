@@ -423,6 +423,61 @@ class TestDataMixin(object):
   def test_file_list_plugin(self):
     self._test_file_list(['etc', 'plugin'], ['.pyc'])
 
+  # Promises for states which a busy cluster reaches only after propagating
+  # the slave information to every partition, which can take hours. Each is
+  # split in a test-only promise reacting at once, so that the partition keeps
+  # being processed, and an anomaly promise alarming after a grace period.
+  DESENSITIZED_PROMISE_TUPLE = (
+    'master-key-download-url-ready-promise',
+    'master-key-generate-auth-url-ready-promise',
+    'master-key-upload-url-ready-promise',
+    'promise-kedifa-auth-ready',
+    'promise-key-download-url-ready',
+    'publish-failsafe-error',
+  )
+  DESENSITIZED_PROMISE_GRACE = '5'
+
+  def test_promise_desensitized(self):
+    checked_list = []
+    for promise in self.DESENSITIZED_PROMISE_TUPLE:
+      for test_path in glob.glob(os.path.join(
+          self.instance_path, '*', 'etc', 'plugin', '%s.py' % (promise,))):
+        anomaly_path = os.path.join(
+          os.path.dirname(test_path), '%s-anomaly.py' % (promise,))
+        self.assertTrue(
+          os.path.exists(anomaly_path),
+          '%s has no anomaly counterpart' % (test_path,))
+        test_dict = getPromisePluginParameterDict(test_path)
+        anomaly_dict = getPromisePluginParameterDict(anomaly_path)
+        self.assertEqual(
+          {
+            'report-anomaly': 'false',
+            'result-count': None,
+            'failure-amount': None,
+          },
+          {
+            'report-anomaly': test_dict.get('report-anomaly'),
+            'result-count': test_dict.get('result-count'),
+            'failure-amount': test_dict.get('failure-amount'),
+          },
+          'unexpected configuration of %s' % (test_path,))
+        self.assertEqual(
+          {
+            'report-anomaly': 'true',
+            'result-count': self.DESENSITIZED_PROMISE_GRACE,
+            'failure-amount': self.DESENSITIZED_PROMISE_GRACE,
+          },
+          {
+            'report-anomaly': anomaly_dict.get('report-anomaly'),
+            'result-count': anomaly_dict.get('result-count'),
+            'failure-amount': anomaly_dict.get('failure-amount'),
+          },
+          'unexpected configuration of %s' % (anomaly_path,))
+        # both have to watch the very same state
+        self.assertEqual(test_dict['filename'], anomaly_dict['filename'])
+        checked_list.append(promise)
+    self.assertNotEqual([], checked_list)
+
   def test00supervisor_state(self):
     # test00 name chosen to be run just after setup
     # give a chance for etc/run scripts to finish
