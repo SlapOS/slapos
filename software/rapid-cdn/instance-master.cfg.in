@@ -1238,6 +1238,14 @@ name = publish-failsafe-error.py
 config-filename = ${check-publish-failsafe-error:file}
 config-state = empty
 config-url = ${check-publish-failsafe-error-publish:url}
+config-report-anomaly = false
+
+[publish-failsafe-error-promise-anomaly]
+<= publish-failsafe-error-promise
+name = publish-failsafe-error-anomaly.py
+config-report-anomaly = true
+config-result-count = 5
+config-failure-amount = 5
 
 [buildout]
 extends =
@@ -1248,6 +1256,7 @@ parts =
   publish-slave-information
   check-publish-failsafe-error
   publish-failsafe-error-promise
+  publish-failsafe-error-promise-anomaly
   publish-information
   request-kedifa
   request-error-page-manager
