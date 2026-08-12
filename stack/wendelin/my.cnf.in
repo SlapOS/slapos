@@ -23,6 +23,7 @@ datadir = {{ parameter_dict['data-directory'] }}
 tmpdir = {{ parameter_dict['tmp-directory'] }}
 pid_file = {{ parameter_dict['pid-file'] }}
 log_error = {{ parameter_dict['error-log'] }}
+loose_mroonga_log_file = {{ parameter_dict['mroonga-log'] }}
 slow_query_log
 slow_query_log_file = {{ parameter_dict['slow-query-log'] }}
 long_query_time = {{ parameter_dict['long-query-time'] }}

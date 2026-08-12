@@ -408,6 +408,7 @@ plugin-directory = {{ dumps(parameter_dict['mroonga-mariadb-plugin-dir']) }}
 groonga-plugins-path = {{ parameter_dict['groonga-plugins-path'] }}
 pid-file = ${directory:run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
+mroonga-log = ${directory:log}/mroonga.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
 long-query-time = {{ dumps(slapparameter_dict.get('long-query-time', 1)) }}
 max-connection-count = {{ dumps(slapparameter_dict.get('max-connection-count', 1000)) }}
@@ -524,12 +525,15 @@ url = {{ mariadb['mariadb-background-template'] }}
 shebang =
   #!{{ bash }}
   set -euo pipefail
+environ =
+  GRN_PLUGINS_PATH='${my-cnf-parameters:groonga-plugins-path}'
 context =
   key shebang :shebang
   key mariadb_socket my-cnf-parameters:socket
   key defaults_file my-cnf:output
   key foreground_script :foreground-script
   raw extra_options --skip-networking
+  key environ :environ
 foreground-script =
   mariadb="${binary-wrap-mariadb:wrapper-path}"
   mariadb_upgrade="${binary-wrap-mariadb-upgrade:wrapper-path}"
@@ -972,7 +976,7 @@ inline = {{ dumps(slapparameter_dict.get('odbc-ini', ' ')) }}
 [{{ section('logrotate-entry-mariadb') }}]
 < = logrotate-entry-base
 name = mariadb
-log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
+log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:mroonga-log} ${my-cnf-parameters:slow-query-log}
 post = "${binary-wrap-mariadb:wrapper-path}" --skip-ssl -B -e "FLUSH LOGS"
 
 [{{ section('binary-link') }}]
