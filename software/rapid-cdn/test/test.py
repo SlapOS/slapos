@@ -286,19 +286,36 @@ class AtsMixin(object):
       fh.write(''.join(self._hack_ats_original_records_config))
     self._hack_ats_restart()
 
-  def _waitForCached(self, domain, path, source_ip, body, timeout=10):
-    # ATS commits the cache write asynchronously, so a fixed sleep races it
-    # under load. Wait for the Age header (proof of a cache hit) while the
-    # backend still returns 200, so these reads are harmless.
+  def _waitForCached(self, domain, path, source_ip, body, timeout=20):
+    # Wait until the object is *durably* cached, i.e. the caller can flip the
+    # backend to an error and still expect the cached copy to be served.
+    #
+    # An Age header alone is not enough: ATS commits the cache write
+    # asynchronously and, with read-while-writer enabled (the default), serves
+    # the still-in-flight copy WITH an Age header before that write is
+    # committed. A request arriving after such a response but before the commit
+    # is a plain miss -- and once the backend returns 5xx, open_write_fail_action
+    # only serves stale on a *revalidation*, so a miss is proxied to the broken
+    # origin and returns 502. Only a committed object keeps ageing, so require
+    # two cache hits at least a second apart whose Age has actually increased.
     begin = time.time()
+    first_age = first_time = None
     while True:
       result = fakeHTTPSResult(domain, path, source_ip=source_ip)
-      if 'Age' in result.headers:
+      age = result.headers.get('Age')
+      if age is not None:
         self.assertEqual(result.status_code, http.client.OK)
         self.assertEqual(result.text, body)
-        return
+        now = time.time()
+        if first_age is not None and int(age) > first_age and now - first_time >= 1:
+          return
+        if first_age is None:
+          first_age, first_time = int(age), now
+      else:
+        # a miss resets the confirmation: the entry was not committed yet
+        first_age = first_time = None
       if time.time() - begin > timeout:
-        self.fail('Frontend did not cache %r within %ss' % (path, timeout))
+        self.fail('Frontend did not durably cache %r within %ss' % (path, timeout))
       time.sleep(0.5)
 
   def _hack_ats_restart(self):
