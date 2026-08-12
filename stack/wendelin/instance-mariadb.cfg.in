@@ -402,6 +402,7 @@ ip = {{ private_ipv4 }}
 port = {{ port }}
 {%- endif %}
 socket = ${directory:run}/mariadb.sock
+tmp-socket = ${directory:run}/mariadb-tmp.sock
 data-directory = ${directory:srv}/mariadb
 tmp-directory = ${directory:tmp}
 etc-directory = ${directory:etc}
@@ -502,12 +503,11 @@ shebang =
   set -euo pipefail
 context =
   key shebang :shebang
-  key mariadb_socket my-cnf-parameters:socket
+  key mariadb_socket my-cnf-parameters:tmp-socket
   key defaults_file my-cnf:output
   key foreground_script :foreground-script
-  raw extra_options --skip-networking
 foreground-script =
-  "${binary-wrap-mariadb:wrapper-path}" < "${init-script:output}"
+  "${binary-wrap-mariadb:wrapper-path}" -S "${my-cnf-parameters:tmp-socket}" < "${init-script:output}"
 
 [pytz-path]
 recipe = slapos.recipe.build
@@ -530,10 +530,9 @@ environ =
   GRN_PLUGINS_PATH='${my-cnf-parameters:groonga-plugins-path}'
 context =
   key shebang :shebang
-  key mariadb_socket my-cnf-parameters:socket
+  key mariadb_socket my-cnf-parameters:tmp-socket
   key defaults_file my-cnf:output
   key foreground_script :foreground-script
-  raw extra_options --skip-networking
   key environ :environ
 foreground-script =
   mariadb="${binary-wrap-mariadb:wrapper-path}"
@@ -542,8 +541,8 @@ foreground-script =
   zoneinfo="${pytz-path:zoneinfo}"
   if [ -z "$("$mariadb" -e "SHOW SLAVE STATUS")" ]
   then
-    "$mariadb_upgrade" || true
-    "$mariadb_tzinfo_to_sql" "$zoneinfo" | "$mariadb" -B mysql || true
+    "$mariadb_upgrade" -S "${my-cnf-parameters:tmp-socket}" || true
+    "$mariadb_tzinfo_to_sql" "$zoneinfo" | "$mariadb" -B mysql -S "${my-cnf-parameters:tmp-socket}" || true
   fi
 
 {% if replication -%}
@@ -578,7 +577,7 @@ shebang =
   set -euo pipefail
 context =
   key shebang :shebang
-  key mariadb_socket my-cnf-parameters:socket
+  key mariadb_socket my-cnf-parameters:tmp-socket
   key defaults_file my-cnf:output
   raw extra_options --innodb-flush-method=nosync --skip-innodb-doublewrite --innodb-flush-log-at-trx-commit=0 --sync-frm=0 --slow-query-log=0 --skip-log-bin
   key foreground_script :foreground-script
@@ -650,7 +649,7 @@ foreground-script =
 
   {% elif upstream_bootstrap_url -%}
   echo "Importing $bootstrap_file"
-  "$zcat" "$bootstrap_file" | "$mariadb"
+  "$zcat" "$bootstrap_file" | "$mariadb" -S "${my-cnf-parameters:tmp-socket}"
 
   echo "Extracting GTID from backup, this can take a while"
   set +o pipefail
@@ -669,11 +668,11 @@ foreground-script =
   {%- endif %}
 
   echo "Configuring server as replica"
-  "$mariadb" -e "$SQL_SET_GTID"
-  "$mariadb" -e "
+  "$mariadb" -S "${my-cnf-parameters:tmp-socket}" -e "$SQL_SET_GTID"
+  "$mariadb" -S "${my-cnf-parameters:tmp-socket}" -e "
   ${:sql-change-master-command}
   "
-  "$mariadb" -e "START SLAVE;"
+  "$mariadb" -S "${my-cnf-parameters:tmp-socket}" -e "START SLAVE;"
 sql-change-master-command =
   CHANGE MASTER TO
   MASTER_HOST='{{ upstream.hostname }}',
