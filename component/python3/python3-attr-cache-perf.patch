@@ -14,11 +14,16 @@ tp_subclasses-based version-tag invalidation that the cache depends on.
 
 This restores fast attribute access for metaclasses like ExtensionClass
 whose mro() only concatenates the MROs of the real bases.
+
+Also raise MAX_VERSIONS_PER_CLASS from 1000 to 10000 so classes that
+are modified heavily during startup (e.g. dynamic accessor generation in
+ERP5) do not permanently exhaust their version tag budget and disable
+the type attribute cache for themselves and their subclasses.
 ---
  Lib/test/test_metaclass.py                    | 48 +++++++++++++++++++
- ...-09-00-00.gh-issue-XXXXX.is_superclass.rst |  8 ++++
- Objects/typeobject.c                          | 38 ++++++++++++++-
- 3 files changed, 92 insertions(+), 2 deletions(-)
+  ...-09-00-00.gh-issue-XXXXX.is_superclass.rst |  8 ++++
+ Objects/typeobject.c                          | 37 ++++++++++++++-
+ 3 files changed, 85 insertions(+), 3 deletions(-)
  create mode 100644 Misc/NEWS.d/next/Core_and_Builtins/2026-08-10-09-00-00.gh-issue-XXXXX.is_superclass.rst
 
 diff --git a/Lib/test/test_metaclass.py b/Lib/test/test_metaclass.py
@@ -81,7 +86,7 @@ index 07a333f98fa..7059769ae58 100644
  
  import sys
 diff --git a/Objects/typeobject.c b/Objects/typeobject.c
-index 714288bc415..e2c45855bd0 100644
+index 8f44c99..ffe6d7a 100644
 --- a/Objects/typeobject.c
 +++ b/Objects/typeobject.c
 @@ -1066,6 +1066,28 @@ PyType_Modified(PyTypeObject *type)
@@ -143,5 +148,12 @@ index 714288bc415..e2c45855bd0 100644
          }
      }
      n = PyTuple_GET_SIZE(bases);
--- 
-2.39.5
+@@ -1132,7 +1166,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
+     }
+ }
+ 
+-#define MAX_VERSIONS_PER_CLASS 1000
++#define MAX_VERSIONS_PER_CLASS 10000
+ #if _Py_ATTR_CACHE_UNUSED < MAX_VERSIONS_PER_CLASS
+ #error "_Py_ATTR_CACHE_UNUSED must be bigger than max"
+ #endif

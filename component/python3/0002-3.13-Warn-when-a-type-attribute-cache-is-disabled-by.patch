@@ -1,0 +1,64 @@
+From d5c5ddb034a615afb2dd133e057f893dce467bd5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Wed, 12 Aug 2026 10:32:44 +0900
+Subject: [PATCH 2/2] [3.13] Warn when a type attribute cache is disabled by
+ too many modifications
+
+A type can never be assigned a new version tag once tp_versions_used
+reaches MAX_VERSIONS_PER_CLASS (10000), so its attribute cache is
+permanently disabled.  Emit a RuntimeWarning at the first modification
+after that limit is hit, naming the class, so that code which modifies a
+class that often can be located.  The warning fires once and never
+breaks the modification, even with warnings-as-errors.
+---
+ Objects/typeobject.c | 21 ++++++++++++++++-----
+ 1 file changed, 16 insertions(+), 5 deletions(-)
+
+diff --git a/Objects/typeobject.c b/Objects/typeobject.c
+index e2c45855bd0..15d2210137b 100644
+--- a/Objects/typeobject.c
++++ b/Objects/typeobject.c
+@@ -980,6 +980,11 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
+     FT_ATOMIC_STORE_UINT_RELAXED(tp->tp_version_tag, version);
+ }
+ 
++#define MAX_VERSIONS_PER_CLASS 10000
++#if _Py_ATTR_CACHE_UNUSED < MAX_VERSIONS_PER_CLASS
++#error "_Py_ATTR_CACHE_UNUSED must be bigger than max"
++#endif
++
+ static void
+ type_modified_unlocked(PyTypeObject *type)
+ {
+@@ -999,6 +1004,17 @@ type_modified_unlocked(PyTypeObject *type)
+        needed.
+      */
+     ASSERT_TYPE_LOCK_HELD();
++    if (type->tp_versions_used == MAX_VERSIONS_PER_CLASS) {
++        type->tp_versions_used = _Py_ATTR_CACHE_UNUSED;
++        if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
++                             "attribute cache of class '%.200s' has been "
++                             "disabled: the class has been modified more "
++                             "than %d times",
++                             type->tp_name, MAX_VERSIONS_PER_CLASS) < 0)
++        {
++            PyErr_Clear();
++        }
++    }
+     if (type->tp_version_tag == 0) {
+         return;
+     }
+@@ -1166,11 +1182,6 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
+     }
+ }
+ 
+-#define MAX_VERSIONS_PER_CLASS 10000
+-#if _Py_ATTR_CACHE_UNUSED < MAX_VERSIONS_PER_CLASS
+-#error "_Py_ATTR_CACHE_UNUSED must be bigger than max"
+-#endif
+-
+ static int
+ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
+ {
+-- 
+2.39.5
