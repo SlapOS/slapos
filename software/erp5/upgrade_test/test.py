@@ -30,31 +30,32 @@ import glob
 import json
 import os
 import ssl
-import sys
 import tempfile
-import time
-
-import requests
+import typing
 import urllib.parse
 import xmlrpc.client
-import urllib3
 
+import requests
+import urllib3
 from slapos.grid.utils import md5digest
 from slapos.testing.testcase import (
   SlapOSNodeCommandError,
   installSoftwareUrlList,
   makeModuleSetUpAndTestCaseClass,
 )
+from ZODB._compat import FILESTORAGE_MAGIC
 
 old_software_release_url = 'https://lab.nexedi.com/nexedi/slapos/raw/1.0.417.1/software/erp5/software.cfg'
 new_software_release_url = os.path.abspath(
-  os.path.join(os.path.dirname(__file__), '..', 'software.cfg'))
+  os.path.join(os.path.dirname(__file__), '..', 'software-py3.cfg'))
 
 _, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
   old_software_release_url,
   software_id="upgrade_erp5",
   skip_software_check=True,
 )
+if typing.TYPE_CHECKING:
+  from slapos.testing.testcase import SlapOSInstanceTestCase  # noqa: TC004
 
 
 def setUpModule():
@@ -73,7 +74,12 @@ class ERP5UpgradeTestCase(SlapOSInstanceTestCase):
   def setUpOldInstance(cls):
     """setUp hook executed while to old instance is running, before update
     """
-    pass
+
+  @classmethod
+  def getNewInstanceParameterDict(cls):
+    """parameter for the new instance.
+    """
+    raise NotImplementedError()
 
   _current_software_url = old_software_release_url
 
@@ -90,12 +96,12 @@ class ERP5UpgradeTestCase(SlapOSInstanceTestCase):
 
     # request instance on new software
     cls._current_software_url = new_software_release_url
+    cls._instance_parameter_dict = cls.getNewInstanceParameterDict()
     cls.logger.debug('requesting instance on new software')
     cls.requestDefaultInstance()
 
     # wait for slapos node instance
-    snapshot_name = "{}.{}.setUpClass new instance".format(
-      cls.__module__, cls.__name__)
+    snapshot_name = f"{cls.__module__}.{cls.__name__}.setUpClass new instance"
     try:
       if cls._debug and cls.instance_max_retry:
         try:
@@ -131,6 +137,14 @@ class TestERP5Upgrade(ERP5UpgradeTestCase):
             }
         })
     }
+
+  @classmethod
+  def getNewInstanceParameterDict(cls):
+    """parameter for the new instance.
+    """
+    parameter_dict = json.loads(cls.getInstanceParameterDict()['_'])
+    parameter_dict['python2-data-compatibility'] = True
+    return {'_': json.dumps(parameter_dict)}
 
   @classmethod
   def tearDownClass(cls):
@@ -240,8 +254,7 @@ class TestERP5Upgrade(ERP5UpgradeTestCase):
     )
 
     cls.session.post(
-      '{zope_base_url}/ERP5Site_createTestPerson'.format(
-        zope_base_url=cls.zope_base_url),
+      f'{cls.zope_base_url}/ERP5Site_createTestPerson',
       auth=requests.auth.HTTPBasicAuth(
         username=param_dict['inituser-login'],
         password=param_dict['inituser-password'],
@@ -254,8 +267,7 @@ class TestERP5Upgrade(ERP5UpgradeTestCase):
     ).raise_for_status()
 
     assert cls.session.get(
-      '{zope_base_url}/ERP5Site_searchTestPerson'.format(
-        zope_base_url=cls.zope_base_url),
+      f'{cls.zope_base_url}/ERP5Site_searchTestPerson',
       auth=requests.auth.HTTPBasicAuth(
         username=param_dict['inituser-login'],
         password=param_dict['inituser-password'],
@@ -266,6 +278,17 @@ class TestERP5Upgrade(ERP5UpgradeTestCase):
       verify=False,
       allow_redirects=False,
     ).json() == ['before upgrade']
+
+    # stop zeo and update the file storage magic for python3
+    with cls.slap.instance_supervisor_rpc as supervisor:
+      info, = [i for i in
+         supervisor.getAllProcessInfo() if i['name'].startswith('zeo')]
+      zeo_process_name = f"{info['group']}:{info['name']}"
+      supervisor.stopProcess(zeo_process_name)
+    root_fs, = glob.glob(os.path.join(
+      cls.slap.instance_directory, '*', 'srv', 'zodb', 'root.fs'))
+    with open(root_fs, 'r+b') as data_fs:
+      data_fs.write(FILESTORAGE_MAGIC)
 
   def test_published_url_is_same(self):
     default_instance_new_parameter_dict = json.loads(
@@ -324,8 +347,7 @@ class TestERP5Upgrade(ERP5UpgradeTestCase):
     # data created before upgrade is available
     self.assertEqual(
       self.session.get(
-        '{zope_base_url}/ERP5Site_searchTestPerson'.format(
-          zope_base_url=self.zope_base_url),
+        f'{self.zope_base_url}/ERP5Site_searchTestPerson',
         auth=requests.auth.HTTPBasicAuth(
           username=param_dict['inituser-login'],
           password=param_dict['inituser-password'],
@@ -339,8 +361,7 @@ class TestERP5Upgrade(ERP5UpgradeTestCase):
 
     # create data after upgrade
     self.session.post(
-      '{zope_base_url}/ERP5Site_createTestPerson'.format(
-        zope_base_url=self.zope_base_url),
+      f'{self.zope_base_url}/ERP5Site_createTestPerson',
       auth=requests.auth.HTTPBasicAuth(
         username=param_dict['inituser-login'],
         password=param_dict['inituser-password'],
@@ -355,8 +376,7 @@ class TestERP5Upgrade(ERP5UpgradeTestCase):
     # new data can also be found
     self.assertEqual(
       self.session.get(
-        '{zope_base_url}/ERP5Site_searchTestPerson'.format(
-          zope_base_url=self.zope_base_url),
+        f'{self.zope_base_url}/ERP5Site_searchTestPerson',
         auth=requests.auth.HTTPBasicAuth(
           username=param_dict['inituser-login'],
           password=param_dict['inituser-password'],

@@ -15,6 +15,24 @@ Releases
    :depth: 1
    :backlinks: none
 
+Unreleased
+--------------------
+
+Changes on ``master`` since 1.0.501 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.501...master>`__).
+
+Failed slave publication retries before alarming
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The ``publish-failsafe-error`` promise no longer raises a cluster anomaly on
+the first slave whose publication to the SlapOS Master failed. It still fails
+its test immediately, so the master partition keeps being processed and the
+publication is retried; the anomaly is reported only after five consecutive
+failures. A cluster busy propagating slave information no longer opens a
+self-healing ticket for a publication that the next run fixes. The failing
+slaves stay listed at ``publish-failsafe-error-promise-url`` throughout.
+(`!2177 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2177>`__)
+
 1.0.501 (2026-08-07)
 --------------------
 
