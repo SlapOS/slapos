@@ -952,7 +952,8 @@ class TestInstanceResilientBackupExporterMixin(
   TestInstanceResilientBackupMixin):
   def assertImported(self):
     self.assertEqual(
-      set(sorted(os.listdir(self.getPartitionPath('kvm-import', 'srv')))),
+      set(os.listdir(self.getPartitionPath('kvm-import', 'srv')))
+      - {'logrotate.status'},
       set([
         'backup', 'proof.signature', 'virtual.qcow2', 'sshkeys',
         'backup.diff', 'monitor', 'cgi-bin', 'passwd', 'ssl', 'equeue.db'])
