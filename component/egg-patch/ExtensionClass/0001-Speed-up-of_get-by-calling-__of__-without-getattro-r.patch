@@ -1,0 +1,57 @@
+From 383c1dd592ac6a59f05b3764c0a56ffacc2e9ed9 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Thu, 13 Aug 2026 15:23:34 +0900
+Subject: [PATCH] Speed up of_get by calling __of__ without getattro re-entry.
+
+Look up __of__ on the type and invoke via vectorcall / descr_get instead
+of CallMethodObjArgs, which was re-entering Base_getattro on every bind.
+---
+ src/ExtensionClass/_ExtensionClass.c | 31 ++++++++++++++++++++++++----
+ 1 file changed, 27 insertions(+), 4 deletions(-)
+
+diff --git a/src/ExtensionClass/_ExtensionClass.c b/src/ExtensionClass/_ExtensionClass.c
+index c3893a6..98488d7 100644
+--- a/src/ExtensionClass/_ExtensionClass.c
++++ b/src/ExtensionClass/_ExtensionClass.c
+@@ -34,11 +34,34 @@ static PyObject *
+ of_get(PyObject *self, PyObject *inst, PyObject *cls)
+ {
+   /* Descriptor slot function that calls __of__ */
+-  if (inst && PyExtensionInstance_Check(inst))
+-    return PyObject_CallMethodObjArgs(self, str__of__, inst, NULL);
++  PyObject *__of__, *bound, *r;
+ 
+-  Py_INCREF(self);
+-  return self;
++  if (!(inst && PyExtensionInstance_Check(inst))) {
++    Py_INCREF(self);
++    return self;
++  }
++
++  /* Type-dict lookup avoids CallMethodObjArgs re-entering Base_getattro. */
++  __of__ = _PyType_Lookup(Py_TYPE(self), str__of__);
++  if (__of__ == NULL) {
++    Py_INCREF(self);
++    return self;
++  }
++  if (PyFunction_Check(__of__)) {
++    PyObject *args[2];
++    args[0] = self;
++    args[1] = inst;
++    return PyObject_Vectorcall(__of__, args, 2, NULL);
++  }
++  if (Py_TYPE(__of__)->tp_descr_get != NULL) {
++    bound = Py_TYPE(__of__)->tp_descr_get(__of__, self, (PyObject *)Py_TYPE(self));
++    if (bound == NULL)
++      return NULL;
++    r = PyObject_CallOneArg(bound, inst);
++    Py_DECREF(bound);
++    return r;
++  }
++  return PyObject_CallMethodObjArgs(self, str__of__, inst, NULL);
+ }
+ 
+ PyObject *
+-- 
+2.52.0
+
