@@ -105,7 +105,7 @@ the number of overrides rather than the number of shared instances.
 (`!2159 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2159>`__)
 
 Node schemas accept unknown parameters for mixed-release clusters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
 
 The frontend, kedifa and error-page-manager input schemas, and the
