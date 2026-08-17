@@ -57,7 +57,8 @@ default-parameters =
     "additional-frontend-sr-type": "default",
     "additional-frontend-guid": null,
     "monitor-httpd-port": 8386,
-    "testing-short-embedded-instance-path": null
+    "testing-short-embedded-instance-path": null,
+    "disable-local-software": false
   }
 frontend-sr = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 

@@ -137,12 +137,12 @@ class TestOrderBuildPackingListSimulation(
       'slapos-software-release-git-describe':
         subprocess.check_output(
           ('git', 'describe', '--long'),
-          cwd=pathlib.Path(self.getSoftwareURL()).parent,
+          cwd=self._software_checkout_directory or pathlib.Path(self.getSoftwareURL()).parent,
           text=True),
       'slapos-software-release-git-diff':
         subprocess.check_output(
           ('git', 'diff'),
-          cwd=pathlib.Path(self.getSoftwareURL()).parent,
+          cwd=self._software_checkout_directory or pathlib.Path(self.getSoftwareURL()).parent,
           text=True),
     })
 

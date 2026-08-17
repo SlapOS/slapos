@@ -2,6 +2,7 @@
 {%- set additional_frontend = parameter_dict.get('additional-frontend-guid') or parameter_dict.get('additional-frontend-sr') or parameter_dict.get('additional-frontend-sr-type') %}
 {%- set parameter_dict = dict(default_parameter_dict, **parameter_dict) %}
 {%- set embedded_instance_config = parameter_dict['initial-embedded-instance'] %}
+{%- set disable_local_software = str(parameter_dict['disable-local-software']).lower() == 'true' %}
 
 [buildout]
 extends =
@@ -61,6 +62,12 @@ runner = $${:home}/r
 {% else %}
 runner = $${:srv}/runner
 {% endif %}
+{% if disable_local_software %}
+softwareroot = /opt/slapgrid
+{% else %}
+softwareroot = $${:runner}/software
+{% endif %}
+
 backup = $${:srv}/backup/theia
 project = $${:srv}/project
 
@@ -587,7 +594,7 @@ base-directory = $${directory:runner}
 software-root = $${directory:runner}/s
 instance-root = $${directory:runner}/i
 {% else %}
-software-root = $${directory:runner}/software
+software-root = $${directory:softwareroot}
 instance-root = $${directory:runner}/instance
 {% endif %}
 local-software-release-root = $${directory:home}
@@ -629,8 +636,10 @@ context =
   key embedded_instance_config embedded-instance-config:output
   key home_path directory:home
   key forward_frontend_requests :forward-frontend-requests
+  key disable_local_software :disable-local-software
   section slap_connection slap-connection
   section config slapos-standalone-config
+disable-local-software = {{ disable_local_software }}
 forward-frontend-requests = {{ parameter_dict['forward-slapos-frontend-requests'] }}
 url = ${slapos-standalone-script:output}
 

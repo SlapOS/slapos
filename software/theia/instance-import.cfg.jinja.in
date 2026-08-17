@@ -1,4 +1,5 @@
 {%- set parameter_dict = dict(default_parameter_dict, **parameter_dict) -%}
+{%- set disable_local_software = str(parameter_dict['disable-local-software']).lower() == 'true' -%}
 {%- set additional_frontend = parameter_dict['additional-frontend-guid'] -%}
 {%- set namebase = parameter_dict['namebase'] -%}
 {%- set theia_number = parameter_dict['number'] -%}
@@ -94,6 +95,11 @@ recipe = slapos.recipe.template:jinja2
 output = $${directory:bin}/theia-import-script
 exitcode-file = $${directory:srv}/import-exitcode-file
 error-file = $${directory:srv}/import-errormessage-file
+{%- if disable_local_software %}
+disable-local-software = True
+{%- else %}
+disable-local-software = False
+{%- endif %}
 context =
   raw python ${software-info:python-for-resiliency}
   raw theia_import ${software-info:theia-import}
@@ -112,6 +118,7 @@ context =
   raw public_path $${directory:frontend-static-public}
   raw statefiles_path $${directory:statefiles}
   raw netrc_path_if_exists $${buildout:directory}/.netrc
+  key disable_local_software :disable-local-software
   key exitfile :exitcode-file
   key errorfile :error-file
 {%- raw %}
@@ -134,6 +141,9 @@ inline =
   --dirs {{ public_path }} \
   --dirs {{ statefiles_path }} \
   --files {{ netrc_path_if_exists }} \
+  {%- if str(disable_local_software).lower() == 'true' %}
+  --disable_software_restoration \
+  {%- endif %}
   --exitfile {{ exitfile }} \
   --errorfile {{ errorfile }}
 {%- endraw %}
