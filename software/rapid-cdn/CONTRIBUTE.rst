@@ -19,7 +19,10 @@ Changelog (CHANGES.rst)
 **Every merge request or commit that changes functionality must update
 this changelog in the same commit/MR**: add an entry under the
 ``Unreleased`` heading. Non-functional changes — internal refactoring,
-tests, documentation — need no entry.
+tests, documentation — need no entry. The obligation follows impact,
+not location: a change outside ``software/rapid-cdn/`` (a component, a
+stack) whose net effect changes rapid-cdn behaviour needs its entry
+here too.
 
 ``CHANGES.rst`` is a functional changelog for CDN operators and users: each entry is a short, audience-tagged note (``[operator]`` / ``[user]``) about a behaviour or parameter change. Purely internal/developer changes are omitted.
 
