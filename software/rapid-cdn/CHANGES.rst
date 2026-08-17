@@ -20,6 +20,18 @@ Unreleased
 
 Changes on ``master`` since 1.0.501 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.501...master>`__).
 
+Slave key download URLs wait before reporting an instance error
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+A frontend partition whose slaves have no key download URL yet no longer
+reports the instance in error on the first check: ``ERROR
+'.../url-ready.txt' not empty`` now needs about an hour of consecutive
+failures. Those URLs come from the SlapOS Master, which re-requests the
+partition as soon as they are known, so a cluster busy propagating slave
+information was reporting an error about a delay it could not shorten. The
+anomaly still asks the cluster to heal itself after five failures.
+
 Failed slave publication retries before alarming
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
