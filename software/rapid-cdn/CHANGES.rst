@@ -33,6 +33,32 @@ self-healing ticket for a publication that the next run fixes. The failing
 slaves stay listed at ``publish-failsafe-error-promise-url`` throughout.
 (`!2177 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2177>`__)
 
+Binarized builds usable on CPUs older than the build machine again
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+Since SlapOS tag 1.0.497 openssl was built with ``-march=native`` on
+every architecture, so a build installed from the binary cache raised
+``SIGILL`` in ``libcrypto.so.3`` on any CPU older than the machine that
+binarized it — including ``slapos node instance`` itself. Do not install
+the Software Release from SlapOS tags 1.0.497 through 1.0.503 via the
+binary cache. The flag is now restricted to armv7l, where it works
+around a build failure; other architectures build generic binaries
+again.
+(`ae47e0e1a <https://lab.nexedi.com/nexedi/slapos/-/commit/ae47e0e1ad0964ca88a20016a7af71ebefd50e17>`__)
+
+Build fails on a CPU-specific openssl
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The Software Release now refuses to build when its openssl reports a
+``-march=native`` (or ``-mtune``/``-mcpu``) compile flag, instead of
+producing binaries that pass binary-cache verification yet raise
+``SIGILL`` on older CPUs after download. The check runs on every build
+and update, so a regression of the flag surfaces on the machine that
+introduces it.
+(`aeb4fe4e7 <https://lab.nexedi.com/nexedi/slapos/-/commit/aeb4fe4e733b2543d2f803e6b897dd120b4889b2>`__)
+
 1.0.501 (2026-08-07)
 --------------------
 
