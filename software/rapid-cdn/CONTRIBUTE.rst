@@ -29,7 +29,7 @@ The style is adapted from `Keep a Changelog <https://keepachangelog.com/en/1.1.0
 * Mark a breaking change with a bold ``**Breaking:**`` prefix, and list breaking entries first within their section.
 * Cite the relevant merge request(s) as links (to lab.nexedi.com) after each entry. Prefer merge requests over commits: an MR link survives rebases and carries the review discussion. Cite commits only when the change reached ``master`` without an MR.
 * Link each version heading to its tag on lab.nexedi.com, and ``Unreleased`` to the compare against the last release.
-* rapid-cdn is not Semantically Versioned: it ships with the shared, monotonic SlapOS ``1.0.<n>`` release tags, and releases with no rapid-cdn change are omitted.
+* rapid-cdn is not Semantically Versioned: it ships with the shared, monotonic SlapOS ``1.0.<n>`` release tags. A version heading is written only when the maintainer releases rapid-cdn itself (a release includes binarization and publication) — a SlapOS tag cut for other Software Releases gets no heading even when it contains rapid-cdn commits; their entries stay under ``Unreleased`` until the next rapid-cdn release.
 
 Keeping the ``Unreleased`` section
 ----------------------------------
