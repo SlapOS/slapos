@@ -11,9 +11,7 @@ parts =
   monitor-base
   port-listening-promise
   galene-service
-{% if slapparameter_dict.get('request_dns', '') %}
   request-dns-entry
-{% endif %}
 
 extends = ${monitor-template:output}
 
@@ -136,4 +134,14 @@ config-name = dns-galene-entry
 config-subdomain = conference
 config-ip = $${slap-configuration:ipv6-random}
 return = domain ip
+{% else %}
+[request-dns-entry]
+<= slap-connection
+name = dns-galene-entry
+recipe = slapos.cookbook:requestoptional
+software-url = automated_local_dns
+software-type = core-network
+shared = true
+state = destroyed
+sla-computer_guid = {{ slap_connection['computer-id'] }}
 {% endif %}
