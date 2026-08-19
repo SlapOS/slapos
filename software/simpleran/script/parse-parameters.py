@@ -514,8 +514,12 @@ def ors_radio(config, publish, shared_list):
             config[c]['amarisoft_ssb_computation'] = True
 
     def configure_cpu():
-        if options['sbc-model'] != 'PD10ANS':
+        if options['sbc-model'] == 'LE-37SU7':
+            config['cpu_core_list'] = [0, 2]
             return
+        elif options['sbc-model'] != 'PD10ANS':
+            return
+
         if config['cell1']['enable_cell'] and config['cell2']['enable_cell']:
             return
         if config['cell1']['enable_cell']:
@@ -801,17 +805,20 @@ def ors_radio(config, publish, shared_list):
                         'ru': { 'ru_type':  'ru_ref',
                                 'ru_ref':       'SDR' }
                     })})
-            shared_list.append({
-                    'slave_title':          'UESIM1',
-                    'slave_reference':  False,
-                    '_': json.dumps({
+            sim_params = {
                         'ue_type':  'lte',
                         'imsi':         config['sim']['imsi'],
                         'k':                config['sim']['k'],
-                        'opc':          config['sim']['opc'],
                         'sqn':          config['sim']['sqn'],
                         'sim_algo': config['sim']['sim_algo'],
-                    })})
+            }
+            if 'opc' in config['sim']:
+                sim_params['opc'] = config['sim']['opc']
+            shared_list.append({
+                    'slave_title':          'UESIM1',
+                    'slave_reference':  False,
+                    '_': json.dumps(sim_params)
+                    })
         else:
             shared_list.append({
                     'slave_title':          'CELL1',
@@ -827,17 +834,20 @@ def ors_radio(config, publish, shared_list):
                         'ru': { 'ru_type':  'ru_ref',
                                 'ru_ref':       'SDR' }
                     })})
-            shared_list.append({
-                    'slave_title':          'UESIM1',
-                    'slave_reference':  False,
-                    '_': json.dumps({
+            sim_params = {
                         'ue_type':  'nr',
                         'imsi':     config['sim']['imsi'],
                         'k':        config['sim']['k'],
-                        'opc':      config['sim']['opc'],
                         'sqn':      config['sim']['sqn'],
                         'sim_algo': config['sim']['sim_algo'],
-                    })})
+            }
+            if 'opc' in config['sim']:
+                sim_params['opc'] = config['sim']['opc']
+            shared_list.append({
+                    'slave_title':          'UESIM1',
+                    'slave_reference':  False,
+                    '_': json.dumps(sim_params)
+                    })
         for shared in shared_list:
             shared_params = json.loads(shared['_'])
             if 'imsi' in shared_params:

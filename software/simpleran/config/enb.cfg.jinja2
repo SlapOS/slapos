@@ -182,6 +182,13 @@
 {%-   endfor %}
   ],
 {%- endif %}
+{%- if slapparameter_dict.get('cpu_core_list', []) %}
+  cpu_core_list: [
+{%-   for cpu_core in slapparameter_dict.cpu_core_list %}
+    {{ cpu_core }},
+{%-   endfor %}
+  ],
+{%- endif %}
   com_addr: "{{ slapparameter_dict.com_url }}",
 {%- if not slapparameter_dict.com_unsecure %}
   com_auth: {
