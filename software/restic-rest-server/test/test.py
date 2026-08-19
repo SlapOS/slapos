@@ -27,6 +27,7 @@
 
 import contextlib
 import json
+import lzma
 import os
 import pathlib
 import subprocess
@@ -35,6 +36,7 @@ import urllib.parse
 
 import requests
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.utils import CrontabMixin
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
   os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
@@ -107,7 +109,7 @@ class ResticRestServerTestCase(SlapOSInstanceTestCase):
     return ca_cert.name
 
 
-class TestResticRestServer(ResticRestServerTestCase):
+class TestResticRestServer(CrontabMixin, ResticRestServerTestCase):
   def test_http_get(self):
     resp = requests.get(self.connection_parameters["backend-url"], verify=self.ca_cert)
     self.assertEqual(resp.status_code, requests.codes.unauthorized)
@@ -207,6 +209,34 @@ class TestResticRestServer(ResticRestServerTestCase):
 
     cert_after = _getpeercert()
     self.assertNotEqual(cert_before["notAfter"], cert_after["notAfter"])
+
+  def test_log_rotation(self):
+    log_file = self.computer_partition_root_path / 'var' / 'log' / 'rest-server-access.log'
+    rotated_dir = self.computer_partition_root_path / 'srv' / 'backup' / 'logrotate'
+
+    requests.get(
+      urllib.parse.urljoin(self.backend_url_with_credentials, '/metrics'),
+      verify=self.ca_cert,
+    ).raise_for_status()
+    self.assertIn('GET /metrics HTTP', log_file.read_text())
+
+    self._executeCrontabAtDate('logrotate', '2000-01-01')
+    self._executeCrontabAtDate('logrotate', '2050-01-01')
+
+    rotated_file = rotated_dir / 'rest-server-access.log-20500101'
+    self.assertIn('GET /metrics HTTP', rotated_file.read_text())
+
+    requests.get(
+      urllib.parse.urljoin(self.backend_url_with_credentials, '/metrics'),
+      verify=self.ca_cert,
+    ).raise_for_status()
+    self.assertIn('GET /metrics HTTP', log_file.read_text())
+
+    self._executeCrontabAtDate('logrotate', '2050-01-02')
+    compressed_file = rotated_file.parent / (rotated_file.name + '.xz')
+    with lzma.open(compressed_file, 'rt') as f:
+      self.assertIn('GET /metrics HTTP', f.read())
+    self.assertFalse(rotated_file.exists())
 
 
 class TestResticRestServerAppendOnlyDisabled(ResticRestServerTestCase):

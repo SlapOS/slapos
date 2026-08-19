@@ -26,8 +26,10 @@
 ##############################################################################
 
 import backend
+import contextlib
 import glob
 import os
+import random
 from recurls import Recurls, CurlException
 from recurls import dict2HTTPMessage as d2h
 import http.client
@@ -71,7 +73,6 @@ from cryptography.x509.oid import NameOID
 
 from slapos.testing.monitoring_mixin import MonitoringPropagationTestMixin
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-from slapos.testing.utils import findFreeTCPPortRange
 from slapos.testing.utils import getPromisePluginParameterDict
 if __name__ == '__main__':
   SlapOSInstanceTestCase = object
@@ -85,6 +86,37 @@ HTTP_PORT = 11080
 HTTPS_PORT = 11443
 CAUCASE_PORT = 15090
 KEDIFA_PORT = 15080
+
+# Band the test's own backend servers take their ports from. It has to clear
+# two neighbours: the instance profiles default their fixed ports into
+# 20000-30000, which is also where slapos.testing.utils.findFreeTCPPortRange
+# draws from, and the kernel starts handing out ephemeral ports at 32768. A
+# backend landing on an instance port passes the free-port scan -- the cluster
+# is not deployed yet -- and haproxy or nginx then dies on bind for the whole
+# class. TestBackendPortBand keeps the band honest.
+BACKEND_PORT_BAND = (30000, 32700)
+
+
+def findFreeBackendPortRange(ip, count):
+  """Find `count` consecutive free TCP ports inside BACKEND_PORT_BAND.
+
+  A consecutive range, because separate single-port lookups can return the
+  same port and make a later bind fail with "Address already in use".
+  """
+  start, stop = BACKEND_PORT_BAND
+  for _ in range(100):
+    port = random.randrange(start, stop - count)
+    for offset in range(count):
+      with contextlib.closing(
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        try:
+          s.bind((ip, port + offset))
+        except OSError:
+          break
+    else:
+      return port
+  raise RuntimeError(
+    'No %s consecutive free ports found in %s' % (count, BACKEND_PORT_BAND))
 
 # IP to originate requests from
 # has to be not partition one
@@ -1468,11 +1500,8 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     try:
       cls.createWildcardExampleComCertificate()
       cls.prepareCertificate()
-      # find ports once to be able startServerProcess many times.
-      # Allocate a consecutive range so the ports are guaranteed distinct:
-      # separate findFreeTCPPort calls can return the same port, which then
-      # makes a later server bind fail with "Address already in use".
-      base_port = findFreeTCPPortRange(cls._ipv4_address, 7)
+      # find ports once to be able startServerProcess many times
+      base_port = findFreeBackendPortRange(cls._ipv4_address, 7)
       (
         cls._server_http_port,
         cls._server_https_port,
@@ -10682,6 +10711,37 @@ class TestRapidCDNMonitoringPropagation(
 
 
 
+class TestBackendPortBand(unittest.TestCase):
+  """BACKEND_PORT_BAND must stay clear of the cluster and of the kernel."""
+
+  def test_no_instance_port_default_inside_band(self):
+    # A port the cluster binds must never be handed to a test backend: the
+    # backend takes it while the cluster is down, and the service owning it
+    # dies on bind once buildout deploys it.
+    start, stop = BACKEND_PORT_BAND
+    colliding = {}
+    for schema_name in glob.glob(os.path.join(
+        os.path.dirname(__file__), '..', 'instance-*-input-schema.json')) + [
+        os.path.join(
+          os.path.dirname(__file__), '..', 'instance-input-schema.json')]:
+      with open(schema_name) as fh:
+        schema = json.load(fh)
+      for key, definition in schema.get('properties', {}).items():
+        default = definition.get('default')
+        if 'port' in key and isinstance(default, int) \
+           and start <= default < stop:
+          colliding[
+            '%s:%s' % (os.path.basename(schema_name), key)] = default
+    self.assertEqual({}, colliding)
+
+  def test_band_below_ephemeral_range(self):
+    # Fixed ports inside the ephemeral range collide with outgoing
+    # connections instead, which is the same flakiness by another route.
+    with open('/proc/sys/net/ipv4/ip_local_port_range') as fh:
+      ephemeral_start = int(fh.read().split()[0])
+    self.assertLessEqual(BACKEND_PORT_BAND[1], ephemeral_start)
+
+
 class TestHaproxyFormat(unittest.TestCase):
   """Unit tests for the module-level _haproxy_format() function in software.py."""
 
@@ -11153,10 +11213,7 @@ class TestErrorPageSlaveOverride(SlaveHttpFrontendTestCase):
   @classmethod
   def startServerProcess(cls):
     super().startServerProcess()
-    # allocate the two extra backend ports as a consecutive range: separate
-    # findFreeTCPPort calls can return the same port, which then makes the
-    # second raw backend fail to bind.
-    _reset_slow_base = findFreeTCPPortRange(cls._ipv4_address, 2)
+    _reset_slow_base = findFreeBackendPortRange(cls._ipv4_address, 2)
     cls._reset_port, cls._slow_port = (
       _reset_slow_base, _reset_slow_base + 1)
     cls._raw_backend_list = [
