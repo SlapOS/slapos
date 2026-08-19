@@ -15,10 +15,10 @@ Releases
    :depth: 1
    :backlinks: none
 
-Unreleased
+1.0.505 (2026-08-19)
 --------------------
 
-Changes on ``master`` since 1.0.501 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.501...master>`__).
+Tag `1.0.505 <https://lab.nexedi.com/nexedi/slapos/-/tags/1.0.505>`__.
 
 Slave key download URLs wait before reporting an instance error
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
