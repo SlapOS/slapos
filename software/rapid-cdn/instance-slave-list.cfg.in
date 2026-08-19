@@ -793,9 +793,16 @@ name = ${:_buildout_section_name_}.py
 config-filename = ${key-download-url-ready:output}
 config-state = empty
 config-report-anomaly = false
+{#- The Master re-requests this partition once the URLs are known, so it is
+    not on the partition to react: report the instance in error only past any
+    propagation delay. #}
+config-result-count = 30
+config-failure-amount = 30
 
 [promise-key-download-url-ready-anomaly]
 <= promise-key-download-url-ready
 config-report-anomaly = true
+{#- The delay above holds only while the anomaly does not report it too. #}
+config-perdiodic-only = true
 config-result-count = 5
 config-failure-amount = 5
