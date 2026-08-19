@@ -5,6 +5,8 @@ parts =
   binary-link
   promises
   publish-connection-parameter
+  cron-entry-logrotate
+  logrotate-entry-rest-server
 extends =
   {{ template_monitor }}
 
@@ -216,6 +218,12 @@ hash-existing-files =
 <= check-port-listening-promise
 hostname= ${rest-server:ip}
 port = ${rest-server:port}
+
+[logrotate-entry-rest-server]
+<= logrotate-entry-base
+name = rest-server
+log = ${directory:var-log}/rest-server-access.log
+copytruncate = true
 
 [frontend]
 <= slap-connection
