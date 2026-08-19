@@ -14,6 +14,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.remote_connection import RemoteConnection
+from selenium.common.exceptions import TimeoutException
 from subprocess import check_output
 import json
 
@@ -96,11 +97,11 @@ def main():
           'skip_count': 0,
           'duration': 1,
           'command': '',
-          'stdout': result_string,
-          'stderr': '',
+          'stdout': '',
+          'stderr': result_string,
           'html_test_result': ''
         }
-      finally:
+      else:
         for result in result_dict['tests']:
           test_line_dict['%s: %s' % (result['module'], result['name'])] = {
             'test_count': int(result['total']),
@@ -165,41 +166,58 @@ def main():
       print(url)
 
       browser.get(url)
-      WebDriverWait(browser, 300).until(EC.presence_of_element_located((
-        By.XPATH, '//p[@id="qunit-testresult" and contains(text(), "completed")]')
-      ))
 
-      html_parser = etree.HTMLParser(recover=True)
-      body = etree.fromstring(browser.page_source.encode('UTF-8'), html_parser)
+      try:
+        WebDriverWait(browser, 300).until(EC.presence_of_element_located((
+          By.XPATH, '//p[@id="qunit-testresult" and contains(text(), "completed")]')
+        ))
 
-      print(' '.join(body.xpath('//*[@id="qunit-testresult"]//text()')))
-
-      for elt in body.xpath('.//ol[@id="qunit-tests"]/li'):
-        if (len(elt.xpath('.//span[@class="module-name"]'))):
-          test_name = '%s: %s' % (
-            elt.xpath('.//span[@class="module-name"]')[0].text,
-            elt.xpath('.//span[@class="test-name"]')[0].text
-          )
-        #global failure, like Uncaught ReferenceError: RSVP is not defined
-        else:
-          test_name = elt.xpath('.//span[@class="test-name"]')[0].text
-
-        print(elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext()))
-        # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
-
-        failure = int(elt.xpath('.//b[@class="failed"]')[0].text)
-        success = int(elt.xpath('.//b[@class="passed"]')[0].text)
-        test_line_dict[test_name] = {
-          'test_count': success + failure,
-          'error_count': 0,
-          'failure_count': failure,
+      except TimeoutException:
+        print(traceback.format_exc())
+        test_line_dict['Timeout while waiting for test results'] = {
+          'test_count': 1,
+          'error_count': 1,
+          'failure_count': 0,
           'skip_count': 0,
-          'duration': int(elt.xpath('.//span[@class="runtime"]')[0].text.split()[0]),
-          'command': elt.xpath('.//a[text()="Rerun"]')[0].get('href'),
-          'stdout': agent,
-          'stderr': '',
-          'html_test_result': etree.tostring(elt.xpath('.//ol')[0])
+          'duration': 300,
+          'command': '',
+          'stdout': '',
+          'stderr': browser.page_source.encode('UTF-8'),
+          'html_test_result': ''
         }
+
+      else:
+        html_parser = etree.HTMLParser(recover=True)
+        body = etree.fromstring(browser.page_source.encode('UTF-8'), html_parser)
+
+        print(' '.join(body.xpath('//*[@id="qunit-testresult"]//text()')))
+
+        for elt in body.xpath('.//ol[@id="qunit-tests"]/li'):
+          if (len(elt.xpath('.//span[@class="module-name"]'))):
+            test_name = '%s: %s' % (
+              elt.xpath('.//span[@class="module-name"]')[0].text,
+              elt.xpath('.//span[@class="test-name"]')[0].text
+            )
+          #global failure, like Uncaught ReferenceError: RSVP is not defined
+          else:
+            test_name = elt.xpath('.//span[@class="test-name"]')[0].text
+
+          print(elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext()))
+          # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
+
+          failure = int(elt.xpath('.//b[@class="failed"]')[0].text)
+          success = int(elt.xpath('.//b[@class="passed"]')[0].text)
+          test_line_dict[test_name] = {
+            'test_count': success + failure,
+            'error_count': 0,
+            'failure_count': failure,
+            'skip_count': 0,
+            'duration': int(elt.xpath('.//span[@class="runtime"]')[0].text.split()[0]),
+            'command': elt.xpath('.//a[text()="Rerun"]')[0].get('href'),
+            'stdout': agent,
+            'stderr': '',
+            'html_test_result': etree.tostring(elt.xpath('.//ol')[0])
+          }
 
       # do quit browser asap as we have results. this is required in case of timeout of
       # remote appium service which will close test session of no command received within
