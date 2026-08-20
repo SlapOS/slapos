@@ -363,8 +363,8 @@
       p_b: -1,
     },
 {%- if "fixed_mcs" in cell %}
-    pusch_mcs: {{ cell.fixed_mcs }},
-    pdsch_mcs: {{ cell.fixed_mcs }},
+    pusch_mcs: {{ cell.fixed_mcs_uplink }},
+    pdsch_mcs: {{ cell.fixed_mcs_downlink }},
 {%- endif %}
     pdcch_format:       {{  1   if n_rb_dl == 6  else 2 }},
     prach_config_index: {{  15  if n_rb_dl == 6  else 4 }},
@@ -1029,8 +1029,8 @@
 {%-     endif %}
         },
         pdsch: {
-{%-     if "fixed_mcs" in cell %}
-          mcs: {{ cell.fixed_mcs }},
+{%-     if "fixed_mcs_downlink" in cell %}
+          mcs: {{ cell.fixed_mcs_downlink }},
 {%-     endif %}
 {%-     if ru.ru_type == "sunwave" %}
           k0: 0,
@@ -1038,8 +1038,8 @@
 {%-     endif %}
         },
         pusch: {
-{%-     if "fixed_mcs" in cell %}
-          mcs: {{ cell.fixed_mcs }},
+{%-     if "fixed_mcs_uplink" in cell %}
+          mcs: {{ cell.fixed_mcs_uplink }},
 {%-     endif %}
           phr_link_adaptation: {{ cell.phr_link_adaptation |tojson }},
 {%-     if cell.get('enable_ul_su_mimo', False) %}
