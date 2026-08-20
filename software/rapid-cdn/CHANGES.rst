@@ -20,6 +20,18 @@ Unreleased
 
 Changes on ``master`` since 1.0.519 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.519...master>`__).
 
+No support request while a new slave waits for its key download URL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+A new slave does not open a support request in the SlapOS Master while
+the cluster propagates its key download URL. A support request
+therefore shows a propagation which is stuck, and not the normal
+convergence of the cluster. The master partition still reports each
+slave without a key download URL at the first check, and names the
+slave.
+(`!2237 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2237>`__)
+
 1.0.519 (2026-10-23)
 --------------------
 

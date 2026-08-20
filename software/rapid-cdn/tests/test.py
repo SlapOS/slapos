@@ -495,22 +495,40 @@ class TestDataMixin(object):
 
   # Promises for states which a busy cluster reaches only after propagating
   # the slave information to every partition, which can take hours. Each is
-  # split in a test-only promise reacting at once, so that the partition keeps
-  # being processed, and an anomaly promise alarming after a grace period.
-  DESENSITIZED_PROMISE_TUPLE = (
+  # split in a test promise, which puts the instance in error, and an anomaly
+  # promise, which asks the cluster to heal itself after a grace period.
+  #
+  # The watched state is recomputed by instanciating the partition, and slapgrid
+  # only instanciates a partition again if its previous run failed, so failing
+  # the test at once is what makes the cluster converge.
+  RETRIED_PROMISE_TUPLE = (
     'master-key-download-url-ready-promise',
     'master-key-generate-auth-url-ready-promise',
     'master-key-upload-url-ready-promise',
     'promise-kedifa-auth-ready',
-    'promise-key-download-url-ready',
     'publish-failsafe-error',
     'slave-key-download-url-ready-promise',
   )
+  # The slave key download URLs are given by the SlapOS Master, which
+  # re-requests the partition once they are known, so convergence does not need
+  # the test to fail: it waits far longer than the anomaly instead of reporting
+  # an error only the Master can end. Its anomaly promise is anomaly only,
+  # otherwise it would report the very error which is delayed.
+  DELAYED_PROMISE_TUPLE = (
+    'promise-key-download-url-ready',
+  )
   DESENSITIZED_PROMISE_GRACE = '5'
+  DELAYED_PROMISE_GRACE = '30'
 
   def test_promise_desensitized(self):
     checked_list = []
-    for promise in self.DESENSITIZED_PROMISE_TUPLE:
+    promise_test_grace_list = [
+      (promise, None) for promise in self.RETRIED_PROMISE_TUPLE
+    ] + [
+      (promise, self.DELAYED_PROMISE_GRACE)
+      for promise in self.DELAYED_PROMISE_TUPLE
+    ]
+    for promise, test_grace in promise_test_grace_list:
       for test_path in glob.glob(os.path.join(
           self.instance_path, '*', 'etc', 'plugin', '%s.py' % (promise,))):
         anomaly_path = os.path.join(
@@ -523,8 +541,8 @@ class TestDataMixin(object):
         self.assertEqual(
           {
             'report-anomaly': 'false',
-            'result-count': None,
-            'failure-amount': None,
+            'result-count': test_grace,
+            'failure-amount': test_grace,
           },
           {
             'report-anomaly': test_dict.get('report-anomaly'),
@@ -537,11 +555,14 @@ class TestDataMixin(object):
             'report-anomaly': 'true',
             'result-count': self.DESENSITIZED_PROMISE_GRACE,
             'failure-amount': self.DESENSITIZED_PROMISE_GRACE,
+            # a delayed test is only delayed if the anomaly does not report it
+            'perdiodic-only': 'true' if test_grace else None,
           },
           {
             'report-anomaly': anomaly_dict.get('report-anomaly'),
             'result-count': anomaly_dict.get('result-count'),
             'failure-amount': anomaly_dict.get('failure-amount'),
+            'perdiodic-only': anomaly_dict.get('perdiodic-only'),
           },
           'unexpected configuration of %s' % (anomaly_path,))
         # both have to watch the very same state
@@ -1503,6 +1524,48 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       )
     cls.waitForMethod('waitForFrontend', method)
 
+  # Amount of instantiations granted to the cluster to spread the slave key
+  # download URLs, before the wait below gives up.
+  key_download_url_max_round = 10
+
+  @classmethod
+  def getKeyDownloadUrlNotReadyDict(cls):
+    not_ready_dict = {}
+    for url_ready_file in sorted(glob.glob(os.path.join(
+        cls.instance_path, '*', 'var', 'url-ready.txt'))):
+      with open(url_ready_file) as fh:
+        not_ready = fh.read().strip()
+      if not_ready:
+        not_ready_dict[url_ready_file] = not_ready
+    return not_ready_dict
+
+  @classmethod
+  def waitForKeyDownloadUrl(cls):
+    # The master partition re-requests a frontend with the key download URLs
+    # of its slaves, and the frontend needs one more instantiation to use
+    # them. A node runs slapos node instance periodically, so that
+    # instantiation always comes; here nothing runs once the promises pass,
+    # so it is asked for explicitly -- without it the frontend serves its own
+    # certificate instead of the uploaded one.
+    round_amount = 0
+    while True:
+      not_ready_dict = cls.getKeyDownloadUrlNotReadyDict()
+      if not not_ready_dict:
+        break
+      if round_amount >= cls.key_download_url_max_round:
+        raise ValueError(
+          'Key download URLs not ready after %i instantiations: %s' % (
+            round_amount,
+            json.dumps(not_ready_dict, indent=2, sort_keys=True)))
+      round_amount += 1
+      cls.logger.info(
+        'waitForKeyDownloadUrl instantiation %i of %i' % (
+          round_amount, cls.key_download_url_max_round))
+      cls.slap.waitForInstance(cls.instance_max_retry)
+    if round_amount:
+      # the kedifa mapping changed, so the certificates have to be fetched
+      cls.runKedifaUpdater()
+
   @classmethod
   def _cleanup(cls, snapshot_name):
     cls.cleanUpCertificate()
@@ -1553,6 +1616,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
       cls.software_path = os.path.realpath(os.path.join(
           cls.computer_partition_root_path, 'software_release'))
       cls.setUpMaster()
+      cls.waitForKeyDownloadUrl()
       cls.waitForFrontend()
     except BaseException:
       cls.logger.exception("Error during setUpClass")
@@ -1628,6 +1692,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     super(SlaveHttpFrontendTestCase, cls).setUpClass()
     cls.runCDNInstanceNode()
     cls.slap.waitForInstance(cls.instance_max_retry)
+    cls.waitForKeyDownloadUrl()
 
     for backend_url in [cls.backend_url, cls.backend_https_url]:
       config_result = mimikra.config(
@@ -10275,6 +10340,68 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'master publish file lacks [publish-_publish-check] section; '
       'cluster did not consume frontend\'s published slave info.\n'
       'Content:\n%s' % content)
+
+  def test_added_slave_key_download_url_propagation(self):
+    master_promise_list = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'plugin',
+      'slave-key-download-url-ready-promise.py'))
+    if len(master_promise_list) != 1:
+      self.fail('no single master partition promise, plugins are %s' % (
+        json.dumps(sorted(glob.glob(os.path.join(
+          self.instance_path, '*', 'etc', 'plugin', '*.py'))),
+          indent=2),))
+    master_path = os.path.dirname(os.path.dirname(os.path.dirname(
+      master_promise_list[0])))
+    master_timestamp = os.path.join(master_path, '.timestamp')
+    # the very file the master partition promise watches
+    master_not_ready_file = getPromisePluginParameterDict(
+      master_promise_list[0])['filename']
+
+    self.requestSlaveInstance('propagation', {})
+    # one instantiation only: the master partition promise fails while kedifa
+    # has no key download URL for the new slave, and waitForInstance retries
+    # until no promise fails, which hides the state to assert
+    try:
+      self.slap.waitForInstance()
+    except SlapOSNodeInstanceError:
+      pass
+
+    with open(master_not_ready_file) as fh:
+      master_not_ready = fh.read().strip()
+    self.assertTrue(
+      master_not_ready,
+      'master partition has a key download URL for the added slave after'
+      ' one instantiation, so the state to assert does not happen')
+    # slapgrid writes the timestamp of a partition only after a run in which
+    # no promise failed, so the master partition is processed again until the
+    # key download URL of each slave is real
+    self.assertFalse(
+      os.path.exists(master_timestamp),
+      'master partition keeps its timestamp while not ready: %s' % (
+        master_not_ready,))
+    not_ready_dict = self.getKeyDownloadUrlNotReadyDict()
+    for url_ready_file, not_ready in not_ready_dict.items():
+      # a frontend partition which waits for the master partition passes its
+      # run: the delay of its promise is what keeps it out of error
+      frontend_path = os.path.dirname(os.path.dirname(url_ready_file))
+      self.assertTrue(
+        os.path.exists(os.path.join(frontend_path, '.timestamp')),
+        'frontend partition lost its timestamp while waiting: %s' % (
+          not_ready,))
+
+    for round_amount in range(1, 11):
+      self.slap.waitForInstance(self.instance_max_retry)
+      with open(master_not_ready_file) as fh:
+        master_not_ready = fh.read().strip()
+      not_ready_dict = self.getKeyDownloadUrlNotReadyDict()
+      if not master_not_ready and not not_ready_dict:
+        break
+    else:
+      self.fail(
+        'cluster did not propagate the key download URLs in %i '
+        'instantiations: master %r, frontends %s' % (
+          round_amount, master_not_ready,
+          json.dumps(not_ready_dict, indent=2, sort_keys=True)))
 
   def test_destroyed_slave(self):
     slapgrid_log_file = self.clean_frontend_log_file()
