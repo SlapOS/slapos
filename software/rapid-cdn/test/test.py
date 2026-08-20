@@ -474,39 +474,21 @@ class TestDataMixin(object):
 
   # Promises for states which a busy cluster reaches only after propagating
   # the slave information to every partition, which can take hours. Each is
-  # split in a test promise, which puts the instance in error, and an anomaly
-  # promise, which asks the cluster to heal itself after a grace period.
-  #
-  # The watched state is recomputed by instanciating the partition, and slapgrid
-  # only instanciates a partition again if its previous run failed, so failing
-  # the test at once is what makes the cluster converge.
-  RETRIED_PROMISE_TUPLE = (
+  # split in a test-only promise reacting at once, so that the partition keeps
+  # being processed, and an anomaly promise alarming after a grace period.
+  DESENSITIZED_PROMISE_TUPLE = (
     'master-key-download-url-ready-promise',
     'master-key-generate-auth-url-ready-promise',
     'master-key-upload-url-ready-promise',
     'promise-kedifa-auth-ready',
+    'promise-key-download-url-ready',
     'publish-failsafe-error',
   )
-  # The slave key download URLs are given by the SlapOS Master, which
-  # re-requests the partition once they are known, so convergence does not need
-  # the test to fail: it waits far longer than the anomaly instead of reporting
-  # an error only the Master can end. Its anomaly promise is anomaly only,
-  # otherwise it would report the very error which is delayed.
-  DELAYED_PROMISE_TUPLE = (
-    'promise-key-download-url-ready',
-  )
   DESENSITIZED_PROMISE_GRACE = '5'
-  DELAYED_PROMISE_GRACE = '30'
 
   def test_promise_desensitized(self):
     checked_list = []
-    promise_test_grace_list = [
-      (promise, None) for promise in self.RETRIED_PROMISE_TUPLE
-    ] + [
-      (promise, self.DELAYED_PROMISE_GRACE)
-      for promise in self.DELAYED_PROMISE_TUPLE
-    ]
-    for promise, test_grace in promise_test_grace_list:
+    for promise in self.DESENSITIZED_PROMISE_TUPLE:
       for test_path in glob.glob(os.path.join(
           self.instance_path, '*', 'etc', 'plugin', '%s.py' % (promise,))):
         anomaly_path = os.path.join(
@@ -519,8 +501,8 @@ class TestDataMixin(object):
         self.assertEqual(
           {
             'report-anomaly': 'false',
-            'result-count': test_grace,
-            'failure-amount': test_grace,
+            'result-count': None,
+            'failure-amount': None,
           },
           {
             'report-anomaly': test_dict.get('report-anomaly'),
@@ -533,14 +515,11 @@ class TestDataMixin(object):
             'report-anomaly': 'true',
             'result-count': self.DESENSITIZED_PROMISE_GRACE,
             'failure-amount': self.DESENSITIZED_PROMISE_GRACE,
-            # a delayed test is only delayed if the anomaly does not report it
-            'perdiodic-only': 'true' if test_grace else None,
           },
           {
             'report-anomaly': anomaly_dict.get('report-anomaly'),
             'result-count': anomaly_dict.get('result-count'),
             'failure-amount': anomaly_dict.get('failure-amount'),
-            'perdiodic-only': anomaly_dict.get('perdiodic-only'),
           },
           'unexpected configuration of %s' % (anomaly_path,))
         # both have to watch the very same state

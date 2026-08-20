@@ -20,6 +20,19 @@ Unreleased
 
 Changes on ``master`` since 1.0.505 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.505...master>`__).
 
+Slave key download URLs report an instance error again
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+Reverts the 1.0.505 change: a frontend partition whose slaves have no key
+download URL yet reports the instance in error on the first check again,
+``ERROR '.../url-ready.txt' not empty``. The delay left the partition
+unprocessed wherever no SlapOS Master re-requests it, so the slave key
+download URLs never resolved and the frontends kept serving their own
+certificate instead of the uploaded one. The anomaly still asks the
+cluster to heal itself after five failures.
+(`5c9d81ecc <https://lab.nexedi.com/nexedi/slapos/-/commit/5c9d81ecc94c4b0360e9e7f8323e1ea37eef3512>`__)
+
 1.0.505 (2026-08-19)
 --------------------
 
