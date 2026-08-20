@@ -33,6 +33,19 @@ certificate instead of the uploaded one. The anomaly still asks the
 cluster to heal itself after five failures.
 (`5c9d81ecc <https://lab.nexedi.com/nexedi/slapos/-/commit/5c9d81ecc94c4b0360e9e7f8323e1ea37eef3512>`__)
 
+Software Release builds again with the openssl portability check
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The check introduced in 1.0.504 declared openssl's directory as its own
+buildout part location. On a node without shared parts the build stops
+with ``The following paths are already installed by other sections:
+{'.../parts/openssl-3.5': 'openssl-3.5'}``; with shared parts, the next
+openssl change removed the shared openssl directory, which the other
+Software Releases on the node keep using. Tags 1.0.504 and 1.0.505 are
+affected. What the check verifies is unchanged.
+(`aeb4fe4e7 <https://lab.nexedi.com/nexedi/slapos/-/commit/aeb4fe4e733b2543d2f803e6b897dd120b4889b2>`__)
+
 1.0.505 (2026-08-19)
 --------------------
 
