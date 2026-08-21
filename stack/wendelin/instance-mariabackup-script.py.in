@@ -28,7 +28,7 @@ for _ in range(60):
 
 print('Checking backup...')
 try:
-  last_meta = sorted(glob.glob(os.path.join(mariadb_backup_directory, '*.meta')))[-1]
+  last_meta = sorted([e for e in glob.glob(os.path.join(mariadb_backup_directory, '*.meta')) if len(os.listdir(e))])[-1]
 except IndexError:
   last_meta = None
 try:
@@ -38,7 +38,7 @@ except IndexError:
 if not last_meta:
   incremental_count = 0
 else:
-  incremental_count = len([e for e in glob.glob(os.path.join(mariadb_backup_directory, '*.inc.meta')) if e > last_full_meta])
+  incremental_count = len([e for e in glob.glob(os.path.join(mariadb_backup_directory, '*.inc.meta')) if len(os.listdir(e)) and e > last_full_meta])
 
 if last_full_meta and os.path.isdir(last_full_meta) and incremental_count < max_incremental_count:
   print('Doing incremental backup...')
