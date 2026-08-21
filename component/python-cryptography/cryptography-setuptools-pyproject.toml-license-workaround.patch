@@ -1,0 +1,14 @@
+Remove "license" keys in pyproject.toml, this was incompatible with the old version of setuptools used in SlapOS
+
+diff '--color=auto' -ru cryptography-50.0.0-orig/pyproject.toml cryptography-50.0.0/pyproject.toml
+--- cryptography-50.0.0-orig/pyproject.toml	2006-07-24 10:21:28.000000000 +0900
++++ cryptography-50.0.0/pyproject.toml	2026-08-23 08:52:14.129669104 +0900
+@@ -22,8 +22,6 @@
+ ]
+ description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
+ readme = "README.rst"
+-license = "Apache-2.0 OR BSD-3-Clause"
+-license-files = [ "LICENSE", "LICENSE.APACHE", "LICENSE.BSD" ]
+ classifiers = [
+     "Development Status :: 5 - Production/Stable",
+     "Intended Audience :: Developers",
