@@ -188,8 +188,7 @@ input = inline:
 <= logrotate-entry-base
 name = apache
 log = ${apache-php-configuration:log-dir}/*.log
-frequency = daily
-rotate-num = 30
+post = test ! -s ${apache-php-configuration:pid-file} || ${apache-graceful:output}
 
 [php.ini-configuration]
 tmp-dir = ${directory:tmp-php}
