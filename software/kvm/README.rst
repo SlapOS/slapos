@@ -198,13 +198,13 @@ Fixing qmpbackup dirty bitmap
 
 It can happen that bin/exporter will fail with:
 
-CRITICAL - main: Error executing backup: Bitmap 'qmpbackup-virtio0-NNN' is inconsistent and cannot be used
+CRITICAL - main: Error executing backup: Bitmap 'qmpbackup-NNN' is inconsistent and cannot be used
 
 In such case it is required to:
 
  * stop the kvm
- * use qemu-img info virtual.qcow2 to find the bitmap value, it shall be qmpbackup-virtio0-NNN
- * remove the bitmap value with qemu-img bitmap --remove virtual.qcow2 qmpbackup-virtio0-NNN
+ * use qemu-img info virtual.qcow2 to find the bitmap value, it shall be qmpbackup-NNN
+ * remove the bitmap value with qemu-img bitmap --remove virtual.qcow2 qmpbackup-NNN
  * start back the kvm
  * re-rexecute the backup with bin/exporter
  * remove FULL-*partial from backup destination

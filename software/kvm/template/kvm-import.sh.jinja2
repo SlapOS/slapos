@@ -22,10 +22,11 @@ tmpfile=$(mktemp --tmpdir={{ directory['tmp'] }})
 # assure the temporary directory is cleaned up
 trap "rm -rf $tmpdir $tmpfile" EXIT TERM INT
 
-if [ -d $BACKUP_DIR/virtual1 ] ; then
-  dir=$BACKUP_DIR/virtual1
-else
-  echo "Backup not found"
+# qmpbackup names the chain directory after the disk image file since 0.63 and
+# after the qemu node name before, so find it instead of assuming the name
+dir=$(find $BACKUP_DIR -mindepth 1 -maxdepth 1 -type d)
+if [ $(echo "$dir" | grep -c .) -ne 1 ] ; then
+  echo "Not exactly one backup chain directory found in $BACKUP_DIR"
   exit 1
 fi
 

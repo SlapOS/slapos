@@ -31,6 +31,11 @@ device = ide0-hd0
 # unsupported disk-type {{ disk_type }}
 {%- endif %}
 
+# qmpbackup >= 0.63 stores the backup chain in a directory named after the
+# disk image file, previous versions used the qemu node name (virtual1)
+[backup-chain]
+directory = ${directory:backup}/virtual.${slap-parameter:disk-format}
+
 [backup-info]
 file = ${directory:var}/backup-in-progress
 
@@ -51,6 +56,7 @@ context =
     section buildout buildout
     key qmp_socket_path kvm-parameter-dict:qmp-socket-path
     key backup_info backup-info:file
+    key backup_chain_directory backup-chain:directory
     section disk disk
     raw qmpbackup {{ qmpbackup }}
     raw backup_signature {{ backup_signature }}
@@ -74,7 +80,7 @@ password = {{ slapparameter_dict['monitor-password'] }}
 [check-backup-directory]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/check-backup-directory
-command-line = {{ flock }} --conflict-exit-code 0 --nonblock --no-fork ${backup-info:file} {{ check_backup_directory }} ${directory:backup}/virtual1 ${directory:tmp} ${backup-info:file}
+command-line = {{ flock }} --conflict-exit-code 0 --nonblock --no-fork ${backup-info:file} {{ check_backup_directory }} ${backup-chain:directory} ${directory:tmp} ${backup-info:file}
 
 [check-backup-directory-promise]
 # Check that disk image is not corrupted
