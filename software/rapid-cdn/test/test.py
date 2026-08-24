@@ -118,6 +118,30 @@ def findFreeBackendPortRange(ip, count):
   raise RuntimeError(
     'No %s consecutive free ports found in %s' % (count, BACKEND_PORT_BAND))
 
+
+def startRawBackend(ip, port, handler):
+  """Serve `handler(conn)` on ip:port until the returned socket is closed.
+
+  A raw TCP origin, for responses http.server cannot produce: a body whose
+  framing, pacing or truncation point the test has to control byte by byte.
+  """
+  srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+  srv.bind((ip, port))
+  srv.listen(50)
+
+  def loop():
+    while True:
+      try:
+        conn, _ = srv.accept()
+      except OSError:
+        return
+      threading.Thread(target=handler, args=(conn,), daemon=True).start()
+
+  threading.Thread(target=loop, daemon=True).start()
+  return srv
+
+
 # IP to originate requests from
 # has to be not partition one
 SOURCE_IP = '127.0.0.1'
@@ -11172,21 +11196,7 @@ class TestErrorPageSlaveOverride(SlaveHttpFrontendTestCase):
 
   @classmethod
   def _startRawBackend(cls, port, handler):
-    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    srv.bind((cls._ipv4_address, port))
-    srv.listen(50)
-
-    def loop():
-      while True:
-        try:
-          conn, _ = srv.accept()
-        except OSError:
-          return
-        threading.Thread(target=handler, args=(conn,), daemon=True).start()
-
-    threading.Thread(target=loop, daemon=True).start()
-    return srv
+    return startRawBackend(cls._ipv4_address, port, handler)
 
   @staticmethod
   def _resetHandler(conn):
@@ -12668,3 +12678,5 @@ if __name__ == '__main__':
 
   print((url_template % (scheme, *server.server_address[:2])))
   server.serve_forever()
+
+
