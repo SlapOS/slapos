@@ -63,6 +63,7 @@ vhosts = $${:home}/vhosts
 srv = $${buildout:directory}/srv
 apache.d = $${:etc}/apache.d
 httpd-log = $${:log}/apache
+php-log = $${:log}/php
 php-ini-dir = $${:etc}/php
 tmp-php = $${:tmp}/php
 tmp-upload = $${:tmp}/upload
@@ -999,6 +1000,7 @@ backend-url = $${apache-php-configuration:url}
 php-bin = ${apache-php:location}/bin/php
 php-ini = $${php.ini-conf:output}
 fpm-socket-path = $${apache-php-configuration:fpm-socket-path}
+fpm-log-path = $${directory:php-log}/php-fpm.log
 
 #Default php-fpm.conf parameters
 #See https://www.php.net/manual/en/install.fpm.configuration.php
