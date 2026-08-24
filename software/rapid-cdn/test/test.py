@@ -12688,7 +12688,9 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
   or its absence), the pacing, and the point at which the body stops.
 
   * a client walking away mid-download -- ATS is expected to finish the
-    transfer on its own and leave a whole object in cache (background fill).
+    transfer on its own and leave a whole object in cache (background fill);
+  * a Range request for an object already complete in cache: reading ranges
+    out of the cache and writing them into it are separate ATS settings.
 
   Each origin records what it actually pushed, per request, in cls.origin_log.
   "Did the origin keep sending after the client left" and "was the origin
@@ -12919,6 +12921,16 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       'origin never stopped sending %r within %ss; log: %r'
       % (path, timeout, self.origin_log))
 
+  def _waitForCacheHit(self, domain, path, timeout=60):
+    """Poll until the object is committed to cache, i.e. an Age header shows up."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+      headers, _ = self._fetch(domain, path)
+      if 'age' in headers:
+        return
+      time.sleep(2)
+    self.fail('%r never became a cache hit within %ss' % (path, timeout))
+
   # --- the fill: a client aborts, ATS finishes the object -------------------
 
   def test_aborted_download_is_completed_in_cache(self):
@@ -12948,3 +12960,37 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     self.assertEqual(
       1, self._originRequestCount(path),
       'the origin was asked again, so nothing usable was cached')
+
+  # --- the read path: a range of an object already in cache -----------------
+
+  def test_range_of_cached_object_is_served_from_cache(self):
+    """A resumable client must not re-pull a body the cache already holds.
+
+    Getting an object *into* cache through a range request is a separate
+    matter (test_aborted_range_download_is_completed_in_cache); here the
+    object is already complete in cache and only the read path is exercised.
+    """
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-cached-then-range'
+    first = self.ABORT_AT
+    last = first + 1024 * 1024 - 1
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual('200', headers['_status'])
+    self.assertEqual(self.BODY_SIZE, got)
+    self._waitForCacheHit(domain, path)
+
+    # Every miss while waiting would have hit the origin, so compare against
+    # the count as it stands once the object is known to be cached.
+    before = self._originRequestCount(path)
+    headers, got = self._fetch(
+      domain, path, range_spec='bytes=%d-%d' % (first, last))
+    self.assertEqual('206', headers['_status'])
+    self.assertEqual(
+      'bytes %d-%d/%d' % (first, last, self.BODY_SIZE),
+      headers.get('content-range'))
+    self.assertEqual(last - first + 1, got)
+    self.assertIn('age', headers, 'the range was not served from cache')
+    self.assertEqual(
+      before, self._originRequestCount(path),
+      'the origin was asked again for a range of an already cached object')
