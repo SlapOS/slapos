@@ -12680,3 +12680,271 @@ if __name__ == '__main__':
   server.serve_forever()
 
 
+class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
+  """Big-file behaviour of a cached slave, one test per question.
+
+  They run against raw TCP origins, because what matters is exactly what
+  http.server will not give: the response framing (a declared Content-Length
+  or its absence), the pacing, and the point at which the body stops.
+
+  * a client walking away mid-download -- ATS is expected to finish the
+    transfer on its own and leave a whole object in cache (background fill).
+
+  Each origin records what it actually pushed, per request, in cls.origin_log.
+  "Did the origin keep sending after the client left" and "was the origin
+  asked a second time" are then plain assertions on that log, independent of
+  Age-header timing.
+  """
+  request_timeout = 30
+
+  BODY_SIZE = 32 * 1024 * 1024
+  # Paced so the whole body takes several seconds: the client has to be able
+  # to abort while the origin is still writing.
+  BODY_RATE = 4 * 1024 * 1024
+  ABORT_AT = 2 * 1024 * 1024
+  WRITE_CHUNK = 256 * 1024
+
+  origin_log = []
+  origin_log_lock = threading.Lock()
+
+  # --- raw origins ----------------------------------------------------------
+
+  @staticmethod
+  def _readRequest(conn):
+    """Return (path, {lowercased header: value}) of one request, or (None, {})."""
+    raw = b''
+    while b'\r\n\r\n' not in raw:
+      try:
+        data = conn.recv(65536)
+      except OSError:
+        return None, {}
+      if not data:
+        return None, {}
+      raw += data
+    head = raw.split(b'\r\n\r\n', 1)[0].decode('latin-1').split('\r\n')
+    try:
+      path = head[0].split(' ')[1]
+    except IndexError:
+      return None, {}
+    headers = {}
+    for line in head[1:]:
+      name, _, value = line.partition(':')
+      headers[name.strip().lower()] = value.strip()
+    return path, headers
+
+  @classmethod
+  def _log(cls, entry):
+    with cls.origin_log_lock:
+      cls.origin_log.append(entry)
+
+  @classmethod
+  def _replyShort(cls, conn):
+    # Anything that is not the test path (waitForSlave probes '/', health
+    # checks, ...) gets an immediate small cacheable reply.
+    body = b'short'
+    conn.sendall(
+      b'HTTP/1.1 200 OK\r\n'
+      b'Content-Type: application/octet-stream\r\n'
+      b'Cache-Control: max-age=3600\r\n'
+      b'Content-Length: %d\r\n'
+      b'Connection: close\r\n\r\n%s' % (len(body), body))
+    conn.close()
+
+  @classmethod
+  def _streamPaced(cls, conn, path, size):
+    """Write `size` bytes at BODY_RATE, logging how far it got and why it stopped."""
+    blob = b'x' * cls.WRITE_CHUNK
+    sent = 0
+    started = time.time()
+    try:
+      while sent < size:
+        behind = started + sent / float(cls.BODY_RATE) - time.time()
+        if behind > 0:
+          time.sleep(behind)
+        n = min(cls.WRITE_CHUNK, size - sent)
+        conn.sendall(blob[:n])
+        sent += n
+    except OSError:
+      # The client (through the frontend) went away.
+      cls._log({'path': path, 'sent': sent, 'complete': False})
+      return
+    cls._log({'path': path, 'sent': sent, 'complete': sent == size})
+
+  @classmethod
+  def _bigHandler(cls, conn):
+    """Origin for cases 1 and 2: a paced body with a declared length.
+
+    Honours a byte range, like any origin serving big files does -- so the
+    range case is not accidentally answered with a plain 200.
+    """
+    path, headers = cls._readRequest(conn)
+    if path is None:
+      conn.close()
+      return
+    if '/big' not in path:
+      cls._replyShort(conn)
+      return
+    cls._log({'path': path, 'request': True})
+    range_spec = headers.get('range')
+    try:
+      if range_spec:
+        first = int(range_spec.split('=', 1)[1].split('-')[0])
+        size = cls.BODY_SIZE - first
+        conn.sendall(
+          b'HTTP/1.1 206 Partial Content\r\n'
+          b'Content-Range: bytes %d-%d/%d\r\n' % (
+            first, cls.BODY_SIZE - 1, cls.BODY_SIZE))
+      else:
+        size = cls.BODY_SIZE
+        conn.sendall(b'HTTP/1.1 200 OK\r\n')
+      conn.sendall(
+        b'Content-Type: application/octet-stream\r\n'
+        b'Accept-Ranges: bytes\r\n'
+        b'Cache-Control: max-age=3600\r\n'
+        b'Content-Length: %d\r\n'
+        b'Connection: close\r\n\r\n' % (size,))
+    except OSError:
+      conn.close()
+      return
+    cls._streamPaced(conn, path, size)
+    conn.close()
+
+  @classmethod
+  def startServerProcess(cls):
+    super().startServerProcess()
+    cls._big_port = findFreeBackendPortRange(cls._ipv4_address, 1)
+    cls._raw_backend_list = [
+      startRawBackend(cls._ipv4_address, cls._big_port, cls._bigHandler),
+    ]
+
+  @classmethod
+  def stopServerProcess(cls):
+    for srv in getattr(cls, '_raw_backend_list', []):
+      try:
+        srv.close()
+      except OSError:
+        pass
+    super().stopServerProcess()
+
+  # --- cluster and slaves ---------------------------------------------------
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': cls.request_timeout,
+      })
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'bigfile': {
+        'enable_cache': 'true',
+        'url': 'http://%s:%s/' % (cls._ipv4_address, cls._big_port),
+      },
+    }
+
+  def setUp(self):
+    super().setUp()
+    with self.origin_log_lock:
+      del self.origin_log[:]
+
+  # --- client and origin-log helpers ----------------------------------------
+
+  def _fetch(self, domain, path, abort_at=None, range_spec=None, timeout=120):
+    """Fetch through the frontend on a raw TLS socket.
+
+    Returns (headers, body_bytes_read). With `abort_at` the socket is closed
+    once that many body bytes arrived, which is what a client walking away
+    does: the frontend haproxy sees the close and drops its own connection to
+    trafficserver.
+    """
+    request = (
+      'GET /%s HTTP/1.1\r\nHost: %s\r\nAccept-Encoding: identity\r\n'
+      'Connection: close\r\n' % (path, domain))
+    if range_spec:
+      request += 'Range: %s\r\n' % range_spec
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
+    sock = context.wrap_socket(
+      socket.create_connection((TEST_IP, HTTPS_PORT), timeout=timeout),
+      server_hostname=domain)
+    try:
+      sock.sendall((request + '\r\n').encode())
+      raw = b''
+      while b'\r\n\r\n' not in raw:
+        data = sock.recv(65536)
+        if not data:
+          self.fail('no response headers for %r' % path)
+        raw += data
+      head, _, rest = raw.partition(b'\r\n\r\n')
+      lines = head.decode('latin-1').split('\r\n')
+      headers = {'_status': lines[0].split(' ')[1]}
+      for line in lines[1:]:
+        name, _, value = line.partition(':')
+        headers[name.strip().lower()] = value.strip()
+      body = len(rest)
+      while abort_at is None or body < abort_at:
+        data = sock.recv(1024 * 1024)
+        if not data:
+          break
+        body += len(data)
+      return headers, body
+    finally:
+      sock.close()
+
+  def _originRequestCount(self, path):
+    with self.origin_log_lock:
+      return len([e for e in self.origin_log
+                  if e.get('request') and e['path'].endswith(path)])
+
+  def _waitForOriginToStop(self, path, timeout=120):
+    """Wait for the origin's write loop to end, and return its last entry."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+      with self.origin_log_lock:
+        done = [e for e in self.origin_log
+                if 'sent' in e and e['path'].endswith(path)]
+      if done:
+        return done[-1]
+      time.sleep(1)
+    self.fail(
+      'origin never stopped sending %r within %ss; log: %r'
+      % (path, timeout, self.origin_log))
+
+  # --- the fill: a client aborts, ATS finishes the object -------------------
+
+  def test_aborted_download_is_completed_in_cache(self):
+    """A client dropping a big download must not cost the next one a refetch.
+
+    ATS is expected to keep pulling the body after the client is gone (a
+    background fill) and to leave a complete object behind.
+    """
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-aborted'
+
+    headers, got = self._fetch(domain, path, abort_at=self.ABORT_AT)
+    self.assertEqual('200', headers['_status'])
+    self.assertEqual(str(self.BODY_SIZE), headers.get('content-length'))
+    self.assertLess(got, self.BODY_SIZE, 'the client did not abort early')
+
+    origin = self._waitForOriginToStop(path)
+    self.assertTrue(
+      origin['complete'],
+      'origin stopped at %s of %s bytes: the frontend dropped the transfer '
+      'when the client left instead of finishing it'
+      % (origin['sent'], self.BODY_SIZE))
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual(self.BODY_SIZE, got)
+    self.assertIn('age', headers, 'the completed object was not cached')
+    self.assertEqual(
+      1, self._originRequestCount(path),
+      'the origin was asked again, so nothing usable was cached')
