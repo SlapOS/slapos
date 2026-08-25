@@ -12694,7 +12694,8 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
   * an origin that announces a length and then closes early, which must cost
     exactly one origin request and leave nothing cached;
   * the same truncation reached through a stall, where backend-haproxy's
-    request-timeout is what ends the response.
+    request-timeout is what ends the response;
+  * a client that leaves almost at once, which the fill must still finish.
 
   Each origin records what it actually pushed, per request, in cls.origin_log.
   "Did the origin keep sending after the client left" and "was the origin
@@ -12713,6 +12714,8 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
   # to abort while the origin is still writing.
   BODY_RATE = 4 * 1024 * 1024
   ABORT_AT = 2 * 1024 * 1024
+  # Small enough that any fill threshold worth the name would refuse it.
+  ABORT_TINY = 64 * 1024
   TRUNCATE_AT = 2 * 1024 * 1024
   WRITE_CHUNK = 256 * 1024
 
@@ -13136,3 +13139,32 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       2, self._originRequestCount(path),
       'the frontend kept the partial instead of fetching again')
 
+  # --- the fill has no lower bound -----------------------------------------
+
+  def test_barely_started_download_is_completed_in_cache(self):
+    """A client that leaves at once still leaves a whole object behind.
+
+    The fill threshold is what decides how much of a body has to have been
+    transferred before an abort is worth finishing; at its default any amount
+    counts. A client that took well under a percent must be enough.
+    """
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-barely-started'
+
+    headers, got = self._fetch(domain, path, abort_at=self.ABORT_TINY)
+    self.assertEqual(str(self.BODY_SIZE), headers.get('content-length'))
+    self.assertLess(
+      got, self.BODY_SIZE // 20,
+      'the client read too much for this to say anything about a threshold')
+
+    origin = self._waitForOriginToStop(path)
+    self.assertTrue(
+      origin['complete'],
+      'origin stopped at %s of %s bytes: the fill refused a client that had '
+      'barely started' % (origin['sent'], self.BODY_SIZE))
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual(self.BODY_SIZE, got)
+    self.assertTrue(
+      self._servedFromCache(headers), 'the completed object was not cached')
+    self.assertEqual(1, self._originRequestCount(path))
