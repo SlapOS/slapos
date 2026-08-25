@@ -12692,7 +12692,9 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
   * a Range request for an object already complete in cache: reading ranges
     out of the cache and writing them into it are separate ATS settings;
   * an origin that announces a length and then closes early, which must cost
-    exactly one origin request and leave nothing cached.
+    exactly one origin request and leave nothing cached;
+  * the same truncation reached through a stall, where backend-haproxy's
+    request-timeout is what ends the response.
 
   Each origin records what it actually pushed, per request, in cls.origin_log.
   "Did the origin keep sending after the client left" and "was the origin
@@ -12700,6 +12702,11 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
   Age-header timing.
   """
   request_timeout = 30
+  # The stall slave gives up on its origin long before the frontend does, so
+  # backend-haproxy is the component that terminates the stalled response.
+  _stall_slave_timeout = 3
+  # ... and it must give up well before the origin stops stalling.
+  _stall_duration = 30
 
   BODY_SIZE = 32 * 1024 * 1024
   # Paced so the whole body takes several seconds: the client has to be able
@@ -12834,11 +12841,52 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     conn.close()
 
   @classmethod
+  def _stallHandler(cls, conn):
+    """Origin that starts a body and then hangs, announcing its length or not.
+
+    Nothing here ever closes the connection, so backend-haproxy's
+    request-timeout is the only thing that can end the response. The framing
+    announced length is what makes the resulting body detectably short.
+    """
+    path, _ = cls._readRequest(conn)
+    if path is None:
+      conn.close()
+      return
+    if '/clstall' not in path:
+      cls._replyShort(conn)
+      return
+    length = b'Content-Length: %d\r\n' % (cls.BODY_SIZE,)
+    cls._log({'path': path, 'request': True})
+    blob = b'x' * cls.WRITE_CHUNK
+    sent = 0
+    try:
+      conn.sendall(
+        b'HTTP/1.1 200 OK\r\n'
+        b'Content-Type: application/octet-stream\r\n'
+        b'Cache-Control: max-age=3600\r\n'
+        + length +
+        b'Connection: close\r\n\r\n')
+      while sent < cls.TRUNCATE_AT:
+        n = min(cls.WRITE_CHUNK, cls.TRUNCATE_AT - sent)
+        conn.sendall(blob[:n])
+        sent += n
+      # Never write again and never close: the response can only be ended by a
+      # timeout somewhere in the frontend.
+      time.sleep(cls._stall_duration)
+    except OSError:
+      pass
+    cls._log({'path': path, 'sent': sent, 'complete': False})
+    conn.close()
+
+  @classmethod
   def startServerProcess(cls):
     super().startServerProcess()
-    cls._big_port = findFreeBackendPortRange(cls._ipv4_address, 1)
+    base = findFreeBackendPortRange(cls._ipv4_address, 2)
+    cls._big_port, cls._stall_port = base, base + 1
     cls._raw_backend_list = [
       startRawBackend(cls._ipv4_address, cls._big_port, cls._bigHandler),
+      startRawBackend(
+        cls._ipv4_address, cls._stall_port, cls._stallHandler),
     ]
 
   @classmethod
@@ -12871,6 +12919,12 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       'bigfile': {
         'enable_cache': 'true',
         'url': 'http://%s:%s/' % (cls._ipv4_address, cls._big_port),
+      },
+      'bigfile-stall': {
+        'enable_cache': 'true',
+        'url': 'http://%s:%s/' % (cls._ipv4_address, cls._stall_port),
+        'request-timeout': cls._stall_slave_timeout,
+        'backend-connect-retries': 0,
       },
     }
 
@@ -13052,6 +13106,32 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     self.assertFalse(
       self._servedFromCache(headers),
       'the truncated body was served from cache')
+    self.assertEqual(
+      2, self._originRequestCount(path),
+      'the frontend kept the partial instead of fetching again')
+
+  # --- an announced length keeps a timed-out body out of the cache ----------
+
+  def test_stalled_response_with_length_is_not_cached(self):
+    """An announced length is what keeps a timed-out body out of the cache.
+
+    The origin stalls mid-body and backend-haproxy's request-timeout ends the
+    response, reporting it as a 200 with a short body. Because the origin said
+    how long the body would be, that shortness is detectable and the response
+    must not be stored.
+    """
+    domain = self.parseSlaveParameterDict('bigfile-stall')['domain']
+    path = 'clstall-partial'
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual(str(self.BODY_SIZE), headers.get('content-length'))
+    self.assertLess(got, self.BODY_SIZE)
+    self.assertEqual(1, self._originRequestCount(path))
+
+    headers, got = self._fetch(domain, path)
+    self.assertFalse(
+      self._servedFromCache(headers),
+      'a response cut short by the backend timeout was served from cache')
     self.assertEqual(
       2, self._originRequestCount(path),
       'the frontend kept the partial instead of fetching again')
