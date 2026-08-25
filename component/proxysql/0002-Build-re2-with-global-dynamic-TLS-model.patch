@@ -1,0 +1,27 @@
+# re2 uses thread_local storage which defaults to the "local-exec" TLS model.
+# When re2.o is linked into libhttpserver.so (a shared library), the linker
+# rejects R_X86_64_TPOFF32 relocations with: "local-exec is incompatible with -shared".
+#
+# Fix: add -ftls-model=global-dynamic to re2's CXXFLAGS so it uses dynamic
+# TLS access compatible with shared objects.
+#
+# The second sed changes "CXXFLAGS?=" to "CXXFLAGS=" because the buildout
+# environment already sets CXXFLAGS (with -I paths), and "?=" is a conditional
+# assignment that would be a no-op — the environment value would win, silently
+# discarding our -ftls-model=global-dynamic flag.
+--- a/deps/Makefile
++++ b/deps/Makefile
+@@ -370,10 +370,12 @@
+ 	cd re2/re2 && patch re2/onepass.cc < ../onepass.cc-multiplication-overflow.patch
+ ifeq ($(UNAME_S),Darwin)
+-	cd re2/re2 && sed -i '' -e 's/-O3 -g/-O3 -g -${STDCPP} -fPIC -DMEMORY_SANITIZER -DRE2_ON_VALGRIND /' Makefile
++	cd re2/re2 && sed -i '' -e 's/-O3 -g/-O3 -g -${STDCPP} -fPIC -ftls-model=global-dynamic -DMEMORY_SANITIZER -DRE2_ON_VALGRIND /' Makefile
++	cd re2/re2 && sed -i '' -e 's/^CXXFLAGS?=/CXXFLAGS=/' Makefile
+ #	cd re2/re2 && sed -i '' -e 's/RE2_CXXFLAGS?=-std=c++11 /RE2_CXXFLAGS?=-std=c++11 -fPIC /' Makefile
+ else
+-	cd re2/re2 && sed -i -e 's/-O3 -g/-O3 -g ${STDCPP} -fPIC -DMEMORY_SANITIZER -DRE2_ON_VALGRIND /' Makefile
++	cd re2/re2 && sed -i -e 's/-O3 -g/-O3 -g ${STDCPP} -fPIC -ftls-model=global-dynamic -DMEMORY_SANITIZER -DRE2_ON_VALGRIND /' Makefile
++	cd re2/re2 && sed -i -e 's/^CXXFLAGS?=/CXXFLAGS=/' Makefile
+ #	cd re2/re2 && sed -i -e 's/RE2_CXXFLAGS?=-std=c++11 /RE2_CXXFLAGS?=-std=c++11 -fPIC /' Makefile
+ endif
+ 	cd re2/re2 && CC=${CC} CXX=${CXX} ${MAKE}
