@@ -12690,7 +12690,9 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
   * a client walking away mid-download -- ATS is expected to finish the
     transfer on its own and leave a whole object in cache (background fill);
   * a Range request for an object already complete in cache: reading ranges
-    out of the cache and writing them into it are separate ATS settings.
+    out of the cache and writing them into it are separate ATS settings;
+  * an origin that announces a length and then closes early, which must cost
+    exactly one origin request and leave nothing cached.
 
   Each origin records what it actually pushed, per request, in cls.origin_log.
   "Did the origin keep sending after the client left" and "was the origin
@@ -12704,6 +12706,7 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
   # to abort while the origin is still writing.
   BODY_RATE = 4 * 1024 * 1024
   ABORT_AT = 2 * 1024 * 1024
+  TRUNCATE_AT = 2 * 1024 * 1024
   WRITE_CHUNK = 256 * 1024
 
   origin_log = []
@@ -12753,8 +12756,12 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     conn.close()
 
   @classmethod
-  def _streamPaced(cls, conn, path, size):
-    """Write `size` bytes at BODY_RATE, logging how far it got and why it stopped."""
+  def _streamPaced(cls, conn, path, size, declared=None):
+    """Write `size` bytes at BODY_RATE, logging how far it got and why it stopped.
+
+    `declared` is what the response header announced, when the origin means to
+    write less than that -- a truncation its receiver is able to detect.
+    """
     blob = b'x' * cls.WRITE_CHUNK
     sent = 0
     started = time.time()
@@ -12770,7 +12777,8 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       # The client (through the frontend) went away.
       cls._log({'path': path, 'sent': sent, 'complete': False})
       return
-    cls._log({'path': path, 'sent': sent, 'complete': sent == size})
+    cls._log({'path': path, 'sent': sent,
+              'complete': sent == (declared if declared is not None else size)})
 
   @classmethod
   def _bigHandler(cls, conn):
@@ -12787,6 +12795,20 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       cls._replyShort(conn)
       return
     cls._log({'path': path, 'request': True})
+    if '/big-truncated' in path:
+      try:
+        conn.sendall(
+          b'HTTP/1.1 200 OK\r\n'
+          b'Content-Type: application/octet-stream\r\n'
+          b'Cache-Control: max-age=3600\r\n'
+          b'Content-Length: %d\r\n'
+          b'Connection: close\r\n\r\n' % (cls.BODY_SIZE,))
+      except OSError:
+        conn.close()
+        return
+      cls._streamPaced(conn, path, cls.TRUNCATE_AT, declared=cls.BODY_SIZE)
+      conn.close()
+      return
     range_spec = headers.get('range')
     try:
       if range_spec:
@@ -13005,4 +13027,32 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     self.assertEqual(
       before, self._originRequestCount(path),
       'the origin was asked again for a range of an already cached object')
+
+  # --- a body cut short is neither retried nor cached -----------------------
+
+  def test_truncated_response_is_not_retried_and_not_cached(self):
+    """A body cut short costs one origin request, and leaves no cache entry.
+
+    Nothing in the frontend resumes or re-fetches a response whose body broke
+    after the header went out -- the retry settings cover connection setup
+    only. And the short body must not be stored: the announced Content-Length
+    is what makes the truncation detectable.
+    """
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-truncated'
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual(str(self.BODY_SIZE), headers.get('content-length'))
+    self.assertLess(got, self.BODY_SIZE)
+    self.assertEqual(
+      1, self._originRequestCount(path),
+      'the frontend went back to the origin for a body that broke mid-response')
+
+    headers, got = self._fetch(domain, path)
+    self.assertFalse(
+      self._servedFromCache(headers),
+      'the truncated body was served from cache')
+    self.assertEqual(
+      2, self._originRequestCount(path),
+      'the frontend kept the partial instead of fetching again')
 
