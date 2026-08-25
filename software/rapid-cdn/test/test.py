@@ -12921,12 +12921,21 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       'origin never stopped sending %r within %ss; log: %r'
       % (path, timeout, self.origin_log))
 
+  @staticmethod
+  def _servedFromCache(headers):
+    """Whether the frontend answered out of its cache.
+
+    Trafficserver stamps `Age` on a miss as well, as 0, so the header being
+    present proves nothing -- only a non-zero value does.
+    """
+    return int(headers.get('age', 0)) > 0
+
   def _waitForCacheHit(self, domain, path, timeout=60):
     """Poll until the object is committed to cache, i.e. an Age header shows up."""
     deadline = time.time() + timeout
     while time.time() < deadline:
       headers, _ = self._fetch(domain, path)
-      if 'age' in headers:
+      if self._servedFromCache(headers):
         return
       time.sleep(2)
     self.fail('%r never became a cache hit within %ss' % (path, timeout))
@@ -12956,7 +12965,8 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
 
     headers, got = self._fetch(domain, path)
     self.assertEqual(self.BODY_SIZE, got)
-    self.assertIn('age', headers, 'the completed object was not cached')
+    self.assertTrue(
+      self._servedFromCache(headers), 'the completed object was not cached')
     self.assertEqual(
       1, self._originRequestCount(path),
       'the origin was asked again, so nothing usable was cached')
@@ -12990,7 +13000,9 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       'bytes %d-%d/%d' % (first, last, self.BODY_SIZE),
       headers.get('content-range'))
     self.assertEqual(last - first + 1, got)
-    self.assertIn('age', headers, 'the range was not served from cache')
+    self.assertTrue(
+      self._servedFromCache(headers), 'the range was not served from cache')
     self.assertEqual(
       before, self._originRequestCount(path),
       'the origin was asked again for a range of an already cached object')
+
