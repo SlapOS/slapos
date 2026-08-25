@@ -12695,7 +12695,9 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     exactly one origin request and leave nothing cached;
   * the same truncation reached through a stall, where backend-haproxy's
     request-timeout is what ends the response;
-  * a client that leaves almost at once, which the fill must still finish.
+  * a client that leaves almost at once, which the fill must still finish;
+  * a response with no explicit lifetime, which cannot be cached and so must
+    not be filled either.
 
   Each origin records what it actually pushed, per request, in cls.origin_log.
   "Did the origin keep sending after the client left" and "was the origin
@@ -12805,6 +12807,19 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       cls._replyShort(conn)
       return
     cls._log({'path': path, 'request': True})
+    if '/big-nostore' in path:
+      try:
+        conn.sendall(
+          b'HTTP/1.1 200 OK\r\n'
+          b'Content-Type: application/octet-stream\r\n'
+          b'Content-Length: %d\r\n'
+          b'Connection: close\r\n\r\n' % (cls.BODY_SIZE,))
+      except OSError:
+        conn.close()
+        return
+      cls._streamPaced(conn, path, cls.BODY_SIZE)
+      conn.close()
+      return
     if '/big-truncated' in path:
       try:
         conn.sendall(
@@ -13168,3 +13183,33 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     self.assertTrue(
       self._servedFromCache(headers), 'the completed object was not cached')
     self.assertEqual(1, self._originRequestCount(path))
+
+  # --- without an explicit lifetime there is nothing to fill ----------------
+
+  def test_aborted_download_without_lifetime_is_not_cached(self):
+    """An uncacheable body is dropped when the client goes, not finished.
+
+    The fill exists to complete a cache entry, so it needs one: with
+    required_headers at 2 a response carrying neither Cache-Control nor
+    Expires is not cacheable, and abandoning it must cost the origin
+    connection.
+    """
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-nostore'
+
+    headers, got = self._fetch(domain, path, abort_at=self.ABORT_AT)
+    self.assertNotIn('cache-control', headers)
+    self.assertLess(got, self.BODY_SIZE)
+
+    origin = self._waitForOriginToStop(path)
+    self.assertFalse(
+      origin['complete'],
+      'origin pushed all %s bytes for a response that cannot be cached'
+      % (self.BODY_SIZE,))
+
+    headers, got = self._fetch(domain, path, abort_at=self.ABORT_AT)
+    self.assertFalse(
+      self._servedFromCache(headers), 'an uncacheable body was cached')
+    self.assertEqual(
+      2, self._originRequestCount(path),
+      'the origin was not asked again for an uncacheable body')
