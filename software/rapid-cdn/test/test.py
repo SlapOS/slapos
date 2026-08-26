@@ -13220,3 +13220,21 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     self.assertEqual(
       before, self._originRequestCount(path),
       'a cached object was fetched from the backend again')
+
+  def test_suffix_range_of_cached_object_is_served_from_cache(self):
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-suffix-range'
+
+    self.assertEqual(self.BODY_SIZE, self._fetch(domain, path)[1])
+    self._waitForCacheHit(domain, path)
+    before = self._originRequestCount(path)
+
+    headers, got = self._fetch(domain, path, range_spec='bytes=-1048576')
+    self.assertEqual('206', headers['_status'])
+    self.assertEqual(
+      'bytes %d-%d/%d' % (self.BODY_SIZE - 1048576, self.BODY_SIZE - 1,
+                          self.BODY_SIZE),
+      headers.get('content-range'))
+    self.assertEqual(1048576, got)
+    self.assertTrue(self._servedFromCache(headers))
+    self.assertEqual(before, self._originRequestCount(path))
