@@ -13238,3 +13238,19 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     self.assertEqual(1048576, got)
     self.assertTrue(self._servedFromCache(headers))
     self.assertEqual(before, self._originRequestCount(path))
+
+  def test_multi_range_of_cached_object_is_served_from_cache(self):
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-multi-range'
+
+    self.assertEqual(self.BODY_SIZE, self._fetch(domain, path)[1])
+    self._waitForCacheHit(domain, path)
+    before = self._originRequestCount(path)
+
+    headers, got = self._fetch(
+      domain, path, range_spec='bytes=0-1023,1048576-1049599')
+    # A multipart 206 and a plain 200 are both allowed answers; what must not
+    # happen is going back to the backend for an object already cached.
+    self.assertIn(headers['_status'], ('200', '206'))
+    self.assertGreater(got, 0)
+    self.assertEqual(before, self._originRequestCount(path))
