@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+include debian/common.mk
+
+override_dh_auto_install:
+	dh_install debian/bin usr
+	dh_install GeoLite2-Country_20191224/GeoLite2-Country.mmdb usr/share/$(PACKAGE)
+	dh_install lib/* usr/lib/python3/dist-packages
+# BBB: override UNITDIR for Debian 12 and older
+	make DESTDIR=$(TMP) UNITDIR=/lib/systemd/system PREFIX=/usr install
+	find $(TMP)/usr -name 'ovpn-*' -print0 | \
+	xargs -0 sed -i "1s,.*,#!/usr/bin/python3 -S,"
+
+re6st.cli.%:
+	cd lib && python3 -m $@ --help >/dev/null
+
+%:
+	dh $@

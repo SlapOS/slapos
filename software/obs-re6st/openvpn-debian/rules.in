@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%%:
+	dh $@
+
+override_dh_auto_test:
+
+override_dh_auto_configure:
+	IFCONFIG=/sbin/ifconfig ROUTE=/sbin/route IPROUTE=/sbin/ip \
+	dh_auto_configure -- $(shell dpkg-buildflags --export=configure) \
+		--host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+		--prefix=/usr --mandir=\$${prefix}/share/man \
+		--docdir=\$${prefix}/share/doc/openvpn-re6stnet \
+		--program-suffix=-re6stnet \
+		%s
+
+override_dh_auto_install:
+	dh_auto_install
+	$(RM) -r $(CURDIR)/debian/openvpn-re6stnet/usr/include

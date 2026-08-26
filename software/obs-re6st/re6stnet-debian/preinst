@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+# BBB: service renamed from 're6st-node' to 're6stnet'
+dpkg-maintscript-helper rm_conffile /etc/init.d/re6st-node -- "$@"
+
+#DEBHELPER#

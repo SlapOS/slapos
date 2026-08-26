@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+# https://lists.debian.org/debian-mentors/2015/12/msg00367.html
+x=/var/lib/dpkg/info/re6stnet.postrm
+if [ "$1" = "configure" ] && grep -q DPKG_MAINTSCRIPT_PACKAGE $x 2>/dev/null
+then sed -ri '1s,^(#!/bin/)sh,\1true\n\0,' $x
+fi
+
+#DEBHELPER#

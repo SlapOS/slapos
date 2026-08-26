@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+pyclean() {
+  local IFS='
+'
+  find `dpkg -L $1 |sed -n 's,[^/]*\.py$,__pycache__,p' |
+    sort -u` -delete 2>/dev/null || true
+}
+
+pyclean $DPKG_MAINTSCRIPT_PACKAGE
+
+#DEBHELPER#

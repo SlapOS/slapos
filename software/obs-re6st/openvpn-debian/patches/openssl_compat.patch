@@ -1,0 +1,13 @@
+Fix build with recent openssl
+
+--- a/src/openvpn/openssl_compat.h
++++ b/src/openvpn/openssl_compat.h
+@@ -270,7 +270,7 @@
+ }
+ #endif
+ 
+-#if !defined(HAVE_EVP_PKEY_ID)
++#if !defined(HAVE_EVP_PKEY_ID) && !defined(EVP_PKEY_id)
+ /**
+  * Get the PKEY type
+  *
