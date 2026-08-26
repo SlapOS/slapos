@@ -120,11 +120,8 @@ def findFreeBackendPortRange(ip, count):
 
 
 def startRawBackend(ip, port, handler):
-  """Serve `handler(conn)` on ip:port until the returned socket is closed.
-
-  A raw TCP origin, for responses http.server cannot produce: a body whose
-  framing, pacing or truncation point the test has to control byte by byte.
-  """
+  # A raw TCP origin, for responses http.server cannot produce: a body whose
+  # framing, pacing or truncation point the test has to control byte by byte.
   srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
   srv.bind((ip, port))
@@ -12681,29 +12678,6 @@ if __name__ == '__main__':
 
 
 class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
-  """Big-file behaviour of a cached slave, one test per question.
-
-  They run against raw TCP origins, because what matters is exactly what
-  http.server will not give: the response framing (a declared Content-Length
-  or its absence), the pacing, and the point at which the body stops.
-
-  * a client walking away mid-download -- ATS is expected to finish the
-    transfer on its own and leave a whole object in cache (background fill);
-  * a Range request for an object already complete in cache: reading ranges
-    out of the cache and writing them into it are separate ATS settings;
-  * an origin that announces a length and then closes early, which must cost
-    exactly one origin request and leave nothing cached;
-  * the same truncation reached through a stall, where backend-haproxy's
-    request-timeout is what ends the response;
-  * a client that leaves almost at once, which the fill must still finish;
-  * a response with no explicit lifetime, which cannot be cached and so must
-    not be filled either.
-
-  Each origin records what it actually pushed, per request, in cls.origin_log.
-  "Did the origin keep sending after the client left" and "was the origin
-  asked a second time" are then plain assertions on that log, independent of
-  Age-header timing.
-  """
   request_timeout = 30
   # The stall slave gives up on its origin long before the frontend does, so
   # backend-haproxy is the component that terminates the stalled response.
@@ -12724,11 +12698,8 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
   origin_log = []
   origin_log_lock = threading.Lock()
 
-  # --- raw origins ----------------------------------------------------------
-
   @staticmethod
   def _readRequest(conn):
-    """Return (path, {lowercased header: value}) of one request, or (None, {})."""
     raw = b''
     while b'\r\n\r\n' not in raw:
       try:
@@ -12769,11 +12740,8 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
 
   @classmethod
   def _streamPaced(cls, conn, path, size, declared=None):
-    """Write `size` bytes at BODY_RATE, logging how far it got and why it stopped.
-
-    `declared` is what the response header announced, when the origin means to
-    write less than that -- a truncation its receiver is able to detect.
-    """
+    # `declared` is what the header announced when the origin means to write
+    # less than that, so the log can record a truncation rather than an end.
     blob = b'x' * cls.WRITE_CHUNK
     sent = 0
     started = time.time()
@@ -12794,11 +12762,8 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
 
   @classmethod
   def _bigHandler(cls, conn):
-    """Origin for cases 1 and 2: a paced body with a declared length.
-
-    Honours a byte range, like any origin serving big files does -- so the
-    range case is not accidentally answered with a plain 200.
-    """
+    # Honours a byte range, so the range cases are not accidentally answered
+    # with a plain 200.
     path, headers = cls._readRequest(conn)
     if path is None:
       conn.close()
@@ -12860,12 +12825,9 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
 
   @classmethod
   def _stallHandler(cls, conn):
-    """Origin that starts a body and then hangs, announcing its length or not.
-
-    Nothing here ever closes the connection, so backend-haproxy's
-    request-timeout is the only thing that can end the response. The framing
-    announced length is what makes the resulting body detectably short.
-    """
+    # Never closes, so backend-haproxy's request-timeout is the only thing
+    # that can end the response, and the announced length is what makes the
+    # result detectably short.
     path, _ = cls._readRequest(conn)
     if path is None:
       conn.close()
@@ -12916,8 +12878,6 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
         pass
     super().stopServerProcess()
 
-  # --- cluster and slaves ---------------------------------------------------
-
   @classmethod
   def getInstanceParameterDict(cls):
     return {
@@ -12951,16 +12911,9 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     with self.origin_log_lock:
       del self.origin_log[:]
 
-  # --- client and origin-log helpers ----------------------------------------
-
   def _fetch(self, domain, path, abort_at=None, range_spec=None, timeout=120):
-    """Fetch through the frontend on a raw TLS socket.
-
-    Returns (headers, body_bytes_read). With `abort_at` the socket is closed
-    once that many body bytes arrived, which is what a client walking away
-    does: the frontend haproxy sees the close and drops its own connection to
-    trafficserver.
-    """
+    # Closing at `abort_at` is what a client walking away does: the frontend
+    # haproxy sees the close and drops its own connection to trafficserver.
     request = (
       'GET /%s HTTP/1.1\r\nHost: %s\r\nAccept-Encoding: identity\r\n'
       'Connection: close\r\n' % (path, domain))
@@ -13002,7 +12955,6 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
                   if e.get('request') and e['path'].endswith(path)])
 
   def _waitForOriginToStop(self, path, timeout=120):
-    """Wait for the origin's write loop to end, and return its last entry."""
     deadline = time.time() + timeout
     while time.time() < deadline:
       with self.origin_log_lock:
@@ -13017,15 +12969,11 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
 
   @staticmethod
   def _servedFromCache(headers):
-    """Whether the frontend answered out of its cache.
-
-    Trafficserver stamps `Age` on a miss as well, as 0, so the header being
-    present proves nothing -- only a non-zero value does.
-    """
+    # Trafficserver stamps `Age` on a miss too, as 0, so the header being
+    # present proves nothing -- only a non-zero value does.
     return int(headers.get('age', 0)) > 0
 
   def _waitForCacheHit(self, domain, path, timeout=60):
-    """Poll until the object is committed to cache, i.e. an Age header shows up."""
     deadline = time.time() + timeout
     while time.time() < deadline:
       headers, _ = self._fetch(domain, path)
@@ -13034,14 +12982,7 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       time.sleep(2)
     self.fail('%r never became a cache hit within %ss' % (path, timeout))
 
-  # --- the fill: a client aborts, ATS finishes the object -------------------
-
   def test_aborted_download_is_completed_in_cache(self):
-    """A client dropping a big download must not cost the next one a refetch.
-
-    ATS is expected to keep pulling the body after the client is gone (a
-    background fill) and to leave a complete object behind.
-    """
     domain = self.parseSlaveParameterDict('bigfile')['domain']
     path = 'big-aborted'
 
@@ -13065,15 +13006,7 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       1, self._originRequestCount(path),
       'the origin was asked again, so nothing usable was cached')
 
-  # --- the read path: a range of an object already in cache -----------------
-
   def test_range_of_cached_object_is_served_from_cache(self):
-    """A resumable client must not re-pull a body the cache already holds.
-
-    Getting an object *into* cache through a range request is a separate
-    matter (test_aborted_range_download_is_completed_in_cache); here the
-    object is already complete in cache and only the read path is exercised.
-    """
     domain = self.parseSlaveParameterDict('bigfile')['domain']
     path = 'big-cached-then-range'
     first = self.ABORT_AT
@@ -13100,16 +13033,7 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       before, self._originRequestCount(path),
       'the origin was asked again for a range of an already cached object')
 
-  # --- a body cut short is neither retried nor cached -----------------------
-
   def test_truncated_response_is_not_retried_and_not_cached(self):
-    """A body cut short costs one origin request, and leaves no cache entry.
-
-    Nothing in the frontend resumes or re-fetches a response whose body broke
-    after the header went out -- the retry settings cover connection setup
-    only. And the short body must not be stored: the announced Content-Length
-    is what makes the truncation detectable.
-    """
     domain = self.parseSlaveParameterDict('bigfile')['domain']
     path = 'big-truncated'
 
@@ -13128,16 +13052,7 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       2, self._originRequestCount(path),
       'the frontend kept the partial instead of fetching again')
 
-  # --- an announced length keeps a timed-out body out of the cache ----------
-
   def test_stalled_response_with_length_is_not_cached(self):
-    """An announced length is what keeps a timed-out body out of the cache.
-
-    The origin stalls mid-body and backend-haproxy's request-timeout ends the
-    response, reporting it as a 200 with a short body. Because the origin said
-    how long the body would be, that shortness is detectable and the response
-    must not be stored.
-    """
     domain = self.parseSlaveParameterDict('bigfile-stall')['domain']
     path = 'clstall-partial'
 
@@ -13154,15 +13069,7 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       2, self._originRequestCount(path),
       'the frontend kept the partial instead of fetching again')
 
-  # --- the fill has no lower bound -----------------------------------------
-
   def test_barely_started_download_is_completed_in_cache(self):
-    """A client that leaves at once still leaves a whole object behind.
-
-    The fill threshold is what decides how much of a body has to have been
-    transferred before an abort is worth finishing; at its default any amount
-    counts. A client that took well under a percent must be enough.
-    """
     domain = self.parseSlaveParameterDict('bigfile')['domain']
     path = 'big-barely-started'
 
@@ -13184,16 +13091,7 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       self._servedFromCache(headers), 'the completed object was not cached')
     self.assertEqual(1, self._originRequestCount(path))
 
-  # --- without an explicit lifetime there is nothing to fill ----------------
-
   def test_aborted_download_without_lifetime_is_not_cached(self):
-    """An uncacheable body is dropped when the client goes, not finished.
-
-    The fill exists to complete a cache entry, so it needs one: with
-    required_headers at 2 a response carrying neither Cache-Control nor
-    Expires is not cacheable, and abandoning it must cost the origin
-    connection.
-    """
     domain = self.parseSlaveParameterDict('bigfile')['domain']
     path = 'big-nostore'
 
