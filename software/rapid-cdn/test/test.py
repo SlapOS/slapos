@@ -13191,3 +13191,32 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     self.assertEqual(
       1, self._originRequestCount(path),
       'the second request did not ride the fill left running by the first')
+
+  def test_concurrent_access_to_cached_object(self):
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-conc-cached'
+    mid = self.BODY_SIZE // 2
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual(self.BODY_SIZE, got)
+    self._waitForCacheHit(domain, path)
+    before = self._originRequestCount(path)
+
+    head, tail, plain = self._fetchConcurrently(domain, path, [
+      {'range_spec': 'bytes=0-1048575'},
+      {'range_spec': 'bytes=%d-%d' % (mid, mid + 1048575)},
+      {},
+    ])
+    self.assertEqual('206', head[0]['_status'])
+    self.assertEqual(
+      'bytes 0-1048575/%d' % self.BODY_SIZE, head[0].get('content-range'))
+    self.assertEqual(1048576, head[1])
+    self.assertEqual('206', tail[0]['_status'])
+    self.assertEqual(
+      'bytes %d-%d/%d' % (mid, mid + 1048575, self.BODY_SIZE),
+      tail[0].get('content-range'))
+    self.assertEqual(1048576, tail[1])
+    self.assertEqual(('200', self.BODY_SIZE), (plain[0]['_status'], plain[1]))
+    self.assertEqual(
+      before, self._originRequestCount(path),
+      'a cached object was fetched from the backend again')
