@@ -13254,3 +13254,16 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     self.assertIn(headers['_status'], ('200', '206'))
     self.assertGreater(got, 0)
     self.assertEqual(before, self._originRequestCount(path))
+
+  def test_unsatisfiable_range_of_cached_object_is_rejected(self):
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-unsatisfiable-range'
+
+    self.assertEqual(self.BODY_SIZE, self._fetch(domain, path)[1])
+    self._waitForCacheHit(domain, path)
+    before = self._originRequestCount(path)
+
+    headers, _ = self._fetch(
+      domain, path, range_spec='bytes=%d-' % (self.BODY_SIZE + 1024,))
+    self.assertEqual('416', headers['_status'])
+    self.assertEqual(before, self._originRequestCount(path))
