@@ -13118,3 +13118,43 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     self.assertEqual(
       2, self._originRequestCount(path),
       'the origin was not asked again for an uncacheable body')
+
+  def _fetchConcurrently(self, domain, path, specs):
+    # A fetch that raises is re-raised in the calling thread, since an
+    # assertion failing inside a worker thread would go unnoticed.
+    out = {}
+
+    def run(index, spec):
+      try:
+        time.sleep(spec.get('delay', 0))
+        out[index] = self._fetch(
+          domain, path, abort_at=spec.get('abort_at'),
+          range_spec=spec.get('range_spec'))
+      except Exception as e:                                    # noqa: BLE001
+        out[index] = e
+
+    threads = [
+      threading.Thread(target=run, args=(i, spec))
+      for i, spec in enumerate(specs)]
+    for t in threads:
+      t.start()
+    for t in threads:
+      t.join()
+    for i in range(len(specs)):
+      if isinstance(out[i], Exception):
+        raise out[i]
+    return [out[i] for i in range(len(specs))]
+
+
+  def test_second_request_joins_the_transfer(self):
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-conc-join'
+
+    first, second = self._fetchConcurrently(
+      domain, path, [{}, {'delay': 2}])
+    self.assertEqual(('200', self.BODY_SIZE), (first[0]['_status'], first[1]))
+    self.assertEqual(('200', self.BODY_SIZE), (second[0]['_status'], second[1]))
+    self.assertEqual(
+      1, self._originRequestCount(path),
+      'the second request opened its own backend transfer instead of '
+      'joining the one already running')
