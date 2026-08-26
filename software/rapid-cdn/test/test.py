@@ -13174,3 +13174,20 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       1, self._originRequestCount(path),
       'a range request opened its own backend transfer while the whole object '
       'was already being fetched')
+
+  def test_fill_in_progress_is_joined_by_a_second_request(self):
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-conc-fill-join'
+
+    aborted, second = self._fetchConcurrently(domain, path, [
+      {'abort_at': self.ABORT_AT},
+      {'delay': 2},
+    ])
+    self.assertLess(aborted[1], self.BODY_SIZE)
+    self.assertEqual(('200', self.BODY_SIZE), (second[0]['_status'], second[1]))
+
+    origin = self._waitForOriginToStop(path)
+    self.assertTrue(origin['complete'])
+    self.assertEqual(
+      1, self._originRequestCount(path),
+      'the second request did not ride the fill left running by the first')
