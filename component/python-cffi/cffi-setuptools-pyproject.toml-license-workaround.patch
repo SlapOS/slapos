@@ -1,0 +1,14 @@
+Remove "license" keys in pyproject.toml, this was incompatible with the old version of setuptools used in SlapOS
+
+diff '--color=auto' -ru cffi-2.1.1-orig/pyproject.toml cffi-2.1.1/pyproject.toml
+--- cffi-2.1.1-orig/pyproject.toml	2026-08-04 02:28:13.000000000 +0900
++++ cffi-2.1.1/pyproject.toml	2026-08-23 09:39:28.940709633 +0900
+@@ -15,8 +15,6 @@
+ 
+ description = "Foreign Function Interface for Python calling C code."
+ readme = "README.md"
+-license = "MIT-0"
+-license-files = ["LICENSE"]
+ classifiers = [
+     "Programming Language :: Python",
+     "Programming Language :: Python :: 3",
