@@ -54,65 +54,6 @@ class KnownHostsFile(dict):
   def __exit__(self, exc_type, exc_value, traceback):
     self._dump()
 
-class Recipe(GenericBaseRecipe):
-
-  def install(self):
-    dropbear_cmd = [self.options['dropbear-binary']]
-    # Don't fork into background
-    dropbear_cmd.append('-F')
-    # Log on stderr
-    dropbear_cmd.append('-E')
-    # Don't display motd
-    dropbear_cmd.append('-m')
-    # Disable password login
-    dropbear_cmd.extend(['-s', '-g'])
-    # Disable port forwarding
-    if not self.optionIsTrue('allow-port-forwarding', default=False):
-      dropbear_cmd.extend(['-j', '-k'])
-
-    host = self.options['host']
-    if ':' in host:
-      host = '[%s]' % host
-    port = self.options['port']
-    binding_address = '%s:%s' % (host, port)
-    dropbear_cmd.extend(['-p', binding_address])
-    # Single user mode
-    dropbear_cmd.append('-n')
-    # Keep connection alive for 5 minutes
-    dropbear_cmd.extend(['-K', '300'])
-
-    if 'dss-keyfile' in self.options:
-      dropbear_cmd.extend(['-d', self.options['dss-keyfile']])
-    else:
-      dropbear_cmd.extend(['-r', self.options['rsa-keyfile']])
-
-    env = {}
-    if 'home' in self.options:
-      env['DROPBEAR_OVERRIDE_HOME'] = self.options['home']
-
-    if 'shell' in self.options:
-      env['DROPBEAR_OVERRIDE_SHELL'] = self.options['shell']
-
-    return self.createWrapper(self.options['wrapper'], dropbear_cmd, env)
-
-class Client(GenericBaseRecipe):
-
-  def install(self):
-    env = {}
-
-    if 'home' in self.options:
-      env['HOME'] = self.options['home']
-      self.createDirectory(self.options['home'], '.ssh')
-
-    dropbear_cmd = [self.options['dbclient-binary'], '-T']
-    if self.optionIsTrue('force-host-key', default=False):
-      dropbear_cmd.extend(['-y'])
-
-    if 'identity-file' in self.options:
-      dropbear_cmd.extend(['-i', self.options['identity-file']])
-
-    return self.createWrapper(self.options['wrapper'], dropbear_cmd, env)
-
 
 class AddAuthorizedKey(GenericBaseRecipe):
 
