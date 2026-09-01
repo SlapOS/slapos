@@ -254,6 +254,36 @@
       },
       "default": ["NIA2 (128 bit AES)","NIA1 (Snow 3G)"]
     },
+    "configured_grant": {
+      "title": "Configured Grant",
+      "required": [
+        "l_crb",
+        "periodicity",
+        "configuration_type"
+      ],
+      "type": "object",
+      "properties": {
+        "l_crb": {
+          "title": "Configured Grant RB Number",
+          "description": "Configured Grant size in number of RBs. Must be a multiple of the RBG size if ra_type is set to type0",
+          "type": "number"
+        },
+        "periodicity": {
+          "type": "number",
+          "description": "Periodicity of the CG in slots",
+          "type": "number"
+        },
+        "configuration_type": {
+          "type": "string",
+          "description": "Configuration type1 is a semi-static grant configured via RRC while type2 is activated/released by an UL DCI. type2_immediate will send an activation DCI right after RRC configuration. type2_dynamic will send activation/release DCI based on the UL traffic on the bearers flagged with need_sps.",
+          "enum": [
+            "type1", 
+            "type2_immediate", 
+            "type2_dynamic"
+          ]
+        }
+      }
+    },
     "redcap_ue": {
       "title": "Reduced Capability parameters",
       "description": "Configure the cell to allow the connection of Reduced Capability UEs (RedCap) and enhanced Reduced Capability UEs (eRedCap).",

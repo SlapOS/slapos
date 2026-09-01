@@ -1077,6 +1077,21 @@
           }
         },
 {%-     endif %}
+{%-     if 'configured_grant' in cell %}
+        configured_grant: {
+          l_crb: {{ cell.configured_grant.l_crb }},
+          periodicity: {{ cell.configured_grant.l_crb }},
+          configuration_type: "{{ cell.configured_grant.configuration_type }}"
+        },
+{%-     endif %}
+{%-     if cell.advanced_parameter.enable_sib2 | tojson == 'true' %}
+        sib_sched_list: [
+          {
+            filename: "{{ B('%s-sib23.asn' % cell_ref) }}",
+            si_periodicity: 16,
+          },
+        ],
+{%-     endif %}
         drb_config: "{{ B('%s-drb.cfg' % cell_ref) }}",
 {%-     if "redcap_ue" in cell and "allow" in cell.redcap_ue and cell.redcap_ue.allow %}
         redcap_ue: {
