@@ -93,6 +93,9 @@
     "prach_config_index": {
       "$ref": "cell/nr/input-schema.json#/properties/prach_config_index"
     },
+    "configured_grant": {
+      "$ref": "cell/nr/input-schema.json#/properties/configured_grant"
+    },
     "redcap_ue": {
       "$ref": "cell/nr/input-schema.json#/properties/redcap_ue"
     },
