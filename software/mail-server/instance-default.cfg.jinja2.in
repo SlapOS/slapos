@@ -63,7 +63,6 @@ vhosts = $${:home}/vhosts
 srv = $${buildout:directory}/srv
 apache.d = $${:etc}/apache.d
 httpd-log = $${:log}/apache
-php-log = $${:log}/php
 php-ini-dir = $${:etc}/php
 tmp-php = $${:tmp}/php
 tmp-upload = $${:tmp}/upload
@@ -994,13 +993,13 @@ key-file = $${ca-directory:certs}/httpd.key
 apache-config-dir = $${directory:apache.d}
 fpm-socket-path = $${directory:run}/php-fpm.sock
 
-[instance-parameter]
+[php-configuration]
 document-root = $${apache-php-configuration:document-root}
 backend-url = $${apache-php-configuration:url}
 php-bin = ${apache-php:location}/bin/php
 php-ini = $${php.ini-conf:output}
 fpm-socket-path = $${apache-php-configuration:fpm-socket-path}
-fpm-log-path = $${directory:php-log}/php-fpm.log
+fpm-log-path = $${directory:httpd-log}/php-fpm.log
 
 #Default php-fpm.conf parameters
 #See https://www.php.net/manual/en/install.fpm.configuration.php
@@ -1020,7 +1019,7 @@ url = ${template-php.ini:target}
 output = $${directory:php-ini-dir}/php.ini
 context =
   section apache_parameter_dict php.ini-configuration
-  section instance_dict instance-parameter
+  section instance_dict php-configuration
 extensions = jinja2.ext.do
 
 [php-fpm-conf]
@@ -1028,7 +1027,7 @@ recipe = slapos.recipe.template:jinja2
 url = ${template-php-fpm.conf:target}
 output = $${directory:php-ini-dir}/php-fpm.conf
 context =
-  section instance_dict instance-parameter
+  section instance_dict php-configuration
   section php_environment php-environment
 extensions = jinja2.ext.do
 
@@ -1037,7 +1036,7 @@ extensions = jinja2.ext.do
 [php-bin]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:bin}/php
-command-line = $${instance-parameter:php-bin} -c $${php.ini-conf:output}
+command-line = $${php-configuration:php-bin} -c $${php.ini-conf:output}
 
 [lamp-apache-httpd-conf]
 recipe = slapos.recipe.template:jinja2
