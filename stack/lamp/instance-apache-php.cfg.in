@@ -152,6 +152,7 @@ cert-file = ${ca-directory:certs}/httpd.crt
 key-file = ${ca-directory:certs}/httpd.key
 apache-config-dir = ${directory:apache.d}
 fpm-socket-path = ${directory:run}/php-fpm.sock
+fpm-log-path = ${directory:httpd-log}/php-fpm.log
 
 [lamp-apache-httpd]
 recipe = slapos.recipe.template:jinja2
@@ -188,8 +189,7 @@ input = inline:
 <= logrotate-entry-base
 name = apache
 log = ${apache-php-configuration:log-dir}/*.log
-frequency = daily
-rotate-num = 30
+post = test ! -s ${apache-php-configuration:pid-file} || ${apache-graceful:output}
 
 [php.ini-configuration]
 tmp-dir = ${directory:tmp-php}
@@ -231,6 +231,7 @@ backend-url = ${apache-php-configuration:url}
 php-bin = {{ parameter_dict['apache-php-location'] }}/bin/php
 php-ini = ${php.ini-conf:output}
 fpm-socket-path  = ${apache-php-configuration:fpm-socket-path}
+fpm-log-path  = ${apache-php-configuration:fpm-log-path}
 
 #Defaut php.ini parameters
 #They have been set in file php.ini.in

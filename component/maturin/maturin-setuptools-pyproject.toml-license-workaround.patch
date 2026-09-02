@@ -1,0 +1,17 @@
+Remove "license" keys in pyproject.toml, this was incompatible with the old version of setuptools used in SlapOS
+
+diff '--color=auto' -ru maturin-1.14.1-orig/pyproject.toml maturin-1.14.1/pyproject.toml
+--- maturin-1.14.1-orig/pyproject.toml	2006-07-24 10:21:28.000000000 +0900
++++ maturin-1.14.1/pyproject.toml	2026-08-23 08:57:56.311140114 +0900
+@@ -14,11 +14,6 @@
+ authors = [{ name = "konstin", email = "konstin@mailbox.org" }]
+ readme = { file = "README.md", content-type = "text/markdown" }
+ requires-python = ">=3.7"
+-license = "MIT OR Apache-2.0"
+-license-files = [
+-    "license-mit",
+-    "license-apache",
+-]
+ classifiers = [
+     "Topic :: Software Development :: Build Tools",
+     "Programming Language :: Rust",

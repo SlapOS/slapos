@@ -118,6 +118,30 @@ def findFreeBackendPortRange(ip, count):
   raise RuntimeError(
     'No %s consecutive free ports found in %s' % (count, BACKEND_PORT_BAND))
 
+
+def startRawBackend(ip, port, handler):
+  """Serve `handler(conn)` on ip:port until the returned socket is closed.
+
+  A raw TCP origin, for responses http.server cannot produce: a body whose
+  framing, pacing or truncation point the test has to control byte by byte.
+  """
+  srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+  srv.bind((ip, port))
+  srv.listen(50)
+
+  def loop():
+    while True:
+      try:
+        conn, _ = srv.accept()
+      except OSError:
+        return
+      threading.Thread(target=handler, args=(conn,), daemon=True).start()
+
+  threading.Thread(target=loop, daemon=True).start()
+  return srv
+
+
 # IP to originate requests from
 # has to be not partition one
 SOURCE_IP = '127.0.0.1'
@@ -11172,21 +11196,7 @@ class TestErrorPageSlaveOverride(SlaveHttpFrontendTestCase):
 
   @classmethod
   def _startRawBackend(cls, port, handler):
-    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    srv.bind((cls._ipv4_address, port))
-    srv.listen(50)
-
-    def loop():
-      while True:
-        try:
-          conn, _ = srv.accept()
-        except OSError:
-          return
-        threading.Thread(target=handler, args=(conn,), daemon=True).start()
-
-    threading.Thread(target=loop, daemon=True).start()
-    return srv
+    return startRawBackend(cls._ipv4_address, port, handler)
 
   @staticmethod
   def _resetHandler(conn):
@@ -12668,3 +12678,538 @@ if __name__ == '__main__':
 
   print((url_template % (scheme, *server.server_address[:2])))
   server.serve_forever()
+
+
+class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
+  """Big-file behaviour of a cached slave, one test per question.
+
+  They run against raw TCP origins, because what matters is exactly what
+  http.server will not give: the response framing (a declared Content-Length
+  or its absence), the pacing, and the point at which the body stops.
+
+  * a client walking away mid-download -- ATS is expected to finish the
+    transfer on its own and leave a whole object in cache (background fill);
+  * a Range request for an object already complete in cache: reading ranges
+    out of the cache and writing them into it are separate ATS settings;
+  * an origin that announces a length and then closes early, which must cost
+    exactly one origin request and leave nothing cached;
+  * the same truncation reached through a stall, where backend-haproxy's
+    request-timeout is what ends the response;
+  * a client that leaves almost at once, which the fill must still finish;
+  * a response with no explicit lifetime, which cannot be cached and so must
+    not be filled either.
+
+  Each origin records what it actually pushed, per request, in cls.origin_log.
+  "Did the origin keep sending after the client left" and "was the origin
+  asked a second time" are then plain assertions on that log, independent of
+  Age-header timing.
+  """
+  request_timeout = 30
+  # The stall slave gives up on its origin long before the frontend does, so
+  # backend-haproxy is the component that terminates the stalled response.
+  _stall_slave_timeout = 3
+  # ... and it must give up well before the origin stops stalling.
+  _stall_duration = 30
+
+  BODY_SIZE = 32 * 1024 * 1024
+  # Paced so the whole body takes several seconds: the client has to be able
+  # to abort while the origin is still writing.
+  BODY_RATE = 4 * 1024 * 1024
+  ABORT_AT = 2 * 1024 * 1024
+  # Small enough that any fill threshold worth the name would refuse it.
+  ABORT_TINY = 64 * 1024
+  TRUNCATE_AT = 2 * 1024 * 1024
+  WRITE_CHUNK = 256 * 1024
+
+  origin_log = []
+  origin_log_lock = threading.Lock()
+
+  # --- raw origins ----------------------------------------------------------
+
+  @staticmethod
+  def _readRequest(conn):
+    """Return (path, {lowercased header: value}) of one request, or (None, {})."""
+    raw = b''
+    while b'\r\n\r\n' not in raw:
+      try:
+        data = conn.recv(65536)
+      except OSError:
+        return None, {}
+      if not data:
+        return None, {}
+      raw += data
+    head = raw.split(b'\r\n\r\n', 1)[0].decode('latin-1').split('\r\n')
+    try:
+      path = head[0].split(' ')[1]
+    except IndexError:
+      return None, {}
+    headers = {}
+    for line in head[1:]:
+      name, _, value = line.partition(':')
+      headers[name.strip().lower()] = value.strip()
+    return path, headers
+
+  @classmethod
+  def _log(cls, entry):
+    with cls.origin_log_lock:
+      cls.origin_log.append(entry)
+
+  @classmethod
+  def _replyShort(cls, conn):
+    # Anything that is not the test path (waitForSlave probes '/', health
+    # checks, ...) gets an immediate small cacheable reply.
+    body = b'short'
+    conn.sendall(
+      b'HTTP/1.1 200 OK\r\n'
+      b'Content-Type: application/octet-stream\r\n'
+      b'Cache-Control: max-age=3600\r\n'
+      b'Content-Length: %d\r\n'
+      b'Connection: close\r\n\r\n%s' % (len(body), body))
+    conn.close()
+
+  @classmethod
+  def _streamPaced(cls, conn, path, size, declared=None):
+    """Write `size` bytes at BODY_RATE, logging how far it got and why it stopped.
+
+    `declared` is what the response header announced, when the origin means to
+    write less than that -- a truncation its receiver is able to detect.
+    """
+    blob = b'x' * cls.WRITE_CHUNK
+    sent = 0
+    started = time.time()
+    try:
+      while sent < size:
+        behind = started + sent / float(cls.BODY_RATE) - time.time()
+        if behind > 0:
+          time.sleep(behind)
+        n = min(cls.WRITE_CHUNK, size - sent)
+        conn.sendall(blob[:n])
+        sent += n
+    except OSError:
+      # The client (through the frontend) went away.
+      cls._log({'path': path, 'sent': sent, 'complete': False})
+      return
+    cls._log({'path': path, 'sent': sent,
+              'complete': sent == (declared if declared is not None else size)})
+
+  @classmethod
+  def _bigHandler(cls, conn):
+    """Origin for cases 1 and 2: a paced body with a declared length.
+
+    Honours a byte range, like any origin serving big files does -- so the
+    range case is not accidentally answered with a plain 200.
+    """
+    path, headers = cls._readRequest(conn)
+    if path is None:
+      conn.close()
+      return
+    if '/big' not in path:
+      cls._replyShort(conn)
+      return
+    cls._log({'path': path, 'request': True})
+    if '/big-nostore' in path:
+      try:
+        conn.sendall(
+          b'HTTP/1.1 200 OK\r\n'
+          b'Content-Type: application/octet-stream\r\n'
+          b'Content-Length: %d\r\n'
+          b'Connection: close\r\n\r\n' % (cls.BODY_SIZE,))
+      except OSError:
+        conn.close()
+        return
+      cls._streamPaced(conn, path, cls.BODY_SIZE)
+      conn.close()
+      return
+    if '/big-truncated' in path:
+      try:
+        conn.sendall(
+          b'HTTP/1.1 200 OK\r\n'
+          b'Content-Type: application/octet-stream\r\n'
+          b'Cache-Control: max-age=3600\r\n'
+          b'Content-Length: %d\r\n'
+          b'Connection: close\r\n\r\n' % (cls.BODY_SIZE,))
+      except OSError:
+        conn.close()
+        return
+      cls._streamPaced(conn, path, cls.TRUNCATE_AT, declared=cls.BODY_SIZE)
+      conn.close()
+      return
+    range_spec = headers.get('range')
+    try:
+      if range_spec:
+        first = int(range_spec.split('=', 1)[1].split('-')[0])
+        size = cls.BODY_SIZE - first
+        conn.sendall(
+          b'HTTP/1.1 206 Partial Content\r\n'
+          b'Content-Range: bytes %d-%d/%d\r\n' % (
+            first, cls.BODY_SIZE - 1, cls.BODY_SIZE))
+      else:
+        size = cls.BODY_SIZE
+        conn.sendall(b'HTTP/1.1 200 OK\r\n')
+      conn.sendall(
+        b'Content-Type: application/octet-stream\r\n'
+        b'Accept-Ranges: bytes\r\n'
+        b'Cache-Control: max-age=3600\r\n'
+        b'Content-Length: %d\r\n'
+        b'Connection: close\r\n\r\n' % (size,))
+    except OSError:
+      conn.close()
+      return
+    cls._streamPaced(conn, path, size)
+    conn.close()
+
+  @classmethod
+  def _stallHandler(cls, conn):
+    """Origin that starts a body and then hangs, announcing its length or not.
+
+    Nothing here ever closes the connection, so backend-haproxy's
+    request-timeout is the only thing that can end the response. The framing
+    announced length is what makes the resulting body detectably short.
+    """
+    path, _ = cls._readRequest(conn)
+    if path is None:
+      conn.close()
+      return
+    if '/clstall' not in path:
+      cls._replyShort(conn)
+      return
+    length = b'Content-Length: %d\r\n' % (cls.BODY_SIZE,)
+    cls._log({'path': path, 'request': True})
+    blob = b'x' * cls.WRITE_CHUNK
+    sent = 0
+    try:
+      conn.sendall(
+        b'HTTP/1.1 200 OK\r\n'
+        b'Content-Type: application/octet-stream\r\n'
+        b'Cache-Control: max-age=3600\r\n'
+        + length +
+        b'Connection: close\r\n\r\n')
+      while sent < cls.TRUNCATE_AT:
+        n = min(cls.WRITE_CHUNK, cls.TRUNCATE_AT - sent)
+        conn.sendall(blob[:n])
+        sent += n
+      # Never write again and never close: the response can only be ended by a
+      # timeout somewhere in the frontend.
+      time.sleep(cls._stall_duration)
+    except OSError:
+      pass
+    cls._log({'path': path, 'sent': sent, 'complete': False})
+    conn.close()
+
+  @classmethod
+  def startServerProcess(cls):
+    super().startServerProcess()
+    base = findFreeBackendPortRange(cls._ipv4_address, 2)
+    cls._big_port, cls._stall_port = base, base + 1
+    cls._raw_backend_list = [
+      startRawBackend(cls._ipv4_address, cls._big_port, cls._bigHandler),
+      startRawBackend(
+        cls._ipv4_address, cls._stall_port, cls._stallHandler),
+    ]
+
+  @classmethod
+  def stopServerProcess(cls):
+    for srv in getattr(cls, '_raw_backend_list', []):
+      try:
+        srv.close()
+      except OSError:
+        pass
+    super().stopServerProcess()
+
+  # --- cluster and slaves ---------------------------------------------------
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'request-timeout': cls.request_timeout,
+      })
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'bigfile': {
+        'enable_cache': 'true',
+        'url': 'http://%s:%s/' % (cls._ipv4_address, cls._big_port),
+      },
+      'bigfile-stall': {
+        'enable_cache': 'true',
+        'url': 'http://%s:%s/' % (cls._ipv4_address, cls._stall_port),
+        'request-timeout': cls._stall_slave_timeout,
+        'backend-connect-retries': 0,
+      },
+    }
+
+  def setUp(self):
+    super().setUp()
+    with self.origin_log_lock:
+      del self.origin_log[:]
+
+  # --- client and origin-log helpers ----------------------------------------
+
+  def _fetch(self, domain, path, abort_at=None, range_spec=None, timeout=120):
+    """Fetch through the frontend on a raw TLS socket.
+
+    Returns (headers, body_bytes_read). With `abort_at` the socket is closed
+    once that many body bytes arrived, which is what a client walking away
+    does: the frontend haproxy sees the close and drops its own connection to
+    trafficserver.
+    """
+    request = (
+      'GET /%s HTTP/1.1\r\nHost: %s\r\nAccept-Encoding: identity\r\n'
+      'Connection: close\r\n' % (path, domain))
+    if range_spec:
+      request += 'Range: %s\r\n' % range_spec
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
+    sock = context.wrap_socket(
+      socket.create_connection((TEST_IP, HTTPS_PORT), timeout=timeout),
+      server_hostname=domain)
+    try:
+      sock.sendall((request + '\r\n').encode())
+      raw = b''
+      while b'\r\n\r\n' not in raw:
+        data = sock.recv(65536)
+        if not data:
+          self.fail('no response headers for %r' % path)
+        raw += data
+      head, _, rest = raw.partition(b'\r\n\r\n')
+      lines = head.decode('latin-1').split('\r\n')
+      headers = {'_status': lines[0].split(' ')[1]}
+      for line in lines[1:]:
+        name, _, value = line.partition(':')
+        headers[name.strip().lower()] = value.strip()
+      body = len(rest)
+      while abort_at is None or body < abort_at:
+        data = sock.recv(1024 * 1024)
+        if not data:
+          break
+        body += len(data)
+      return headers, body
+    finally:
+      sock.close()
+
+  def _originRequestCount(self, path):
+    with self.origin_log_lock:
+      return len([e for e in self.origin_log
+                  if e.get('request') and e['path'].endswith(path)])
+
+  def _waitForOriginToStop(self, path, timeout=120):
+    """Wait for the origin's write loop to end, and return its last entry."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+      with self.origin_log_lock:
+        done = [e for e in self.origin_log
+                if 'sent' in e and e['path'].endswith(path)]
+      if done:
+        return done[-1]
+      time.sleep(1)
+    self.fail(
+      'origin never stopped sending %r within %ss; log: %r'
+      % (path, timeout, self.origin_log))
+
+  @staticmethod
+  def _servedFromCache(headers):
+    """Whether the frontend answered out of its cache.
+
+    Trafficserver stamps `Age` on a miss as well, as 0, so the header being
+    present proves nothing -- only a non-zero value does.
+    """
+    return int(headers.get('age', 0)) > 0
+
+  def _waitForCacheHit(self, domain, path, timeout=60):
+    """Poll until the object is committed to cache, i.e. an Age header shows up."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+      headers, _ = self._fetch(domain, path)
+      if self._servedFromCache(headers):
+        return
+      time.sleep(2)
+    self.fail('%r never became a cache hit within %ss' % (path, timeout))
+
+  # --- the fill: a client aborts, ATS finishes the object -------------------
+
+  def test_aborted_download_is_completed_in_cache(self):
+    """A client dropping a big download must not cost the next one a refetch.
+
+    ATS is expected to keep pulling the body after the client is gone (a
+    background fill) and to leave a complete object behind.
+    """
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-aborted'
+
+    headers, got = self._fetch(domain, path, abort_at=self.ABORT_AT)
+    self.assertEqual('200', headers['_status'])
+    self.assertEqual(str(self.BODY_SIZE), headers.get('content-length'))
+    self.assertLess(got, self.BODY_SIZE, 'the client did not abort early')
+
+    origin = self._waitForOriginToStop(path)
+    self.assertTrue(
+      origin['complete'],
+      'origin stopped at %s of %s bytes: the frontend dropped the transfer '
+      'when the client left instead of finishing it'
+      % (origin['sent'], self.BODY_SIZE))
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual(self.BODY_SIZE, got)
+    self.assertTrue(
+      self._servedFromCache(headers), 'the completed object was not cached')
+    self.assertEqual(
+      1, self._originRequestCount(path),
+      'the origin was asked again, so nothing usable was cached')
+
+  # --- the read path: a range of an object already in cache -----------------
+
+  def test_range_of_cached_object_is_served_from_cache(self):
+    """A resumable client must not re-pull a body the cache already holds.
+
+    Getting an object *into* cache through a range request is a separate
+    matter (test_aborted_range_download_is_completed_in_cache); here the
+    object is already complete in cache and only the read path is exercised.
+    """
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-cached-then-range'
+    first = self.ABORT_AT
+    last = first + 1024 * 1024 - 1
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual('200', headers['_status'])
+    self.assertEqual(self.BODY_SIZE, got)
+    self._waitForCacheHit(domain, path)
+
+    # Every miss while waiting would have hit the origin, so compare against
+    # the count as it stands once the object is known to be cached.
+    before = self._originRequestCount(path)
+    headers, got = self._fetch(
+      domain, path, range_spec='bytes=%d-%d' % (first, last))
+    self.assertEqual('206', headers['_status'])
+    self.assertEqual(
+      'bytes %d-%d/%d' % (first, last, self.BODY_SIZE),
+      headers.get('content-range'))
+    self.assertEqual(last - first + 1, got)
+    self.assertTrue(
+      self._servedFromCache(headers), 'the range was not served from cache')
+    self.assertEqual(
+      before, self._originRequestCount(path),
+      'the origin was asked again for a range of an already cached object')
+
+  # --- a body cut short is neither retried nor cached -----------------------
+
+  def test_truncated_response_is_not_retried_and_not_cached(self):
+    """A body cut short costs one origin request, and leaves no cache entry.
+
+    Nothing in the frontend resumes or re-fetches a response whose body broke
+    after the header went out -- the retry settings cover connection setup
+    only. And the short body must not be stored: the announced Content-Length
+    is what makes the truncation detectable.
+    """
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-truncated'
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual(str(self.BODY_SIZE), headers.get('content-length'))
+    self.assertLess(got, self.BODY_SIZE)
+    self.assertEqual(
+      1, self._originRequestCount(path),
+      'the frontend went back to the origin for a body that broke mid-response')
+
+    headers, got = self._fetch(domain, path)
+    self.assertFalse(
+      self._servedFromCache(headers),
+      'the truncated body was served from cache')
+    self.assertEqual(
+      2, self._originRequestCount(path),
+      'the frontend kept the partial instead of fetching again')
+
+  # --- an announced length keeps a timed-out body out of the cache ----------
+
+  def test_stalled_response_with_length_is_not_cached(self):
+    """An announced length is what keeps a timed-out body out of the cache.
+
+    The origin stalls mid-body and backend-haproxy's request-timeout ends the
+    response, reporting it as a 200 with a short body. Because the origin said
+    how long the body would be, that shortness is detectable and the response
+    must not be stored.
+    """
+    domain = self.parseSlaveParameterDict('bigfile-stall')['domain']
+    path = 'clstall-partial'
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual(str(self.BODY_SIZE), headers.get('content-length'))
+    self.assertLess(got, self.BODY_SIZE)
+    self.assertEqual(1, self._originRequestCount(path))
+
+    headers, got = self._fetch(domain, path)
+    self.assertFalse(
+      self._servedFromCache(headers),
+      'a response cut short by the backend timeout was served from cache')
+    self.assertEqual(
+      2, self._originRequestCount(path),
+      'the frontend kept the partial instead of fetching again')
+
+  # --- the fill has no lower bound -----------------------------------------
+
+  def test_barely_started_download_is_completed_in_cache(self):
+    """A client that leaves at once still leaves a whole object behind.
+
+    The fill threshold is what decides how much of a body has to have been
+    transferred before an abort is worth finishing; at its default any amount
+    counts. A client that took well under a percent must be enough.
+    """
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-barely-started'
+
+    headers, got = self._fetch(domain, path, abort_at=self.ABORT_TINY)
+    self.assertEqual(str(self.BODY_SIZE), headers.get('content-length'))
+    self.assertLess(
+      got, self.BODY_SIZE // 20,
+      'the client read too much for this to say anything about a threshold')
+
+    origin = self._waitForOriginToStop(path)
+    self.assertTrue(
+      origin['complete'],
+      'origin stopped at %s of %s bytes: the fill refused a client that had '
+      'barely started' % (origin['sent'], self.BODY_SIZE))
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual(self.BODY_SIZE, got)
+    self.assertTrue(
+      self._servedFromCache(headers), 'the completed object was not cached')
+    self.assertEqual(1, self._originRequestCount(path))
+
+  # --- without an explicit lifetime there is nothing to fill ----------------
+
+  def test_aborted_download_without_lifetime_is_not_cached(self):
+    """An uncacheable body is dropped when the client goes, not finished.
+
+    The fill exists to complete a cache entry, so it needs one: with
+    required_headers at 2 a response carrying neither Cache-Control nor
+    Expires is not cacheable, and abandoning it must cost the origin
+    connection.
+    """
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-nostore'
+
+    headers, got = self._fetch(domain, path, abort_at=self.ABORT_AT)
+    self.assertNotIn('cache-control', headers)
+    self.assertLess(got, self.BODY_SIZE)
+
+    origin = self._waitForOriginToStop(path)
+    self.assertFalse(
+      origin['complete'],
+      'origin pushed all %s bytes for a response that cannot be cached'
+      % (self.BODY_SIZE,))
+
+    headers, got = self._fetch(domain, path, abort_at=self.ABORT_AT)
+    self.assertFalse(
+      self._servedFromCache(headers), 'an uncacheable body was cached')
+    self.assertEqual(
+      2, self._originRequestCount(path),
+      'the origin was not asked again for an uncacheable body')

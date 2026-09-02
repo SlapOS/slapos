@@ -1,3 +1,6 @@
+[global]
+error_log = {{ repr(instance_dict['fpm-log-path']) }}
+
 [www]
 listen = {{ repr(instance_dict['fpm-socket-path']) }}
 pm = {{ instance_dict['pm'] }}
