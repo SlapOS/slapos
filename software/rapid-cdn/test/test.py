@@ -504,6 +504,7 @@ class TestDataMixin(object):
     'promise-kedifa-auth-ready',
     'promise-key-download-url-ready',
     'publish-failsafe-error',
+    'slave-key-download-url-ready-promise',
   )
   DESENSITIZED_PROMISE_GRACE = '5'
 
@@ -1255,13 +1256,16 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
           mimikra.get(url + 'access.log', verify=False).status_code
         )
 
+  def getKedifaUrlRegexBase(self):
+    """Return the regex which matches a key URL of the kedifa partition."""
+    return '^' + re.escape(
+      'https://[%s]:%s' % (self.kedifa_ipv6, KEDIFA_PORT)) + '/.{32}'
+
   def assertKedifaKeysWithPop(self, parameter_dict, prefix=''):
     generate_auth_url = parameter_dict.pop('%skey-generate-auth-url' % (
       prefix,))
     upload_url = parameter_dict.pop('%skey-upload-url' % (prefix,))
-    kedifa_ipv6_base = 'https://[%s]:%s' % (self.kedifa_ipv6, KEDIFA_PORT)
-    base = '^' + kedifa_ipv6_base.replace(
-      '[', r'\[').replace(']', r'\]') + '/.{32}'
+    base = self.getKedifaUrlRegexBase()
     self.assertRegex(
       generate_auth_url,
       base + r'\/generateauth$'
@@ -10528,6 +10532,31 @@ class TestSlaveManagementDomainReuse(
     finally:
       conn.close()
 
+  def assertSlaveKeyDownloadUrlReady(self, slave_reference):
+    """Assert every frontend has the real key download URL of the slave."""
+    mapping_path_list = sorted(glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'kedifa_updater_mapping.txt')))
+    self.assertNotEqual([], mapping_path_list, self.instance_path)
+    certificate_name = '_%s.pem' % slave_reference.replace('-', '.')
+    url_regex = self.getKedifaUrlRegexBase() + '$'
+    for mapping_path in mapping_path_list:
+      key_download_url_list = []
+      with open(mapping_path) as fh:
+        for line in fh:
+          field_list = line.split()
+          if not field_list:
+            continue
+          self.assertEqual(3, len(field_list), line)
+          if os.path.basename(field_list[1]) == certificate_name:
+            key_download_url_list.append(field_list[0])
+      self.assertNotEqual(
+        [], key_download_url_list,
+        '%s has no line for %s' % (mapping_path, slave_reference))
+      for key_download_url in key_download_url_list:
+        self.assertRegex(
+          key_download_url, url_regex,
+          '%s: %s' % (mapping_path, key_download_url))
+
   def test_no_bang_loop_for_unchanged_invalid_custom_domain(self):
     """
     An invalid slave (custom_domain with no DNS TXT record) must not cause
@@ -10599,6 +10628,18 @@ class TestSlaveManagementDomainReuse(
     self.runCDNInstanceNode()
     entry = self._get_domain_validation_entry('reuse-new')
     self.assertTrue(bool(entry['validated']))
+
+    # Step 6: every frontend gets the real key download URL of the new slave.
+    max_convergence_cycle_count = 3
+    for cycle in range(max_convergence_cycle_count):
+      self.slap.waitForInstance(self.instance_max_retry)
+      try:
+        self.assertSlaveKeyDownloadUrlReady('reuse-new')
+      except AssertionError:
+        if cycle == max_convergence_cycle_count - 1:
+          raise
+      else:
+        break
 
 
 class TestCDNHTTP(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
