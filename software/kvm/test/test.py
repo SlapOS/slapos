@@ -769,16 +769,23 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
 
 
 class CronMixin(object):
+  @staticmethod
+  def _loadCronEnvironment(path):
+    with open(path) as fh:
+      return json.load(fh)
+
   def setUp(self):
     super().setUp()
-    # wait until all mocked partition have var/cron-environment.json
+    # wait until all mocked partition have a readable var/cron-environment.json
     for i in range(20):
       missing_list = []
       for mocked in glob.glob(os.path.join(
         self.slap._instance_root, '*', 'var', 'cron-d-mock')):
         cron_environment = os.path.join(
           '/', *mocked.split('/')[:-2], 'var', 'cron-environment.json')
-        if not os.path.exists(cron_environment):
+        try:
+          self._loadCronEnvironment(cron_environment)
+        except (OSError, ValueError):
           missing_list.append(cron_environment)
       if len(missing_list) == 0:
         break
@@ -790,10 +797,16 @@ class CronMixin(object):
   def executeCronDMockJob(cls, instance_type, cron):
     jobpath = cls.getPartitionPath(
       instance_type, 'var', 'cron-d-mock', cron)
-    with open(
-      cls.getPartitionPath(
-          instance_type, 'var', 'cron-environment.json')) as fh:
-      cron_environment = json.load(fh)
+    cron_environment_path = cls.getPartitionPath(
+      instance_type, 'var', 'cron-environment.json')
+    for i in range(60):
+      try:
+        cron_environment = cls._loadCronEnvironment(cron_environment_path)
+        break
+      except ValueError:
+        time.sleep(1)
+    else:
+      raise ValueError('Empty cron environment', cron_environment_path)
     job_list = []
     with open(jobpath, 'r') as fh:
       for job in fh.readlines():
