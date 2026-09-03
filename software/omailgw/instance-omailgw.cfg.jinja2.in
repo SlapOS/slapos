@@ -12,9 +12,11 @@ parts =
   monitor-base
   certificate-authority
   php.ini-conf
+  omailgw-app-key
   omailgw-copy-api
   omailgw-copy-ui
   omailgw-ui-settings
+  omailgw-env-template
   omailgw-env
   omailgw-bootstrap-php
   omailgw-bootstrap-script
@@ -59,6 +61,7 @@ omailgw-cli-var = $${:omailgw-cli}/var
 omailgw-cli-marker = $${:omailgw-cli}/marker
 fluentd-buffer = $${:var}/fluentd-buffer
 fluentd-exec-buffer = $${:var}/fluentd-exec-buffer
+deployment-state = $${:var}/deployment
 
 [omailgw-users]
 root-user = root@omailgw.local
@@ -73,21 +76,67 @@ recipe = slapos.cookbook:generate.password
 [omailgw-fluentd-shared-key]
 recipe = slapos.cookbook:generate.password
 
+[omailgw-app-key]
+recipe = plone.recipe.command
+storage-path = $${directory:var}/omailgw-app-key
+command =
+  set -e
+  if [ ! -s "$${:storage-path}" ]; then
+    app_key=""
+    if [ -f "$${directory:omailgw-api}/.env" ]; then
+      app_key="$(sed -n 's/^APP_KEY=//p' "$${directory:omailgw-api}/.env" | head -n 1)"
+    fi
+    if [ -z "$app_key" ]; then
+      app_key="base64:$(${openssl:location}/bin/openssl rand -base64 32)"
+    fi
+    umask 077
+    printf '%s' "$app_key" > "$${:storage-path}.tmp"
+    mv -f "$${:storage-path}.tmp" "$${:storage-path}"
+  fi
+update-command = $${:command}
+stop-on-error = true
+
 [omailgw-copy-api]
 recipe = plone.recipe.command
-command = if [ ! -e "$${directory:omailgw-api}/artisan" ]; then
-    rm -rf $${directory:omailgw-api};
-    mkdir -p $${directory:omailgw-api};
-    cp -ax ${omailgw-api-prepared:location}/. $${directory:omailgw-api}/;
+source = ${omailgw-api-prepared:location}
+revision = ${omailgw-api-source:revision}
+deployment-id = $${:revision}:$${:source}
+marker = $${directory:deployment-state}/omailgw-api
+command =
+  set -e
+  mkdir -p "$${directory:omailgw-api}" "$${directory:deployment-state}"
+  current_deployment_id="$(cat "$${:marker}" 2>/dev/null || true)"
+  if [ "$current_deployment_id" != "$${:deployment-id}" ]; then
+    ${rsync:location}/bin/rsync -rlpt --delete \
+      --exclude=/.env \
+      --exclude=/storage/ \
+      --exclude=/public/ui/ \
+      "$${:source}/" "$${directory:omailgw-api}/"
+    mkdir -p "$${directory:omailgw-api}/storage"
+    ${rsync:location}/bin/rsync -rlpt \
+      "$${:source}/storage/" "$${directory:omailgw-api}/storage/"
+    printf '%s\n' "$${:deployment-id}" > "$${:marker}.tmp"
+    mv -f "$${:marker}.tmp" "$${:marker}"
   fi
 update-command = $${:command}
 stop-on-error = true
 
 [omailgw-copy-ui]
 recipe = plone.recipe.command
-command = if [ -z "$(ls -A $${directory:www}/ui 2>/dev/null)" ]; then
-    mkdir -p $${directory:www}/ui;
-    cp -ax ${omailgw-ui-source:location}/. $${directory:www}/ui/;
+source = ${omailgw-ui-source:location}
+revision = ${omailgw-ui-source:revision}
+deployment-id = $${:revision}:$${:source}
+marker = $${directory:deployment-state}/omailgw-ui
+command =
+  set -e
+  mkdir -p "$${directory:www}/ui" "$${directory:deployment-state}"
+  current_deployment_id="$(cat "$${:marker}" 2>/dev/null || true)"
+  if [ "$current_deployment_id" != "$${:deployment-id}" ]; then
+    ${rsync:location}/bin/rsync -rlpt --delete \
+      --exclude=/js/settings.js \
+      "$${:source}/" "$${directory:www}/ui/"
+    printf '%s\n' "$${:deployment-id}" > "$${:marker}.tmp"
+    mv -f "$${:marker}.tmp" "$${:marker}"
   fi
 update-command = $${:command}
 stop-on-error = true
@@ -99,15 +148,35 @@ output = $${directory:www}/ui/js/settings.js
 context =
   key api_url publish-connection-information:api-url
 
-[omailgw-env]
+[omailgw-env-template]
 recipe = slapos.recipe.template:jinja2
 url = ${omailgw-api.env.in:target}
-output = $${directory:omailgw-api}/.env
+output = $${directory:etc}/omailgw-api.env.in
 context =
+  raw app_key __OMAILGW_APP_KEY__
   key app_url apache-php-configuration:url
   key db_password omailgw-mailgw-password:passwd
   key db_socket omailgw-mariadb-conf:socket
   key root_email omailgw-users:root-user
+
+[omailgw-env]
+recipe = plone.recipe.command
+template = $${omailgw-env-template:output}
+output = $${directory:omailgw-api}/.env
+app-key-storage = $${omailgw-app-key:storage-path}
+command =
+  set -e
+  app_key="$(cat "$${:app-key-storage}")"
+  umask 077
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      APP_KEY=*) printf 'APP_KEY=%s\n' "$app_key" ;;
+      *) printf '%s\n' "$line" ;;
+    esac
+  done < "$${:template}" > "$${:output}.tmp"
+  mv -f "$${:output}.tmp" "$${:output}"
+update-command = $${:command}
+stop-on-error = true
 
 [omailgw-bootstrap-php]
 recipe = slapos.recipe.template:jinja2
@@ -181,9 +250,7 @@ foreground-script =
   GRANT ALL PRIVILEGES ON omailgw.* TO 'omailgw'@'localhost';
   FLUSH PRIVILEGES;
   EOF
-  if grep -q '^APP_KEY=$' .env; then
-    "$php_bin" -c "$${php.ini-conf:output}" artisan key:generate --force
-  fi
+  "$php_bin" -c "$${php.ini-conf:output}" artisan optimize:clear
   "$php_bin" -c "$${php.ini-conf:output}" artisan package:discover --ansi
   "$php_bin" -c "$${php.ini-conf:output}" artisan migrate --force
   OMAILGW_ROOT_EMAIL="$${omailgw-users:root-user}" \
