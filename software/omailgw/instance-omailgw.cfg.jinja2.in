@@ -12,6 +12,7 @@ parts =
   monitor-base
   certificate-authority
   php.ini-conf
+  php-fpm-conf
   omailgw-app-key
   omailgw-copy-api
   omailgw-copy-ui
@@ -25,6 +26,8 @@ parts =
   lamp-apache-httpd
   omailgw-mariadb-service
   apache-php-service
+  php-fpm-service
+  php-fpm-promise
   omailgw-cli-config
   omailgw-fluentd-conf
   omailgw-fluentd-bridge
@@ -315,11 +318,12 @@ url = https://[$${:ip}]:$${:port}/
 error-log = $${directory:httpd-log}/error.log
 access-log = $${directory:httpd-log}/access.log
 log-dir = $${directory:httpd-log}
-php-ini-dir = $${directory:php-ini-dir}
 cert-file = $${ca-directory:certs}/httpd.crt
 key-file = $${ca-directory:certs}/httpd.key
 apache-config-dir = $${directory:apache.d}
 document-root = $${directory:www}
+fpm-socket-path = $${directory:run}/php-fpm.sock
+fpm-log-path = $${directory:httpd-log}/php-fpm.log
 
 [lamp-apache-httpd]
 recipe = slapos.recipe.template:jinja2
@@ -349,6 +353,11 @@ wait-for-files =
   $${ca-directory:certs}/httpd.crt
   $${ca-directory:certs}/httpd.key
 
+[php-fpm-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:bin}/php-fpm-wrapper
+command-line = "${apache-php:location}/sbin/php-fpm" -y $${php-fpm-conf:output} -c $${php.ini-conf:output} -F
+
 [apache-graceful]
 recipe = collective.recipe.template
 output = $${directory:scripts}/apache-httpd-graceful
@@ -370,6 +379,19 @@ depends =
   $${omailgw-bootstrap-app:recipe}
   $${apache-graceful:recipe}
 
+[php-fpm-service]
+recipe = slapos.cookbook:wrapper
+command-line = $${php-fpm-wrapper:wrapper-path}
+wrapper-path = $${directory:service}/php-fpm
+hash-existing-files = $${buildout:directory}/software_release/buildout.cfg
+
+[php-fpm-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = fpm-socket-listening.py
+config-pathname = $${apache-php-configuration:fpm-socket-path}
+depends = $${php-fpm-service:recipe}
+
 [logrotate-entry-apache]
 <= logrotate-entry-base
 name = apache
@@ -384,6 +406,13 @@ php-upload-dir = $${directory:upload-tmp}
 [instance-parameter]
 document-root = $${apache-php-configuration:default-document-root}
 backend-url = $${apache-php-configuration:url}
+fpm-socket-path = $${apache-php-configuration:fpm-socket-path}
+fpm-log-path = $${apache-php-configuration:fpm-log-path}
+pm = dynamic
+pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
 php.date.timezone = Europe/Paris
 
 [php.ini-conf]
@@ -394,6 +423,17 @@ context =
   section parameter_dict php.ini-configuration
   section instance_dict instance-parameter
 extensions = jinja2.ext.do
+
+[php-fpm-conf]
+recipe = slapos.recipe.template:jinja2
+url = ${template-php-fpm.conf:target}
+output = $${directory:php-ini-dir}/php-fpm.conf
+context =
+  section instance_dict instance-parameter
+  section php_environment php-environment
+extensions = jinja2.ext.do
+
+[php-environment]
 
 [omailgw-cli-config]
 recipe = slapos.recipe.template:jinja2
