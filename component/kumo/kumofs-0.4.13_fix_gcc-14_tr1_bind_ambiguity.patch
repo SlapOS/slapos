@@ -1,0 +1,94 @@
+# Fix compilation failure with GCC >= 14 due to ambiguous 'bind' overload.
+#
+# With GCC 14+, #include <tr1/functional> transitively pulls in
+# <functional>, making both std::tr1::bind and std::bind visible.
+# When mp::wavy::core::submit() calls unqualified bind(), the compiler
+# finds both candidates and rejects the call as ambiguous.
+#
+# The same issue affects shared_ptr, weak_ptr, static_pointer_cast, and
+# dynamic_pointer_cast via <tr1/memory>.
+#
+# Fix: change the using-declarations from std::tr1::* to std::* so that
+# mp::bind resolves to std::bind, eliminating the ambiguity. The
+# #include <tr1/...> headers are kept for backward compatibility.
+#
+# std::function/std::bind/std::placeholders are C++11 names. On older
+# libstdc++ (e.g. GCC 9) #include <tr1/functional> does not pull in
+# <functional>, so the using-declarations fail with "std::function has not
+# been declared"; include <functional> explicitly so they are always
+# available. <memory> is added the same way in memory.h for symmetry.
+--- a/src/mp/functional.h	2026-08-29 19:36:25.825085008 +0900
++++ b/src/mp/functional.h	2026-08-29 19:36:25.829085003 +0900
+@@ -20,12 +20,13 @@
+ #define MP_FUNCTIONAL_H__
+ 
+ #ifdef MP_FUNCTIONAL_BOOST
++#include <functional>
+ #include <boost/tr1/functional.hpp>
+ namespace mp {
+-	using std::tr1::function;
+-	using std::tr1::bind;
++	using std::function;
++	using std::bind;
+ 	namespace placeholders {
+-		using namespace std::tr1::placeholders;
++		using namespace std::placeholders;
+ 	}
+ }
+ #else
+@@ -39,12 +40,13 @@
+ }
+ #else
+ #ifndef MP_FUNCTIONAL_STANDARD
++#include <functional>
+ #include <tr1/functional>
+ namespace mp {
+-	using std::tr1::function;
+-	using std::tr1::bind;
++	using std::function;
++	using std::bind;
+ 	namespace placeholders {
+-		using namespace std::tr1::placeholders;
++		using namespace std::placeholders;
+ 	}
+ }
+ #else
+--- a/src/mp/memory.h	2026-08-29 19:36:25.825085008 +0900
++++ b/src/mp/memory.h	2026-08-29 19:36:25.829085003 +0900
+@@ -20,13 +20,14 @@
+ #define MP_MEMORY_H__
+ 
+ #ifdef MP_MEMORY_BOOST
++#include <memory>
+ #include <boost/tr1/memory>
+ namespace mp {
+-	using std::tr1::shared_ptr;
++	using std::shared_ptr;
+ 	using std::tr1::wak_ptr;
+ 	//using std::tr2::scoped_ptr;
+-	using std::tr1::static_pointer_cast;
+-	using std::tr1::dynamic_pointer_cast;
++	using std::static_pointer_cast;
++	using std::dynamic_pointer_cast;
+ }
+ #else
+ #ifdef MP_MEMORY_BOOST_ORG
+@@ -42,13 +43,14 @@
+ }
+ #else
+ #ifndef MP_MEMORY_STANDARD
++#include <memory>
+ #include <tr1/memory>
+ namespace mp {
+-	using std::tr1::shared_ptr;
+-	using std::tr1::weak_ptr;
++	using std::shared_ptr;
++	using std::weak_ptr;
+ 	//using std::tr2::scoped_ptr;
+-	using std::tr1::static_pointer_cast;
+-	using std::tr1::dynamic_pointer_cast;
++	using std::static_pointer_cast;
++	using std::dynamic_pointer_cast;
+ }
+ #else
+ #include <memory>
