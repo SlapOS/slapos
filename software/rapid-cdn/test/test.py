@@ -10226,12 +10226,11 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     return slapgrid_log_file
 
   def test_added_slave(self):
+    slapgrid_log_file = self.clean_frontend_log_file()
     # request additional slave
     self.requestSlaveInstance('second', {})
     self.slap.waitForInstance(self.instance_max_retry)
-    self.runCDNInstanceNode()
     self.runKedifaUpdater()
-    slapgrid_log_file = self.clean_frontend_log_file()
     self.slap.waitForInstance(self.instance_max_retry)
 
     # assert it worked with inspecting the log file, for now the only way
@@ -10250,16 +10249,14 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     Regression test for the master publish-file race documented in
     test-rapid-cdn-instancenode.md: after a slave is added to a
     converged cluster, the master's instance-publish-slave-information.cfg
-    must contain the slave's [publish-_<reference>] section. The fix
-    drives convergence via cdninstancenode's postDeployInstanceValidation
-    + needs_bang signal; this test asserts the file end-state.
+    must contain the slave's [publish-_<reference>] section. This test
+    asserts the file end-state.
     """
     self.requestSlaveInstance('publish-check', {})
-    # Drive the convergence loop: cdninstancenode bangs master, master
-    # rebuilds, frontend rebuilds, master rebuilds, etc. Bounded.
+    # Drive the convergence loop: master rebuilds, frontend rebuilds,
+    # master rebuilds, etc. Bounded.
     for _ in range(5):
       self.slap.waitForInstance(self.instance_max_retry)
-      self.runCDNInstanceNode()
 
     master_path = self.getMasterPartitionPath()
     publish_file = os.path.join(
@@ -10276,11 +10273,10 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       'Content:\n%s' % content)
 
   def test_destroyed_slave(self):
+    slapgrid_log_file = self.clean_frontend_log_file()
     self.requestSlaveInstance('deleted', {}, 'destroyed')
     self.slap.waitForInstance(self.instance_max_retry)
-    self.runCDNInstanceNode()
     self.runKedifaUpdater()
-    slapgrid_log_file = self.clean_frontend_log_file()
     self.slap.waitForInstance(self.instance_max_retry)
 
     # assert it worked with inspecting the log file, for now the only way

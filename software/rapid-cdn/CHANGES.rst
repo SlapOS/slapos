@@ -20,6 +20,16 @@ Unreleased
 
 Changes on ``master`` since 1.0.506 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.506...master>`__).
 
+The cluster deploys the slave list the SlapOS Master sent
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The master partition deploys and publishes the slave list that the
+SlapOS Master sent. The CDN instance node and its database do not change
+this list. The master partition checks each slave against the JSON schema
+and writes the result in the database for the CDN instance node. The next
+run of ``slapos node instance`` removes a destroyed slave.
+
 1.0.506 (2026-08-24)
 --------------------
 
