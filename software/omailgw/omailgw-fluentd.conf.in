@@ -12,6 +12,11 @@
     shared_key {{ shared_key }}
   </security>
 </source>
+<label @FLUENT_LOG>
+  <match **>
+    @type null
+  </match>
+</label>
 <match **>
   @type exec
   command {{ bridge_command }}

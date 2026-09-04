@@ -28,3 +28,6 @@ $config['lock_id'] = 'omailgwcli-' . $serverHostnameForPath;
 $config['smtpd_auth_tester'] = null;
 $config['sudo_postfix_reload'] = '/bin/true';
 $config['rspamd_check'] = false;
+
+$config['log_regex'][] = '/^(?<smtp_queueId>[A-Z0-9]+): to=<(?<smtp_to>\S+)>, relay=(?<smtp_relay>\S+), delay=(?<smtp_delay>\S+), delays=(?<smtp_delays>\S+), tls=[^\s,]+, dsn=(?<smtp_dsn>\S+), status=(?<smtp_status>\S+) \((?<smtp_msg>.+)\)/';
+$config['log_regex'][] = '/^(?<smtp_queueId>[A-Z0-9]+): to=<(?<smtp_to>\S+)>, orig_to=(?<smtp_orig_to>\S+), relay=(?<smtp_relay>\S+), delay=(?<smtp_delay>\S+), delays=(?<smtp_delays>\S+), tls=[^\s,]+, dsn=(?<smtp_dsn>\S+), status=(?<smtp_status>\S+) \((?<smtp_msg>.+)\)/';
