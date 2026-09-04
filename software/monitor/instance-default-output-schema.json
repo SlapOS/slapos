@@ -84,7 +84,7 @@
       "type": "number"
     },
     "promise_free_disk_space_threshold": {
-      "description": "Minimum partition space ratio threshold below which the promise will fail (unit: N/A)",
+      "description": "Minimum free disk space ratio threshold below which the promise will fail (unit: N/A)",
       "type": "number"
     },
     "promise_free_disk_space_nb_days_predicted": {
