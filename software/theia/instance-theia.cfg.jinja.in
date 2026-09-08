@@ -672,17 +672,17 @@ command-line = $${slapos-standalone-config:base-directory}/bin/slapos
 # --------------------------------
 
 [slapos-autorun]
-recipe = plone.recipe.command
-command =
+recipe = slapos.recipe.template
+output = $${directory:etc}/run/$${:_buildout_section_name_}
+service-name = slapos-node-auto
+supervisor-conf = $${directory:runner}/etc/supervisord.conf
+autorun = {{ parameter_dict['autorun'] }}
+inline =
+  #!${bash:location}/bin/bash
   case $${:autorun} in
     ( running ) ${buildout:bin-directory}/supervisorctl -c $${:supervisor-conf} start $${:service-name};;
     ( stopped ) ${buildout:bin-directory}/supervisorctl -c $${:supervisor-conf} stop $${:service-name};;
   esac
-update-command = $${:command}
-service-name = slapos-node-auto
-supervisor-conf = $${directory:runner}/etc/supervisord.conf
-autorun = {{ parameter_dict['autorun'] }}
-
 
 # Theia Local Environment Setup
 # -----------------------------

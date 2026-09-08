@@ -1,0 +1,17 @@
+# libusual's configure --with-openssl expects the installation prefix (parent
+# of include/ and lib/), but the Linux rule passes $(SSL_LDIR) which is already
+# the lib/ directory. This makes configure look for include/openssl/ssl.h under
+# lib/ — which doesn't exist.
+#
+# The macOS rule already gets this right via $(patsubst %/include,%,$(SSL_IDIR)).
+# Apply the same fix to the Linux rule.
+--- a/deps/Makefile
++++ b/deps/Makefile
+@@ -415,7 +415,7 @@
+ ifeq ($(UNAME_S),Darwin)
+ 	cd libusual/libusual &&  CPPFLAGS="-I$(SSL_IDIR)" LDFLAGS="$(LIB_SSL_PATH) $(LIB_CRYPTO_PATH)" DYLD_LIBRARY_PATH="$(SSL_LDIR):$$DYLD_LIBRARY_PATH" ./configure --with-openssl="$(patsubst %/include,%,$(SSL_IDIR))" --disable-shared
+ else
+-	cd libusual/libusual &&  CPPFLAGS="-I$(SSL_IDIR)" LDFLAGS="$(LIB_SSL_PATH) $(LIB_CRYPTO_PATH)" ./configure --with-openssl="$(SSL_LDIR)" --disable-shared
++	cd libusual/libusual &&  CPPFLAGS="-I$(SSL_IDIR)" LDFLAGS="$(LIB_SSL_PATH) $(LIB_CRYPTO_PATH)" ./configure --with-openssl="$(patsubst %/include,%,$(SSL_IDIR))" --disable-shared
+ endif
+ 	cd libusual/libusual && CC=${CC} CXX=${CXX} ${MAKE}

@@ -40,6 +40,7 @@ import urllib3
 from slapos.grid.utils import md5digest
 from slapos.testing.testcase import (
   SlapOSNodeCommandError,
+  _serveSoftwareURL,
   installSoftwareUrlList,
   makeModuleSetUpAndTestCaseClass,
 )
@@ -85,6 +86,8 @@ class ERP5UpgradeTestCase(SlapOSInstanceTestCase):
 
   @classmethod
   def getSoftwareURL(cls):
+    if cls._serve_software_from_url:
+      return _serveSoftwareURL(cls._current_software_url)[0]
     return cls._current_software_url
 
   @classmethod

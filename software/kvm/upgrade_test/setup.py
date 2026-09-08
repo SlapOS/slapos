@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
+# Copyright (c) 2026 Nexedi SA and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -27,30 +27,24 @@
 from setuptools import setup, find_packages
 
 version = '0.0.1.dev0'
-name = 'slapos.test.kvm'
+name = 'slapos.test.upgrade_kvm'
 with open("README.md") as f:
   long_description = f.read()
 
 setup(name=name,
       version=version,
-      description="Test for SlapOS' kvm",
+      description="Upgrade test for SlapOS' KVM software release",
       long_description=long_description,
       long_description_content_type='text/markdown',
       maintainer="Nexedi",
       maintainer_email="info@nexedi.com",
       url="https://lab.nexedi.com/nexedi/slapos",
       packages=find_packages(),
-      # shared with the upgrade_kvm test suite
-      py_modules=['kvm_testing'],
       install_requires=[
-          'slapos.core',
-          'slapos.cookbook',
-          'slapos.toolbox',
-          'slapos.libnetworkcache',
-          'erp5.util',
-          'supervisor',
-          'psutil',
+        'slapos.core',
+        'slapos.libnetworkcache',
+        'requests',
       ],
       zip_safe=True,
       test_suite='test',
-      )
+    )

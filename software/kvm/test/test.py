@@ -54,6 +54,8 @@ from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.slap.standalone import SlapOSNodeCommandError
 from slapos.testing.utils import findFreeTCPPort
 
+import kvm_testing
+
 # To be in sync with component/vm-img/debian.cfg
 DEFAULT_IMAGE_ISONAME = 'debian-13.3.0-amd64-netinst.iso'
 DEFAULT_IMAGE_TITLE = 'Debian Trixie 13 netinst x86_64'
@@ -153,45 +155,16 @@ class KVMTestCase(InstanceTestCase):
     return image_list
 
   @classmethod
-  def _findTopLevelPartitionPath(cls, path: str):
-    index = 0
-    while True:
-      index = path.find(os.path.sep, index) + len(os.path.sep)
-      top_path = path[:index]
-      if os.path.exists(os.path.join(top_path, '.slapos-resource')):
-        return top_path
-      if index == -1:
-        return None
-
-  @classmethod
-  def _updateSlaposResource(cls, partition_path, **kw):
-    with open(os.path.join(partition_path, '.slapos-resource'), 'r+') as f:
-      resource = json.load(f)
-      resource.update(kw)
-      f.seek(0)
-      f.truncate()
-      json.dump(resource, f, indent=2)
-
-  @classmethod
   def formatPartitions(cls):
     super().formatPartitions()
-
-    # steal tap from top level partition
-    instance_directory = cls.slap.instance_directory
-    top_partition_path = cls._findTopLevelPartitionPath(instance_directory)
-
-    with open(os.path.join(top_partition_path, '.slapos-resource')) as f:
-      top_resource = json.load(f)
-
-    for partition in os.listdir(instance_directory):
-      if not partition.startswith(cls.__partition_reference__):
-        continue
-
-      partition_path = os.path.join(instance_directory, partition)
-      cls._updateSlaposResource(partition_path, tap=top_resource['tap'])
+    kvm_testing.stealTopLevelTap(
+      cls.slap.instance_directory, cls.__partition_reference__)
 
 
-class KvmMixin:
+class KvmMixin(kvm_testing.KvmPartitionMixin):
+  # the kvm tests always request the same software release
+  match_software_url = True
+
   def assertPromiseFailsInDir(self, partition_directory, promise):
     monitor_run_promise = os.path.join(
       partition_directory, 'software_release', 'bin',
@@ -216,50 +189,9 @@ class KvmMixin:
     return self.assertPromiseFailsInDir(partition_directory, promise)
 
   @classmethod
-  def getPartitionIdByType(cls, instance_type):
-    software_url = cls.getSoftwareURL()
-    for computer_partition in cls.slap.computer.getComputerPartitionList():
-      try:
-        partition_url = computer_partition.\
-          getSoftwareRelease()._software_release
-        partition_type = computer_partition.getType()
-      except (
-        slapos.slap.exception.NotFoundError,
-        slapos.slap.exception.ResourceNotReady
-      ):
-        partition_url = 'NA'
-        partition_type = 'NA'
-      if partition_url == software_url and partition_type == instance_type:
-        return computer_partition.getId()
-    raise Exception("Partition type %s not found" % instance_type)
-
-  @classmethod
-  def getPartitionPath(cls, instance_type='kvm-export', *paths):
-    return os.path.join(
-      cls.slap._instance_root, cls.getPartitionIdByType(instance_type), *paths)
-
-  @classmethod
   def getKvmExportPartitionBackupPath(cls, *paths):
     return cls.getPartitionPath(
-      'kvm-export', 'srv', 'backup', 'kvm', 'virtual1', *paths)
-
-  @classmethod
-  def getAuthenticatedUrl(cls, connection_parameter_dict, prefix='',
-                          additional=False):
-    parsed_url = urlparse(
-      connection_parameter_dict['%surl%s' % (
-        prefix, '-additional' if additional else '')])
-    return parsed_url._replace(
-      netloc='{}:{}@[{}]:{}'.format(
-        connection_parameter_dict['%susername' % prefix],
-        connection_parameter_dict['%spassword' % prefix],
-        parsed_url.hostname,
-        parsed_url.port,
-      )).geturl()
-
-  def getConnectionParameterDictJson(self):
-    return json.loads(
-      self.computer_partition.getConnectionParameterDict()['_'])
+      'kvm-export', 'srv', 'backup', 'kvm', 'virtual.qcow2', *paths)
 
   def getProcessInfo(self, kvm_additional_hash_file_list=None):
     if kvm_additional_hash_file_list is None:
@@ -524,10 +456,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
     # START: mock .slapos-resource with tap.ipv4_addr
     # needed for netconfig.sh
     partition_path = str(self.computer_partition_root_path)
-    top_partition_path = self._findTopLevelPartitionPath(partition_path)
-
-    with open(os.path.join(top_partition_path, '.slapos-resource')) as f:
-      top_tap = json.load(f)['tap']
+    top_tap = kvm_testing.getTopLevelTap(partition_path)
 
     if top_tap['ipv4_addr'] == '':
       top_tap.update({
@@ -537,7 +466,7 @@ class TestAccessDefaultBootstrap(MonitorAccessMixin, KVMTestCase):
         "ipv4_network": "10.0.0.0"
       })
 
-    self._updateSlaposResource(partition_path, tap=top_tap)
+    kvm_testing.updateResource(partition_path, tap=top_tap)
 
     self.waitForInstanceWithForce()
     # END: mock .slapos-resource with tap.ipv4_addr
@@ -769,16 +698,23 @@ class TestAccessKvmClusterBootstrap(MonitorAccessMixin, KVMTestCase):
 
 
 class CronMixin(object):
+  @staticmethod
+  def _loadCronEnvironment(path):
+    with open(path) as fh:
+      return json.load(fh)
+
   def setUp(self):
     super().setUp()
-    # wait until all mocked partition have var/cron-environment.json
+    # wait until all mocked partition have a readable var/cron-environment.json
     for i in range(20):
       missing_list = []
       for mocked in glob.glob(os.path.join(
         self.slap._instance_root, '*', 'var', 'cron-d-mock')):
         cron_environment = os.path.join(
           '/', *mocked.split('/')[:-2], 'var', 'cron-environment.json')
-        if not os.path.exists(cron_environment):
+        try:
+          self._loadCronEnvironment(cron_environment)
+        except (OSError, ValueError):
           missing_list.append(cron_environment)
       if len(missing_list) == 0:
         break
@@ -790,10 +726,16 @@ class CronMixin(object):
   def executeCronDMockJob(cls, instance_type, cron):
     jobpath = cls.getPartitionPath(
       instance_type, 'var', 'cron-d-mock', cron)
-    with open(
-      cls.getPartitionPath(
-          instance_type, 'var', 'cron-environment.json')) as fh:
-      cron_environment = json.load(fh)
+    cron_environment_path = cls.getPartitionPath(
+      instance_type, 'var', 'cron-environment.json')
+    for i in range(60):
+      try:
+        cron_environment = cls._loadCronEnvironment(cron_environment_path)
+        break
+      except ValueError:
+        time.sleep(1)
+    else:
+      raise ValueError('Empty cron environment', cron_environment_path)
     job_list = []
     with open(jobpath, 'r') as fh:
       for job in fh.readlines():
@@ -812,10 +754,15 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
   instance_max_retry = 20
 
   disk_type = 'virtio'
+  extra_parameter_dict = {}
 
   @classmethod
   def getInstanceParameterDict(cls):
-    parameter_dict = {}
+    # the backup chain of a VM which barely allocated its disk image is much
+    # bigger than the image, so rolling full backups would kick in during the
+    # tests which are not about them
+    parameter_dict = {'backup-rolling-full-ratio': 0}
+    parameter_dict.update(cls.extra_parameter_dict)
     if cls.disk_type != 'virtio':
       parameter_dict['disk-type'] = cls.disk_type
     return {'_': json.dumps(parameter_dict)}
@@ -846,7 +793,8 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
     partial_recover=False,
     empty_backup_recover=False,
     migrated_old=False,
-    recovered_not_ready=False
+    recovered_not_ready=False,
+    rolling_full=False
   ):
     take_over_text = 'Post take-over or post qmpbackup upgrade cleanup'
     if post_take_over:
@@ -879,6 +827,18 @@ class TestInstanceResilientBackupMixin(CronMixin, KvmMixin):
     else:
       self.assertNotIn(recovered_not_ready_text, status_text)
 
+    rolling_full_text = 'Rolling full backup, as increments of'
+    if rolling_full:
+      self.assertIn(rolling_full_text, status_text)
+      # the exporter deletes the chain before the full backup replacing it is
+      # written, so the partition never holds both
+      started_text = 'Started backup transaction'
+      self.assertIn(started_text, status_text)
+      self.assertLess(
+        status_text.index(rolling_full_text), status_text.index(started_text))
+    else:
+      self.assertNotIn(rolling_full_text, status_text)
+
 
 def awaitBackup(equeue_file):
   for f in range(30):
@@ -901,7 +861,7 @@ class TestInstanceResilientBackupImporter(
     destination_qcow2 = os.path.join(
       self.importer_partition, 'srv', 'virtual.qcow2')
     destination_backup = os.path.join(
-      self.importer_partition, 'srv', 'backup', 'kvm', 'virtual1')
+      self.importer_partition, 'srv', 'backup', 'kvm', 'virtual.qcow2')
     # sanity check - no export/import happened yet
     self.assertFalse(os.path.exists(self.getKvmExportPartitionBackupPath()))
     self.call_exporter()
@@ -952,7 +912,8 @@ class TestInstanceResilientBackupExporterMixin(
   TestInstanceResilientBackupMixin):
   def assertImported(self):
     self.assertEqual(
-      set(sorted(os.listdir(self.getPartitionPath('kvm-import', 'srv')))),
+      set(os.listdir(self.getPartitionPath('kvm-import', 'srv')))
+      - {'logrotate.status'},
       set([
         'backup', 'proof.signature', 'virtual.qcow2', 'sshkeys',
         'backup.diff', 'monitor', 'cgi-bin', 'passwd', 'ssl', 'equeue.db'])
@@ -1043,9 +1004,13 @@ class TestInstanceResilientBackupExporterMigrateOld(
       with open(os.path.join(backup_partition, backup_file), 'w') as fh:
         fh.write('')
     self.initialBackup()
-    post_backup_file_list = os.listdir(backup_partition)
+    # the backup chain directory has the very name of the old style backup
+    # file, so only being a file tells the leftover of the old style apart
     for backup_file in backup_file_list:
-      self.assertNotIn(backup_file, post_backup_file_list)
+      self.assertFalse(
+        os.path.isfile(os.path.join(backup_partition, backup_file)))
+    self.assertTrue(
+      os.path.isdir(os.path.join(backup_partition, 'virtual.qcow2')))
 
 
 @skipUnlessKvm
@@ -1172,6 +1137,118 @@ class TestInstanceResilientBackupExporterOldStyleMigration(
       len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
       0)
     self.assertExporterStatus(status_text, migrated_old=True)
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterMigratePre063(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  # qmpbackup before 0.63 named the backup chain directory and the bitmap after
+  # the qemu node name, so simulate what such version left in the partition
+  old_bitmap = 'qmpbackup-virtual1-8a1050f7-cabd-4e29-a825-742e5eecdfea'
+
+  def getQemuImgPath(self):
+    with open(
+      glob.glob(os.path.join(
+          self.slap._instance_root, '*', 'etc', 'kvm_raw.json'))[0]) as fh:
+      return json.load(fh)['qemu-img-path']
+
+  def getBitmapList(self):
+    image_info = json.loads(subprocess.check_output([
+      self.getQemuImgPath(), 'info', '--output', 'json', '--force-share',
+      self.getPartitionPath('kvm-export', 'srv', 'virtual.qcow2')]))
+    return [
+      bitmap['name'] for bitmap in image_info.get(
+        'format-specific', {}).get('data', {}).get('bitmaps', [])]
+
+  def test(self):
+    backup_path = self.getPartitionPath('kvm-export', 'srv', 'backup', 'kvm')
+    old_chain_path = os.path.join(backup_path, 'virtual1')
+    os.mkdir(old_chain_path)
+    old_chain_file_list = [
+      os.path.join(old_chain_path, 'FULL-1750000000-virtual1.qcow2'),
+      os.path.join(old_chain_path, 'INC-1750000001-virtual1.qcow2'),
+    ]
+    # qmpbackup writes those next to the chain directory, and the backup would
+    # be requested incremental as long as its uuid is around
+    old_root_file_list = [
+      os.path.join(backup_path, 'virtual.qcow2.config'),
+      os.path.join(backup_path, 'uuid'),
+    ]
+    for old_file in old_chain_file_list + old_root_file_list:
+      with open(old_file, 'w') as fh:
+        fh.write('')
+    # the image is only writable with the VM stopped
+    self.requestDefaultInstance(state='stopped')
+    self.waitForInstanceWithPropagation()
+    subprocess.check_call([
+      self.getQemuImgPath(), 'bitmap', '--add',
+      self.getPartitionPath('kvm-export', 'srv', 'virtual.qcow2'),
+      self.old_bitmap])
+    self.requestDefaultInstance(state='started')
+    self.waitForInstanceWithPropagation()
+
+    status_text = self.call_exporter()
+    self.assertExporterStatus(status_text, migrated_old=True)
+    self.assertEqual(
+      len(glob.glob(self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))),
+      1)
+    self.assertEqual(
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
+      0)
+    self.assertFalse(os.path.exists(old_chain_path))
+    for old_file in old_root_file_list:
+      # dropped by the migration and written again by the backup
+      self.assertGreater(os.path.getsize(old_file), 0)
+    # the next backup is incremental, which the migrated bitmap allows
+    status_text = self.call_exporter()
+    self.assertExporterStatus(status_text)
+    self.assertEqual(
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
+      1)
+
+    # the stopped VM flushes the bitmaps to the image
+    self.requestDefaultInstance(state='stopped')
+    self.waitForInstanceWithPropagation()
+    with open(os.path.join(backup_path, 'uuid')) as fh:
+      backup_uuid = fh.read()
+    self.assertEqual(
+      ['qmpbackup-%s' % (backup_uuid,)], self.getBitmapList())
+
+
+@skipUnlessKvm
+class TestInstanceResilientBackupExporterRollingFull(
+  TestInstanceResilientBackupExporterMixin, KVMTestCase):
+  rolling_ratio = 0.01
+  extra_parameter_dict = {'backup-rolling-full-ratio': rolling_ratio}
+
+  def test(self):
+    self.initialBackup()
+    full = glob.glob(self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))[0]
+    # a chain without increments is a full backup on its own, replacing it
+    # would not save any space
+    status_text = self.call_exporter()
+    self.assertExporterStatus(status_text)
+    increment_list = glob.glob(
+      self.getKvmExportPartitionBackupPath('INC-*.qcow2'))
+    self.assertEqual(1, len(increment_list))
+    self.assertGreater(
+      sum(os.path.getsize(increment) for increment in increment_list),
+      self.rolling_ratio * os.path.getsize(full))
+    equeue_file = self.getPartitionPath(
+      'kvm-import', 'var', 'log', 'equeue.log')
+    with open(equeue_file, 'w') as fh:
+      fh.write('')
+    status_text = self.call_exporter()
+    awaitBackup(equeue_file)
+    self.assertExporterStatus(status_text, rolling_full=True)
+    full_list = glob.glob(
+      self.getKvmExportPartitionBackupPath('FULL-*.qcow2'))
+    self.assertEqual(1, len(full_list))
+    self.assertNotEqual(full, full_list[0])
+    self.assertEqual(
+      len(glob.glob(self.getKvmExportPartitionBackupPath('INC-*.qcow2'))),
+      0)
+    self.assertImported()
 
 
 @skipUnlessKvm
@@ -2608,7 +2685,7 @@ class ExternalDiskMixin(KvmMixin):
         os.mkdir(partition_store)
         partition_store_list.append(partition_store)
 
-      cls._updateSlaposResource(
+      kvm_testing.updateResource(
         partition_path,
         external_storage_list=partition_store_list,
       )
