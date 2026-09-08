@@ -73,7 +73,7 @@ wait_puma () {
     fi
 
     if [ -S "$socket" ]; then
-      code=$(curl --unix-socket "$socket" -o /dev/null -s -w "%{http_code}" "http://localhost/explore")
+      code=$(curl --unix-socket "$socket" -o /dev/null -s -w "%{http_code}" "http://localhost/explore" || true)
       if [ "$code" -eq 200 ]; then
         echo "OK: Puma service is ready"
         success=1
@@ -108,7 +108,7 @@ rm -rf $var_location/repositories.*
 echo "Starting Postgres..."
 $postgres_executable &
 postgres_pid=$!
-trap "echo 'kill $postgres_pid" EXIT TERM INT
+trap "kill $postgres_pid" EXIT TERM INT
 
 echo "Starting Redis server..."
 $redis_executable &
@@ -123,12 +123,11 @@ $puma_script &
 puma_pid=$!
 trap "kill $gitaly_pid $postgres_pid $redis_pid $puma_pid" EXIT TERM INT
 # wait until Puma is started and pid file exists
-sleep 10
+wait_puma $puma_pid $puma_socket
 if [ -s "$puma_pid_file" ]; then
   puma_pid=$(head -n 1 $puma_pid_file) > /dev/null 2>&1
   trap "kill $gitaly_pid $postgres_pid $redis_pid $puma_pid" EXIT TERM INT
 fi
-wait_puma $puma_pid $puma_socket
 echo "[OK]"
 echo "Restoring gitlab data..."
 
