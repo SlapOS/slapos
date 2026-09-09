@@ -12969,9 +12969,18 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
 
   @staticmethod
   def _servedFromCache(headers):
-    # Trafficserver stamps `Age` on a miss too, as 0, so the header being
-    # present proves nothing -- only a non-zero value does.
+    # Trafficserver stamps `Age` on a miss too, so presence proves nothing.
+    # A non-zero value is evidence, not proof: it comes from the response
+    # `Date`, which a slow miss can age past a second.
     return int(headers.get('age', 0)) > 0
+
+  def _assertNotFromCache(self, headers, path, message):
+    # The origin request count is what settles it where `Age` is only
+    # evidence, so a failure here has to carry both.
+    self.assertFalse(
+      self._servedFromCache(headers),
+      '%s (age %s, %s origin requests for %r)' % (
+        message, headers.get('age'), self._originRequestCount(path), path))
 
   def _waitForCacheHit(self, domain, path, timeout=60):
     deadline = time.time() + timeout
@@ -13045,9 +13054,8 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       'the frontend went back to the origin for a body that broke mid-response')
 
     headers, got = self._fetch(domain, path)
-    self.assertFalse(
-      self._servedFromCache(headers),
-      'the truncated body was served from cache')
+    self._assertNotFromCache(
+      headers, path, 'the truncated body was served from cache')
     self.assertEqual(
       2, self._originRequestCount(path),
       'the frontend kept the partial instead of fetching again')
@@ -13062,8 +13070,8 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     self.assertEqual(1, self._originRequestCount(path))
 
     headers, got = self._fetch(domain, path)
-    self.assertFalse(
-      self._servedFromCache(headers),
+    self._assertNotFromCache(
+      headers, path,
       'a response cut short by the backend timeout was served from cache')
     self.assertEqual(
       2, self._originRequestCount(path),
@@ -13106,8 +13114,7 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       % (self.BODY_SIZE,))
 
     headers, got = self._fetch(domain, path, abort_at=self.ABORT_AT)
-    self.assertFalse(
-      self._servedFromCache(headers), 'an uncacheable body was cached')
+    self._assertNotFromCache(headers, path, 'an uncacheable body was cached')
     self.assertEqual(
       2, self._originRequestCount(path),
       'the origin was not asked again for an uncacheable body')
