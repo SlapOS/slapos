@@ -19,6 +19,7 @@ context =
   key instance_title slap-configuration:instance-title
   key slapparameter_dict slap-configuration:configuration
   key computer_id slap-configuration:computer
+  key slapuser slap-configuration:user-name
   section slap_connection slap-connection
 
 [dynamic-template-cluster]

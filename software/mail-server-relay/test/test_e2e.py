@@ -984,16 +984,24 @@ class E2E(E2ETestCase):
       topology = {
         "relay-one": {"fqdn": cls.omailgw_relay_hostname},
       },
+      # Request rate-limits on both proxies to make sure there are no issues
+      # when there are multiple custom limits in policyd-rate-limit config
       proxy_map = {
         "external-proxy-1": {
           "host": external[0]['imap-smtp-ipv6'],
           "port": int(external[0]['smtp-port']),
-          "domains": cls.mail_server_domains[:-1]
+          "domains": cls.mail_server_domains[:-1],
+          "rate-limits": [
+            {"cap": 1000000, "per": 1}, # extremly much/second, no real limit
+          ],
         },
         "external-proxy-2": {
           "host": external[1]['imap-smtp-ipv6'],
           "port": int(external[1]['smtp-port']),
-          "domains": cls.mail_server_domains[-1:]
+          "domains": cls.mail_server_domains[-1:],
+          "rate-limits": [
+            {"cap": 1, "per": 3600}, # 1 mail/hour max
+          ],
         },
       },
       extra = {
@@ -1026,6 +1034,11 @@ class E2E(E2ETestCase):
     cls.relay_inbound = {
       'host': relay_host,
       'port': cls.relay_inbound_port,
+      'timeout': cls.smtp_timeout,
+    }
+    cls.relay_outbound = {
+      'host': relay_host,
+      'port': cls.relay_outbound_port,
       'timeout': cls.smtp_timeout,
     }
     cls.relay_nodes = cls.getRelayNodes()
@@ -1115,13 +1128,45 @@ class E2E(E2ETestCase):
       "This is a test email to external server."
     )
 
-  def test_send_email_via_proxy2(self):
+  def test_send_email_via_proxy2_with_rate_limit(self):
     """Mail from a domain whitelisted in the second proxy entry is routed
     through the second external relay and arrives at the second external
     mail server."""
+    from_server = self.mail_servers[-1]
+    to_server = self.external_mail_servers[1]
+    # Check first email reaches external destination
     self.check_mail_e2e(
-      self.mail_servers[-1], self.external_mail_servers[1],
+      from_server, to_server,
       "This is a test email routed via the second proxy."
+    )
+    # Check second email is rejected
+    from_cert_bundle = self.partitionPath(
+      from_server, 'etc', 'postfix', 'ssl', 'postfix-backend.bundle.pem'
+    )
+    # XXX use source_address
+    with self.assertRaises(smtplib.SMTPRecipientsRefused) as exc:
+      with smtplib.SMTP(**self.relay_outbound) as smtp:
+        smtp.starttls(context=self.client_ssl_context(from_cert_bundle))
+        smtp.sendmail(
+          from_addr=from_server.testmail,
+          to_addrs=[to_server.testmail],
+          msg=f"Subject: Test Second Email to External\n\n2"
+        )
+    self.assertIn("Rate limit reach", str(exc.exception))
+    # Check un-normalized domain is still rate-limited
+    with self.assertRaises(smtplib.SMTPRecipientsRefused) as exc:
+      with smtplib.SMTP(**self.relay_outbound) as smtp:
+        smtp.starttls(context=self.client_ssl_context(from_cert_bundle))
+        smtp.sendmail(
+          from_addr=from_server.testmail.upper(),
+          to_addrs=[to_server.testmail],
+          msg=f"Subject: Test Capitalized Email to External\n\n2"
+        )
+    self.assertIn("Rate limit reach", str(exc.exception))
+    # Check relay-internal mails are not rate limited
+    self.check_mail_e2e(
+      from_server, self.mail_servers[0],
+      "This is an internal test email not rate-limited"
     )
 
   def test_send_email_from_external_via_relay(self):
