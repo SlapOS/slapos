@@ -12772,6 +12772,19 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       cls._replyShort(conn)
       return
     cls._log({'path': path, 'request': True})
+    if '/big-eoffull' in path:
+      try:
+        conn.sendall(
+          b'HTTP/1.1 200 OK\r\n'
+          b'Content-Type: application/octet-stream\r\n'
+          b'Cache-Control: max-age=3600\r\n'
+          b'Connection: close\r\n\r\n')
+      except OSError:
+        conn.close()
+        return
+      cls._streamPaced(conn, path, cls.BODY_SIZE)
+      conn.close()
+      return
     if '/big-nostore' in path:
       try:
         conn.sendall(
@@ -13267,3 +13280,18 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       domain, path, range_spec='bytes=%d-' % (self.BODY_SIZE + 1024,))
     self.assertEqual('416', headers['_status'])
     self.assertEqual(before, self._originRequestCount(path))
+
+  def test_complete_response_without_length_is_cached(self):
+    domain = self.parseSlaveParameterDict('bigfile')['domain']
+    path = 'big-eoffull'
+
+    headers, got = self._fetch(domain, path)
+    self.assertEqual('200', headers['_status'])
+    self.assertNotIn('content-length', headers)
+    # The origin wrote the whole body and closed, which RFC 9112 makes a
+    # complete message. It stays cacheable because this slave did not ask for
+    # the strict policy, which cannot tell it from a body a timeout cut short.
+    self.assertGreaterEqual(got, self.BODY_SIZE)
+
+    self._waitForCacheHit(domain, path)
+    self.assertEqual(1, self._originRequestCount(path))
