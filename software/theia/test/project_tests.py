@@ -585,7 +585,7 @@ class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
     # of time, so we give it at least 20 minutes.
     soon = (datetime.now() + timedelta(minutes=20))
     frequency = "%d * * * *" % soon.minute
-    params = 'backup_frequency=%s' % frequency
+    params = '_={"backup_frequency": "%s" }' % frequency
 
     # Update Gitlab parameters
     print('Requesting Gitlab with parameters %s' % params)
