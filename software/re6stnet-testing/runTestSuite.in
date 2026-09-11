@@ -1,0 +1,152 @@
+#!{{parameter_dict['runTestSuite_py']}}
+import argparse, json, os, re, subprocess, traceback
+from time import gmtime, strftime, time
+# These are the 2 modules to reuse when using ERP5 for managing test bots.
+# What we do here is currently too new to reuse more from testsuite.
+from erp5.util import taskdistribution
+from erp5.util.testsuite import format_command, subprocess_capture
+from zc.buildout.buildout import Buildout
+
+{% set vm = parameter_dict['vm'] -%}
+
+dist_list = {{vm['dists'].split()}}
+
+RUN_RE = re.compile(
+  br'Ran (?P<all_tests>\d+) tests? in (?P<seconds>\d+\.\d+)s',
+  re.DOTALL)
+
+STATUS_RE = re.compile(br"""
+  (OK|FAILED)\s+\(
+    (failures=(?P<failures>\d+),?\s*)?
+    (errors=(?P<errors>\d+),?\s*)?
+    (skipped=(?P<skips>\d+),?\s*)?
+    (expected\s+failures=(?P<expected_failures>\d+),?\s*)?
+    (unexpected\s+successes=(?P<unexpected_successes>\d+),?\s*)?
+  \)
+  """, re.DOTALL | re.VERBOSE)
+
+
+class DummyTestResult:
+
+  class DummyTestResultLine:
+
+    def stop(self, **kw):
+      with open(self.name + '.json', 'w') as f:
+        json.dump(kw, f)
+
+  done = 0
+
+  def __init__(self, test_name_list):
+    self.test_name_list = test_name_list
+
+  def start(self):
+    test_result_line = self.DummyTestResultLine()
+    try:
+      test_result_line.name = self.test_name_list[self.done]
+    except IndexError:
+      return
+    self.done += 1
+    return test_result_line
+
+
+def main():
+  os.environ.update({k: v.strip() % os.environ
+    for k, v in {{tuple(parameter_dict['environment'].items())}}})
+
+  parser = argparse.ArgumentParser(description='Run a test suite.')
+  parser.add_argument('--test_suite', help='The test suite name')
+  parser.add_argument('--test_suite_title', help='The test suite title')
+  parser.add_argument('--test_node_title', help='The test node title')
+  parser.add_argument('--project_title', help='The project title')
+  parser.add_argument('--revision', help='The revision to test',
+                      default='dummy_revision')
+  parser.add_argument('--node_quantity', type=int,
+                      help='Number of CPUs to use for the VM')
+  parser.add_argument('--master_url',
+                      help='The Url of Master controling many suites')
+
+  args = parser.parse_args()
+
+  test_title = args.test_suite_title or args.test_suite
+  if args.master_url:
+    tool = taskdistribution.TaskDistributor(args.master_url)
+    test_result = tool.createTestResult(args.revision,
+                                        dist_list,
+                                        args.test_node_title,
+                                        test_title=test_title,
+                                        project_title=args.project_title)
+    if test_result is None:
+      return
+  else:
+    test_result = DummyTestResult(dist_list)
+
+  Buildout._setup_logging = lambda self: None
+
+  fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
+  try:
+    os.write(fd, b"""\
+[buildout]
+offline = true
+relative-paths = true
+""")
+    Buildout('buildout.cfg', ()).bootstrap(None)
+    os.write(fd, b"""\
+extends = {{parameter_dict['profile_base_location']}}/testing.cfg
+develop-eggs-directory = {{buildout['develop-eggs-directory']}}
+eggs-directory = {{buildout['eggs-directory']}}
+
+[testing]
+environment =
+vm = {{vm['location']}}
+mount.nemu3 = {{parameter_dict['nemu3']}}
+mount.re6stnet = {{parameter_dict['re6stnet']}}
+""")
+  finally:
+    os.close(fd)
+  partdir = os.path.join('parts', 'testing')
+
+  while True:
+    test_result_line = test_result.start()
+    if not test_result_line:
+      break
+    dist = test_result_line.name
+
+    cmd = [os.path.join('bin', 'buildout'),
+      'testing:dist=' + dist,
+    ]
+    status_dict = {'command': format_command(*cmd)}
+    print('$', status_dict['command'])
+
+    start = time()
+    try:
+      try:
+        stdout, stderr = subprocess_capture(subprocess.Popen(
+          cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+      finally:
+        end = time()
+      status_dict['stdout'] = stdout.decode('utf-8', 'backslashreplace')
+      status_dict['stderr'] = stderr.decode('utf-8', 'backslashreplace')
+
+      m = RUN_RE.search(stderr)
+      if m:
+        status_dict['test_count'] = int(m['all_tests'])
+      m = STATUS_RE.search(stderr)
+      if m:
+        status_dict.update(
+          error_count=int(m['errors'] or 0),
+          failure_count=int(m['failures'] or 0)
+                       +int(m['unexpected_successes'] or 0),
+          skip_count=int(m['skips'] or 0)
+                    +int(m['expected_failures'] or 0))
+
+    except Exception:
+      status_dict.setdefault('stderr', traceback.format_exc())
+
+    test_result_line.stop(
+      date = strftime("%Y/%m/%d %H:%M:%S", gmtime(end)),
+      duration = end - start,
+      **status_dict)
+
+
+if __name__ == "__main__":
+    main()
