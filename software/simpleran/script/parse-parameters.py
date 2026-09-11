@@ -582,7 +582,7 @@ def ors_radio(config, publish, shared_list):
                 publish['cell'].setdefault('tac', {})[c] = config[c]['tac']
                 publish['id']['handover-json-export'][c] = json.dumps({
                     'name': hostname,
-                    'e_cell_id': global_id(config['enb_id'], config[c]['cell_id'], 8),
+                    'e_cell_id': eutra_cell_id,
                     'dl_earfcn': dl_arfcn,
                     'pci': config[c]['pci'],
                     'tac': config[c]['tac'],
@@ -595,7 +595,7 @@ def ors_radio(config, publish, shared_list):
                 publish['id']['nr-cell-id'][c] = publish_hex(nr_cell_id)
                 publish['id']['handover-json-export'][c] = json.dumps({
                     'name': hostname,
-                    'nr_cell_id': global_id(config['enb_id'], config[c]['cell_id'], 8),
+                    'nr_cell_id': nr_cell_id,
                     'gnb_id_bits': config['gnb_id_bits'],
                     'dl_nr_arfcn': dl_arfcn,
                     'nr_band': band,
