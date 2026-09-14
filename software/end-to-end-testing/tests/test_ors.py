@@ -48,6 +48,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                 "sdr_map": {
                   "0": {
                     "serial": "001",
+                    "sdr_dev": "2",
                     "version": "4.5",
                     "band": "B39",
                     "tdd": "TDD",
@@ -55,6 +56,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                   },
                   "1": {
                     "serial": "001",
+                    "sdr_dev": "3",
                     "version": "4.5",
                     "band": "B39",
                     "tdd": "TDD",
@@ -118,7 +120,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                       "ru_type": "sdr",
                       "ru_link_type": "sdr",
                       "sdr_dev_list": [
-                          1
+                          3
                       ],
                       "n_antenna_dl": 1,
                       "n_antenna_ul": 1,
