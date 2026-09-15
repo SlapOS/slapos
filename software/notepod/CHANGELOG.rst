@@ -2,6 +2,7 @@
 ''''''''''
 
 - Upgrade re6stnet, switching to new OBS packaging.
+- Make sure the EFI partition is FAT32 to fix boot on some machines.
 
 2026-08-29
 ''''''''''
