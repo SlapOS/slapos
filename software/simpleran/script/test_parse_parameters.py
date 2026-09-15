@@ -53,18 +53,18 @@ sim_list.append({
 slave_instance_list = []
 
 for i, s in enumerate(sim_list):
-	slave_instance_list.append({
-		'_': json.dumps(s),
-		'slap_software_type': 'core-network',
-		'slave_reference': f'SOFTINST-{100000+i}',
-		'slave_title': f'ORS100-SIM-{i}',
-		'timestamp': time.time(),
-	})
+  slave_instance_list.append({
+    '_': json.dumps(s),
+    'slap_software_type': 'core-network',
+    'slave_reference': f'SOFTINST-{100000+i}',
+    'slave_title': f'ORS100-SIM-{i}',
+    'timestamp': time.time(),
+  })
 
 
 self.buildout = {
     'slap-configuration': {
-		'instance-title': 'ors100-core-network',
+    'instance-title': 'ors100-core-network',
         'slave-instance-list': slave_instance_list,
         'slap-software-type': 'core-network',
         'configuration': config,

@@ -422,7 +422,7 @@
               "default": true,
               "type": "boolean"
             }
-	  }
+          }
         },
         "half_duplex": {
           "title": "Half Duplex",
@@ -435,7 +435,7 @@
               "default": false,
               "type": "boolean"
             }
-	  }
+          }
         }
       }
     }
