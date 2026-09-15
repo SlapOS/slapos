@@ -87,12 +87,6 @@
     "latency_parameter": {
       "$ref": "cell/nr/input-schema.json#/properties/latency_parameter"
     },
-    "pusch_mapping_type": {
-      "$ref": "cell/nr/input-schema.json#/properties/pusch_mapping_type"
-    },
-    "prach_config_index": {
-      "$ref": "cell/nr/input-schema.json#/properties/prach_config_index"
-    },
     "configured_grant": {
       "$ref": "cell/nr/input-schema.json#/properties/configured_grant"
     },
@@ -104,6 +98,9 @@
       "description": "Export only. Enable this to let Amarisoft generate SSB NR ARFCN instead of Simpleran. Warning: enabling this will prevent SSB NR ARFCN to be correctely displayed in the connection parameters, you will need to check gNB log to know the value Amarisoft computed.",
       "type": "boolean",
       "default": false
+    },
+    "advanced_parameter": {
+      "$ref": "cell/nr/input-schema.json#/properties/advanced_parameter"
     }
   }
 }

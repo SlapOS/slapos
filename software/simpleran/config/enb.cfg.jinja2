@@ -227,6 +227,16 @@
 {%-     if amf.get('ngap_bind_addr', '') %}
       ngap_bind_addr: "{{ amf['ngap_bind_addr'] }}",
 {%-     endif %}
+{%-     if amf.get('5qi_dscp_mapping') %}
+      5qi_dscp_mapping: [
+{%-       for qci in amf.get('5qi_dscp_mapping', []) %}
+        {
+          5qi: {{ qci.get('5qi') }},
+          dscp: {{ qci.dscp }},
+        },
+{%-       endfor %}
+      ],
+{%-     endif %}
     },
 {%-   endfor %}
   ],
@@ -282,6 +292,15 @@
       root_sequence_index: {{ cell.root_sequence_index }},
       inactivity_timer: {{ cell.inactivity_timer }},
       ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
+      prach_freq_offset: {{ cell.advanced_parameter.prach_freq_offset }},
+      q_rx_lev_min: {{ cell.advanced_parameter.q_rx_lev_min }},
+{%-   if 'p_max' in cell.advanced_parameter %}
+      p_max: {{ cell.advanced_parameter.p_max }},
+{%-   endif %}
+{%-   if 'q_qual_min' in cell.advanced_parameter %}
+      q_qual_min: {{ cell.advanced_parameter.q_qual_min }},
+{%-   endif %}
+      q_rx_lev_min_offset: {{ cell.advanced_parameter.q_rx_lev_min_offset }},
 {%-   if 'sr_period' in cell %}
       sr_period: {{ cell.sr_period }},
 {%-   endif %}
@@ -369,7 +388,11 @@
     pdsch_mcs: {{ cell.fixed_mcs_downlink }},
 {%- endif %}
     pdcch_format:       {{  1   if n_rb_dl == 6  else 2 }},
+{%- if "prach_config_index" in cell.advanced_parameter %}
+    prach_config_index: {{ cell.advanced_parameter.prach_config_index }},
+{%- else %}
     prach_config_index: {{  15  if n_rb_dl == 6  else 4 }},
+{%- endif %}
     initial_cqi:        {{  5   if n_rb_dl == 6  else 3 }},
     phr_link_adaptation: {{ cell.phr_link_adaptation |tojson }},
     pucch_dedicated: {
@@ -632,11 +655,9 @@
     si_value_tag: 0,
     cell_barred: false,
     intra_freq_reselection: true,
-    q_rx_lev_min: -70,
     si_window_length: 40,
     si_pdcch_format: 2,
     n_symb_cch: 0,
-    prach_freq_offset: -1,
     pusch_dedicated: {
       beta_offset_ack_index: 9,
       beta_offset_ri_index: 6,
@@ -814,6 +835,12 @@
         root_sequence_index: {{ cell.root_sequence_index }},
         inactivity_timer: {{ cell.inactivity_timer }},
         ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
+        q_rx_lev_min: {{ cell.advanced_parameter.q_rx_lev_min }},
+        delta_rx_lev_min: {{ cell.advanced_parameter.delta_rx_lev_min }},
+        q_qual_min: {{ cell.advanced_parameter.q_qual_min }},
+{%-   if 'p_max' in cell.advanced_parameter %}
+        p_max: {{ cell.advanced_parameter.p_max }},
+{%-   endif %}
         sr_period: {{ cell.get('latency_parameter', {}).get('sr_period', 40) }},
 {%-   if 'rx_to_tx_latency' in cell.get('latency_parameter', {}) %}
         rx_to_tx_latency: {{ cell.latency_parameter.rx_to_tx_latency }},
@@ -995,12 +1022,17 @@
           ],
         },
         prach: {
+          preamble_received_target_power: {{ cell.advanced_parameter.prach_preamble_received_target_power }},
+          preamble_trans_max: {{ cell.advanced_parameter.prach_preamble_trans_max }},
+          power_ramping_step: {{ cell.advanced_parameter.prach_power_ramping_step }},
 {%-     if ru.ru_type == "sunwave" %}
           msg1_frequency_start: 0,
+{%-     elif 'msg1_frequency_start' in cell.advanced_parameter %}
+          msg1_frequency_start: {{ cell.advanced_parameter.msg1_frequency_start }},
 {%-     endif %}
           ra_response_window: {{ 20 if tdd else 10 }},
-{%-     if "prach_config_index" in cell %}
-          prach_config_index: {{ cell.prach_config_index }},
+{%-     if "prach_config_index" in cell.advanced_parameter %}
+          prach_config_index: {{ cell.advanced_parameter.prach_config_index }},
 {%-     else %}
 {%-       if tdd %}
           prach_config_index: {{ 156 if (tdd_config == 6 or tdd_config == 7) else 160 }},
@@ -1008,6 +1040,11 @@
           prach_config_index: 16,
 {%-       endif %}
 {%-     endif %}
+        },
+        pucch: {
+          p0_nominal: {{ cell.advanced_parameter.pucch_p0_nominal }},
+          resource_auto: {
+          }
         },
         pdcch: {
 {%-     if ru.ru_type == "sunwave" %}
@@ -1054,6 +1091,7 @@
 {%-     endif %}
         },
         pusch: {
+          p0_nominal_with_grant: {{ cell.advanced_parameter.pusch_p0_nominal }},
           mapping_type: {{ cell.get('pusch_mapping_type', 'typeA') | tojson }},
 {%-     if "fixed_mcs_uplink" in cell %}
           mcs: {{ cell.fixed_mcs_uplink }},
@@ -1140,16 +1178,10 @@
     si_window_length: 40,
     cell_barred: false,
     intra_freq_reselection: true,
-    q_rx_lev_min: -70,
-    q_qual_min: -20,
     prach: {
       msg1_subcarrier_spacing: 30,
       msg1_fdm: 1,
-      msg1_frequency_start: -1,
       zero_correlation_zone_config: 15,
-      preamble_received_target_power: -110,
-      preamble_trans_max: 7,
-      power_ramping_step: 4,
       restricted_set_config: "unrestricted_set",
       ra_contention_resolution_timer: 64,
       ssb_per_prach_occasion: 1,
@@ -1179,11 +1211,6 @@
       rar_mcs: 2,
       si_mcs: 6,
     },
-    pucch: {
-      p0_nominal: -96,
-      resource_auto: {
-      }
-    },
     pusch: {
       dmrs_add_pos: 1,
       dmrs_type: 1,
@@ -1192,7 +1219,6 @@
       mcs_table: "qam256",
       mcs_table_tp: "qam256",
       ldpc_max_its: 5,
-      p0_nominal_with_grant: -84,
       msg3_mcs: 4,
       msg3_delta_power: 0,
       beta_offset_ack_index: 9,

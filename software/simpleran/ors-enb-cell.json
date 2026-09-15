@@ -83,6 +83,9 @@
     },
     "integ_algo_pref": {
       "$ref": "cell/lte/input-schema.json#/properties/integ_algo_pref"
+    },
+    "advanced_parameter": {
+      "$ref": "cell/lte/input-schema.json#/properties/advanced_parameter"
     }
   }
 }
