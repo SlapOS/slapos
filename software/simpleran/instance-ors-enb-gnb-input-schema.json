@@ -9,8 +9,8 @@
       "$ref": "#/$defs/ors_cell"
     },
     "nodeb": {
-      "title": "eNB Parameters",
-      "description": "Parameters not related to a single cell but to the eNB",
+      "title": "eNB / gNB Parameters",
+      "description": "Parameters not related to a single cell but to the eNB and / or gNB",
       "allOf": [
         {
           "$ref": "ors-enb-gnb-classic.json"
