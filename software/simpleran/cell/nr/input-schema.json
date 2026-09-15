@@ -99,6 +99,112 @@
       "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
       "default": 1
     },
+    "advanced_parameter": {
+      "title": "Advanced Parameters",
+      "type": "object",
+      "default": {
+        "enable_sib2": false,
+        "msg1_frequency_start": -1,
+        "prach_power_ramping_step": 4,
+        "prach_preamble_trans_max": 7,
+        "prach_preamble_received_target_power": -110,
+        "pucch_p0_nominal": -96,
+        "pusch_p0_nominal": -84,
+        "q_rx_lev_min": -70,
+        "q_qual_min": -20,
+        "delta_rx_lev_min": 0,
+        "cell_reselection_priority": 6,
+        "t_reselection_nr": 1,
+        "s_intra_search": 31,
+        "q_hyst": 3
+      },
+      "properties": {
+        "enable_sib2": {
+          "title": "Enable SIB2",
+          "description": "By default only SIB1 is transmitted. You should enable SIB2 transmission if you have configured any parameters located in SIB2 (example: cell reselection priority) else they will have no effect",
+          "type": "boolean",
+          "default": false
+        },
+        "prach_config_index": {
+          "$ref": "../../cell/common.json#/$defs/prach_config_index",
+          "description": "Expert only: Integer (range 0 to 262). prach-ConfigurationIndex parameter. Default value depends on TDD configuration"
+        },
+        "msg1_frequency_start": {
+          "$ref": "../../cell/common.json#/$defs/prach_freq_offset",
+          "title": "PRACH msg1 Frequency Start",
+          "description": "msg1-FrequencyStart parameter. The special value -1 indicates to automatically select the PRACH frequency",
+          "default": -1
+        },
+        "prach_power_ramping_step": {
+          "$ref": "../../cell/common.json#/$defs/prach_power_ramping_step",
+          "default": 4
+        },
+        "prach_preamble_trans_max": {
+          "$ref": "../../cell/common.json#/$defs/prach_preamble_trans_max",
+          "default": 7
+        },
+        "prach_preamble_received_target_power": {
+          "$ref": "../../cell/common.json#/$defs/prach_preamble_received_target_power",
+          "default": -110
+        },
+        "pucch_p0_nominal": {
+          "$ref": "../../cell/common.json#/$defs/pucch_p0_nominal",
+          "default": -96
+        },
+        "pusch_p0_nominal": {
+          "$ref": "../../cell/common.json#/$defs/pusch_p0_nominal",
+          "title": "PUSCH P0 Nominal With Grant",
+          "description": "PUSCH p0-NominalWithGrant",
+          "default": -84
+        },
+        "pusch_mapping_type": {
+          "title": "PUSCH Mapping type",
+          "description": "Select the mapping type for the full UL slots",
+          "enum": [
+            "typeA",
+            "typeB"
+          ],
+          "type": "string"
+        },
+        "p_max": {
+          "$ref": "../../cell/common.json#/$defs/p_max",
+          "description": "Range -30 to 33 or -127. p-NR-FR1 (in PhysicalCellGroupConfig IE) and p-Max (in FrequencyInfoUL and FrequencyInfoUL-SIB IEs) value in dB. The value -127 means that the parameter is not broadcast. p-MAX will limit UE Power. By default it is not set so that UE power is not limited"
+        },
+        "q_rx_lev_min": {
+          "$ref": "../../cell/common.json#/$defs/q_rx_lev_min",
+          "description": "Value of SIB1.cellSelectionInfo.q-RxLevMin"
+        },
+        "q_qual_min": {
+          "$ref": "../../cell/common.json#/$defs/q_qual_min",
+          "description": "Value of SIB1.cellSelectionInfo.q-QualMin",
+          "default": -20
+        },
+        "delta_rx_lev_min": {
+          "$ref": "../../cell/common.json#/$defs/q_rx_lev_min_offset",
+          "description": "Value of SIB1.cellSelectionInfo.q-RxLevMinOffset. The value 0 disables the field"
+        },
+        "cell_reselection_priority": {
+          "$ref": "../../cell/common.json#/$defs/cell_reselection_priority",
+          "description": "Value of SIB2.cellReselectionServingFreqInfo.cellReselectionPriority"
+        },
+        "t_reselection_nr": {
+          "title": "t-ReselectionNR",
+          "description": "Value of SIB2.intraFreqCellReselectionInfo.t-ReselectionNR",
+          "type": "number",
+          "default": 1
+        },
+        "s_intra_search": {
+          "$ref": "../../cell/common.json#/$defs/s_intra_search",
+          "description": "Value of SIB2.intraFreqCellReselectionInfo.s-IntraSearchP",
+          "default": 31
+        },
+        "q_hyst": {
+          "$ref": "../../cell/common.json#/$defs/q_hyst",
+          "description": "Value of SIB2.cellReselectionInfoCommon.q-Hyst",
+          "default": 3
+        }
+      }
+    },
     "latency_parameter": {
       "title": "Latency Parameters",
       "description": "Parameters useful for tuning latency",
@@ -198,20 +304,6 @@
           "type": "integer"
         }
       }
-    },
-    "pusch_mapping_type": {
-      "title": "PUSCH Mapping type",
-      "description": "Select the mapping type for the full UL slots",
-      "enum": [
-        "typeA",
-        "typeB"
-      ],
-      "type": "string"
-    },
-    "prach_config_index": {
-      "title": "Expert only: Prach Config Index",
-      "description": "Expert only: Integer (range 0 to 262). prach-ConfigurationIndex parameter. Default is 160 or 156 depending on TDD configuration",
-      "type": "number"
     },
     "subcarrier_spacing": {
       "title": "Expert only: Subcarrier Spacing (in kHz)",

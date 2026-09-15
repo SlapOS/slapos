@@ -275,7 +275,7 @@
       ],
       "default": {
         "event": {
-          "a3_rsrp": 6
+          "a3_offset": 6
         },
         "hysteresis": 0,
         "time_to_trigger": 480
@@ -290,12 +290,12 @@
               "title": "A3 event",
               "type": "object",
               "required": [
-                "a3_rsrp"
+                "a3_offset"
               ],
               "properties": {
-                "a3_rsrp": {
-                  "title": "Handover A3 event RSRP offset",
-                  "description": "Integer, range from -140 to -43. RSRP gain offset between eNBs and gNBs which will trigger handover",
+                "a3_offset": {
+                  "title": "Handover A3 event offset",
+                  "description": "Range from -30 to 30. A3 offset in 0.5dB steps used for the measurement report triggering condition",
                   "type": "number"
                 }
               }
@@ -427,7 +427,7 @@
       ],
       "default": {
         "event": {
-          "a3_rsrp": 6
+          "a3_offset": 6
         },
         "hysteresis": 0,
         "time_to_trigger": 480
@@ -442,12 +442,12 @@
               "title": "A3 event",
               "type": "object",
               "required": [
-                "a3_rsrp"
+                "a3_offset"
               ],
               "properties": {
-                "a3_rsrp": {
-                  "title": "Handover A3 event RSRP offset",
-                  "description": "Integer, range from -140 to -43. RSRP gain offset between eNBs and gNBs which will trigger handover",
+                "a3_offset": {
+                  "title": "Handover A3 event offset",
+                  "description": "Range from -30 to 30. A3 offset in 0.5dB steps used for the measurement report triggering condition",
                   "type": "number"
                 }
               }

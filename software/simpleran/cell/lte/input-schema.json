@@ -98,6 +98,94 @@
       },
       "default": ["EIA2 (128 bit AES)","EIA1 (Snow 3G)"]
     },
+    "advanced_parameter": {
+      "title": "Advanced Parameters",
+      "type": "object",
+      "default": {
+        "prach_freq_offset": -1,
+        "prach_power_ramping_step": 2,
+        "prach_preamble_trans_max": 10,
+        "prach_preamble_received_target_power": -104,
+        "pucch_p0_nominal": -96,
+        "pusch_p0_nominal": -85,
+        "q_rx_lev_min": -70,
+        "q_rx_lev_min_offset": 0,
+        "cell_reselection_priority": 6,
+        "t_reselection_eutra": 1,
+        "s_intra_search": 5,
+        "q_hyst": 2
+      },
+      "properties": {
+        "prach_config_index": {
+          "$ref": "../../cell/common.json#/$defs/prach_config_index",
+          "description": "Range: -1 to 63. Set the PRACH configuration index. The special value -1 indicates to take the value from the SIB2 (legacy case). Default value depends on bandwidth"
+        },
+        "prach_freq_offset": {
+          "$ref": "../../cell/common.json#/$defs/prach_freq_offset",
+          "title": "Prach Frequency Offset",
+          "description": "Range: -2 to n_rb_ul - 6. Set the PRACH frequency offset. The special value -2 indicates to take the value from the SIB2 (legacy case). The special value -1 indicates to automatically set it.",
+          "default": -1
+        },
+        "prach_power_ramping_step": {
+          "$ref": "../../cell/common.json#/$defs/prach_power_ramping_step",
+          "default": 2
+        },
+        "prach_preamble_trans_max": {
+          "$ref": "../../cell/common.json#/$defs/prach_preamble_trans_max",
+          "default": 10
+        },
+        "prach_preamble_received_target_power": {
+          "$ref": "../../cell/common.json#/$defs/prach_preamble_received_target_power",
+          "default": -104
+        },
+        "pucch_p0_nominal": {
+          "$ref": "../../cell/common.json#/$defs/pucch_p0_nominal",
+          "default": -96
+        },
+        "pusch_p0_nominal": {
+          "$ref": "../../cell/common.json#/$defs/pusch_p0_nominal",
+          "title": "PUSCH P0 Nominal",
+          "description": "Range -126 to 24. PUSCH p0-nominal parameter",
+          "default": -85
+        },
+        "p_max": {
+          "$ref": "../../cell/common.json#/$defs/p_max",
+          "description": "Value of SIB1.p-Max, which will limit UE Power. By default it is not set so that UE power is not limited"
+        },
+        "q_rx_lev_min": {
+          "$ref": "../../cell/common.json#/$defs/q_rx_lev_min",
+          "description": "Value of SIB1.q-RxLevMin"
+        },
+        "q_qual_min": {
+          "$ref": "../../cell/common.json#/$defs/q_qual_min",
+          "description": "Value of SIB1.cellSelectionInfo-v920.q-QualMin-r9"
+        },
+        "q_rx_lev_min_offset": {
+          "$ref": "../../cell/common.json#/$defs/q_rx_lev_min_offset",
+          "description": "Value of SIB1.q-RxLevMinOffset. The value 0 disables the field"
+        },
+        "cell_reselection_priority": {
+          "$ref": "../../cell/common.json#/$defs/cell_reselection_priority",
+          "description": "Range 0 to 7. Value of SIB3.cellReselectionServingFreqInfo.cellReselectionPriority"
+        },
+        "t_reselection_eutra": {
+          "title": "t-ReselectionEUTRA",
+          "description": "Value of SIB3.intraFreqCellReselectionInfo.t-ReselectionEUTRA",
+          "type": "number",
+          "default": 1
+        },
+        "s_intra_search": {
+          "$ref": "../../cell/common.json#/$defs/s_intra_search",
+          "description": "Value of SIB3.intraFreqCellReselectionInfo.s-IntraSearch",
+          "default": 5
+        },
+        "q_hyst": {
+          "$ref": "../../cell/common.json#/$defs/q_hyst",
+          "description": "Value of SIB3.cellReselectionInfoCommon.q-Hyst",
+          "default": 2
+        }
+      }
+    },
     "tti_bundling": {
       "title": "TTI Bundling",
       "description": "TTI Bundling",
