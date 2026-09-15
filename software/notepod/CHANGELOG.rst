@@ -1,3 +1,8 @@
+2026-09-15
+''''''''''
+
+- Upgrade re6stnet, switching to new OBS packaging.
+
 2026-08-29
 ''''''''''
 
