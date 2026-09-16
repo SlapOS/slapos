@@ -1762,7 +1762,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       self.assertNotIn('error-page-upload-url', parameter_dict)
     self.assertNodeInformationWithPop(parameter_dict)
     if hostname is None:
-      hostname = reference.replace('_', '').replace('-', '').lower()
+      hostname = reference.replace('_', '').replace('-', '').replace('.', '').lower()
     expected_parameter_dict.update(**{
       'domain': '%s.example.com' % (hostname,),
       'replication_number': '1',
@@ -8793,7 +8793,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
       'SERVER-ALIAS-UNSAFE': {
         'server-alias': '${section:option} afterspace',
       },
-      'SERVER-ALIAS-SAME': {
+      'SERVER-ALIAS.SAME': {
         'url': cls.backend_url,
         'server-alias': 'serveraliassame.example.com',
       },
@@ -9061,7 +9061,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_server_alias_same(self):
     parameter_dict = self.assertSlaveBase(
-      'SERVER-ALIAS-SAME')
+      '_SERVER-ALIAS.SAME')
 
     result = fakeHTTPSResult(
       parameter_dict['domain'], 'test-path')
