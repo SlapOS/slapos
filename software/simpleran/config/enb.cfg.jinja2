@@ -211,6 +211,16 @@
 {%-     if mme.get('s1ap_bind_addr', '') %}
       s1ap_bind_addr: "{{ mme['s1ap_bind_addr'] }}",
 {%-     endif %}
+{%-     if mme.get('qci_dscp_mapping') %}
+      qci_dscp_mapping: [
+{%-       for qci in mme.get('qci_dscp_mapping', []) %}
+        {
+          qci: {{ qci.qci }},
+          dscp: {{ qci.dscp }},
+        },
+{%-       endfor %}
+      ],
+{%-     endif %}
     },
 {%-   endfor %}
   ],
@@ -228,10 +238,10 @@
       ngap_bind_addr: "{{ amf['ngap_bind_addr'] }}",
 {%-     endif %}
 {%-     if amf.get('5qi_dscp_mapping') %}
-      5qi_dscp_mapping: [
+      "5qi_dscp_mapping": [
 {%-       for qci in amf.get('5qi_dscp_mapping', []) %}
         {
-          5qi: {{ qci.get('5qi') }},
+          "5qi": {{ qci.get('5qi') }},
           dscp: {{ qci.dscp }},
         },
 {%-       endfor %}
