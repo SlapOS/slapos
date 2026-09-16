@@ -20,6 +20,14 @@ Unreleased
 
 Changes on ``master`` since 1.0.519 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.519...master>`__).
 
+The generated domain drops the dots of the slave reference
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+A slave without ``custom_domain`` gets a domain made from its reference.
+The dots of the reference are now dropped too, like ``-`` and ``_``: the
+reference ``my.site`` gives ``mysite.<domain>``, not ``my.site.<domain>``.
+
 No support request while a new slave waits for its key download URL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
