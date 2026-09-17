@@ -8,11 +8,6 @@ parts +=
     resiliency-exclude-file
     gitlab-resiliency-restore-script
 
-# -export specific instance parameters
-[instance-parameter]
-# cron frequency for gitlab backup (default: every 4h)
-configuration.backup_frequency  = 0 */4 * * *
-
 [gitlab-backup-directory]
 recipe            = slapos.cookbook:mkdirectory
 srv               = ${buildout:directory}/srv
