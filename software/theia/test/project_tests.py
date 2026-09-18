@@ -519,11 +519,19 @@ class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
     self.assertEqual(requests.codes['OK'], response.status_code)
 
     # Set the password and token
+    retry_count = 1
+    create_user_command = (gitlab_rails_bin, 'runner', "user = User.find(1); user.password = 'nexedi4321'; user.password_confirmation = 'nexedi4321'; user.save!")
+    for i in range(5):
+      try:
+        output = subprocess.check_output(create_user_command, universal_newlines=True)
+        break
+      except subprocess.CalledProcessError:
+        time.sleep(10)
+    else:
+      subprocess.check_output(create_user_command, universal_newlines=True)
+    expiration_date = (datetime.now() + timedelta(days=4)).strftime("%Y-%m-%d")
     output = subprocess.check_output(
-      (gitlab_rails_bin, 'runner', "user = User.find(1); user.password = 'nexedi4321'; user.password_confirmation = 'nexedi4321'; user.save!"),
-      universal_newlines=True)
-    output = subprocess.check_output(
-      (gitlab_rails_bin, 'runner', "user = User.find(1); token = user.personal_access_tokens.create(scopes: [:api], name: 'Root token'); token.set_token('SLurtnxPscPsU-SDm4oN'); token.save!"),
+      (gitlab_rails_bin, 'runner', "user = User.find(1); token = user.personal_access_tokens.create(scopes: [:api], name: 'Root token', expires_at: '%s'); token.set_token('SLurtnxPscPsU-SDm4oN'); token.save!" % expiration_date),
       universal_newlines=True)
 
     # Create a new project
@@ -577,7 +585,7 @@ class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
     # of time, so we give it at least 20 minutes.
     soon = (datetime.now() + timedelta(minutes=20))
     frequency = "%d * * * *" % soon.minute
-    params = 'backup_frequency=%s' % frequency
+    params = '_={"backup_frequency": "%s" }' % frequency
 
     # Update Gitlab parameters
     print('Requesting Gitlab with parameters %s' % params)

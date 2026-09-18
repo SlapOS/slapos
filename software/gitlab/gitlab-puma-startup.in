@@ -58,7 +58,7 @@ restore_db() {
   fi
 }
 pre_migration16_ok={{ var_dir }}/gitlab-16.1.8-pre-migration-ok
-if [ ! -f "$pre_migration16_ok" ]; then
+if [ ! -f "$pre_migration16_ok" ] && [ -d "$db_migration_location" ]; then
   trap restore_db EXIT INT TERM
 
   mv $gitlab_location/db $gitlab_location/db.orig
