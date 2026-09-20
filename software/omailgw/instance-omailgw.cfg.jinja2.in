@@ -208,6 +208,7 @@ output = $${directory:bin}/mysqld
 context =
   key defaults_file omailgw-mariadb-conf:output
   key datadir omailgw-mariadb-conf:data-directory
+  key mariadb_socket omailgw-mariadb-conf:socket
 
 [omailgw-mariadb-service]
 recipe = slapos.cookbook:wrapper
