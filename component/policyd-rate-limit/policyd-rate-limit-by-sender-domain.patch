@@ -1,0 +1,27 @@
+diff --git a/policyd_rate_limit/config.py b/policyd_rate_limit/config.py
+index 974b79c..d917d18 100644
+--- a/policyd_rate_limit/config.py
++++ b/policyd_rate_limit/config.py
+@@ -54,6 +54,7 @@ limits_by_id = {}
+ 
+ limit_by_sasl = True
+ limit_by_sender = False
++limit_by_sender_domain = False
+ limit_by_ip = False
+ 
+ limited_networks = []
+diff --git a/policyd_rate_limit/policyd.py b/policyd_rate_limit/policyd.py
+index 434ec67..4b245fa 100644
+--- a/policyd_rate_limit/policyd.py
++++ b/policyd_rate_limit/policyd.py
+@@ -271,6 +271,9 @@ class Policyd(object):
+                     # else, if activated, we filter by sender
+                     elif config.limit_by_sender and u'sender' in request:
+                         id = request[u'sender']
++                    # else, if activated, we filter by lowercased sender domain
++                    elif config.limit_by_sender_domain and u'sender' in request:
++                        id = request[u'sender'].split('@')[-1].lower()
+                     # else, if activated, we filter by ip source addresse
+                     elif (
+                         config.limit_by_ip and
+
