@@ -499,6 +499,7 @@ depends =
   ${monitor-bootstrap-promise:name}
   ${monitor-symlink:recipe}
   ${promise-check-slapgrid:recipe}
+  ${promise-check-free-disk-space:recipe}
   ${logrotate-entry-monitor-httpd:name}
   ${logrotate-entry-monitor-data:name}
   ${logrotate-entry-monitor-promise-history:name}
