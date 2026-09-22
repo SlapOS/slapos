@@ -16,7 +16,6 @@ Outputs:
 - slapparameter-dict : slap-configuration.configuration
 - shared-list        : slap-configuration.slave-instance-list
 - sim-list           : Core Network only, list of SIM Cards
-- dns-list           : Core Network only, list of DNS entries
 
 """
 
@@ -1116,13 +1115,10 @@ def core_network(config, publish, shared_list):
         config['ims_com_url'] = f"{config['ims_com_addr']}:{config['ims_com_ws_port']}"
 
     sim_list = []
-    dns_list = []
     for shared in shared_list:
         p = json.loads(shared['_'])
         p.setdefault('slave_reference', shared['slave_reference'])
-        if p.get('subdomain', '') != '':
-            dns_list.append(p)
-        elif p.get('k', '') != '':
+        if p.get('k', '') != '':
             sim_list.append(p)
             impi = f"{p['imsi']}@ims.mnc{p['mnc']}.mcc{p['mcc']}.3gppnetwork.org"
             p.setdefault('impi', impi)
@@ -1308,18 +1304,6 @@ def core_network(config, publish, shared_list):
                     p[f"{pdn['access_point_name']}-ipv6-prefix"] = pdn['ipv6_prefix']
         publish_section['publish'] = p
         publish_section_list.append(publish_section)
-
-    for dns in dns_list:
-        publish_section = {}
-        publish_section['title'] = f"publish-{dns['slave_reference']}"
-        p = {}
-        p['-slave-reference'] = dns['slave_reference']
-        p['domain'] = f"{dns['subdomain']}.{dns.get('domain', config.get('local_domain', ''))}"
-        p['ip'] = dns.get('ip', '')
-        p['info'] = f"DNS entry has been attached to service {slap_configuration['instance-title']}."
-        publish_section['publish'] = p
-        publish_section_list.append(publish_section)
-
 
     return sim_list, publish_section_list
 

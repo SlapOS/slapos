@@ -8,9 +8,6 @@
     },
     {
       "$ref": "sim/input-schema-xor.json"
-    },
-    {
-      "$ref": "core-network-local-dns-entry.json"
     }
   ]
 }
