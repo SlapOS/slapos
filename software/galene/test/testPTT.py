@@ -43,7 +43,7 @@ class TestGalene(SlapOSInstanceTestCase):
 
   @classmethod
   def getInstanceParameterDict(cls):
-    return {'_': json.dumps({"request_dns": False})}
+    return {'_': json.dumps({})}
 
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()

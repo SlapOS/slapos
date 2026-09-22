@@ -11,9 +11,6 @@ parts =
   monitor-base
   port-listening-promise
   galene-service
-{% if slapparameter_dict.get('request_dns', '') %}
-  request-dns-entry
-{% endif %}
 
 extends = ${monitor-template:output}
 
@@ -27,9 +24,6 @@ recipe = slapos.cookbook:publish
 url = https://[$${galene-wrapper:ip}]:$${galene-wrapper:port}
 admin-user = $${admin-password:username}
 admin-password = $${admin-password:passwd}
-{% if slapparameter_dict.get('request_dns', '') %}
-domain-url = https://$${request-dns-entry:connection-domain}:$${galene-wrapper:port}
-{% endif %}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -122,18 +116,3 @@ promise = check_socket_listening
 name = galene-port-listening.py
 config-host = $${slap-configuration:ipv6-random}
 config-port = 8443
-
-{% if slapparameter_dict.get('request_dns', '') %}
-[request-dns-entry]
-<= slap-connection
-name = dns-galene-entry
-recipe = slapos.cookbook:request.serialised
-software-url = automated_local_dns
-software-type = core-network
-shared = true
-sla-computer_guid = {{ slap_connection['computer-id'] }}
-config-name = dns-galene-entry
-config-subdomain = conference
-config-ip = $${slap-configuration:ipv6-random}
-return = domain ip
-{% endif %}
