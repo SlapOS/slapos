@@ -10,7 +10,8 @@ offline = true
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
-nginx = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/
+nginx = $${nginx-configuration:secure_access}
+secure_access = $${nginx-frontend:connection-secure_access}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -101,6 +102,7 @@ access-log = $${directory:log}/nginx-access.log
 error-log = $${directory:log}/nginx-error.log
 ip = $${instance-parameter:ipv6-random}
 port = 9443
+secure_access = https://[$${:ip}]:$${:port}
 ssl-csr = $${directory:ssl}/nginx.csr
 ssl-key = $${directory:ssl}/nginx.key
 ssl-crt = $${directory:ssl}/nginx.crt
@@ -111,6 +113,16 @@ path = $${directory:promise}/$${:_buildout_section_name_}
 hostname = $${nginx-configuration:ip}
 port = $${nginx-configuration:port}
 
+[nginx-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = nginx frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = $${nginx-configuration:secure_access}
+config-https-only = true
+return = secure_access
 
 #################################
 # SlapOS service
