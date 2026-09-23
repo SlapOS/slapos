@@ -193,7 +193,7 @@ gnb_param_dict = {
 }
 gnb_param_dict1 = {
     'cell1': {
-        'tdd_ul_dl_config': 'DDDSU      (2.5ms, 3DL/1UL), S-slot=10DL:2GP:2UL, reduced latency',
+        'tdd_ul_dl_config': 'DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink',
     },
     'nodeb': {
         'plmn_list_5g': [
@@ -369,11 +369,11 @@ class TestGNBParameters1(ORSTestCase):
 
     tdd_config = conf['nr_cell_list'][0]['tdd_ul_dl_config']['pattern1']
 
-    self.assertEqual(float(tdd_config['period']), 2.5)
-    self.assertEqual(int(tdd_config['dl_slots']), 3)
-    self.assertEqual(int(tdd_config['dl_symbols']), 10)
-    self.assertEqual(int(tdd_config['ul_slots']), 1)
-    self.assertEqual(int(tdd_config['ul_symbols']), 2)
+    self.assertEqual(float(tdd_config['period']), 5)
+    self.assertEqual(int(tdd_config['dl_slots']), 2)
+    self.assertEqual(int(tdd_config['dl_symbols']), 6)
+    self.assertEqual(int(tdd_config['ul_slots']), 7)
+    self.assertEqual(int(tdd_config['ul_symbols']), 4)
 
 
 class TestGNBParameters2(ORSTestCase):
