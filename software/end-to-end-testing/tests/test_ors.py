@@ -7,10 +7,12 @@ import slapos.testing.e2e as e2e
 from websocket import create_connection
 from websocket import _exceptions
 
-# 1767374328
-DEV = True
-LOCK = False
-MAX_RETRY = 3
+CHECK_PROMISE      = False      # Disable to run tests faster
+DEBUG              = True       # Sleep for 20 minutes after failure to give time to debug
+DEV                = True       # Use DEV services
+LOCK               = False      # Checks nobody else is using service
+MAX_RETRY          = 3          # Max retries to connect UE after services have been checked
+RERUN_TEST         = 1767374328 # Increase to force test suite to run test again
 
 class WebsocketTestClass(e2e.EndToEndTestCase):
     @classmethod
@@ -111,6 +113,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                    "iperf3": 1,
                    "network_name": "E2E Testing",
                    "network_short_name": "E2E Testing",
+                   "amarisoft_version": "2026-09-11.1789372267",
             }
             cls.parameters["ue"] = {
             }
@@ -148,28 +151,36 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             raise
 
     @classmethod
-    def setup_websocket_connection(cls):
-        connection_params = cls.getInstanceInfos(cls.ue_instance_name).connection_dict
-        cls.waitUntilGreen(cls.ue_instance_name)
-        cls.ws_host = connection_params.get("websocket-hostname")
-        cls.ws_port = connection_params.get("websocket-port")
-        cls.ws_pass = connection_params.get("websocket-password")
-        cls.ws_url = f"wss://{cls.ws_host}/websocket:{cls.ws_port}"
+    def setup_websocket_connection(cls, instance, name):
+        connection_params = cls.getInstanceInfos(instance).connection_dict
+        ws_host = connection_params.get("websocket-hostname") or connection_params.get("URL.websocket-hostname")
+        ws_port = connection_params.get("websocket-port") or connection_params.get("URL.websocket-port")
+        ws_pass = connection_params.get("websocket-password") or connection_params.get("URL.websocket-password")
+        ws_url = f"wss://{ws_host}/websocket:{ws_port}"
 
-        cls.logger.info(f"Websocket URL: {cls.ws_url}")
+        cls.logger.info(f"{name} Websocket URL: {ws_url}")
 
-        cls.ws = create_connection(cls.ws_url)
-        cls.logger.info("Websocket connection established.")
-        data = json.loads(cls.ws.recv())
+        ws = create_connection(ws_url)
+        cls.logger.info(f"{name} Websocket connection established.")
+        data = json.loads(ws.recv())
         res = hmac.new(
-          "{}:{}:{}".format(data["type"], cls.ws_pass, data["name"]).encode(),
+          "{}:{}:{}".format(data["type"], ws_pass, data["name"]).encode(),
           msg=data["challenge"].encode(),
           digestmod=hashlib.sha256
         ).hexdigest()
         msg = {"message": "authenticate", "res": res}
-        cls.ws.send(json.dumps(msg))
-        cls.ws.recv()
-        cls.logger.info("Websocket authentication established.")
+        ws.send(json.dumps(msg))
+        ws.recv()
+        cls.logger.info(f"{name} Websocket authentication established.")
+        return ws
+
+    @classmethod
+    def setup_ue_websocket_connection(cls):
+        cls.ue_ws = cls.setup_websocket_connection(cls.ue_instance_name, "UE")
+
+    @classmethod
+    def setup_enb_websocket_connection(cls):
+        cls.enb_ws = cls.setup_websocket_connection(cls.enb_gnb_instance_name, "eNB / gNB")
 
     @classmethod
     def update_service(cls, name, state, parameters=None, lock=None):
@@ -238,28 +249,61 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
         return None
 
     @classmethod
-    def close_websocket_connection(cls):
-        if hasattr(cls, "ws") and cls.ws is not None:
-            cls.logger.info("Closing websocket")
-            cls.ws.close()
+    def close_ue_websocket_connection(cls):
+        if hasattr(cls, "ue_ws") and cls.ue_ws is not None:
+            cls.logger.info("Closing UE websocket")
+            cls.ue_ws.close()
+
+    @classmethod
+    def close_enb_websocket_connection(cls):
+        if hasattr(cls, "enb_ws") and cls.enb_ws is not None:
+            cls.logger.info("Closing eNB / gNB websocket")
+            cls.enb_ws.close()
 
     @classmethod
     def tearDownClass(cls):
-        cls.close_websocket_connection()
+        cls.close_ue_websocket_connection()
+        cls.close_enb_websocket_connection()
         if LOCK:
           cls.update_service("enb-gnb", "stopped", lock=False)
           cls.update_service("core-network", "stopped", lock=False)
           cls.update_service("ue", "stopped", lock=False)
         # Don"t call super().tearDownClass as we don"t want to destroy requested instances
 
-    def send(self, msg):
-        self.ws.send(json.dumps(msg))
-    def recv(self):
-        return json.loads(self.ws.recv())
+    def ue_send(self, msg):
+        self.ue_ws.send(json.dumps(msg))
+    def ue_recv(self):
+        return json.loads(self.ue_ws.recv())
+
+    def enb_send(self, msg):
+        self.enb_ws.send(json.dumps(msg))
+    def enb_recv(self):
+        return json.loads(self.enb_ws.recv())
+
+    def ue_config_get_cell(self):
+        self.ue_send({"message": "config_get"})
+        result = self.ue_recv()
+        return list(result["cells"].values())[0]
+
+    def ue_check_cpu(self):
+        self.ue_send({"message": "stats", "rf": True})
+        result = self.ue_recv()
+        return bool(int(result["rf"]["tx_count"]))
+
+    def ue_quit(self):
+        self.ue_send({"message": "quit"})
+
+    def enb_config_get_cell(self):
+        self.enb_send({"message": "config_get"})
+        result = self.enb_recv()
+        if "nr_cells" in result:
+            return list(result["nr_cells"].values())[0]
+        else:
+            return list(result["cells"].values())[0]
 
     def ue_get(self):
-        self.send({"message": "ue_get"})
-        result = self.recv()
+        self.ue_send({"message": "ue_get"})
+        result = self.ue_recv()
 
         if "message" not in result:
             raise ValueError(f"Unexpected response format: {result}")
@@ -273,13 +317,13 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
 
     def power_on(self, ue_id):
         self.assertFalse(self.ue_get()["power_on"], "UE already powered on")
-        self.send({"message": "power_on", "ue_id": ue_id})
-        self.recv()
+        self.ue_send({"message": "power_on", "ue_id": ue_id})
+        self.ue_recv()
 
     def power_off(self, ue_id):
         self.assertTrue(self.ue_get()["power_on"], "UE already powered off")
-        self.send({"message": "power_off", "ue_id": ue_id})
-        self.recv()
+        self.ue_send({"message": "power_off", "ue_id": ue_id})
+        self.ue_recv()
 
 class ORSTest(WebsocketTestClass):
 
@@ -288,12 +332,51 @@ class ORSTest(WebsocketTestClass):
         for ref in self.parameters:
           self.update_service(ref, "started", parameters=self.parameters[ref], lock=False)
 
-        self.logger.info("Waiting until instances are green")
-        time.sleep(5 * 60)
-        self.waitUntilGreen(self.enb_gnb_instance_name, timeout=60 * 2)
-        self.waitUntilGreen(self.ue_instance_name, timeout=60 * 2)
+        if CHECK_PROMISE:
+            self.logger.info("Waiting until instances are green")
+            time.sleep(5 * 60)
+            self.waitUntilGreen(self.enb_gnb_instance_name, timeout=60 * 2)
+            self.waitUntilGreen(self.ue_instance_name, timeout=60 * 2)
 
         retry = True
+
+        for i in range(13):
+            if i == 12:
+                self.assertTrue(False, "Service was not ready in time")
+            try:
+                self.logger.info("Setup UE Websocket")
+                self.setup_ue_websocket_connection()
+                self.logger.info("Setup eNB Websocket")
+                self.setup_enb_websocket_connection()
+
+                if not self.ue_check_cpu():
+                    self.logger.info("UE TRX SDR is stuck, lteue will restart")
+                    self.ue_quit()
+                    time.sleep(20)
+                    raise Exception
+
+                ue_cell = self.ue_config_get_cell()
+                enb_cell = self.enb_config_get_cell()
+                lte = 'dl_earfcn' in self.parameters["ue#cell"]
+                if lte:
+                    if ue_cell['dl_earfcn'] != self.parameters["ue#cell"]['dl_earfcn']:
+                        raise Exception
+                    if enb_cell['dl_earfcn'] != self.parameters["ue#cell"]['dl_earfcn']:
+                        raise Exception
+                    self.logger.info(f"checked dl_earfcn is {ue_cell['dl_earfcn']}")
+                else:
+                    if ue_cell['dl_earfcn'] != self.parameters["ue#cell"]['dl_nr_arfcn']:
+                        raise Exception
+                    if enb_cell['dl_nr_arfcn'] != self.parameters["ue#cell"]['dl_nr_arfcn']:
+                        raise Exception
+                    self.logger.info(f"checked dl_nr_arfcn is {ue_cell['dl_earfcn']}")
+                break
+            except Exception as e:
+                self.logger.info(f"Exception: {e}")
+                time.sleep(10)
+            finally:
+                self.close_ue_websocket_connection()
+                self.close_enb_websocket_connection()
 
         for i in range(MAX_RETRY):
             if not retry:
@@ -301,12 +384,15 @@ class ORSTest(WebsocketTestClass):
             retry = False
             ue_id = None
             try:
-                self.setup_websocket_connection()
+                self.setup_ue_websocket_connection()
                 result = self.ue_get()
                 ue_id = result["ue_id"]
                 self.power_on(ue_id)
                 time.sleep(10)
                 result = self.ue_get()
+                if DEBUG and "pdn_list" not in result or "ipv4" not in result["pdn_list"][0]:
+                    self.logger.info("UE did not connect, sleeping 20 minutes...")
+                    time.sleep(1200)
                 self.assertIn("pdn_list", result, "UE didn't connect")
                 self.assertIn("ipv4", result["pdn_list"][0], "UE didn't get IPv4")
                 self.logger.info("UE connected with ip: " + result["pdn_list"][0]["ipv4"])
@@ -316,7 +402,7 @@ class ORSTest(WebsocketTestClass):
                 try:
                     if ue_id:
                       self.power_off(ue_id)
-                    self.close_websocket_connection()
+                    self.close_ue_websocket_connection()
                 except _exceptions.WebSocketConnectionClosedException:
                     pass
 
@@ -405,21 +491,33 @@ class ORSTest(WebsocketTestClass):
             })
         #tx_gain = 90
         #rx_gain = 40
-        tx_gain = 73
-        rx_gain = 28
-        tx_gain_gnb = 81
-        rx_gain_gnb = 28
+        tx_gain = 80
+        rx_gain = 44
+        tx_gain_gnb = 80
+        rx_gain_gnb = 44
         tx_power_list = [
-            (500 ,  12.0),
-            (1000,  12.0),
+            (500 ,  20.0),
+            (1000,  20.0),
+            (1500,  20.0),
+            (2000,  13.0),
+            (2500,  13.0),
+            (3000,  13.0),
+            (3500,  13.0),
+            (4000,  0),
+            (4500,  0),
+            (5000,  0),
+        ]
+        rx_power_list = [
+            (500 ,  9.0),
+            (1000,  9.0),
             (1500,  9.0),
             (2000,  8.0),
-            (2500,  4.0),
-            (3000,  5.0),
-            (3500,  3.0),
-            (4000,  -20.0),
-            (4500,  -20.0),
-            (5000,  -20.0),
+            (2500,  8.0),
+            (3000,  8.0),
+            (3500,  6.0),
+            (4000,  6.0),
+            (4500,  1.0),
+            (5000,  0.0),
         ]
         for freq,db in tx_power_list:
             if float(connection_params['RADIO.dl-frequency'].removesuffix(" MHz")) < freq:
@@ -439,8 +537,8 @@ class ORSTest(WebsocketTestClass):
 
     #def test_lte_B28_10(self):
     #    self.check_ue_connect(False, 'B28', 'FDD', 10)
-    def test_lte_B38_10(self):
-        self.check_ue_connect(False, 'B38', 'TDD', 10)
+    #def test_lte_B38_10(self):
+    #    self.check_ue_connect(False, 'B38', 'TDD', 10)
     #def test_lte_B39_10(self):
     #    self.check_ue_connect(False, 'B39', 'TDD', 10)
     #def test_lte_B40_10(self):
@@ -451,20 +549,20 @@ class ORSTest(WebsocketTestClass):
     #    self.check_ue_connect(False, 'B43', 'TDD', 10)
     #def test_nr_B28_20(self):
     #    self.check_ue_connect(True, 'B28', 'FDD', 20)
-    #def test_nr_B38_20(self):
-    #    self.check_ue_connect(True, 'B38', 'TDD', 20)
-    #def test_nr_B39_20(self):
-    #    self.check_ue_connect(True, 'B39', 'TDD', 20)
-    #def test_nr_B40_20(self):
-    #    self.check_ue_connect(True, 'B40', 'TDD', 20)
-    #def test_nr_N77_20(self):
-    #    self.check_ue_connect(True, 'N77', 'TDD', 20)
-    #def test_nr_B42_20(self):
-    #    self.check_ue_connect(True, 'B42', 'TDD', 20)
-    #def test_nr_B43_20(self):
-    #    self.check_ue_connect(True, 'B43', 'TDD', 20)
-    #def test_nr_N79_20(self):
-    #    self.check_ue_connect(True, 'N79', 'TDD', 20, ssb=719712)
+    def test_nr_B38_20(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 20)
+    def test_nr_B39_20(self):
+        self.check_ue_connect(True, 'B39', 'TDD', 20)
+    def test_nr_B40_20(self):
+        self.check_ue_connect(True, 'B40', 'TDD', 20)
+    def test_nr_N77_20(self):
+        self.check_ue_connect(True, 'N77', 'TDD', 20)
+    def test_nr_B42_20(self):
+        self.check_ue_connect(True, 'B42', 'TDD', 20)
+    def test_nr_B43_20(self):
+        self.check_ue_connect(True, 'B43', 'TDD', 20)
+    def test_nr_N79_20(self):
+        self.check_ue_connect(True, 'N79', 'TDD', 20, ssb=719712)
 
     # TODO: uncomment these tests
     #def test_max_rx_sample_db(self):
