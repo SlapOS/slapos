@@ -41,6 +41,7 @@ import urllib.request
 from slapos.testing.testcase import (
   makeModuleSetUpAndTestCaseClass,
   installSoftwareUrlList,
+  _serveSoftwareURL,
 )
 
 
@@ -107,6 +108,12 @@ class E2ETestCase(SlapOSInstanceTestCase):
     return unwrap(instance.getConnectionParameterDict())
 
   @classmethod
+  def servedSoftwareURL(cls, sr_url):
+    if cls._serve_software_from_url:
+      return _serveSoftwareURL(sr_url)[0]
+    return sr_url
+
+  @classmethod
   def requestRelayCluster(
     cls,
     topology,
@@ -171,7 +178,15 @@ class E2ETestCase(SlapOSInstanceTestCase):
     mailserver = requester()
     mailserver.rerequest = requester
     mailserver.domain = domain
+    class Account:
+      def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
     mailserver.testmail = 'testmail@' + domain
+    mailserver.test = Account(
+      mail=mailserver.testmail,
+      password=cls.testmail_password,
+      server=mailserver,
+    )
     return mailserver
 
   @classmethod
@@ -181,6 +196,30 @@ class E2ETestCase(SlapOSInstanceTestCase):
       state,
       {'inbound-relay': {'enable': False}},
   )
+
+  @classmethod
+  def requestMailAccount(cls, name, mailserver, extra_parameters, state):
+    mail = '%s@%s' % (name, mailserver.domain)
+    parameters = {"address": mail}
+    parameters.update(extra_parameters)
+    def requester():
+      # account = cls.slap.request(
+      # wkrd standalone over-disallowing any filter_kw
+      account = cls.slap._slap.registerOpenOrder().request(
+        software_release=cls.servedSoftwareURL(EMAIL_SR),
+        partition_reference=mail,
+        partition_parameter_kw=serialize(parameters),
+        filter_kw={'instance_guid': mailserver.getId()}, # works for slapproxy
+        shared=True,
+        software_type='default',
+        state=state,
+      )
+      account.mail = mail
+      account.server = mailserver
+      return account
+    account = requester()
+    account.rerequest = requester
+    return account
 
   @classmethod
   def requestRelayShared(cls, domain, address, extra_parameters, state):
@@ -368,22 +407,49 @@ class E2ETestCase(SlapOSInstanceTestCase):
       ),
     )
 
-  def send_email(self, mailserver, mail_recipient, body, send_as=None):
-    sender = send_as or mailserver.testmail
-    with smtplib.SMTP(*mailserver.smtp_addr, timeout=self.smtp_timeout) as smtp:
+  def activate_mail_account(self, account, password):
+    conn = self.getConnectionDict(account)
+    data = urllib.parse.urlencode({
+      'user': account.mail,
+      'token': conn['token'],
+      'password': password
+    }).encode('utf-8')
+    url = conn['setup-url'].split('?')[0]
+    ctx = self._get_ssl_context()
+    try:
+      req = urllib.request.Request(url, data=data, method='POST')
+      with urllib.request.urlopen(req, timeout=10, context=ctx) as response:
+        response_text = response.read().decode('utf-8')
+        self.assertIn("Password updated successfully", response_text)
+    except Exception as e:
+      self.fail(f"Password change failed for {account.mail}: {e}")
+    account.password = password
+
+  def send_email(
+      self,
+      from_account,
+      to_account,
+      body,
+      send_as=None,
+      login=None
+  ):
+    sender = send_as or from_account.mail
+    smtp_addr = from_account.server.smtp_addr
+    with smtplib.SMTP(*smtp_addr, timeout=self.smtp_timeout) as smtp:
       smtp.starttls()
-      smtp.login(mailserver.testmail, self.testmail_password)
+      smtp.login(login or from_account.mail, from_account.password)
       smtp.sendmail(
         from_addr=sender,
-        to_addrs=[mail_recipient.testmail],
+        to_addrs=[to_account.mail],
         msg=f"Subject: Test email from {sender}\n\n{body}",
       )
 
-  def check_inbox(self, mailserver, expected):
+  def check_inbox(self, account, expected):
     def check_email():
-      with imaplib.IMAP4(*mailserver.imap_addr, timeout=self.smtp_timeout) as imap:
+      imap_addr = account.server.imap_addr
+      with imaplib.IMAP4(*imap_addr, timeout=self.smtp_timeout) as imap:
         imap.starttls(ssl_context=self._get_ssl_context())
-        imap.login(mailserver.testmail, self.testmail_password)
+        imap.login(account.mail, account.password)
         imap.select("INBOX")
         result, data = imap.search(None, 'ALL')
         if result != 'OK':
@@ -403,27 +469,21 @@ class E2ETestCase(SlapOSInstanceTestCase):
       wrap_exception(check_email),
       timeout=60,
       interval=2,
-      err_msg=f"Email with '{expected}' not received by {mailserver.testmail}"
+      err_msg=f"Email with '{expected}' not received by {account.mail}"
     )
 
-  def check_mail_e2e(
-    self,
-    mailserver,
-    mail_recipient,
-    body,
-    send_as=None,
-  ):
-    sender = send_as or mailserver.testmail
-    self.send_email(mailserver, mail_recipient, body, send_as)
-    self.check_inbox(mail_recipient, body)
+  def check_mail_e2e(self, from_account, to_account, body, send_as=None):
+    self.send_email(from_account, to_account, body, send_as)
+    self.check_inbox(to_account, body)
 
-  def check_not_in_inbox(self, mailserver, unexpected_content, wait_time=30):
+  def check_not_in_inbox(self, account, unexpected_content, wait_time=30):
     time.sleep(wait_time)
-    imap_params = self.getConnectionDict(mailserver)
+    imap_params = self.getConnectionDict(account.server)
     host, port = imap_params['imap-smtp-ipv6'], imap_params['imap-port']
-    with imaplib.IMAP4(*mailserver.imap_addr, timeout=self.smtp_timeout) as imap:
+    imap_addr = account.server.imap_addr
+    with imaplib.IMAP4(*imap_addr, timeout=self.smtp_timeout) as imap:
       imap.starttls(ssl_context=self._get_ssl_context())
-      imap.login(mailserver.testmail, self.testmail_password)
+      imap.login(account.mail, account.password)
       imap.select("INBOX")
       result, data = imap.search(None, 'ALL')
       if result != 'OK' or not data[0]:
@@ -435,7 +495,7 @@ class E2ETestCase(SlapOSInstanceTestCase):
           self.assertNotIn(
             unexpected_content, body,
             f"Email with unexpected content '{unexpected_content}'"
-            f"was found in {mailserver.testmail}'s inbox",
+            f"was found in {account.mail}'s inbox",
           )
 
 
@@ -609,7 +669,7 @@ class Relay(E2ETestCase):
         to_addrs=[mail1.testmail],
         msg=msg,
       )
-    self.check_inbox(mail1, msg)
+    self.check_inbox(mail1.test, msg)
 
   def test_relay_password_shared_output_stable(self):
     params = self.getConnectionDict(self.password_relay_shared)
@@ -668,7 +728,7 @@ class Relay(E2ETestCase):
         to_addrs=[mail1.testmail],
         msg="Subject: New password Auth Legit\n\n" + body,
       )
-    self.check_inbox(mail1, body)
+    self.check_inbox(mail1.test, body)
     # Test existing domain still works after
     self.test_relay_password_auth_legitimate(
       "Existing password domain still works"
@@ -687,7 +747,7 @@ class Relay(E2ETestCase):
         to_addrs=[mail1.testmail],
         msg="Subject: Password Auth Legit\n\n" + body,
       )
-    self.check_inbox(mail1, body)
+    self.check_inbox(mail1.test, body)
 
   def test_relay_password_auth_impersonation_blocked(self):
     """Authenticate as <domain> on the submission port but try
@@ -739,7 +799,7 @@ class Relay(E2ETestCase):
         to_addrs=[mail1.testmail],
         msg="Subject: IP Auth Legit\n\n" + body,
       )
-    self.check_inbox(mail1, body)
+    self.check_inbox(mail1.test, body)
 
   def test_relay_ip_auth_impersonation_blocked(self):
     mail1 = self.mail_servers[0]
@@ -782,7 +842,7 @@ class Relay(E2ETestCase):
         to_addrs=[mail1.testmail],
         msg="Subject: TLS fingerprint auth to relay\n\n" + body,
       )
-    self.check_inbox(mail1, body)
+    self.check_inbox(mail1.test, body)
 
   def test_relay_fingerprint_auth_impersonation_blocked(self):
     mail1 = self.mail_servers[0]
@@ -850,7 +910,7 @@ class Relay(E2ETestCase):
           to_addrs=[mailserver.testmail],
           msg="Subject: TLS fingerprint auth as relay\n\n" + body,
         )
-      self.check_inbox(mailserver, body)
+      self.check_inbox(mailserver.test, body)
 
   def test_server_non_authenticated_relay_rejected(self):
     msg = "Subject: Unauthenticated Connection\n\nThis should be rejected."
@@ -909,7 +969,7 @@ class Relay(E2ETestCase):
           to_addrs=[mail1.testmail],
           msg=f"Subject: SPF Impersonation\n\n{msg_body}",
         )
-    self.check_not_in_inbox(mail1, msg_body, wait_time=5)
+    self.check_not_in_inbox(mail1.test, msg_body, wait_time=5)
 
   def test_inbound_internal_sender_domain_rejected(self):
     mail1 = self.mail_servers[0]
@@ -931,7 +991,7 @@ class Relay(E2ETestCase):
         to_addrs=[mail1.testmail],
         msg=f"Subject: SPF Pass\n\n{msg_body}",
       )
-    self.check_inbox(mail1, msg_body)
+    self.check_inbox(mail1.test, msg_body)
 
   def test_greylist_whitelist_recipient(self):
     mail2 = self.mail_servers[1]
@@ -942,7 +1002,7 @@ class Relay(E2ETestCase):
         to_addrs=[mail2.testmail],
         msg=f"Subject: Mock SPF Pass\n\n{msg_body}",
       )
-    self.check_inbox(mail2, msg_body)
+    self.check_inbox(mail2.test, msg_body)
 
 
 class E2E(E2ETestCase):
@@ -1017,9 +1077,22 @@ class E2E(E2ETestCase):
       },
       state = state,
     )
-    cls.mail_servers = [
+    cls.mail_servers = mail_servers = [
       cls.requestMailServer(domain, state) for domain in cls.mail_server_domains
     ]
+    if not all(s.getConnectionParameterDict() for s in mail_servers):
+      # Due to brittle "publish only new accounts" logic, mail servers must be
+      # ready before requesting mail accounts, as otherwise account connection
+      # parameters may never be published. XXX: this is a defect.
+      cls.waitForInstance()
+    rate_limits = {'sending-rate-limits': [{'cap': 1, 'per': 3600}]}
+    for server in mail_servers:
+      server.alice = cls.requestMailAccount('alice', server, rate_limits, state)
+    # Request additional rate-limited accounts on one of the servers to make
+    # sure there are no issues when there are multiple custom limits in
+    # policyd-rate-limit config
+    server.bob = cls.requestMailAccount('bob', server, rate_limits, state)
+    server.eve = cls.requestMailAccount('eve', server, rate_limits, state)
     # We need to return an instance here because the framework expects it.
     return relay_cluster
 
@@ -1111,8 +1184,8 @@ class E2E(E2ETestCase):
     from_mail, to_mail = self.mail_servers[:2]
     send_timestamp = int(time.time())
     self.check_mail_e2e(
-      from_mail,
-      to_mail,
+      from_mail.test,
+      to_mail.test,
       "This is a test email.",
     )
     self.check_omailgw_received_mail(
@@ -1124,8 +1197,9 @@ class E2E(E2ETestCase):
 
   def test_send_email_to_external(self):
     self.check_mail_e2e(
-      self.mail_servers[0], self.external_mail_server,
-      "This is a test email to external server."
+      self.mail_servers[0].test,
+      self.external_mail_server.test,
+      "This is a test email to external server.",
     )
 
   def test_send_email_via_proxy2_with_rate_limit(self):
@@ -1136,8 +1210,9 @@ class E2E(E2ETestCase):
     to_server = self.external_mail_servers[1]
     # Check first email reaches external destination
     self.check_mail_e2e(
-      from_server, to_server,
-      "This is a test email routed via the second proxy."
+      from_server.test,
+      to_server.test,
+      "This is a test email routed via the second proxy.",
     )
     # Check second email is rejected
     from_cert_bundle = self.partitionPath(
@@ -1165,8 +1240,63 @@ class E2E(E2ETestCase):
     self.assertIn("Rate limit reach", str(exc.exception))
     # Check relay-internal mails are not rate limited
     self.check_mail_e2e(
-      from_server, self.mail_servers[0],
-      "This is an internal test email not rate-limited"
+      from_server.test,
+      self.mail_servers[0].test,
+      "This is an internal test email not rate-limited",
+    )
+
+  def test_server_account_rate_limit(self):
+    # Activate two accounts
+    from_server, to_server = self.mail_servers[:2]
+    from_account, to_account = from_server.alice, to_server.alice
+    self.activate_mail_account(from_account, 'alice123')
+    self.activate_mail_account(to_account, 'alice456')
+    # Check first email reaches external destination
+    self.check_mail_e2e(
+      from_account,
+      to_account,
+      "This is a test email from a rate-limited account"
+    )
+    with self.assertRaises(smtplib.SMTPRecipientsRefused) as exc:
+      self.send_email(
+        from_account,
+        to_account,
+        "Test second email from rate-limited account",
+      )
+    self.assertIn("Rate limit reach", str(exc.exception))
+    # Check un-normalized address is still rate-limited
+    with self.assertRaises(smtplib.SMTPRecipientsRefused) as exc:
+      self.send_email(
+        from_account,
+        to_account,
+        "Test email with capitalized sender from rate-limited account",
+        send_as=from_account.mail.upper(),
+      )
+    self.assertIn("Rate limit reach", str(exc.exception))
+    # Check +foo addresses do not allow bypassing rate limit
+    # (they don't because Postfix rejects them as not matching the SASL user)
+    with self.assertRaises(smtplib.SMTPRecipientsRefused) as exc:
+      self.send_email(
+        from_account,
+        to_account,
+        "Test email with sender+foo@ from rate-limited account",
+        send_as='+foo@'.join(from_account.mail.split('@')),
+      )
+    self.assertIn("not owned by user " + from_account.mail, str(exc.exception))
+    # Check un-normalized login is still rate-limited
+    with self.assertRaises(smtplib.SMTPRecipientsRefused) as exc:
+      self.send_email(
+        from_account,
+        to_account,
+        "Test email with capitalized sender from rate-limited account",
+        login=from_account.mail.upper(),
+      )
+    self.assertIn("Rate limit reach", str(exc.exception))
+    # Check server-internal mails are not rate limited
+    self.check_mail_e2e(
+      from_account,
+      from_server.test,
+      "This is an internal test email not rate-limited",
     )
 
   def test_send_email_from_external_via_relay(self):
@@ -1194,15 +1324,16 @@ class E2E(E2ETestCase):
         msg=f"Subject: Test Email from External\n\n{msg_body}"
       )
     # Verify email was received at mail1
-    self.check_inbox(mail1, msg_body)
+    self.check_inbox(mail1.test, msg_body)
 
   def test_sender_restriction_legitimate(self):
     """mail1 (whitelisted) sends as @mail1.domain.lan through the relay to
     mail2 — this is a legitimate sender domain and must be accepted."""
     mail1, mail2 = self.mail_servers[:2]
     self.check_mail_e2e(
-      mail1, mail2,
-      "This is a legitimate sender domain test."
+      mail1.test,
+      mail2.test,
+      "This is a legitimate sender domain test.",
     )
 
   def test_sieve_redirect(self):
@@ -1239,8 +1370,8 @@ class E2E(E2ETestCase):
     self.addCleanup(self._managesieve, mail2, None, None)
 
     body = "Sieve redirect via ManageSieve test"
-    self.send_email(mail1, mail2, body)
-    mailmsg = self.check_inbox(mail3, body)
+    self.send_email(mail1.test, mail2.test, body)
+    mailmsg = self.check_inbox(mail3.test, body)
     self.assertIn("Reply-To: " + mail1.testmail, mailmsg)
     self.assertIn("From: " + mail2.testmail, mailmsg)
     self.assertIn("Return-Path: <%s>" % mail2.testmail, mailmsg)
@@ -1405,8 +1536,8 @@ class CustomOutbound(E2ETestCase):
 
   def test_send_via_custom_outbound_relay(self):
     self.check_mail_e2e(
-      self.custom_mailserver,
-      self.mailserver,
+      self.custom_mailserver.test,
+      self.mailserver.test,
       "This is a test email.",
     )
 
