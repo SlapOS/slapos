@@ -17,6 +17,7 @@ from selenium.webdriver.remote.remote_connection import RemoteConnection
 from selenium.common.exceptions import TimeoutException
 from subprocess import check_output
 import json
+import traceback
 
 os.environ['XORG_LOCK_DIR'] = '$${xvfb-instance:lock-dir}'
 os.environ['DISPLAY'] = '$${xvfb-instance:display}'
@@ -169,7 +170,7 @@ def main():
 
       try:
         WebDriverWait(browser, 300).until(EC.presence_of_element_located((
-          By.XPATH, '//p[@id="qunit-testresult" and contains(text(), "completed")]')
+          By.XPATH, '//*[contains(text(), "completed in")]')
         ))
 
       except TimeoutException:
@@ -205,17 +206,35 @@ def main():
           print(elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext()))
           # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
 
-          failure = int(elt.xpath('.//b[@class="failed"]')[0].text)
-          success = int(elt.xpath('.//b[@class="passed"]')[0].text)
+          try:
+            failure_elt_list = elt.xpath('.//b[@class="failed"]')
+            if len(failure_elt_list):
+              failure = int(failure_elt_list[0].text)
+              success = int(elt.xpath('.//b[@class="passed"]')[0].text)
+            else:
+              # qunit 2.26.0
+              failure = 0
+              success = int(elt.xpath('.//b[@class="counts"]')[0].text[1:-1])
+          except Exception as e:
+            test_count = 1
+            error_count = 1
+            failure_count = 0
+            stderr = 'Can not parse failures: %s\n%s\n\n%s' % (repr(e), traceback.format_exc(), etree.tostring(elt))
+          else:
+            test_count = success + failure
+            error_count = 0
+            failure_count = failure
+            stderr = ''
+
           test_line_dict[test_name] = {
-            'test_count': success + failure,
-            'error_count': 0,
-            'failure_count': failure,
+            'test_count': test_count,
+            'error_count': error_count,
+            'failure_count': failure_count,
             'skip_count': 0,
             'duration': int(elt.xpath('.//span[@class="runtime"]')[0].text.split()[0]),
             'command': elt.xpath('.//a[text()="Rerun"]')[0].get('href'),
             'stdout': agent,
-            'stderr': '',
+            'stderr': stderr,
             'html_test_result': etree.tostring(elt.xpath('.//ol')[0])
           }
 
