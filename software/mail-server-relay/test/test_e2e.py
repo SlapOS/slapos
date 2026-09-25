@@ -1012,19 +1012,17 @@ class E2E(E2ETestCase):
   external_domains = ["external%d.domain.lan" % i for i in range(1, 3)]
   unknown_domain = "unknown.domain.lan"
   testmail_password = 'password123'
+  omailgw_relay_hostname = 'relay.one.lan'
 
   @classmethod
   def requestDefaultInstance(cls, state="started"):
-    cls.omailgw_relay_hostname = 'relay.one.lan'
     external_mail_servers = [
       cls.requestExternalMailServer(external_domain, state)
       for external_domain in cls.external_domains
     ]
-    omailgw = cls.requestOMailGw('%s-omailgw' % cls.__partition_reference__, state)
-    if (
-      not all(e.getConnectionParameterDict() for e in external_mail_servers)
-      or not omailgw.getConnectionParameterDict()
-    ):
+    omailgw = cls.requestOMailGw('omailgw', state)
+    prerequired = external_mail_servers + [omailgw]
+    if not (all(e.getConnectionParameterDict() for e in prerequired)):
       # requestDefaultInstance is called twice by the framework:
       # the first time to make the initial requests, and the second
       # time after the framework ran waitForInstance, to obtain the
