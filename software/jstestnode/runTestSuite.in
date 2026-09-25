@@ -88,8 +88,8 @@ def main():
                                    cwd='${jio-repository.git:location}',
                                    env={'CI': 'true'})
       try:
-        result_dict = json.loads(result_string)
-      except json.decoder.JSONDecodeError:
+        result_list = json.loads(result_string)['tests']
+      except (json.decoder.JSONDecodeError, KeyError):
         print(traceback.format_exc())
         test_line_dict['Error while running: test/node.js'] = {
           'test_count': 1,
@@ -99,23 +99,22 @@ def main():
           'duration': 1,
           'command': '',
           'stdout': '',
-          'stderr': result_string,
+          'stderr': '%s\n\n%s' % (traceback.format_exc(), result_string),
           'html_test_result': ''
         }
       else:
-        for result in result_dict['tests']:
+        for result in result_list:
           test_line_dict['%s: %s' % (result['module'], result['name'])] = {
             'test_count': int(result['total']),
             'error_count': 0,
             'failure_count': int(result['failed']),
             'skip_count': 0,
-            'duration': int(result['duration']),
+            'duration': 1,
             'command': '',
             'stdout': result['source'],
             'stderr': '',
             'html_test_result': json.dumps(result['assertions'])
           }
-
     else:
       # Execute WebBrowser tests
       if target == 'firefox':
