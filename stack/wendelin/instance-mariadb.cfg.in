@@ -479,6 +479,7 @@ environ =
 context =
   key defaults_file my-cnf:output
   key datadir my-cnf-parameters:data-directory
+  key mariadb_socket my-cnf-parameters:socket
   key environ :environ
 {%- if replication %}
 {%- if upstream_mariabackup_url %}
