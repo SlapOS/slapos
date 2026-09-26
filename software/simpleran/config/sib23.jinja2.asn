@@ -2,20 +2,25 @@
 /* SIB2/SIB3 for {{ cell.cell_type | upper }} cell {{ B(cell_ref) }} @ {{ B(ru_ref) }}. */
 {
   message c1: systemInformation: {
+{%- if cell.cell_type == 'lte' %}
     criticalExtensions systemInformation-r8: {
+{%- elif cell.cell_type == 'nr' %}
+    criticalExtensions systemInformation: {
+{%- endif %}
       sib-TypeAndInfo {
         sib2: {
+{%- if cell.cell_type == 'lte' %}
           radioResourceConfigCommon {
             rach-ConfigCommon {
               preambleInfo {
                 numberOfRA-Preambles n52
               },
               powerRampingParameters {
-                powerRampingStep dB2,
-                preambleInitialReceivedTargetPower dBm-104
+                powerRampingStep dB{{ cell.advanced_parameter.prach_power_ramping_step }},
+                preambleInitialReceivedTargetPower dBm{{ cell.advanced_parameter.prach_preamble_received_target_power }}
               },
               ra-SupervisionInfo {
-                preambleTransMax n10,
+                preambleTransMax n{{ cell.advanced_parameter.prach_preamble_trans_max }},
                 ra-ResponseWindowSize sf10,
                 mac-ContentionResolutionTimer sf40
               },
@@ -67,9 +72,9 @@
               ackNackSRS-SimultaneousTransmission TRUE
             },
             uplinkPowerControlCommon {
-              p0-NominalPUSCH -85,
+              p0-NominalPUSCH {{ cell.advanced_parameter.pusch_p0_nominal }},
               alpha al1,
-              p0-NominalPUCCH -117,
+              p0-NominalPUCCH {{ cell.advanced_parameter.pucch_p0_nominal }},
               deltaFList-PUCCH {
                 deltaF-PUCCH-Format1 deltaF0,
                 deltaF-PUCCH-Format1b deltaF3,
@@ -93,25 +98,47 @@
             additionalSpectrumEmission 1
           },
           timeAlignmentTimerCommon infinity
+{%- elif cell.cell_type == 'nr' %}
+          cellReselectionInfoCommon {
+            q-Hyst dB{{ cell.advanced_parameter.q_hyst }}
+          },
+          cellReselectionServingFreqInfo {
+            threshServingLowP 0,
+            cellReselectionPriority {{ cell.advanced_parameter.cell_reselection_priority }}
+          },
+          intraFreqCellReselectionInfo {
+            q-RxLevMin -70,
+            s-IntraSearchP {{ cell.advanced_parameter.s_intra_search }},
+            t-ReselectionNR {{ cell.advanced_parameter.t_reselection_nr }},
+            smtc {
+              periodicityAndOffset sf20: 0,
+              duration sf1
+            },
+            ssb-ToMeasure mediumBitmap: '10000000'B,
+            deriveSSB-IndexFromCell TRUE
+          }
+{%- endif %}
         },
+{%- if cell.cell_type == 'lte' %}
         sib3: {
           cellReselectionInfoCommon {
-            q-Hyst dB2
+            q-Hyst dB{{ cell.advanced_parameter.q_hyst }}
           },
           cellReselectionServingFreqInfo {
             s-NonIntraSearch 3,
             threshServingLow 2,
-            cellReselectionPriority 6
+            cellReselectionPriority {{ cell.advanced_parameter.cell_reselection_priority }}
           },
           intraFreqCellReselectionInfo {
             q-RxLevMin -61,
             p-Max 23,
-            s-IntraSearch 5,
+            s-IntraSearch {{ cell.advanced_parameter.s_intra_search }},
             presenceAntennaPort1 TRUE,
             neighCellConfig '01'B,
-            t-ReselectionEUTRA 1
+            t-ReselectionEUTRA {{ cell.advanced_parameter.t_reselection_eutra }}
           }
         }
+{%- endif %}
       }
     }
   }

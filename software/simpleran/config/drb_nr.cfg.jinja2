@@ -357,6 +357,9 @@
   },
   {
     qci: 9,
+{%- if 'configured_grant' in cell %}
+    need_sps: "ul",
+{%- endif %}
     pdcp_config: {
       discardTimer: 0,
       pdcp_SN_SizeUL: 18,

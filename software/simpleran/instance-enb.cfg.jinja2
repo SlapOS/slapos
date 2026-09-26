@@ -69,6 +69,7 @@ parts =
   enb-config
   publish-enb-config
   enb-service
+  enb-rotate-service
 {%- if slapparameter_dict.xlog_enabled %}
   xamari-xlog-service
 {%- endif %}
@@ -145,7 +146,7 @@ promise = ${:etc}/promise
 log = ${:var}/log
 xlog-fluentbit = ${:var}/xlog-fluentbit
 
-[enb-sh-wrapper]
+[enb-rotate-sh-wrapper]
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 info-log = ${directory:log}/enb-info.log
@@ -154,6 +155,33 @@ start-date = ${directory:run}/enb-start.date
 max-combined-radio-log-kb-size = 2000000
 max-combined-info-log-kb-size  = 1000000
 max-info-log-kb-size           = 100000
+max-log-file-number            = 1000
+inline =
+  #!/bin/sh
+  /bin/sh {{ amarisoft_log_rotate_sh }} \
+            ${:start-date} \
+            ${:radio-log} \
+            ${:info-log} \
+            ${:max-combined-radio-log-kb-size} \
+            ${:max-combined-info-log-kb-size} \
+            ${:max-info-log-kb-size} \
+            ${:max-log-file-number}
+
+[enb-rotate-service]
+recipe = slapos.cookbook:wrapper
+command-line = ${enb-rotate-sh-wrapper:output}
+wrapper-path = ${directory:service}/enb-rotate
+mode = 0775
+pidfile = ${directory:run}/enb.pid
+hash-files =
+  ${enb-rotate-sh-wrapper:output}
+
+[enb-sh-wrapper]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+info-log = ${directory:log}/enb-info.log
+radio-log = ${directory:log}/enb.log
+start-date = ${directory:run}/enb-start.date
 inline =
   #!/bin/sh
   # Amarisoft init scripts
@@ -176,13 +204,12 @@ inline =
   EOF
   # Remove obsolete logs
   rm -f ${directory:log}/enb-2* ${directory:log}/gnb* ${directory:log}/enb-output.log
-  /bin/sh {{ amarisoft_log_rotate_sh }} \
-            ${:start-date} \
-            ${:radio-log} \
-            ${:info-log} \
-            ${:max-combined-radio-log-kb-size} \
-            ${:max-combined-info-log-kb-size} \
-            ${:max-info-log-kb-size}
+  # Archive current log
+  stat $START_DATE && mv $LOG $LOG.$(cat $START_DATE)
+  # Add start date
+  date +"%Y%m%d.%T" > $START_DATE
+
+  # Start lteenb
   {{ amarisoft['enb_dir'] }}/lteenb ${directory:etc}/enb.cfg >> ${:info-log} 2>> ${:info-log}
 
 [enb-service]

@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Version 1.0.509 (2026-09-17)
+-------------
+
+* Add advanced parameters section
+* Upgrade Amarisoft to 2026-09-11
+* Add basic support for configured grant
+* Integrate low latency TDD gNB configurations
+* Downlink and Uplink MCS can be fixed separately
+* Fix wrong IPv6 CSCF address preventing VoNR / VoLTE to work properly
+* Ensure eNB / gNB logs don't grow too big
+
 Version 1.0.494 (2026-07-03)
 -------------
 

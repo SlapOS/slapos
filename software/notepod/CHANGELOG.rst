@@ -1,3 +1,15 @@
+2026-09-15
+''''''''''
+
+- Upgrade re6stnet, switching to new OBS packaging.
+- Switch OBS repository to 26.04.
+- Make sure the EFI partition is FAT32 to fix boot on some machines.
+
+2026-08-29
+''''''''''
+
+- Ubuntu 26.04.1 LTS
+
 2026-04-29
 ''''''''''
 

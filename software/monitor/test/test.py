@@ -366,6 +366,11 @@ class EdgeMixin(object):
 
 
 class TestEdgeE2E(SlapOSInstanceTestCase):
+  # surykatka writes its status JSON file only through a cron entry every
+  # 2 minutes, so retry slapos node instance enough times for that cron
+  # entry to have run at least once before the promise checks it.
+  instance_max_retry = 40
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'edgetest-basic'

@@ -80,6 +80,41 @@
             "title": "S1AP Bind Address",
             "description": "Optional String. IP address and optional port on which the S1AP SCTP connection is bound.",
             "type": "string"
+          },
+          "qci_dscp_mapping": {
+            "title": "QCI DSCP Mapping",
+            "description": "Allows to define a specific IP differentiated services code point for a given QCI. QCI not explicitly configured use the default DSCP value 0.",
+            "default": [
+              {
+                "qci": 1,
+                "dscp": "0x2e"
+              },
+              {
+                "qci": 65,
+                "dscp": "0x2e"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "title": "5QI DSCP Mapping",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "qci",
+                "dscp"
+              ],
+              "properties": {
+                "qci": {
+                  "title": "QCI",
+                  "type": "number"
+                },
+                "dscp": {
+                  "title": "DSCP",
+                  "description": "DSCP, in hexadecimal (preceded by 0x) or decimal",
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       },
@@ -160,6 +195,41 @@
             "title": "NGAP Bind Address",
             "description": "Optional string. IP address and optional port on which the NGAP SCTP connection is bound.",
             "type": "string"
+          },
+          "5qi_dscp_mapping": {
+            "title": "5QI DSCP Mapping",
+            "description": "Allows to define a specific IP differentiated services code point for a given 5QI. 5QI not explicitly configured use the default DSCP value 0.",
+            "type": "array",
+            "default": [
+              {
+                "5qi": 1,
+                "dscp": "0x2e"
+              },
+              {
+                "5qi": 65,
+                "dscp": "0x2e"
+              }
+            ],
+            "items": {
+              "title": "5QI DSCP Mapping",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "5qi",
+                "dscp"
+              ],
+              "properties": {
+                "5qi": {
+                  "title": "5QI",
+                  "type": "number"
+                },
+                "dscp": {
+                  "title": "DSCP",
+                  "description": "DSCP, in hexadecimal (preceded by 0x) or decimal",
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       },
@@ -275,7 +345,7 @@
       ],
       "default": {
         "event": {
-          "a3_rsrp": 6
+          "a3_offset": 6
         },
         "hysteresis": 0,
         "time_to_trigger": 480
@@ -290,12 +360,12 @@
               "title": "A3 event",
               "type": "object",
               "required": [
-                "a3_rsrp"
+                "a3_offset"
               ],
               "properties": {
-                "a3_rsrp": {
-                  "title": "Handover A3 event RSRP offset",
-                  "description": "Integer, range from -140 to -43. RSRP gain offset between eNBs and gNBs which will trigger handover",
+                "a3_offset": {
+                  "title": "Handover A3 event offset",
+                  "description": "Range from -30 to 30. A3 offset in 0.5dB steps used for the measurement report triggering condition",
                   "type": "number"
                 }
               }
@@ -427,7 +497,7 @@
       ],
       "default": {
         "event": {
-          "a3_rsrp": 6
+          "a3_offset": 6
         },
         "hysteresis": 0,
         "time_to_trigger": 480
@@ -442,12 +512,12 @@
               "title": "A3 event",
               "type": "object",
               "required": [
-                "a3_rsrp"
+                "a3_offset"
               ],
               "properties": {
-                "a3_rsrp": {
-                  "title": "Handover A3 event RSRP offset",
-                  "description": "Integer, range from -140 to -43. RSRP gain offset between eNBs and gNBs which will trigger handover",
+                "a3_offset": {
+                  "title": "Handover A3 event offset",
+                  "description": "Range from -30 to 30. A3 offset in 0.5dB steps used for the measurement report triggering condition",
                   "type": "number"
                 }
               }

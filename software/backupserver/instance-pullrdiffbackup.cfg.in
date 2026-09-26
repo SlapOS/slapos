@@ -59,7 +59,7 @@ logfile = $${directory:log}/crond.log
 {%   set include_string = "' --include='".join(include.split(' ')) -%}
 {%   set exclude = slave_instance.get('exclude', '') -%}
 {%   set exclude_string = '' -%}
-{%   set sudo = slave_instance.get('sudo', 'False') -%}
+{%   set sudo = slave_instance.get('sudo', False) -%}
 {%   set remote_schema = slave_instance.get('remote_rdiff_path', 'rdiff-backup') + ' --server --restrict-read-only / -- "$@"' -%}
 
 {%   if (exclude != '') -%}
@@ -67,7 +67,7 @@ logfile = $${directory:log}/crond.log
 {%     set exclude_string = "--exclude='" + exclude_string + "'" -%}
 {%   endif -%}
 
-{%   if (sudo == 'True') -%}
+{%   if sudo -%}
 {%     set remote_schema = 'sudo backupagent_rdiff-backup' -%}
 {%   endif -%}
 
@@ -98,7 +98,7 @@ storage-path = {{ '$${' ~ slave_reference }}-backup-private_key:public_key}
 recipe = slapos.cookbook:publish
 -slave-reference = {{ orig_slave_reference }}
 authorized_key = {{ '$${' ~ slave_reference }}-backup-read-public_key:readline}
-rss = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/{{ '$${' ~ slave_reference }}-backup-script:status_name}.rss
+rss = $${nginx-frontend:connection-secure_access}/{{ '$${' ~ slave_reference }}-backup-script:status_name}.rss
 {%   do part_list.append("%s-backup-publish" % slave_reference) -%}
 
 [{{ slave_reference }}-promise-check-backup]
@@ -165,7 +165,7 @@ frequency = */5 * * * *
 [publish-global-rss]
 recipe = slapos.cookbook:publish
 <= monitor-publish
-rss = https://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/$${update-rss-script:global_rss}
+rss = $${nginx-frontend:connection-secure_access}/$${update-rss-script:global_rss}
 
 {% set crontab_line_list_string = " ".join(crontab_line_list) -%}
 [activate-crontab-file]
@@ -202,6 +202,18 @@ port = 9443
 ssl_key = $${directory:ssl}/nginx.key
 ssl_csr = $${directory:ssl}/nginx.csr
 ssl_crt = $${directory:ssl}/nginx.crt
+secure_access = https://[$${:ip}]:$${:port}
+
+[nginx-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = nginx frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = $${nginx-configuration:secure_access}
+config-https-only = true
+return = secure_access
 
 #################################
 # Monitoring

@@ -32,7 +32,10 @@
             "DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink",
             "DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink",
             "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink",
-            "DDDSU      (2.5ms, 3DL/1UL), S-slot=10DL:2GP:2UL, reduced latency"
+            "DDDSU      (2.5ms, 2DL/2UL), S-slot=6DL:4GP:4UL, reduced latency, balanced downlink and uplink",
+            "DSUUU      (2.5ms, 1DL/3UL), S-slot=6DL:2GP:4UL, reduced latency, high uplink, no TRS",
+            "DSUUU      (2.5ms, 1DL/3UL), S-slot=9DL:4GP:1UL, reduced latency, high uplink",
+            "DS         (1ms, 1DL/0UL), S-slot=0DL:2GP:12UL, minimum latency, balanced downlink and uplink, no TRS"
           ]
         },
         {
@@ -96,16 +99,211 @@
       "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
       "default": 1
     },
-    "trs_presence": {
-      "default": true,
-      "title": "Expert only: TRS Presence",
-      "description": "Expert only: Add NZP CSI-RS resources for TRS.",
-      "type": "boolean"
+    "advanced_parameter": {
+      "title": "Advanced Parameters",
+      "type": "object",
+      "default": {
+        "enable_sib2": false,
+        "msg1_frequency_start": -1,
+        "prach_power_ramping_step": 4,
+        "prach_preamble_trans_max": 7,
+        "prach_preamble_received_target_power": -110,
+        "pucch_p0_nominal": -96,
+        "pusch_p0_nominal": -84,
+        "q_rx_lev_min": -70,
+        "q_qual_min": -20,
+        "delta_rx_lev_min": 0,
+        "cell_reselection_priority": 6,
+        "t_reselection_nr": 1,
+        "s_intra_search": 31,
+        "q_hyst": 3
+      },
+      "properties": {
+        "enable_sib2": {
+          "title": "Enable SIB2",
+          "description": "By default only SIB1 is transmitted. You should enable SIB2 transmission if you have configured any parameters located in SIB2 (example: cell reselection priority) else they will have no effect",
+          "type": "boolean",
+          "default": false
+        },
+        "prach_config_index": {
+          "$ref": "../../cell/common.json#/$defs/prach_config_index",
+          "description": "Expert only: Integer (range 0 to 262). prach-ConfigurationIndex parameter. Default value depends on TDD configuration"
+        },
+        "msg1_frequency_start": {
+          "$ref": "../../cell/common.json#/$defs/prach_freq_offset",
+          "title": "PRACH msg1 Frequency Start",
+          "description": "msg1-FrequencyStart parameter. The special value -1 indicates to automatically select the PRACH frequency",
+          "default": -1
+        },
+        "prach_power_ramping_step": {
+          "$ref": "../../cell/common.json#/$defs/prach_power_ramping_step",
+          "default": 4
+        },
+        "prach_preamble_trans_max": {
+          "$ref": "../../cell/common.json#/$defs/prach_preamble_trans_max",
+          "default": 7
+        },
+        "prach_preamble_received_target_power": {
+          "$ref": "../../cell/common.json#/$defs/prach_preamble_received_target_power",
+          "default": -110
+        },
+        "pucch_p0_nominal": {
+          "$ref": "../../cell/common.json#/$defs/pucch_p0_nominal",
+          "default": -96
+        },
+        "pusch_p0_nominal": {
+          "$ref": "../../cell/common.json#/$defs/pusch_p0_nominal",
+          "title": "PUSCH P0 Nominal With Grant",
+          "description": "PUSCH p0-NominalWithGrant",
+          "default": -84
+        },
+        "pusch_mapping_type": {
+          "title": "PUSCH Mapping type",
+          "description": "Select the mapping type for the full UL slots",
+          "enum": [
+            "typeA",
+            "typeB"
+          ],
+          "type": "string"
+        },
+        "p_max": {
+          "$ref": "../../cell/common.json#/$defs/p_max",
+          "description": "Range -30 to 33 or -127. p-NR-FR1 (in PhysicalCellGroupConfig IE) and p-Max (in FrequencyInfoUL and FrequencyInfoUL-SIB IEs) value in dB. The value -127 means that the parameter is not broadcast. p-MAX will limit UE Power. By default it is not set so that UE power is not limited"
+        },
+        "q_rx_lev_min": {
+          "$ref": "../../cell/common.json#/$defs/q_rx_lev_min",
+          "description": "Value of SIB1.cellSelectionInfo.q-RxLevMin"
+        },
+        "q_qual_min": {
+          "$ref": "../../cell/common.json#/$defs/q_qual_min",
+          "description": "Value of SIB1.cellSelectionInfo.q-QualMin",
+          "default": -20
+        },
+        "delta_rx_lev_min": {
+          "$ref": "../../cell/common.json#/$defs/q_rx_lev_min_offset",
+          "description": "Value of SIB1.cellSelectionInfo.q-RxLevMinOffset. The value 0 disables the field"
+        },
+        "cell_reselection_priority": {
+          "$ref": "../../cell/common.json#/$defs/cell_reselection_priority",
+          "description": "Value of SIB2.cellReselectionServingFreqInfo.cellReselectionPriority"
+        },
+        "t_reselection_nr": {
+          "title": "t-ReselectionNR",
+          "description": "Value of SIB2.intraFreqCellReselectionInfo.t-ReselectionNR",
+          "type": "number",
+          "default": 1
+        },
+        "s_intra_search": {
+          "$ref": "../../cell/common.json#/$defs/s_intra_search",
+          "description": "Value of SIB2.intraFreqCellReselectionInfo.s-IntraSearchP",
+          "default": 31
+        },
+        "q_hyst": {
+          "$ref": "../../cell/common.json#/$defs/q_hyst",
+          "description": "Value of SIB2.cellReselectionInfoCommon.q-Hyst",
+          "default": 3
+        }
+      }
     },
-    "prach_config_index": {
-      "title": "Expert only: Prach Config Index",
-      "description": "Expert only: Integer (range 0 to 262). prach-ConfigurationIndex parameter. Default is 160 or 156 depending on TDD configuration",
-      "type": "number"
+    "latency_parameter": {
+      "title": "Latency Parameters",
+      "description": "Parameters useful for tuning latency",
+      "type": "object",
+      "properties": {
+        "uss": {
+          "title": "Expert only: PDCCH UE Search Space",
+          "type": "object",
+          "required": [
+            "n_candidates",
+            "dci_0_1_and_1_1"
+          ],
+          "additionalProperties": false,
+          "description": "Expert only: PDCCH UE dedicated search space configuration defined in RRC PDCCH-Config. Default value depends on TDD configuration, see generated configuration file in Monitor App as a reference",
+          "properties": {
+            "n_candidates": {
+              "title": "Number of Candidates List",
+              "description": "Mandatory for the DL BWP #0. nrofCandidates parameters for each aggregation level (1, 2, 4, 8, 16).",
+              "type": "object",
+              "required": [
+                "n_candidates_1",
+                "n_candidates_2",
+                "n_candidates_4",
+                "n_candidates_8",
+                "n_candidates_16"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "n_candidates_1": {
+                  "title": "Number of Candidates for aggregation level 1",
+                  "$ref": "#/$defs/n_candidates"
+                },
+                "n_candidates_2": {
+                  "title": "Number of Candidates for aggregation level 2",
+                  "$ref": "#/$defs/n_candidates"
+                },
+                "n_candidates_4": {
+                  "title": "Number of Candidates for aggregation level 4",
+                  "$ref": "#/$defs/n_candidates"
+                },
+                "n_candidates_8": {
+                  "title": "Number of Candidates for aggregation level 8",
+                  "$ref": "#/$defs/n_candidates"
+                },
+                "n_candidates_16": {
+                  "title": "Number of Candidates for aggregation level 16",
+                  "$ref": "#/$defs/n_candidates"
+                }
+              }
+            },
+            "dci_0_1_and_1_1": {
+              "title": "DCI 0_1 and DCI 1_1",
+              "description": "It defines whether DCI 0_1 and 1_1 are used for PDCCH in the search space. It is relevant only if css is false.",
+              "type": "boolean"
+            }
+          }
+        },
+        "sr_period": {
+          "title": "Scheduling Request Period",
+          "description": "Scheduling Request periodicity. 0 means no Sheduling Request configuration.",
+          "enum": [
+            0,
+            1,
+            2,
+            4,
+            5,
+            8,
+            10,
+            16,
+            20,
+            40,
+            80,
+            160,
+            320,
+            640
+          ],
+          "type": "integer"
+        },
+        "k_min": {
+          "title": "Minimum k value",
+          "description": "Minimum value for PDSCH k1 and PUSCH k2 and msg3_k2 (range: 1 to 16)",
+          "type": "integer"
+        },
+        "rx_to_tx_latency": {
+          "title": "RX to TX Latency",
+          "description": "Minimum allowed latency in slots between RX and TX. Its range is from 2 slots to 4ms (The default value depends on subcarrier spacing). If the latency is too high, the gNB scheduler may not be able to use all the PDSCH transmission occasions with subcarrier spacings larger or equal to 30 kHz. Increasing the value will improve performances, especially in case of radio frontend underflows. If LTE and NB-IoT cells are present on the RF port, only 4ms is allowed.",
+          "type": "integer"
+        },
+        "trs_presence": {
+          "title": "Expert only: TRS Presence",
+          "description": "Expert only: Add NZP CSI-RS resources for TRS.",
+          "type": "boolean"
+        },
+        "csi_srs_period": {
+          "title": "Expert only: CSI SRS Period",
+          "description": "Expert only: Period for NZP CSI-RS resources, in slots.",
+          "type": "integer"
+        }
+      }
     },
     "subcarrier_spacing": {
       "title": "Expert only: Subcarrier Spacing (in kHz)",
@@ -117,58 +315,6 @@
         60,
         120
       ]
-    },
-    "uss": {
-      "title": "Expert only: PDCCH UE Search Space",
-      "type": "object",
-      "required": [
-        "n_candidates",
-        "dci_0_1_and_1_1"
-      ],
-      "additionalProperties": false,
-      "description": "Expert only: PDCCH UE dedicated search space configuration defined in RRC PDCCH-Config. Default value depends on TDD configuration, see generated configuration file in Monitor App as a reference",
-      "properties": {
-        "n_candidates": {
-          "title": "Number of Candidates List",
-          "description": "Mandatory for the DL BWP #0. nrofCandidates parameters for each aggregation level (1, 2, 4, 8, 16).",
-          "type": "object",
-          "required": [
-            "n_candidates_1",
-            "n_candidates_2",
-            "n_candidates_4",
-            "n_candidates_8",
-            "n_candidates_16"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "n_candidates_1": {
-              "title": "Number of Candidates for aggregation level 1",
-              "$ref": "#/$defs/n_candidates"
-            },
-            "n_candidates_2": {
-              "title": "Number of Candidates for aggregation level 2",
-              "$ref": "#/$defs/n_candidates"
-            },
-            "n_candidates_4": {
-              "title": "Number of Candidates for aggregation level 4",
-              "$ref": "#/$defs/n_candidates"
-            },
-            "n_candidates_8": {
-              "title": "Number of Candidates for aggregation level 8",
-              "$ref": "#/$defs/n_candidates"
-            },
-            "n_candidates_16": {
-              "title": "Number of Candidates for aggregation level 16",
-              "$ref": "#/$defs/n_candidates"
-            }
-          }
-        },
-        "dci_0_1_and_1_1": {
-          "title": "DCI 0_1 and DCI 1_1",
-          "description": "It defines whether DCI 0_1 and 1_1 are used for PDCCH in the search space. It is relevant only if css is false.",
-          "type": "boolean"
-        }
-      }
     },
     "cipher_algo_pref": {
       "title": "Preferred Cipher algorithms",
@@ -199,6 +345,36 @@
         ]
       },
       "default": ["NIA2 (128 bit AES)","NIA1 (Snow 3G)"]
+    },
+    "configured_grant": {
+      "title": "Configured Grant",
+      "required": [
+        "l_crb",
+        "periodicity",
+        "configuration_type"
+      ],
+      "type": "object",
+      "properties": {
+        "l_crb": {
+          "title": "Configured Grant RB Number",
+          "description": "Configured Grant size in number of RBs. Must be a multiple of the RBG size if ra_type is set to type0",
+          "type": "number"
+        },
+        "periodicity": {
+          "type": "number",
+          "description": "Periodicity of the CG in slots",
+          "type": "number"
+        },
+        "configuration_type": {
+          "type": "string",
+          "description": "Configuration type1 is a semi-static grant configured via RRC while type2 is activated/released by an UL DCI. type2_immediate will send an activation DCI right after RRC configuration. type2_dynamic will send activation/release DCI based on the UL traffic on the bearers flagged with need_sps.",
+          "enum": [
+            "type1", 
+            "type2_immediate", 
+            "type2_dynamic"
+          ]
+        }
+      }
     },
     "redcap_ue": {
       "title": "Reduced Capability parameters",
@@ -246,7 +422,7 @@
               "default": true,
               "type": "boolean"
             }
-	  }
+          }
         },
         "half_duplex": {
           "title": "Half Duplex",
@@ -259,7 +435,7 @@
               "default": false,
               "type": "boolean"
             }
-	  }
+          }
         }
       }
     }

@@ -1,0 +1,34 @@
+Source: openvpn-re6stnet
+Section: net
+Priority: optional
+Build-Depends:
+  debhelper-compat (= 12),
+  iproute2,
+  liblz4-dev,
+  liblzo2-dev,
+  libssl-dev,
+Standards-Version: 4.5.0
+Rules-Requires-Root: no
+Homepage: https://openvpn.net/
+
+Package: openvpn-re6stnet
+Architecture: any
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ iproute2
+Description: virtual private network daemon
+ OpenVPN is an application to securely tunnel IP networks over a
+ single UDP or TCP port. It can be used to access remote sites, make
+ secure point-to-point connections, enhance wireless security, etc.
+ .
+ OpenVPN uses all of the encryption, authentication, and certification
+ features provided by the OpenSSL library (any cipher, key size, or
+ HMAC digest).
+ .
+ OpenVPN may use static, pre-shared keys or TLS-based dynamic key exchange. It
+ also supports VPNs with dynamic endpoints (DHCP or dial-up clients), tunnels
+ over NAT or connection-oriented stateful firewalls (such as Linux's iptables).
+ .
+ Due to a regression in version 2.5.x, this package ships the last version of
+ OpenVPN that's supported by re6stnet (https://re6st.nexedi.com/).
