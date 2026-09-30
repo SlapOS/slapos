@@ -717,9 +717,9 @@
     a2_hysteresis:          {{ slapparameter_dict.handover_a2_hysteresis      }},
     a2_time_to_trigger:     {{ slapparameter_dict.handover_a2_time_to_trigger }},
     eutra_handover: {
-{%-     if 'a3_rsrp' in slapparameter_dict.eutra_eutra_handover.event %}
+{%-     if 'a3_offset' in slapparameter_dict.eutra_eutra_handover.event %}
       a3_report_type: "rsrp",
-      a3_offset:            {{ slapparameter_dict.eutra_eutra_handover.event.a3_rsrp }},
+      a3_offset:            {{ slapparameter_dict.eutra_eutra_handover.event.a3_offset }},
 {%-     elif 'a4_rsrp' in slapparameter_dict.eutra_eutra_handover.event %}
       a4_report_type: "rsrp",
       a4_threshold_rsrp:    {{ slapparameter_dict.eutra_eutra_handover.event.a4_rsrp }},
@@ -761,11 +761,12 @@
 {%-     endif %}
   ho_from_meas: true,
 
-{%- set nr_bands = list(ipeercell_dict | dictsort | selectattr('1._.cell_type', '==', 'nr') | map(attribute='1._.nr_band')) | unique %}
-{%- set lte_bands = list(ipeercell_dict | dictsort | selectattr('1._.cell_type', '==', 'lte') | map(attribute='1._.lte_band')) %}
+{%- set nr_bands = list(ipeercell_dict | dictsort | selectattr('1._.cell_type', '==', 'nr') | map(attribute='1._.nr_band') | unique) %}
+{%- set lte_bands = list(ipeercell_dict | dictsort | selectattr('1._.cell_type', '==', 'lte') | map(attribute='1._.lte_band') | unique) %}
 
+{%- if (len(nr_bands) + len(lte_bands)) > 0 %}
   requested_freq_bands_nr_mrdc: [
-{%- for band in nr_bands -%}
+{%-   for band in nr_bands -%}
     {
       rat: "nr",
       band_nr: {{ band }},
@@ -774,18 +775,18 @@
       max_carriers_requested_dl: 2,
       max_carriers_requested_ul: 2,
     },
-{%- endfor %}
-{%- for band in lte_bands -%}
+{%-   endfor %}
+{%-   for band in lte_bands -%}
     {
       rat: "eutra",
       band_eutra: {{ band }},
       ca_bandwidth_class_dl: "b",
       ca_bandwidth_class_ul: "b",
     },
-{%- endfor %}
+{%-   endfor %}
   ],
   requested_freq_bands_nr: [
-{%- for band in nr_bands -%}
+{%-   for band in nr_bands -%}
     {
       rat: "nr",
       band_nr: {{ band }},
@@ -794,21 +795,24 @@
       max_carriers_requested_dl: 2,
       max_carriers_requested_ul: 2,
     },
-{%- endfor %}
-{%- for band in lte_bands -%}
+{%-   endfor %}
+{%-   for band in lte_bands -%}
     {
       rat: "eutra",
       band_eutra: {{ band }},
       ca_bandwidth_class_dl: "b",
       ca_bandwidth_class_ul: "b",
     },
-{%- endfor %}
+{%-   endfor %}
   ],
+{%- endif %}
+{%- if len(lte_bands) > 0 %}
   requested_eutra_freq_bands: [
-{%- for band in lte_bands -%}
+{%-   for band in lte_bands -%}
 {{ band }}, 
-{%- endfor -%}
+{%-   endfor -%}
 ],
+{%- endif %}
 
 {%-   endif %}
   },
@@ -1248,9 +1252,9 @@
     a2_hysteresis:          {{ slapparameter_dict.handover_a2_hysteresis      }},
     a2_time_to_trigger:     {{ slapparameter_dict.handover_a2_time_to_trigger }},
     nr_handover: {
-{%-     if 'a3_rsrp' in slapparameter_dict.nr_nr_handover.event %}
+{%-     if 'a3_offset' in slapparameter_dict.nr_nr_handover.event %}
       a3_report_type: "rsrp",
-      a3_offset:            {{ slapparameter_dict.nr_nr_handover.event.a3_rsrp }},
+      a3_offset:            {{ slapparameter_dict.nr_nr_handover.event.a3_offset }},
 {%-     elif 'a4_rsrp' in slapparameter_dict.nr_nr_handover.event %}
       a4_threshold_rsrp:    {{ slapparameter_dict.nr_nr_handover.event.a4_rsrp }},
 {%-     elif 'a5_rsrp' in slapparameter_dict.nr_nr_handover.event %}
@@ -1290,11 +1294,12 @@
 {%-     endif %}
   ho_from_meas: true,
 
-{%- set nr_bands = list(ipeercell_dict | dictsort | selectattr('1._.cell_type', '==', 'nr') | map(attribute='1._.nr_band')) | unique %}
-{%- set lte_bands = list(ipeercell_dict | dictsort | selectattr('1._.cell_type', '==', 'lte') | map(attribute='1._.lte_band')) %}
+{%- set nr_bands = list(ipeercell_dict | dictsort | selectattr('1._.cell_type', '==', 'nr') | map(attribute='1._.nr_band') | unique) %}
+{%- set lte_bands = list(ipeercell_dict | dictsort | selectattr('1._.cell_type', '==', 'lte') | map(attribute='1._.lte_band') | unique) %}
 
+{%- if (len(nr_bands) + len(lte_bands)) > 0 %}
   requested_freq_bands_nr_mrdc: [
-{%- for band in nr_bands -%}
+{%-   for band in nr_bands -%}
     {
       rat: "nr",
       band_nr: {{ band }},
@@ -1303,18 +1308,18 @@
       max_carriers_requested_dl: 2,
       max_carriers_requested_ul: 2,
     },
-{%- endfor %}
-{%- for band in lte_bands -%}
+{%-   endfor %}
+{%-   for band in lte_bands -%}
     {
       rat: "eutra",
       band_eutra: {{ band }},
       ca_bandwidth_class_dl: "b",
       ca_bandwidth_class_ul: "b",
     },
-{%- endfor %}
+{%-   endfor %}
   ],
   requested_freq_bands_nr: [
-{%- for band in nr_bands -%}
+{%-   for band in nr_bands -%}
     {
       rat: "nr",
       band_nr: {{ band }},
@@ -1323,21 +1328,25 @@
       max_carriers_requested_dl: 2,
       max_carriers_requested_ul: 2,
     },
-{%- endfor %}
-{%- for band in lte_bands -%}
+{%-   endfor %}
+{%-   for band in lte_bands -%}
     {
       rat: "eutra",
       band_eutra: {{ band }},
       ca_bandwidth_class_dl: "b",
       ca_bandwidth_class_ul: "b",
     },
-{%- endfor %}
+{%-   endfor %}
   ],
+{%- endif %}
+{%- if len(lte_bands) > 0 %}
   requested_eutra_freq_bands: [
-{%- for band in lte_bands -%}
+{%-   for band in lte_bands -%}
 {{ band }}, 
-{%- endfor -%}
+{%-   endfor -%}
 ],
+{%- endif %}
+
 {%-   endif %}
   },
 {%- endif %}
