@@ -96,6 +96,93 @@ index 3bf28659e1c..005d08c1caa 100644
    add_library(parse_secret_objs OBJECT ${parse_secret_srcs})
 +  target_include_directories(parse_secret_objs PRIVATE ${KEYUTILS_INCLUDE_DIR})
  endif()
--- 
+--
+2.30.2
+
+From 9c1f2e3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e Mon Sep 17 00:00:00 2001
+From: Nexedi <info@nexedi.com>
+Date: Thu, 1 Oct 2026 00:00:00 +0000
+Subject: [PATCH 4/4] extblkdev: link against cap::cap imported target
+
+target_link_libraries(extblkdev cap) passes a bare library name to the
+linker instead of the cap::cap imported target created by
+cmake/modules/Findcap.cmake, so the include directory of libcap is not
+propagated and the build fails with a missing sys/capability.h.
+---
+ src/extblkdev/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/extblkdev/CMakeLists.txt b/src/extblkdev/CMakeLists.txt
+index 1111111..2222222 100644
+--- a/src/extblkdev/CMakeLists.txt
++++ b/src/extblkdev/CMakeLists.txt
+@@ -8,7 +8,7 @@ add_library(extblkdev STATIC ExtBlkDevPlugin.cc)
+
+ if(LINUX)
+   find_package(cap REQUIRED)
+-  target_link_libraries(extblkdev cap)
++  target_link_libraries(extblkdev cap::cap)
+ endif()
+
+ add_custom_target(extblkdev_plugins DEPENDS
+--
+2.30.2
+
+From a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0 Mon Sep 17 00:00:00 2001
+From: Nexedi <info@nexedi.com>
+Date: Thu, 1 Oct 2026 00:00:00 +0000
+Subject: [PATCH 5/5] global: link against cap::cap for ExtBlkDevInterface.h
+
+src/global/global_init.cc includes extblkdev/ExtBlkDevPlugin.h, which
+pulls in extblkdev/ExtBlkDevInterface.h and its sys/capability.h
+dependency, but the libglobal_objs target never links against cap::cap
+so its include directory is not available to the compiler.
+---
+ src/global/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/global/CMakeLists.txt b/src/global/CMakeLists.txt
+index 3333333..4444444 100644
+--- a/src/global/CMakeLists.txt
++++ b/src/global/CMakeLists.txt
+@@ -8,6 +8,6 @@
+ endif()
+
+ add_library(libglobal_objs OBJECT ${libglobal_srcs})
+-target_link_libraries(libglobal_objs legacy-option-headers)
++target_link_libraries(libglobal_objs legacy-option-headers cap::cap)
+
+ add_library(global-static STATIC
+--
+2.30.2
+
+From b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1 Mon Sep 17 00:00:00 2001
+From: Nexedi <info@nexedi.com>
+Date: Thu, 1 Oct 2026 00:00:00 +0000
+Subject: [PATCH 6/6] cmake: make cap::cap a GLOBAL imported target
+
+Findcap.cmake creates the cap::cap imported target without GLOBAL, so
+it is only visible in the directory scope of whichever CMakeLists.txt
+first calls find_package(cap) (src/extblkdev) and its subdirectories.
+Sibling directories such as src/global that also link against cap::cap
+cannot see it and fail to configure with "target was not found".
+---
+ cmake/modules/Findcap.cmake | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/modules/Findcap.cmake b/cmake/modules/Findcap.cmake
+index 5555555..6666666 100644
+--- a/cmake/modules/Findcap.cmake
++++ b/cmake/modules/Findcap.cmake
+@@ -27,7 +27,7 @@ find_package_handle_standard_args (cap
+     cap_INCLUDE_DIR)
+
+ if(cap_FOUND AND NOT TARGET cap::cap)
+-  add_library(cap::cap UNKNOWN IMPORTED)
++  add_library(cap::cap UNKNOWN IMPORTED GLOBAL)
+   set_target_properties(cap::cap
+     PROPERTIES
+       IMPORTED_LOCATION ${cap_LIBRARY}
+--
 2.30.2
 
