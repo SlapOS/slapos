@@ -175,6 +175,7 @@ for i in netifaces.interfaces():
 def ors_radio(config, publish, shared_list):
     """eNB / gNB / UE - ORS Specific"""
     from xlte import nrarfcn
+    from nrarfcn import tables
     from xlte import earfcn
 
     with open(options.get('json-ors-defaults'), 'r') as f:
@@ -381,6 +382,22 @@ def ors_radio(config, publish, shared_list):
     publish['id']['gnb-id'] = publish_hex(config['gnb_id'])
     publish['id']['enb-id'] = publish_hex(config['enb_id'])
 
+    def nr_frequency(dl_frequency, ssb_nr_arfcn):
+        dl_arfcn = nrarfcn.nrarfcn(dl_frequency, nearby=True)
+        if nr:
+            if 'ssb_nr_arfcn' not in config[c]:
+                for j in range(1, 11):
+                    try:
+                        _arfcn = dl_arfcn + (j // 2) * ((j % 2) * 2 - 1)
+                        config[c]['ssb_nr_arfcn'], _ = nrarfcn.dl2ssb(_arfcn, band)
+                    except KeyError as e:
+                        continue
+                    dl_arfcn = _arfcn
+                    dl_frequency = nrarfcn.frequency(dl_arfcn)
+                    break
+            ul_arfcn = nrarfcn.dl2ul(dl_arfcn, band)
+            ul_frequency = nrarfcn.frequency(ul_arfcn)
+
     # RF parameters (frequency, band, arfcn...)
     def configure_rf_parameters(i):
 
@@ -418,15 +435,28 @@ def ors_radio(config, publish, shared_list):
             else:
                 dl_arfcn = nrarfcn.nrarfcn(dl_frequency, nearby=True)
         if nr:
+            config[c].setdefault('subcarrier_spacing', 15 if config[c]['rf_mode'] == 'fdd' else 30)
+            table = tables.applicable_nrarfcn_fr1.table_applicable_nrarfcn_fr1()
+            for row in table.data:
+                if table.get_cell(row, 'band') == f'n{band}':
+                    f_raster  = table.get_cell(row, 'f_raster')
+                    dl_step   = table.get_cell(row, 'dl_step')
+                    dl_first  = table.get_cell(row, 'dl_first')
+                    dl_last   = table.get_cell(row, 'dl_last')
             if 'ssb_nr_arfcn' not in config[c]:
+                dl_arfcn = dl_first + ((dl_arfcn - dl_first) // dl_step) * dl_step
                 for j in range(1, 11):
+                    _arfcn = dl_arfcn + (j // 2) * dl_step * ((j % 2) * 2 - 1)
                     try:
-                        _arfcn = dl_arfcn + (j // 2) * ((j % 2) * 2 - 1)
                         config[c]['ssb_nr_arfcn'], _ = nrarfcn.dl2ssb(_arfcn, band)
                     except KeyError as e:
                         continue
                     dl_arfcn = _arfcn
                     dl_frequency = nrarfcn.frequency(dl_arfcn)
+                    if int(dl_frequency * 1000) % int(config[c]['subcarrier_spacing']):
+                        continue
+                    if int(dl_frequency * 1000) % int(f_raster):
+                        continue
                     break
             ul_arfcn = nrarfcn.dl2ul(dl_arfcn, band)
             ul_frequency = nrarfcn.frequency(ul_arfcn)
@@ -453,7 +483,7 @@ def ors_radio(config, publish, shared_list):
         # Bandwidth
         if config[c]['cell_type'] == 'gNB':
             if config[c]['nr_bandwidth_ul'] != config[c]['nr_bandwidth']:
-                if config[c].get('subcarrier_spacing', 15 if config[c]['rf_mode'] == 'fdd' else 30) == 15:
+                if config[c]['subcarrier_spacing'] == 15:
                     n_rb_map = {
                         5 : 25,
                         10: 52,
