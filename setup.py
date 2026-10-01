@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.499'
+version = '1.0.510'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read()
 
@@ -74,7 +74,8 @@ setup(name=name,
         'zc.buildout', # plays with buildout
         'zc.recipe.egg', # for scripts generation
         'pytz', # for timezone database
-        'passlib',
+        "libpass; python_version >= '3.9'",
+        "passlib; python_version < '3.9'",
         ],
       zip_safe=True,
       entry_points={

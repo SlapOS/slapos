@@ -790,6 +790,7 @@ class MariaDBReplicationTestCase(MariaDBTestCase):
     replica_status = self.getReplicaStatus(replica)
     try:
       self.assertTrue(replica_status)
+      self.assertEqual(replica_status['Using_Gtid'], 'Slave_Pos')
       seconds_behind_master = replica_status['Seconds_Behind_Master']
       self.assertIsInstance(seconds_behind_master, int)
       return seconds_behind_master
