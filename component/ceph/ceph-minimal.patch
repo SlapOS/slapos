@@ -96,6 +96,66 @@ index 3bf28659e1c..005d08c1caa 100644
    add_library(parse_secret_objs OBJECT ${parse_secret_srcs})
 +  target_include_directories(parse_secret_objs PRIVATE ${KEYUTILS_INCLUDE_DIR})
  endif()
--- 
+--
+2.30.2
+
+From 9c1f2e3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e Mon Sep 17 00:00:00 2001
+From: Nexedi <info@nexedi.com>
+Date: Thu, 1 Oct 2026 00:00:00 +0000
+Subject: [PATCH 4/4] extblkdev: link against cap::cap imported target
+
+target_link_libraries(extblkdev cap) passes a bare library name to the
+linker instead of the cap::cap imported target created by
+cmake/modules/Findcap.cmake, so the include directory of libcap is not
+propagated and the build fails with a missing sys/capability.h.
+---
+ src/extblkdev/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/extblkdev/CMakeLists.txt b/src/extblkdev/CMakeLists.txt
+index 1111111..2222222 100644
+--- a/src/extblkdev/CMakeLists.txt
++++ b/src/extblkdev/CMakeLists.txt
+@@ -8,7 +8,7 @@ add_library(extblkdev STATIC ExtBlkDevPlugin.cc)
+
+ if(LINUX)
+   find_package(cap REQUIRED)
+-  target_link_libraries(extblkdev cap)
++  target_link_libraries(extblkdev cap::cap)
+ endif()
+
+ add_custom_target(extblkdev_plugins DEPENDS
+--
+2.30.2
+
+From a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0 Mon Sep 17 00:00:00 2001
+From: Nexedi <info@nexedi.com>
+Date: Thu, 1 Oct 2026 00:00:00 +0000
+Subject: [PATCH 5/5] global: drop unused extblkdev include
+
+src/global/global_init.cc includes extblkdev/ExtBlkDevPlugin.h, which
+pulls in extblkdev/ExtBlkDevInterface.h and its sys/capability.h
+dependency, but nothing in global_init.cc uses that header. It was
+added alongside a prctl(PR_SET_KEEPCAPS) call that only needs
+sys/prctl.h, already included separately. Drop the dead include
+instead of adding a cap::cap dependency to src/global.
+---
+ src/global/global_init.cc | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/global/global_init.cc b/src/global/global_init.cc
+index 1111111..2222222 100644
+--- a/src/global/global_init.cc
++++ b/src/global/global_init.cc
+@@ -22,7 +22,6 @@
+ #include "common/errno.h"
+ #include "common/signal.h"
+ #include "common/version.h"
+ #include "erasure-code/ErasureCodePlugin.h"
+-#include "extblkdev/ExtBlkDevPlugin.h"
+ #include "global/global_context.h"
+ #include "global/global_init.h"
+ #include "global/pidfile.h"
+--
 2.30.2
 
