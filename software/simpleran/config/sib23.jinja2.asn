@@ -118,9 +118,9 @@
             deriveSSB-IndexFromCell TRUE
           }
 {%- endif %}
-        },
+        }
 {%- if cell.cell_type == 'lte' %}
-        sib3: {
+        , sib3: {
           cellReselectionInfoCommon {
             q-Hyst dB{{ cell.advanced_parameter.q_hyst }}
           },
