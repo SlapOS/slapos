@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Test",
+  "properties": {
+    "cell_type": {
+      "title": "Cell Type",
+      "oneOf": [
+        {
+          "title": "A",
+          "type": "object",
+          "required": [
+            "a"
+          ],
+          "properties": {
+              "a": {
+                  "title": "A",
+                  "type": "string"
+              }
+          }
+        },
+        {
+          "title": "B",
+          "type": "object",
+          "required": [
+            "b"
+          ],
+          "properties": {
+              "b": {
+                  "title": "B",
+                  "type": "string"
+              }
+          }
+        }
+      ]
+    }
+  }
+}

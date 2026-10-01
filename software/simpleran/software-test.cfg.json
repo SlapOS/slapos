@@ -1,0 +1,16 @@
+{
+  "name": "Test",
+  "description": "Test",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "test": {
+      "title": "Test",
+      "software-type": "test",
+      "description": "Test",
+      "request": "simple-test-schema.json",
+      "response": "instance-ors-enb-schema.json",
+      "index": 1
+    }
+  }
+}
+
