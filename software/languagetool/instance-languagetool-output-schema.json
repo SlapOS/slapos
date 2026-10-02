@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "url": {
+      "title": "URL",
+      "description": "Public URL to access the LanguageTool HTTP server.",
+      "type": "string",
+      "format": "uri"
+    },
+    "backend-url": {
+      "title": "Backend URL",
+      "description": "URL to access the LanguageTool HTTP server from the partition network.",
+      "type": "string",
+      "format": "uri"
+    },
+    "monitor-base-url": {
+      "description": "Base URL used by monitor",
+      "type": "string",
+      "format": "uri"
+    },
+    "monitor-setup-url": {
+      "description": "One-click link to setup and monitor feeds",
+      "type": "string",
+      "format": "uri"
+    }
+  }
+}

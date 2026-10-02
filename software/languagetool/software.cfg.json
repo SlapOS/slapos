@@ -1,0 +1,15 @@
+{
+  "name": "LanguageTool",
+  "description": "LanguageTool is an open source grammar and style checker. This software release runs the standalone LanguageTool HTTP server.",
+  "serialisation": "json-in-xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "software-type": "default",
+      "description": "Default",
+      "request": "instance-languagetool-input-schema.json",
+      "response": "instance-languagetool-output-schema.json",
+      "index": 1
+    }
+  }
+}
