@@ -64,7 +64,7 @@ return =
   smtp-ipv6
   smtp-port
   tls-fingerprints
-
+  monitor-base-url
 
 {% for relay_name, config in slapparameter_dict['topology'].items() -%}
 {% set relay_fqdn = config.get('fqdn') -%}
@@ -95,18 +95,25 @@ relay-names = {{ dumps(list(slapparameter_dict['topology'].keys())) }}
 init =
   fingerprints = []
   hosts = []
+  monitoring = []
   for relay_name in options['relay-names']:
     part = self.buildout['request-relay-' + relay_name]
     fingerprints.extend(part['connection-tls-fingerprints'])
     hosts.append(part['connection-smtp-ipv6'])
+    monitoring.append(part['connection-monitor-base-url'])
   options['tls-fingerprints'] = fingerprints
   options['hosts'] = hosts
+  options['monitor-url-list'] = ' '.join(monitoring)
 {% if "relay-domain" in slapparameter_dict %}
 relay-host = {{ slapparameter_dict['relay-domain'] }}
 {% else %}
 # TODO: use multiple relays when supported
 relay-host = $${request-relay-{{ next(iter(slapparameter_dict['topology'].keys())) }}:connection-smtp-ipv6}
 {% endif %}
+
+[monitor-conf-parameters]
+# Aggregate monitoring feeds of relay nodes
+monitor-url-list = $${request-all-relays:monitor-url-list}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
