@@ -88,6 +88,10 @@ log_slave_updates = 1
 # hostname, but still there is a line in mariadb_error.log on every start
 # warning about this missing option. So provide it.
 relay-log = mariadb-relay-bin
+# Several configurations to make binlog size smaller
+binlog_annotate_row_events = OFF
+binlog_row_image = MINIMAL
+log_bin_compress = ON
 {% endif %}
 
 # Some dangerous settings you may want to uncomment temporarily
