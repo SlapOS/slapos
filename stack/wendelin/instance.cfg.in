@@ -83,6 +83,7 @@ apachedex-location = {{ bin_directory }}/apachedex
 run-apachedex-location = {{ bin_directory }}/runApacheDex
 promise-check-apachedex-result = {{ bin_directory }}/check-apachedex-result
 template-haproxy-cfg = {{ template_haproxy_cfg }}
+template-haproxy-health-check-lua = {{ template_haproxy_health_check_lua }}
 template-rsyslogd-cfg = {{ template_rsyslogd_cfg }}
 # XXX: only used in software/slapos-master:
 apache = {{ apache_location }}

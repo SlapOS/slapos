@@ -221,6 +221,7 @@ crl = ${haproxy-conf-ssl:crl}
 {% endif %}
 stats-socket = ${directory:run}/ha.sock
 admin-socket = ${directory:run}/haa.sock
+health-check-lua-script = ${haproxy-health-check-lua:output}
 path-routing-list = {{ dumps(slapparameter_dict['path-routing-list']) }}
 family-path-routing-dict = {{ dumps(slapparameter_dict['family-path-routing-dict']) }}
 pidfile = ${directory:run}/haproxy.pid
@@ -345,6 +346,16 @@ context =
   section parameter_dict haproxy-cfg-parameter-dict
   import urllib_parse six.moves.urllib.parse
 extensions = jinja2.ext.do
+
+[haproxy-health-check-lua-parameter-dict]
+zope-family-dict = {{ dumps(slapparameter_dict['zope-family-dict']) }}
+
+[haproxy-health-check-lua]
+< = jinja2-template-base
+url = {{ parameter_dict['template-haproxy-health-check-lua'] }}
+output = ${directory:etc}/haproxy-health-check.lua
+context =
+  section parameter_dict haproxy-health-check-lua-parameter-dict
 
 [haproxy-reload]
 recipe = slapos.recipe.template:jinja2

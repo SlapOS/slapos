@@ -1,0 +1,25 @@
+function make_health_check_applet(backend_name)
+  return function(txn)
+    local be = backend_name
+    local backend = core.backends[be]
+    local has_up = false
+    if backend and backend.servers then
+      for k, srv in pairs(backend.servers) do
+        if srv then
+          if srv:get_stats()["status"] == "UP" then
+            has_up = true
+            break
+          end
+        end
+      end
+    end
+    txn:set_status(has_up and 200 or 503)
+    txn:start_response()
+    txn:send(has_up and "OK\n" or "DOWN\n")
+  end
+end
+
+
+{% for backend_name in parameter_dict['zope-family-dict'] %}
+core.register_service("health_check_backend_{{ backend_name }}", "http", make_health_check_applet("backend_{{ backend_name}}"))
+{% endfor %}

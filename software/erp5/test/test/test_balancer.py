@@ -1280,3 +1280,77 @@ class TestRateLimiting(BalancerTestCase):
         text=True,
       )
     )
+
+class TestHealthCheck(BalancerTestCase):
+  __partition_reference__ = 'hc'
+  @classmethod
+  def _getInstanceParameterDict(cls) -> dict:
+    parameter_dict = super()._getInstanceParameterDict()
+    parameter_dict['a_http_server'] = [
+      [cls.getManagedResource("a_1", EchoHTTPServer).netloc, 1, False],
+    ]
+    parameter_dict['b_http_server'] = [
+      [cls.getManagedResource("b_1", EchoHTTPServer).netloc, 1, False],
+      [cls.getManagedResource("b_2", EchoHTTPServer).netloc, 1, False],
+    ]
+    parameter_dict['zope-family-dict'] = {
+      'a': ['a_http_server'],
+      'b': ['b_http_server'],
+    }
+    parameter_dict['ssl-authentication-dict'] = {'a': False, 'b': False}
+    parameter_dict['timeout-dict'] = {'a': None, 'b': None}
+    parameter_dict['frontend-parameter-dict'] = {
+      'a': {'internal-path': '', 'zope-family': 'a'},
+      'b': {'internal-path': '', 'zope-family': 'b'},
+    }
+    return parameter_dict
+
+  def setUp(self):
+    connection_parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()['_'])
+    self.urls = {
+      'a': [
+        connection_parameter_dict['a'],
+        connection_parameter_dict['a-v6'],
+        connection_parameter_dict['url-backend-a'],
+      ],
+      'b': [
+        connection_parameter_dict['b'],
+        connection_parameter_dict['b-v6'],
+        connection_parameter_dict['url-backend-b'],
+      ],
+    }
+
+  def assertHealthy(self, family):
+    for url in self.urls[family]:
+      resp = requests.get(urllib.parse.urljoin(url, '/health'), verify=False)
+      self.assertEqual(resp.text, 'OK\n')
+      self.assertEqual(resp.status_code, requests.codes.ok)
+
+  def assertNotHealthy(self, family):
+    for url in self.urls[family]:
+      resp = requests.get(urllib.parse.urljoin(url, '/health'), verify=False)
+      self.assertEqual(resp.text, 'DOWN\n')
+      self.assertEqual(resp.status_code, requests.codes.service_unavailable)
+
+  def stopBackend(self, backend_name):
+    backend = self.getManagedResource(backend_name, EchoHTTPServer)
+    backend.close()
+    self.addCleanup(backend.open)
+    time.sleep(5)  # haproxy checks backend health every 3s
+
+  def test(self):
+    self.assertHealthy('a')
+    self.assertHealthy('b')
+
+    self.stopBackend('a_1')
+    self.assertNotHealthy('a')
+    self.assertHealthy('b')
+
+    self.stopBackend('b_1')
+    self.assertNotHealthy('a')
+    self.assertHealthy('b')
+
+    self.stopBackend('b_2')
+    self.assertNotHealthy('a')
+    self.assertNotHealthy('b')
