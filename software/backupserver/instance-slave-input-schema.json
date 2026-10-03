@@ -32,6 +32,25 @@
       "title": "Use Sudo",
       "type": "boolean",
       "description": "Use Sudo (sudo needed to the target hostname)"
+    },
+    "rdiff-backup-version": {
+      "title": "Remote rdiff-backup Major Version",
+      "type": "integer",
+      "enum": [1, 2],
+      "default": 2,
+      "description": "Major version of rdiff-backup running on the target hostname. The rdiff-backup network protocol is not compatible between major versions, so this must match the remote end exactly."
+    },
+    "connection_port": {
+      "title": "Connection Port",
+      "type": "integer",
+      "default": 22,
+      "description": "SSH port of the target hostname"
+    },
+    "remote_rdiff_path": {
+      "title": "Remote rdiff-backup Path",
+      "type": "string",
+      "default": "rdiff-backup",
+      "description": "Path to the rdiff-backup binary on the target hostname, if not reachable as 'rdiff-backup' through the SSH login shell's PATH"
     }
   },
   "required": [
