@@ -36,12 +36,12 @@ NR_TDD_CONFIG_MAP = {
     'DDDSUUDDDD (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, same ratios as default': {
         'pattern1': '3ms 2UL 3DL S=4UL:6DL',
         'pattern2': '2ms 0UL 4DL S=0UL:0DL',
-        'prach_config_index': 156,
+        'advanced_parameter': {'prach_config_index': 156}
     },
     'DDDSUUUUDD (5ms,   5DL/4UL), S-slot=6DL:4GP:4UL, balanced downlink and uplink': {
         'pattern1': '4ms 4UL 3DL S=4UL:6DL',
         'pattern2': '1ms 0UL 2DL S=0UL:0DL',
-        'prach_config_index': 156,
+        'advanced_parameter': {'prach_config_index': 156}
     },
     'DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink': {
         'pattern1': '5ms 6UL 3DL S=10UL:2DL',
@@ -133,7 +133,7 @@ NR_TDD_CONFIG_MAP = {
               'report_quantity': "CRI_RI_PMI_CQI",
           },
         },
-        'prach_config_index': 128,
+        'advanced_parameter': {'prach_config_index': 128}
     },
 }
 
@@ -668,9 +668,11 @@ def ors_radio(config, publish, shared_list):
                     }
                 config[c]['tdd_ul_dl_config'] = tdd_ul_dl_config
                 for param in nr_tdd_config:
-                    if param in ['index', 'pattern1', 'pattern2']:
+                    if param in ['index', 'pattern1', 'pattern2', 'advanced_parameter']:
                         continue
                     config[c].setdefault(param, nr_tdd_config[param])
+                for param in nr_tdd_config.get('advanced_parameter', {}):
+                    config[c]['advanced_parameter'].setdefault(param, nr_tdd_config['advanced_parameter'][param])
 
     def configure_cpu():
         if options['sbc-model'] == 'LE-37SU7':
