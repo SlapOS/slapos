@@ -117,14 +117,14 @@ content =
     option httplog
     http-request set-header X-Forwarded-Proto https
     server slapproxy $${slapproxy:ipv4}:$${slapproxy:port}
-    tcp-request connection reject if !{ src $${:accepted-ipv6} }
+    http-request deny deny_status 403 hdr Denial-Reason "Wrong IPv6 subnet" if !{ src $${:accepted-ipv6} }
   listen monitor
     log global
     bind $${:ipv6}:$${:monitor.app-port} ssl crt $${certificate:location}
     mode http
     option httplog
     server slapproxy unix@$${monitor.app:socketpath}
-    tcp-request connection reject if !{ src $${:accepted-ipv6} }
+    http-request deny deny_status 403 hdr Denial-Reason "Wrong IPv6 subnet" if !{ src $${:accepted-ipv6} }
 accepted-ipv6 = {{ slapparameter_dict['accepted-client-ipv6'] }}
 ipv6 = {{ public_ipv6 }}
 slapproxy-port = 4000
