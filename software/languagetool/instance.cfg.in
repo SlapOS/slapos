@@ -1,0 +1,94 @@
+[buildout]
+parts =
+  directory
+  languagetool
+  languagetool-promise
+  languagetool-frontend
+  languagetool-frontend-promise
+  publish-connection-parameter
+  monitor-base
+  logrotate-entry-languagetool
+
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
+offline = true
+
+extends = {{ template_monitor }}
+
+[slap-configuration]
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = {{ software_cfg_json }}
+set-default = main
+validate-parameters = main
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+srv = ${:home}/srv
+service = ${:etc}/service
+run = ${:var}/run
+log = ${:var}/log
+
+[languagetool]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:service}/${:_buildout_section_name_}
+command-line =
+  {{ java_location }}/bin/java
+  -Xms64m
+  -Xmx512m
+  -Dlanguagetool.host=${:ip}
+  -cp "{{ languagetool_launcher_location }}:{{ languagetool_location }}/languagetool-server.jar:{{ languagetool_location }}/libs/*:{{ languagetool_location }}"
+  org.languagetool.server.SlapOSHTTPServer
+  --port ${:port}
+  --allow-origin "*"
+environment =
+  HOME=${directory:srv}
+hash-existing-files =
+  ${buildout:directory}/software_release/buildout.cfg
+
+ip = ${slap-configuration:ipv6-random}
+port = 8081
+url = http://[${:ip}]:${:port}
+pidfile = ${directory:run}/languagetool.pid
+# USR1 reopens the log file in the wrapper; the JVM inherits SIG_IGN for it.
+redirect-signal = USR1
+redirect-stdout = ${directory:log}/languagetool.log
+redirect-stderr = ${directory:log}/languagetool.log
+
+[languagetool-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = ${:_buildout_section_name_}.py
+config-url = ${languagetool:url}/v2/languages
+
+[languagetool-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = LanguageTool Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+shared = true
+config-url = ${languagetool:url}
+config-https-only = true
+return = domain secure_access
+
+[languagetool-frontend-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = languagetool-http-frontend.py
+config-url = ${languagetool-frontend:connection-secure_access}/v2/languages
+
+[logrotate-entry-languagetool]
+<= logrotate-entry-base
+name = languagetool
+log = ${languagetool:redirect-stdout}
+post = test ! -s ${languagetool:pidfile} || {{ buildout['bin-directory'] }}/slapos-kill --pidfile ${languagetool:pidfile} -s USR1
+
+[publish-connection-parameter]
+<= monitor-publish
+recipe = slapos.cookbook:publish
+url = ${languagetool-frontend:connection-secure_access}
+backend-url = ${languagetool:url}

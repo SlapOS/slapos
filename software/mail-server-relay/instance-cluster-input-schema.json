@@ -7,7 +7,7 @@
       "title": "Fully Qualified Domain Name",
       "description": "The public fully qualified domain name referencing this relay node",
       "type": "string",
-      "pattern": "^.+$"
+      "pattern": "^[a-z0-9.-]+$"
     },
     "relay-config": {
       "type": "object",

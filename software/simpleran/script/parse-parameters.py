@@ -386,6 +386,7 @@ def ors_radio(config, publish, shared_list):
 
         c = f'cell{i+1}'
         sdr_info = sdr_list[i]
+        config[c]['sdr_dev_list'] = [int(sdr_info.get('sdr_dev') or i)]
 
         if not config[c]['enable_cell']:
             return
@@ -398,7 +399,6 @@ def ors_radio(config, publish, shared_list):
             lte, nr = False, True
         model = sdr_info['band']
         defaults = DEFAULTS[model]
-        config[c]['sdr_dev'] = int(sdr_info.get('sdr_dev') or i)
 
         # Use ARFCN or frequency depending on what is in input parameters
         band = config[c].get(rat + '_band', defaults[f'{rat}_band'])
@@ -756,16 +756,10 @@ def ors_radio(config, publish, shared_list):
                 ncell.setdefault('cell_kind', 'enb_peer')
         config.setdefault('gtp_addr_list', [config['gtp_addr']])
         if max(config['n_antenna_ul'], config['n_antenna_dl']) > 2:
-            n_cell = config['cell1']['enable_cell'] + config['cell2']['enable_cell']
-            if n_cell == 0:
-                sdr_dev_list = []
-            elif n_cell == 1:
-                sdr_dev_list = [config['cell1']['sdr_dev'], config['cell2']['sdr_dev']]
-            elif n_cell == 2:
-                raise AssertionError('Both cells are enabled but antenna count is higher than 2')
-        else:
-            sdr_dev_list  = [config['cell1']['sdr_dev']] if config['cell1']['enable_cell'] else []
-            sdr_dev_list += [config['cell2']['sdr_dev']] if config['cell2']['enable_cell'] else []
+            if config['cell2']['enable_cell']:
+                raise AssertionError('Only the first cell should be enabled when antenna count is higher than 2')
+            if config['cell1']['enable_cell']:
+                config['cell1']['sdr_dev_list'] += config['cell2']['sdr_dev_list']
         # make real ru/cell/peer/... shared instances to be rejected in ORS mode
         for shared in shared_list:
             shared_params = json.loads(shared['_'])
@@ -780,7 +774,7 @@ def ors_radio(config, publish, shared_list):
                 ru_params = {
                     'ru_type':          'sdr',
                     'ru_link_type': 'sdr',
-                    'sdr_dev_list': sdr_dev_list,
+                    'sdr_dev_list': config[cell]['sdr_dev_list'],
                     'n_antenna_dl': config['n_antenna_dl'],
                     'n_antenna_ul': config['n_antenna_ul'],
                     'txrx_active':  'ACTIVE',

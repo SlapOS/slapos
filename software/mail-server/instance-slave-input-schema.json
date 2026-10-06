@@ -5,7 +5,9 @@
   "properties": {
     "address": {
       "title": "E-mail address",
-      "type": "string"
+      "description": "E-mail address of the account. Must be in lowercase.",
+      "type": "string",
+      "pattern": "^[a-z0-9._-]+@[a-z0-9.-]+$"
     },
     "reset-token": {
       "title": "Password reset token",
