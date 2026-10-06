@@ -26,6 +26,10 @@ curl -s -X POST "$url/v2/check" \
   -d "text=I has an error."
 ```
 
+The server accepts texts up to 20000 characters. A longer text returns an
+error. The server keeps the resources of each language in memory, so it runs
+with a 2 GB Java heap.
+
 ## Tests
 
 The automated tests live in `test/`. They deploy an instance and check the
