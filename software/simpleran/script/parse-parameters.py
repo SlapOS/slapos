@@ -181,7 +181,7 @@ def ors_radio(config, publish, shared_list):
     with open(options.get('json-ors-defaults'), 'r') as f:
         DEFAULTS = json.load(f)
 
-    publish_sections = ['nodeb', 'cell', 'hardware', 'radio', 'id', 'power']
+    publish_sections = ['nodeb', 'cell', 'hardware', 'radio', 'id', 'power', 'error']
     for s in publish_sections:
         publish.setdefault(s, {})
     for s in ['cell1', 'cell2', 'nodeb', 'management']:
@@ -437,12 +437,18 @@ def ors_radio(config, publish, shared_list):
         if nr:
             config[c].setdefault('subcarrier_spacing', 15 if config[c]['rf_mode'] == 'fdd' else 30)
             table = tables.applicable_nrarfcn_fr1.table_applicable_nrarfcn_fr1()
+            valid_band = False
             for row in table.data:
                 if table.get_cell(row, 'band') == f'n{band}':
+                    valid_band = True
                     f_raster  = table.get_cell(row, 'f_raster')
                     dl_step   = table.get_cell(row, 'dl_step')
                     dl_first  = table.get_cell(row, 'dl_first')
                     dl_last   = table.get_cell(row, 'dl_last')
+            if not valid_band:
+                publish['error'].setdefault('band', {})[c] = f'n{band} is not a valid NR band'
+                config[c]['enable_cell'] = False
+                return
             if 'ssb_nr_arfcn' not in config[c]:
                 dl_arfcn = dl_first + ((dl_arfcn - dl_first) // dl_step) * dl_step
                 for j in range(1, 11):
@@ -451,6 +457,10 @@ def ors_radio(config, publish, shared_list):
                         config[c]['ssb_nr_arfcn'], _ = nrarfcn.dl2ssb(_arfcn, band)
                     except KeyError as e:
                         continue
+                    except ValueError as e:
+                        publish['error'].setdefault('nr-arfcn', {})[c] = f'{e}'
+                        config[c]['enable_cell'] = False
+                        return
                     dl_arfcn = _arfcn
                     dl_frequency = nrarfcn.frequency(dl_arfcn)
                     if int(dl_frequency * 1000) % int(config[c]['subcarrier_spacing']):
@@ -769,6 +779,7 @@ def ors_radio(config, publish, shared_list):
         configure_rf_parameters(1)
 
     configure_cpu()
+
 
     # ENB / GNB MODE
     if sr_type in ['enb', 'gnb', 'enb-gnb']:
