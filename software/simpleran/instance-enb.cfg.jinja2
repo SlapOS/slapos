@@ -88,6 +88,7 @@ parts =
 {%- if slapparameter_dict.check_core_network %}
   check-core-network.py
 {%- endif %}
+  check-configuration-error.py
   monitor-base
   publish-connection-information
   ${:extra-parts}
@@ -483,4 +484,13 @@ config-amf-list = {{ dumps(amf_list) }}
 promise = check_gps_lock
 config-amarisoft-stats-log = ${ru_amarisoft-stats-template:log-output}
 config-stats-period = {{ slapparameter_dict.get("enb_stats_fetch_period", 60) }}
+{%- endif %}
+
+[check-configuration-error.py]
+recipe = slapos.cookbook:promise.plugin
+eggs = slapos.core
+file = {{ check_configuration_error }}
+output = ${directory:plugins}/check-configuration-error.py
+{%- if slapparameter_dict.get('error') %}
+config-error = {{ slapparameter_dict.get('error') }}
 {%- endif %}
