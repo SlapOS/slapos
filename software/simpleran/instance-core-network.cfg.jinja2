@@ -29,6 +29,7 @@ parts =
   publish-ue-db-config
   monitor-base
   check-interface-up.py
+  check-configuration-error.py
   publish-connection-information
   ws-mme-websocket-promise
   ws-mme-nginx-launcher
@@ -501,3 +502,12 @@ config-ifname = {{ slap_configuration['tun-name'] }}
 {% else %}
 config-ifname =
 {% endif %}
+
+[check-configuration-error.py]
+recipe = slapos.cookbook:promise.plugin
+eggs = slapos.core
+file = {{ check_configuration_error }}
+output = ${directory:plugins}/check-configuration-error.py
+{%- if slapparameter_dict.get('error') %}
+config-error = {{ slapparameter_dict.get('error') }}
+{%- endif %}
