@@ -531,7 +531,9 @@ class TestTheiaEnv(TheiaTestCase):
     # Launch slapos node software from theia shell
     theia_shell_process.sendline('slapos node software')
     theia_shell_process.expect('Installing software release %s' % self.dummy_software_path)
-    theia_shell_process.expect('Finished software releases.')
+    # Building the dummy software release downloads several eggs, which can
+    # take longer than pexpect's default 30 second timeout on a slow network.
+    theia_shell_process.expect('Finished software releases.', timeout=300)
 
     # Get the theia shell environment
     with open(env_json_path) as f:
