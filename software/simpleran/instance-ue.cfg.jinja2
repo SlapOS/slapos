@@ -20,6 +20,7 @@
 [buildout]
 parts =
   directory
+  check-configuration-error.py
   lte-ue-config
   lte-ue-service
   nginx-launcher
@@ -164,3 +165,12 @@ monitor-title = {{ slapparameter_dict['name'] | string }}
 {% if slapparameter_dict.get("monitor-password", None) %}
 password = {{ slapparameter_dict['monitor-password'] | string }}
 {% endif %}
+
+[check-configuration-error.py]
+recipe = slapos.cookbook:promise.plugin
+eggs = slapos.core
+file = {{ check_configuration_error }}
+output = ${directory:plugins}/check-configuration-error.py
+{%- if slapparameter_dict.get('error') %}
+config-error = {{ slapparameter_dict.get('error') }}
+{%- endif %}
