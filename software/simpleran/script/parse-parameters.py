@@ -1,4 +1,4 @@
-import json, netaddr, netifaces, math, socket, re, subprocess, time
+import json, math, netaddr, netifaces, os, socket, re, subprocess, time
 from copy import deepcopy
 
 """
@@ -136,6 +136,8 @@ NR_TDD_CONFIG_MAP = {
         'advanced_parameter': {'prach_config_index': 128}
     },
 }
+
+self.error = False
 
 # Get serial number of this ORS
 sn = 0
@@ -448,6 +450,7 @@ def ors_radio(config, publish, shared_list):
             if not valid_band:
                 publish['error'].setdefault('band', {})[c] = f'n{band} is not a valid NR band'
                 config[c]['enable_cell'] = False
+                self.error = True
                 return
             if 'ssb_nr_arfcn' not in config[c]:
                 dl_arfcn = dl_first + ((dl_arfcn - dl_first) // dl_step) * dl_step
@@ -460,6 +463,7 @@ def ors_radio(config, publish, shared_list):
                     except ValueError as e:
                         publish['error'].setdefault('nr-arfcn', {})[c] = f'{e}'
                         config[c]['enable_cell'] = False
+                        self.error = True
                         return
                     dl_arfcn = _arfcn
                     dl_frequency = nrarfcn.frequency(dl_arfcn)
@@ -777,6 +781,9 @@ def ors_radio(config, publish, shared_list):
         configure_rf_parameters(0)
     if len(sdr_list) >= 2:
         configure_rf_parameters(1)
+
+    if not sum([int(config[cell]['enable_cell']) for cell in ['cell1', 'cell2']]):
+        return
 
     configure_cpu()
 
@@ -1522,6 +1529,9 @@ if sr_type == 'core-network':
 elif options['software'].startswith('software-ors') and sr_type in ['enb', 'gnb', 'enb-gnb']:
     publish['nodeb']['gtp-addr'] = config['gtp_addr_list'][0]
 
+if self.error:
+    error = ', '.join([f'{k}: {publish["error"][k]}' for k in publish['error']])
+
 publish = delete_empty(publish)
 publish = flatten(publish)
 publish = {publish_naming(k[:-1]): k[-1] for k in publish}
@@ -1534,12 +1544,32 @@ slap_configuration.update({
     'configuration': config,
     'slave-instance-list': shared_list,
 })
+
+if self.error:
+    # If there was an error, load all parameters from backup
+    with open(options['backup-path'], 'r') as f:
+        output = json.load(f)
+    output['slapparameter-dict']['error'] = error
+    output['slap-configuration']['configuration']['error'] = error
+else:
+    # Write outputs in options and save to a file
+    output = {
+        'slap-configuration': dict(slap_configuration),
+        'slapparameter-dict': dict(config),
+        'shared-list':        list(shared_list),
+    }
+    if sr_type == 'core-network':
+        output['sim-list'] = list(sim_list)
+
+    # Create etc directory in case mkdirectory recipe hasn't ran yet
+    backup_dir = os.path.dirname(options['backup-path'])
+    if not os.path.isdir(backup_dir):
+        os.makedirs(backup_dir, int('0777', 8))
+    with open(options['backup-path'], 'w+') as f:
+        json.dump(output, f, indent=4)
+
 options['publish'] = publish
-options['slap-configuration'] = slap_configuration
-options['slapparameter-dict'] = config
-options['shared-list'] = shared_list
-
 if sr_type == 'core-network':
-    options['sim-list'] = sim_list
     options['publish-section-list'] = publish_section_list
-
+for k in output:
+    options[k] = output[k]
