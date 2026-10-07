@@ -212,6 +212,19 @@ inline =
   # Start lteenb
   {{ amarisoft['enb_dir'] }}/lteenb ${directory:etc}/enb.cfg >> ${:info-log} 2>> ${:info-log}
 
+[check-lteenb]
+recipe = slapos.recipe.build
+pidfile = ${directory:run}/enb.pid
+init =
+  # Check if lteenb is running or not
+  import subprocess
+  with open(options['pidfile'], 'r') as f:
+      pid = int(f.read())
+  out = subprocess.run(['lsof', '-p', pid], stdout=subprocess.PIPE, text=True, check=False)
+  if not out.stdout:
+      with open(options['info-log'], 'r') as f:
+   
+
 [enb-service]
 recipe = slapos.cookbook:wrapper
 command-line = ${enb-sh-wrapper:output}
