@@ -9,6 +9,35 @@
       "type": "string",
       "pattern": "^[a-z0-9.-]+$"
     },
+    "rate-limits": {
+      "title": "Rate Limits",
+      "description": "List of Sliding Windows",
+      "type": "array",
+      "items": {
+        "title": "Sliding Window",
+        "description": "Pair of (maximum amount allowed, number of seconds)",
+        "type": "object",
+        "properties": {
+          "cap": {
+            "title": "Limit",
+            "description": "Maximum amount allowed",
+            "type": "integer",
+            "minimum": 0
+          },
+          "per": {
+            "title": "Duration in seconds",
+            "description": "Number of seconds",
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "cap",
+          "per"
+        ]
+      },
+      "default": []
+    },
     "relay-config": {
       "type": "object",
       "properties": {
@@ -46,6 +75,10 @@
                   "type": "string",
                   "pattern": "^.+$"
                 },
+                "default": []
+              },
+              "rate-limits": {
+                "$ref": "#/definitions/rate-limits",
                 "default": []
               }
             },
