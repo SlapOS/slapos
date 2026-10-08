@@ -222,6 +222,10 @@ pidfile = ${directory:run}/enb.pid
 hash-files =
   ${enb-config:output}
   ${enb-sh-wrapper:output}
+{%-   for cell_ref, icell in rulib.icell_dict|dictsort %}
+  ${drb-config-{{ cell_ref }}:output}
+  ${sib23-config-{{ cell_ref }}:output}
+{%- endfor %}
 environment =
   AMARISOFT_PATH={{ amarisoft['license_dir'] }}
 
