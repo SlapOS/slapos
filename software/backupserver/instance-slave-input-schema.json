@@ -36,7 +36,10 @@
     "rdiff-backup-version": {
       "title": "Remote rdiff-backup Major Version",
       "type": "integer",
-      "enum": [1, 2],
+      "enum": [
+        1,
+        2
+      ],
       "default": 2,
       "description": "Major version of rdiff-backup running on the target hostname. The rdiff-backup network protocol is not compatible between major versions, so this must match the remote end exactly."
     },
