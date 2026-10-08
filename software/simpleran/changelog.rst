@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Version 1.0.524 (2026-11-13)
+-------------
+
+* Don't stop eNB / gNB / Core Network if wrong parameters are inputted
+* Report parameter validation issues in check-configuration-error promise output and connection parameters
+* Improve low latency TDD configurations
+  - Set MCS Table to 64qam for better reliability
+  - Set n_rb_coreset0 to 48 and n_symb_coreset0 to 1 on 1ms TDD configuration
+* Fix bug causing ORS Offline mode database to become corrupted after a hard poweroff
+
 Version 1.0.516 (2026-10-15)
 -------------
 
@@ -12,7 +22,7 @@ Version 1.0.513 (2026-10-13)
 * Fix wrong SIP IPv6 server address
 * Find dl_nr_arfcn divisible by raster, preventing dl_nr_arfcn and ssb_nr_arfcn errors when configuring DL Frequency
 
-Version 1.0.509 (2026-09-17)
+Version 1.0.511 (2026-09-17)
 -------------
 
 * Add advanced parameters section
