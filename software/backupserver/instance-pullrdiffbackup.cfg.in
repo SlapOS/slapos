@@ -59,8 +59,20 @@ logfile = $${directory:log}/crond.log
 {%   set include_string = "' --include='".join(include.split(' ')) -%}
 {%   set exclude = slave_instance.get('exclude', '') -%}
 {%   set exclude_string = '' -%}
-{%   set sudo = slave_instance.get('sudo', False) -%}
-{%   set remote_schema = slave_instance.get('remote_rdiff_path', 'rdiff-backup') + ' --server --restrict-read-only / -- "$@"' -%}
+{%   set sudo = slave_instance.get('sudo', 'False') -%}
+{#   rdiff-backup's network protocol is not compatible between major
+     versions (see https://rdiff-backup.net/migration.html), so the local
+     binary and the remote-schema server invocation must both match
+     whatever major version the target hostname is actually running. #}
+{%   set rdiff_backup_version = slave_instance.get('rdiff-backup-version', 2) -%}
+{%   if rdiff_backup_version == 1 -%}
+{%     set remote_schema = slave_instance.get('remote_rdiff_path', 'rdiff-backup') + ' --server --restrict-read-only / -- "$@"' -%}
+{%   else -%}
+{#     rdiff-backup 2.x's server subcommand, unlike 1.x's --server flag,
+       rejects a trailing "--" with no argument after it (argparse error
+       "unrecognized arguments: --"), so it must not be appended here. #}
+{%     set remote_schema = slave_instance.get('remote_rdiff_path', 'rdiff-backup') + ' server --restrict-mode read-only --restrict-path /' -%}
+{%   endif -%}
 
 {%   if (exclude != '') -%}
 {%     set exclude_string = "' --exclude='".join(exclude.split(' ')) -%}
@@ -129,6 +141,7 @@ hostname = {{ hostname }}
 include = {{ include_string }}
 exclude_string = {{ exclude_string }}
 remote_schema = {{ remote_schema }}
+rdiff_backup_version = {{ rdiff_backup_version }}
 status_name = {{ slave_reference }}_status.txt
 statistic_name = {{ slave_reference }}_statistic.txt
 status_log = $${directory:status}/$${:status_name}
