@@ -1,0 +1,23 @@
+Backport of upstream commit 3cfb16998808a6ec8012a6120d0a82f0e1a0c8bb,
+adapted to the generate-errno-list.sh of the v252 stable branch.
+https://github.com/systemd/systemd/commit/3cfb16998808a6ec8012a6120d0a82f0e1a0c8bb
+
+--- a/src/basic/generate-errno-list.sh
++++ b/src/basic/generate-errno-list.sh
+@@ -3,9 +3,13 @@
+ set -eu
+ set -o pipefail
+
+-# In kernel's arch/parisc/include/uapi/asm/errno.h, ECANCELLED and EREFUSED are defined as aliases of
+-# ECANCELED and ECONNREFUSED, respectively. Let's drop them.
++# In kernel's arch/parisc/include/uapi/asm/errno.h, the following aliases are defined:
++# ECANCELLED -> ECANCELED
++# EREFUSED -> ECONNREFUSED
++# EFSBADCRC -> EBADMSG
++# EFSCORRUPTED -> EUCLEAN
++# Let's drop them.
+
+ ${1:?} -dM -include errno.h - </dev/null | \
+-       grep -Ev '^#define[[:space:]]+(ECANCELLED|EREFUSED)' | \
++       grep -Ev '^#define[[:space:]]+(ECANCELLED|EREFUSED|EFSBADCRC|EFSCORRUPTED)' | \
+        awk '/^#define[ \t]+E[^ _]+[ \t]+/ { print $2; }'
