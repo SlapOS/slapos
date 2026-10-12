@@ -90,7 +90,9 @@
           ul_nr_arfcn:  {{ cell.ul_nr_arfcn }},
           ssb_nr_arfcn: {{ cell.ssb_nr_arfcn }},
           bandwidth:    {{ cell.bandwidth }},
-
+{%-     if 'rx_to_tx_latency' in cell %}
+          rx_to_tx_latency: {{ cell.rx_to_tx_latency }},
+{%-     endif %}
           subcarrier_spacing: {{ cell.subcarrier_spacing }},
         },
 {%-   endif %}
