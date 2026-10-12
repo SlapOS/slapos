@@ -213,22 +213,54 @@ inline =
   date +"%Y%m%d.%T" > ${:start-date}
 
   # Start lteenb
-  {{ amarisoft['enb_dir'] }}/lteenb ${directory:etc}/enb.cfg >> ${:info-log} 2>> ${:info-log}
+  {{ amarisoft['enb_dir'] }}/lteenb ${directory:etc}/enb.cfg 2>&1 >> ${:info-log}
 
 [enb-service]
-recipe = slapos.cookbook:wrapper
-command-line = ${enb-sh-wrapper:output}
-wrapper-path = ${directory:service}/enb
-mode = 0775
-reserve-cpu = True
-pidfile = ${directory:run}/enb.pid
-hash-files =
+recipe = slapos.recipe.build
+egg-paths =
+  {{ eggs_directory }}
+  {{ develop_eggs_directory }}
+eggs = websockets
+ws-url = ws://{{ slapparameter_dict.com_url }}
+ws-password = ${websocket-password:passwd}
+script-path = {{ lteenb_wrapper }}
+enb-wrapper-file = ${enb-wrapper:wrapper-path}
+enb-config-file = ${enb-config:output}
+enb-directory = {{ amarisoft['enb_dir'] }}
+amarisoft-license-dir = {{ amarisoft['license_dir'] }}
+config-directory = ${directory:etc}
+bin-directory = ${directory:bin}
+service-directory = ${directory:service}
+hash-output-file = ${directory:var}/enb-service-hash
+config-file-list =
   ${enb-config:output}
-  ${enb-sh-wrapper:output}
 {%-   for cell_ref, icell in rulib.icell_dict|dictsort %}
   ${drb-config-{{ cell_ref }}:output}
   ${sib23-config-{{ cell_ref }}:output}
 {%- endfor %}
+init =
+  options['location'] = ''
+  import zc.buildout
+  import pkg_resources
+  zc.buildout.easy_install.install(
+    [e.strip() for e in options['eggs'].splitlines()],
+    dest=None,
+    working_set=pkg_resources.working_set,
+    path=[p.strip() for p in options['egg-paths'].splitlines()]
+  )
+update =
+  with open(options['script-path'], 'r') as f:
+    exec(f.read())
+
+[enb-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = ${enb-sh-wrapper:output}
+wrapper-path = ${directory:bin}/lteenb-service
+mode = 0775
+reserve-cpu = True
+pidfile = ${directory:run}/enb.pid
+hash-files =
+  ${enb-sh-wrapper:output}
 environment =
   AMARISOFT_PATH={{ amarisoft['license_dir'] }}
 
@@ -387,7 +419,25 @@ target-directory = ${monitor-directory:private}
 [enb-config]
 <= config-base
 url = {{ enb_template }}
-output = ${directory:etc}/enb.cfg
+output = ${directory:var}/enb.cfg
+import-list =
+    rawfile slaplte.jinja2 {{ slaplte_template }}
+extra-context =
+    import json_module json
+    key iru_dict       :iru_dict
+    key icell_dict     :icell_dict
+    key ipeer_dict     :ipeer_dict
+    key ipeercell_dict :ipeercell_dict
+    key websocket_password websocket-password:passwd
+iru_dict       = {{ dumps(rulib.iru_dict) }}
+icell_dict     = {{ dumps(rulib.icell_dict) }}
+ipeer_dict     = {{ dumps(ipeer_dict) }}
+ipeercell_dict = {{ dumps(ipeercell_dict) }}
+
+[enb-dummy-config]
+<= config-base
+url = {{ enb_template }}
+output = ${directory:etc}/enb-dummy.cfg
 import-list =
     rawfile slaplte.jinja2 {{ slaplte_template }}
 extra-context =
@@ -411,6 +461,7 @@ link-binary = ${enb-config:output}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
+depends-enb-service = ${enb-service:recipe}
 {%- if slapparameter_dict.websocket_url_ipv6 %}
 URL.websocket-hostname = {{ slapparameter_dict.com_addr }}
 URL.websocket-port = {{ slapparameter_dict.com_ws_port }}
@@ -439,7 +490,6 @@ URL.monitor-gadget = ${:URL.monitor-base}/gadget/software.cfg.html
 URL.wendelin-fluentbit-tag = ${xlog-fluentbit-tag:xlog-fluentbit-tag}
 URL.wendelin = https://wendelin.rapid.space/
 {%- endif %}
-
 
 [monitor-instance-parameter]
 {% if slapparameter_dict.get("name", None) %}
@@ -488,6 +538,7 @@ config-stats-period = {{ slapparameter_dict.get("enb_stats_fetch_period", 60) }}
 
 [check-configuration-error.py]
 recipe = slapos.cookbook:promise.plugin
+depends-enb-service = ${enb-service:recipe}
 eggs = slapos.core
 file = {{ check_configuration_error }}
 output = ${directory:plugins}/check-configuration-error.py
