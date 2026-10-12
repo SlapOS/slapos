@@ -1,4 +1,4 @@
-import json, math, netaddr, netifaces, os, socket, re, subprocess, time
+import hashlib, json, math, netaddr, netifaces, os, socket, re, subprocess, time
 from copy import deepcopy
 
 """
@@ -549,7 +549,6 @@ def ors_radio(config, publish, shared_list):
         if config[c]['cell_type'] == 'gNB':
             publish['radio'].setdefault('dl-nr-arfcn', {})[c] = dl_arfcn
             publish['radio'].setdefault('ul-nr-arfcn', {})[c] = ul_arfcn
-            publish['radio'].setdefault('ssb-nr-arfcn', {})[c] = config[c]['ssb_nr_arfcn']
             publish['radio'].setdefault('bandwidth', {})[c] = f"{config[c]['nr_bandwidth']} MHz"
             if sr_type in ['enb', 'gnb', 'enb-gnb']:
                 publish['radio'].setdefault('ssb-pos-bitmap', {})[c] = config[c]['ssb_pos_bitmap']
@@ -640,6 +639,8 @@ def ors_radio(config, publish, shared_list):
                 cid_len = 36 - config['gnb_id_bits']
                 nr_cell_id = global_id(config['gnb_id'], config[c]['cell_id'], cid_len)
                 publish['id']['nr-cell-id'][c] = publish_hex(nr_cell_id)
+                # CELLx_SSB_NR_ARFCN will get replaced in amarisoft-wrapper.py after we get ssb_nr_arfcn
+                # from lteenb
                 publish['id']['handover-json-export'][c] = json.dumps({
                     'name': hostname,
                     'nr_cell_id': nr_cell_id,
