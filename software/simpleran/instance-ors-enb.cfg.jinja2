@@ -37,7 +37,6 @@ init =
   del publish['depends']
 
 {%- if slapparameter_dict.cell1.enable_cell %}
-# Add custom promise to check if /dev/sdr0 is busy
 [check-frequency-outofbounds.py]
 <= macro.promise
 promise = check_frequency_outofbounds
@@ -46,7 +45,6 @@ config-range-rating = {{ slapparameter_dict.cell1.range }}
 {%- endif %}
 
 {%- if slapparameter_dict.cell2.enable_cell %}
-# Add custom promise to check if /dev/sdr1 is busy
 [check-frequency-outofbounds-sdr1.py]
 <= macro.promise
 promise = check_frequency_outofbounds

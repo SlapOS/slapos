@@ -257,7 +257,7 @@ txrx_active = {{ dumps(ru.txrx_active) }}
 {{ part('drb-config-%s' % cell_ref) }}
 <= config-base
 url = {{ {'lte': drb_lte_template, 'nr': drb_nr_template, 'nb': drb_nb_template} [cell.cell_type] }}
-output = ${directory:etc}/{{B('%s-drb.cfg' % cell_ref)}}
+output = ${directory:var}/{{B('%s-drb.cfg' % cell_ref)}}
 extra-context =
     key cell_ref :cell_ref
     key cell     :cell
@@ -281,7 +281,7 @@ link-binary = ${
 {{ part('sib23-config-%s' % cell_ref) }}
 <= config-base
 url = {{ sib23_template }}
-output = ${directory:etc}/{{B('%s-sib23.asn' % cell_ref)}}
+output = ${directory:var}/{{B('%s-sib23.asn' % cell_ref)}}
 extra-context =
     key cell_ref :cell_ref
     key cell     :cell

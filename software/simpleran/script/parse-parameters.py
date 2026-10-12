@@ -1,4 +1,4 @@
-import json, math, netaddr, netifaces, os, socket, re, subprocess, time
+import hashlib, json, math, netaddr, netifaces, os, socket, re, subprocess, time
 from copy import deepcopy
 
 """
@@ -549,7 +549,6 @@ def ors_radio(config, publish, shared_list):
         if config[c]['cell_type'] == 'gNB':
             publish['radio'].setdefault('dl-nr-arfcn', {})[c] = dl_arfcn
             publish['radio'].setdefault('ul-nr-arfcn', {})[c] = ul_arfcn
-            publish['radio'].setdefault('ssb-nr-arfcn', {})[c] = config[c]['ssb_nr_arfcn']
             publish['radio'].setdefault('bandwidth', {})[c] = f"{config[c]['nr_bandwidth']} MHz"
             if sr_type in ['enb', 'gnb', 'enb-gnb']:
                 publish['radio'].setdefault('ssb-pos-bitmap', {})[c] = config[c]['ssb_pos_bitmap']
