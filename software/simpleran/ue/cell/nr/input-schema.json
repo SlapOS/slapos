@@ -9,7 +9,8 @@
     "ru",
     "dl_nr_arfcn",
     "bandwidth",
-    "nr_band"
+    "nr_band",
+    "rx_to_tx_latency"
   ],
   "properties": {
     "cell_type": {
@@ -40,6 +41,11 @@
     },
     "ssb_nr_arfcn": {
       "$ref": "../../../cell/nr/input-schema.json#/properties/ssb_nr_arfcn"
+    },
+    "rx_to_tx_latency": {
+      "title": "RX to TX Latency",
+      "description": "Range 2 to 32. Minimum allowed latency in slots between RX and TX. This parameter will bound the minimum k1 and k2 parameter allowed by the system. Increasing the value will improve performance, especially in case of radio frontend underflows.",
+      "type": "integer"
     }
   }
 }
