@@ -32,18 +32,30 @@ service = ${:etc}/service
 run = ${:var}/run
 log = ${:var}/log
 
+[languagetool-config]
+recipe = slapos.recipe.template
+output = ${directory:etc}/${:_buildout_section_name_}.cfg
+inline =
+  # LanguageTool loads the resources of a language on the first check in
+  # that language. The resources stay in memory. The limits below reject
+  # oversized requests and keep the server within the Java heap.
+  maxTextLength = 20000
+  maxTextHardLength = 100000
+
 [languagetool]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:service}/${:_buildout_section_name_}
 command-line =
   {{ java_location }}/bin/java
   -Xms64m
-  -Xmx512m
+  -Xmx2g
+  -XX:+ExitOnOutOfMemoryError
   -Dlanguagetool.host=${:ip}
   -cp "{{ languagetool_launcher_location }}:{{ languagetool_location }}/languagetool-server.jar:{{ languagetool_location }}/libs/*:{{ languagetool_location }}"
   org.languagetool.server.SlapOSHTTPServer
   --port ${:port}
   --allow-origin "*"
+  --config ${languagetool-config:output}
 environment =
   HOME=${directory:srv}
 hash-existing-files =
