@@ -626,7 +626,9 @@ class TheiaSyncMixin(TakeoverMixin, ResilienceMixin):
 
 class TestTheiaResilience(TheiaSyncMixin, ResilientTheiaTestCase):
   test_instance_max_retries = 0
-  backup_max_tries = 70
+  # A bit more than the bare minimum, as the import script has occasionally
+  # been observed to not finish within the previous, tighter budget.
+  backup_max_tries = 100
   backup_wait_interval = 10
 
   _test_software_url = dummy_software_url
@@ -710,7 +712,7 @@ class TestTheiaFrontendForwarding(TheiaSyncMixin, ResilientTheiaTestCase):
 
 
 class TestTheiaResilienceWithInitialInstance(TestTheiaResilience, test.TestTheiaWithEmbeddedInstance):
-  backup_max_tries = 70
+  backup_max_tries = 100
   backup_wait_interval = 10
 
   sr_url = dummy_software_url

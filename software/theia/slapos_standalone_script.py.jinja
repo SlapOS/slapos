@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 
+import slapos.grid.svcbackend
 import slapos.slap.standalone
 
 from slapos.util import unicode2str
@@ -69,6 +70,18 @@ def setupStandalone():
 {%- endif %}
   shared_parts = {{ repr(shared_part_list) }}
   shared_part_list = [x.strip() for x in shared_parts.splitlines() if x.strip()]
+  # StandaloneSlapOS.__init__ starts the "System" supervisor, which
+  # unconditionally tries to launch a "slapos-instance-supervisord" program
+  # pointing at instance_root/etc/supervisord.conf. That file is normally
+  # only created the first time "slapos node instance" actually runs, which
+  # may never happen on this partition (e.g. a resilient "export" partition
+  # that only snapshots existing state). Pre-create a minimal one here so
+  # that program starts cleanly instead of crash-looping until (or unless)
+  # "slapos node instance" eventually creates the real one.
+  instance_root = {{ repr(config['instance-root']) }}
+  os.makedirs(instance_root, exist_ok=True)
+  slapos.grid.svcbackend.createSupervisordConfiguration(
+    instance_root, logging.getLogger(__name__))
   standalone = slapos.slap.standalone.StandaloneSlapOS(
     {{ repr(config['base-directory']) }},
     {{ repr(config['ipv4']) }},
@@ -76,7 +89,7 @@ def setupStandalone():
     computer_id={{ repr(config['computer-id']) }},
     shared_part_list=shared_part_list,
     software_root={{ repr(config['software-root']) }},
-    instance_root={{ repr(config['instance-root']) }},
+    instance_root=instance_root,
     partition_forward_configuration=partition_forward_configuration,
     slapos_bin={{ repr(config['slapos-bin']) }},
     local_software_release_root={{ repr(config['local-software-release-root']) }},

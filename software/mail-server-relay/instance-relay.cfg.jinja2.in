@@ -759,6 +759,19 @@ content =
     # permit only recipients that are known backends.
     reject_unauth_destination
 
+  smtpd_recipient_restrictions =
+    # Permit without further restrictions recipients that are known backends,
+    # thus accessible from this relay without going through and external proxy.
+    permit_auth_destination
+    # Otherwise, further subject the sender to per-proxied-domain rate limits
+    # (only mails reaching this check will be counted towards the rate limits).
+    check_policy_service {
+        unix:$${outbound-proxy-rate-limit-service:socket},
+        default_action=DUNNO }
+    # Note: rate limit checks and proxy access checks could be combined, but
+    # doing so makes the whole logic less legible, in part because of Postfix
+    # restriction semantics requiring some contorsions.
+
   {% if sorted_sender_hosts or fingerprint_auth_backends -%}
   smtpd_restriction_classes =
     # Per-host sender domain restrictions
@@ -904,6 +917,74 @@ depends =
 name = outbound_postfix
 log = $${outbound-postfix-main.cf:log-file}
 copytruncate = true
+
+
+# Outbound Proxy Rate Limits
+# --------------------------
+
+[outbound-proxy-rate-limit-service]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:service}/$${:_buildout_section_name_}
+confpath = $${outbound-proxy-policyd-rate-limit.conf:output}
+socket = $${outbound-proxy-rate-limit-promise:config-pathname}
+command-line = ${policyd-rate-limit:bin} --file $${:confpath}
+hash-files = $${:confpath}
+depends = $${outbound-proxy-rate-limit-cron:recipe}
+
+[outbound-proxy-rate-limit-cron]
+recipe = slapos.cookbook:cron.d
+name = $${:_buildout_section_name_}
+cron-entries = $${cron:cron-entries}
+time = daily
+confpath = $${outbound-proxy-policyd-rate-limit.conf:output}
+command = ${policyd-rate-limit:bin} --file $${:confpath} --clean
+
+[outbound-proxy-rate-limits]
+recipe = slapos.recipe.build
+proxy-map = {{ dumps(proxy_map) }}
+init =
+  import pprint
+  proxy_map = options['proxy-map']
+  limits = {}
+  for proxy_id, proxy_config in proxy_map.items():
+    rate_limits = [(x['cap'], x['per']) for x in proxy_config['rate-limits']]
+    if rate_limits:
+      for domain in proxy_config.get('domains', []):
+        domain = domain.lower() # normalize defensively
+        if domain not in limits: # skip duplicates, only the first proxy is used
+          limits[domain] = rate_limits
+  options['limits'] = pprint.pformat(limits)
+
+[outbound-proxy-policyd-rate-limit.conf]
+recipe = slapos.recipe.template:jinja2
+output = $${directory:etc}/$${:_buildout_section_name_}
+context =
+  key limits outbound-proxy-rate-limits:limits
+  key socket outbound-proxy-rate-limit-promise:config-pathname
+  raw pidfile $${directory:run}/policyd-rate-limit.pid
+  raw database $${directory:srv}/policyd-rate-limit.db
+inline =
+  user = {{ repr(slapuser) }}
+  debug = True
+  {%- raw %}
+  sqlite_config = {
+    'database': {{ repr(database) }},
+  }
+  SOCKET = {{ repr(socket) }}
+  pidfile = {{ repr(pidfile) }}
+  limit_by_sasl = False
+  limit_by_sender_domain = True
+  limits_by_id = {{ limits | indent(2) }}
+  sql_limits_by_id = ""
+  # no limits by default
+  limits = []
+  {%- endraw %}
+
+[outbound-proxy-rate-limit-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = outbound_policyd_rate_limit_listening.py
+config-pathname = $${directory:run}/policyd-rate-limit.sock
 
 
 # Postfix Wrappers

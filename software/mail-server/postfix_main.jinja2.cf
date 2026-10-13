@@ -89,6 +89,12 @@ smtpd_relay_restrictions =
 smtpd_recipient_restrictions =
   # Check that the recipient mailbox is not full
   check_policy_service unix:{{ postfix_dovecot_quota }}
+  # Permit without further restrictions mails to local recipients
+  permit_auth_destination
+  # Otherwise check per-sender rate limits
+  check_policy_service {
+      unix:{{ policyd_rate_limit_socket }},
+      default_action=DUNNO }
 
 allow_min_user = yes
 

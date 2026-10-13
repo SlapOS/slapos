@@ -1,0 +1,56 @@
+diff --git a/policyd_rate_limit/utils.py b/policyd_rate_limit/utils.py
+--- a/policyd_rate_limit/utils.py
++++ b/policyd_rate_limit/utils.py
+@@ -15,7 +15,8 @@
+ import collections
+ import ipaddress
+ import time
+-import imp
++import importlib.util
++import importlib.machinery
+ import pwd
+ import grp
+ import warnings
+diff --git a/policyd_rate_limit/utils.py b/policyd_rate_limit/utils.py
+--- a/policyd_rate_limit/utils.py
++++ b/policyd_rate_limit/utils.py
+@@ -35,6 +36,18 @@ def ip_network(ip_str):
+         return ipaddress.IPv6Network(ip_str)
+ 
+ 
++
++def load_source(modname, filename):
++    # Replacing imp.load_source() according to https://docs.python.org/3/whatsnew/3.12.html#imp
++    loader = importlib.machinery.SourceFileLoader(modname, filename)
++    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
++    module = importlib.util.module_from_spec(spec)
++    # The module is always executed and not cached in sys.modules.
++    # Uncomment the following line to cache the module.
++    # sys.modules[module.__name__] = module
++    loader.exec_module(module)
++    return module
++
+ class Exit(Exception):
+     pass
+ 
+diff --git a/policyd_rate_limit/utils.py b/policyd_rate_limit/utils.py
+--- a/policyd_rate_limit/utils.py
++++ b/policyd_rate_limit/utils.py
+@@ -63,15 +76,15 @@ def __init__(self, config_file=None):
+                 try:
+                     # compatibility with old config style in a python module
+                     if config_file.endswith(".conf"):  # pragma: no cover (deprecated)
+-                        self._config = imp.load_source('config', config_file)
++                        self._config = load_source('config', config_file)
+                         warnings.warn(
+                             (
+                                 "New configuration use a .yaml file. "
+                                 "Please migrate to it and delete you .conf file"
+                             ),
+                             stacklevel=3
+                         )
+-                        cache_file = imp.cache_from_source(config_file)
++                        cache_file = importlib.util.cache_from_source(config_file)
+                         # remove the config pyc file
+                         try:
+                             os.remove(cache_file)

@@ -74,7 +74,9 @@ name = {{ relay_name }}
 state = {{ config['state'] }}
 software-url = {{ config.get('sr-url') or '$${:software-release-url}' }}
 software-type = {{ config.get('software-type') or 'relay' }}
-config-fqdn = {{ relay_fqdn }}
+{% if relay_fqdn -%}
+config-fqdn = {{ dumps(relay_fqdn) }}
+{%- endif %}
 
 {% if config.get('custom-inbound-certificate') -%}
 config-custom-inbound-certificate = {{ dumps(config['custom-inbound-certificate']) }}

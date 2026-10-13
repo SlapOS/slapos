@@ -289,20 +289,28 @@ init =
   slave_list = options['account-requests']
 
   def make_entry(slave, previous={}):
-    reset_token = slave['parameters'].get('reset-token')
-    # if matching entry was already in passdb and is unchanged (no password reset, nothing to do), just forward it
+    parameters = slave['parameters']
+    reset_token = parameters.get('reset-token')
+    # if matching entry is already in passdb and already correctly stored
+    # (reset token does not need renewing)
     if previous and (reset_token is None or previous['gecos'] == reset_token):
-      return previous
-    addr = slave['parameters']['address']
-    new_passwd = reset_token or str(uuid.uuid4())
-    new_account_dict[slave['reference']] = {'address': addr, 'token': new_passwd}
-    return {
-      'name': addr,
-      'passwd': new_passwd,
-      'gecos': reset_token or '',
-      'shell': slave['reference'],
-      'extra_fields': 'fail',
-    }
+      entry = previous
+    # Otherwise generate new entry
+    else:
+      addr = parameters['address']
+      new_passwd = reset_token or str(uuid.uuid4())
+      new_account_dict[slave['reference']] = {'address': addr, 'token': new_passwd}
+      entry = {
+        'name': addr,
+        'passwd': new_passwd,
+        'gecos': reset_token or '',
+        'shell': slave['reference'],
+        'extra_fields': 'fail',
+      }
+    # In both cases, forward up-to-date value of unstored parameters
+    # (such are not stored in passdb as they can be freely changed)
+    entry['sending-rate-limits'] = parameters['sending-rate-limits']
+    return entry
 
   # 1st pass: keep only slaves matching both address and reference ( = previously accepted slaves)
   for slave in slave_list:
@@ -343,7 +351,8 @@ init =
       if test_mail not in output:
         output[test_mail] = {
           'name': test_mail,
-          'passwd': 'password123'
+          'passwd': 'password123',
+          'sending-rate-limits': [],
         }
 
   options['account-entries'] = output
@@ -468,6 +477,7 @@ context =
 {%- endif %}
   key relay_tls_fingerprints request-relays:tls-fingerprints
   key bogofilter_enable :bogofilter-enable
+  key policyd_rate_limit_socket policyd-rate-limit-service:socket
 
 [postfix-relay-clientcerts]
 recipe = slapos.recipe.template:jinja2
@@ -689,6 +699,70 @@ depends =
 name = postfix
 log = $${postfix-conf-main:log-file}
 copytruncate = true
+
+
+# Postfix Rate Limit Service
+# --------------------------
+
+[policyd-rate-limit-service]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:service}/$${:_buildout_section_name_}
+confpath = $${policyd-rate-limit.conf:output}
+socket = $${policyd-rate-limit-promise:config-pathname}
+command-line = ${policyd-rate-limit:bin} --file $${:confpath}
+hash-files = $${:confpath}
+depends = $${policyd-rate-limit-cron:recipe}
+
+[policyd-rate-limit-cron]
+recipe = slapos.cookbook:cron.d
+name = $${:_buildout_section_name_}
+cron-entries = $${cron:cron-entries}
+time = daily
+confpath = $${policyd-rate-limit.conf:output}
+command = ${policyd-rate-limit:bin} --file $${:confpath} --clean
+
+[policyd-rate-limits]
+recipe = slapos.recipe.build
+account-entries = $${dovecot-passwords:account-entries}
+init =
+  import pprint
+  account_entries = options['account-entries']
+  limits = {}
+  for address, entry in account_entries.items():
+    rate_limits = [(x['cap'], x['per']) for x in entry['sending-rate-limits']]
+    if rate_limits:
+      limits[address] = rate_limits
+  options['limits'] = pprint.pformat(limits)
+
+[policyd-rate-limit.conf]
+recipe = slapos.recipe.template:jinja2
+output = $${directory:etc}/$${:_buildout_section_name_}
+context =
+  key limits policyd-rate-limits:limits
+  key socket policyd-rate-limit-promise:config-pathname
+  raw pidfile $${directory:run}/policyd-rate-limit.pid
+  raw database $${directory:srv}/policyd-rate-limit.db
+inline =
+  user = {{ repr(user_name) }}
+  debug = True
+  {%- raw %}
+  sqlite_config = {
+    'database': {{ repr(database) }},
+  }
+  SOCKET = {{ repr(socket) }}
+  pidfile = {{ repr(pidfile) }}
+  limit_by_sasl = True
+  limits_by_id = {{ limits | indent(2) }}
+  sql_limits_by_id = ""
+  # no limits by default
+  limits = []
+  {%- endraw %}
+
+[policyd-rate-limit-promise]
+<= monitor-promise-base
+promise = check_socket_listening
+name = policyd_rate_limit_listening.py
+config-pathname = $${directory:run}/policyd-rate-limit.sock
 
 {% if slapparameter_dict['bogofilter']['enable'] %}
 # Bogofilter spam filter (per-user, with sieve + imapsieve retraining)
