@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 1.0.513 (2026-10-13)
+-------------
+
+* Fix wrong SIP IPv6 server address
+* Find dl_nr_arfcn divisible by raster, preventing dl_nr_arfcn and ssb_nr_arfcn errors when configuring DL Frequency
+
 Version 1.0.509 (2026-09-17)
 -------------
 
