@@ -8,13 +8,20 @@ parts =
   slapproxy_promise
   monitor_app_promise
   haproxy_promise
+{%- if software_type == 'henri' %}
+  henri_promise
+{%- endif %}
 
 
 [publish]
 <= monitor-publish
 recipe = slapos.cookbook:publish
 slapproxy-ipv4-url = $${slapproxy:url}
+{%- if software_type == 'henri' %}
+slapproxy-ipv6-url = $${haproxy:henri-url}
+{%- else %}
 slapproxy-ipv6-url = $${haproxy:slapproxy-url}
+{%- endif %}
 monitor.app-url = $${haproxy:monitor.app-url}
 
 
@@ -73,7 +80,26 @@ url = http://$${:ipv4}:$${:port}
 promise = check_url_available
 config-url = $${slapproxy:url}
 
+{% if software_type == 'henri' %}
+[henri]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:service}/$${:_buildout_section_name_}
+command-line =
+  sh -c 'cd $${buildout:directory} && exec ${buildout:bin-directory}/ors-henri-gui'
+environment =
+  HENRI_HOST=$${:ipv4}
+  HENRI_PORT=$${:port}
+ipv4 = $${slapproxy.cfg:ipv4}
+port = 4002
+url = http://$${:ipv4}:$${:port}/henri/
 
+
+[henri_promise]
+<= macro.promise
+promise = check_url_available
+config-url = $${henri:url}
+
+{% endif %}
 [monitor.app]
 recipe = slapos.cookbook:simplehttpserver
 wrapper = $${directory:service}/$${:_buildout_section_name_}
@@ -118,6 +144,23 @@ content =
     http-request set-header X-Forwarded-Proto https
     server slapproxy $${slapproxy:ipv4}:$${slapproxy:port}
     tcp-request connection reject if !{ src $${:accepted-ipv6} }
+{%- if software_type == 'henri' %}
+  backend henri-backend
+    server henri $${henri:ipv4}:$${henri:port}
+  listen henri
+    log global
+    bind $${:ipv6}:$${:henri-port} ssl crt $${certificate:location}
+    mode http
+    option httplog
+    http-request set-header X-Forwarded-Proto https
+    # The henri GUI (served under /henri) calls the slapproxy JSON-RPC API
+    # with paths relative to its own origin, one level up. Both live behind
+    # this single listen so that still resolves to slapproxy.
+    acl is-henri path_beg /henri
+    use_backend henri-backend if is-henri
+    server slapproxy $${slapproxy:ipv4}:$${slapproxy:port}
+    tcp-request connection reject if !{ src $${:accepted-ipv6} }
+{%- endif %}
   listen monitor
     log global
     bind $${:ipv6}:$${:monitor.app-port} ssl crt $${certificate:location}
@@ -128,6 +171,9 @@ content =
 accepted-ipv6 = {{ slapparameter_dict['accepted-client-ipv6'] }}
 ipv6 = {{ public_ipv6 }}
 slapproxy-port = 4000
+{%- if software_type == 'henri' %}
+henri-port = 4002
+{%- endif %}
 monitor.app-port = 4001
 
 
@@ -143,6 +189,9 @@ command-line =
 hash-files = $${haproxy.cfg:output}
 ipv6 = $${haproxy.cfg:ipv6}
 slapproxy-url = https://[$${:ipv6}]:$${haproxy.cfg:slapproxy-port}
+{%- if software_type == 'henri' %}
+henri-url = https://[$${:ipv6}]:$${haproxy.cfg:henri-port}/henri/
+{%- endif %}
 monitor.app-url = https://[$${:ipv6}]:$${haproxy.cfg:monitor.app-port}
 
 

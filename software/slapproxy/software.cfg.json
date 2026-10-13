@@ -9,6 +9,14 @@
       "request": "instance-slapproxy-input-schema.json",
       "response": "instance-slapproxy-output-schema.json",
       "index": 0
+    },
+    "henri": {
+      "title": "Slapproxy (henri)",
+      "description": "Slapproxy exposing the henri GUI instead of the classic panel",
+      "software-type": "henri",
+      "request": "instance-slapproxy-input-schema.json",
+      "response": "instance-slapproxy-output-schema.json",
+      "index": 1
     }
   }
 }

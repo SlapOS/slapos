@@ -17,6 +17,7 @@ unstringify = none
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 default = instance-slapproxy.cfg:output
+henri = instance-slapproxy-henri.cfg:output
 
 
 [validate-parameters]
@@ -46,3 +47,16 @@ context =
   key public_ipv6 slap-configuration:ipv6-random
   key slapparameter_dict validate-parameters:configuration
   section slap_connection slap-connection
+  raw software_type default
+
+
+[instance-slapproxy-henri.cfg]
+recipe = slapos.recipe.template:jinja2
+url = ${instance-slapproxy.cfg.jinja:output}
+output = $${buildout:directory}/$${:_buildout_section_name_}
+context =
+  key private_ipv4 slap-configuration:ipv4-random
+  key public_ipv6 slap-configuration:ipv6-random
+  key slapparameter_dict validate-parameters:configuration
+  section slap_connection slap-connection
+  raw software_type henri
