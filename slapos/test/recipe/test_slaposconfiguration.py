@@ -11,6 +11,7 @@ import six
 import unittest
 import tempfile
 from collections import defaultdict
+from slapos.recipe import localinstancedb
 from slapos.recipe import slapconfiguration
 from slapos import format as slapformat
 
@@ -396,6 +397,16 @@ class JsonSchemaTestCase(SlapConfigurationTestCase):
 
   def recoverStrToInt(self, sent_parameters, keys):
     return {k : int(v) if k in keys else v for k, v in sent_parameters.items()}
+
+  SHARED_INVALID_KIND_ERROR = (
+    "  $: {'kind': 0} is not valid under any of the given schemas"
+  )
+
+  def assertErrorEqual(self, first, second):
+    """Assert error message equality, normalizing Python 2 unicode repr (u'...')."""
+    if six.PY2:
+      first = re.sub(r"\bu(['\"])", r"\1", first)
+    self.assertEqual(first, second)
 
 
 class JsonSchemaTest(JsonSchemaTestCase):
@@ -959,12 +970,6 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
     "  $: 'number' is a required property"
   )
 
-  def assertErrorEqual(self, first, second):
-    """Assert error message equality, normalizing Python 2 unicode repr (u'...')."""
-    if six.PY2:
-      first = re.sub(r"\bu(['\"])", r"\1", first)
-    self.assertEqual(first, second)
-
   def test_report_error_main_default(self):
     """Main validation error is reported to master by default (report-error='all')."""
     self.writeJsonSchema()
@@ -1026,10 +1031,6 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
       self.mock_computer_partition.error.assert_called_once()
       args, kwargs = self.mock_computer_partition.error.call_args
       self.assertErrorEqual(args[0], self.MAIN_MISSING_NUMBER_ERROR)
-
-  SHARED_INVALID_KIND_ERROR = (
-    "  $: {'kind': 0} is not valid under any of the given schemas"
-  )
 
   def test_report_error_shared_default(self):
     """Shared validation errors are reported to master by default with slave_reference."""
@@ -1142,3 +1143,231 @@ class JsonSchemaReportErrorTest(JsonSchemaTestCase):
       self.mock_computer_partition.error.assert_called_once()
       args, kwargs = self.mock_computer_partition.error.call_args
       self.assertErrorEqual(args[0], self.SHARED_INVALID_KIND_ERROR)
+
+
+class JsonSchemaWithDBTest(JsonSchemaTestCase):
+  """
+  JsonSchemaWithDB keeps a record of the shared instance validation and
+  decides nothing with it.
+  """
+
+  def setUp(self):
+    super(JsonSchemaWithDBTest, self).setUp()
+    # Not under instance_root: the base tearDown removes it with rmdir.
+    self.db_root = tempfile.mkdtemp()
+    self.db_path = os.path.join(self.db_root, 'shared-instance.sqlite')
+
+  def tearDown(self):
+    shutil.rmtree(self.db_root)
+    super(JsonSchemaWithDBTest, self).tearDown()
+
+  def runJsonSchemaRecipe(self, options=()):
+    """Run the recipe on the test database, unless the test picks another."""
+    options = defaultdict(str, options)
+    options['jsonschema'] = self.software_json_file
+    options.setdefault('instance-db-path', self.db_path)
+    slapconfiguration.JsonSchemaWithDB(self.buildout, "slapconfiguration", options)
+    return options
+
+  def readRecord(self):
+    """Return {reference: (verdict, parameters)} as stored in the record."""
+    db = localinstancedb.HostedInstanceLocalDB(self.db_path)
+    return {
+      row['reference']: (
+        row['valid_parameter'],
+        json.loads(row['json_parameters']),
+      )
+      for row in db.getInstanceList(
+        'reference, json_parameters, valid_parameter')
+    }
+
+  def readRecordedError(self, reference):
+    db = localinstancedb.HostedInstanceLocalDB(self.db_path)
+    return json.loads(db.getInstance(reference)['json_error'])
+
+  def test_shared_list_is_passed_through_and_recorded(self):
+    """The templates get the list the master sent, the record the verdicts."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}, {"kind": 0}]  # kind 0 is neither kind 1 nor kind 2
+    with self.patchSlap(parameters, shared):
+      options = self.runJsonSchemaRecipe()
+      self.assertEqual(
+        options['slave-instance-list'],
+        [
+          {"kind": 1, "slave_reference": "SHARED0"},
+          {"kind": 0, "slave_reference": "SHARED1"},
+        ],
+      )
+      self.assertEqual(
+        self.readRecord(),
+        {
+          "SHARED0": ('valid', {"kind": 1}),
+          "SHARED1": ('invalid', {"kind": 0}),
+        },
+      )
+      recorded = self.readRecordedError("SHARED1")
+      self.assertErrorEqual(
+        recorded['message'],
+        self.SHARED_INVALID_KIND_ERROR,
+      )
+      # One message, kept whole in a list of one.
+      self.assertEqual(recorded['errors'], [recorded['message']])
+
+  def test_record_holds_only_the_shared_instance_parameters(self):
+    """The record holds the shared parameters, not the keys the master adds."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared_parameters = {"kind": 1}
+    # The keys the SlapOS Master adds to an entry of the shared instance
+    # list, next to the parameters the shared instance asked for.
+    master_added_key_dict = {
+      'slave_title': 'shared-zero',
+      'timestamp': '1234',
+      'slap_software_type': 'default',
+    }
+    with self.patchSlap(parameters, shared=[]):
+      if self.serialise:
+        entry = {'_': json.dumps(shared_parameters, sort_keys=True)}
+        # These keys can only be told apart from the parameters when the
+        # parameters travel in a payload of their own, so only a release
+        # that wraps them gets the keys added here.
+        entry.update(master_added_key_dict)
+      else:
+        entry = copy.deepcopy(shared_parameters)
+      entry['slave_reference'] = 'SHARED0'
+      d = self.mock_computer_partition.getInstanceParameterDict.return_value
+      d['slave_instance_list'] = [entry]
+      options = self.runJsonSchemaRecipe()
+      self.assertEqual(
+        self.readRecord(),
+        {"SHARED0": ('valid', shared_parameters)},
+      )
+      # The templates get the entry the master sent, the master keys
+      # included.
+      expected_entry = copy.deepcopy(shared_parameters)
+      expected_entry['slave_reference'] = 'SHARED0'
+      if self.serialise:
+        expected_entry.update(master_added_key_dict)
+      self.assertEqual(options['slave-instance-list'], [expected_entry])
+
+  def writeNestedDefaultJsonSchema(self):
+    """Write a shared schema with a default inside a nested object."""
+    main = self.writeObjectSchema(
+      'instance-default',
+      {"number": {"type": "integer"}},
+      required=["number"],
+    )
+    shared = self.writeObjectSchema(
+      'shared-default',
+      {
+        "nested": {
+          "type": "object",
+          "properties": {
+            "inner": {"type": "string", "default": "filled"},
+          },
+        },
+      },
+    )
+    self.writeSoftwareJson([('default', main)], [('default', shared)])
+
+  def test_master_state_is_not_mutated(self):
+    """Validation changes neither the master dicts nor the template list."""
+    self.writeNestedDefaultJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"nested": {}}]
+    with self.patchSlap(parameters, shared):
+      # Keep a reference to the dicts the master passed. The recipe
+      # takes the list out of the master parameters, so it can only be
+      # read here.
+      master_shared_list = self.mock_computer_partition \
+        .getInstanceParameterDict()['slave_instance_list']
+      options = self.runJsonSchemaRecipe({'set-default': 'all'})
+      self.assertEqual(
+        self.readRecord(),
+        {"SHARED0": ('valid', {"nested": {"inner": "filled"}})},
+      )
+      for entry in master_shared_list:
+        self.assertIn('slave_reference', entry)
+        payload = entry.get('_')
+        nested = json.loads(payload)['nested'] if payload else entry['nested']
+        self.assertEqual(nested, {})
+      self.assertEqual(
+        options['slave-instance-list'],
+        [{"nested": {}, "slave_reference": "SHARED0"}],
+      )
+
+  def test_shared_validation_is_refused(self):
+    """validate-parameters defaults to main and refuses shared."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}]
+    with self.patchSlap(parameters, shared):
+      options = self.runJsonSchemaRecipe()
+      self.assertEqual(options['validate-parameters'], 'main')
+    for validate_parameters in ('all', 'shared'):
+      with self.patchSlap(parameters, shared):
+        self.assertRaises(
+          slapconfiguration.UserError,
+          self.runJsonSchemaRecipe,
+          {'validate-parameters': validate_parameters},
+        )
+
+  def test_instance_db_path_is_required(self):
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 1}]
+    with self.patchSlap(parameters, shared):
+      self.assertRaises(
+        slapconfiguration.UserError,
+        self.runJsonSchemaRecipe,
+        {'instance-db-path': ''},
+      )
+
+  def test_missing_shared_schema_leaves_record_untouched(self):
+    """Without a shared schema the recipe deploys and the rows stay."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    # First run two shared instances against a software type that has a
+    # schema, to get two rows in the record.
+    with self.patchSlap(parameters, [{"kind": 1}, {"kind": 2}]):
+      self.runJsonSchemaRecipe()
+    seeded_record = {
+      "SHARED0": ('valid', {"kind": 1}),
+      "SHARED1": ('valid', {"kind": 2}),
+    }
+    # Check the rows are really there, otherwise the assertion below on
+    # the untouched record would hold even with an empty record.
+    self.assertEqual(self.readRecord(), seeded_record)
+    # Now a software type with no shared schema, and only one shared
+    # instance: writing the record would drop the row of the other one.
+    with self.patchSlap(
+        parameters, [{"kind": 1}], software_type='nonexistent'):
+      options = self.runJsonSchemaRecipe({'validate-parameters': 'none'})
+      self.assertEqual(
+        options['slave-instance-list'],
+        [{"kind": 1, "slave_reference": "SHARED0"}],
+      )
+    self.assertEqual(self.readRecord(), seeded_record)
+
+  def test_report_error(self):
+    """report-error decides whether an invalid shared instance is reported."""
+    self.writeJsonSchema()
+    parameters = {"number": 1}
+    shared = [{"kind": 0}]
+    for report_error, reported in (('all', True), ('main', False)):
+      with self.patchSlap(parameters, shared):
+        self.runJsonSchemaRecipe({'report-error': report_error})
+        if reported:
+          self.mock_computer_partition.error.assert_called_once()
+        else:
+          self.mock_computer_partition.error.assert_not_called()
+
+
+class JsonSchemaWithDBTestUnserialised(JsonSchemaWithDBTest):
+  serialise = False
+
+
+class JsonSchemaWithDBTestUnserialisedXml(JsonSchemaWithDBTest):
+  serialisation = 'xml'
+  serialise = False

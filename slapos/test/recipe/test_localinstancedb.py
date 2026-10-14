@@ -784,3 +784,25 @@ class TestSharedInstanceResultDB(unittest.TestCase):
     # Verify ref5 added as invalid
     ref5 = self.db.getInstance("ref5")
     self.assertEqual(ref5["valid_parameter"], 'invalid')
+
+  def test_updateFromValidationResults_keeps_error_message_whole(self):
+    """Test that the error of an invalid instance is stored as one message.
+
+    The validation passes one message that is already formatted, not a
+    list of messages. Joining it would walk over its characters and store
+    them one by one, so the message must be stored as it is received.
+    """
+    message = (
+      "Invalid parameters:\n"
+      "  $: 'kind' is a required property; 'kind' must be 1 or 2"
+    )
+    invalid_list = [
+      {"reference": "ref1", "parameters": {"name": "test1"},
+       "errors": message}
+    ]
+
+    self.db.updateFromValidationResults([], invalid_list)
+
+    stored_error = json.loads(self.db.getInstance("ref1")["json_error"])
+    self.assertEqual(stored_error["message"], message)
+    self.assertEqual(stored_error["errors"], [message])

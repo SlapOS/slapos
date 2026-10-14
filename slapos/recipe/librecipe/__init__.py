@@ -46,7 +46,9 @@ from .filehash import filehash, generateHashFromFiles
 # to master.
 JSON_SERIALISED_MAGIC_KEY = '_'
 def wrap(value):
-  return {JSON_SERIALISED_MAGIC_KEY: json.dumps(value)}
+  # Ensure output is stable to reduce changes on the slapos master
+  # and so, reduce number of buildout calls
+  return {JSON_SERIALISED_MAGIC_KEY: json.dumps(value, sort_keys=True)}
 
 def unwrap(value):
   try:

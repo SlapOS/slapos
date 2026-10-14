@@ -373,12 +373,14 @@ class SharedInstanceResultDB(HostedInstanceLocalDB):
     for item in valid_list:
       instance_map[item["reference"]] = (item["parameters"], 'valid', {})  # Empty error_info for valid
     for item in invalid_list:
-      errors = item.get("errors", [])
+      # JsonSchema._validateShared passes one formatted message, not a list.
+      # Keep it whole, in a list of one, as cdninstancenode writes it.
+      error_message = item.get("errors", '')
       error_info = {}
-      if errors:
+      if error_message:
         error_info = {
-          "message": "; ".join(errors),
-          "errors": errors
+          "message": error_message,
+          "errors": [error_message]
         }
       instance_map[item["reference"]] = (item["parameters"], 'invalid', error_info)
 
