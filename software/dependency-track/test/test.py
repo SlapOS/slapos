@@ -26,21 +26,49 @@
 ##############################################################################
 
 import os
-import requests
+import urllib.parse
 
+import lxml.html
+import requests
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 
-
 setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
+  os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
+)
 
 
 class TestDependencyTrack(InstanceTestCase):
-  __partition_reference__ = 'DT'  # postgresql use a socket in data dir
+  __partition_reference__ = "DT"  # postgresql use a socket in data dir
 
-  def test(self):
-    url = self.computer_partition.getConnectionParameterDict()['url']
-    resp = requests.get(url, verify=False)
-    self.assertTrue(resp.text)
+  def setUp(self):
+    self.url = self.computer_partition.getConnectionParameterDict()["url"]
+
+  def test_http_single_page_app(self):
+    resp = requests.get(self.url, verify=False)
+    home_page_text = resp.text
     self.assertTrue(resp.ok)
+    resp = requests.get(urllib.parse.urljoin(self.url, "/projects"), verify=False)
+    self.assertTrue(resp.ok)
+    self.assertEqual(resp.text, home_page_text)
+
+  def test_http_api(self):
+    resp = requests.get(urllib.parse.urljoin(self.url, "/api/version"), verify=False)
+    resp.raise_for_status()
+    self.assertEqual(resp.json()["application"], "Dependency-Track")
+
+  def test_http_caching_and_compression(self):
+    resp = requests.get(self.url, verify=False)
+    tree = lxml.html.fromstring(resp.text)
+    for path in (
+      tree.xpath("//link[@rel='stylesheet']/@href")[0],
+      tree.xpath("//script[@src]/@src")[0],
+    ):
+      with self.subTest(path=path):
+        resp = requests.get(
+          urllib.parse.urljoin(self.url, path),
+          headers={"Accept-Encoding": "gzip"},
+          verify=False,
+        )
+        resp.raise_for_status()
+        self.assertEqual(resp.headers["Cache-Control"], "public, max-age=31536000, immutable")
+        self.assertEqual(resp.headers["Content-Encoding"], "gzip")

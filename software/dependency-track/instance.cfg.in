@@ -8,30 +8,37 @@ develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
 
-[dependency-track-instance]
+[dependency-track-api-server-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:service}/$${:_buildout_section_name_}
 command-line =
   ${java:location}/bin/java
-  -jar ${dependency-track-bundled.jar:location}/dependency-track-bundled.jar
+  -jar ${dependency-track-apiserver:location}/dependency-track-apiserver.jar
   -host $${:ip}
   -port $${:port}
 environment =
-  ALPINE_DATABASE_MODE=external
-  ALPINE_DATABASE_URL=jdbc:postgresql://$${postgresql:ipv4}:$${postgresql:port}/$${postgresql:dbname}
-  ALPINE_DATABASE_DRIVER=org.postgresql.Driver
-  ALPINE_DATABASE_USERNAME=$${postgresql:superuser}
-  ALPINE_DATABASE_PASSWORD=$${postgresql:password}
+  DT_DATASOURCE_DEFAULT_MODE=external
+  DT_DATASOURCE_DEFAULT_URL=jdbc:postgresql://$${postgresql:ipv4}:$${postgresql:port}/$${postgresql:dbname}
+  DT_DATASOURCE_USERNAME=$${postgresql:superuser}
+  DT_DATASOURCE_PASSWORD=$${postgresql:password}
+  BASE_PATH=$${:base-path}/
   HOME=$${directory:srv-dependency-track}
 hash-existing-files =
   $${buildout:directory}/software_release/buildout.cfg
 
 ip = $${instance-parameter:ipv4-random}
 port = 18080
+base-path = /api
 promises =
-  $${dependency-track-promise:name}
+  $${dependency-track-apiserver-promise:name}
 
-[dependency-track-frontend-certificate]
+[dependency-track-apiserver-promise]
+<= monitor-promise-base
+promise = check_url_available
+name = $${:_buildout_section_name_}.py
+config-url= $${dependency-track-nginx:url}/api/version
+
+[dependency-track-nginx-certificate]
 recipe = plone.recipe.command
 command =
   if [ ! -e $${:cert-file} ]
@@ -43,40 +50,98 @@ command =
   fi
 update-command = $${:command}
 cert-file = $${directory:var}/$${:_buildout_section_name_}.pem
-common-name = $${dependency-track-frontend-config:ip}
+common-name = $${dependency-track-nginx-config:ip}
 location =
   $${:cert-file}
 
-[dependency-track-frontend-config]
-recipe = slapos.recipe.template:jinja2
-url = ${stack-haproxy-default-backend-config:target}
+[dependency-track-nginx-config]
+recipe = slapos.recipe.template
 output = $${directory:etc}/$${:_buildout_section_name_}
-context =
-  key pidfile :pidfile
-  key content :content
-content =
-  listen app
-  log global
-  bind $${:ip}:$${:port} ssl crt $${dependency-track-frontend-certificate:cert-file} alpn h2,http/1.1
-  server app $${dependency-track-instance:ip}:$${dependency-track-instance:port}
+inline =
+  pid $${:pidfile};
+  daemon off;
+  error_log /dev/stderr warn;
 
+  events {
+    worker_connections 4096;
+  }
+  http {
+    include       ${nginx:location}/conf/mime.types;
+    default_type  application/octet-stream;
+    access_log    /dev/stdout;
+
+    sendfile on;
+
+    client_max_body_size  0;
+    client_body_temp_path $${directory:var}/nginx_tmp_client_body;
+
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_types
+      application/font-woff application/font-woff2 application/hal+json
+      application/javascript application/json application/rss+xml
+      application/wasm application/x-font-opentype application/x-font-ttf
+      application/x-javascript application/xml image/svg+xml
+      text/cache-manifest text/css text/javascript text/plain text/xml;
+
+    upstream apiserver {
+      server $${dependency-track-api-server-instance:ip}:$${dependency-track-api-server-instance:port};
+    }
+    proxy_temp_path       $${directory:var}/nginx_tmp_proxy;
+    fastcgi_temp_path     $${directory:var}/nginx_tmp_fastcgi;
+    uwsgi_temp_path       $${directory:var}/nginx_tmp_uwsgi;
+    scgi_temp_path        $${directory:var}/nginx_tmp_scgi;
+
+    server {
+      listen [$${:ip}]:$${:port} ssl;
+      http2 on;
+      server_name _;
+
+      ssl_certificate      $${dependency-track-nginx-certificate:cert-file};
+      ssl_certificate_key  $${dependency-track-nginx-certificate:cert-file};
+      ssl_protocols TLSv1.2 TLSv1.3;
+
+      root ${dependency-track-frontend:location};
+      index index.html;
+
+      location ~ ^/api(/|$) {
+        proxy_pass http://apiserver;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $http_host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
+      location / {
+        try_files $uri $uri/ /index.html;
+      }
+
+      location ~ (config\.json|index\.html)$ {
+        add_header Cache-Control "max-age=0, no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires 0 always;
+      }
+      location ~* \.(css|js)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+      }
+      error_page 500 502 503 504 /50x.html;
+      location = /50x.html {
+        root ${nginx:location}/html;
+      }
+    }
+  }
 pidfile = $${directory:run}/$${:_buildout_section_name_}.pid
 ip = $${instance-parameter:ipv6-random}
 port = 8443
 
-[dependency-track-frontend]
+[dependency-track-nginx]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
-  ${haproxy:location}/sbin/haproxy -f $${dependency-track-frontend-config:output}
+  ${nginx:location}/sbin/nginx -c $${dependency-track-nginx-config:output}
+url = https://[$${dependency-track-nginx-config:ip}]:$${dependency-track-nginx-config:port}
 
-url = https://[$${dependency-track-frontend-config:ip}]:$${dependency-track-frontend-config:port}
-
-[dependency-track-promise]
-<= monitor-promise-base
-promise = check_url_available
-name = $${:_buildout_section_name_}.py
-config-url= $${dependency-track-frontend:url}/
 
 [postgresql-password]
 recipe = slapos.cookbook:generate.password
@@ -189,7 +254,7 @@ name = Dependency Track Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 shared = true
-config-url = $${dependency-track-frontend:url}
+config-url = $${dependency-track-nginx:url}
 return = domain secure_access
 
 [rapidcdn-frontend-available-promise]
