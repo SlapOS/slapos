@@ -205,9 +205,9 @@ inline =
   # Remove obsolete logs
   rm -f ${directory:log}/enb-2* ${directory:log}/gnb* ${directory:log}/enb-output.log
   # Archive current log
-  stat $START_DATE && mv $LOG $LOG.$(cat $START_DATE)
+  stat ${:start-date} && mv ${:radio-log} ${:radio-log}.$(cat ${:start-date})
   # Add start date
-  date +"%Y%m%d.%T" > $START_DATE
+  date +"%Y%m%d.%T" > ${:start-date}
 
   # Start lteenb
   {{ amarisoft['enb_dir'] }}/lteenb ${directory:etc}/enb.cfg >> ${:info-log} 2>> ${:info-log}
