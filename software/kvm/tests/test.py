@@ -1532,6 +1532,14 @@ class HttpHandler(http.server.SimpleHTTPRequestHandler):
       return
 
 
+def serveHttpDirectory(server_address, directory):
+  # multiprocessing's forkserver start method pickles this function and its
+  # arguments to send them to the child process, so the TCPServer itself
+  # must be created there: a live socket and its locks are not picklable.
+  os.chdir(directory)
+  SocketServer.TCPServer(server_address, HttpHandler).serve_forever()
+
+
 class FakeImageServerMixin(KvmMixin):
   @classmethod
   def setUpClass(cls):
@@ -1551,9 +1559,7 @@ class FakeImageServerMixin(KvmMixin):
   @classmethod
   def startImageHttpServer(cls):
     cls.image_source_directory = tempfile.mkdtemp()
-    server = SocketServer.TCPServer(
-      (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address)),
-      HttpHandler)
+    server_address = (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address))
 
     # c89f17758be13adeb06886ef935d5ff1
     fake_image_content = b'fake_image_content'
@@ -1596,22 +1602,18 @@ class FakeImageServerMixin(KvmMixin):
       cls.image_source_directory, cls.real_gzip_md5sum), 'wb') as fh:
       fh.write(real_gzip_content)
 
-    url = 'http://%s:%s' % server.server_address
+    url = 'http://%s:%s' % server_address
     cls.fake_image = '/'.join([url, cls.fake_image_md5sum])
     cls.fake_image2 = '/'.join([url, cls.fake_image2_md5sum])
     cls.fake_image3 = '/'.join([url, cls.fake_image3_md5sum])
     cls.real_image = '/'.join([url, cls.real_image_md5sum])
     cls.real_gzip = '/'.join([url, cls.real_gzip_md5sum])
 
-    old_dir = os.path.realpath(os.curdir)
-    os.chdir(cls.image_source_directory)
-    try:
-      cls.server_process = multiprocessing.Process(
-        target=server.serve_forever, name='FakeImageHttpServer', daemon=True)
-      cls.server_process.start()
-      server.socket.close()
-    finally:
-      os.chdir(old_dir)
+    cls.server_process = multiprocessing.Process(
+      target=serveHttpDirectory,
+      args=(server_address, cls.image_source_directory),
+      name='FakeImageHttpServer', daemon=True)
+    cls.server_process.start()
 
   @classmethod
   def stopImageHttpServer(cls):
@@ -2571,6 +2573,13 @@ INF: Storing errors in %(error_state_file)s
 class TestParameterDefault(KVMTestCase, KvmMixin):
   __partition_reference__ = 'pd'
 
+  # kvm_raw.json stores an unrequested boolean parameter as the
+  # capitalized Python string from its hardcoded slap-parameter default,
+  # on every software type. An explicitly requested one goes through a
+  # resilient instance's own slap-parameter section instead, which dumps
+  # every value through json.dumps and so stores a real JSON boolean.
+  _energy_monitoring_value = {False: 'False', True: 'True'}
+
   @classmethod
   def getInstanceSoftwareType(cls):
     return 'default'
@@ -2608,6 +2617,34 @@ class TestParameterDefault(KVMTestCase, KvmMixin):
   def test_cpu_count_set(self):
     self._test({'cpu-count': 4}, "smp-count", "4")
 
+  def test_energy_monitoring_default(self):
+    self._test(
+      {}, "energy-monitoring", self._energy_monitoring_value[False])
+    kvm_pid_file_list = glob.glob(os.path.join(
+      self.slap._instance_root, '*', 'var', 'run', 'kvm.pid'))
+    self.assertEqual(1, len(kvm_pid_file_list))
+    with open(kvm_pid_file_list[0]) as fh:
+      kvm_pid = int(fh.read().strip())
+    cmdline = psutil.Process(kvm_pid).cmdline()
+    self.assertNotIn('vhost-user-fs-pci', ' '.join(cmdline))
+
+  def test_energy_monitoring_set(self):
+    self._test(
+      {'energy-monitoring': True}, "energy-monitoring",
+      self._energy_monitoring_value[True])
+    kvm_pid_file_list = glob.glob(os.path.join(
+      self.slap._instance_root, '*', 'var', 'run', 'kvm.pid'))
+    self.assertEqual(1, len(kvm_pid_file_list))
+    with open(kvm_pid_file_list[0]) as fh:
+      kvm_pid = int(fh.read().strip())
+    cmdline = psutil.Process(kvm_pid).cmdline()
+    joined_cmdline = ' '.join(cmdline)
+    self.assertIn('vhost-user-fs-pci,chardev=char-scaphandre,tag=scaphandre',
+                  joined_cmdline)
+    self.assertIn('memory-backend-memfd', joined_cmdline)
+    self.assertTrue(
+      cmdline[cmdline.index('-name') + 1].startswith('guest='))
+
   def test_ram_size_default(self):
     self._test({}, "ram-size", "4096")
 
@@ -2618,6 +2655,8 @@ class TestParameterDefault(KVMTestCase, KvmMixin):
 @skipUnlessKvm
 class TestParameterResilient(TestParameterDefault):
   __partition_reference__ = 'pr'
+
+  _energy_monitoring_value = {False: 'False', True: True}
 
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -2944,9 +2983,7 @@ class TestInstanceHttpServer(KVMTestCase, KvmMixin):
   @classmethod
   def startHttpServer(cls):
     cls.http_directory = tempfile.mkdtemp()
-    server = SocketServer.TCPServer(
-      (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address)),
-      HttpHandler)
+    server_address = (cls._ipv4_address, findFreeTCPPort(cls._ipv4_address))
 
     bootstrap_script = b'bootstrap_script'
     cls.bootstrap_script_md5sum = hashlib.md5(bootstrap_script).hexdigest()
@@ -2954,17 +2991,14 @@ class TestInstanceHttpServer(KVMTestCase, KvmMixin):
       cls.http_directory, cls.bootstrap_script_md5sum), 'wb') as fh:
       fh.write(bootstrap_script)
 
-    url = 'http://%s:%s' % server.server_address
+    url = 'http://%s:%s' % server_address
     cls.bootstrap_script_url = '/'.join([url, cls.bootstrap_script_md5sum])
 
-    old_dir = os.path.realpath(os.curdir)
-    os.chdir(cls.http_directory)
-    try:
-      cls.server_process = multiprocessing.Process(
-        target=server.serve_forever, name='HttpServer', daemon=True)
-      cls.server_process.start()
-    finally:
-      os.chdir(old_dir)
+    cls.server_process = multiprocessing.Process(
+      target=serveHttpDirectory,
+      args=(server_address, cls.http_directory),
+      name='HttpServer', daemon=True)
+    cls.server_process.start()
 
   @classmethod
   def stopHttpServer(cls):
