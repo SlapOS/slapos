@@ -20,6 +20,26 @@ Unreleased
 
 Changes on ``master`` since 1.0.506 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.506...master>`__).
 
+The cluster deploys the slave list the SlapOS Master sent
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The master partition deploys and publishes the slave list that the
+SlapOS Master sent. The CDN instance node and its database do not change
+this list. The master partition checks each slave against the JSON schema
+and writes the result in the database for the CDN instance node. The next
+run of ``slapos node instance`` removes a destroyed slave.
+
+The master partition waits for the key download URL of every slave
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+A new promise ``slave-key-download-url-ready-promise`` fails while the
+kedifa partition has no real key download URL for a slave. While the
+promise fails, slapgrid processes the master partition on each run. The
+master partition then gives the new URLs to the frontend partitions. The
+anomaly promise asks the cluster to heal after five failures.
+
 1.0.506 (2026-08-24)
 --------------------
 

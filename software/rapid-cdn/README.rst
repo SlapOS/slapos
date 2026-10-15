@@ -745,13 +745,14 @@ Validation is passive: no slave is rejected, blocked, or modified. Results are s
 
 The recipes involved:
 
- * ``slapos.recipe.slapconfiguration`` (``JsonSchemaWithDB`` variants):
+ * ``slapos.recipe.slapconfiguration`` (the ``JsonSchemaWithDB`` recipe):
    validates each slave and records ``valid`` / ``invalid`` plus errors
    in the instance database.
  * ``slapos.recipe.cdninstancenode``: CDN-specific checks (DNS ownership,
    SSL, server-alias conflict).
 
-So on slapos node instance run, the recipe stores the slave instance list in a local database for processing by the instance node and it reads the results from another one.
+So on slapos node instance run, the recipe stores the slave instance list in a local database for the instance node to process.
+The slave list used by the templates stays the one sent by the SlapOS Master: the instance node results are only a record, they never change which slaves are served or published.
 
 Validation is asynchronous as some validation like DNS check doesn't depend on slapos node instance parameters. 
 The instance node runs from cron on the master partition, independently of slapgrid, so DNS challenges are re-checked between slapgrid cycles.
