@@ -161,8 +161,7 @@
         "additionalProperties": false,
         "properties": {
           "name": {
-            "title": "(Optional) Neighbour Cell Name",
-            "description": "Neighbour Cell name (for management purposes only)",
+            "title": "(Optional) X2 Peer Name",
             "type": "string"
           },
           "x2_addr": {
@@ -182,8 +181,7 @@
         "additionalProperties": false,
         "properties": {
           "name": {
-            "title": "(Optional) Neighbour Cell Name",
-            "description": "Neighbour Cell name (for management purposes only)",
+            "title": "(Optional) XN Peer Name",
             "type": "string"
           },
           "xn_addr": {
