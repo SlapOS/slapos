@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 1.0.516 (2026-10-15)
+-------------
+
+* Fix eNB log rotation
+
 Version 1.0.513 (2026-10-13)
 -------------
 
