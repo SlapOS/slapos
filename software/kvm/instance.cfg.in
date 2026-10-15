@@ -89,6 +89,8 @@ extra-context =
   raw qemu_executable_location ${qemu:location}/bin/qemu-system-x86_64
   raw qemu_img_executable_location ${qemu:location}/bin/qemu-img
   raw qemu_start_promise_tpl ${template-qemu-ready:target}
+  raw scaphandre_executable_location ${scaphandre:location}/bin/scaphandre
+  raw virtiofsd_executable_location ${virtiofsd:location}/bin/virtiofsd
   raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
   raw template_httpd_cfg ${template-httpd:output}
   raw template_content ${template-content:target}

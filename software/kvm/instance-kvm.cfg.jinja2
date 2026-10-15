@@ -16,6 +16,7 @@
 {% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', True) -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', [22, 80, 443]) -%}
 {% set disk_device_path = slapparameter_dict.get('disk-device-path', None) -%}
+{% set energy_monitoring = slapparameter_dict.get('energy-monitoring', False) -%}
 {% set whitelist_domains = slapparameter_dict.get('whitelist-domains', '') -%}
 {% set virtual_hard_drive_url_enabled = 'virtual-hard-drive-url' in slapparameter_dict %}
 {% set virtual_hard_drive_url_gzipped = slapparameter_dict.get('virtual-hard-drive-gzipped', False) %}
@@ -63,6 +64,9 @@ boot-image-url-list-expose = ${monitor-directory:private}/boot-image-url-list
 boot-image-url-select-repository = ${:srv}/boot-image-url-select-repository
 boot-image-url-select-var = ${:var}/boot-image-url-select
 boot-image-url-select-expose = ${monitor-directory:private}/boot-image-url-select
+{%- if energy_monitoring %}
+scaphandre = ${:srv}/scaphandre
+{%- endif %}
 
 [create-mac]
 recipe = slapos.cookbook:generate.mac
@@ -444,6 +448,11 @@ auto-ballooning = ${slap-parameter:auto-ballooning}
 machine-options = ${slap-parameter:machine-options}
 cpu-model = ${slap-parameter:cpu-model}
 
+energy-monitoring = ${slap-parameter:energy-monitoring}
+{% if energy_monitoring -%}
+scaphandre-socket-path = ${directory:run}/scaphandre-virtiofs.sock
+{% endif -%}
+
 log-file = ${directory:log}/qemu.log
 
 [tunnel-6to4-base]
@@ -484,6 +493,43 @@ command = [ ! -f {{ '${' + key + '}' }} ] && touch {{ '${' +  key + '}' }}
 {{    generate_depend_section('virtual-hard-drive-url-depend', 'virtual-hard-drive-url-download-wrapper:config') }}
 {%- endif %}
 
+{% if energy_monitoring %}
+[scaphandre-exporter]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/scaphandre-exporter
+command-line = {{ scaphandre_executable_location }} qemu
+environment =
+  SCAPHANDRE_QEMU_PATH=${directory:scaphandre}
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+
+[own-unix-ids]
+recipe = slapos.recipe.build
+# "init" runs during __init__, eagerly, before any other section's ${}
+# substitution reads these options -- "install" runs too late for that
+# and would also force a "location" file this section has no use for.
+init =
+  import os
+  options['uid'] = str(os.getuid())
+  options['gid'] = str(os.getgid())
+
+[virtiofsd-service]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/virtiofsd
+# virtiofsd creates and enters its own user namespace when not run as
+# root (src/sandbox.rs, --sandbox namespace, the default), so it needs
+# no help from this wrapper. Without an explicit --uid-map/--gid-map
+# though, it maps its own uid/gid to themselves (a no-op mapping) instead
+# of to 0, so it can never become root inside that namespace; give it
+# this partition's own uid/gid explicitly so the 0 -> uid mapping exists.
+command-line =
+  {{ virtiofsd_executable_location }}
+  --socket-path=${kvm-parameter-dict:scaphandre-socket-path}
+  --shared-dir=${directory:scaphandre}
+  --uid-map :0:${own-unix-ids:uid}:1:
+  --gid-map :0:${own-unix-ids:gid}:1:
+  --readonly
+hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
+{% endif %}
 [kvm-instance]
 depends =
 {%- for depend_section in depend_section_list %}
@@ -492,6 +538,9 @@ depends =
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/kvm
 command-line = {{ python_eggs_executable }} {{ template_kvm_run }} ${kvm-parameter-dict:location}
+{%- if energy_monitoring %}
+wait-for-files = ${kvm-parameter-dict:scaphandre-socket-path}
+{%- endif %}
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 hash-files =
 {%- for hash_file in hash_file_list %}
@@ -1043,6 +1092,7 @@ use-nat = True
 use-tap = True
 nat-restrict-mode = False
 enable-vhost = False
+energy-monitoring = False
 
 virtual-hard-drive-url =
 virtual-hard-drive-md5sum =
@@ -1194,6 +1244,10 @@ parts =
   kvm-instance
   kvm-vnc-promise
   kvm-disk-image-corruption-promise
+{% if energy_monitoring %}
+  scaphandre-exporter
+  virtiofsd-service
+{% endif %}
 {% if enable_novnc_server %}
   nginx-launcher
   nginx-graceful
