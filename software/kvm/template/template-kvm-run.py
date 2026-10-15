@@ -54,6 +54,8 @@ cluster_doc_port = int(parameter_dict.get("cluster-doc-port"))
 auto_ballooning = parameter_dict.get("auto-ballooning") in (
   'true', 'True', '1')
 vm_name = parameter_dict.get("name")
+energy_monitoring = parameter_dict.get("energy-monitoring", "false").lower() == 'true'
+scaphandre_socket_path = parameter_dict.get("scaphandre-socket-path")
 
 # If a device (ie.: /dev/sdb) is provided, use it instead
 # the disk_path with disk_format
@@ -212,8 +214,12 @@ if use_tap == 'true':
     '-device', '%s,netdev=lan%s,mac=%s' % (
       network_adapter, number, tap_mac_address)]
 
+# "guest=" is the format scaphandre's qemu exporter looks for on the
+# command line of running qemu-system processes, to tell VMs apart.
+vm_name_argument = 'guest=%s' % vm_name if energy_monitoring else vm_name
+
 kvm_argument_list = [
-  qemu_path, '-enable-kvm', '-name', vm_name, '-vga', 'std',
+  qemu_path, '-enable-kvm', '-name', vm_name_argument, '-vga', 'std',
   '-smp', str(parameter_dict['smp-count']),
   '-m', '%sM' % (parameter_dict['ram-size'],),
   '-vnc', 'unix:%s,websocket=unix:%s' % (vnc_socket_path, vnc_socket_path),
@@ -226,6 +232,15 @@ kvm_argument_list = [
   # see https://wiki.gentoo.org/wiki/QEMU/Options#USB
   '-usbdevice', 'tablet',
 ]
+
+if energy_monitoring:
+  kvm_argument_list += [
+    '-chardev', 'socket,id=char-scaphandre,path=%s' % scaphandre_socket_path,
+    '-device', 'vhost-user-fs-pci,chardev=char-scaphandre,tag=scaphandre',
+    '-object', 'memory-backend-memfd,id=mem,size=%sM,share=on' % (
+      parameter_dict['ram-size'],),
+    '-numa', 'node,memdev=mem',
+  ]
 DISK_INFO_COUNT = 1
 for disk_info in disk_info_list:
   kvm_argument_list += (

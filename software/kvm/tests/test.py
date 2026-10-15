@@ -2608,6 +2608,31 @@ class TestParameterDefault(KVMTestCase, KvmMixin):
   def test_cpu_count_set(self):
     self._test({'cpu-count': 4}, "smp-count", "4")
 
+  def test_energy_monitoring_default(self):
+    self._test({}, "energy-monitoring", "False")
+    kvm_pid_file_list = glob.glob(os.path.join(
+      self.slap._instance_root, '*', 'var', 'run', 'kvm.pid'))
+    self.assertEqual(1, len(kvm_pid_file_list))
+    with open(kvm_pid_file_list[0]) as fh:
+      kvm_pid = int(fh.read().strip())
+    cmdline = psutil.Process(kvm_pid).cmdline()
+    self.assertNotIn('vhost-user-fs-pci', ' '.join(cmdline))
+
+  def test_energy_monitoring_set(self):
+    self._test({'energy-monitoring': True}, "energy-monitoring", "True")
+    kvm_pid_file_list = glob.glob(os.path.join(
+      self.slap._instance_root, '*', 'var', 'run', 'kvm.pid'))
+    self.assertEqual(1, len(kvm_pid_file_list))
+    with open(kvm_pid_file_list[0]) as fh:
+      kvm_pid = int(fh.read().strip())
+    cmdline = psutil.Process(kvm_pid).cmdline()
+    joined_cmdline = ' '.join(cmdline)
+    self.assertIn('vhost-user-fs-pci,chardev=char-scaphandre,tag=scaphandre',
+                  joined_cmdline)
+    self.assertIn('memory-backend-memfd', joined_cmdline)
+    self.assertTrue(
+      cmdline[cmdline.index('-name') + 1].startswith('guest='))
+
   def test_ram_size_default(self):
     self._test({}, "ram-size", "4096")
 

@@ -58,6 +58,20 @@ KVM instance parameters:
 - enable-vhost (default: False)
     Increase network speed by enabling vhost on qemu. (To use if the module is loaded on host machine)
 
+- energy-monitoring (default: False)
+    Run scaphandre (https://github.com/hubblo-org/scaphandre) alongside this VM, reading host
+    power counters (/sys/class/powercap) and sharing this VM's own share of them into the guest,
+    over a virtio-fs device tagged "scaphandre". Inside the guest::
+
+      mount -t virtiofs scaphandre /mnt
+      cat /mnt/<name>/intel-rapl:0/energy_uj
+
+    (<name> is this instance's "name" parameter). A guest with scaphandre installed can instead
+    point its own "--vm" mode at that mount; installing scaphandre inside the guest is the
+    tenant's own responsibility, this software release does not manage guest contents.
+    Not compatible with a custom "numa" parameter (energy-monitoring already attaches its own
+    memory-backend-memfd NUMA node).
+
 - virtual-hard-drive-url
     URL of qemu image to download and use by this VM. If specified, Disk size and Disk type will be ignored.
 - virtual-hard-drive-md5sum
