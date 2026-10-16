@@ -842,7 +842,7 @@
         bandwidth:    {{ cell.bandwidth }},
 {%-     endif %}
         subcarrier_spacing: {{ cell.subcarrier_spacing }},
-{%-     if not cell.get('amarisoft_ssb_computation', false) %}
+{%-     if cell.get('ssb_nr_arfcn') %}
         ssb_nr_arfcn:   {{ cell.ssb_nr_arfcn }},
 {%-     endif %}
         ssb_pos_bitmap: "{{ cell.ssb_pos_bitmap }}",
