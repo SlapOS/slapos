@@ -21,7 +21,6 @@
     },
     "name": {
       "title": "(Optional) Neighbour Cell Name",
-      "description": "Neighbour Cell name (for management purposes only)",
       "type": "string"
     },
     "e_cell_id": {

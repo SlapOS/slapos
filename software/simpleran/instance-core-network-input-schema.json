@@ -132,8 +132,7 @@
         ],
         "properties": {
           "name": {
-            "title": "(Optional) Neighbour Cell Name",
-            "description": "Neighbour Cell name (for management purposes only)",
+            "title": "(Optional) MME Name",
             "type": "string"
           },
           "addr": {

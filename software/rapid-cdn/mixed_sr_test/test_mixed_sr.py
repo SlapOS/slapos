@@ -31,6 +31,7 @@ Bump the pinned OLD tag as releases advance (same convention as
 ``software/theia/test/upgrade_tests.py``).
 """
 
+import ast
 import glob
 import http.client
 import json
@@ -45,53 +46,50 @@ sys.path.insert(0, os.path.abspath(
   os.path.join(os.path.dirname(__file__), os.pardir, 'test')))
 
 import test
-from test import fakeHTTPSResult
+from test import CurlException, fakeHTTPSResult, subprocess_status_output
 
 
 OLD_SOFTWARE_RELEASE_URL = (
   'https://lab.nexedi.com/nexedi/slapos/-/raw/1.0.469'
   '/software/rapid-cdn/software.cfg')
+NEW_SOFTWARE_RELEASE_URL = test.SlapOSInstanceTestCase.getSoftwareURL()
 
 # Hotfix specific to 1.0.469, which was before this mix-sr test
 PATCH_FILENAME = 'rapid-cdn-1.0.469-relax-frontend-schema.patch'
 _PATCH_PATH = os.path.join(os.path.dirname(__file__), PATCH_FILENAME)
+
+BASE_INSTANCE_PARAMETER_DICT = {
+  'domain': 'example.com',
+  'port': test.HTTPS_PORT,
+  'plain_http_port': test.HTTP_PORT,
+  'kedifa_port': test.KEDIFA_PORT,
+  'caucase_port': test.CAUCASE_PORT,
+}
+
+UPGRADED_SLAVE_AMOUNT = 10
+UPGRADE_INSTANCE_RUN_AMOUNT = 4
 
 
 def setUpModule():
   installSoftwareUrlList(
     test.SlapOSInstanceTestCase,
     [
-      test.SlapOSInstanceTestCase.getSoftwareURL(),
+      NEW_SOFTWARE_RELEASE_URL,
       OLD_SOFTWARE_RELEASE_URL,
     ],
     debug=test.SlapOSInstanceTestCase._debug,
   )
 
 
-class TestMixedFrontendSoftwareRelease(
+class OldSoftwareReleaseTestCase(
     test.SlaveHttpFrontendTestCase, test.ReplicateSlaveMixin):
 
   old_software_release_url = OLD_SOFTWARE_RELEASE_URL
-  instance_parameter_dict = {
-    'domain': 'example.com',
-    'port': test.HTTPS_PORT,
-    'plain_http_port': test.HTTP_PORT,
-    'kedifa_port': test.KEDIFA_PORT,
-    'caucase_port': test.CAUCASE_PORT,
-  }
 
   @classmethod
   def getInstanceParameterDict(cls):
     return {
       '_': json.dumps(cls.instance_parameter_dict)
-    }
-
-  @classmethod
-  def getSlaveParameterDictDict(cls):
-    return {
-      'mixed': {
-        'url': cls.backend_url,
-      },
     }
 
   def _hotfixCompiledOldSoftwareRelease(self):
@@ -109,6 +107,18 @@ class TestMixedFrontendSoftwareRelease(
       if '"additionalProperties": true' in fh.read():
         return  # already hotfixed: the software directory is reused across runs
     subprocess.check_call(['patch', schema, '-i', _PATCH_PATH])
+
+
+class TestMixedFrontendSoftwareRelease(OldSoftwareReleaseTestCase):
+  instance_parameter_dict = dict(BASE_INSTANCE_PARAMETER_DICT)
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'mixed': {
+        'url': cls.backend_url,
+      },
+    }
 
   def _requestMixedCluster(self, frontend_1_state, frontend_2_state):
     self.instance_parameter_dict.update({
@@ -194,3 +204,154 @@ class TestMixedFrontendSoftwareRelease(
         if ipv6_collision:
           raise
     self._assertLiveAccess(domain)
+
+
+class WholeClusterUpgradeTestCase(OldSoftwareReleaseTestCase):
+  # the framework requests the root instance with getSoftwareURL(), so it has
+  # to answer with the release the cluster is currently requested on
+  current_software_release_url = OLD_SOFTWARE_RELEASE_URL
+  # the slave requests carry their own release: upgrading a cluster on a real
+  # master does not re-request the shared instances of its users
+  slave_software_release_url = OLD_SOFTWARE_RELEASE_URL
+
+  @classmethod
+  def getSoftwareURL(cls):
+    return cls.current_software_release_url
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'slave-%02i' % (i,): {
+        'url': cls.backend_url,
+      }
+      for i in range(1, UPGRADED_SLAVE_AMOUNT + 1)
+    }
+
+  @classmethod
+  def requestSlaveInstance(
+    cls, partition_reference, partition_parameter_kw, state='started'):
+    return cls.slap.request(
+      software_release=cls.slave_software_release_url,
+      software_type=cls.getInstanceSoftwareType(),
+      partition_reference=partition_reference,
+      partition_parameter_kw=partition_parameter_kw,
+      shared=True,
+      state=state,
+    )
+
+  @classmethod
+  def getPartitionId(cls, instance_name):
+    try:
+      return super().getPartitionId(instance_name)
+    except IndexError:
+      if instance_name == 'error-page-manager':
+        # setUpClass looks this partition up, and the old release has none
+        return super().getPartitionId(cls.default_partition_reference)
+      raise
+
+  def _upgradeRootInstance(self):
+    type(self).current_software_release_url = NEW_SOFTWARE_RELEASE_URL
+    self.slap.request(
+      software_release=NEW_SOFTWARE_RELEASE_URL,
+      software_type=self.getInstanceSoftwareType(),
+      partition_reference=self.default_partition_reference,
+      partition_parameter_kw=self._instance_parameter_dict,
+      state='started',
+    )
+
+  def _getMasterPartitionPath(self):
+    # getMasterPartitionPath() globs for a rendered file, which is absent
+    # while the upgrade rebuilds the master partition
+    return os.path.join(
+      self.instance_path,
+      self.getPartitionId(self.default_partition_reference))
+
+  def _getMasterSlaveInstanceList(self):
+    computer = self.slap._slap.registerComputer('local')
+    for partition in computer.getComputerPartitionList():
+      try:
+        parameter_dict = partition.getInstanceParameterDict()
+      except Exception:
+        # partitions not (yet) allocated to a software release
+        continue
+      if parameter_dict.get(
+          'instance_title') != self.default_partition_reference:
+        continue
+      slave_instance_list = parameter_dict.get('slave_instance_list', [])
+      if isinstance(slave_instance_list, str):
+        slave_instance_list = json.loads(slave_instance_list)
+      return slave_instance_list
+    return []
+
+  def _getPassedSlaveReferenceDict(self):
+    result_dict = {}
+    section = None
+    with open(
+      os.path.join(
+        self._getMasterPartitionPath(), 'instance-master.cfg')) as fh:
+      for line in fh:
+        if line.startswith('['):
+          section = line.strip()[1:-1]
+        elif line.startswith('config-extra_slave_instance_list'):
+          value = line.split('=', 1)[1].strip()
+          if value.startswith('!py!'):
+            value = ast.literal_eval(value[4:].strip())
+          if isinstance(value, str):
+            value = json.loads(value)
+          result_dict[section] = sorted(
+            slave['slave_reference'] for slave in value)
+    return result_dict
+
+  def _getSlaveDomain(self, slave_reference):
+    return '%s.example.com' % (slave_reference.replace('-', ''),)
+
+  def _getServedDomainList(self):
+    served_domain_list = []
+    for slave_reference in self.getSlaveParameterDictDict():
+      domain = self._getSlaveDomain(slave_reference)
+      try:
+        status_code = fakeHTTPSResult(domain, 'test-path').status_code
+      except CurlException:
+        continue
+      if status_code == http.client.OK:
+        served_domain_list.append(domain)
+    return sorted(served_domain_list)
+
+  def assertSlaveListIntact(self, context):
+    reference_list = sorted(
+      slave['slave_reference']
+      for slave in self._getMasterSlaveInstanceList())
+    domain_list = sorted(
+      self._getSlaveDomain(slave_reference)
+      for slave_reference in self.getSlaveParameterDictDict())
+    self.assertEqual(
+      {
+        'passed to the frontend nodes': {
+          'request-caddy-frontend-1': reference_list},
+        'served': domain_list,
+      },
+      {
+        'passed to the frontend nodes': self._getPassedSlaveReferenceDict(),
+        'served': self._getServedDomainList(),
+      },
+      context)
+
+  def _processInstance(self):
+    subprocess_status_output([
+      self.slap._slapos_wrapper, 'node', 'instance',
+      '--cfg', self.slap._slapos_config,
+    ])
+
+
+class TestUpgradeSlaveListNotEmptied(WholeClusterUpgradeTestCase):
+  instance_parameter_dict = dict(BASE_INSTANCE_PARAMETER_DICT)
+
+  def test_upgrade_slave_list_not_emptied(self):
+    self._hotfixCompiledOldSoftwareRelease()
+    self.assertSlaveListIntact('before the upgrade')
+
+    self._upgradeRootInstance()
+    for run_number in range(1, UPGRADE_INSTANCE_RUN_AMOUNT + 1):
+      self._processInstance()
+      self.assertSlaveListIntact(
+        'after instance run %i of the upgrade' % (run_number,))

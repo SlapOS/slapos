@@ -1168,6 +1168,40 @@ config-report-anomaly = true
 config-result-count = 5
 config-failure-amount = 5
 
+# Force reprocessing of the master partition until kedifa has a real key
+# download URL for each slave, so that the correct URL is published.
+[slave-key-download-url-ready]
+<= master-key-upload-url-ready
+key = ${request-kedifa:connection-slave-kedifa-information}
+slave-reference-list = {{ dumps(authorized_slave_list | map(attribute='slave_reference') | list) }}
+slave-key-download-url-regex = ^https://\[[0-9a-fA-F:]+\]:[0-9]+/[a-z0-9]{32}$
+init =
+  import json
+  import os
+  import re
+  # protect against early init
+  if os.path.isdir(options['directory']):
+    kedifa_information = json.loads(options['key'] or '{}')
+    url_regex = re.compile(options['slave-key-download-url-regex'])
+    not_ready_list = []
+    for slave_reference in options['slave-reference-list']:
+      url = kedifa_information.get(slave_reference, {}).get(
+        'key-download-url', '')
+      if not url_regex.match(url):
+        not_ready_list.append('%s: %r' % (slave_reference, url))
+    with open(options['output'], 'w') as fh:
+      fh.write('\n'.join(not_ready_list))
+
+[slave-key-download-url-ready-promise]
+<= master-key-upload-url-ready-promise
+config-filename = ${slave-key-download-url-ready:output}
+
+[slave-key-download-url-ready-promise-anomaly]
+<= slave-key-download-url-ready-promise
+config-report-anomaly = true
+config-result-count = 5
+config-failure-amount = 5
+
 [caucased-backend-client]
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 {{  caucase.caucased(
@@ -1186,7 +1220,7 @@ hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 [cdn-requester-configuration]
 cdn-requester-log = ${directory:log}/cdn-instance-node.log
 instance-db-path = {{ instance_parameter_dict["instance-db-path"] }}
-validated-instance-db-path = {{ instance_parameter_dict["validated-instance-db-path"] }}
+validated-instance-db-path = ${buildout:directory}/validated-shared-instance.sqlite
 domain-validation-db-path = ${directory:srv}/domainvalidation-db.sqlite
 openssl = {{ software_parameter_dict['openssl'] }}
 instance-retention-delay = {{ slapparameter_dict['instance-retention-delay'] | string }}
@@ -1267,9 +1301,11 @@ parts =
   master-key-upload-url-ready-promise
   master-key-generate-auth-url-ready-promise
   master-key-download-url-ready-promise
+  slave-key-download-url-ready-promise
   master-key-upload-url-ready-promise-anomaly
   master-key-generate-auth-url-ready-promise-anomaly
   master-key-download-url-ready-promise-anomaly
+  slave-key-download-url-ready-promise-anomaly
   master-introspection-frontend
   cdn-instance-node-cron
   logrotate-entry-cdn-requester
