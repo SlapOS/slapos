@@ -101,6 +101,10 @@ if out.returncode or file_missing or new_hash != previous_hash:
             time.sleep(1)
         ssb_list = asyncio.run(get_ssb(options['ws-url'], options['ws-password']))
         asyncio.run(quit_enb(options['ws-url'], options['ws-password']))
-        self.buildout['publish-connection-information']['RADIO.ssb-nr-arfcn'] = ' / '.join(map(str, ssb_list))
+        publish['RADIO.ssb-nr-arfcn'] = ' / '.join(map(str, ssb_list))
+        if 'ID.handover-json-export' in publish:
+            for i in range(len(ssb_list)):
+                publish['ID.handover-json-export'] = \
+                  publish['ID.handover-json-export'].replace(f'CELL{i}_SSB_NR_ARFCN', str(ssb_list[i]))
 
-self.buildout['publish-connection-information']['ERROR.amarisoft'] = error
+publish['ERROR.amarisoft'] = error
