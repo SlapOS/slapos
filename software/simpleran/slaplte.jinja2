@@ -374,7 +374,9 @@
 {%-   elif cell.cell_type == 'nr' %}
 {%-     do cell.setdefault('ul_nr_arfcn',  J(jdefault_ul_nr_arfcn(cell.dl_nr_arfcn, cell.nr_band)))  %}
 {%-     do cell.setdefault('subcarrier_spacing', 30  if cell.rf_mode == 'tdd'  else 15)  %}
+{%-     if not ors %}
 {%-     do cell.setdefault('ssb_nr_arfcn', J(jdefault_ssb_nr_arfcn(cell.dl_nr_arfcn, cell.nr_band)))  %}
+{%-     endif %}
 {%-   else  %}
 {%-     do bug('unreachable') %}
 {%-   endif %}

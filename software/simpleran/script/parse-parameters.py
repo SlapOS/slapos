@@ -384,22 +384,6 @@ def ors_radio(config, publish, shared_list):
     publish['id']['gnb-id'] = publish_hex(config['gnb_id'])
     publish['id']['enb-id'] = publish_hex(config['enb_id'])
 
-    def nr_frequency(dl_frequency, ssb_nr_arfcn):
-        dl_arfcn = nrarfcn.nrarfcn(dl_frequency, nearby=True)
-        if nr:
-            if 'ssb_nr_arfcn' not in config[c]:
-                for j in range(1, 11):
-                    try:
-                        _arfcn = dl_arfcn + (j // 2) * ((j % 2) * 2 - 1)
-                        config[c]['ssb_nr_arfcn'], _ = nrarfcn.dl2ssb(_arfcn, band)
-                    except KeyError as e:
-                        continue
-                    dl_arfcn = _arfcn
-                    dl_frequency = nrarfcn.frequency(dl_arfcn)
-                    break
-            ul_arfcn = nrarfcn.dl2ul(dl_arfcn, band)
-            ul_frequency = nrarfcn.frequency(ul_arfcn)
-
     # RF parameters (frequency, band, arfcn...)
     def configure_rf_parameters(i):
 
@@ -452,26 +436,7 @@ def ors_radio(config, publish, shared_list):
                 config[c]['enable_cell'] = False
                 self.error = True
                 return
-            if 'ssb_nr_arfcn' not in config[c]:
-                dl_arfcn = dl_first + ((dl_arfcn - dl_first) // dl_step) * dl_step
-                for j in range(1, 11):
-                    _arfcn = dl_arfcn + (j // 2) * dl_step * ((j % 2) * 2 - 1)
-                    try:
-                        config[c]['ssb_nr_arfcn'], _ = nrarfcn.dl2ssb(_arfcn, band)
-                    except KeyError as e:
-                        continue
-                    except ValueError as e:
-                        publish['error'].setdefault('nr-arfcn', {})[c] = f'{e}'
-                        config[c]['enable_cell'] = False
-                        self.error = True
-                        return
-                    dl_arfcn = _arfcn
-                    dl_frequency = nrarfcn.frequency(dl_arfcn)
-                    if int(dl_frequency * 1000) % int(config[c]['subcarrier_spacing']):
-                        continue
-                    if int(dl_frequency * 1000) % int(f_raster):
-                        continue
-                    break
+            dl_arfcn = dl_first + ((dl_arfcn - dl_first) // dl_step) * dl_step
             ul_arfcn = nrarfcn.dl2ul(dl_arfcn, band)
             ul_frequency = nrarfcn.frequency(ul_arfcn)
         else:
@@ -639,13 +604,14 @@ def ors_radio(config, publish, shared_list):
                 cid_len = 36 - config['gnb_id_bits']
                 nr_cell_id = global_id(config['gnb_id'], config[c]['cell_id'], cid_len)
                 publish['id']['nr-cell-id'][c] = publish_hex(nr_cell_id)
+                # CELLx_SSB_NR_ARFCN will get replaced in lteenb-wrapper.py after we get ssb_nr_arfcn from lteenb
                 publish['id']['handover-json-export'][c] = json.dumps({
                     'name': hostname,
                     'nr_cell_id': nr_cell_id,
                     'gnb_id_bits': config['gnb_id_bits'],
                     'dl_nr_arfcn': dl_arfcn,
                     'nr_band': band,
-                    'ssb_nr_arfcn': config[c]['ssb_nr_arfcn'],
+                    'ssb_nr_arfcn': f'CELL{i}_SSB_NR_ARFCN',
                     'ul_nr_arfcn': ul_arfcn,
                     'pci': config[c]['pci'],
                     'tac': config['plmn_list_5g'][0]['tac'],
@@ -655,8 +621,6 @@ def ors_radio(config, publish, shared_list):
             if config[c]['cell_type'] in ['eNB', 'gNB']:
                 publish['radio'].setdefault('root-sequence-index', {})[c] = config[c]['root_sequence_index']
                 publish['radio'].setdefault('tdd-ul-dl-config',      {})[c] = config[c]['tdd_ul_dl_config']
-        if config[c]['cell_type'] == 'gNB' and config[c]['nr_band'] == 79:
-            config[c]['amarisoft_ssb_computation'] = True
 
         if config[c]['cell_type'] == 'gNB':
             if type(config[c]['tdd_ul_dl_config']) is dict:
@@ -864,6 +828,7 @@ def ors_radio(config, publish, shared_list):
                     'ru': { 'ru_type': 'ru_ref',
                             'ru_ref' : f'SDR{i}'}
                 })
+                print("JHGD cell_params = " + json.dumps(cell_params,indent=4))
                 shared_list.append({
                     'slave_title'    : f'CELL{i}',
                     'slave_reference': False,
