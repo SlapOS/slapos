@@ -99,6 +99,28 @@
       "description": "Range 0 to 837 for PRACH format up to 3, 0 to 137 otherwise. prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration.",
       "default": 1
     },
+    "mcs_table_ul": {
+      "title": "PUSCH MCS Table",
+      "enum": [
+        "qam64",
+        "qam256",
+        "qam64LowSE"
+      ],
+      "description": "qam64 will ensure more reliable transfers at the cost of throughput",
+      "default": "qam256",
+      "type": "string"
+    },
+    "mcs_table_dl": {
+      "title": "PDSCH MCS Table",
+      "enum": [
+        "qam64",
+        "qam256",
+        "qam64LowSE"
+      ],
+      "description": "qam64 will ensure more reliable transfers at the cost of throughput",
+      "default": "qam256",
+      "type": "string"
+    },
     "advanced_parameter": {
       "title": "Advanced Parameters",
       "type": "object",
