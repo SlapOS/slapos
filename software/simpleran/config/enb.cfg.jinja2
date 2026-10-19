@@ -1091,6 +1091,7 @@
 {%-     endif %}
         },
         pdsch: {
+          mcs_table: "{{ cell.mcs_table_dl }}",
 {%-     if "fixed_mcs_downlink" in cell %}
           mcs: {{ cell.fixed_mcs_downlink }},
 {%-     endif %}
@@ -1100,6 +1101,8 @@
 {%-     endif %}
         },
         pusch: {
+          mcs_table: "{{ cell.mcs_table_ul }}",
+          mcs_table_tp: "{{ cell.mcs_table_ul }}",
           p0_nominal_with_grant: {{ cell.advanced_parameter.pusch_p0_nominal }},
           mapping_type: {{ cell.get('pusch_mapping_type', 'typeA') | tojson }},
 {%-     if "fixed_mcs_uplink" in cell %}
@@ -1216,7 +1219,6 @@
       dmrs_add_pos: 1,
       dmrs_type: 1,
       dmrs_max_len: 1,
-      mcs_table: "qam256",
       rar_mcs: 2,
       si_mcs: 6,
     },
@@ -1225,8 +1227,6 @@
       dmrs_type: 1,
       dmrs_max_len: 1,
       tf_precoding: false,
-      mcs_table: "qam256",
-      mcs_table_tp: "qam256",
       ldpc_max_its: 5,
       msg3_mcs: 4,
       msg3_delta_power: 0,
