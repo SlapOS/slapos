@@ -84,6 +84,12 @@
     "subcarrier_spacing": {
       "$ref": "cell/nr/input-schema.json#/properties/subcarrier_spacing"
     },
+    "mcs_table_ul": {
+      "$ref": "cell/nr/input-schema.json#/properties/mcs_table_ul"
+    },
+    "mcs_table_dl": {
+      "$ref": "cell/nr/input-schema.json#/properties/mcs_table_dl"
+    },
     "latency_parameter": {
       "$ref": "cell/nr/input-schema.json#/properties/latency_parameter"
     },
