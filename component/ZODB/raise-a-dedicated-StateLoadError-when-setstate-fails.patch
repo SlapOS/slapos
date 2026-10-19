@@ -1,0 +1,219 @@
+From 9efb8f30342ab1b2652182a7e044cb579f9da86b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=A9rome=20Perrin?= <jerome@nexedi.com>
+Date: Fri, 9 Oct 2026 17:39:14 +0900
+Subject: [PATCH] raise a dedicated StateLoadError when __setstate__ fails
+ (#426)
+
+Ghosts are activated transparently when an attribute is first
+activated, and if the __setstate__ raises an exception, that exception
+is raised during activation, while getting the attribute.
+This is generally fine, but if __setstate__ fails with AttributeError,
+caller code may be confused and think that the attribute is missing,
+when in fact it is present but __setstate__ failed to set it.
+
+To prevent confusion with AttributeError, we now raise a dedicated
+StateLoadError for any exception other than POSError that propagate.
+
+Fixes zopefoundation/Zope#1301
+---
+ CHANGES.rst                     |  2 +
+ src/ZODB/POSException.py        | 10 ++++
+ src/ZODB/serialize.py           | 19 +++++--
+ src/ZODB/tests/testSerialize.py | 91 +++++++++++++++++++++++++++++++++
+ 4 files changed, 118 insertions(+), 4 deletions(-)
+
+diff --git a/src/ZODB/POSException.py b/src/ZODB/POSException.py
+index 491536c51..2956e0b79 100644
+--- a/src/ZODB/POSException.py
++++ b/src/ZODB/POSException.py
+@@ -367,3 +367,13 @@ class ConnectionStateError(POSError):
+       still joined to a transaction (for example, a transaction is in
+       progress, with uncommitted modifications in the connection).
+     """
++
++
++class StateLoadError(POSError):
++    """Error when loading an object's state.
++
++    Raised when the state of an object can not be loaded, for example
++    when calling the object's ``__setstate__`` raises an error, or when
++    unpickling the record fails.  The original exception is chained as
++    ``__cause__``.
++    """
+diff --git a/src/ZODB/serialize.py b/src/ZODB/serialize.py
+index 02c55e707..4702ddda6 100644
+--- a/src/ZODB/serialize.py
++++ b/src/ZODB/serialize.py
+@@ -139,6 +139,7 @@ class of an object, a new record with new class metadata would be
+ from persistent import Persistent
+ from persistent.wref import WeakRef
+ from persistent.wref import WeakRefMarker
++from transaction.interfaces import TransientError
+ from zodbpickle import binary
+ 
+ from ZODB import broken
+@@ -146,6 +147,8 @@ class of an object, a new record with new class metadata would be
+ from ZODB._compat import PersistentUnpickler
+ from ZODB._compat import _protocol
+ from ZODB.POSException import InvalidObjectReference
++from ZODB.POSException import POSError
++from ZODB.POSException import StateLoadError
+ 
+ 
+ _oidtypes = bytes, type(None)
+@@ -629,14 +632,22 @@ def getState(self, pickle):
+         try:
+             unpickler.load()  # skip the class metadata
+             return unpickler.load()
+-        except EOFError:
+-            log = logging.getLogger("ZODB.serialize")
+-            log.exception("Unpickling error: %r", pickle)
++        except (POSError, TransientError):
+             raise
++        except Exception as e:
++            if isinstance(e, EOFError):
++                log = logging.getLogger("ZODB.serialize")
++                log.exception("Unpickling error: %r", pickle)
++            raise StateLoadError() from e
+ 
+     def setGhostState(self, obj, pickle):
+         state = self.getState(pickle)
+-        obj.__setstate__(state)
++        try:
++            obj.__setstate__(state)
++        except (POSError, TransientError):
++            raise
++        except Exception as e:
++            raise StateLoadError() from e
+ 
+ 
+ def referencesf(p, oids=None):
+diff --git a/src/ZODB/tests/testSerialize.py b/src/ZODB/tests/testSerialize.py
+index f872ed9b0..ed2054601 100644
+--- a/src/ZODB/tests/testSerialize.py
++++ b/src/ZODB/tests/testSerialize.py
+@@ -18,12 +18,15 @@
+ 
+ from persistent import Persistent
+ from persistent.wref import WeakRef
++from transaction.interfaces import TransientError
+ 
+ import ZODB.tests.util
+ from ZODB import serialize
+ from ZODB._compat import PersistentUnpickler
+ from ZODB._compat import Pickler
+ from ZODB._compat import _protocol
++from ZODB.POSException import StateLoadError
++from ZODB.POSException import StorageError
+ 
+ 
+ class PersistentObject(Persistent):
+@@ -43,6 +46,45 @@ def __init__(self, value):
+         self.value = value
+ 
+ 
++class UserError(Exception):
++    pass
++
++
++class ClassWithState:
++    def __init__(self):
++        self.state = "something"
++
++
++class ClassWithBrokenSetStateUserError(ClassWithState):
++    def __setstate__(self, state):
++        raise UserError
++
++
++class ClassWithBrokenSetStateStorageError(ClassWithState):
++    def __setstate__(self, state):
++        raise StorageError
++
++
++class ClassWithBrokenSetStateTransientError(ClassWithState):
++    def __setstate__(self, state):
++        raise TransientError()
++
++
++class PersistentClassWithBrokenSetStateUserError(
++        ClassWithBrokenSetStateUserError, Persistent):
++    pass
++
++
++class PersistentClassWithBrokenSetStateStorageError(
++        ClassWithBrokenSetStateStorageError, Persistent):
++    pass
++
++
++class PersistentClassWithBrokenSetStateTransientError(
++        ClassWithBrokenSetStateTransientError, Persistent):
++    pass
++
++
+ def make_pickle(ob):
+     sio = BytesIO()
+     p = Pickler(sio, _protocol)
+@@ -169,6 +211,54 @@ def test_protocol_3_binary_handling(self):
+         self.assertIn(b'C\x03o.o', pickle)
+ 
+ 
++class StateLoadErrorTests(unittest.TestCase):
++
++    def setUp(self):
++        self.reader = serialize.ObjectReader(factory=_factory)
++        self.writer = serialize.ObjectWriter()
++
++    def test_load_error_on_persistent_object(self):
++        o = PersistentClassWithBrokenSetStateUserError()
++        record = self.writer.serialize(o)
++        with self.assertRaises(StateLoadError) as exc:
++            self.reader.setGhostState(o, record)
++        self.assertIsInstance(exc.exception.__cause__, UserError)
++
++    def test_load_error_on_non_persistent_object(self):
++        o = PersistentObject()
++        o.o = ClassWithBrokenSetStateUserError()
++        record = self.writer.serialize(o)
++        with self.assertRaises(StateLoadError) as exc:
++            self.reader.setGhostState(o, record)
++        self.assertIsInstance(exc.exception.__cause__, UserError)
++
++    def test_poserror_on_persistent_object(self):
++        o = PersistentClassWithBrokenSetStateStorageError()
++        record = self.writer.serialize(o)
++        with self.assertRaises(StorageError):
++            self.reader.setGhostState(o, record)
++
++    def test_poserror_on_non_persistent_object(self):
++        o = PersistentObject()
++        o.o = ClassWithBrokenSetStateStorageError()
++        record = self.writer.serialize(o)
++        with self.assertRaises(StorageError):
++            self.reader.setGhostState(o, record)
++
++    def test_transient_error_on_persistent_object(self):
++        o = PersistentClassWithBrokenSetStateTransientError()
++        record = self.writer.serialize(o)
++        with self.assertRaises(TransientError):
++            self.reader.setGhostState(o, record)
++
++    def test_transient_error_on_non_persistent_object(self):
++        o = PersistentObject()
++        o.o = ClassWithBrokenSetStateTransientError()
++        record = self.writer.serialize(o)
++        with self.assertRaises(TransientError):
++            self.reader.setGhostState(o, record)
++
++
+ class SerializerFunctestCase(unittest.TestCase):
+ 
+     def setUp(self):
+@@ -250,6 +340,7 @@ def test_suite():
+         unittest.defaultTestLoader.loadTestsFromTestCase(SerializerTestCase),
+         unittest.defaultTestLoader.loadTestsFromTestCase(
+             SerializerFunctestCase),
++        unittest.defaultTestLoader.loadTestsFromTestCase(StateLoadErrorTests),
+         doctest.DocTestSuite("ZODB.serialize",
+                              checker=ZODB.tests.util.checker),
+     ))
