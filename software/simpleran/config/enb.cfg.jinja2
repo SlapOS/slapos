@@ -1057,6 +1057,12 @@
             duration: 1,
           },
 {%-     endif %}
+{%-     if 'n_rb_coreset0' in cell.get('latency_parameter', {}) %}
+          n_rb_coreset0: {{ cell.latency_parameter.n_rb_coreset0 }},
+{%-     endif %}
+{%-     if 'n_symb_coreset0' in cell.get('latency_parameter', {}) %}
+          n_symb_coreset0: {{ cell.latency_parameter.n_symb_coreset0 }},
+{%-     endif %}
 {%-     if 'uss' in cell.get('latency_parameter', {}) %}
           uss: {
             n_candidates: [ {{ cell.latency_parameter.uss.n_candidates.n_candidates_1 }},
