@@ -106,22 +106,14 @@ NR_TDD_CONFIG_MAP = {
     'DS         (1ms, 1DL/0UL), S-slot=0DL:2GP:12UL, minimum latency, balanced downlink and uplink, no TRS': {
         'pattern1': '1ms 0UL 1DL S=12UL:0DL',
         'latency_parameter': {
-            'uss': {
-                'n_candidates': {
-                    'n_candidates_1': 0,
-                    'n_candidates_2': 8,
-                    'n_candidates_4': 0,
-                    'n_candidates_8': 0,
-                    'n_candidates_16': 0,
-                },
-                'dci_0_1_and_1_1': True,
-            },
             'trs_presence': False,
             'sr_period': 2,
             'k_min': 2,
             'rx_to_tx_latency': 4,
             'csi_srs_period': 40,
             'simultaneous_sr_csi': True,
+            'n_rb_coreset0': 48,
+            'n_symb_coreset0': 1,
         },
         'pusch_mapping_type': 'typeB',
         'csi_rs': {
