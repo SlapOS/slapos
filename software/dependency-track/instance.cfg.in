@@ -23,11 +23,13 @@ environment =
   DT_DATASOURCE_PASSWORD=$${postgresql:password}
   BASE_PATH=$${:base-path}/
   HOME=$${directory:srv-dependency-track}
+  DT_DATA_DIRECTORY=$${directory:srv-dependency-track-dot-dependency-track}
 hash-existing-files =
   $${buildout:directory}/software_release/buildout.cfg
 
 ip = $${instance-parameter:ipv4-random}
 port = 18080
+monitor-port = 9000
 base-path = /api
 promises =
   $${dependency-track-apiserver-promise:name}
@@ -36,7 +38,7 @@ promises =
 <= monitor-promise-base
 promise = check_url_available
 name = $${:_buildout_section_name_}.py
-config-url= $${dependency-track-nginx:url}/api/version
+config-url= $${dependency-track-nginx:url}/health
 
 [dependency-track-nginx-certificate]
 recipe = plone.recipe.command
@@ -88,6 +90,9 @@ inline =
     upstream apiserver {
       server $${dependency-track-api-server-instance:ip}:$${dependency-track-api-server-instance:port};
     }
+    upstream monitor {
+      server $${dependency-track-api-server-instance:ip}:$${dependency-track-api-server-instance:monitor-port};
+    }
     proxy_temp_path       $${directory:var}/nginx_tmp_proxy;
     fastcgi_temp_path     $${directory:var}/nginx_tmp_fastcgi;
     uwsgi_temp_path       $${directory:var}/nginx_tmp_uwsgi;
@@ -107,6 +112,14 @@ inline =
 
       location ~ ^/api(/|$) {
         proxy_pass http://apiserver;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $http_host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
+      location ~ ^/health(/|$) {
+        proxy_pass http://monitor;
         proxy_http_version 1.1;
         proxy_set_header Host              $http_host;
         proxy_set_header X-Real-IP         $remote_addr;
@@ -178,14 +191,14 @@ promise = check_command_execute
 name = promise-postgresql.py
 config-command = $${postgresql-psql:wrapper-path} -c '\q'
 
-[postgresql-backup-crontab-entry]
+[backup-crontab-entry]
 recipe = slapos.cookbook:cron.d
 name = $${:_buildout_section_name_}
 cron-entries = $${cron:cron-entries}
 time = daily
-command = $${postgresql-backup:wrapper-path}
+command = $${backup:wrapper-path}
 
-[postgresql-backup]
+[backup]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
 # XXX there's a recipe for backup in slapos cookbook, but it does not create
@@ -197,17 +210,19 @@ command-line =
       -h $${postgresql:pgdata-directory} \
       -U $${postgresql:superuser} \
       --format=custom \
-      -f $${:backup-file}.tmp \
+      -f $${:postgresql-backup-file}.tmp \
       $${postgresql:dbname} \
-    && mv $${:backup-file}.tmp $${:backup-file}"
-backup-file = $${directory:srv-backup}/backup.pg_dump
+    && mv $${:postgresql-backup-file}.tmp $${:postgresql-backup-file} \
+    && ${tar:location}/bin/tar -czf $${:dot-dependency-track-backup-file} -C $${directory:srv-dependency-track-dot-dependency-track} ."
+postgresql-backup-file = $${directory:srv-backup}/backup.pg_dump
+dot-dependency-track-backup-file = $${directory:srv-backup}/dependency-track.tar.gz
 
 [postgresql-restore-backup]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:bin}/$${:_buildout_section_name_}
 command-line =
   sh -e -c "\
-    echo 'This will replace current database with latest backup. Hit Ctrl+C to cancel';
+    echo 'This will replace current environment with latest backup. Hit Ctrl+C to cancel';
     sleep 10;
     $${postgresql:bin}/dropdb \
         -h $${postgresql:pgdata-directory} \
@@ -223,7 +238,10 @@ command-line =
         -h $${postgresql:pgdata-directory} \
         -U $${postgresql:superuser} \
         -d $${postgresql:dbname} \
-        $${postgresql-backup:backup-file}"
+        $${backup:postgresql-backup-file};
+    rm -rf $${directory:srv-dependency-track-dot-dependency-track};
+    mkdir -p $${directory:srv-dependency-track-dot-dependency-track};
+    ${tar:location}/bin/tar -xzf $${backup:dot-dependency-track-backup-file} -C $${directory:srv-dependency-track-dot-dependency-track}"
 
 [cron]
 recipe = slapos.cookbook:cron
@@ -285,10 +303,11 @@ tmp = $${buildout:directory}/tmp
 run = $${buildout:directory}/run
 service = $${:etc}/service
 srv-dependency-track = $${:srv}/dependency-track
+srv-dependency-track-dot-dependency-track = $${:srv-dependency-track}/.dependency-track/
 srv-backup = $${:srv}/backup
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 url = $${rapidcdn-frontend-available-promise:config-url}
-backup-crontab = $${postgresql-backup-crontab-entry:name}
+backup-crontab = $${backup-crontab-entry:name}
 restore-backup-script = $${postgresql-restore-backup:wrapper-path}

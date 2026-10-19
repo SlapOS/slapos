@@ -26,11 +26,15 @@
 ##############################################################################
 
 import os
+import subprocess
+import tarfile
 import urllib.parse
 
 import lxml.html
 import requests
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
+from slapos.testing.utils import CrontabMixin
+
 
 setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
   os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
@@ -72,3 +76,46 @@ class TestDependencyTrack(InstanceTestCase):
         resp.raise_for_status()
         self.assertEqual(resp.headers["Cache-Control"], "public, max-age=31536000, immutable")
         self.assertEqual(resp.headers["Content-Encoding"], "gzip")
+
+
+class TestBackup(InstanceTestCase, CrontabMixin):
+  __partition_reference__ = "b"  # postgresql use a socket in data dir
+
+  def test(self):
+    partition_root = self.computer_partition_root_path
+    psql = partition_root / 'bin' / 'postgresql-psql'
+    marker = (
+      partition_root / 'srv' / 'dependency-track' / '.dependency-track'
+      / 'backup-test-marker')
+
+    marker.write_text('before backup')
+    subprocess.check_call([psql, '-c', 'CREATE TABLE backup_test (value text)'])
+    subprocess.check_call(
+      [psql, '-c', "INSERT INTO backup_test VALUES ('before backup')"])
+
+    self._executeCrontabAtDate('backup-crontab-entry', '2000-01-01')
+
+    with tarfile.open(
+      partition_root / 'srv' / 'backup' / 'dependency-track.tar.gz') as tar:
+      self.assertIn('./backup-test-marker', tar.getnames())
+
+    with self.slap.instance_supervisor_rpc as supervisor:
+      process_info, = [
+        process_info
+        for process_info in supervisor.getAllProcessInfo()
+        if 'dependency-track-api-server-instance' in process_info['name']
+      ]
+      supervisor.stopProcess(
+        f"{process_info['group']}:{process_info['name']}")
+    marker.unlink()
+    subprocess.check_call([psql, '-c', 'DROP TABLE backup_test'])
+    subprocess.check_call(partition_root / 'bin' / 'postgresql-restore-backup')
+
+    self.assertEqual(marker.read_text(), 'before backup')
+    self.assertEqual(
+      subprocess.check_output(
+        [psql, '-tAc', 'SELECT value FROM backup_test']).strip(),
+      b'before backup')
+
+    (partition_root / '.timestamp').unlink()
+    self.waitForInstance()
