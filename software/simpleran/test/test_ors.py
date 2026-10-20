@@ -231,6 +231,8 @@ for s in "cell1 nodeb management".split(" "):
 for d in [enb_param_dict, gnb_param_dict1, gnb_param_dict2]:
     d['testing']  = True
     d['lte_mock'] = True
+    # a real lteenb on the test node can use the default com_ws_port 9001
+    d['com_ws_port'] = 9101
 
 def load_yaml_conf(slap, name):
     conf_file = glob.glob(os.path.join(

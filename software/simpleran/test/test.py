@@ -314,6 +314,8 @@ class ENBTestCase4(RFTestCase4):
     return {'_': json.dumps({
         'testing':      True,
         'lte_mock':      True,
+        # a real lteenb on the test node can use the default com_ws_port 9001
+        'com_ws_port':  9101,
         'enb_id':       '0x17',
         'gnb_id':       '0x23',
         'gnb_id_bits':  30,
