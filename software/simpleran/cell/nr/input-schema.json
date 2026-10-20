@@ -33,7 +33,7 @@
             "DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink",
             "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink",
             "DDDSU      (2.5ms, 2DL/2UL), S-slot=6DL:4GP:4UL, reduced latency, balanced downlink and uplink",
-            "DSUUU      (2.5ms, 1DL/3UL), S-slot=6DL:2GP:4UL, reduced latency, high uplink, no TRS",
+            "DSUUU      (2.5ms, 1DL/3UL), S-slot=6DL:4GP:4UL, reduced latency, high uplink, no TRS",
             "DSUUU      (2.5ms, 1DL/3UL), S-slot=9DL:4GP:1UL, reduced latency, high uplink",
             "DS         (1ms, 1DL/0UL), S-slot=0DL:2GP:12UL, minimum latency, balanced downlink and uplink, no TRS"
           ]
