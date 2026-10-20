@@ -71,9 +71,11 @@ max-combined-info-log-kb-size  = 500000
 max-info-log-kb-size           = 100000
 inline =
   #!/bin/sh
+{%- if not amarisoft['mock'] %}
   # Amarisoft init scripts
   sudo -n {{ amarisoft['dir'] }}/init-sdr {{ amarisoft['binary_dir'] }};
   sudo -n {{ amarisoft['dir'] }}/init-enb
+{%- endif %}
   # Print hardware and software info in info-log
   cat >> ${:info-log} << EOF
 

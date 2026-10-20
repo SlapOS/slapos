@@ -482,6 +482,10 @@ class ENBTestCase4(RFTestCase4):
       },
     ])
 
+  # lte_mock: the enb wrapper does not run the Amarisoft init scripts
+  def test_enb_sh_wrapper_mock(t):
+    assertNoAmarisoftInit(t, t.ipath('bin/enb-sh-wrapper'))
+
 
 # ---- RU mixins to be used with RFTestCase4 ----
 
@@ -682,6 +686,10 @@ class UEsimTestCase4(RFTestCase4):
       )
     ])
 
+  # lte_mock: the ue wrapper does not run the Amarisoft init scripts
+  def test_ue_sh_wrapper_mock(t):
+    assertNoAmarisoftInit(t, t.ipath('bin/lte-ue-sh-wrapper'))
+
 
 # instantiate UEsim tests
 class TestUEsim_SDR4        (UEsimTestCase4, SDR4):         pass
@@ -690,6 +698,16 @@ class TestUEsim_Sunwave4    (UEsimTestCase4, Sunwave4):     pass
 
 
 # ---- misc ----
+
+# assertNoAmarisoftInit verifies that the wrapper at path does not call the
+# Amarisoft init scripts. rm-tmp-lte removes /tmp/.lte* of every Amarisoft
+# service on the host, also the files of a real lteenb in another partition.
+def assertNoAmarisoftInit(t, path):
+  with open(path, 'r') as f:
+    wrapper = f.read()
+  for script in ('rm-tmp-lte', 'init-sdr', 'init-enb', 'init-ue', 'init-mme'):
+    t.assertNotIn(script, wrapper)
+
 
 # yamlpp_load loads yaml config file after preprocessing it.
 #
