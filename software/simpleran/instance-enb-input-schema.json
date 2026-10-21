@@ -31,7 +31,7 @@
           ]
         },
         {
-          "title": "Expert only: manual address",
+          "title": "Manual address",
           "description": "Format: 'ip_address', 'ipv4_address:port' or '[ipv6_address]:port",
           "type": "string"
         }
@@ -661,18 +661,6 @@
       "description": "True if GPS should be used for synchronisation",
       "type": "boolean"
     },
-    "enb_stats_fetch_period": {
-      "title": "eNB/gNB statistics fetch period (seconds)",
-      "description": "Describes how often a call to Amarisoft remote API is made to get eNB/gNB statistics",
-      "type": "number",
-      "default": 60
-    },
-    "enb_drb_stats_enabled": {
-      "title": "Enable eNB/gNB drb statistics",
-      "description": "Enable eNB/gNB drb statistics through 100Hz polling, needed for E-UTRAN IP Throughput KPI",
-      "type": "boolean",
-      "default": true
-    },
     "max_rx_sample_db": {
       "title": "Maximum RX sample value (dB)",
       "description": "Maximum RX sample threshold above which RX saturated promise will fail",
@@ -691,43 +679,15 @@
       "type": "boolean",
       "default": true
     },
-    "xlog_forwarding_enabled": {
-      "title": "Enable eNB/gNB xlog forwarding",
-      "description": "Enable eNB/gNB xlog forwarding through fluentbit",
-      "type": "boolean",
-      "default": true
-    },
     "check_core_network": {
       "title": "Check all S1 and NG connections",
       "description": "check-core-network promise will fail if any S1 or NG connection is not setup",
       "type": "boolean",
       "default": true
     },
-    "wendelin_telecom_software_release_url": {
-      "title": "Wendelin Telecom Software Release URL",
-      "description": "URL of the Wendelin Telecom Software Release to use to request a shared instance",
-      "type": "string",
-      "default": "wendelin-telecom-enb-shared-instance"
-    },
-    "xlog_fluentbit_forward_host": {
-      "title": "Fluentbit Xlog forwarding address",
-      "description": "Address of remote Fluentd or Fluentbit server to which Fluentbit should forward Xlog data",
-      "type": "string"
-    },
-    "xlog_fluentbit_forward_port": {
-      "title": "Fluentbit Xlog forwarding port",
-      "description": "Port of remote Fluentd or Fluentbit server to which Fluentbit should forward Xlog data",
-      "type": "integer",
-      "default": 24224
-    },
-    "xlog_fluentbit_forward_shared_key": {
-      "title": "Fluentbit Xlog forwarding shared key",
-      "description": "Secret key shared with remote Fluentd or Fluentbit server for authentication when forwarding Xlog data",
-      "type": "string"
-    },
     "amarisoft_version": {
       "title": "Amarisoft Version",
-      "description": "Expert only: force amarisoft version",
+      "description": "Force amarisoft version",
       "type": "string"
     },
     "websocket_url_ipv6": {
