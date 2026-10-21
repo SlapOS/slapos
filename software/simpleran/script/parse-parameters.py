@@ -596,7 +596,8 @@ def ors_radio(config, publish, shared_list):
                 cid_len = 36 - config['gnb_id_bits']
                 nr_cell_id = global_id(config['gnb_id'], config[c]['cell_id'], cid_len)
                 publish['id']['nr-cell-id'][c] = publish_hex(nr_cell_id)
-                # CELLx_SSB_NR_ARFCN will get replaced in lteenb-wrapper.py after we get ssb_nr_arfcn from lteenb
+                # CELLx_SSB_NR_ARFCN will get replaced in amarisoft-wrapper.py after we get ssb_nr_arfcn
+                # from lteenb
                 publish['id']['handover-json-export'][c] = json.dumps({
                     'name': hostname,
                     'nr_cell_id': nr_cell_id,
