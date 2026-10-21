@@ -221,12 +221,17 @@ egg-paths =
   {{ eggs_directory }}
   {{ develop_eggs_directory }}
 eggs = websockets
+depends = ${enb-wrapper:recipe}
+
+# amarisoft-wrapper.py script parameters
+amarisoft-service = lteenb
 ws-url = ws://{{ slapparameter_dict.com_url }}
+{%- if not slapparameter_dict.websocket_url_ipv6 %}
 ws-password = ${websocket-password:passwd}
-script-path = {{ lteenb_wrapper }}
-enb-wrapper-file = ${enb-wrapper:wrapper-path}
-enb-config-file = ${enb-config:output}
-enb-directory = {{ amarisoft['enb_dir'] }}
+{%- endif %}
+script-path = {{ amarisoft_wrapper }}
+amarisoft-config-file = ${enb-config:output}
+amarisoft-directory = {{ amarisoft['enb_dir'] }}
 amarisoft-license-dir = {{ amarisoft['license_dir'] }}
 config-directory = ${directory:etc}
 bin-directory = ${directory:bin}
@@ -235,9 +240,10 @@ hash-output-file = ${directory:var}/enb-service-hash
 config-file-list =
   ${enb-config:output}
 {%-   for cell_ref, icell in rulib.icell_dict|dictsort %}
-  ${drb-config-{{ cell_ref }}:output}
-  ${sib23-config-{{ cell_ref }}:output}
+  ${drb-config-{{ B(cell_ref) }}:output}
+  ${sib23-config-{{ B(cell_ref) }}:output}
 {%- endfor %}
+
 init =
   options['location'] = ''
   import zc.buildout
