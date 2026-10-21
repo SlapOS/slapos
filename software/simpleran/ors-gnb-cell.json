@@ -58,21 +58,21 @@
       "$ref": "cell/nr/input-schema.json#/properties/tdd_ul_dl_config"
     },
     "root_sequence_index": {
-      "title": "Expert only: Root Sequence Index",
+      "title": "Root Sequence Index",
       "$ref": "cell/common.json#/$defs/root_sequence_index",
       "description": "Range: 0 to 137. Equal to ORS serial number modulo 138 by default. Sets prach-RootSequenceIndex parameter. It must be different for each neighbour cell operating on the same frequency and sharing the same PRACH configuration."
     },
     "dl_nr_arfcn": {
       "$ref": "cell/nr/input-schema.json#/properties/dl_nr_arfcn",
-      "title": "Expert only: DL NR ARFCN",
+      "title": "DL NR ARFCN",
       "description": "Can be used instead of DL Frequency to directly set the Downlink NR Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL NR ARFCN)"
     },
     "ssb_nr_arfcn": {
-      "title": "Expert only: SSB NR ARFCN",
+      "title": "SSB NR ARFCN",
       "$ref": "cell/nr/input-schema.json#/properties/ssb_nr_arfcn"
     },
     "ssb_pos_bitmap": {
-      "title": "Expert only: SSB Position Bitmap",
+      "title": "SSB Position Bitmap",
       "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap"
     },
     "cipher_algo_pref": {
@@ -90,14 +90,8 @@
     "mcs_table_dl": {
       "$ref": "cell/nr/input-schema.json#/properties/mcs_table_dl"
     },
-    "latency_parameter": {
-      "$ref": "cell/nr/input-schema.json#/properties/latency_parameter"
-    },
     "configured_grant": {
       "$ref": "cell/nr/input-schema.json#/properties/configured_grant"
-    },
-    "advanced_parameter": {
-      "$ref": "cell/nr/input-schema.json#/properties/advanced_parameter"
     }
   }
 }

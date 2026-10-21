@@ -14,7 +14,6 @@
   'handover_a2_hysteresis':      0,
   'handover_a2_time_to_trigger': 640,
   'handover_meas_gap_config': 'Gap Pattern 1',
-  'xlog_forwarding_enabled': True,
   'xlog_enabled': True,
   'check_core_network': True,
   'websocket_url_ipv6': False,
@@ -74,7 +73,7 @@ parts =
   xamari-xlog-service
 {%- endif %}
   request-wendelin-telecom-shared
-{%- if slapparameter_dict.xlog_forwarding_enabled %}
+{%- if slapparameter_dict.xlog_enabled %}
   xlog-fluentbit-service
   check-xlog-fluentbit-forward-host.py
   check-xlog-fluentbit-health.py
@@ -275,7 +274,7 @@ recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 period = {{ slapparameter_dict.get("enb_stats_fetch_period", 60) }}
 stats_logspec = stats[samples,rf]/${:period}s
-{%- if slapparameter_dict.get("enb_drb_stats_enabled", True) %}
+{%- if slapparameter_dict.get("xlog_enabled", True) %}
 drb_stats_logspec = x.drb_stats/${:period}s
 {%- else %}
 drb_stats_logspec =
@@ -304,7 +303,7 @@ recipe = slapos.cookbook:requestoptional
 name = Wendelin Telecom Registration
 software-url = {{ slapparameter_dict.wendelin_telecom_software_release_url }}
 shared = true
-{%- if not slapparameter_dict.xlog_forwarding_enabled or slapparameter_dict.get("xlog_fluentbit_forward_host") %}
+{%- if not slapparameter_dict.xlog_enabled or slapparameter_dict.get("xlog_fluentbit_forward_host") %}
 state = destroyed
 {%- else %}
 state = {{ slap_configuration['instance-state'] }}
@@ -312,7 +311,7 @@ config-fluentbit-tag = ${xlog-fluentbit-tag:xlog-fluentbit-tag}
 return = gateway-host
 {%- endif %}
 
-{% if slapparameter_dict.xlog_forwarding_enabled %}
+{% if slapparameter_dict.xlog_enabled %}
 [xlog-fluentbit-tag]
 recipe = slapos.recipe.build
 computer = ${slap-connection:computer-id}
@@ -492,7 +491,7 @@ NODEB.peer-cell-list = {{ dumps(ipeercell_dict.keys() | sort) }}
 URL.monitor-base = ${monitor-publish-connection-information:monitor-base-url}
 URL.monitor-setup = ${monitor-publish-connection-information:monitor-setup-url}
 URL.monitor-gadget = ${:URL.monitor-base}/gadget/software.cfg.html
-{%- if slapparameter_dict.xlog_forwarding_enabled %}
+{%- if slapparameter_dict.xlog_enabled %}
 URL.wendelin-fluentbit-tag = ${xlog-fluentbit-tag:xlog-fluentbit-tag}
 URL.wendelin = https://wendelin.rapid.space/
 {%- endif %}

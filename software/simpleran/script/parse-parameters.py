@@ -30,6 +30,23 @@ LTE_TDD_CONFIG_MAP = {
     '[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink'                 : 6,
 }
 NR_TDD_CONFIG_MAP = {
+    'default': {
+        'advanced_parameter': {'prach_config_index': 160},
+        'latency_parameter': {
+            'uss': {
+                'n_candidates': {
+                    'n_candidates_1': 0,
+                    'n_candidates_2': 4,
+                    'n_candidates_4': 0,
+                    'n_candidates_8': 0,
+                    'n_candidates_16': 0,
+                },
+                'dci_0_1_and_1_1': True,
+            },
+            'trs_presence': True,
+            'sr_period': 40,
+        },
+    },
     'DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default': {
         'pattern1': '5ms 2UL 7DL S=4UL:6DL',
     },
@@ -637,12 +654,12 @@ def ors_radio(config, publish, shared_list):
                         'dl_symbols': dl_symbols,
                     }
                 config[c]['tdd_ul_dl_config'] = tdd_ul_dl_config
+                for param in NR_TDD_CONFIG_MAP['default']:
+                    nr_tdd_config.setdefault(param, NR_TDD_CONFIG_MAP['default'][param])
                 for param in nr_tdd_config:
-                    if param in ['index', 'pattern1', 'pattern2', 'advanced_parameter']:
+                    if param in ['index', 'pattern1', 'pattern2']:
                         continue
                     config[c].setdefault(param, nr_tdd_config[param])
-                for param in nr_tdd_config.get('advanced_parameter', {}):
-                    config[c]['advanced_parameter'].setdefault(param, nr_tdd_config['advanced_parameter'][param])
 
     def configure_cpu():
         if options['sbc-model'] == 'LE-37SU7':
@@ -876,14 +893,6 @@ def ors_radio(config, publish, shared_list):
                     'xn_addr'  : peer['xn_addr'],
                 })
             })
-
-    if sr_type == 'gnb' and options['software'] == 'software-ors':
-        # backward compatibility: if ORS is running in gnb mode, and gnb_* parameters
-        #       are present, replace their generic enb_* counterparts with gnb_* ones
-        if 'gnb_stats_fetch_period' in config:
-            config['enb_stats_fetch_period'] = config['gnb_stats_fetch_period']
-        if 'gnb_drb_stats_enabled' in config:
-            config['enb_drb_stats_enabled'] =  config['gnb_drb_stats_enabled']
 
     # UE MODE
     if sr_type == 'ue':

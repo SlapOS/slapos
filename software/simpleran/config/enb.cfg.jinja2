@@ -302,15 +302,8 @@
       root_sequence_index: {{ cell.root_sequence_index }},
       inactivity_timer: {{ cell.inactivity_timer }},
       ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
-      prach_freq_offset: {{ cell.advanced_parameter.prach_freq_offset }},
-      q_rx_lev_min: {{ cell.advanced_parameter.q_rx_lev_min }},
-{%-   if 'p_max' in cell.advanced_parameter %}
-      p_max: {{ cell.advanced_parameter.p_max }},
-{%-   endif %}
-{%-   if 'q_qual_min' in cell.advanced_parameter %}
-      q_qual_min: {{ cell.advanced_parameter.q_qual_min }},
-{%-   endif %}
-      q_rx_lev_min_offset: {{ cell.advanced_parameter.q_rx_lev_min_offset }},
+      prach_freq_offset: -1,
+      q_rx_lev_min: -70,
 {%-   if 'sr_period' in cell %}
       sr_period: {{ cell.sr_period }},
 {%-   endif %}
@@ -398,11 +391,7 @@
     pdsch_mcs: {{ cell.fixed_mcs_downlink }},
 {%- endif %}
     pdcch_format:       {{  1   if n_rb_dl == 6  else 2 }},
-{%- if "prach_config_index" in cell.advanced_parameter %}
-    prach_config_index: {{ cell.advanced_parameter.prach_config_index }},
-{%- else %}
     prach_config_index: {{  15  if n_rb_dl == 6  else 4 }},
-{%- endif %}
     initial_cqi:        {{  5   if n_rb_dl == 6  else 3 }},
     phr_link_adaptation: {{ cell.phr_link_adaptation |tojson }},
     pucch_dedicated: {
@@ -849,12 +838,8 @@
         root_sequence_index: {{ cell.root_sequence_index }},
         inactivity_timer: {{ cell.inactivity_timer }},
         ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
-        q_rx_lev_min: {{ cell.advanced_parameter.q_rx_lev_min }},
-        delta_rx_lev_min: {{ cell.advanced_parameter.delta_rx_lev_min }},
-        q_qual_min: {{ cell.advanced_parameter.q_qual_min }},
-{%-   if 'p_max' in cell.advanced_parameter %}
-        p_max: {{ cell.advanced_parameter.p_max }},
-{%-   endif %}
+        q_rx_lev_min: -70,
+        q_qual_min: -20,
         sr_period: {{ cell.get('latency_parameter', {}).get('sr_period', 40) }},
 {%-   if 'rx_to_tx_latency' in cell.get('latency_parameter', {}) %}
         rx_to_tx_latency: {{ cell.latency_parameter.rx_to_tx_latency }},
@@ -1025,16 +1010,16 @@
           ],
         },
         prach: {
-          preamble_received_target_power: {{ cell.advanced_parameter.prach_preamble_received_target_power }},
-          preamble_trans_max: {{ cell.advanced_parameter.prach_preamble_trans_max }},
-          power_ramping_step: {{ cell.advanced_parameter.prach_power_ramping_step }},
+          preamble_received_target_power: -110,
+          preamble_trans_max: 7,
+          power_ramping_step: 4,
 {%-     if ru.ru_type == "sunwave" %}
           msg1_frequency_start: 0,
-{%-     elif 'msg1_frequency_start' in cell.advanced_parameter %}
-          msg1_frequency_start: {{ cell.advanced_parameter.msg1_frequency_start }},
+{%-     else %}
+          msg1_frequency_start: -1,
 {%-     endif %}
           ra_response_window: {{ 20 if tdd else 10 }},
-{%-     if "prach_config_index" in cell.advanced_parameter %}
+{%-     if "prach_config_index" in cell.get('advanced_parameter', {}) %}
           prach_config_index: {{ cell.advanced_parameter.prach_config_index }},
 {%-     else %}
 {%-       if tdd %}
@@ -1045,7 +1030,7 @@
 {%-     endif %}
         },
         pucch: {
-          p0_nominal: {{ cell.advanced_parameter.pucch_p0_nominal }},
+          p0_nominal: -96,
           resource_auto: {
           }
         },
@@ -1103,7 +1088,7 @@
         pusch: {
           mcs_table: "{{ cell.mcs_table_ul }}",
           mcs_table_tp: "{{ cell.mcs_table_ul }}",
-          p0_nominal_with_grant: {{ cell.advanced_parameter.pusch_p0_nominal }},
+          p0_nominal_with_grant: -84,
           mapping_type: {{ cell.get('pusch_mapping_type', 'typeA') | tojson }},
 {%-     if "fixed_mcs_uplink" in cell %}
           mcs: {{ cell.fixed_mcs_uplink }},
@@ -1133,14 +1118,6 @@
           periodicity: {{ cell.configured_grant.l_crb }},
           configuration_type: "{{ cell.configured_grant.configuration_type }}"
         },
-{%-     endif %}
-{%-     if cell.advanced_parameter.enable_sib2 | tojson == 'true' %}
-        sib_sched_list: [
-          {
-            filename: "{{ B('%s-sib23.asn' % cell_ref) }}",
-            si_periodicity: 16,
-          },
-        ],
 {%-     endif %}
         drb_config: "{{ B('%s-drb.cfg' % cell_ref) }}",
       },
