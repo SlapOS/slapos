@@ -337,7 +337,7 @@ class ENBTestCase4(RFTestCase4):
             {'plmn': '51413', 'tac': '0x124'},
             {'plmn': '55555', 'tac': '0x125', 'ranac': 210, 'reserved': True},
         ],
-        'xlog_forwarding_enabled': False,
+        'xlog_enabled': False,
         'check_core_network': False,
     })}
 

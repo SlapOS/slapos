@@ -28,7 +28,7 @@
             ]
           },
           {
-            "title": "Expert only: manual address",
+            "title": "Manual address",
             "description": "Format: 'ip_address' or 'ip_address:port'",
             "type": "string"
           }
@@ -289,11 +289,6 @@
     "websocket_url_ipv6": {
       "$ref": "instance-enb-input-schema.json#/properties/websocket_url_ipv6"
     },
-    "lock": {
-      "title": "Expert only: Force reprocess",
-      "description": "Expert only: change this parameter value to force reprocess of partition",
-      "type": "string"
-    },
     "monitor-interface-url": {
       "$ref": "instance-ors-enb-gnb-input-schema.json#/properties/monitor-interface-url"
     }
@@ -338,22 +333,22 @@
           "type": "boolean"
         },
         "ipv4_start": {
-          "title": "Expert only: First IPv4 address",
+          "title": "First IPv4 address",
           "description": "First available IPv4 address of the PDN",
           "type": "string"
         },
         "ipv4_end": {
-          "title": "Expert only: Last IPv4 address",
+          "title": "Last IPv4 address",
           "description": "Last available IPv4 address of the PDN",
           "type": "string"
         },
         "ipv6_start": {
-          "title": "Expert only: First IPv6 prefix",
+          "title": "First IPv6 prefix",
           "description": "First available global IPv6 prefix used in Router Advertisement message sent to the UE (only the high 8 bytes of the IPv6 address are meaningful). Note that the selected prefix will also be used as the interface identifier sent in NAS signalling.",
           "type": "string"
         },
         "ipv6_end": {
-          "title": "Expert only: Last IPv6 prefix",
+          "title": "Last IPv6 prefix",
           "description": "Last available global IPv6 prefix used in Router Advertisement message sent to the UE (only the high 8 bytes of the IPv6 address are meaningful). Note that the selected prefix will also be used as the interface identifier sent in NAS signalling.",
           "type": "string"
         }
