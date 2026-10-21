@@ -8,15 +8,17 @@ from websocket import create_connection
 from websocket import _exceptions
 
 CHECK_PROMISE      = False      # Disable to run tests faster
-DEBUG              = True       # Sleep for 20 minutes after failure to give time to debug
+DEBUG              = False      # Sleep for 20 minutes after failure to give time to debug
 DEV                = True       # Use DEV services
 LOCK               = False      # Checks nobody else is using service
 MAX_RETRY          = 3          # Max retries to connect UE after services have been checked
 RERUN_TEST         = 1767374328 # Increase to force test suite to run test again
+RESET = False
 
 class WebsocketTestClass(e2e.EndToEndTestCase):
     @classmethod
     def setUpClass(cls):
+        global RESET
         try:
             super().setUpClass()
 
@@ -71,14 +73,10 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             cls.parameters = {}
             cls.parameters["enb-gnb"] = {
                 "cell1": {
-                    "enable_cell": "Enable eNB",
-                    "tx_power_dbm": 0,
-                    "rx_gain": 35,
+                    "enable_cell": "Disable eNB",
                 },
                 "cell2": {
-                    "enable_cell": "Enable eNB",
-                    "tx_power_dbm": 0,
-                    "rx_gain": 35,
+                    "enable_cell": "Disable eNB",
                 },
                 "nodeb": {
                     "n_antenna_dl": 1,
@@ -129,6 +127,10 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                       "n_antenna_ul": 1,
                       "txrx_active": "ACTIVE"
                   },
+                  "dl_earfcn": 0,
+                  "cell_type": "lte",
+                  "rf_mode": "tdd",
+                  "bandwidth": 20,
             }
             cls.parameters["ue#ue"] = {
                   "imsi": f"{plmn}0000000001",
@@ -138,11 +140,20 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
                   "amf": "0x9001",
                   "sqn": "000000000000",
                   "impu": f"{plmn}0000000001",
-                  "impi": f"{plmn}0000000001@ims.mnc{mnc}.mcc{mcc}.3gppnetwork.org"
+                  "impi": f"{plmn}0000000001@ims.mnc{mnc}.mcc{mcc}.3gppnetwork.org",
+                  "ue_type": "lte"
             }
-            if LOCK:
-              for ref in cls.parameters:
-                cls.update_service(ref, "started", parameters=cls.parameters[ref], lock=True)
+            # Update gNB and UE to disable them to make sure they restart
+            for ref in cls.parameters:
+                if LOCK:
+                    cls.logger.info(f"Resetting {ref}")
+                    cls.update_service(ref, "started", parameters=cls.parameters[ref], lock=True)
+                else:
+                    if not RESET:
+                        cls.logger.info(f"Resetting {ref}")
+                        cls.update_service(ref, "started", parameters=cls.parameters[ref], lock=False)
+            RESET = 1
+            time.sleep(60)
 
         except Exception as e:
             cls.logger.error("Error during setup: " + str(e))
@@ -316,6 +327,11 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             return result
 
     def power_on(self, ue_id):
+        for i in range(10):
+            if not self.ue_get()["power_on"]:
+                break
+            self.power_off(ue_id)
+            time.sleep(1)
         self.assertFalse(self.ue_get()["power_on"], "UE already powered on")
         self.ue_send({"message": "power_on", "ue_id": ue_id})
         self.ue_recv()
@@ -337,6 +353,8 @@ class ORSTest(WebsocketTestClass):
             time.sleep(5 * 60)
             self.waitUntilGreen(self.enb_gnb_instance_name, timeout=60 * 2)
             self.waitUntilGreen(self.ue_instance_name, timeout=60 * 2)
+        else:
+            time.sleep(60)
 
         retry = True
 
@@ -398,6 +416,7 @@ class ORSTest(WebsocketTestClass):
                 self.logger.info("UE connected with ip: " + result["pdn_list"][0]["ipv4"])
             except (_exceptions.WebSocketConnectionClosedException, _exceptions.WebSocketBadStatusException, json.decoder.JSONDecodeError):
                 retry = True
+                self.power_off(ue_id)
             finally:
                 try:
                     if ue_id:
@@ -406,7 +425,7 @@ class ORSTest(WebsocketTestClass):
                 except _exceptions.WebSocketConnectionClosedException:
                     pass
 
-    def check_ue_connect(self, nr, band, rf_mode, bandwidth, freq=None, ssb=None):
+    def check_ue_connect(self, nr, band, rf_mode, bandwidth, freq=None, ssb=None, enb_params={}, ue_params={}, check={}):
 
         self.logger.info(f"Checking following configuration: 5G={nr}, {band}, {rf_mode}, {bandwidth}, {freq}")
 
@@ -433,6 +452,7 @@ class ORSTest(WebsocketTestClass):
               "cell_type": "nr" if nr else "lte",
               "rf_mode": rf_mode.lower(),
               "bandwidth": bandwidth,
+              "rx_to_tx_latency": 4,
             })
         if nr:
             self.parameters["enb-gnb"]["cell1"]["nr_bandwidth"] = f"{bandwidth} MHz"
@@ -445,7 +465,11 @@ class ORSTest(WebsocketTestClass):
             self.parameters["ue#cell"].pop("ul_nr_arfcn", None)
             self.parameters["ue#ue"]["ue_type"] = "lte"
 
-        self.logger.info("Gettting eNB / gNB connection parameters")
+        self.parameters["enb-gnb"].setdefault("cell1", {}).update(enb_params.get("cell1", {}))
+        self.parameters["enb-gnb"].setdefault("nodeb", {}).update(enb_params.get("nodeb", {}))
+        self.parameters["ue#cell"].update(ue_params)
+
+        self.logger.info("Update eNB / gNB parameters")
         self.update_service("enb-gnb", "started", parameters=self.parameters["enb-gnb"], lock=False)
 
         self.logger.info("Waiting until parameters update")
@@ -455,7 +479,7 @@ class ORSTest(WebsocketTestClass):
             connection_params = self.getInstanceInfos(self.enb_gnb_instance_name).connection_dict
             model = connection_params['HARDWARE.ors-version'].split(' ')[2]
             try:
-              bandwidth = float(connection_params['RADIO.bandwidth'].removesuffix(" MHz"))
+              bandwidth = float(connection_params.get('RADIO.bandwidth', "0 MHz").removesuffix(" MHz"))
             except ValueError:
               self.logger.info(f"Bandwidth missing in connection parameters")
               continue
@@ -468,7 +492,20 @@ class ORSTest(WebsocketTestClass):
             if not nr and bandwidth != float(params['bandwidth'].removesuffix(" MHz")):
                 self.logger.info(f'{bandwidth} != {params["bandwidth"].removesuffix(" MHz")}')
                 continue
-            break
+            if freq:
+                configured_freq = float(connection_params["RADIO.dl-frequency"].removesuffix(" MHz"))
+                if abs(configured_freq - freq) > 0.5:
+                    self.logger.info(f'{configured_freq} != {freq}')
+                    continue
+            for c in check:
+                if connection_params.get(c) != check[c]:
+                    self.logger.info(f'{c} connection parameter mismatch: {connection_params[c]} != {check[c]}')
+                    break
+                else:
+                    self.logger.info(f'{c} connection parameter match: {connection_params[c]} = {check[c]}')
+            else:
+                break
+            continue
         else:
             self.assertTrue(False, "Service was not ready in time")
         self.logger.info("Parameters updated")
@@ -489,8 +526,6 @@ class ORSTest(WebsocketTestClass):
               "dl_earfcn": int(connection_params['RADIO.dl-earfcn']),
               "ul_earfcn": int(connection_params['RADIO.ul-earfcn']),
             })
-        #tx_gain = 90
-        #rx_gain = 40
         tx_gain = 80
         rx_gain = 44
         tx_gain_gnb = 80
@@ -535,6 +570,124 @@ class ORSTest(WebsocketTestClass):
 
         self.check_ue_ip()
 
+    def test_nr_B38_20_tdd1(self):
+        tdd_config = "DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default"
+        self.check_ue_connect(True, 'B38', 'TDD', 20, freq=2601,
+            enb_params={"cell1": {
+                "tdd_ul_dl_config": tdd_config
+                }}, check={
+                "RADIO.tdd-ul-dl-config": tdd_config
+            })
+    def test_nr_B38_20_tdd2(self):
+        tdd_config = "DDDSUUDDDD (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, same ratios as default"
+        self.check_ue_connect(True, 'B38', 'TDD', 20, freq=2602,
+            enb_params={"cell1": {
+                "tdd_ul_dl_config": tdd_config
+                }}, check={
+                "RADIO.tdd-ul-dl-config": tdd_config
+            })
+    def test_nr_B38_20_tdd3(self):
+        tdd_config = "DDDSUUUUDD (5ms,   5DL/4UL), S-slot=6DL:4GP:4UL, balanced downlink and uplink"
+        self.check_ue_connect(True, 'B38', 'TDD', 20, freq=2603,
+            enb_params={"cell1": {
+                "tdd_ul_dl_config": tdd_config
+                }}, check={
+                "RADIO.tdd-ul-dl-config": tdd_config
+            })
+    def test_nr_B38_20_tdd4(self):
+        tdd_config = "DDDSUUUUUU (5ms,   3DL/6UL), S-slot=2DL:2GP:10UL, high uplink"
+        self.check_ue_connect(True, 'B38', 'TDD', 20, freq=2604,
+            enb_params={"cell1": {
+                "tdd_ul_dl_config": tdd_config
+                }}, check={
+                "RADIO.tdd-ul-dl-config": tdd_config
+            })
+    def test_nr_B38_20_tdd5(self):
+        tdd_config = "DDSUUUUUUU (5ms,   2DL/7UL), S-slot=6DL:4GP:4UL, EXPERIMENTAL very high uplink"
+        self.check_ue_connect(True, 'B38', 'TDD', 20, freq=2605,
+            enb_params={"cell1": {
+                "tdd_ul_dl_config": tdd_config
+                }}, check={
+                "RADIO.tdd-ul-dl-config": tdd_config
+            })
+    def test_nr_B38_20_tdd6(self):
+        tdd_config = "DSUUUUUUUU (5ms,   1DL/8UL), S-slot=10DL:2GP:2UL, EXPERIMENTAL maximum uplink"
+        self.check_ue_connect(True, 'B38', 'TDD', 20, freq=2606,
+            enb_params={"cell1": {
+                "tdd_ul_dl_config": tdd_config
+                }}, check={
+                "RADIO.tdd-ul-dl-config": tdd_config
+            })
+    def test_nr_B38_20_tdd7(self):
+        tdd_config = "DDDSU      (2.5ms, 2DL/2UL), S-slot=6DL:4GP:4UL, reduced latency, balanced downlink and uplink"
+        self.check_ue_connect(True, 'B38', 'TDD', 20, freq=2607,
+            enb_params={"cell1": {
+                "tdd_ul_dl_config": tdd_config
+                }}, check={
+                "RADIO.tdd-ul-dl-config": tdd_config
+            },
+            ue_params={"rx_to_tx_latency": 2})
+    def test_nr_B38_20_tdd8(self):
+        tdd_config = "DSUUU      (2.5ms, 1DL/3UL), S-slot=6DL:4GP:4UL, reduced latency, high uplink, no TRS"
+        self.check_ue_connect(True, 'B38', 'TDD', 20, freq=2608,
+            enb_params={"cell1": {
+                "tdd_ul_dl_config": tdd_config
+                }}, check={
+                "RADIO.tdd-ul-dl-config": tdd_config
+            },
+            ue_params={"rx_to_tx_latency": 2})
+    def test_nr_B38_20_tdd9(self):
+        tdd_config = "DSUUU      (2.5ms, 1DL/3UL), S-slot=9DL:4GP:1UL, reduced latency, high uplink"
+        self.check_ue_connect(True, 'B38', 'TDD', 20, freq=2609,
+            enb_params={"cell1": {
+                "tdd_ul_dl_config": tdd_config
+                }}, check={
+                "RADIO.tdd-ul-dl-config": tdd_config
+            },
+            ue_params={"rx_to_tx_latency": 2})
+    def test_nr_B38_20_tdd10(self):
+        tdd_config = "DS         (1ms, 1DL/0UL), S-slot=0DL:2GP:12UL, minimum latency, balanced downlink and uplink, no TRS"
+        self.check_ue_connect(True, 'B38', 'TDD', 20, freq=2610,
+            enb_params={"cell1": {
+                "tdd_ul_dl_config": tdd_config,
+                "mcs_table_ul": "qam64",
+                "mcs_table_dl": "qam64",
+                }}, check={
+                "RADIO.tdd-ul-dl-config": tdd_config
+            },
+            ue_params={"rx_to_tx_latency": 3})
+
+    def test_lte_B38_3(self):
+        self.check_ue_connect(False, 'B38', 'TDD', 3, freq=2572)
+    def test_lte_B38_5(self):
+        self.check_ue_connect(False, 'B38', 'TDD', 5, freq=2573)
+    def test_lte_B38_15(self):
+        self.check_ue_connect(False, 'B38', 'TDD', 15, freq=2578)
+    def test_lte_B38_20(self):
+        self.check_ue_connect(False, 'B38', 'TDD', 20, freq=2580)
+
+    def test_nr_B28_3(self):
+        self.check_ue_connect(True, 'B28', 'FDD', 3, freq=780,
+            enb_params={"cell1": {"ssb_pos_bitmap": "0100"}})
+    def test_nr_B28_5(self):
+        self.check_ue_connect(True, 'B28', 'FDD', 5, freq=781)
+    def test_nr_B38_10(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 10, freq=2575)
+    def test_nr_B38_15(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 15, freq=2578)
+    def test_nr_B38_25(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 25, freq=2583)
+    def test_nr_B38_30(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 30, freq=2585)
+    def test_nr_B38_35(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 35, freq=2588)
+    def test_nr_B38_40(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 40, freq=2590)
+    def test_nr_B38_45(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 45, freq=2593)
+    def test_nr_B38_50(self):
+        self.check_ue_connect(True, 'B38', 'TDD', 50, freq=2595)
+
     def test_lte_B28_10(self):
         self.check_ue_connect(False, 'B28', 'FDD', 10)
     def test_lte_B38_10(self):
@@ -562,7 +715,7 @@ class ORSTest(WebsocketTestClass):
     def test_nr_B43_20(self):
         self.check_ue_connect(True, 'B43', 'TDD', 20)
     def test_nr_N79_20(self):
-        self.check_ue_connect(True, 'N79', 'TDD', 20, ssb=719712)
+        self.check_ue_connect(True, 'N79', 'TDD', 20)
 
     # TODO: uncomment these tests
     #def test_max_rx_sample_db(self):
