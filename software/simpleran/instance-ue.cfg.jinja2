@@ -85,9 +85,11 @@ ue-radio-log = ${directory:log}/ue.log
 ue-start-date = ${directory:run}/enb-start.date
 inline =
   #!/bin/sh
+{%- if not amarisoft['mock'] %}
   sudo {{ amarisoft['dir'] }}/rm-tmp-lte ue | true;
   sudo -n {{ amarisoft['dir'] }}/init-sdr {{ amarisoft['dir'] }}/v{{ amarisoft['version'] }};
   sudo -n {{ amarisoft['dir'] }}/init-ue;
+{%- endif %}
   stat ${:ue-start-date} && mv ${:ue-radio-log} ${directory:log}/ue-$(cat ${:ue-start-date}).log
   rm -f $(ls -1t ${directory:log}/ue-2* | tail -n+50)
   date +"%Y-%m-%d-%T" > ${:ue-start-date}

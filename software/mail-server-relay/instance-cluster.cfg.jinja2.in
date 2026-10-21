@@ -78,10 +78,6 @@ software-type = {{ config.get('software-type') or 'relay' }}
 config-fqdn = {{ dumps(relay_fqdn) }}
 {%- endif %}
 
-{% if config.get('custom-inbound-certificate') -%}
-config-custom-inbound-certificate = {{ dumps(config['custom-inbound-certificate']) }}
-{%- endif %}
-
 {% for key, value in config.get('config', {}).items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
@@ -123,26 +119,6 @@ errors = $${validate-proxy-map:errors}
 # Shared instances (domains)
 # ----------------------------
 
-[macro.sys-path-add-egg]
-recipe = slapos.recipe.build
-eggs = $${missing_option_eggs:error}
-egg-paths =
-  $${buildout:develop-eggs-directory}
-  $${buildout:eggs-directory}
-init =
-  import zc.buildout
-  import pkg_resources
-  zc.buildout.easy_install.install(
-    [e.strip() for e in options['eggs'].splitlines()],
-    dest=None,
-    working_set=pkg_resources.working_set,
-    path=[p.strip() for p in options['egg-paths'].splitlines()]
-  )
-
-[sys-path-add-dnspython]
-<= macro.sys-path-add-egg
-eggs = dnspython
-
 [filter-shared-instances]
 recipe = slapos.recipe.build
 # JSON store for mapping domain -> shared reference
@@ -152,7 +128,8 @@ target = $${directory:etc}/relay-domains.json
 shared-list = $${slap-configuration:valid-shared-instance-list}
 cluster-fqdns = $${cluster-mx:fqdn-list}
 domain-to-proxy = $${validate-proxy-map:domain-to-proxy}
-depends = $${sys-path-add-dnspython:recipe}
+setup-eggs =
+  dnspython
 init =
   import json
   import secrets

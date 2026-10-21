@@ -184,10 +184,12 @@ radio-log = ${directory:log}/enb.log
 start-date = ${directory:run}/enb-start.date
 inline =
   #!/bin/sh
+{%- if not amarisoft['mock'] %}
   # Amarisoft init scripts
   sudo -n {{ amarisoft['dir'] }}/rm-tmp-lte enb
   sudo -n {{ amarisoft['dir'] }}/init-sdr {{ amarisoft['binary_dir'] }};
   sudo -n {{ amarisoft['dir'] }}/init-enb
+{%- endif %}
   # Print hardware and software info in info-log
   cat >> ${:info-log} << EOF
 
