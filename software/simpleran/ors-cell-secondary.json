@@ -4,24 +4,21 @@
   "type": "object",
   "properties": {
     "fixed_mcs_uplink": {
-      "title": "Expert only: Fixed MCS for Uplink",
+      "title": "Fixed MCS for Uplink",
       "description": "Forces PUSCH MCS (range 0 to 28). The MCS Table used is qam256",
       "type": "number"
     },
     "fixed_mcs_downlink": {
-      "title": "Expert only: Fixed MCS for Downlink",
+      "title": "Fixed MCS for Downlink",
       "description": "Forces PDSCH MCS (range 0 to 28). The MCS Table used is qam256",
       "type": "number"
     },
     "phr_link_adaptation": {
       "$ref": "cell/common.json#/properties/phr_link_adaptation"
     },
-    "ignore_gbr_congestion": {
-      "$ref": "cell/common.json#/properties/ignore_gbr_congestion"
-    },
     "tx_power_offset": {
-      "title": "Expert only: TX Power Offset",
-      "description": "Expert only. Offset between Amarisoft SDR50 board power and ORS power. For fine tuning the reference signal power value. Default depends on ORS frequency, please refer to the connection parameters",
+      "title": "TX Power Offset",
+      "description": "Offset between Amarisoft SDR50 board power and ORS power. For fine tuning the reference signal power value. Default depends on ORS frequency, please refer to the connection parameters",
       "type": "number"
     }
   }

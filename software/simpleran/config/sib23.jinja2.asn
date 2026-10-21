@@ -238,11 +238,11 @@
                 numberOfRA-Preambles n52
               },
               powerRampingParameters {
-                powerRampingStep dB{{ cell.advanced_parameter.prach_power_ramping_step }},
-                preambleInitialReceivedTargetPower dBm{{ cell.advanced_parameter.prach_preamble_received_target_power }}
+                powerRampingStep dB2,
+                preambleInitialReceivedTargetPower dBm-104
               },
               ra-SupervisionInfo {
-                preambleTransMax n{{ cell.advanced_parameter.prach_preamble_trans_max }},
+                preambleTransMax n10,
                 ra-ResponseWindowSize sf10,
                 mac-ContentionResolutionTimer sf40
               },
@@ -294,9 +294,9 @@
               ackNackSRS-SimultaneousTransmission TRUE
             },
             uplinkPowerControlCommon {
-              p0-NominalPUSCH {{ cell.advanced_parameter.pusch_p0_nominal }},
+              p0-NominalPUSCH -85,
               alpha al1,
-              p0-NominalPUCCH {{ cell.advanced_parameter.pucch_p0_nominal }},
+              p0-NominalPUCCH -96,
               deltaFList-PUCCH {
                 deltaF-PUCCH-Format1 deltaF0,
                 deltaF-PUCCH-Format1b deltaF3,
@@ -322,16 +322,16 @@
           timeAlignmentTimerCommon infinity
 {%-   elif cell.cell_type == 'nr' %}
           cellReselectionInfoCommon {
-            q-Hyst dB{{ cell.advanced_parameter.q_hyst }}
+            q-Hyst dB3
           },
           cellReselectionServingFreqInfo {
             threshServingLowP 0,
-            cellReselectionPriority {{ cell.advanced_parameter.cell_reselection_priority }}
+            cellReselectionPriority 6
           },
           intraFreqCellReselectionInfo {
             q-RxLevMin -70,
-            s-IntraSearchP {{ cell.advanced_parameter.s_intra_search }},
-            t-ReselectionNR {{ cell.advanced_parameter.t_reselection_nr }},
+            s-IntraSearchP 31,
+            t-ReselectionNR 1,
             smtc {
               periodicityAndOffset sf20: 0,
               duration sf1
@@ -344,20 +344,20 @@
 {%-   if cell.cell_type == 'lte' %}
         , sib3: {
           cellReselectionInfoCommon {
-            q-Hyst dB{{ cell.advanced_parameter.q_hyst }}
+            q-Hyst dB2
           },
           cellReselectionServingFreqInfo {
             s-NonIntraSearch 3,
             threshServingLow 2,
-            cellReselectionPriority {{ cell.advanced_parameter.cell_reselection_priority }}
+            cellReselectionPriority 6
           },
           intraFreqCellReselectionInfo {
             q-RxLevMin -61,
             p-Max 23,
-            s-IntraSearch {{ cell.advanced_parameter.s_intra_search }},
+            s-IntraSearch 5,
             presenceAntennaPort1 TRUE,
             neighCellConfig '01'B,
-            t-ReselectionEUTRA {{ cell.advanced_parameter.t_reselection_eutra }}
+            t-ReselectionEUTRA 1
           }
         }
 {%-   endif %}
