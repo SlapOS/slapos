@@ -209,7 +209,7 @@ class E2ETestCase(SlapOSInstanceTestCase):
         software_release=cls.servedSoftwareURL(EMAIL_SR),
         partition_reference=mail,
         partition_parameter_kw=serialize(parameters),
-        filter_kw={'instance_guid': mailserver.getId()}, # works for slapproxy
+        filter_kw={'instance_guid': mailserver.getInstanceGuid()},
         shared=True,
         software_type='default',
         state=state,
