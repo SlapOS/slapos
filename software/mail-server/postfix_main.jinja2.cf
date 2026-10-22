@@ -116,5 +116,10 @@ bogofilter_destination_recipient_limit = 1
 smtpd_client_restrictions =
   permit_sasl_authenticated
   check_client_access static:{ FILTER bogofilter:bogofilter }
+# The SMTP server uses a cleanup service with these header checks. They remove
+# all X-Bogosity headers of received mail, so that the only X-Bogosity header
+# is the one that bogofilter adds. Bogofilter sends mail back through pickup
+# and the default cleanup service, which keeps the header.
+bogofilter_header_checks = regexp:{ {/^X-Bogosity:/ IGNORE} }
 {%- endif %}
 

@@ -26,6 +26,8 @@
 ##############################################################################
 
 import os
+import re
+import subprocess
 import imaplib
 import json
 import smtplib
@@ -78,6 +80,7 @@ class PostfixTestCase(SlapOSInstanceTestCase):
           "mail-domains": [
             "example.com",
             "bogofilter-test.example.com",
+            "bogofilter-training.example.com",
           ],
           "inbound-relay": {"enable": False},
           "test-account": True,  # Enable test account creation
@@ -422,6 +425,206 @@ class PostfixTestCase(SlapOSInstanceTestCase):
       )
     ))
 
+
+  @contextmanager
+  def _imap(self, address, password="password123"):
+    parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()["_"]
+    )
+    imap = imaplib.IMAP4(
+      parameter_dict["imap-smtp-ipv6"], int(parameter_dict["imap-port"]),
+      timeout=10)
+    try:
+      imap.starttls(ssl_context=self._get_ssl_context())
+      imap.login(address, password)
+      yield imap
+    finally:
+      try:
+        imap.logout()
+      except Exception:
+        pass
+
+  def _find_message(self, imap, mailbox, subject, timeout=0):
+    """Return the UID of the message with subject in mailbox, or None.
+
+    Wait up to timeout seconds for the message to arrive.
+    """
+    deadline = time.time() + timeout
+    while True:
+      result, _ = imap.select(mailbox)
+      self.assertEqual(result, "OK")
+      result, data = imap.uid("SEARCH", None, '(HEADER Subject "%s")' % subject)
+      self.assertEqual(result, "OK")
+      uid_list = data[0].split()
+      self.assertLessEqual(len(uid_list), 1)
+      if uid_list or time.time() >= deadline:
+        return uid_list[0] if uid_list else None
+      time.sleep(1)
+
+  def _get_flags(self, imap, mailbox, subject):
+    uid = self._find_message(imap, mailbox, subject)
+    self.assertIsNotNone(uid, "%r not found in %s" % (subject, mailbox))
+    result, data = imap.uid("FETCH", uid, "(FLAGS)")
+    self.assertEqual(result, "OK")
+    return imaplib.ParseFlags(data[0]) if data[0] else ()
+
+  def _move(self, imap, source, destination, subject):
+    uid = self._find_message(imap, source, subject)
+    self.assertIsNotNone(uid, "%r not found in %s" % (subject, source))
+    result, _ = imap.uid("MOVE", uid, destination)
+    self.assertEqual(result, "OK")
+
+  def _dump_bogofilter_database(self, address):
+    """Return the non-zero counts of the bogofilter database of address.
+
+    The ".MSG_COUNT" key gives the number of registered spam and ham
+    messages.
+    """
+    wordlist_path = os.path.join(
+      self.computer_partition_root_path, "bogofilter", address, "wordlist.db")
+    if not os.path.exists(wordlist_path):
+      return {}
+    with open(os.path.join(self.computer_partition_root_path,
+        "etc", "sieve", "execute", "bogofilter-learn.sh")) as f:
+      bogofilter = re.search(r"(\S+)/bin/bogofilter ", f.read()).group(1)
+    output = subprocess.check_output(
+      [bogofilter + "/bin/bogoutil", "-d", wordlist_path],
+      universal_newlines=True)
+    counts = {}
+    for line in output.splitlines():
+      token, spam, ham = line.split()[:3]
+      if token not in (".WORDLIST_VERSION", ".ENCODING") and (spam, ham) != ("0", "0"):
+        counts[token] = (int(spam), int(ham))
+    return counts
+
+  def _get_bogofilter_message_count(self, address):
+    """Return the number of spam and ham messages registered for address."""
+    return self._dump_bogofilter_database(address).get(".MSG_COUNT", (0, 0))
+
+  def test_bogofilter_trains_from_junk_moves_and_spam_verdicts(self):
+    """Moves to and from Junk train bogofilter, and so does a spam verdict.
+
+    Each message is registered in one class at most. Moving a message from
+    Junk to Trash does not train.
+    """
+    address = "testmail@bogofilter-training.example.com"
+    spam_text = (
+      "buy cheap pills now, limited offer, click here to order discount "
+      "viagra casino lottery winner")
+    ham_text = (
+      "here are the notes from the project meeting, please review the "
+      "budget and the schedule before friday")
+    self.assertEqual(self._get_bogofilter_message_count(address), (0, 0))
+
+    with self._imap(address) as imap:
+      imap.create("Junk")
+      imap.create("Trash")
+      for subject, text in (("Cheap pills offer", spam_text),
+                            ("Meeting notes", ham_text)):
+        msg = MIMEText(text)
+        msg["Subject"] = subject
+        msg["From"] = "sender@example.net"
+        msg["To"] = address
+        result, _ = imap.append("INBOX", None, None, msg.as_bytes())
+        self.assertEqual(result, "OK")
+
+      # A move to Junk registers spam
+      self._move(imap, "INBOX", "Junk", "Cheap pills offer")
+      self.assertIn(b"$BogofilterSpam",
+        self._get_flags(imap, "Junk", "Cheap pills offer"))
+      self.assertEqual(self._get_bogofilter_message_count(address), (1, 0))
+
+      # A move from Junk registers ham, also for a message that the user moved
+      # to Junk
+      self._move(imap, "INBOX", "Junk", "Meeting notes")
+      self.assertEqual(self._get_bogofilter_message_count(address), (2, 0))
+      self._move(imap, "Junk", "INBOX", "Meeting notes")
+      flags = self._get_flags(imap, "INBOX", "Meeting notes")
+      self.assertIn(b"$BogofilterHam", flags)
+      self.assertNotIn(b"$BogofilterSpam", flags)
+      self.assertEqual(self._get_bogofilter_message_count(address), (1, 1))
+      trained_database = self._dump_bogofilter_database(address)
+
+      # Moving a message back and forth does not register it again
+      self._move(imap, "INBOX", "Junk", "Meeting notes")
+      self._move(imap, "Junk", "INBOX", "Meeting notes")
+      self.assertEqual(
+        self._dump_bogofilter_database(address), trained_database)
+
+      # A move from Junk to Trash does not train
+      self._move(imap, "Junk", "Trash", "Cheap pills offer")
+      self.assertIn(b"$BogofilterSpam",
+        self._get_flags(imap, "Trash", "Cheap pills offer"))
+      self.assertEqual(
+        self._dump_bogofilter_database(address), trained_database)
+
+    # Incoming mail classified as spam is registered as spam and filed into
+    # Junk. Postfix removes the X-Bogosity header that the sender wrote.
+    parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()["_"]
+    )
+    msg = MIMEText(spam_text)
+    msg["Subject"] = "Cheap pills offer again"
+    msg["From"] = "sender@example.net"
+    msg["To"] = address
+    msg["X-Bogosity"] = "Ham, tests=bogofilter, spamicity=0.000000"
+    with smtplib.SMTP(parameter_dict["imap-smtp-ipv6"],
+        int(parameter_dict["smtp-port"]), timeout=10) as smtp:
+      smtp.starttls(context=self._get_ssl_context())
+      smtp.sendmail("sender@example.net", [address], msg.as_string())
+
+    with self._imap(address) as imap:
+      uid = self._find_message(imap, "Junk", "Cheap pills offer again",
+        timeout=30)
+      self.assertIsNotNone(uid, "Incoming spam was not filed into Junk")
+      result, data = imap.uid("FETCH", uid, "(FLAGS BODY.PEEK[HEADER])")
+      self.assertEqual(result, "OK")
+      flags = imaplib.ParseFlags(data[0][0])
+      self.assertIn(b"$BogofilterSpam", flags)
+      self.assertIn(b"\\Seen", flags)
+      bogosity_list = re.findall(
+        r"^X-Bogosity: (.*)$",
+        data[0][1].decode("utf-8", errors="replace"),
+        re.MULTILINE | re.IGNORECASE,
+      )
+      self.assertEqual(len(bogosity_list), 1, bogosity_list)
+      self.assertTrue(bogosity_list[0].startswith("Spam,"), bogosity_list)
+      self.assertEqual(self._get_bogofilter_message_count(address), (2, 1))
+      delivered_database = self._dump_bogofilter_database(address)
+
+      # Moving the message from Junk and back restores the database exactly
+      self._move(imap, "Junk", "INBOX", "Cheap pills offer again")
+      self.assertEqual(self._get_bogofilter_message_count(address), (1, 2))
+      self._move(imap, "INBOX", "Junk", "Cheap pills offer again")
+      self.assertEqual(
+        self._dump_bogofilter_database(address), delivered_database)
+
+  def test_bogofilter_header_removed_from_authenticated_mail(self):
+    """A sender cannot give its own X-Bogosity header to a local user."""
+    parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()["_"]
+    )
+    address = "testmail@example.com"
+    subject = "Forged bogosity %s" % time.time()
+    database = self._dump_bogofilter_database(address)
+    msg = MIMEText("A message with a forged X-Bogosity header")
+    msg["Subject"] = subject
+    msg["From"] = address
+    msg["To"] = address
+    msg["X-Bogosity"] = "Spam, tests=bogofilter, spamicity=1.000000"
+    with smtplib.SMTP(parameter_dict["imap-smtp-ipv6"],
+        int(parameter_dict["smtp-port"]), timeout=10) as smtp:
+      smtp.starttls(context=self._get_ssl_context())
+      smtp.login(address, "password123")
+      smtp.sendmail(address, [address], msg.as_string())
+
+    with self._imap(address) as imap:
+      uid = self._find_message(imap, "INBOX", subject, timeout=30)
+      self.assertIsNotNone(uid, "Authenticated mail was not delivered to INBOX")
+      result, data = imap.uid("FETCH", uid, "(BODY.PEEK[HEADER])")
+      self.assertEqual(result, "OK")
+      self.assertNotIn(b"x-bogosity", data[0][1].lower())
+    self.assertEqual(self._dump_bogofilter_database(address), database)
 
 class OrsTestCase(SlapOSInstanceTestCase):
   __partition_reference__ = 'ors'
