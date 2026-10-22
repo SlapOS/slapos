@@ -161,11 +161,7 @@
 {%- if pdn.get('ims') %}
       p_cscf_addr: ["{{ pdn.ipv4 }}", "{{ pdn.ipv6_start }}"],
 {%- endif %}
-{%- if pdn.get('local_domain', '') %}
-      dns_addr: ["{{ default_pdn.ipv4 }}"],
-{%- else %}
       dns_addr: ["8.8.8.8", "2001:4860:4860::8888"],
-{%- endif %}
       erabs: [
         {
           qci: {{ pdn.qci }},
