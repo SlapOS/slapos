@@ -96,9 +96,6 @@
     "configured_grant": {
       "$ref": "cell/nr/input-schema.json#/properties/configured_grant"
     },
-    "redcap_ue": {
-      "$ref": "cell/nr/input-schema.json#/properties/redcap_ue"
-    },
     "advanced_parameter": {
       "$ref": "cell/nr/input-schema.json#/properties/advanced_parameter"
     }
