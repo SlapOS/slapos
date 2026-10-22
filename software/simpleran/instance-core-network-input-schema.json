@@ -50,12 +50,6 @@
       "description": "Activate one or multiple iperf3 UDP server",
       "type": "number"
     },
-    "local_domain": {
-      "default": "",
-      "title": "Local Domain",
-      "description": "Activates local DNS server serving the given domain name",
-      "type": "string"
-    },
     "network_name": {
       "title": "Network Name",
       "description": "Network name displayed on UE",

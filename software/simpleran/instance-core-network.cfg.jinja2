@@ -43,9 +43,6 @@ parts =
   iperf-service-{{ i }}
   iperf-{{ i }}-listen-promise
 {%-  endfor %}
-{%   if slapparameter_dict.get("local_domain", '') %}
-  dnsmasq-service
-{%   endif %}
 {% endif %}
 {% for part in part_list -%}
 {{ '  %s' % part }}
@@ -282,38 +279,6 @@ promise = check_socket_listening
 name = ims-mms-port-listening.py
 config-host = {{ slapparameter_dict.default_pdn.ipv4 }}
 config-port = 1111
-
-{% if slapparameter_dict.get("local_domain", '') %}
-[dnsmasq-config]
-recipe = slapos.recipe.template:jinja2
-url = {{dnsmasq_template}}
-filename = dnsmasq.cfg
-extensions = jinja2.ext.do
-output = ${directory:etc}/${:filename}
-context =
-  import json_module json
-  import netaddr netaddr
-  section directory directory
-  key slap_configuration myslap:slap_configuration
-  key slapparameter_dict myslap:slapparameter_dict
-
-[dnsmasq-service]
-recipe = slapos.cookbook:wrapper
-port = 5353
-ip = {{ slap_configuration['tun-ipv4-addr'] }}
-command-line = {{ dnsmasq_location }}/sbin/dnsmasq --conf-file=${dnsmasq-config:output} -x ${directory:run}/dnsmasq.pid --local-service --keep-in-foreground
-wrapper-path = ${directory:service}/dnsmasq
-mode = 0775
-hash-files =
-  ${dnsmasq-config:output}
-
-#[dnsmasq-listen-promise]
-#<= monitor-promise-base
-#promise = check_socket_listening
-#name = dnsmasq-port-listening.py
-#config-host = ${dnsmasq-service:ip}
-#config-port = ${dnsmasq-service:port}
-{% endif %}
 
 [monitor-instance-parameter]
 {% if slapparameter_dict.get("name", None) %}
