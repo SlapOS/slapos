@@ -209,7 +209,7 @@ class E2ETestCase(SlapOSInstanceTestCase):
         software_release=cls.servedSoftwareURL(EMAIL_SR),
         partition_reference=mail,
         partition_parameter_kw=serialize(parameters),
-        filter_kw={'instance_guid': mailserver.getId()}, # works for slapproxy
+        filter_kw={'instance_guid': mailserver.getInstanceGuid()},
         shared=True,
         software_type='default',
         state=state,
@@ -1455,18 +1455,8 @@ class E2E(E2ETestCase):
     with open(next_fingerprint) as f:
       tls_next_next_fingerprint = f.read().split('=', 1)[1].strip()
     # reprocess and check relay cluster and server
-    self.slapos(
-      'node', 'instance', '--only', self.relay_cluster.getId(),
-      # slapproxy does not bang on sub-instance connection parameter change
-      # but real slapos master should
-      '--force',
-    )
-    self.slapos(
-      'node', 'instance', '--only', server.getId(),
-      # slapproxy does not bang on sub-instance connection parameter change
-      # but real slapos master should
-      '--force',
-    )
+    self.slapos('node', 'instance', '--only', self.relay_cluster.getId())
+    self.slapos('node', 'instance', '--only', server.getId())
     with open(relay_clientcerts) as f:
       clientcerts = f.read()
     self.assertNotIn(tls_fingerprint, clientcerts)

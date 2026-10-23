@@ -13017,26 +13017,15 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       'origin never stopped sending %r within %ss; log: %r'
       % (path, timeout, self.origin_log))
 
-  @staticmethod
-  def _servedFromCache(headers):
-    # Trafficserver stamps `Age` on a miss too, so presence proves nothing.
-    # A non-zero value is evidence, not proof: it comes from the response
-    # `Date`, which a slow miss can age past a second.
-    return int(headers.get('age', 0)) > 0
-
-  def _assertNotFromCache(self, headers, path, message):
-    # The origin request count is what settles it where `Age` is only
-    # evidence, so a failure here has to carry both.
-    self.assertFalse(
-      self._servedFromCache(headers),
-      '%s (age %s, %s origin requests for %r)' % (
-        message, headers.get('age'), self._originRequestCount(path), path))
-
   def _waitForCacheHit(self, domain, path, timeout=60):
+    # A hit is the origin not being asked. `Age` cannot stand in for that:
+    # trafficserver derives it from the response `Date`, so a slow miss
+    # reports a non-zero age and a hit within the same second reports 0.
     deadline = time.time() + timeout
     while time.time() < deadline:
-      headers, _ = self._fetch(domain, path)
-      if self._servedFromCache(headers):
+      before = self._originRequestCount(path)
+      self._fetch(domain, path)
+      if self._originRequestCount(path) == before:
         return
       time.sleep(2)
     self.fail('%r never became a cache hit within %ss' % (path, timeout))
@@ -13059,8 +13048,6 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
 
     headers, got = self._fetch(domain, path)
     self.assertEqual(self.BODY_SIZE, got)
-    self.assertTrue(
-      self._servedFromCache(headers), 'the completed object was not cached')
     self.assertEqual(
       1, self._originRequestCount(path),
       'the origin was asked again, so nothing usable was cached')
@@ -13086,8 +13073,6 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       'bytes %d-%d/%d' % (first, last, self.BODY_SIZE),
       headers.get('content-range'))
     self.assertEqual(last - first + 1, got)
-    self.assertTrue(
-      self._servedFromCache(headers), 'the range was not served from cache')
     self.assertEqual(
       before, self._originRequestCount(path),
       'the origin was asked again for a range of an already cached object')
@@ -13104,11 +13089,9 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       'the frontend went back to the origin for a body that broke mid-response')
 
     headers, got = self._fetch(domain, path)
-    self._assertNotFromCache(
-      headers, path, 'the truncated body was served from cache')
     self.assertEqual(
       2, self._originRequestCount(path),
-      'the frontend kept the partial instead of fetching again')
+      'the frontend kept the truncated body instead of fetching again')
 
   def test_stalled_response_with_length_is_not_cached(self):
     domain = self.parseSlaveParameterDict('bigfile-stall')['domain']
@@ -13120,12 +13103,10 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
     self.assertEqual(1, self._originRequestCount(path))
 
     headers, got = self._fetch(domain, path)
-    self._assertNotFromCache(
-      headers, path,
-      'a response cut short by the backend timeout was served from cache')
     self.assertEqual(
       2, self._originRequestCount(path),
-      'the frontend kept the partial instead of fetching again')
+      'the frontend served a response cut short by the backend timeout '
+      'instead of fetching again')
 
   def test_barely_started_download_is_completed_in_cache(self):
     domain = self.parseSlaveParameterDict('bigfile')['domain']
@@ -13145,9 +13126,9 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
 
     headers, got = self._fetch(domain, path)
     self.assertEqual(self.BODY_SIZE, got)
-    self.assertTrue(
-      self._servedFromCache(headers), 'the completed object was not cached')
-    self.assertEqual(1, self._originRequestCount(path))
+    self.assertEqual(
+      1, self._originRequestCount(path),
+      'the origin was asked again, so the completed object was not cached')
 
   def test_aborted_download_without_lifetime_is_not_cached(self):
     domain = self.parseSlaveParameterDict('bigfile')['domain']
@@ -13164,7 +13145,6 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
       % (self.BODY_SIZE,))
 
     headers, got = self._fetch(domain, path, abort_at=self.ABORT_AT)
-    self._assertNotFromCache(headers, path, 'an uncacheable body was cached')
     self.assertEqual(
       2, self._originRequestCount(path),
       'the origin was not asked again for an uncacheable body')
@@ -13286,8 +13266,9 @@ class TestBigFileCache(SlaveHttpFrontendTestCase, AtsMixin):
                           self.BODY_SIZE),
       headers.get('content-range'))
     self.assertEqual(1048576, got)
-    self.assertTrue(self._servedFromCache(headers))
-    self.assertEqual(before, self._originRequestCount(path))
+    self.assertEqual(
+      before, self._originRequestCount(path),
+      'the origin was asked again for a suffix range already cached')
 
   def test_multi_range_of_cached_object_is_served_from_cache(self):
     domain = self.parseSlaveParameterDict('bigfile')['domain']

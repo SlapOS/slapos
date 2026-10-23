@@ -29,8 +29,7 @@ parts =
 {% if slapparameter_dict['bogofilter']['enable'] %}
   bogofilter-directory
   bogofilter-scan-script
-  bogofilter-learn-spam-script
-  bogofilter-learn-ham-script
+  bogofilter-learn-script
   bogofilter-sieve-spam-filter
   bogofilter-sieve-report-spam
   bogofilter-sieve-report-ham
@@ -250,7 +249,7 @@ context =
   key demo_disable_auth :demo-disable-auth
 {% if slapparameter_dict['bogofilter']['enable'] %}
   key sieve_before bogofilter-directory:sieve-before
-  key sieve_pipe_bin_dir bogofilter-directory:sieve-pipe
+  key sieve_execute_bin_dir bogofilter-directory:sieve-execute
   key sieve_report_spam bogofilter-sieve-report-spam:output
   key sieve_report_ham bogofilter-sieve-report-ham:output
 {% endif %}
@@ -765,25 +764,31 @@ name = policyd_rate_limit_listening.py
 config-pathname = $${directory:run}/policyd-rate-limit.sock
 
 {% if slapparameter_dict['bogofilter']['enable'] %}
-# Bogofilter spam filter (per-user, with sieve + imapsieve retraining)
+# Bogofilter spam filter (per-user, with sieve + imapsieve training)
 # Based on: https://www.owlfish.com/thoughts/dovecot-bogofilter-antispam-2017-01-28.html
 # ----------------------------------------------------------------------------
 #
 # Architecture:
-#   1. Postfix pipes incoming (non-authenticated) mail through bogofilter
-#      via smtpd_client_restrictions + FILTER action. Per-user bogofilter
+#   1. Postfix removes X-Bogosity headers from all mail received over SMTP.
+#      Postfix then pipes incoming (non-authenticated) mail through
+#      bogofilter via smtpd_client_restrictions + FILTER action. Bogofilter
+#      adds the X-Bogosity header and does not train. Per-user bogofilter
 #      databases (auto-created on first message).
-#   2. Dovecot sieve filter (sieve_before) checks X-Bogosity header and
-#      files spam into the Junk folder, marking it as read.
-#   3. Dovecot imapsieve triggers retraining when users move messages
-#      to/from Junk via IMAP.
+#   2. Dovecot sieve filter (sieve_before) registers mail classified as spam
+#      as spam, and files it into the Junk folder, marked as read.
+#   3. Dovecot imapsieve trains when users move messages to/from Junk via
+#      IMAP: a move to Junk registers spam, and a move from Junk registers
+#      ham. A move from Junk to Trash does not train.
+#   The $$BogofilterSpam and $$BogofilterHam IMAP keywords record the class of
+#   each message in the database, so that each message is registered in one
+#   class at most.
 
 [bogofilter-directory]
 recipe = slapos.cookbook:mkdirectory
 spool = $${directory:home}/bogofilter
 sieve = $${directory:etc}/sieve
 sieve-before = $${:sieve}/before
-sieve-pipe = $${:sieve}/pipe
+sieve-execute = $${:sieve}/execute
 
 [bogofilter-scan-script]
 recipe = slapos.recipe.template
@@ -803,43 +808,51 @@ inline =
   RECIPIENT="$$3"
   MAIL_CONFIG=$${postfix-directory:etc} ; export MAIL_CONFIG
   mkdir -p "$$BOGODIR"
-  ${bogofilter:location}/bin/bogofilter -e -u -p -l -d "$$BOGODIR" \
+  # Without a database, bogofilter fails to classify. Create an empty one.
+  [ -e "$$BOGODIR/wordlist.db" ] || \
+    ${bogofilter:location}/bin/bogoutil -l "$$BOGODIR/wordlist.db" < /dev/null
+  ${bogofilter:location}/bin/bogofilter -e -p -l -d "$$BOGODIR" \
     | ${postfix:location}/usr/sbin/sendmail -G -i -f "$$SENDER" "$$RECIPIENT"
   exit $$?
 
-[bogofilter-learn-spam-script]
+[bogofilter-learn-script]
 recipe = slapos.recipe.template
-output = $${bogofilter-directory:sieve-pipe}/bogofilter-learn-spam.sh
+output = $${bogofilter-directory:sieve-execute}/bogofilter-learn.sh
 mode = 755
 inline =
   #!/bin/sh
-  # Called by imapsieve when a message is moved TO the Junk folder.
+  # Called by sieve to register the message on standard input in the
+  # bogofilter database of a user.
+  # Arg 1: user name
+  # Arg 2: class of the message in the database: "none", "spam" or "ham"
+  # Arg 3: new class of the message: "spam" or "ham"
   USER=$$(printf '%s' "$$1" | tr '[:upper:]' '[:lower:]')
   BOGODIR="$${bogofilter-directory:spool}/$$USER"
+  case "$$2,$$3" in
+    none,spam) OPTIONS=-s ;;
+    none,ham) OPTIONS=-n ;;
+    ham,spam) OPTIONS=-Ns ;;
+    spam,ham) OPTIONS=-Sn ;;
+    *) exit 1 ;;
+  esac
   mkdir -p "$$BOGODIR"
-  ${bogofilter:location}/bin/bogofilter -e -Ns -d "$$BOGODIR"
-
-[bogofilter-learn-ham-script]
-recipe = slapos.recipe.template
-output = $${bogofilter-directory:sieve-pipe}/bogofilter-learn-ham.sh
-mode = 755
-inline =
-  #!/bin/sh
-  # Called by imapsieve when a message is moved FROM the Junk folder.
-  USER=$$(printf '%s' "$$1" | tr '[:upper:]' '[:lower:]')
-  BOGODIR="$${bogofilter-directory:spool}/$$USER"
-  mkdir -p "$$BOGODIR"
-  ${bogofilter:location}/bin/bogofilter -e -Sn -d "$$BOGODIR"
+  exec ${bogofilter:location}/bin/bogofilter $$OPTIONS -d "$$BOGODIR"
 
 [bogofilter-sieve-spam-filter]
 recipe = slapos.recipe.template
 output = $${bogofilter-directory:sieve-before}/spam-folder.sieve
 mode = 644
 inline =
-  require ["regex", "fileinto", "imap4flags"];
-  if header :regex "X-Bogosity" "^(Spam)" {
-    setflag "\\Seen";
-    fileinto "Junk";
+  require ["regex", "fileinto", "mailbox", "imap4flags", "envelope", "variables", "vnd.dovecot.execute"];
+  if header :regex "X-Bogosity" "^Spam" {
+    if envelope :matches "to" "*" {
+      set "user" "{{ '$' }}{{ '$' }}{1}";
+    }
+    if execute :pipe "bogofilter-learn.sh" ["{{ '$' }}{{ '$' }}{user}", "none", "spam"] {
+      addflag "$$BogofilterSpam";
+    }
+    addflag "\\Seen";
+    fileinto :create "Junk";
     stop;
   }
 
@@ -848,22 +861,46 @@ recipe = slapos.recipe.template
 output = $${bogofilter-directory:sieve}/report-spam.sieve
 mode = 644
 inline =
-  require ["vnd.dovecot.pipe", "copy", "imapsieve", "environment", "variables"];
+  require ["vnd.dovecot.execute", "imapsieve", "environment", "variables", "imap4flags"];
+  if hasflag "$$BogofilterSpam" {
+    stop;
+  }
   if environment :matches "imap.user" "*" {
     set "user" "{{ '$' }}{{ '$' }}{1}";
   }
-  pipe :copy "bogofilter-learn-spam.sh" ["{{ '$' }}{{ '$' }}{user}"];
+  set "class" "none";
+  if hasflag "$$BogofilterHam" {
+    set "class" "ham";
+  }
+  if execute :pipe "bogofilter-learn.sh" ["{{ '$' }}{{ '$' }}{user}", "{{ '$' }}{{ '$' }}{class}", "spam"] {
+    removeflag "$$BogofilterHam";
+    addflag "$$BogofilterSpam";
+  }
 
 [bogofilter-sieve-report-ham]
 recipe = slapos.recipe.template
 output = $${bogofilter-directory:sieve}/report-ham.sieve
 mode = 644
 inline =
-  require ["vnd.dovecot.pipe", "copy", "imapsieve", "environment", "variables"];
+  require ["vnd.dovecot.execute", "imapsieve", "environment", "variables", "imap4flags"];
+  # Deleting a message from Junk moves it to Trash. That is not a ham report.
+  if environment "imap.mailbox" "Trash" {
+    stop;
+  }
+  if hasflag "$$BogofilterHam" {
+    stop;
+  }
   if environment :matches "imap.user" "*" {
     set "user" "{{ '$' }}{{ '$' }}{1}";
   }
-  pipe :copy "bogofilter-learn-ham.sh" ["{{ '$' }}{{ '$' }}{user}"];
+  set "class" "none";
+  if hasflag "$$BogofilterSpam" {
+    set "class" "spam";
+  }
+  if execute :pipe "bogofilter-learn.sh" ["{{ '$' }}{{ '$' }}{user}", "{{ '$' }}{{ '$' }}{class}", "ham"] {
+    removeflag "$$BogofilterSpam";
+    addflag "$$BogofilterHam";
+  }
 
 {% endif %}
 
