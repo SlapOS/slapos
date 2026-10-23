@@ -29,6 +29,7 @@ SlapOS Master sent. The CDN instance node and its database do not change
 this list. The master partition checks each slave against the JSON schema
 and writes the result in the database for the CDN instance node. The next
 run of ``slapos node instance`` removes a destroyed slave.
+(`!2195 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2195>`__)
 
 The master partition waits for the key download URL of every slave
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -39,6 +40,17 @@ kedifa partition has no real key download URL for a slave. While the
 promise fails, slapgrid processes the master partition on each run. The
 master partition then gives the new URLs to the frontend partitions. The
 anomaly promise asks the cluster to heal after five failures.
+(`!2195 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2195>`__)
+
+Security updates of the served-traffic components
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The Software Release ships openssl 3.5.9, pcre2 10.49 (used by haproxy),
+nginx 1.31.6 with libexpat 2.9.0 and libxml2 2.15.4, xz-utils 5.8.4 and
+curl 8.22.0, all with security fixes. haproxy and trafficserver are
+unchanged.
+(`73026ac51 <https://lab.nexedi.com/nexedi/slapos/-/commit/73026ac51af0f09a2cd5866c5b7fea861d5eebf3>`__, `05a67e80f <https://lab.nexedi.com/nexedi/slapos/-/commit/05a67e80f39ecee46fc29b45d7cfb31c6601fe6a>`__, `f4bccf387 <https://lab.nexedi.com/nexedi/slapos/-/commit/f4bccf3874e626530d463bcb2e92cc0eb3d252a9>`__, `4dc03c20f <https://lab.nexedi.com/nexedi/slapos/-/commit/4dc03c20f29f7d4fa533064b8ed98e4a8cf881a8>`__, `050b19857 <https://lab.nexedi.com/nexedi/slapos/-/commit/050b19857d15ff54bb7bdd223dc2ffcba9bb5a12>`__, `7b22caaa6 <https://lab.nexedi.com/nexedi/slapos/-/commit/7b22caaa651cfb5198a56a45ae649c7595b480bb>`__, `6d0729535 <https://lab.nexedi.com/nexedi/slapos/-/commit/6d072953576660ffe42cb7d63389715d3d10ceb7>`__)
 
 1.0.506 (2026-08-24)
 --------------------
