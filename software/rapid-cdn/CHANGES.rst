@@ -15,10 +15,10 @@ Releases
    :depth: 1
    :backlinks: none
 
-Unreleased
+1.0.519 (2026-10-23)
 --------------------
 
-Changes on ``master`` since 1.0.506 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.506...master>`__).
+Tag `1.0.519 <https://lab.nexedi.com/nexedi/slapos/-/tags/1.0.519>`__.
 
 The cluster deploys the slave list the SlapOS Master sent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
