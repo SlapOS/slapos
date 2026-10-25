@@ -39,6 +39,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
 
 
 class TestPeerTube(SlapOSInstanceTestCase):
+  __partition_reference__ = 'pt'
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
 
