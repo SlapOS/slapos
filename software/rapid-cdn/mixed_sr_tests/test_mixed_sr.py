@@ -43,7 +43,7 @@ from slapos.grid.utils import md5digest
 from slapos.testing.testcase import installSoftwareUrlList
 
 sys.path.insert(0, os.path.abspath(
-  os.path.join(os.path.dirname(__file__), os.pardir, 'test')))
+  os.path.join(os.path.dirname(__file__), os.pardir, 'tests')))
 
 import test
 from test import CurlException, fakeHTTPSResult, subprocess_status_output
