@@ -46,7 +46,7 @@ See https://imagemagick.org/script/security-policy.php
  
    <!-- Maximum number of images permitted in a sequence. -->
 -  <!-- <policy domain="resource" name="list-length" value="32"/> -->
-+  <policy domain="resource" name="list-length" value="32"/>
++  <policy domain="resource" name="list-length" value="128"/>
  
    <!-- Maximum image width. -->
 -  <!-- <policy domain="resource" name="width" value="8KP"/> -->
