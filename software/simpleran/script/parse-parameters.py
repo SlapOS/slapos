@@ -185,7 +185,7 @@ for i in netifaces.interfaces():
 def ors_radio(config, publish, shared_list):
     """eNB / gNB / UE - ORS Specific"""
     from xlte import nrarfcn
-    from nrarfcn import tables
+    from nrarfcn.tables import get_table
     from xlte import earfcn
 
     with open(options.get('json-ors-defaults'), 'r') as f:
@@ -430,7 +430,7 @@ def ors_radio(config, publish, shared_list):
                 dl_arfcn = nrarfcn.nrarfcn(dl_frequency, nearby=True)
         if nr:
             config[c].setdefault('subcarrier_spacing', 15 if config[c]['rf_mode'] == 'fdd' else 30)
-            table = tables.applicable_nrarfcn_fr1.table_applicable_nrarfcn_fr1()
+            table = get_table('applicable_nrarfcn_fr1')
             valid_band = False
             for row in table.data:
                 if table.get_cell(row, 'band') == f'n{band}':
