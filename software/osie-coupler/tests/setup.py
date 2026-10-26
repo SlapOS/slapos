@@ -47,5 +47,4 @@ setup(
         'erp5.util',
     ],
     zip_safe=True,
-    test_suite='test',
 )

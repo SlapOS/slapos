@@ -50,5 +50,4 @@ setup(name=name,
           'psutil',
       ],
       zip_safe=True,
-      test_suite='test',
       )

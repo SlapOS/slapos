@@ -47,5 +47,4 @@ setup(
         'websocket-client',
     ],
     zip_safe=True,
-    test_suite='test',
 )

@@ -47,5 +47,4 @@ setup(
         'uritemplate',
     ],
     zip_safe=True,
-    test_suite='test',
 )

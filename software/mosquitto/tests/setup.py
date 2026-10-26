@@ -24,5 +24,4 @@ setup(
 	"paho-mqtt",
     ],
     zip_safe=True,
-    test_suite="test",
 )

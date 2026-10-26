@@ -52,5 +52,4 @@ setup(name=name,
         'pexpect',
         'pyOpenSSL',
       ],
-      test_suite='test',
     )

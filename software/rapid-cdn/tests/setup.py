@@ -55,5 +55,4 @@ setup(name=name,
         'cryptography',
       ],
       zip_safe=True,
-      test_suite='test',
       )

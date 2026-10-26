@@ -45,5 +45,4 @@ setup(name=name,
         'supervisor',
         'slapos.libnetworkcache',
       ],
-      test_suite='test',
     )

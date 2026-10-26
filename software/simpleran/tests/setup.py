@@ -50,5 +50,4 @@ setup(
         'netaddr'
     ],
     zip_safe=True,
-    test_suite='test',
 )

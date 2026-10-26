@@ -49,5 +49,4 @@ setup(name=name,
         'requests',
         ],
       zip_safe=True,
-      test_suite='test',
     )

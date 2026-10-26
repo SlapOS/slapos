@@ -49,5 +49,4 @@ setup(
     "pypdf",
   ],
   zip_safe=True,
-  test_suite="test",
 )
