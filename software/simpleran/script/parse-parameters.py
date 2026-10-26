@@ -525,6 +525,8 @@ def ors_radio(config, publish, shared_list):
             publish['radio'].setdefault('bandwidth', {})[c] = f"{config[c]['nr_bandwidth']} MHz"
             if sr_type in ['enb', 'gnb', 'enb-gnb']:
                 publish['radio'].setdefault('ssb-pos-bitmap', {})[c] = config[c]['ssb_pos_bitmap']
+            # This will get updated by amarisoft-wrapper.py
+            publish['radio'].setdefault('ssb-nr-arfcn', {})[c] = '__SSB_NR_ARFCN__'
         elif config[c]['cell_type'] in ['eNB', 'NB']:
             publish['radio'].setdefault('dl-earfcn', {})[c] = dl_arfcn
             publish['radio'].setdefault('ul-earfcn', {})[c] = ul_arfcn
@@ -620,7 +622,7 @@ def ors_radio(config, publish, shared_list):
                     'gnb_id_bits': config['gnb_id_bits'],
                     'dl_nr_arfcn': dl_arfcn,
                     'nr_band': band,
-                    'ssb_nr_arfcn': f'CELL{i}_SSB_NR_ARFCN',
+                    'ssb_nr_arfcn': f'CELL{i}__SSB_NR_ARFCN__',
                     'ul_nr_arfcn': ul_arfcn,
                     'pci': config[c]['pci'],
                     'tac': config['plmn_list_5g'][0]['tac'],
