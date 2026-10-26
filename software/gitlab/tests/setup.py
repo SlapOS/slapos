@@ -49,5 +49,4 @@ setup(
         'beautifulsoup4'
     ],
     zip_safe=True,
-    test_suite='test',
 )

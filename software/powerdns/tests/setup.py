@@ -50,5 +50,4 @@ setup(name=name,
           'dnspython',
       ],
       zip_safe=True,
-      test_suite='test',
       )

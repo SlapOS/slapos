@@ -55,5 +55,4 @@ setup(name=name,
         'ZEO',
         'zodburi',
       ],
-      test_suite='test',
     )

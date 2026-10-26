@@ -49,5 +49,4 @@ setup(
         'lxml',
     ],
     zip_safe=True,
-    test_suite='test',
 )

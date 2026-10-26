@@ -46,5 +46,4 @@ setup(
         'slapos.libnetworkcache',
     ],
     zip_safe=True,
-    test_suite='test',
 )

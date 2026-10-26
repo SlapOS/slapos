@@ -46,5 +46,4 @@ setup(
     'slapos.libnetworkcache',
     'erp5.util',
   ],
-  test_suite='test',
 )

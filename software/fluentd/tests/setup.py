@@ -48,5 +48,4 @@ setup(name=name,
           'supervisor',
       ],
       zip_safe=True,
-      test_suite='test',
       )

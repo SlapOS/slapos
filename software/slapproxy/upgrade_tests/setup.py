@@ -44,5 +44,4 @@ setup(name=name,
         'slapos.core',
       ],
       zip_safe=True,
-      test_suite='test',
     )
