@@ -31,6 +31,40 @@ async def websocket_quit(uri, password, ignore_error=False):
         if not ignore_error:
             raise e
 
+def get_ssb():
+    ssb_list = [0, 0]
+    for i in range(5):
+        try:
+            ssb_list = asyncio.run(websocket_get_ssb(options['ws-url'], options.get('ws-password')))
+        except ConnectionRefusedError as e:
+            time.sleep(0.1)
+            continue
+        break
+    print(f'SSB NR ARFCN list: {", ".join(map(str, ssb_list))}')
+    return ssb_list
+
+def publish_ssb(publish, ssb_list):
+    # Publish ssb-nr-arfcn
+    publish['RADIO.ssb-nr-arfcn'] = ' / '.join(map(str, ssb_list))
+    if 'ID.handover-json-export' in publish:
+        for i in range(len(ssb_list)):
+            publish['ID.handover-json-export'] = \
+              publish['ID.handover-json-export'].replace(f'CELL{i}__SSB_NR_ARFCN__', str(ssb_list[i]))
+
+def hash_file_list(file_list):
+    h = hashlib.sha256()
+    for path in file_list:
+        with open(path, 'rb') as f:
+            h.update(f.read())
+    return h.hexdigest()
+
+def parse_amarisoft_stderr(stderr):
+    # Filter out non ascii characters
+    amarisoft_error = ''.join(filter(lambda x: x in set(string.printable), stderr))
+    if 'no license found' in amarisoft_error:
+        amarisoft_error = 'License error: no license found\n' + amarisoft_error.split('\n')[-2]
+    return amarisoft_error
+
 error = 'No error'
 config_file_list  = options['config-file-list'].split('\n')
 amarisoft_service = options['amarisoft-service']
@@ -39,13 +73,6 @@ publish = self.buildout['publish-connection-information']
 promise = self.buildout['check-configuration-error.py']
 
 os.environ['AMARISOFT_PATH'] = options['amarisoft-license-dir']
-
-def hash_file_list(file_list):
-    h = hashlib.sha256()
-    for path in file_list:
-        with open(path, 'rb') as f:
-            h.update(f.read())
-    return h.hexdigest()
 
 # Check if the generated configuration files have changed
 new_hash = hash_file_list(config_file_list)
@@ -73,13 +100,6 @@ for path in os.listdir(options['service-directory']):
 # Always dry run amarisoft even if configuration hasn't changed in case licenses are invalid
 proc = subprocess.run([amarisoft_binary, '-d', options['amarisoft-config-file']], timeout=0.3,
   stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, check=False)
-
-def parse_amarisoft_stderr(stderr):
-    # Filter out non ascii characters
-    amarisoft_error = ''.join(filter(lambda x: x in set(string.printable), stderr))
-    if 'no license found' in amarisoft_error:
-        amarisoft_error = 'License error: no license found\n' + amarisoft_error.split('\n')[-2]
-    return amarisoft_error
 
 if proc.returncode or file_missing or new_hash != previous_hash or new_service not in service_list:
 
@@ -128,15 +148,7 @@ if proc.returncode or file_missing or new_hash != previous_hash or new_service n
                     except subprocess.TimeoutExpired:
                         break
                     time.sleep(0.3)
-                ssb_list = ['Unknown', 'Unknown']
-                for i in range(5):
-                    try:
-                        ssb_list = asyncio.run(websocket_get_ssb(options['ws-url'], options.get('ws-password')))
-                    except ConnectionRefusedError as e:
-                        time.sleep(0.1)
-                        continue
-                    break
-                print(f'SSB NR ARFCN list: {", ".join(map(str, ssb_list))}')
+                ssb_list = get_ssb()
                 # Kill dummy lteenb
                 asyncio.run(websocket_quit(options['ws-url'], options.get('ws-password')))
                 try:
@@ -145,13 +157,16 @@ if proc.returncode or file_missing or new_hash != previous_hash or new_service n
                     proc.kill()
                     proc.communicate()
                 # Publish ssb-nr-arfcn
-                publish['RADIO.ssb-nr-arfcn'] = ' / '.join(map(str, ssb_list))
-                if 'ID.handover-json-export' in publish:
-                    for i in range(len(ssb_list)):
-                        publish['ID.handover-json-export'] = \
-                          publish['ID.handover-json-export'].replace(f'CELL{i}_SSB_NR_ARFCN', str(ssb_list[i]))
+                publish_ssb(publish, ssb_list)
 
             with open(options['hash-output-file'], 'w+') as f:
                 f.write(new_hash)
+
+# Check if there are SSB NR ARFCN values to replace
+# Ensures SSB NR ARFCN is always published if something went wrong previously
+if '__SSB_NR_ARFCN__' in publish.get('RADIO.ssb-nr-arfcn', '') or \
+ '__SSB_NR_ARFCN__' in publish.get('ID.handover-json-export'):
+    ssb_list = get_ssb()
+    publish_ssb(publish, ssb_list)
 
 publish['ERROR.amarisoft'] = error
