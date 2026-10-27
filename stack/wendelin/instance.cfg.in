@@ -44,6 +44,7 @@ default-cloudooo-url-list = ${default-cloudooo-url-list:url-list}
 jupyter-enable-default = {{ jupyter_enable_default }}
 wcfs-enable-default = {{ wcfs_enable_default }}
 with-max-rlimit-nofile-enable-default = {{ with_max_rlimit_nofile_enable_default }}
+form-disk-limit-default = {{ form_disk_limit_default }}
 local-bt5-repository = {{ ' '.join(local_bt5_repository.split()) }}
 default-bt5 = {{ ' '.join(default_bt5.split()) }}
 
@@ -61,6 +62,7 @@ extra-context =
     key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
     key wcfs_enable_default dynamic-template-erp5-parameters:wcfs-enable-default
     key with_max_rlimit_nofile_enable_default dynamic-template-erp5-parameters:with-max-rlimit-nofile-enable-default
+    key form_disk_limit_default dynamic-template-erp5-parameters:form-disk-limit-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     key default_bt5 dynamic-template-erp5-parameters:default-bt5
     key openssl_location :openssl-location
