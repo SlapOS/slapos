@@ -294,8 +294,12 @@ software-type = zope
 {%   do ssl_authentication_dict.__setitem__(zope_family, zope_parameter_dict.get('ssl-authentication', False)) -%}
 {%   set current_zope_family_override_dict = zope_family_override_dict.get(zope_family, {}) -%}
 {%   do balancer_timeout_dict.__setitem__(zope_family, current_zope_family_override_dict.get('publisher-timeout', global_publisher_timeout)) -%}
+{%   set dos_protection = dict(zope_parameter_dict.get('dos-protection', {"form-memory-limit": "10MB"})) -%}
+{%   if form_disk_limit_default -%}
+{%     do dos_protection.setdefault('form-disk-limit', form_disk_limit_default) -%}
+{%   endif -%}
 [{{ section_name }}:python3]
-config-dos-protection = {{ dumps(zope_parameter_dict.get('dos-protection', {"form-memory-limit": "10MB"})) }}
+config-dos-protection = {{ dumps(dos_protection) }}
 
 [{{ section_name }}]
 <= request-zope-base
