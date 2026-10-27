@@ -1,0 +1,447 @@
+From 07a512003d42156ea7d742a16036237a8e37fd71 Mon Sep 17 00:00:00 2001
+From: Thomas Gambier <thomas.gambier@nexedi.com>
+Date: Tue, 27 Oct 2026 11:45:28 +0100
+Subject: [PATCH] Add IZODBStreamIterator to stream data from the ZODB
+
+The WSGI publisher closes the ZODB connection of the request before the
+WSGI server iterates on the response body. So an IStreamIterator must not
+load objects from the ZODB, and an application that sends big data from
+the ZODB must first load all of it in memory.
+
+A response body that provides the new IZODBStreamIterator interface can
+load objects from the ZODB while the WSGI server iterates on it. The
+publisher keeps the load_app context, and with it the ZODB connection of
+the request, open until the WSGI server calls close on the returned
+iterable. publish_module uses an ExitStack for this, so this also works
+when load_app is replaced, for example by Testing.ZopeTestCase.
+
+The publisher does not give such a body to wsgi.file_wrapper, because the
+WSGI server can read a file wrapper in another thread. For a HEAD request,
+the publisher closes the body at once and sends an empty body. If an error
+occurs after the publication, for example in start_response, the publisher
+closes the body and the connection.
+
+Co-Authored-By: AI agent <ai-agent@noreply>
+---
+ src/ZPublisher/Iterators.py                |  21 ++
+ src/ZPublisher/WSGIPublisher.py            |  90 +++++++--
+ src/ZPublisher/tests/test_WSGIPublisher.py | 215 +++++++++++++++++++++
+ 3 files changed, 308 insertions(+), 18 deletions(-)
+
+diff --git a/src/ZPublisher/Iterators.py b/src/ZPublisher/Iterators.py
+index e549ad5b4..0dbe36b10 100644
+--- a/src/ZPublisher/Iterators.py
++++ b/src/ZPublisher/Iterators.py
+@@ -38,6 +38,27 @@ class IStreamIterator(IUnboundStreamIterator):
+         """
+ 
+ 
++class IZODBStreamIterator(IUnboundStreamIterator):
++    """
++    An iterator that can be published and that loads objects from the
++    object database while the WSGI server iterates on it.
++
++    The publisher keeps the ZODB connection of the request open until the
++    WSGI server calls the ``close`` method of the iterable that the
++    publisher returns. The iterator can provide ``IStreamIterator`` too,
++    to give its length.
++
++    The transaction of the request is finished, and the request is closed,
++    before the iteration starts. So the iterator must not modify persistent
++    objects, and it must not use the request.
++
++    The publisher does not give such an iterator to ``wsgi.file_wrapper``,
++    because the WSGI server can read from a file wrapper in another thread.
++    For a ``HEAD`` request, the publisher closes the iterator and sends an
++    empty body.
++    """
++
++
+ @implementer(IStreamIterator)
+ class filestream_iterator(io.FileIO):
+     """
+diff --git a/src/ZPublisher/WSGIPublisher.py b/src/ZPublisher/WSGIPublisher.py
+index 2e7b3129b..f22c5661b 100644
+--- a/src/ZPublisher/WSGIPublisher.py
++++ b/src/ZPublisher/WSGIPublisher.py
+@@ -14,6 +14,7 @@
+ """
+ import sys
+ from _thread import allocate_lock
++from contextlib import ExitStack
+ from contextlib import closing
+ from contextlib import contextmanager
+ from io import BytesIO
+@@ -38,6 +39,7 @@ from ZPublisher import pubevents
+ from ZPublisher.HTTPRequest import WSGIRequest
+ from ZPublisher.HTTPResponse import WSGIResponse
+ from ZPublisher.Iterators import IUnboundStreamIterator
++from ZPublisher.Iterators import IZODBStreamIterator
+ from ZPublisher.mapply import mapply
+ from ZPublisher.utils import recordMetaData
+ 
+@@ -296,6 +298,36 @@ def publish(request, module_info):
+     return response
+ 
+ 
++class _ZODBStreamIterator:
++    """Iterate on an ``IZODBStreamIterator`` and then close the application.
++
++    ``app_closer`` exits the ``load_app`` context of the request. This
++    closes the ZODB connection that the iterator uses.
++    """
++
++    def __init__(self, body, app_closer):
++        self._body = body
++        self._iterator = iter(body)
++        self._app_closer = app_closer
++
++    def __iter__(self):
++        return self
++
++    def __next__(self):
++        return next(self._iterator)
++
++    def close(self):
++        app_closer = self._app_closer
++        if app_closer is not None:
++            self._app_closer = None
++            try:
++                close = getattr(self._body, 'close', None)
++                if close is not None:
++                    close()
++            finally:
++                app_closer.close()
++
++
+ @contextmanager
+ def load_app(module_info):
+     app_wrapper, realm, debug_mode = module_info
+@@ -379,12 +411,17 @@ def publish_module(environ, start_response,
+                                   environ,
+                                   new_response))
+ 
++        # Exits the load_app context when the body is an
++        # IZODBStreamIterator, which loads objects from the ZODB connection
++        # of the request after the publication.
++        app_closer = None
+         for i in range(getattr(new_request, 'retry_max_count', 3) + 1):
+             request = new_request
+             response = new_response
+             setRequest(request)
+             try:
+-                with load_app(module_info) as new_mod_info:
++                with ExitStack() as stack:
++                    new_mod_info = stack.enter_context(load_app(module_info))
+                     with transaction_pubevents(request, response):
+                         try:
+                             response = _publish(request, new_mod_info)
+@@ -393,6 +430,8 @@ def publish_module(environ, start_response,
+                             if user is not None and \
+                                user.getUserName() != 'Anonymous User':
+                                 environ['REMOTE_USER'] = user.getUserName()
++                    if IZODBStreamIterator.providedBy(response.body):
++                        app_closer = stack.pop_all()
+                 break
+             except TransientError:
+                 if request.supports_retry():
+@@ -405,24 +444,39 @@ def publish_module(environ, start_response,
+                 request.close()
+                 clearRequest()
+ 
+-        # Start the WSGI server response
+-        status, headers = response.finalize()
+-        start_response(status, headers)
+-
+-        if isinstance(response.body, _FILE_TYPES) or \
+-           IUnboundStreamIterator.providedBy(response.body):
+-            if hasattr(response.body, 'read') and \
+-               'wsgi.file_wrapper' in environ:
+-                result = environ['wsgi.file_wrapper'](response.body)
+-            else:
+-                result = response.body
++        if app_closer is None:
++            body_closer = None
+         else:
+-            # If somebody used response.write, that data will be in the
+-            # response.stdout BytesIO, so we put that before the body.
+-            result = (response.stdout.getvalue(), response.body)
+-
+-        for func in response.after_list:
+-            func()
++            body_closer = _ZODBStreamIterator(response.body, app_closer)
++        try:
++            # Start the WSGI server response
++            status, headers = response.finalize()
++            start_response(status, headers)
++
++            if body_closer is not None:
++                if environ['REQUEST_METHOD'] == 'HEAD':
++                    body_closer.close()
++                    result = ()
++                else:
++                    result = body_closer
++            elif isinstance(response.body, _FILE_TYPES) or \
++                    IUnboundStreamIterator.providedBy(response.body):
++                if hasattr(response.body, 'read') and \
++                   'wsgi.file_wrapper' in environ:
++                    result = environ['wsgi.file_wrapper'](response.body)
++                else:
++                    result = response.body
++            else:
++                # If somebody used response.write, that data will be in the
++                # response.stdout BytesIO, so we put that before the body.
++                result = (response.stdout.getvalue(), response.body)
++
++            for func in response.after_list:
++                func()
++        except BaseException:
++            if body_closer is not None:
++                body_closer.close()
++            raise
+ 
+     # Return the result body iterable.
+     return result
+diff --git a/src/ZPublisher/tests/test_WSGIPublisher.py b/src/ZPublisher/tests/test_WSGIPublisher.py
+index 55428d008..ff897a7d0 100644
+--- a/src/ZPublisher/tests/test_WSGIPublisher.py
++++ b/src/ZPublisher/tests/test_WSGIPublisher.py
+@@ -16,6 +16,7 @@ from urllib.parse import quote
+ 
+ import Testing.testbrowser
+ import transaction
++from persistent import Persistent
+ from Testing.ZopeTestCase import FunctionalTestCase
+ from Testing.ZopeTestCase import ZopeTestCase
+ from Testing.ZopeTestCase import user_name
+@@ -584,6 +585,210 @@ class TestPublishModule(ZopeTestCase):
+             _response.headers['content-type'].startswith('text/plain'))
+         self.assertEqual(_response.status, 200)
+ 
++    def _makeZODBStreamIterator(self, data=(b'hello', b' world')):
++        from zope.interface import implementer
++        from ZPublisher.Iterators import IStreamIterator
++        from ZPublisher.Iterators import IZODBStreamIterator
++
++        @implementer(IStreamIterator, IZODBStreamIterator)
++        class TestZODBStreamIterator:
++            closed = 0
++
++            def __init__(self):
++                self._iterator = iter(data)
++
++            def __iter__(self):
++                return self
++
++            def __next__(self):
++                return next(self._iterator)
++
++            def __len__(self):
++                return sum(map(len, data))
++
++            def read(self, size=-1):
++                raise AssertionError('must not be read by a file wrapper')
++
++            def close(self):
++                self.closed += 1
++
++        return TestZODBStreamIterator()
++
++    def _patchLoadApp(self, app_wrapper=None):
++        # Call the real load_app with an application that records when
++        # load_app opens it, and when load_app closes its ZODB connection.
++        from ZPublisher import WSGIPublisher
++        events = []
++
++        class DummyConnection:
++            def close(self):
++                events.append('close')
++
++        class DummyApp:
++            _p_jar = DummyConnection()
++
++        def dummy_app_wrapper():
++            events.append('open')
++            return DummyApp()
++
++        if app_wrapper is None:
++            app_wrapper = dummy_app_wrapper
++        # Testing.ZopeTestCase.sandbox replaces load_app.
++        load_app = getattr(WSGIPublisher, '__old_load_app__',
++                           WSGIPublisher.load_app)
++        self.addCleanup(setattr, WSGIPublisher, 'load_app',
++                        WSGIPublisher.load_app)
++        WSGIPublisher.load_app = lambda module_info: load_app(
++            (app_wrapper, 'Zope', False))
++        return events
++
++    def _publishZODBStreamIterator(self, body, **environ):
++        from ZPublisher.HTTPResponse import WSGIResponse
++        _response = WSGIResponse()
++        _response.setHeader('Content-Type', 'text/plain')
++        _response.setBody(body)
++        environ = self._makeEnviron(
++            **{'wsgi.file_wrapper': DummyCallable()}, **environ)
++        start_response = DummyCallable()
++        _publish = DummyCallable()
++        _publish._result = _response
++        app_iter = self._callFUT(environ, start_response, _publish)
++        return app_iter, _response, start_response
++
++    def test_response_is_zodb_stream(self):
++        events = self._patchLoadApp()
++        body = self._makeZODBStreamIterator()
++        app_iter, _response, start_response = \
++            self._publishZODBStreamIterator(body)
++        self.assertIsNotNone(start_response._called_with)
++        self.assertEqual(int(_response.headers['content-length']), 11)
++        # The application stays open while the WSGI server iterates.
++        self.assertEqual(events, ['open'])
++        self.assertIsNot(app_iter, body)
++        self.assertEqual(b''.join(app_iter), b'hello world')
++        self.assertEqual(events, ['open'])
++        self.assertEqual(body.closed, 0)
++        app_iter.close()
++        self.assertEqual(events, ['open', 'close'])
++        self.assertEqual(body.closed, 1)
++        # A second close does nothing.
++        app_iter.close()
++        self.assertEqual(events, ['open', 'close'])
++        self.assertEqual(body.closed, 1)
++
++    def test_response_is_zodb_stream_close_before_end(self):
++        # The WSGI server calls close when the client goes away.
++        events = self._patchLoadApp()
++        body = self._makeZODBStreamIterator()
++        app_iter, _response, start_response = \
++            self._publishZODBStreamIterator(body)
++        self.assertEqual(next(app_iter), b'hello')
++        app_iter.close()
++        self.assertEqual(events, ['open', 'close'])
++        self.assertEqual(body.closed, 1)
++
++    def test_response_is_zodb_stream_head(self):
++        events = self._patchLoadApp()
++        body = self._makeZODBStreamIterator()
++        app_iter, _response, start_response = \
++            self._publishZODBStreamIterator(body, REQUEST_METHOD='HEAD')
++        self.assertEqual(int(_response.headers['content-length']), 11)
++        self.assertEqual(list(app_iter), [])
++        self.assertEqual(events, ['open', 'close'])
++        self.assertEqual(body.closed, 1)
++
++    def test_response_is_zodb_stream_start_response_error(self):
++        events = self._patchLoadApp()
++        body = self._makeZODBStreamIterator()
++        from ZPublisher.HTTPResponse import WSGIResponse
++        _response = WSGIResponse()
++        _response.setBody(body)
++        start_response = DummyCallable()
++        start_response._raise = RuntimeError('start_response failed')
++        _publish = DummyCallable()
++        _publish._result = _response
++        with self.assertRaises(RuntimeError):
++            self._callFUT(self._makeEnviron(), start_response, _publish)
++        self.assertEqual(events, ['open', 'close'])
++        self.assertEqual(body.closed, 1)
++
++    def test_response_is_zodb_stream_loads_objects(self):
++        import ZODB
++        from persistent.list import PersistentList
++        from ZODB.DemoStorage import DemoStorage
++        from zope.interface import implementer
++        from ZPublisher.Iterators import IZODBStreamIterator
++
++        db = ZODB.DB(DemoStorage())
++        self.addCleanup(db.close)
++        # Do not commit the transaction of the test fixture.
++        transaction_manager = transaction.TransactionManager()
++        connection = db.open(transaction_manager)
++        app = connection.root()['app'] = DummyPersistentApp()
++        app.chunk_list = PersistentList(
++            DummyPersistentChunk(b'%d' % i) for i in range(10))
++        transaction_manager.commit()
++        connection.close()
++
++        self._patchLoadApp(lambda: db.open().root()['app'])
++
++        loaded = []
++
++        @implementer(IZODBStreamIterator)
++        class ChunkIterator:
++            def __init__(self, app):
++                self.app = app
++
++            def __iter__(self):
++                for chunk in self.app.chunk_list:
++                    loaded.append(chunk.data)
++                    yield chunk.data
++                    chunk._p_deactivate()
++
++        def _publish(request, module_info):
++            app = module_info[0]
++            # Only the publication loads the application.
++            app._p_deactivate()
++            request.response.setBody(ChunkIterator(app))
++            return request.response
++
++        app_iter = self._callFUT(
++            self._makeEnviron(), DummyCallable(), _publish)
++        self.assertEqual(loaded, [])
++        self.assertEqual(len(db.pool.available), 0)
++        self.assertEqual(b''.join(app_iter), b'0123456789')
++        self.assertEqual(loaded, [b'%d' % i for i in range(10)])
++        self.assertEqual(len(db.pool.available), 0)
++        app_iter.close()
++        # The connection is back in the pool of the database.
++        self.assertEqual(len(db.pool.available), 1)
++
++    def test_response_is_stream_closes_app_before_iteration(self):
++        from zope.interface import implementer
++        from ZPublisher.HTTPResponse import WSGIResponse
++        from ZPublisher.Iterators import IStreamIterator
++
++        @implementer(IStreamIterator)
++        class TestStreamIterator:
++            data = b'hello'
++
++            def __next__(self):
++                raise StopIteration
++
++            def __len__(self):
++                return len(self.data)
++
++        events = self._patchLoadApp()
++        _response = WSGIResponse()
++        body = TestStreamIterator()
++        _response.setBody(body)
++        _publish = DummyCallable()
++        _publish._result = _response
++        app_iter = self._callFUT(
++            self._makeEnviron(), DummyCallable(), _publish)
++        self.assertIs(app_iter, body)
++        self.assertEqual(events, ['open', 'close'])
++
+     def test_request_closed(self):
+         environ = self._makeEnviron()
+         start_response = DummyCallable()
+@@ -1114,6 +1319,16 @@ class DummyResponse:
+         self._headers = tuple(headers.items())
+ 
+ 
++class DummyPersistentApp(Persistent):
++    pass
++
++
++class DummyPersistentChunk(Persistent):
++
++    def __init__(self, data):
++        self.data = data
++
++
+ class DummyCallable:
+     _called_with = _raise = _result = None
+ 
+-- 
+2.52.0
+
