@@ -27,7 +27,7 @@ async def websocket_quit(uri, password, ignore_error=False):
         async with websockets.connect(uri, origin='simpleran-sr') as websocket:
             await websocket_connect(websocket, password)
             await websocket.send(f'{{"message":"quit"}}')
-    except ConnectionRefusedError as e:
+    except (ConnectionRefusedError, websockets.exceptions.InvalidMessage) as e:
         if not ignore_error:
             raise e
 
@@ -65,7 +65,7 @@ def parse_amarisoft_stderr(stderr):
         amarisoft_error = 'License error: no license found\n' + amarisoft_error.split('\n')[-2]
     return amarisoft_error
 
-error = 'No error'
+amarisoft_error = 'No error'
 config_file_list  = options['config-file-list'].split('\n')
 amarisoft_service = options['amarisoft-service']
 amarisoft_binary = os.path.join(options['amarisoft-directory'], amarisoft_service)
@@ -169,4 +169,4 @@ if '__SSB_NR_ARFCN__' in publish.get('RADIO.ssb-nr-arfcn', '') or \
     ssb_list = get_ssb()
     publish_ssb(publish, ssb_list)
 
-publish['ERROR.amarisoft'] = error
+publish['ERROR.amarisoft'] = amarisoft_error
