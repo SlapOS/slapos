@@ -10,7 +10,6 @@
       "title": "Bandwidth",
       "description": "Downlink Bandwidth (in MHz)",
       "enum": [
-        "1.4 MHz",
         "3 MHz",
         "5 MHz",
         "10 MHz",
