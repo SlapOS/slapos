@@ -165,7 +165,7 @@ if proc.returncode or file_missing or new_hash != previous_hash or new_service n
 # Check if there are SSB NR ARFCN values to replace
 # Ensures SSB NR ARFCN is always published if something went wrong previously
 if '__SSB_NR_ARFCN__' in publish.get('RADIO.ssb-nr-arfcn', '') or \
- '__SSB_NR_ARFCN__' in publish.get('ID.handover-json-export'):
+ '__SSB_NR_ARFCN__' in publish.get('ID.handover-json-export', ''):
     ssb_list = get_ssb()
     publish_ssb(publish, ssb_list)
 

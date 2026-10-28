@@ -1487,36 +1487,20 @@ for k,v in slap_configuration.items():
     if type(v) is set:
         slap_configuration[k] = list(slap_configuration[k])
 
+if self.error:
+    config.setdefault("cell1", {})["enable_cell"] = False
+    config.setdefault("cell2", {})["enable_cell"] = False
+    config['error'] = error
+
 slap_configuration.update({
     'configuration': config,
     'slave-instance-list': shared_list,
 })
-
-if self.error:
-    # If there was an error, load all parameters from backup
-    with open(options['backup-path'], 'r') as f:
-        output = json.load(f)
-    output['slapparameter-dict']['error'] = error
-    output['slap-configuration']['configuration']['error'] = error
-else:
-    # Write outputs in options and save to a file
-    output = {
-        'slap-configuration': dict(slap_configuration),
-        'slapparameter-dict': dict(config),
-        'shared-list':        list(shared_list),
-    }
-    if sr_type == 'core-network':
-        output['sim-list'] = list(sim_list)
-
-    # Create etc directory in case mkdirectory recipe hasn't ran yet
-    backup_dir = os.path.dirname(options['backup-path'])
-    if not os.path.isdir(backup_dir):
-        os.makedirs(backup_dir, int('0777', 8))
-    with open(options['backup-path'], 'w+') as f:
-        json.dump(output, f, indent=4)
-
 options['publish'] = publish
+options['slap-configuration'] = slap_configuration
+options['slapparameter-dict'] = config
+options['shared-list'] = shared_list
+
 if sr_type == 'core-network':
+    options['sim-list'] = sim_list
     options['publish-section-list'] = publish_section_list
-for k in output:
-    options[k] = output[k]
