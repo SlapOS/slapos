@@ -1,5 +1,6 @@
 [buildout]
 parts =
+  cron-entry-logrotate
   publish-connection-parameter
 
 extends = ${monitor2-template:output}
@@ -8,11 +9,48 @@ develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
 
+[dependency-track-api-server-logback-config]
+recipe = slapos.recipe.template
+output = $${directory:etc}/$${:_buildout_section_name_}.xml
+inline =
+  <?xml version="1.0" encoding="UTF-8"?>
+  <configuration scan="true">
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
+    <appender name="JSON_FILE" class="ch.qos.logback.core.FileAppender">
+      <file>$${:logfile}</file>
+      <append>true</append>
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+        <fieldNames>
+          <levelValue>[ignore]</levelValue>
+          <logger>loggerName</logger>
+          <stackTrace>stackTrace</stackTrace>
+          <thread>threadName</thread>
+          <timestamp>timestamp</timestamp>
+          <version>[ignore]</version>
+        </fieldNames>
+      </encoder>
+    </appender>
+    <logger name="alpine" level="INFO" additivity="false">
+      <appender-ref ref="JSON_FILE"/>
+    </logger>
+    <logger name="org.dependencytrack" level="INFO" additivity="false">
+      <appender-ref ref="JSON_FILE"/>
+    </logger>
+    <logger name="org.eclipse.jetty" level="INFO" additivity="false">
+      <appender-ref ref="JSON_FILE"/>
+    </logger>
+    <root level="WARN">
+      <appender-ref ref="JSON_FILE"/>
+    </root>
+  </configuration>
+logfile = $${directory:var-log}/dependency-track-api-sever.log
+
 [dependency-track-api-server-instance]
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${directory:service}/$${:_buildout_section_name_}
 command-line =
   ${java:location}/bin/java
+  -Dlogback.configurationFile=$${dependency-track-api-server-logback-config:output}
   -jar ${dependency-track-apiserver:location}/dependency-track-apiserver.jar
   -host $${:ip}
   -port $${:port}
@@ -33,6 +71,14 @@ monitor-port = 9000
 base-path = /api
 promises =
   $${dependency-track-apiserver-promise:name}
+depends =
+  $${logrotate-dependency-track-apiserver:name}
+
+[logrotate-dependency-track-apiserver]
+<= logrotate-entry-base
+name = $${:_buildout_section_name_}
+log = $${dependency-track-api-server-logback-config:logfile}
+copytruncate = true
 
 [dependency-track-apiserver-promise]
 <= monitor-promise-base
@@ -62,7 +108,7 @@ output = $${directory:etc}/$${:_buildout_section_name_}
 inline =
   pid $${:pidfile};
   daemon off;
-  error_log /dev/stderr warn;
+  error_log $${:error-log} warn;
 
   events {
     worker_connections 4096;
@@ -70,7 +116,7 @@ inline =
   http {
     include       ${nginx:location}/conf/mime.types;
     default_type  application/octet-stream;
-    access_log    /dev/stdout;
+    access_log    $${:access-log};
 
     sendfile on;
 
@@ -147,6 +193,8 @@ inline =
 pidfile = $${directory:run}/$${:_buildout_section_name_}.pid
 ip = $${instance-parameter:ipv6-random}
 port = 8443
+error-log = $${directory:var-log}/nginx_error.log
+access-log = $${directory:var-log}/nginx_access.log
 
 [dependency-track-nginx]
 recipe = slapos.cookbook:wrapper
@@ -154,7 +202,13 @@ wrapper-path = $${directory:services}/$${:_buildout_section_name_}
 command-line =
   ${nginx:location}/sbin/nginx -c $${dependency-track-nginx-config:output}
 url = https://[$${dependency-track-nginx-config:ip}]:$${dependency-track-nginx-config:port}
+depends = $${logrotate-entry-nginx:name}
 
+[logrotate-entry-nginx]
+<= logrotate-entry-base
+name = $${:_buildout_section_name_}
+log = $${dependency-track-nginx-config:access-log} $${dependency-track-nginx-config:error-log}
+post = kill -USR1 $(cat $${dependency-track-nginx-config:pidfile})
 
 [postgresql-password]
 recipe = slapos.cookbook:generate.password
@@ -297,6 +351,7 @@ var = $${buildout:directory}/var
 var-crontabs = $${:var}/crontabs
 var-cronstamps = $${:var}/cronstamps
 var-cron-entries = $${:var}/cron-entries
+var-log = $${:var}/log
 srv = $${buildout:directory}/srv
 bin = $${buildout:directory}/bin
 tmp = $${buildout:directory}/tmp

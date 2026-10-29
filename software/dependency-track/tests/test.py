@@ -35,13 +35,12 @@ import requests
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
 from slapos.testing.utils import CrontabMixin
 
-
 setUpModule, InstanceTestCase = makeModuleSetUpAndTestCaseClass(
   os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "software.cfg"))
 )
 
 
-class TestDependencyTrack(InstanceTestCase):
+class TestDependencyTrack(CrontabMixin, InstanceTestCase):
   __partition_reference__ = "DT"  # postgresql use a socket in data dir
 
   def setUp(self):
@@ -76,6 +75,33 @@ class TestDependencyTrack(InstanceTestCase):
         resp.raise_for_status()
         self.assertEqual(resp.headers["Cache-Control"], "public, max-age=31536000, immutable")
         self.assertEqual(resp.headers["Content-Encoding"], "gzip")
+
+  def test_logs(self):
+    var_log = self.computer_partition_root_path / "var" / "log"
+    srv_backup_logrotate = self.computer_partition_root_path / "srv" / "backup" / "logrotate"
+
+    def _make_request():
+      requests.post(urllib.parse.urljoin(self.url, '/api/v1/user/login'), verify=False,)
+
+    _make_request()
+    self.assertTrue((var_log / "dependency-track-api-sever.log").read_text())
+    self.assertTrue((var_log / "nginx_access.log").read_text())
+    self.assertTrue((var_log / "nginx_error.log").read_text())
+
+    self._executeCrontabAtDate('logrotate', '2000-01-01')
+    self._executeCrontabAtDate('logrotate', '2001-02-03')
+    self.assertTrue((srv_backup_logrotate / "dependency-track-api-sever.log-20010203").read_text())
+    self.assertTrue((srv_backup_logrotate / "nginx_access.log-20010203").read_text())
+    self.assertTrue((srv_backup_logrotate / "nginx_error.log-20010203").read_text())
+
+    _make_request()
+    self.assertTrue((var_log / "dependency-track-api-sever.log").read_text())
+    self.assertTrue((var_log / "nginx_access.log").read_text())
+    self._executeCrontabAtDate('logrotate', '2001-02-04')
+    self.assertTrue((srv_backup_logrotate / "dependency-track-api-sever.log-20010203.xz").exists())
+    self.assertTrue((srv_backup_logrotate / "nginx_access.log-20010203.xz").exists())
+    self.assertTrue((srv_backup_logrotate / "dependency-track-api-sever.log-20010204").read_text())
+    self.assertTrue((srv_backup_logrotate / "nginx_access.log-20010204").read_text())
 
 
 class TestBackup(InstanceTestCase, CrontabMixin):
