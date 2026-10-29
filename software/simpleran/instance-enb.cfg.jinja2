@@ -232,11 +232,11 @@ script-path = {{ amarisoft_wrapper }}
 amarisoft-config-file = ${enb-config:output}
 amarisoft-directory = {{ amarisoft['enb_dir'] }}
 amarisoft-license-dir = {{ amarisoft['license_dir'] }}
-config-directory = ${directory:etc}
+running-config-directory = ${directory:etc}
 bin-directory = ${directory:bin}
 service-directory = ${directory:service}
 hash-output-file = ${directory:var}/enb-service-hash
-config-file-list =
+dry-config-file-list =
   ${enb-config:output}
 {%-   for cell_ref, icell in rulib.icell_dict|dictsort %}
   ${drb-config-{{ B(cell_ref) }}:output}
