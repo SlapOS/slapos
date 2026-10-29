@@ -392,6 +392,25 @@ def ors_radio(config, publish, shared_list):
     publish['id']['gnb-id'] = publish_hex(config['gnb_id'])
     publish['id']['enb-id'] = publish_hex(config['enb_id'])
 
+    def dl_frequency_to_dl_nr_arfcn(dl_frequency, band):
+        # Convert frequency to nearest DL NR ARFCN
+        dl_nr_arfcn = nrarfcn.nrarfcn(dl_frequency, nearby=True)
+        # Get Raster table from NR ARFCN module
+        table = tables.applicable_nrarfcn_fr1.table_applicable_nrarfcn_fr1()
+        valid_band = False
+        for row in table.data:
+            if table.get_cell(row, 'band') == f'n{band}':
+                valid_band = True
+                dl_step   = table.get_cell(row, 'dl_step')
+                dl_first  = table.get_cell(row, 'dl_first')
+        if not valid_band:
+            publish['error'].setdefault('band', {})[c] = f'n{band} is not a valid NR band'
+            config[c]['enable_cell'] = False
+            self.error = True
+            return
+        # Choose nearest dl_nr_arfcn on raster
+        return dl_first + int(round((dl_nr_arfcn - dl_first) / dl_step)) * dl_step
+
     # RF parameters (frequency, band, arfcn...)
     def configure_rf_parameters(i):
 
@@ -416,36 +435,24 @@ def ors_radio(config, publish, shared_list):
         dl_arfcn_name = f"dl_{'e' if lte else 'nr_'}arfcn"
         ul_arfcn_name = f"ul_{'e' if lte else 'nr_'}arfcn"
         if dl_arfcn_name in config[c]:
-            dl_arfcn = config[c][dl_arfcn_name]
+            dl_arfcn = int(config[c][dl_arfcn_name])
             if lte:
                 dl_frequency = earfcn.frequency(dl_arfcn)
                 band         = earfcn.band(dl_arfcn)[0].band
             else:
                 dl_frequency = nrarfcn.frequency(dl_arfcn)
+                if not dl_frequency:
+                    return
         else:
             dl_frequency = config[c].get('dl_frequency', defaults[f'{rat}_frequency'])
             if rat == 'lte':
                 dl_arfcn = earfcn.earfcn(dl_frequency, band)
             else:
-                dl_arfcn = nrarfcn.nrarfcn(dl_frequency, nearby=True)
+                dl_arfcn = dl_frequency_to_dl_nr_arfcn(dl_frequency, band)
         if nr:
             config[c].setdefault('subcarrier_spacing', 15 if config[c]['rf_mode'] == 'fdd' else 30)
-            table = tables.applicable_nrarfcn_fr1.table_applicable_nrarfcn_fr1()
-            valid_band = False
-            for row in table.data:
-                if table.get_cell(row, 'band') == f'n{band}':
-                    valid_band = True
-                    f_raster  = table.get_cell(row, 'f_raster')
-                    dl_step   = table.get_cell(row, 'dl_step')
-                    dl_first  = table.get_cell(row, 'dl_first')
-                    dl_last   = table.get_cell(row, 'dl_last')
-            if not valid_band:
-                publish['error'].setdefault('band', {})[c] = f'n{band} is not a valid NR band'
-                config[c]['enable_cell'] = False
-                self.error = True
-                return
-            dl_arfcn = dl_first + ((dl_arfcn - dl_first) // dl_step) * dl_step
-            ul_arfcn = nrarfcn.dl2ul(dl_arfcn, band)
+            dl_frequency = nrarfcn.frequency(dl_arfcn)
+            ul_arfcn  = nrarfcn.dl2ul(dl_arfcn, band)
             ul_frequency = nrarfcn.frequency(ul_arfcn)
         else:
             ul_arfcn = earfcn.dl2ul(dl_arfcn)
