@@ -70,7 +70,6 @@ dry_config_file_list  = options['dry-config-file-list'].split('\n')
 amarisoft_service = options['amarisoft-service']
 amarisoft_binary = os.path.join(options['amarisoft-directory'], amarisoft_service)
 publish = self.buildout['publish-connection-information']
-promise = self.buildout['check-configuration-error.py']
 
 os.environ['AMARISOFT_PATH'] = options['amarisoft-license-dir']
 
@@ -106,10 +105,6 @@ if proc.returncode or file_missing or new_hash != previous_hash or new_service n
     if proc.returncode:
         print(f'{amarisoft_service} dry run failed')
         amarisoft_error = parse_amarisoft_stderr(proc.stderr)
-        if 'config-error' in promise:
-            promise['config-error'] = ', '.join([amarisoft_error, promise['config-error']])
-        else:
-            promise['config-error'] = amarisoft_error
     else:
         # Write working config files to etc
         for path in dry_config_file_list:

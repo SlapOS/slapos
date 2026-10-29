@@ -552,3 +552,10 @@ output = ${directory:plugins}/check-configuration-error.py
 {%- if slapparameter_dict.get('error') %}
 config-error = {{ slapparameter_dict.get('error') }}
 {%- endif %}
+config-running-config-directory = ${directory:etc}
+config-dry-config-file-list = ${enb-config:output}
+{#- #}
+{%-   for cell_ref, icell in rulib.icell_dict|dictsort %}
+{#- #} ${drb-config-{{ B(cell_ref) }}:output}
+{#- #} ${sib23-config-{{ B(cell_ref) }}:output}
+{%- endfor %}
