@@ -66,7 +66,7 @@ def parse_amarisoft_stderr(stderr):
     return amarisoft_error
 
 amarisoft_error = 'No error'
-config_file_list  = options['config-file-list'].split('\n')
+dry_config_file_list  = options['dry-config-file-list'].split('\n')
 amarisoft_service = options['amarisoft-service']
 amarisoft_binary = os.path.join(options['amarisoft-directory'], amarisoft_service)
 publish = self.buildout['publish-connection-information']
@@ -75,7 +75,7 @@ promise = self.buildout['check-configuration-error.py']
 os.environ['AMARISOFT_PATH'] = options['amarisoft-license-dir']
 
 # Check if the generated configuration files have changed
-new_hash = hash_file_list(config_file_list)
+new_hash = hash_file_list(dry_config_file_list)
 new_service = f'{amarisoft_service}-service-{new_hash}'
 try:
     with open(options['hash-output-file'], 'r') as f:
@@ -83,11 +83,11 @@ try:
 except FileNotFoundError:
     previous_hash = ''
 
-# Check if any configuration file in config-directory is missing
+# Check if any configuration file in running-config-directory is missing
 file_missing = False
-for path in config_file_list:
+for path in dry_config_file_list:
     filename = os.path.basename(path)
-    if not os.path.exists(os.path.join(options['config-directory'], filename)):
+    if not os.path.exists(os.path.join(options['running-config-directory'], filename)):
         file_missing = True
 
 # List current installed services
@@ -112,9 +112,9 @@ if proc.returncode or file_missing or new_hash != previous_hash or new_service n
             promise['config-error'] = amarisoft_error
     else:
         # Write working config files to etc
-        for path in config_file_list:
+        for path in dry_config_file_list:
             filename = os.path.basename(path)
-            shutil.copyfile(path, os.path.join(options['config-directory'], filename))
+            shutil.copyfile(path, os.path.join(options['running-config-directory'], filename))
         # Remove previous installed services
         for path in os.listdir(options['service-directory']):
             if path.startswith('lteenb-service-'):
