@@ -405,7 +405,6 @@ def ors_radio(config, publish, shared_list):
                 dl_first  = table.get_cell(row, 'dl_first')
         if not valid_band:
             publish['0-error'].setdefault('band', {})[c] = f'n{band} is not a valid NR band'
-            config[c]['enable_cell'] = False
             self.error = True
             return
         # Choose nearest dl_nr_arfcn on raster
@@ -444,19 +443,38 @@ def ors_radio(config, publish, shared_list):
         else:
             dl_frequency = config[c].get('dl_frequency', defaults[f'{rat}_frequency'])
             if rat == 'lte':
-                dl_arfcn = earfcn.earfcn(dl_frequency, band)
+                try:
+                    dl_arfcn = earfcn.earfcn(dl_frequency, band)
+                except ValueError as e:
+                    publish['0-error'].setdefault('arfcn', {})[c] = str(e)
+                    self.error = True
+                    return
             else:
                 dl_arfcn = dl_frequency_to_dl_nr_arfcn(dl_frequency, band)
                 if not dl_arfcn:
+                    if not self.error:
+                        publish['0-error'].setdefault('frequency', {})[c] = f'{dl_frequency} is not a valid '\
+                          f'frequency for n{band} band'
+                        self.error = True
                     return
         if nr:
             config[c].setdefault('subcarrier_spacing', 15 if config[c]['rf_mode'] == 'fdd' else 30)
-            dl_frequency = nrarfcn.frequency(dl_arfcn)
-            ul_arfcn  = nrarfcn.dl2ul(dl_arfcn, band)
-            ul_frequency = nrarfcn.frequency(ul_arfcn)
+            try:
+                dl_frequency = nrarfcn.frequency(dl_arfcn)
+                ul_arfcn  = nrarfcn.dl2ul(dl_arfcn, band)
+                ul_frequency = nrarfcn.frequency(ul_arfcn)
+            except ValueError as e:
+                publish['0-error'].setdefault('arfcn', {})[c] = str(e)
+                self.error = True
+                return
         else:
-            ul_arfcn = earfcn.dl2ul(dl_arfcn)
-            ul_frequency = earfcn.frequency(ul_arfcn)
+            try:
+                ul_arfcn = earfcn.dl2ul(dl_arfcn)
+                ul_frequency = earfcn.frequency(ul_arfcn)
+            except ValueError as e:
+                publish['0-error'].setdefault('arfcn', {})[c] = str(e)
+                self.error = True
+                return
 
         config[c][f'{rat}_band'] = band
         config[c][dl_arfcn_name] = dl_arfcn
