@@ -175,7 +175,7 @@ def ors_radio(config, publish, shared_list):
     with open(options.get('json-ors-defaults'), 'r') as f:
         DEFAULTS = json.load(f)
 
-    publish_sections = ['nodeb', 'cell', 'hardware', 'radio', 'id', 'power', 'error']
+    publish_sections = ['nodeb', 'cell', 'hardware', 'radio', 'id', 'power', '0-error']
     for s in publish_sections:
         publish.setdefault(s, {})
     for s in ['cell1', 'cell2', 'nodeb', 'management']:
@@ -388,9 +388,6 @@ def ors_radio(config, publish, shared_list):
                 dl_step   = table.get_cell(row, 'dl_step')
                 dl_first  = table.get_cell(row, 'dl_first')
         if not valid_band:
-            publish['error'].setdefault('band', {})[c] = f'n{band} is not a valid NR band'
-            config[c]['enable_cell'] = False
-            self.error = True
             return
         # Choose nearest dl_nr_arfcn on raster
         return dl_first + int(round((dl_nr_arfcn - dl_first) / dl_step)) * dl_step
@@ -425,14 +422,16 @@ def ors_radio(config, publish, shared_list):
                 band         = earfcn.band(dl_arfcn)[0].band
             else:
                 dl_frequency = nrarfcn.frequency(dl_arfcn)
-                if not dl_frequency:
-                    return
         else:
             dl_frequency = config[c].get('dl_frequency', defaults[f'{rat}_frequency'])
             if rat == 'lte':
                 dl_arfcn = earfcn.earfcn(dl_frequency, band)
             else:
                 dl_arfcn = dl_frequency_to_dl_nr_arfcn(dl_frequency, band)
+                if dl_arfcn is None:
+                    publish['0-error'].setdefault('band', {})[c] = f'n{band} is not a valid NR band'
+                    self.error = True
+                    return
         if nr:
             config[c].setdefault('subcarrier_spacing', 15 if config[c]['rf_mode'] == 'fdd' else 30)
             dl_frequency = nrarfcn.frequency(dl_arfcn)
@@ -742,10 +741,18 @@ def ors_radio(config, publish, shared_list):
         if uplink_amount > 300 or (n_ul_layer >= 2 and uplink_amount > 150):
             publish['nodeb']['performance-warning'] = 'Warning: you might need to reduce the downlink / uplink bandwidth or number of antennas to avoid perfomance issues, your current settings exceed expected capacities of this SBC model.'
 
-    if len(sdr_list) >= 1:
-        configure_rf_parameters(0)
-    if len(sdr_list) >= 2:
-        configure_rf_parameters(1)
+    for i in range(2):
+        if len(sdr_list) >= i+1:
+            try:
+                configure_rf_parameters(i)
+            except ValueError as e:
+                publish['0-error'].setdefault('cell', {})[f'cell{i+1}'] = str(e)
+                self.error = True
+
+    if self.error:
+        error = f'n{band} is not a valid NR band'
+        config.setdefault("cell1", {})["enable_cell"] = False
+        config.setdefault("cell2", {})["enable_cell"] = False
 
     if not sum([int(config[cell]['enable_cell']) for cell in ['cell1', 'cell2']]):
         return
@@ -1495,7 +1502,7 @@ elif options['software'].startswith('software-ors') and sr_type in ['enb', 'gnb'
     publish['nodeb']['gtp-addr'] = config['gtp_addr_list'][0]
 
 if self.error:
-    error = ', '.join([f'{k}: {publish["error"][k]}' for k in publish['error']])
+    config['error'] = ', '.join([f'{k}: {publish["0-error"][k]}' for k in publish['0-error']])
 
 publish = delete_empty(publish)
 publish = flatten(publish)
