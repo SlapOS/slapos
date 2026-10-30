@@ -37,7 +37,7 @@ class RunPromise(GenericPromise):
         dry_config_hash     = hash_file_list(dry_config_file_list)
 
         if running_config_hash != dry_config_hash:
-            self.logger.error(f"Amarisoft dry run failed, please check ERROR.amarisoft connection parameter " \
+            self.logger.error(f"Amarisoft dry run failed, please check 0-ERROR.amarisoft connection parameter " \
                                "or Amarisoft stdout log")
         self.logger.info("No errors during parameter validation")
 
