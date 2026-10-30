@@ -41,7 +41,7 @@ setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '../software.cfg')))
 repo_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '../test/hello-vue'))
+        os.path.join(os.path.dirname(__file__), 'hello-vue'))
 
 if not os.path.isdir(os.path.join(repo_path, '.git')):
     subprocess.check_call(['git', 'init'], cwd=repo_path)

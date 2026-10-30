@@ -26,23 +26,33 @@
 ##############################################################################
 
 import os
+import subprocess
 
 import requests
-
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-
 
 setUpModule, DREAMTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', 'software.cfg')))
 
 
-class TestHTTPAccess(DREAMTestCase):
+class TestDREAM(DREAMTestCase):
   def setUp(self):
     self.url = self.computer_partition.getConnectionParameterDict()["url"]
 
-  def test(self):
+  def test_http_access(self):
     self.assertEqual(
         requests.codes.ok,
         requests.get(self.url, verify=False).status_code
     )
+
+  def test_manpy_test_suite(self):
+    test_runner_process = subprocess.run(
+      [self.computer_partition_root_path / 'software_release' / 'bin' / 'dream_testrunner'],
+      check=False,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
+      text=True,
+    )
+    if test_runner_process.returncode:
+      self.fail(test_runner_process.stdout)
