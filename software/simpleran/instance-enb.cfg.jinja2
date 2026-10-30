@@ -224,9 +224,13 @@ depends = ${enb-wrapper:recipe}
 
 # amarisoft-wrapper.py script parameters
 amarisoft-service = lteenb
+service-name = Radio
 ws-url = ws://{{ slapparameter_dict.com_url }}
 {%- if not slapparameter_dict.websocket_url_ipv6 %}
 ws-password = ${websocket-password:passwd}
+{%- endif %}
+{%- if slapparameter_dict.get('error') %}
+error = {{ slapparameter_dict.get('error') }}
 {%- endif %}
 script-path = {{ amarisoft_wrapper }}
 amarisoft-config-file = ${enb-config:output}
@@ -496,7 +500,7 @@ URL.wendelin-fluentbit-tag = ${xlog-fluentbit-tag:xlog-fluentbit-tag}
 URL.wendelin = https://wendelin.rapid.space/
 {%- endif %}
 # This will get updated by amarisoft-wrapper.py
-ERROR.amarisoft = No error
+0-ERROR.amarisoft = No error
 
 [monitor-instance-parameter]
 {% if slapparameter_dict.get("name", None) %}
