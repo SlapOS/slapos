@@ -1,0 +1,14 @@
+Remove "license" keys in pyproject.toml, this was incompatible with the old version of setuptools used in SlapOS
+
+diff '--color=auto' -ru rpy2-3.6.9.orig/pyproject.toml rpy2-3.6.9/pyproject.toml
+--- rpy2-3.6.9.orig/pyproject.toml	2026-10-11 00:00:00.000000000 +0900
++++ rpy2-3.6.9/pyproject.toml	2026-10-30 21:20:00.000000000 +0900
+@@ -12,8 +12,6 @@
+ description = "Python interface to the R language (embedded R)"
+ readme = "README.md"
+ requires-python = ">=3.9"
+-license = "GPL-2.0-or-later"
+-license-files = ["LICENSE"]
+ authors = [{ name = "Laurent Gautier", email = "lgautier@gmail.com" }]
+ classifiers = [
+     "Programming Language :: Python",
