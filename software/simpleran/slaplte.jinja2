@@ -556,9 +556,11 @@
   {#- below we continue as if sdr and cpri are both supported by enb simultaneously #}
       args: "{{(dev_argv | join(',')) or '---'}}",
 
-  {%- if ors and sdr100 == "False" %}
-      rx_antenna: "tx_rx",
-      tdd_tx_mod: 1,
+  {%- if slapparameter_dict.get('rx_antenna', False) %}
+      rx_antenna: "{{ slapparameter_dict.rx_antenna }}",
+  {%- endif %}
+  {%- if slapparameter_dict.get('tdd_tx_mod', False) %}
+      tdd_tx_mod: {{ slapparameter_dict.tdd_tx_mod }},
   {%- endif %}
 
   {#- emit cpri_* options if a cpri ru is present #}
