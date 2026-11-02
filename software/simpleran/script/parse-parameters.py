@@ -754,8 +754,24 @@ def ors_radio(config, publish, shared_list):
         config.setdefault("cell1", {})["enable_cell"] = False
         config.setdefault("cell2", {})["enable_cell"] = False
 
-    if not sum([int(config[cell]['enable_cell']) for cell in ['cell1', 'cell2']]):
+    cell_count = sum([int(config[cell]['enable_cell']) for cell in ['cell1', 'cell2']])
+    antenna_count = max(config['n_antenna_ul'], config['n_antenna_dl'])
+
+    if not cell_count:
         return
+
+    # For ORS in FDD mode, RX Antenna should be connected to TX connector
+    # On ORS FDD SDR Boards this is done in hardware, but ORS Devboards require rx_antenna parameter to be set
+    #   to TX when used in FDD mode (this is the case for FDD ORS Brute)
+    # If there are two boards used then we assume none of them are devboards (which is the case for ORS Duo) as
+    #   we can only put one value in rx_antenna for both SDR devices
+    # For SDR100 boards rx_antenna value can be left to default value which is auto
+    if not config['sdr100']:
+        config['tdd_tx_mod'] = 1
+        if config[c]['rf_mode'] == 'fdd' and (cell_count * antenna_count) <= 2:
+            config['rx_antenna'] = "tx"
+        else:
+            config['rx_antenna'] = "tx_rx"
 
     configure_cpu()
 
