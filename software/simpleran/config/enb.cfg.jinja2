@@ -599,7 +599,7 @@
 {%- for plmn in slapparameter_dict.plmn_list %}
       {
         plmn: "{{ plmn.plmn }}",
-        reserved: {{ plmn.get('reserved', false) |tojson }},
+        reserved: false,
         attach_without_pdn: {{ plmn.get('attach_without_pdn', false) |tojson }},
       },
 {%- endfor %}
@@ -643,7 +643,7 @@
 {%- for plmn in slapparameter_dict.plmn_list %}
       {
         plmn: "{{ plmn.plmn }}",
-        reserved: {{ plmn.get('reserved', false) |tojson }},
+        reserved: false,
         attach_without_pdn: {{ plmn.get('attach_without_pdn', false) |tojson }},
       },
 {%- endfor %}
@@ -1133,7 +1133,7 @@
 {%-   if plmn.get('ranac')  %}
         ranac: {{ plmn.ranac }},
 {%-   endif %}
-        reserved: {{ plmn.get('reserved', false) |tojson }},
+        reserved: false,
         nssai: [
 {%-   for nssai in slapparameter_dict.nssai %}
           {

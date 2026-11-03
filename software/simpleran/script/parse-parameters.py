@@ -45,6 +45,8 @@ NR_TDD_CONFIG_MAP = {
             'trs_presence': True,
             'sr_period': 40,
         },
+        'mcs_table_ul': 'qam256',
+        'mcs_table_dl': 'qam256',
     },
     'DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default': {
         'pattern1': '5ms 2UL 7DL S=4UL:6DL',
@@ -1500,6 +1502,28 @@ if sr_type in ['enb', 'gnb', 'ue', 'enb-gnb']:
 
 if sr_type == 'core-network':
     gtp_localhost_addr = '127.0.1.100'
+    config.update(
+        {
+            "external_mme_list": [],
+            "pdn1": {
+                "apn_list": [
+                    "internet",
+                    "default",
+                    "sos"
+                ],
+                "fixed_ips": False,
+                "qci": 9
+            },
+            "pdn2": {
+                "apn_list": [
+                    "ims"
+                ],
+                "fixed_ips": False,
+                "ims": True,
+                "qci": 5
+            },
+        }
+    )
     sim_list, publish_section_list = core_network(config, publish, shared_list)
 elif sr_type in ['enb-gnb', 'enb', 'gnb']:
     gtp_localhost_addr = '127.0.1.1'

@@ -6,20 +6,8 @@
     "log_phy_debug": {
       "$ref": "instance-enb-input-schema.json#/properties/log_phy_debug"
     },
-    "max_rx_sample_db": {
-      "$ref": "instance-enb-input-schema.json#/properties/max_rx_sample_db"
-    },
-    "min_rxtx_delay": {
-      "$ref": "instance-enb-input-schema.json#/properties/min_rxtx_delay"
-    },
     "xlog_enabled": {
       "$ref": "instance-enb-input-schema.json#/properties/xlog_enabled"
-    },
-    "check_core_network": {
-      "$ref": "instance-enb-input-schema.json#/properties/check_core_network"
-    },
-    "amarisoft_version": {
-      "$ref": "instance-enb-input-schema.json#/properties/amarisoft_version"
     },
     "websocket_url_ipv6": {
       "$ref": "instance-enb-input-schema.json#/properties/websocket_url_ipv6"

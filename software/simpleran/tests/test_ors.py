@@ -145,8 +145,8 @@ enb_param_dict = {
     'nodeb': {
         'enb_id': '0x17',
         'plmn_list': [
-            {'attach_without_pdn': True, 'plmn': '00101', 'reserved': True},
-            {'attach_without_pdn': False, 'plmn': '00102', 'reserved': False},
+            {'attach_without_pdn': True, 'plmn': '00101'},
+            {'attach_without_pdn': False, 'plmn': '00102'},
         ],
         'mme_list': [
             {'name': '10.0.0.1',    'mme_addr': '10.0.0.1'},
@@ -197,8 +197,8 @@ gnb_param_dict1 = {
     },
     'nodeb': {
         'plmn_list_5g': [
-            {'plmn': '00101', 'ranac': 1, 'reserved': True, 'tac': '0x01'},
-            {'plmn': '00102', 'ranac': 2, 'reserved': False, 'tac': '0x02'},
+            {'plmn': '00101', 'ranac': 1, 'tac': '0x01'},
+            {'plmn': '00102', 'ranac': 2, 'tac': '0x02'},
         ],
     },
 }
@@ -266,7 +266,7 @@ class TestENBParameters(ORSTestCase):
       for plmn in enb_param_dict['nodeb']['plmn_list']:
           if plmn['plmn'] == p['plmn']:
               break
-      for n in "plmn attach_without_pdn reserved".split():
+      for n in "plmn attach_without_pdn".split():
         self.assertEqual(p[n], plmn[n])
     for p in conf['mme_list']:
       for mme in enb_param_dict['nodeb']['mme_list']:
@@ -330,7 +330,7 @@ class TestGNBParameters1(ORSTestCase):
       for plmn in gnb_param_dict1['nodeb']['plmn_list_5g']:
           if plmn['plmn'] == p['plmn']:
               break
-      for n in "plmn ranac reserved".split():
+      for n in "plmn ranac".split():
         self.assertEqual(p[n], plmn[n])
       self.assertEqual(int(p["tac"]), int(plmn["tac"], 16))
     for p in conf['amf_list']:
