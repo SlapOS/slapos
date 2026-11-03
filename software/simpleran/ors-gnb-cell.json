@@ -25,24 +25,6 @@
       ],
       "type": "string"
     },
-    "nr_bandwidth_ul": {
-      "title": "Uplink Bandwidth",
-      "description": "Uplink Bandwidth (same as downlink bandwidth by default)",
-      "enum": [
-        "5 MHz",
-        "7 MHz",
-        "10 MHz",
-        "15 MHz",
-        "20 MHz",
-        "25 MHz",
-        "30 MHz",
-        "35 MHz",
-        "40 MHz",
-        "45 MHz",
-        "50 MHz"
-      ],
-      "type": "string"
-    },
     "nr_band": {
       "$ref": "cell/nr/input-schema.json#/properties/nr_band",
       "description": "NR band number. Default depends on ORS model, please refer to the connection parameters"
@@ -72,24 +54,6 @@
     "ssb_pos_bitmap": {
       "title": "SSB Position Bitmap",
       "$ref": "cell/nr/input-schema.json#/properties/ssb_pos_bitmap"
-    },
-    "cipher_algo_pref": {
-      "$ref": "cell/nr/input-schema.json#/properties/cipher_algo_pref"
-    },
-    "integ_algo_pref": {
-      "$ref": "cell/nr/input-schema.json#/properties/integ_algo_pref"
-    },
-    "subcarrier_spacing": {
-      "$ref": "cell/nr/input-schema.json#/properties/subcarrier_spacing"
-    },
-    "mcs_table_ul": {
-      "$ref": "cell/nr/input-schema.json#/properties/mcs_table_ul"
-    },
-    "mcs_table_dl": {
-      "$ref": "cell/nr/input-schema.json#/properties/mcs_table_dl"
-    },
-    "configured_grant": {
-      "$ref": "cell/nr/input-schema.json#/properties/configured_grant"
     }
   }
 }
