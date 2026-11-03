@@ -178,9 +178,9 @@ inline =
   #!/bin/sh
 {%- if not amarisoft['mock'] %}
   # Amarisoft init scripts
-  sudo -n {{ amarisoft['dir'] }}/rm-tmp-lte enb
-  sudo -n {{ amarisoft['dir'] }}/init-sdr {{ amarisoft['binary_dir'] }};
-  sudo -n {{ amarisoft['dir'] }}/init-enb
+  sudo -n {{ amarisoft['script_dir'] }}/rm-tmp-lte enb
+  sudo -n {{ amarisoft['script_dir'] }}/init-sdr {{ amarisoft['amarisoft_dir'] }};
+  sudo -n {{ amarisoft['script_dir'] }}/init-enb
 {%- endif %}
   # Print hardware and software info in info-log
   cat >> ${:info-log} << EOF
@@ -221,7 +221,6 @@ publish-URL.websocket-password = ${websocket-password:passwd}
 publish-URL.websocket-amarisoft-gui = ${amarisoft-app:url}
 publish-AMARISOFT.version = {{ amarisoft['version_cn'] }}
 publish-AMARISOFT.host-id = {{ amarisoft['lteenb_host_id'] }}
-publish-AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
 publish-NODEB.ru-list   = {{ B(dumps(rulib.iru_dict.keys()   | sort)) }}
 publish-NODEB.cell-list = {{ B(dumps(rulib.icell_dict.keys() | sort)) }}
 publish-NODEB.peer-list = {{ B(dumps(ipeer_dict.keys()       | sort)) }}
@@ -238,7 +237,7 @@ service-name = Radio
 ws-url = ws://{{ slapparameter_dict.com_url }}
 ws-password = ${websocket-password:passwd}
 mock = {{ amarisoft['mock'] }}
-rm-tmp-lte = sudo -n {{ amarisoft['dir'] }}/rm-tmp-lte enb
+rm-tmp-lte = sudo -n {{ amarisoft['script_dir'] }}/rm-tmp-lte enb
 {%- if slapparameter_dict.get('error') %}
 error = {{ slapparameter_dict.get('error') }}
 {%- endif %}

@@ -194,11 +194,6 @@ hash-files =
 # {{ dumps(ru_ref) }} {{ ru.n_antenna_dl }}T{{ ru.n_antenna_ul }}R  ({{ ru.ru_type }})
 {%-     if ru.ru_link_type == 'sdr'  %}
 {%-     elif ru.ru_link_type == 'cpri'  %}
-{{ promise('%s-sdr-busy' % ru_ref) }}
-promise = check_sdr_busy
-config-sdr = {{ amarisoft['sdr_dir'] }}
-config-sdr_dev  = {{ ru.cpri_link.sdr_dev }}
-config-dma_chan = {{ ru.cpri_link.sfp_port }}
 
 {{ promise('%s-cpri-lock' % ru_ref) }}
 promise = check_cpri_lock

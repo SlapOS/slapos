@@ -6,7 +6,6 @@ parts =
 {%- for cell in ["cell1", "cell2"] %}
 {%-   if slapparameter_dict[cell].enable_cell %}
   sdr-play-service-{{ cell }}
-  check-sdr-busy-{{ cell }}.py
 {%-   endif %}
 {%- endfor %}
 
@@ -73,8 +72,8 @@ inline =
   #!/bin/sh
 {%- if not amarisoft['mock'] %}
   # Amarisoft init scripts
-  sudo -n {{ amarisoft['dir'] }}/init-sdr {{ amarisoft['binary_dir'] }};
-  sudo -n {{ amarisoft['dir'] }}/init-enb
+  sudo -n {{ amarisoft['script_dir'] }}/init-sdr {{ amarisoft['amarisoft_dir'] }};
+  sudo -n {{ amarisoft['script_dir'] }}/init-enb
 {%- endif %}
   # Print hardware and software info in info-log
   cat >> ${:info-log} << EOF
@@ -189,7 +188,6 @@ password = {{ slapparameter_dict['monitor-password'] | string }}
 recipe = slapos.cookbook:publish.serialised
 amarisoft.version = {{ amarisoft['version_cn']}}
 amarisoft.host-id = {{ amarisoft['lteenb_host_id'] }}
-amarisoft.available-versions = {{ amarisoft['version_installed'] }}
 {%- for cell in ["cell1", "cell2"] %}
 {%-   if slapparameter_dict[cell].enable_cell %}
 {{ cell }}.bandwidth          = {{ slapparameter_dict[cell].bandwidth }}
@@ -200,17 +198,3 @@ amarisoft.available-versions = {{ amarisoft['version_installed'] }}
 {%-   endif %}
 {%- endfor %}
 monitor-gadget-url = ${:monitor-base-url}/gadget/software.cfg.html
-
-{%- for i in range(2) %}
-{%-   set cell = 'cell' + str(i+1) %}
-{%-   if slapparameter_dict[cell].enable_cell %}
-[check-sdr-busy-{{ cell }}.py]
-<= monitor-promise-base
-promise = check_sdr_busy
-name = ${:_buildout_section_name_}
-config-testing = {{ slapparameter_dict.get("testing", False) }}
-config-sdr = {{ amarisoft['sdr_dir'] }}
-config-sdr_dev  = {{ i }}
-config-dma_chan = 0
-{%-   endif %}
-{%- endfor %}

@@ -101,7 +101,7 @@ inline =
   #!/bin/sh
 {%- if not amarisoft['mock'] %}
   # Amarisoft init scripts
-  sudo -n {{ amarisoft['dir'] }}/init-mme;
+  sudo -n {{ amarisoft['script_dir'] }}/init-mme;
 {%- endif %}
   # Print hardware and software info in info-log
   cat >> ${:info-log} << EOF
@@ -151,7 +151,7 @@ inline =
   #!/bin/sh
 {%- if not amarisoft['mock'] %}
   # Amarisoft init scripts
-  sudo -n {{ amarisoft['dir'] }}/init-mme;
+  sudo -n {{ amarisoft['script_dir'] }}/init-mme;
 {%- endif %}
   # Print hardware and software info in info-log
   cat >> ${:info-log} << EOF
@@ -426,7 +426,6 @@ URL.websocket-amarisoft-gui = https://tech-academy.amarisoft.com/web-gui/
 NETWORK.core-network-ipv6 = {{ my_ipv6 }}
 AMARISOFT.version = {{ amarisoft['version_cn'] }}
 AMARISOFT.host-id = {{ amarisoft['ltemme_host_id'] }}
-AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
 CORE.plmn = {{ slapparameter_dict.core_network_plmn }}
 {%- if not slapparameter_dict.testing  %}
 {%-   if slapparameter_dict.iperf3 %}
