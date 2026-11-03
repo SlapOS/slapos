@@ -1,5 +1,11 @@
 {% import "caucase" as caucase with context %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{%- set DETACHED = detach_snapshot is defined %}
+{%- if DETACHED %}
+{%-   set slapparameter_dict = detach_snapshot['configuration'] %}
+{%-   do instance_parameter_dict.update({
+        'slave-instance-list': detach_snapshot['slave-instance-list']}) %}
+{%- endif %}
 {%- set HTTP3_PORT = slapparameter_dict['http3-port'] %}
 {%- set FRONTEND_HTTP3 = slapparameter_dict['enable-http3'] %}
 {%- if FRONTEND_HTTP3 %}
@@ -70,6 +76,7 @@ parts =
   promise-slave-introspection-configuration
   logrotate-entry-slave-introspection
   backend-haproxy-statistic-frontend-promise
+  promise-attachment-state
 
 [software-py]
 recipe = software
@@ -190,6 +197,7 @@ recipe = slapos.cookbook:switch-softwaretype
 default = dynamic-custom-personal-profile-slave-list:output
 single-default = dynamic-custom-personal-profile-slave-list:output
 single-custom-personal = dynamic-custom-personal-profile-slave-list:output
+single-custom-personal-detach = dynamic-custom-personal-profile-slave-list:output
 
 [frontend-configuration]
 ip-access-certificate = ${self-signed-ip-access:certificate}
@@ -767,6 +775,36 @@ context =
 promise = validate_frontend_configuration
 name = frontend-frontend-haproxy-configuration-promise.py
 config-verification-script = ${promise-helper-last-configuration-state:output}
+
+[promise-attachment-state-sense]
+recipe = slapos.recipe.template
+output = ${directory:bin}/${:_buildout_section_name_}
+inline =
+  from zope.interface import implementer
+  from slapos.grid.promise import interface
+  from slapos.grid.promise.generic import GenericPromise
+
+  @implementer(interface.IPromise)
+  class RunPromise(GenericPromise):
+    def __init__(self, config):
+      super().__init__(config)
+      self.setPeriodicity(1)
+
+    def sense(self):
+{%- if DETACHED %}
+      self.logger.error(
+        "frontend node {{ slapparameter_dict['frontend-name'] }} detached,"
+        " serving snapshot {{ detach_snapshot['timestamp'] }}")
+{%- else %}
+      self.logger.info(
+        "frontend node {{ slapparameter_dict['frontend-name'] }} attached")
+{%- endif %}
+
+[promise-attachment-state]
+recipe = slapos.cookbook:promise.plugin
+eggs = slapos.core
+file = ${promise-attachment-state-sense:output}
+output = ${directory:plugins}/attachment-state.py
 
 [promise-frontend-haproxy-v4-https]
 <= monitor-promise-base

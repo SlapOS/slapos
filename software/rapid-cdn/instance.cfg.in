@@ -29,6 +29,7 @@ default = dynamic-profile-master:output
 custom-personal = dynamic-profile-master:output
 single-default = dynamic-profile-frontend:output
 single-custom-personal = dynamic-profile-frontend:output
+single-custom-personal-detach = dynamic-profile-frontend-detach:output
 replicate = dynamic-profile-master:output
 kedifa = dynamic-profile-kedifa:output
 error-page-manager = dynamic-profile-error-page-manager:output
@@ -42,9 +43,56 @@ error-page-manager = dynamic-profile-error-page-manager:output
 < = jinja2-template-base
 url = {{ software_parameter_dict['profile_frontend'] }}
 filename = instance-frontend.cfg
+depends = ${detach-snapshot-writer:recipe}
 extra-context =
   import furl_module furl
   raw software_type single-custom-personal
+
+[detach-snapshot-writer]
+{#- Not a rendered template. Buildout deletes the output of a template part
+    when the part goes away. This part goes away when the node detaches, and
+    that is the run which must read the snapshot. This recipe tracks no path.
+    Only 'update' is set, so the recipe runs on each pass. #}
+recipe = slapos.recipe.build
+{#- Not a reference to [detach-snapshot]: a reference makes that section a
+    dependency, and that section reads the snapshot. #}
+path = ${buildout:directory}/.slapos-detach-snapshot.json
+update =
+  import json, time
+  slap_configuration = self.buildout['slap-configuration']
+  with open(options['path'], 'w') as snapshot_file:
+    json.dump({
+      'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+      'configuration': slap_configuration['configuration'],
+      'slave-instance-list': slap_configuration.get('slave-instance-list', []),
+    }, snapshot_file, indent=2, sort_keys=True)
+
+[dynamic-profile-frontend-detach]
+{#- No detach-snapshot-writer dependency: the whole point is to render from
+    the snapshot instead of from what SlapOS Master sends now, so a detached
+    node must not refresh it. #}
+< = jinja2-template-base
+url = {{ software_parameter_dict['profile_frontend'] }}
+filename = instance-frontend.cfg
+extra-context =
+  import furl_module furl
+  raw software_type single-custom-personal-detach
+  key detach_snapshot detach-snapshot:snapshot
+
+[detach-snapshot]
+recipe = slapos.recipe.build
+path = ${buildout:directory}/.slapos-detach-snapshot.json
+init =
+  import json
+  from zc.buildout import UserError
+  try:
+    snapshot_file = open(options['path'])
+  except IOError:
+    raise UserError(
+      "no detach snapshot: re-attach the node, let one instantiation"
+      " finish, then detach again")
+  with snapshot_file:
+    options['snapshot'] = json.load(snapshot_file)
 
 [dynamic-profile-master]
 < = jinja2-template-base

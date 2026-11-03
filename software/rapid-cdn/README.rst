@@ -23,6 +23,7 @@ These parameters are:
   * ``-frontend-quantity`` : The quantity of frontends to request (defaults to "1")
   * ``-frontend-i-state``: The state of frontend i
   * ``-frontend-i-software-release-url``: Software release to be used for frontends, defaults to the current software release
+  * ``-frontend-i-detach``: Detach frontend i from this cluster (defaults to "false"), see `Detaching a frontend node`_
   * ``-frontend-config-i-foo``: Frontend i will be requested with parameter foo. Those parameters will lead to service restart. Supported parameters are:
     * ``ram-cache-size``
     * ``disk-cache-size``
@@ -42,6 +43,71 @@ For example::
 will request the third frontend on COMP-1234 and with SR https://lab.nexedi.com/nexedi/slapos/raw/someid/software/rapid-cdn/software.cfg. All frontends will be of software type ``custom-personal``. The second frontend will be requested with the state stopped.
 
 *Note*: the way slaves are transformed to a parameter avoid modifying more than 3 lines in the frontend logic.
+
+Detaching a frontend node
+=========================
+
+A detached frontend node keeps serving the configuration and the slave list it
+last received, and ignores everything the cluster sends afterwards. It is the
+protection to arm before an operation which can damage the cluster -- a
+software release upgrade of the master partition, a migration, a risky
+parameter change -- so that a node is left which still serves what was being
+served before the operation.
+
+Detach a node with::
+
+  <parameter id="-frontend-1-detach">true</parameter>
+
+and re-attach it by setting the same parameter to ``false``, or by removing it.
+
+The node takes its snapshot every time it renders while attached, so detaching
+freezes the state it saw on its *last run*, not the state it had when it was
+last known to be healthy. Detach **before** starting the operation, not after
+noticing that it went wrong.
+
+Every node runs the ``attachment-state`` promise, which passes while the node
+is attached and fails for as long as the node is detached. This is deliberate:
+a detached node is, by definition, serving something other
+than what the cluster asks for, and that has to be visible for as long as it
+lasts. Its services keep running while the error is reported: detaching a
+node restarts nothing, it goes on serving with the processes it already has,
+and re-attaching it to an unchanged cluster restarts nothing either.
+
+Detach the node which serves -- that is the node the procedure protects:
+
+  1. detach the active node;
+  2. upgrade, or otherwise operate on, the cluster;
+  3. the detached node goes on serving the pre-operation state, whatever the
+     operation does to the cluster;
+  4. repair the cluster if the operation damaged it;
+  5. re-attach the node, which then applies the current cluster state.
+
+A standby node left attached shows what the cluster sends in the meantime,
+which is what the detached node is protected from.
+
+Limitations
+-----------
+
+  * **The partition state is not covered.** ``stopped`` and ``destroyed`` are
+    acted upon by slapgrid outside of buildout, and no software release can
+    refuse them: a detached node can still be stopped or destroyed by the
+    cluster. A stopped node also runs no promise, so a node which is both
+    detached and stopped reports nothing.
+  * **The software release is not covered.** Detaching does not pin the
+    release the node runs; pin it with ``-frontend-i-software-release-url``.
+  * **The arming travels through the master partition**, which is the
+    component an upgrade is most likely to damage. A bug there can re-attach a
+    node.
+  * **It cannot protect the upgrade which introduces it.** A node can only be
+    detached once it already runs a release providing the
+    ``single-custom-personal-detach`` software type: requesting an unknown
+    software type fails. A node detached before it rendered the release once
+    while attached has no snapshot to serve: its instantiation fails, too
+    early for any promise to report it, and it keeps running the services it
+    already has::
+
+      no detach snapshot: re-attach the node, let one instantiation finish,
+      then detach again
 
 How to deploy a frontend server
 ===============================

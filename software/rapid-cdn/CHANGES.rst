@@ -40,6 +40,18 @@ slave without a key download URL at the first check, and names the
 slave.
 (`!2237 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2237>`__)
 
+A frontend node can be detached from its cluster
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+``-frontend-i-detach`` makes frontend node ``i`` keep serving the configuration
+and the slave list it last received, and ignore everything the cluster sends
+afterwards, so that an operation which damages the cluster leaves a node
+serving what was being served before it. A detached node reports an error to
+the SlapOS Master on every run, until it is re-attached. See `Detaching a
+frontend node` in the README for the procedure and its limitations.
+(`!2255 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2255>`__)
+
 1.0.519 (2026-10-23)
 --------------------
 

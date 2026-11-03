@@ -7774,6 +7774,176 @@ class TestReplicateSlaveOtherDestroyed(
     self.assertFalse(node_2_present)
 
 
+class TestDetachedFrontendNode(SlaveHttpFrontendTestCase):
+  instance_parameter_dict = {
+    'domain': 'example.com',
+    'port': HTTPS_PORT,
+    'plain_http_port': HTTP_PORT,
+    'kedifa_port': KEDIFA_PORT,
+    'caucase_port': CAUCASE_PORT,
+  }
+  slave_state = 'started'
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps(cls.instance_parameter_dict)
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'detach': {
+        'url': cls.backend_url,
+      },
+    }
+
+  @classmethod
+  def requestSlaves(cls):
+    for slave_reference, partition_parameter_kw in sorted(
+      cls.getSlaveParameterDictDict().items()):
+      cls.requestSlaveInstance(
+        partition_reference=slave_reference,
+        partition_parameter_kw=partition_parameter_kw,
+        state=cls.slave_state,
+      )
+
+  def _instantiate(self, count=3):
+    for _ in range(count):
+      try:
+        self.slap.waitForInstance(0)
+      except SlapOSNodeInstanceError:
+        pass
+
+  def _requestCluster(self, **parameter_dict):
+    self.instance_parameter_dict.update(parameter_dict)
+    type(self)._instance_parameter_dict = {
+      '_': json.dumps(self.instance_parameter_dict)
+    }
+    self.requestDefaultInstance()
+
+  def _getFrontendPartitionPath(self):
+    configuration_list = glob.glob(
+      os.path.join(self.instance_path, '*', 'etc', 'frontend-haproxy.cfg'))
+    self.assertEqual(1, len(configuration_list), configuration_list)
+    return os.path.realpath(
+      os.path.join(configuration_list[0], os.pardir, os.pardir))
+
+  def _getAttachmentStatePromisePath(self):
+    return os.path.join(
+      self._getFrontendPartitionPath(), 'etc', 'plugin', 'attachment-state.py')
+
+  def _getAttachmentStateResultDict(self):
+    with open(
+      os.path.join(
+        self._getFrontendPartitionPath(), '.slapgrid', 'promise', 'result',
+        'attachment-state.status.json')) as fh:
+      result = json.load(fh)['result']
+    return {key: result[key] for key in ('failed', 'message')}
+
+  def _getFrontendHaproxyConfiguration(self):
+    with open(
+      os.path.join(
+        self._getFrontendPartitionPath(), 'etc',
+        'frontend-haproxy.cfg')) as fh:
+      return fh.read()
+
+  def _getFrontendServicePidDict(self):
+    # the one-shot runners of etc/run/ are re-run by every instantiation pass,
+    # detached or not, so only the services of etc/service/ are compared
+    partition_id = self.getPartitionId('caddy-frontend-1')
+    service_pid_dict = {
+      info['name']: info['pid']
+      for info in self.callSupervisorMethod('getAllProcessInfo')
+      if info['group'] == partition_id and info['statename'] == 'RUNNING'
+    }
+    self.assertTrue(service_pid_dict, partition_id)
+    return service_pid_dict
+
+  def test_detached_node_ignores_the_cluster(self):
+    domain = self.parseSlaveParameterDict('detach')['domain']
+    self.assertEqual(
+      http.client.OK, fakeHTTPSResult(domain, 'test-path').status_code)
+    self.assertTrue(
+      os.path.exists(
+        os.path.join(
+          self._getFrontendPartitionPath(),
+          '.slapos-detach-snapshot.json')))
+    self.assertEqual(
+      {'failed': False, 'message': 'frontend node caddy-frontend-1 attached'},
+      self._getAttachmentStateResultDict())
+
+    service_pid_dict = self._getFrontendServicePidDict()
+    self._requestCluster(**{'-frontend-1-detach': True})
+    self._instantiate()
+    self.assertEqual(
+      http.client.OK, fakeHTTPSResult(domain, 'test-path').status_code)
+    self.assertEqual(
+      service_pid_dict, self._getFrontendServicePidDict(), 'node detached')
+
+    self.assertTrue(os.path.exists(self._getAttachmentStatePromisePath()))
+    status, output = subprocess_status_output([
+      self.slap._slapos_wrapper, 'node', 'instance',
+      '--cfg', self.slap._slapos_config,
+    ])
+    self.assertNotEqual(0, status, output)
+    self.assertRegex(
+      output,
+      br'output: frontend node caddy-frontend-1 detached, serving '
+      br'snapshot \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\n')
+
+    # neither direction restarts anything while the cluster says the same
+    # thing
+    self._requestCluster(**{'-frontend-1-detach': False})
+    self._instantiate()
+    self.assertEqual(
+      http.client.OK, fakeHTTPSResult(domain, 'test-path').status_code)
+    self.assertEqual(
+      service_pid_dict, self._getFrontendServicePidDict(), 'node re-attached')
+    self.assertEqual(
+      {'failed': False, 'message': 'frontend node caddy-frontend-1 attached'},
+      self._getAttachmentStateResultDict())
+    self._requestCluster(**{'-frontend-1-detach': True})
+    self._instantiate()
+    self.assertEqual(
+      http.client.OK, fakeHTTPSResult(domain, 'test-path').status_code)
+    self.assertEqual(
+      service_pid_dict, self._getFrontendServicePidDict(),
+      'node detached again')
+
+    # the 2026-08-28 incident: the cluster loses its shared instance list
+    type(self).slave_state = 'destroyed'
+    self._requestCluster()
+    self._instantiate()
+    self.assertEqual(
+      http.client.OK, fakeHTTPSResult(domain, 'test-path').status_code)
+    self.assertIn(domain, self._getFrontendHaproxyConfiguration())
+    self.assertEqual(
+      service_pid_dict, self._getFrontendServicePidDict(), 'cluster emptied')
+
+    self._requestCluster(**{'-frontend-1-detach': False})
+    self._instantiate()
+    self.assertNotIn(domain, self._getFrontendHaproxyConfiguration())
+    self.assertEqual(
+      {'failed': False, 'message': 'frontend node caddy-frontend-1 attached'},
+      self._getAttachmentStateResultDict())
+
+    # a node detached before it rendered this release once while attached
+    os.unlink(
+      os.path.join(
+        self._getFrontendPartitionPath(), '.slapos-detach-snapshot.json'))
+    self._requestCluster(**{'-frontend-1-detach': True})
+    self._instantiate()
+    status, output = subprocess_status_output([
+      self.slap._slapos_wrapper, 'node', 'instance',
+      '--cfg', self.slap._slapos_config,
+    ])
+    self.assertNotEqual(0, status, output)
+    self.assertIn(
+      b'Error: no detach snapshot: re-attach the node, let one instantiation'
+      b' finish, then detach again', output)
+
+
 class TestRe6stVerificationUrlSlave(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def startServerProcess(cls):

@@ -274,6 +274,12 @@
       "title": "Frontend N State",
       "type": "string"
     },
+    "^-frontend-[0-9]+-detach$": {
+      "description": "Detach the frontend instance (indexed) from this cluster: it keeps serving the configuration and the shared instance list it last received, ignores everything sent afterwards, and reports an error until it is re-attached.",
+      "title": "Frontend N Detach",
+      "type": "boolean",
+      "default": false
+    },
     "^-frontend-config-[0-9]+-.+$": {
       "description": "Frontend config parameter (indexed). Key suffix after the number is a free string (e.g. ram-cache-size, expert-backend-allow-downgrade-ssl). Some parameters accept value with suffix 'K', 'M', 'G'.",
       "title": "Frontend Config N Parameter"
