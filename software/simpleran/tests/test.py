@@ -331,11 +331,11 @@ class ENBTestCase4(RFTestCase4):
         ],
         'plmn_list':    [
             {'plmn': '31415'},
-            {'plmn': '44444', 'attach_without_pdn': True, 'reserved': True},
+            {'plmn': '44444', 'attach_without_pdn': True},
         ],
         'plmn_list_5g':     [
             {'plmn': '51413', 'tac': '0x124'},
-            {'plmn': '55555', 'tac': '0x125', 'ranac': 210, 'reserved': True},
+            {'plmn': '55555', 'tac': '0x125', 'ranac': 210},
         ],
         'xlog_enabled': False,
         'check_core_network': False,
@@ -373,14 +373,14 @@ class ENBTestCase4(RFTestCase4):
       x2_peers=['44.1.1.1'], xn_peers=['55.1.1.1'],
       cell_default={
         'plmn_list': [
-          dict(plmn='31415', attach_without_pdn=False, reserved=False),
-          dict(plmn='44444', attach_without_pdn=True,  reserved=True),
+          dict(plmn='31415', attach_without_pdn=False),
+          dict(plmn='44444', attach_without_pdn=True),
         ]
       },
       nr_cell_default={
         'plmn_list': [
-          dict(plmn='51413', tac=0x124, ranac=NO,  reserved=False),
-          dict(plmn='55555', tac=0x125, ranac=210, reserved=True),
+          dict(plmn='51413', tac=0x124, ranac=NO),
+          dict(plmn='55555', tac=0x125, ranac=210),
         ]
       },
     ))

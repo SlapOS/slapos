@@ -19,18 +19,6 @@
       ],
       "type": "string"
     },
-    "bandwidth_ul": {
-      "title": "Uplink Bandwidth",
-      "description": "Uplink Bandwidth (same as downlink bandwidth by default)",
-      "enum": [
-        "3 MHz",
-        "5 MHz",
-        "10 MHz",
-        "15 MHz",
-        "20 MHz"
-      ],
-      "type": "string"
-    },
     "lte_band": {
       "title": "LTE band",
       "description": "LTE band number. Default depends on ORS model, please refer to the connection parameters",
@@ -56,15 +44,6 @@
       "$ref": "cell/lte/input-schema.json#/properties/dl_earfcn",
       "title": "DL EARFCN",
       "description": "Can be used instead of DL Frequency to directly set the Downlink E-UTRA Absolute Radio Frequency Channel Number of the cell (Do not set both DL Frequency and DL EARFCN)"
-    },
-    "tti_bundling": {
-      "$ref": "cell/lte/input-schema.json#/properties/tti_bundling"
-    },
-    "cipher_algo_pref": {
-      "$ref": "cell/lte/input-schema.json#/properties/cipher_algo_pref"
-    },
-    "integ_algo_pref": {
-      "$ref": "cell/lte/input-schema.json#/properties/integ_algo_pref"
     }
   }
 }
