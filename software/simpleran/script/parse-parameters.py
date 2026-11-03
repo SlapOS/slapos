@@ -75,6 +75,8 @@ NR_TDD_CONFIG_MAP = {
             'k_min': 2,
             'rx_to_tx_latency': 4,
         },
+        'mcs_table_ul': 'qam64',
+        'mcs_table_dl': 'qam64',
     },
     'DSUUU      (2.5ms, 1DL/3UL), S-slot=6DL:4GP:4UL, reduced latency, high uplink, no TRS': {
         'pattern1': '2.5ms 3UL 1DL S=4UL:6DL',
@@ -94,6 +96,8 @@ NR_TDD_CONFIG_MAP = {
             'k_min': 2,
             'rx_to_tx_latency': 4,
         },
+        'mcs_table_ul': 'qam64',
+        'mcs_table_dl': 'qam64',
     },
     'DSUUU      (2.5ms, 1DL/3UL), S-slot=9DL:4GP:1UL, reduced latency, high uplink': {
         'pattern1': '2.5ms 3UL 1DL S=1UL:9DL',
@@ -102,6 +106,8 @@ NR_TDD_CONFIG_MAP = {
             'k_min': 2,
             'rx_to_tx_latency': 4,
         },
+        'mcs_table_ul': 'qam64',
+        'mcs_table_dl': 'qam64',
     },
     'DS         (1ms, 1DL/0UL), S-slot=0DL:2GP:12UL, minimum latency, balanced downlink and uplink, no TRS': {
         'pattern1': '1ms 0UL 1DL S=12UL:0DL',
@@ -125,7 +131,9 @@ NR_TDD_CONFIG_MAP = {
               'report_quantity': "CRI_RI_PMI_CQI",
           },
         },
-        'advanced_parameter': {'prach_config_index': 128}
+        'advanced_parameter': {'prach_config_index': 128},
+        'mcs_table_ul': 'qam64',
+        'mcs_table_dl': 'qam64',
     },
 }
 
