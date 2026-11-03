@@ -156,6 +156,7 @@ NR_TDD_CONFIG_MAP = {
 }
 
 self.error = False
+options['sdr100'] = "0"
 
 # Get serial number of this ORS
 sn = 0
@@ -254,6 +255,8 @@ def ors_radio(config, publish, shared_list):
         elif sdr_info['model'] == 'SDR100':
             config['sdr100'] = True
             sdr_info['power'] = '15mW'
+
+    options['sdr100'] = "1" if config['sdr100'] else "0"
 
     rf_info.setdefault('max_antenna', max_antenna)
     rf_info.setdefault('flavour', 'ORS')
