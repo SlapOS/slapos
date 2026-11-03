@@ -244,7 +244,7 @@ context =
   key ssl_cert postfix-certificate:bundle
   key ssl_key postfix-certificate:bundle
   raw dovecot_plugin_dir ${dovecot-pigeonhole:location}/lib/dovecot
-  key sendmail_path wrapper-sendmail:wrapper-path
+  key sendmail_path dovecot-sendmail:output
   key bogofilter_enable :bogofilter-enable
   key demo_disable_auth :demo-disable-auth
 {% if slapparameter_dict['bogofilter']['enable'] %}
@@ -692,6 +692,105 @@ depends =
 {%- for postfix_wrapper in postfix_wrappers %}
   {{ "$${" + postfix_wrapper + ":recipe" }}
 {%- endfor %}
+
+[dovecot-sendmail]
+recipe = slapos.recipe.template
+output = $${directory:bin}/dovecot-sendmail
+mode = 755
+inline =
+  #!${buildout:executable}
+  # Sendmail command of Dovecot.
+  # This script edits only a message that the Sieve "redirect" action of
+  # Pigeonhole sends. All other messages (vacation replies, notifications,
+  # rejects) go to sendmail unchanged.
+  # Pigeonhole sends each "redirect" action as a separate message with:
+  # - one recipient: Dovecot gives "-i -f <user> -- <recipient>",
+  # - the header "X-Sieve-Redirected-From: <user>" on top,
+  # - the envelope sender <user>, because of
+  #   sieve_redirect_envelope_from = recipient.
+  # If the recipient of a redirected message is the author of the message
+  # (an address in "From"), this script does not send the message. The
+  # author has the message already. For example, a shared address redirects
+  # to all its members. When a member replies to all, the other members get
+  # the reply, and the member who wrote the reply does not get it back.
+  # For all other redirected messages, this script edits the header so that
+  # the message passes the DMARC check of the recipient:
+  # - "From" becomes the address of the user. The original "From" field
+  #   becomes "Reply-To", byte for byte, if the message has no "Reply-To".
+  # - "X-Forwarded-To" gives the address of the recipient.
+  # - "DKIM-Signature" fields are removed, because they do not verify after
+  #   the edit of "From". "X-Bogosity" fields are removed, because the spam
+  #   class is local data.
+  # The body and all other header fields stay unchanged.
+  import os, shutil, subprocess, sys
+  from email.utils import getaddresses
+  SENDMAIL = '$${wrapper-sendmail:wrapper-path}'
+  REMOVED = {b'from', b'dkim-signature', b'x-bogosity'}
+  def name(field):
+    name, colon, _ = field.partition(b':')
+    return name.strip().lower() if colon else None
+  def value(field):
+    return field.partition(b':')[2]
+  argv = sys.argv[1:]
+  stdin = sys.stdin.buffer
+  # Read the header. Each field keeps its folded lines and line endings.
+  field_list = []
+  while True:
+    line = stdin.readline()
+    if line in (b'', b'\n', b'\r\n'):
+      separator = line
+      break
+    if line[:1] in (b' ', b'\t') and field_list:
+      field_list[-1] += line
+    else:
+      field_list.append(line)
+  # Dovecot gives "-i -f <sender> -- <recipient>...".
+  if '--' in argv:
+    i = argv.index('--')
+    option_list, recipient_list = argv[:i], argv[i+1:]
+  else:
+    option_list, recipient_list = argv, []
+  sender = b''
+  if '-f' in option_list[:-1]:
+    sender = os.fsencode(option_list[option_list.index('-f') + 1]).strip(b'<>')
+  # Pigeonhole puts its header on top, so the first one belongs to the user.
+  # The comparison with the envelope sender ignores a header that the sender
+  # of the message forged. The null sender "<>" never matches.
+  redirected_from = next((value(f).strip() for f in field_list
+    if name(f) == b'x-sieve-redirected-from'), None)
+  # The message is a redirect only if all three properties of a redirect
+  # are true. Any other message goes to sendmail unchanged.
+  is_redirect = (bool(sender) and redirected_from == sender
+    and len(recipient_list) == 1)
+  if is_redirect:
+    recipient = recipient_list[0]
+    author_list = [address.lower() for _, address in getaddresses([
+      value(f).decode('utf-8', 'surrogateescape')
+      for f in field_list if name(f) == b'from'])]
+    if recipient.lower() in author_list:
+      # Read the message to the end, because Dovecot writes all of it.
+      # Exit status 0 tells Pigeonhole that the redirect is done.
+      with open(os.devnull, 'wb') as devnull:
+        shutil.copyfileobj(stdin, devnull)
+      sys.exit(0)
+    recipient = os.fsencode(recipient)
+    eol = b'\r\n' if field_list[0].endswith(b'\r\n') else b'\n'
+    field_list = [f if f.endswith(b'\n') else f + eol for f in field_list]
+    name_list = [name(f) for f in field_list]
+    added_list = []
+    if b'from' in name_list and b'reply-to' not in name_list:
+      from_field = field_list[name_list.index(b'from')]
+      added_list.append(b'Reply-To:' + value(from_field))
+    added_list.append(b'From: ' + sender + eol)
+    added_list.append(b'X-Forwarded-To: ' + recipient + eol)
+    field_list = added_list + [
+      f for f in field_list if name(f) not in REMOVED]
+    separator = separator or eol
+  with subprocess.Popen([SENDMAIL, *argv], stdin=subprocess.PIPE) as process:
+    process.stdin.write(b''.join(field_list) + separator)
+    shutil.copyfileobj(stdin, process.stdin)
+    process.stdin.close()
+  sys.exit(process.returncode)
 
 [logrotate-entry-postfix]
 <= logrotate-entry-base
