@@ -82,6 +82,8 @@ extra-context =
   section parameter_dict dynamic-template-apache-php-parameters
   raw lamp_apache_httpd {{ lamp_apache_httpd }}
   raw bin_directory {{ bin_directory }}
+  raw dash_executable_location {{ dash_location }}/bin/dash
+  raw template_monitor_httpd_wrapper {{ template_monitor_httpd_wrapper }}
 
 [dynamic-template-mariadb-parameters]
 bash = {{ bash_location }}
