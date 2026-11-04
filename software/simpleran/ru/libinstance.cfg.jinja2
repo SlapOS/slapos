@@ -334,13 +334,8 @@ context =
   section directory directory
   key slapparameter_dict myslap:parameter_dict
   key log_file :log-output
-{%- if slapparameter_dict.websocket_url_ipv6 %}
-  raw enable_password False
-  raw ws_password 0
-{%- else %}
   raw enable_password True
   raw ws_password ${websocket-password:passwd}
-{%- endif %}
   raw ws_url ws://{{ slapparameter_dict.com_url }}
   raw stats_period {{ slapparameter_dict.get("enb_stats_fetch_period", 60) }}
   raw python_path {{ buildout_directory}}/bin/pythonwitheggs
@@ -397,6 +392,7 @@ context =
     section params nginx-params
     section ca ca-websocket
     section tempdir nginx-tempdir
+    key frontend_domain request-slave-frontend:connection-domain
     raw mime {{ nginx_mime }}
 
 [nginx-params]
@@ -453,15 +449,23 @@ wrapper = ${directory:bin}/nginx-with-ca
 [frontend-urlparse]
 recipe = slapos.recipe.build
 domain = ${request-slave-frontend:connection-domain}
+nginx-websocket-ip = ${nginx-params:ip}
+nginx-websocket-port = ${nginx-params:port}
 init =
   import six.moves.urllib.parse as urlparse
-  parsed_url = urlparse.urlparse('wss://' + options['domain'])
-  if parsed_url.hostname:
-    options['hostname'] = parsed_url.hostname + '/websocket'
+  # If frontend domain is IPv6 we don't use it as it won't work and is not needed
+  if ':' in options['domain']:
+    options['hostname'] = options['nginx-websocket-ip']
+    options['raw_hostname'] = options['nginx-websocket-ip']
+    options['port'] = options['nginx-websocket-port']
   else:
-    options['hostname'] = None
-  options['raw_hostname'] = parsed_url.hostname
-  options['port'] = parsed_url.port if parsed_url.port else 443
+    parsed_url = urlparse.urlparse('wss://' + options['domain'])
+    if parsed_url.hostname:
+      options['hostname'] = parsed_url.hostname + '/websocket'
+    else:
+      options['hostname'] = None
+    options['raw_hostname'] = parsed_url.hostname
+    options['port'] = parsed_url.port if parsed_url.port else 443
 
 {{ part('websocket-promise') }}
 <= monitor-promise-base

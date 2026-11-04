@@ -5,12 +5,10 @@
     log_filename: "{{ directory['log'] }}/ims.log",
 
     com_addr: "{{ slapparameter_dict.ims_com_url }}",
-{%- if not slapparameter_dict.com_unsecure %}
     com_auth: {
       password: "{{ websocket_password }}",
-      unsecure: false,
+      unsecure: true, // We use unsecure because websockets needs to work in offline mode without SSL as well
     },
-{%- endif %}
 
     sip_addr: [
         {addr: "{{ ims_pdn.ipv4 }}", bind_addr: "{{ ims_pdn.ipv4 }}", port_min: 10000, port_max: 20000
