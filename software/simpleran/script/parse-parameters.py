@@ -1116,8 +1116,6 @@ def core_network(config, publish, shared_list):
         'mme_com_addr': '127.0.1.3',
         'ims_com_ws_port':  9004,
         'ims_com_addr': '127.0.1.5',
-        'com_unsecure':     False,
-        'websocket_url_ipv6': False,
         'ims_addr': '127.0.0.1',
         'ims_bind': '127.0.0.2',
         'mme_bind_ipv6': slap_configuration['ipv6-random'],
@@ -1131,16 +1129,8 @@ def core_network(config, publish, shared_list):
     }
     for k,v in mme_defaults.items():
         config.setdefault(k, v)
-    if config['websocket_url_ipv6']:
-        ipv6 = slap_configuration['ipv6-random']
-        config['mme_com_addr'] = ipv6
-        config['mme_com_url' ] = f"[{ipv6}]:{config['mme_com_ws_port']}"
-        config['ims_com_addr'] = ipv6
-        config['ims_com_url' ] = f"[{ipv6}]:{config['ims_com_ws_port']}"
-        config['com_unsecure'] = True
-    else:
-        config['mme_com_url'] = f"{config['mme_com_addr']}:{config['mme_com_ws_port']}"
-        config['ims_com_url'] = f"{config['ims_com_addr']}:{config['ims_com_ws_port']}"
+    config['mme_com_url'] = f"{config['mme_com_addr']}:{config['mme_com_ws_port']}"
+    config['ims_com_url'] = f"{config['ims_com_addr']}:{config['ims_com_ws_port']}"
 
     sim_list = []
     dns_list = []

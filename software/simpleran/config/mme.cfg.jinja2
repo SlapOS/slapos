@@ -9,12 +9,10 @@
   log_filename: "{{ directory['log'] }}/mme.log",
 
   com_addr: "{{ slapparameter_dict.mme_com_url }}",
-{%- if not slapparameter_dict.com_unsecure %}
   com_auth: {
     password: "{{ websocket_password }}",
-    unsecure: false,
+    unsecure: true, // We use unsecure because websockets needs to work in offline mode without SSL as well
   },
-{%- endif %}
 
   gtp_addr: [
 {%-   for addr in slapparameter_dict.get('gtp_addr_list', []) | sort -%}

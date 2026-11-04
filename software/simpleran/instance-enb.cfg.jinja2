@@ -4,7 +4,6 @@
 {%- set enb_defaults = {
   'com_ws_port':  9001,
   'com_addr':     '127.0.1.2',
-  'com_unsecure':     False,
   'gnb_id_bits':  28,
   'nssai':        [{'sst': 1}],
   'handover_a1_rsrp':            -70,
@@ -17,7 +16,6 @@
   'xlog_forwarding_enabled': True,
   'xlog_enabled': True,
   'check_core_network': True,
-  'websocket_url_ipv6': False,
   'wendelin_telecom_software_release_url': 'wendelin-telecom-enb-shared-instance',
   'xlog_fluentbit_forward_port': 24224,
   'nr_nr_handover': {
@@ -52,13 +50,7 @@
 {%- for k,v in enb_defaults|dictsort %}
 {%-   do slapparameter_dict.setdefault(k, v) %}
 {%- endfor %}
-{%- if slapparameter_dict.websocket_url_ipv6 %}
-{%-   do slapparameter_dict.update({"com_addr": my_ipv6}) %}
-{%-   do slapparameter_dict.update({"com_url": "[" + my_ipv6 + "]:" + str(slapparameter_dict.com_ws_port)}) %}
-{%-   do slapparameter_dict.update({"com_unsecure": True}) %}
-{%- else %}
-{%-   do slapparameter_dict.update({"com_url": slapparameter_dict.com_addr + ":" + str(slapparameter_dict.com_ws_port)}) %}
-{%- endif %}
+{%- do slapparameter_dict.update({"com_url": slapparameter_dict.com_addr + ":" + str(slapparameter_dict.com_ws_port)}) %}
 {%- set B = xbuildout.encode %}
 
 
@@ -227,9 +219,7 @@ depends = ${enb-wrapper:recipe}
 amarisoft-service = lteenb
 service-name = Radio
 ws-url = ws://{{ slapparameter_dict.com_url }}
-{%- if not slapparameter_dict.websocket_url_ipv6 %}
 ws-password = ${websocket-password:passwd}
-{%- endif %}
 {%- if slapparameter_dict.get('error') %}
 error = {{ slapparameter_dict.get('error') }}
 {%- endif %}
@@ -290,11 +280,7 @@ xamari = {{ buildout_directory }}/bin/xamari
 logfile = ${monitor-directory:public}/enb.xlog
 inline =
   #!/bin/sh
-{%- if slapparameter_dict.websocket_url_ipv6 %}
-  exec ${:xamari} xlog --rotate ${:rotatespec} ws://{{ slapparameter_dict.com_url }} ${:logfile} ${:logspec}
-{%- else %}
   exec ${:xamari} xlog --rotate ${:rotatespec} --password ${websocket-password:passwd} ws://{{ slapparameter_dict.com_url }} ${:logfile} ${:logspec}
-{%- endif %}
 
 [xamari-xlog-service]
 recipe = slapos.cookbook:wrapper
@@ -397,17 +383,15 @@ promise = check_url_available
 config-url = http://${xlog-fluentbit-config:monitoring-host}:${xlog-fluentbit-config:monitoring-port}/api/v1/health
 {%- endif %}
 
-{%- if slapparameter_dict.websocket_url_ipv6 %}
 [amarisoft-app]
 recipe = slapos.cookbook:simplehttpserver
 wrapper = ${directory:service}/${:_buildout_section_name_}
 base-path = {{ amarisoft['www_dir'] }}
 log-file = ${directory:log}/amarisoft-app.log
 host = {{ my_ipv6 }}
-port = 9004
+port = 9005
 url = http://[${:host}]:${:port}
 use-hash-url = false
-{%- endif %}
 
 [config-base]
 recipe = slapos.recipe.template:jinja2
@@ -472,19 +456,10 @@ link-binary = ${enb-config:output}
 [publish-connection-information]
 recipe = slapos.cookbook:publish.serialised
 depends-enb-service = ${enb-service:recipe}
-{%- if slapparameter_dict.websocket_url_ipv6 %}
-URL.websocket-hostname = {{ slapparameter_dict.com_addr }}
-URL.websocket-port = {{ slapparameter_dict.com_ws_port }}
-{%- else %}
 URL.websocket-hostname = ${frontend-urlparse:hostname}
 URL.websocket-port = ${frontend-urlparse:port}
 URL.websocket-password = ${websocket-password:passwd}
-{%- endif %}
-{%- if slapparameter_dict.websocket_url_ipv6 %}
 URL.websocket-amarisoft-gui = ${amarisoft-app:url}
-{%- else %}
-URL.websocket-amarisoft-gui = https://tech-academy.amarisoft.com/web-gui/
-{%- endif %}
 AMARISOFT.version = {{ amarisoft['version_cn'] }}
 AMARISOFT.host-id = {{ amarisoft['lteenb_host_id'] }}
 AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
