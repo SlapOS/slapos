@@ -1,3 +1,5 @@
+# If frontend domain is IPv6 then we don't use SSL as it won't get accepted by the browser
+{%- set ssl = ':' not in frontend_domain %}
 worker_processes {{ params['nb-workers'] }};
 
 pid {{ params['path-pid'] }};
@@ -20,9 +22,14 @@ http {
         server {{ params['websocket-ip'] }}:{{ params['websocket-port'] }};
     }
     server {
-        listen [{{ params['ip'] }}]:{{ params['port'] }} ssl http2;
+{%- if ssl %}
+        listen [{{ params['ip'] }}]:{{ params['port'] }} ssl;
+{%- else %}
+        listen [{{ params['ip'] }}]:{{ params['port'] }};
+{%- endif %}
         server_name _;
 
+{%- if ssl %}
         ssl_certificate {{ ca['cert-file'] }};
         ssl_certificate_key {{ ca['key-file'] }};
         ssl_session_timeout 1d;
@@ -30,6 +37,7 @@ http {
         ssl_session_tickets off;
         ssl_protocols TLSv1.3;
         ssl_prefer_server_ciphers off;
+{%- endif %}
 
         keepalive_timeout 5;
         client_body_temp_path {{ tempdir['client-body-temp-path'] }};
@@ -38,7 +46,11 @@ http {
         uwsgi_temp_path {{ tempdir['uwsgi-temp-path'] }};
         scgi_temp_path {{ tempdir['scgi-temp-path'] }};
 
+{%- if ssl %}
         location /{{ params['websocket-path'] }} {
+{%- else %}
+        location / {
+{%- endif %}
             proxy_http_version 1.1;
             proxy_pass http://enb_websocket/;
             proxy_set_header Upgrade $http_upgrade;

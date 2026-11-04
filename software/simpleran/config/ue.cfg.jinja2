@@ -26,7 +26,7 @@
   com_addr: "{{ slapparameter_dict.com_addr }}:{{ slapparameter_dict.com_ws_port }}",
   com_auth: {
     password: "{{ websocket_password }}",
-    unsecure: false,
+    unsecure: true, // We use unsecure because websockets needs to work in offline mode without SSL as well
   },
 
 {# instantiate radio units #}

@@ -3,14 +3,13 @@ from slapos.recipe.librecipe import GenericBaseRecipe, generateHashFromFiles
 
 async def websocket_connect(websocket, password):
     data = json.loads(await websocket.recv())
-    if password:
-        res = hmac.new(
-          '{}:{}:{}'.format(data['type'], password, data['name']).encode(),
-          msg=data['challenge'].encode(),
-          digestmod=hashlib.sha256
-        ).hexdigest()
-        await websocket.send(f'{{"message":"authenticate", "res": "{res}"}}')
-        rsp = await websocket.recv()
+    res = hmac.new(
+      '{}:{}:{}'.format(data['type'], password, data['name']).encode(),
+      msg=data['challenge'].encode(),
+      digestmod=hashlib.sha256
+    ).hexdigest()
+    await websocket.send(f'{{"message":"authenticate", "res": "{res}"}}')
+    rsp = await websocket.recv()
 
 async def websocket_check(uri, password):
     for i in range(3):
@@ -49,7 +48,7 @@ def get_ssb():
     ssb_list = [0, 0]
     for i in range(5):
         try:
-            ssb_list = asyncio.run(websocket_get_ssb(options['ws-url'], options.get('ws-password')))
+            ssb_list = asyncio.run(websocket_get_ssb(options['ws-url'], options['ws-password']))
         except ConnectionRefusedError as e:
             time.sleep(0.1)
             continue
@@ -104,7 +103,7 @@ del publish['0-ERROR.amarisoft']
 if options.get('error'):
     if amarisoft_service == 'lteenb':
         remove_enb_gnb_publish(publish)
-        if asyncio.run(websocket_check(options['ws-url'], options.get('ws-password'))):
+        if asyncio.run(websocket_check(options['ws-url'], options['ws-password'])):
             publish['0-INFO.state'] = f'{service_name} is currently running with the previous configuration.'\
               f' The new configuration was not applied after error occured during parameter parsing,'\
               f' please check the error and fix the parameters.'
@@ -147,7 +146,7 @@ else:
             publish['0-ERROR.amarisoft'] = parse_amarisoft_stderr(proc.stderr)
             if amarisoft_service == 'lteenb':
                 remove_enb_gnb_publish(publish)
-            if asyncio.run(websocket_check(options['ws-url'], options.get('ws-password'))):
+            if asyncio.run(websocket_check(options['ws-url'], options['ws-password'])):
                 publish['0-INFO.state'] = f'{service_name} is currently running with the previous configuration.'\
                   f' The new configuration was not applied after Amarisoft {amarisoft_service} dry run failed,'\
                   f' please check the error and fix the parameters.'
@@ -177,13 +176,13 @@ else:
                 print(f'{reason}, restarting lteenb')
 
                 # Kill previous amarisoft service
-                asyncio.run(websocket_quit(options['ws-url'], options.get('ws-password'), ignore_error=True))
+                asyncio.run(websocket_quit(options['ws-url'], options['ws-password'], ignore_error=True))
 
                 if amarisoft_service == 'lteenb':
                     # Start lteenb with dummy driver to get SSB NR ARFCN
                     while True:
                         # Retry to kill previous amarisoft service in case it did not succeed before
-                        asyncio.run(websocket_quit(options['ws-url'], options.get('ws-password'), ignore_error=True))
+                        asyncio.run(websocket_quit(options['ws-url'], options['ws-password'], ignore_error=True))
                         proc = subprocess.Popen([amarisoft_binary, '-n', options['amarisoft-config-file']],
                           stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         # If previous lteenb has not yet quit, dummy lteenb will fail immediatly
@@ -195,7 +194,7 @@ else:
                         time.sleep(0.3)
                     ssb_list = get_ssb()
                     # Kill dummy lteenb
-                    asyncio.run(websocket_quit(options['ws-url'], options.get('ws-password')))
+                    asyncio.run(websocket_quit(options['ws-url'], options['ws-password']))
                     try:
                         proc.communicate(timeout=0.2)
                     except subprocess.TimeoutExpired:
@@ -208,7 +207,7 @@ else:
                     f.write(new_hash)
             publish['0-INFO.state'] = f'{service_name} is currently starting or already running'
     else:
-        if asyncio.run(websocket_check(options['ws-url'], options.get('ws-password'))):
+        if asyncio.run(websocket_check(options['ws-url'], options['ws-password'])):
             publish['0-INFO.state'] = f'{service_name} is currently running with the current configuration'
         else:
             publish['0-INFO.state'] = f'{service_name} is not currently running, please check the monitor app in order to debug'
