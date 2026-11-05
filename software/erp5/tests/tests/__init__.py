@@ -197,8 +197,9 @@ class ERP5InstanceTestCase(SlapOSInstanceTestCase, metaclass=ERP5InstanceTestMet
   @classmethod
   def getComputerPartition(cls, partition_reference):
     for computer_partition in cls.slap.computer.getComputerPartitionList():
-      if partition_reference == computer_partition.getInstanceParameter(
-          'instance_title'):
+      instance_title = computer_partition.getInstanceParameterDict().get(
+        'instance_title')
+      if partition_reference == instance_title:
         return computer_partition
 
   @classmethod

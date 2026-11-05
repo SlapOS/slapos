@@ -83,6 +83,11 @@
       "description": "Password of the initial/rescue user",
       "type": "string"
     },
+    "auto-reset-inituser-password": {
+      "description": "Reset the inituser password once a day.",
+      "default": false,
+      "type": "boolean"
+    },
     "developer-list": {
       "description": "List of logins which should get the Developer role (required to modify portal_components' content), defaulting to inituser-login's value",
       "items": {

@@ -1185,6 +1185,76 @@ class TestZopeWSGI(ZopeTestMixin, ERP5InstanceTestCase):
   pass
 
 
+class TestAutoResetInituserPassword(ZopeSkinsMixin, CrontabMixin,
+                                   ERP5InstanceTestCase):
+  """Test auto-reset-inituser-password resets the inituser password."""
+  __partition_reference__ = 'arp'
+  __test_matrix__ = matrix((default,))
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    parameter_dict = json.loads(super().getInstanceParameterDict()['_'])
+    parameter_dict['auto-reset-inituser-password'] = True
+    return {'_': json.dumps(parameter_dict)}
+
+  def _getCrontabCommand(self, crontab_name):
+    with open(os.path.join(
+        self.getComputerPartitionPath('zope-1'),
+        'etc',
+        'cron.d',
+        crontab_name,
+    )) as f:
+      crontab_spec, = f.readlines()
+    self.assertNotEqual(crontab_spec[0], '@', crontab_spec)
+    return crontab_spec.split(None, 5)[-1]
+
+  def _getResetCommand(self):
+    cron_command = self._getCrontabCommand('reset-inituser-password')
+    reset_script = os.path.join(
+      self.getComputerPartitionPath('zope-1'),
+      'bin',
+      'reset-inituser-password',
+    )
+    if cron_command.startswith(reset_script):
+      return cron_command.split()
+    with open(cron_command) as f:
+      for line in f:
+        if reset_script in line:
+          return line.split('>', 1)[0].split()
+    self.fail('Could not find reset command in cron wrapper')
+
+  def _countActivities(self):
+    with self.getXMLRPCClient() as erp5_xmlrpc_client:
+      return erp5_xmlrpc_client.portal_activities.countMessage()
+
+  @unittest.skipIf(not ERP5PY3, "Feature uses secret, only compatible with py3")
+  def test_reset_inituser_password(self):
+    command = self._getResetCommand()
+    self.assertIn('reset-inituser-password', command[0])
+    self.assertIn('zope-0.conf', command[1])
+
+    script_path = command[0]
+    self.assertTrue(os.path.isfile(script_path))
+    self.assertTrue(os.access(script_path, os.X_OK))
+    inituser_login = self.getRootPartitionConnectionParameterDict()[
+        'inituser-login']
+    self.assertEqual(command[2], inituser_login)
+
+    self.assertIsInstance(self._countActivities(), int)
+
+    self._executeCrontabAtDate('reset-inituser-password', '2000-01-01')
+
+    for _ in range(60):
+      try:
+        self._countActivities()
+      except xmlrpc.client.ProtocolError as e:
+        self.assertIn(e.errcode, (302, 401))
+        break
+      time.sleep(1)
+    else:
+      self.fail('old inituser password still works after reset')
+
+
 class TestZopeShutdown(ZopeSkinsMixin, ERP5InstanceTestCase):
   __partition_reference__ = 's'
   def setUp(self):
