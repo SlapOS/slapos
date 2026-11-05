@@ -21,7 +21,7 @@ context =
   raw template_nginx_configration ${template-nginx-configuration:output}
   raw template_peertube_service   ${template-peertube-service:output}
   raw template_peertube_restore   ${template-peertube-restore-script:output}
-  raw postgresql10_location       ${postgresql10:location}
+  raw postgresql_location         ${postgresql:location}
   raw template_nginx_service      ${template-nginx-service:output}
   raw redis_binprefix             ${redis:location}/bin
   raw template_dcron_service      ${template-dcron-service:output}

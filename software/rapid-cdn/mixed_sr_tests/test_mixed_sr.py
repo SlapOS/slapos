@@ -50,13 +50,9 @@ from test import CurlException, fakeHTTPSResult, subprocess_status_output
 
 
 OLD_SOFTWARE_RELEASE_URL = (
-  'https://lab.nexedi.com/nexedi/slapos/-/raw/1.0.469'
+  'https://lab.nexedi.com/nexedi/slapos/-/raw/1.0.519'
   '/software/rapid-cdn/software.cfg')
 NEW_SOFTWARE_RELEASE_URL = test.SlapOSInstanceTestCase.getSoftwareURL()
-
-# Hotfix specific to 1.0.469, which was before this mix-sr test
-PATCH_FILENAME = 'rapid-cdn-1.0.469-relax-frontend-schema.patch'
-_PATCH_PATH = os.path.join(os.path.dirname(__file__), PATCH_FILENAME)
 
 BASE_INSTANCE_PARAMETER_DICT = {
   'domain': 'example.com',
@@ -106,7 +102,6 @@ class OldSoftwareReleaseTestCase(
     with open(schema) as fh:
       if '"additionalProperties": true' in fh.read():
         return  # already hotfixed: the software directory is reused across runs
-    subprocess.check_call(['patch', schema, '-i', _PATCH_PATH])
 
 
 class TestMixedFrontendSoftwareRelease(OldSoftwareReleaseTestCase):

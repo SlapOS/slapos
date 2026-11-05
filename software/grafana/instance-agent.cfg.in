@@ -211,6 +211,7 @@ init =
               "name_override": "mariadb_activities",
               "driver": "mysql",
               "dsn": dsn,
+              "disconnected_servers_behavior": "ignore",
               "query": [
                 {
                   "query": """

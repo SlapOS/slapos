@@ -59,7 +59,7 @@ ip = {{ ipv4_random }}
 
 [postgresql]
 recipe = slapos.cookbook:postgres
-bin = {{ postgresql10_location }}/bin/
+bin = {{ postgresql_location }}/bin/
 services = ${directory:services}
 dbname  = peertube_prod
 superuser = peertube
