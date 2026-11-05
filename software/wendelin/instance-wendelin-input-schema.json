@@ -147,6 +147,11 @@
               "default": false,
               "type": "boolean"
             },
+            "auto-reset-inituser-password": {
+              "description": "Reset the inituser password of the first Zope instance in this family once a day.",
+              "default": false,
+              "type": "boolean"
+            },
             "activity-timeout": {
               "description": "Override global activity timeout",
               "type": [
@@ -310,6 +315,11 @@
               "default": {
                 "form-memory-limit": "10MB"
               }
+            },
+            "auto-reset-inituser-password": {
+              "description": "Reset the inituser password of the first Zope instance in this partition once a day.",
+              "default": false,
+              "type": "boolean"
             },
             "port-base": {
               "allOf": [

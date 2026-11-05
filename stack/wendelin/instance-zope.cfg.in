@@ -17,6 +17,7 @@
 {% set test_runner_random_activity_priority = slapparameter_dict['test-runner-random-activity-priority'] -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
 {% set zope_expect_backingup_zodb = slapparameter_dict['zope-expect-backingup-zodb'] -%}
+{% set auto_reset_inituser_password = slapparameter_dict.get('auto-reset-inituser-password', False) -%}
 {% if webdav -%}
 {%   set timerserver_interval = 0 -%}
 {% else -%}
@@ -441,6 +442,23 @@ post = test ! -s {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} || {{ bin_direc
        slapparameter_dict['longrequest-logger-interval'],
      ) }}
 {% endfor -%}
+
+{% if auto_reset_inituser_password -%}
+[{{ section("reset-inituser-password") }}]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['reset-inituser-password-template'] }}
+output = ${directory:bin}/${:_buildout_section_name_}
+context =
+  raw python_executable {{ bin_directory }}/{{ parameter_dict['egg-interpreter'] }}
+  raw inituser_login {{ repr(slapparameter_dict['inituser-login']) }}
+
+[{{ section("cron-entry-reset-inituser-password") }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = reset-inituser-password
+time = daily
+command = ${reset-inituser-password:output} ${zope-0-conf:output}
+{% endif -%}
 
 [{{ section("watch_activities") }}]
 <= userhosts-wrapper-base
