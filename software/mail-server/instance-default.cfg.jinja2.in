@@ -1169,7 +1169,7 @@ config-url = $${:url}
 recipe = slapos.cookbook:certificate_authority.request
 key-file = $${apache-php-configuration:key-file}
 cert-file = $${apache-php-configuration:cert-file}
-executable = $${apache-php-wrapper:wrapper-path}
+executable = $${apache-php-wrapper:output}
 wrapper = $${directory:bin}/ca-apache-php
 
 [apache-httpd-promise]
