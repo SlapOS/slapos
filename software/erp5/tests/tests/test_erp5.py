@@ -1214,28 +1214,16 @@ class TestAutoResetInituserPassword(ZopeSkinsMixin, CrontabMixin,
       return erp5_xmlrpc_client.portal_activities.countMessage()
 
   def test_reset_inituser_password(self):
-    partition_path = self.getComputerPartitionPath('zope-default')
-    with open(os.path.join(
-        partition_path,
-        'etc',
-        'cron.d',
-        'reset-inituser-password',
-    )) as f:
-      crontab = f.read()
-    self.assertIn('reset-inituser-password', crontab)
-    self.assertIn('zope-0.conf', crontab)
+    command = self._getCrontabCommand('reset-inituser-password').split()
+    self.assertIn('reset-inituser-password', command[0])
+    self.assertIn('zope-0.conf', command[1])
 
-    script_path = os.path.join(
-        partition_path,
-        'bin',
-        'reset-inituser-password',
-    )
+    script_path = command[0]
     self.assertTrue(os.path.isfile(script_path))
     self.assertTrue(os.access(script_path, os.X_OK))
     inituser_login = self.getRootPartitionConnectionParameterDict()[
         'inituser-login']
-    with open(script_path) as f:
-      self.assertIn('inituser_login = %r' % inituser_login, f.read())
+    self.assertEqual(command[2], inituser_login)
 
     self.assertIsInstance(self._countActivities(), int)
 
