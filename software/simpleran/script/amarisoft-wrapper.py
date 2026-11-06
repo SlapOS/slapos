@@ -183,6 +183,7 @@ else:
                     while True:
                         # Retry to kill previous amarisoft service in case it did not succeed before
                         asyncio.run(websocket_quit(options['ws-url'], options['ws-password'], ignore_error=True))
+
                         proc = subprocess.Popen([amarisoft_binary, '-n', options['amarisoft-config-file']],
                           stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         # If previous lteenb has not yet quit, dummy lteenb will fail immediatly
@@ -192,6 +193,12 @@ else:
                         except subprocess.TimeoutExpired:
                             break
                         time.sleep(0.3)
+                        # Delete /tmp/.lteenb lock file as it may be blocking lteenb -n to run
+                        if not options['mock']:
+                            subprocess.run(
+                              options['rm-tmp-lte'].split(' '),
+                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                              check=False)
                     ssb_list = get_ssb()
                     # Kill dummy lteenb
                     asyncio.run(websocket_quit(options['ws-url'], options['ws-password']))
