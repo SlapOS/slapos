@@ -18,23 +18,21 @@ sdr100 = {{ slapparameter_dict.sdr100 }}
 
 
 # add ORS-specific bits to published information
-[publish-connection-information]
+[enb-service]
 {%- for p in publish %}
-{{ p }} = {{ publish[p] }}
+publish-{{ p }} = {{ publish[p] }}
 {%- endfor %}
-
 # hide ru-list, cell-list, peer-list and peer-cell-list from published information
-[publish-connection-information]
 depends += ${publish-connection-information-ors-cleanup:recipe}
+
 [publish-connection-information-ors-cleanup]
 recipe = slapos.recipe.build
 init =
-  publish = self.buildout['publish-connection-information']
-  del publish['NODEB.ru-list']
-  del publish['NODEB.cell-list']
-  del publish['NODEB.peer-list']
-  del publish['NODEB.peer-cell-list']
-  del publish['depends']
+  enb_service = self.buildout['enb-service']
+  del enb_service['publish-NODEB.ru-list']
+  del enb_service['publish-NODEB.cell-list']
+  del enb_service['publish-NODEB.peer-list']
+  del enb_service['publish-NODEB.peer-cell-list']
 
 {%- if slapparameter_dict.cell1.enable_cell %}
 [check-frequency-outofbounds.py]
