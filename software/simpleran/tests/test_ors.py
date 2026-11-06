@@ -245,7 +245,7 @@ class TestENBParameters(ORSTestCase):
     return {'_': json.dumps(enb_param_dict)}
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "enb"
+    return "enb-gnb"
   def test_enb_conf(self):
 
     conf = load_yaml_conf(self.slap, 'enb')
@@ -306,7 +306,7 @@ class TestGNBParameters1(ORSTestCase):
     return {'_': json.dumps(gnb_param_dict1)}
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "gnb"
+    return "enb-gnb"
   def test_gnb_conf(self):
 
     conf = load_yaml_conf(self.slap, 'enb')
@@ -384,7 +384,7 @@ class TestGNBParameters2(ORSTestCase):
     return {'_': json.dumps(gnb_param_dict2)}
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "gnb"
+    return "enb-gnb"
   def test_gnb_conf(self):
 
     conf = load_yaml_conf(self.slap, 'enb')
@@ -461,7 +461,7 @@ class TestENBMonitorGadgetUrl(ORSTestCase):
 
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "enb"
+    return "enb-gnb"
 
   def test_monitor_gadget_url(self):
     test_monitor_gadget_url(self)
@@ -473,7 +473,7 @@ class TestGNBMonitorGadgetUrl(ORSTestCase):
 
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "gnb"
+    return "enb-gnb"
 
   def test_monitor_gadget_url(self):
     test_monitor_gadget_url(self)

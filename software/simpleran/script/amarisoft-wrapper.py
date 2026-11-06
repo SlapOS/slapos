@@ -87,17 +87,18 @@ def remove_enb_gnb_publish(publish):
     for k in to_remove:
         del publish[k]
 
+publish = {}
+for key in options:
+    if key.startswith('publish-'):
+        key, value = key.split('publish-')[1], options[key]
+        publish[key] = value
+
 dry_config_file_list  = options['dry-config-file-list'].split('\n')
 amarisoft_service = options['amarisoft-service']
 service_name = options['service-name']
 amarisoft_binary = os.path.join(options['amarisoft-directory'], amarisoft_service)
-publish = self.buildout['publish-connection-information']
 
 os.environ['AMARISOFT_PATH'] = options['amarisoft-license-dir']
-
-del publish['depends-enb-service']
-del publish['0-ERROR.amarisoft']
-
 
 # If an error occured during parameter parsing
 if options.get('error'):
@@ -219,3 +220,17 @@ else:
      '__SSB_NR_ARFCN__' in publish.get('ID.handover-json-export', ''):
         ssb_list = get_ssb()
         publish_ssb(publish, ssb_list)
+
+PUBLISH_BUILDOUT="""
+[buildout]
+parts=
+  publish-connection-information
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish.serialised
+"""
+for key in publish:
+    PUBLISH_BUILDOUT += f"{key} = {publish[key]}\n"
+
+with open(options['template-publish'], 'w+') as f:
+  f.write(PUBLISH_BUILDOUT)
