@@ -465,7 +465,7 @@ output = ${directory:bin}/${:_buildout_section_name_}
 mode = 755
 
 [{{ section("cron-entry-reset-inituser-password") }}]
-recipe = slapos.cookbook:cron.d
+<= macro.cron-with-promise
 cron-entries = ${cron:cron-entries}
 name = reset-inituser-password
 time = daily
