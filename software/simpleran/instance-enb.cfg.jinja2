@@ -61,6 +61,7 @@ parts =
   publish-enb-config
   enb-service
   enb-rotate-service
+  run-publish-buildout
 {%- if slapparameter_dict.xlog_enabled %}
   xamari-xlog-service
 {%- endif %}
@@ -81,7 +82,6 @@ parts =
 {%- endif %}
   check-configuration-error.py
   monitor-base
-  publish-connection-information
   ${:extra-parts}
 
 extends = {{ monitor_template }}
@@ -213,8 +213,27 @@ egg-paths =
   {{ develop_eggs_directory }}
 eggs = websockets
 depends = ${enb-wrapper:recipe}
-
 # amarisoft-wrapper.py script parameters
+template-publish = ${directory:home}/template-publish.cfg
+publish-URL.websocket-hostname = ${frontend-urlparse:hostname}
+publish-URL.websocket-port = ${frontend-urlparse:port}
+publish-URL.websocket-password = ${websocket-password:passwd}
+publish-URL.websocket-amarisoft-gui = ${amarisoft-app:url}
+publish-AMARISOFT.version = {{ amarisoft['version_cn'] }}
+publish-AMARISOFT.host-id = {{ amarisoft['lteenb_host_id'] }}
+publish-AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
+publish-AMARISOFT.license-expiration = {{ amarisoft['lteenb_expiration'] }}
+publish-NODEB.ru-list   = {{ dumps(rulib.iru_dict.keys()   | sort) }}
+publish-NODEB.cell-list = {{ dumps(rulib.icell_dict.keys() | sort) }}
+publish-NODEB.peer-list = {{ dumps(ipeer_dict.keys()       | sort) }}
+publish-NODEB.peer-cell-list = {{ dumps(ipeercell_dict.keys() | sort) }}
+publish-URL.monitor-base = ${monitor-publish-connection-information:monitor-base-url}
+publish-URL.monitor-setup = ${monitor-publish-connection-information:monitor-setup-url}
+publish-URL.monitor-gadget = ${:publish-URL.monitor-base}/gadget/software.cfg.html
+{%- if slapparameter_dict.xlog_enabled %}
+publish-URL.wendelin-fluentbit-tag = ${xlog-fluentbit-tag:xlog-fluentbit-tag}
+publish-URL.wendelin = https://wendelin.rapid.space/
+{%- endif %}
 amarisoft-service = lteenb
 service-name = Radio
 ws-url = ws://{{ slapparameter_dict.com_url }}
@@ -454,30 +473,10 @@ link-binary = ${enb-config:output}
 [monitor-publish-connection-information]
 <= monitor-publish
 
-[publish-connection-information]
-recipe = slapos.cookbook:publish.serialised
-depends-enb-service = ${enb-service:recipe}
-URL.websocket-hostname = ${frontend-urlparse:hostname}
-URL.websocket-port = ${frontend-urlparse:port}
-URL.websocket-password = ${websocket-password:passwd}
-URL.websocket-amarisoft-gui = ${amarisoft-app:url}
-AMARISOFT.version = {{ amarisoft['version_cn'] }}
-AMARISOFT.host-id = {{ amarisoft['lteenb_host_id'] }}
-AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
-AMARISOFT.license-expiration = {{ amarisoft['lteenb_expiration'] }}
-NODEB.ru-list   = {{ dumps(rulib.iru_dict.keys()   | sort) }}
-NODEB.cell-list = {{ dumps(rulib.icell_dict.keys() | sort) }}
-NODEB.peer-list = {{ dumps(ipeer_dict.keys()       | sort) }}
-NODEB.peer-cell-list = {{ dumps(ipeercell_dict.keys() | sort) }}
-URL.monitor-base = ${monitor-publish-connection-information:monitor-base-url}
-URL.monitor-setup = ${monitor-publish-connection-information:monitor-setup-url}
-URL.monitor-gadget = ${:URL.monitor-base}/gadget/software.cfg.html
-{%- if slapparameter_dict.xlog_enabled %}
-URL.wendelin-fluentbit-tag = ${xlog-fluentbit-tag:xlog-fluentbit-tag}
-URL.wendelin = https://wendelin.rapid.space/
-{%- endif %}
-# This will get updated by amarisoft-wrapper.py
-0-ERROR.amarisoft = No error
+[run-publish-buildout]
+recipe = slapos.cookbook:switch-softwaretype
+enb = enb-service:template-publish
+enb-gnb = enb-service:template-publish
 
 [monitor-instance-parameter]
 {% if slapparameter_dict.get("name", None) %}
