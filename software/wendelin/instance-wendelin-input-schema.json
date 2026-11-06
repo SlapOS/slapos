@@ -84,7 +84,7 @@
       "type": "string"
     },
     "auto-reset-inituser-password": {
-      "description": "Reset the inituser password of the first requested Zope family once a day.",
+      "description": "Reset the inituser password once a day.",
       "default": false,
       "type": "boolean"
     },
