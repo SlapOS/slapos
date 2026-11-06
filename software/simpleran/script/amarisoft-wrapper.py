@@ -183,6 +183,7 @@ else:
                     while True:
                         # Retry to kill previous amarisoft service in case it did not succeed before
                         asyncio.run(websocket_quit(options['ws-url'], options['ws-password'], ignore_error=True))
+
                         proc = subprocess.Popen([amarisoft_binary, '-n', options['amarisoft-config-file']],
                           stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         # If previous lteenb has not yet quit, dummy lteenb will fail immediatly
