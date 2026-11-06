@@ -1194,8 +1194,7 @@ class TestAutoResetInituserPassword(ZopeSkinsMixin, CrontabMixin,
   @classmethod
   def getInstanceParameterDict(cls):
     parameter_dict = json.loads(super().getInstanceParameterDict()['_'])
-    parameter_dict['family-override']['default'][
-        'auto-reset-inituser-password'] = True
+    parameter_dict['auto-reset-inituser-password'] = True
     return {'_': json.dumps(parameter_dict)}
 
   def _getCrontabCommand(self, crontab_name):

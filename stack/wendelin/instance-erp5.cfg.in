@@ -34,6 +34,8 @@
 {% set partition_thread_count_list = [] -%}
 {% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
 {% set zope_family_override_dict = slapparameter_dict.get('family-override', {}) -%}
+{% set auto_reset_inituser_password = slapparameter_dict.get('auto-reset-inituser-password', False) -%}
+{% set auto_reset_inituser_password = ('' ~ auto_reset_inituser_password).lower() in ('y', 'yes', '1', 'true') -%}
 {% for zope_parameter_dict in six.itervalues(zope_partition_dict) -%}
 {#   Apply some zope_parameter_dict default values, to avoid duplication. -#}
 {%   do zope_parameter_dict.setdefault('thread-amount', 4) -%}
@@ -275,7 +277,7 @@ software-type = zope
 {% set zope_family_name_list = [] -%}
 {% set ssl_authentication_dict = {} -%}
 {% set balancer_timeout_dict = {} -%}
-{% set jupyter_zope_family_default = [] -%}
+{% set first_zope_family = [] -%}
 {% for custom_name, zope_parameter_dict in six.iteritems(zope_partition_dict) -%}
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
@@ -287,8 +289,8 @@ software-type = zope
 {%   do zope_family_name_list.append(zope_family) %}
 {#   # default jupyter zope family is first zope family. -#}
 {#   # use list.append() to update it, because in jinja2 set changes only local scope. -#}
-{%   if not jupyter_zope_family_default -%}
-{%     do jupyter_zope_family_default.append(zope_family) -%}
+{%   if not first_zope_family -%}
+{%     do first_zope_family.append(zope_family) -%}
 {%   endif -%}
 {%   do zope_family_dict.setdefault(zope_family, []).append(section_name) -%}
 {%   do ssl_authentication_dict.__setitem__(zope_family, zope_parameter_dict.get('ssl-authentication', False)) -%}
@@ -317,7 +319,7 @@ config-webdav = {{ dumps(current_zope_family_override_dict.get('webdav', zope_pa
 config-xml-rpc = {{ dumps(current_zope_family_override_dict.get('xml-rpc', False)) }}
 config-publisher-timeout = {{ dumps(current_zope_family_override_dict.get('publisher-timeout', global_publisher_timeout)) }}
 config-activity-timeout = {{ dumps(current_zope_family_override_dict.get('activity-timeout', global_activity_timeout)) }}
-config-auto-reset-inituser-password = {{ dumps(zope_parameter_dict.get('auto-reset-inituser-password', current_zope_family_override_dict.get('auto-reset-inituser-password', False))) }}
+config-auto-reset-inituser-password = {{ dumps(auto_reset_inituser_password and zope_family == first_zope_family[0]) }}
 {%   if test_runner_enabled -%}
 config-test-runner-balancer-url-list = ${publish-early:{{ zope_family }}-test-runner-url-list}
 
@@ -361,8 +363,8 @@ config-command = {{ '${' ~ check_software_url_section_name ~ ':path}' }}
 
 {# if not explicitly configured, connect jupyter to first zope family, which  -#}
 {# will be 'default' if zope families are not configured also -#}
-{% if not jupyter_zope_family and jupyter_zope_family_default -%}
-{%   set jupyter_zope_family = jupyter_zope_family_default[0] -%}
+{% if not jupyter_zope_family and first_zope_family -%}
+{%   set jupyter_zope_family = first_zope_family[0] -%}
 {% endif -%}
 
 {# We need to concatenate lists that we cannot read as lists, so this gets hairy. -#}

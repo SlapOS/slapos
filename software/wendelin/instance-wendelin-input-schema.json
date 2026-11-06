@@ -83,6 +83,11 @@
       "description": "Password of the initial/rescue user",
       "type": "string"
     },
+    "auto-reset-inituser-password": {
+      "description": "Reset the inituser password of the first requested Zope family once a day.",
+      "default": false,
+      "type": "boolean"
+    },
     "developer-list": {
       "description": "List of logins which should get the Developer role (required to modify portal_components' content), defaulting to inituser-login's value",
       "items": {
@@ -144,11 +149,6 @@
             },
             "xml-rpc": {
               "description": "Serve XML-RPC queries",
-              "default": false,
-              "type": "boolean"
-            },
-            "auto-reset-inituser-password": {
-              "description": "Reset the inituser password of the first Zope instance in this family once a day.",
               "default": false,
               "type": "boolean"
             },
@@ -315,11 +315,6 @@
               "default": {
                 "form-memory-limit": "10MB"
               }
-            },
-            "auto-reset-inituser-password": {
-              "description": "Reset the inituser password of the first Zope instance in this partition once a day.",
-              "default": false,
-              "type": "boolean"
             },
             "port-base": {
               "allOf": [
