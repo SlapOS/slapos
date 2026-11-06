@@ -191,7 +191,7 @@ config-port = ${tidstorage:port}
 {% endif -%}
 
 [{{ section("cron-entry-tidstorage-backup") }}]
-recipe = slapos.cookbook:cron.d
+<= macro.cron-with-promise
 cron-entries = ${cron:cron-entries}
 name = tidstorage
 time = {{ dumps(backup_periodicity) }}
@@ -199,7 +199,7 @@ command = ${repozo-backup-script:repozo-wrapper}
 
 {% if check_backup_periodicity != 'never' %}
 [{{ section("cron-entry-tidstorage-check-backup") }}]
-recipe = slapos.cookbook:cron.d
+<= macro.cron-with-promise
 cron-entries = ${cron:cron-entries}
 name = check-backup
 time = {{ dumps(check_backup_periodicity) }}
