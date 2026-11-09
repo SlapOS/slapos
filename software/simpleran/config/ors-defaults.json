@@ -116,6 +116,31 @@
       }
     ]
   },
+  "B1-BRUTE-2110-2170": {
+    "range": "2110MHz - 2170MHz",
+    "lte_frequency": 2140,
+    "bandwidth": "20 MHz",
+    "lte_band": 1,
+    "nr_frequency": 2140,
+    "nr_bandwidth": "50 MHz",
+    "nr_band": 1,
+    "ssb_pos_bitmap": "1000",
+    "rf_mode": "fdd",
+    "tx_power": [
+      {
+        "coeff": null
+      },
+      {
+        "coeff": [
+          -0.00031488328269048464,
+          1.034023355872052,
+          -32.08240561854517
+        ],
+        "min": 40,
+        "max": 75
+      }
+    ]
+  },
   "B28": {
     "range": "758MHz - 803MHz",
     "lte_frequency": 792,
