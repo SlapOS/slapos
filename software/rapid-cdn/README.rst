@@ -785,6 +785,8 @@ Instantiating Rapid.CDN results with a cluster in various partitions:
  * kedifa (contains kedifa server)
  * frontend-node-N which contains the running processes to serve sites - this partition can be replicated by ``-frontend-quantity`` parameter
 
+``frontend-node-N`` is the partition requested as ``caddy-frontend-N``, the ``N`` used by ``-frontend-N-state`` and the other ``-frontend-N-*`` parameters. The master partition publishes its ``frontend-node-N-*`` values under the same ``N``. A destroyed frontend node publishes nothing and leaves a gap in the numbering.
+
 It means sites are served in ``frontend-node-N`` partition, and this partition is structured as:
 
  * Haproxy serving the browser [client-facing-haproxy]

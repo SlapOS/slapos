@@ -7885,6 +7885,75 @@ class TestReplicateSlaveOtherDestroyed(
     self.assertFalse(node_2_present)
 
 
+class TestFrontendNodeNumberingFirstDestroyed(
+  SlaveHttpFrontendTestCase, ReplicateSlaveMixin):
+  instance_parameter_dict = {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+    }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps(cls.instance_parameter_dict)
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'empty': {
+        'url': cls.backend_url,
+      }
+    }
+
+  def getFrontendNodeKeyList(self):
+    return sorted(
+      k for k in self.requestDefaultInstance().getConnectionParameterDict()
+      if k.startswith('frontend-node-'))
+
+  def getPluginList(self):
+    return sorted(
+      os.path.basename(q) for q in glob.glob(os.path.join(
+        self.getMasterPartitionPath(), 'etc', 'plugin',
+        'check-backend-haproxy-statistic-url-frontend-node-*.py')))
+
+  def test(self):
+    self.requestSecondFrontend()
+    connection_parameter_dict = \
+      self.requestDefaultInstance().getConnectionParameterDict()
+    node_2_statistic_url = connection_parameter_dict[
+      'frontend-node-2-backend-haproxy-statistic-url']
+
+    self.instance_parameter_dict.update({
+      '-frontend-1-state': 'destroyed',
+      '-frontend-2-state': 'started',
+    })
+    self.updateDefaultInstanceParameterDict(self.instance_parameter_dict)
+    self.requestDefaultInstance()
+    self.slap.waitForInstance(self.instance_max_retry)
+
+    self.assertEqual(
+      [
+        'frontend-node-2-backend-haproxy-statistic-url',
+        'frontend-node-2-node-information-json',
+        'frontend-node-2-trafficserver-introspection-url',
+      ],
+      self.getFrontendNodeKeyList()
+    )
+    self.assertEqual(
+      node_2_statistic_url,
+      self.requestDefaultInstance().getConnectionParameterDict()[
+        'frontend-node-2-backend-haproxy-statistic-url']
+    )
+    self.assertEqual(
+      ['check-backend-haproxy-statistic-url-frontend-node-2.py'],
+      self.getPluginList()
+    )
+
+
 class TestDetachedFrontendNode(SlaveHttpFrontendTestCase):
   instance_parameter_dict = {
     'domain': 'example.com',

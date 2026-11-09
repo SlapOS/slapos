@@ -59,7 +59,7 @@
   },
   "patternProperties": {
     "^frontend-node-[0-9]+-node-information-json$": {
-      "description": "JSON describing frontend node number N serving the slave.",
+      "description": "JSON describing frontend node caddy-frontend-N serving the slave.",
       "type": "string"
     }
   }

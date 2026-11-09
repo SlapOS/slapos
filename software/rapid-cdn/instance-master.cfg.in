@@ -130,6 +130,7 @@ context =
 {%- set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '1') | int %}
 {%- set slave_list_name = 'extra_slave_instance_list' %}
 {%- set frontend_list = [] %}
+{%- set frontend_node_list = [] %}
 {%- set frontend_section_list = [] %}
 {%- set request_dict = {} %}
 {#- XXX Dirty hack, not possible to define default value before #}
@@ -185,6 +186,7 @@ context =
 {%-   set frontend_state = slapparameter_dict.pop(state_key, None) %}
 {%-   if frontend_state != 'destroyed' %}
 {%-     do frontend_list.append(frontend_name) %}
+{%-     do frontend_node_list.append((i, frontend_name)) %}
 {%-     do frontend_section_list.append(request_section_title) %}
 {%-   endif %}
 {%-   do part_list.append(request_section_title) %}
@@ -492,41 +494,41 @@ warning-list = {{ dumps(json_module.dumps(warning_list, sort_keys=True)) }}
 warning-slave-dict = {{ dumps(json_module.dumps(warning_slave_dict, sort_keys=True)) }}
 {%- endif %}
 {%- if not aikc_enabled or not aibcc_enabled %}
-{%- for index, frontend in enumerate(frontend_list) %}
+{%- for i, frontend in frontend_node_list %}
   {% set section_part = '${request-' + frontend %}
-frontend-node-{{ index + 1 }}-csr-certificate = {{ section_part }}:connection-csr-certificate}
+frontend-node-{{ i }}-csr-certificate = {{ section_part }}:connection-csr-certificate}
 {%- endfor %}
 {%- endif %}
 {%- if not aikc_enabled %}
 kedifa-csr-url = ${request-kedifa:connection-kedifa-csr-url}
 kedifa-csr-certificate = ${request-kedifa:connection-csr-certificate}
-{%- for index, frontend in enumerate(frontend_list) %}
+{%- for i, frontend in frontend_node_list %}
   {% set section_part = '${request-' + frontend %}
-frontend-node-{{ index + 1 }}-kedifa-csr-url = {{ section_part }}:connection-kedifa-csr-url}
+frontend-node-{{ i }}-kedifa-csr-url = {{ section_part }}:connection-kedifa-csr-url}
 {%- endfor %}
 {%- endif %}
-{%- for index, frontend in enumerate(frontend_list) %}
+{%- for i, frontend in frontend_node_list %}
   {% set section_part = '${request-' + frontend %}
-frontend-node-{{ index + 1 }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
-frontend-node-{{ index + 1 }}-node-information-json = ${frontend-information:frontend-node-{{ index + 1 }}-node-information-json}
-frontend-node-{{ index + 1 }}-trafficserver-introspection-url = {{ section_part }}:connection-trafficserver-introspection-url}
+frontend-node-{{ i }}-backend-haproxy-statistic-url = {{ section_part }}:connection-backend-haproxy-statistic-url}
+frontend-node-{{ i }}-node-information-json = ${frontend-information:frontend-node-{{ i }}-node-information-json}
+frontend-node-{{ i }}-trafficserver-introspection-url = {{ section_part }}:connection-trafficserver-introspection-url}
 {%- endfor %}
 {%- if not aibcc_enabled %}
-{%- for index, frontend in enumerate(frontend_list) %}
+{%- for i, frontend in frontend_node_list %}
   {% set section_part = '${request-' + frontend %}
-frontend-node-{{ index + 1 }}-backend-client-csr-url = {{ section_part }}:connection-backend-client-csr-url}
+frontend-node-{{ i }}-backend-client-csr-url = {{ section_part }}:connection-backend-client-csr-url}
 {%- endfor %}
 {%- endif %}
 
 {#- Generate promises for requested nodes #}
-{%- for index, frontend in enumerate(frontend_list) %}
+{%- for i, frontend in frontend_node_list %}
 {%-   set part_name = 'promise-backend-haproxy-statistic-url-' + frontend %}
 {%-   do part_list.append(part_name) %}
 {%-   set section_part = '${request-' + frontend %}
 [{{ part_name }}]
 <= monitor-promise-base
 promise = check_url_available
-name = check-backend-haproxy-statistic-url-frontend-node-{{ index + 1 }}.py
+name = check-backend-haproxy-statistic-url-frontend-node-{{ i }}.py
 config-url =
   {{ section_part }}:connection-backend-haproxy-statistic-url}
 {%- endfor %}
@@ -618,9 +620,9 @@ warning-slave-dict = {{ dumps(warning_slave_dict) }}
 active-slave-instance-list = {{ json_module.dumps(active_slave_instance_list, sort_keys=True) }}
 
 [frontend-information]
-{% for index, frontend in enumerate(frontend_list) %}
+{% for i, frontend in frontend_node_list %}
   {% set section_part = '${request-' + frontend %}
-frontend-node-{{ index + 1 }}-node-information-json = {{ section_part }}:connection-node-information-json}
+frontend-node-{{ i }}-node-information-json = {{ section_part }}:connection-node-information-json}
 {% endfor %}
 
 [instance-publish-slave-information]

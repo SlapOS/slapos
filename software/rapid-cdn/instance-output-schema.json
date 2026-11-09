@@ -83,27 +83,27 @@
   },
   "patternProperties": {
     "^frontend-node-[0-9]+-backend-haproxy-statistic-url$": {
-      "description": "URL on which frontend node number N publishes the backend HAProxy statistics.",
+      "description": "URL on which frontend node caddy-frontend-N publishes the backend HAProxy statistics.",
       "type": "string"
     },
     "^frontend-node-[0-9]+-node-information-json$": {
-      "description": "JSON describing frontend node number N.",
+      "description": "JSON describing frontend node caddy-frontend-N.",
       "type": "string"
     },
     "^frontend-node-[0-9]+-trafficserver-introspection-url$": {
-      "description": "URL on which frontend node number N exposes Traffic Server introspection.",
+      "description": "URL on which frontend node caddy-frontend-N exposes Traffic Server introspection.",
       "type": "string"
     },
     "^frontend-node-[0-9]+-kedifa-csr-url$": {
-      "description": "URL on which frontend node number N publishes its Kedifa CSR sent to caucase. Published only when automatic internal kedifa caucase CSR is disabled.",
+      "description": "URL on which frontend node caddy-frontend-N publishes its Kedifa CSR sent to caucase. Published only when automatic internal kedifa caucase CSR is disabled.",
       "type": "string"
     },
     "^frontend-node-[0-9]+-backend-client-csr-url$": {
-      "description": "URL on which frontend node number N publishes its Backend Client CSR sent to caucase. Published only when automatic internal backend client caucase CSR is disabled.",
+      "description": "URL on which frontend node caddy-frontend-N publishes its Backend Client CSR sent to caucase. Published only when automatic internal backend client caucase CSR is disabled.",
       "type": "string"
     },
     "^frontend-node-[0-9]+-csr-certificate$": {
-      "description": "Certificate used to serve data on the CSR URLs of frontend node number N. Published only when automatic internal CSR is disabled.",
+      "description": "Certificate used to serve data on the CSR URLs of frontend node caddy-frontend-N. Published only when automatic internal CSR is disabled.",
       "type": "string"
     }
   }

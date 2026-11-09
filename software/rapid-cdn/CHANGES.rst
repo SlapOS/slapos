@@ -39,6 +39,19 @@ Network exposure information provided
 The "Network exposure" section of the README tells where to find each
 socket of the cluster and its client, to write the firewall rules.
 
+Published frontend node values keep the number of the frontend node
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The ``frontend-node-N-*`` values of the master partition and the
+``check-backend-haproxy-statistic-url-frontend-node-N`` promise now
+carry the number N of the frontend node ``caddy-frontend-N``. Before,
+N was the position among the frontend nodes which are not destroyed.
+On a cluster with destroyed frontend nodes, the published keys and the
+promise names change at the upgrade. Destroying a frontend node does
+not rename the values and the promise of the other frontend nodes.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 The generated domain drops the dots of the slave reference
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[user]**
