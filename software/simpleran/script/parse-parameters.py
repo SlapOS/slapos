@@ -1494,7 +1494,26 @@ if sr_type == 'core-network':
     gtp_localhost_addr = '127.0.1.100'
     config.update(
         {
+            "eps_5gs_interworking": "With N26",
             "external_mme_list": [],
+            "pdn1": {
+                "apn_list": [
+                  "internet",
+                  "default",
+                  "sos"
+                ],
+                "qci": 9,
+                "fixed_ips": config["pdn1"].get("fixed_ips", False)
+            },
+            "pdn2": {
+                "apn_list": [
+                  "ims"
+                ],
+                "qci": 5,
+                "fixed_ips": config["pdn2"].get("fixed_ips", False),
+                "ims": config["pdn2"].get("ims", True),
+                "disable_pdn": config["pdn2"].get("disable_pdn", False),
+            }
         }
     )
     sim_list, publish_section_list = core_network(config, publish, shared_list)
