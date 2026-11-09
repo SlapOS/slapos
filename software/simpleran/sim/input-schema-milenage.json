@@ -77,9 +77,6 @@
     },
     "enable_broadcast": {
       "$ref": "common.json#/properties/enable_broadcast"
-    },
-    "route_list": {
-      "$ref": "common.json#/properties/route_list"
     }
   }
 }
