@@ -20,9 +20,9 @@
       "description": "URL for HTTPS access",
       "type": "string"
     },
-    "replication_number": {
-      "description": "Number of nodes the slave is replicated",
-      "type": "integer"
+    "shared-information-url": {
+      "description": "URL of a JSON document with the non-critical information about the slave: log-access-url (list of URLs to access logs), replication_number (number of nodes the slave is replicated) and frontend-node-information (node-id and version-hash-history of each frontend node, to resolve the Via header). The URL carries the user and the password of the slave, and is stable, the document follows the cluster.",
+      "type": "string"
     },
     "key-generate-auth-url": {
       "description": "URL to GET once auth for key-upload-url",
@@ -31,10 +31,6 @@
     "key-upload-url": {
       "description": "URL to PUT PEM bundle of certificate and key",
       "type": "string"
-    },
-    "log-access-url": {
-      "description": "List of URLs to access logs",
-      "type": "array"
     },
     "kedifa-caucase-url": {
       "description": "URL to caucase used by KeDiFa",
@@ -55,12 +51,6 @@
     "warning-list": {
       "description": "List of warnings found during the request.",
       "type": "array"
-    }
-  },
-  "patternProperties": {
-    "^frontend-node-[0-9]+-node-information-json$": {
-      "description": "JSON describing frontend node caddy-frontend-N serving the slave.",
-      "type": "string"
     }
   }
 }

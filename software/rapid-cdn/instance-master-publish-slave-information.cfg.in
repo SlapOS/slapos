@@ -1,5 +1,11 @@
 {%- set part_list = [] %}
 {%- set slave_information_dict = {} %}
+{%- set shared_information_dict = {} %}
+{%- set frontend_node_information_dict = {} %}
+{%- for frontend_key, frontend_value in frontend_information.items() %}
+{%-   set frontend_node = frontend_key.replace('-node-information-json', '') %}
+{%-   do frontend_node_information_dict.__setitem__(frontend_node, json_module.loads(frontend_value) if frontend_value else {}) %}
+{%- endfor %}
 
 # regroup slave information from all frontends
 {%- for frontend, slave_list_raw in slave_information.items() %}
@@ -13,17 +19,10 @@
 {%-     set log_access_url = slave_dict.pop('log-access', '') %}
 {%-     set current_slave_dict = slave_information_dict.get(slave_reference, {}) %}
 {%-     do current_slave_dict.update(slave_dict) %}
-{%-     set log_access_list = current_slave_dict.get('log-access-urls', []) %}
-{%-     do log_access_list.append( frontend + ': ' + log_access_url) %}
-{%-     do current_slave_dict.__setitem__(
-            'log-access-urls',
-            log_access_list
-            ) %}
-{%-     do current_slave_dict.__setitem__(
-            'replication_number',
-            current_slave_dict.get('replication_number', 0) + 1
-            ) %}
 {%-     do slave_information_dict.__setitem__(slave_reference, current_slave_dict) %}
+{%-     set current_shared_dict = shared_information_dict.setdefault(slave_reference, {'log-access-url': [], 'replication_number': 0}) %}
+{%-     do current_shared_dict['log-access-url'].append(frontend + ': ' + log_access_url) %}
+{%-     do current_shared_dict.__setitem__('replication_number', current_shared_dict['replication_number'] + 1) %}
 {%-   endfor %}
 {%- endfor %}
 
@@ -67,12 +66,9 @@
 {%-   endif %}
 {%- endfor %}
 
-[common-frontend-information]
-{%- for frontend_key, frontend_value in frontend_information.items() %}
-{{ frontend_key }} = {{ frontend_value }}
-{%- endfor %}
-
 # Publish information for each slave
+{%- set shared_information_file_dict = {} %}
+{%- set shared_information_htpasswd_list = [] %}
 {%- set active_slave_instance_list = json_module.loads(active_slave_instance_dict['active-slave-instance-list']) %}
 {%- for slave_reference, slave_information in slave_information_dict.items() %}
 {#   Filter out destroyed, so not existing anymore, slaves #}
@@ -80,21 +76,86 @@
 {%-   if slave_reference in active_slave_instance_list %}
 {%-     set publish_section_title = 'publish-%s' % slave_reference %}
 {%-     do part_list.append(publish_section_title) %}
+{%-     set shared_information_password_section = 'shared-information-password-%s' % slave_reference %}
+{%-     set shared_information_password = '${%s:passwd}' % shared_information_password_section %}
+{%-     set current_shared_dict = shared_information_dict.get(slave_reference, {'log-access-url': [], 'replication_number': 0}) %}
+{%-     do current_shared_dict['log-access-url'].sort() %}
+{%-     do shared_information_file_dict.__setitem__(slave_reference, current_shared_dict) %}
+{%-     do shared_information_htpasswd_list.append('%s ${%s:passwd-apr-md5-crypt}' % (slave_reference, shared_information_password_section)) %}
+{%-     set furled = furl_module.furl(shared_information_base_url) %}
+{%-     do furled.set(username=slave_reference, password=shared_information_password) %}
+{%-     do furled.path.add(slave_reference + '.json') %}
+[{{ shared_information_password_section }}]
+recipe = slapos.cookbook:generate.password
+storage-path = {{ shared_information_password_directory }}/{{ slave_reference }}.passwd
+bytes = 8
+
 [{{ publish_section_title }}]
-<= common-frontend-information
 recipe = slapos.cookbook:publish_failsafe
 -error-status-file = {{ publish_failsafe_error }}/{{ slave_reference }}-error.status
 -slave-reference = {{ slave_reference }}
-{%-     set log_access_url = slave_information.pop('log-access-urls', None) %}
-{%-     if log_access_url %}
-{# sort_keys are important in order to avoid shuffling parameters on each run #}
-log-access-url = {{ dumps(json_module.dumps(log_access_url, sort_keys=True)) }}
-{%-     endif %}
+{#- unquote keeps the buildout reference to the password #}
+shared-information-url = {{ urllib_module.parse.unquote(furled.tostr()) }}
 {%-     for key, value in slave_information.items() %}
 {{ key }} = {{ dumps(value) }}
 {%-     endfor %}
 {%-   endif %}
 {%- endfor %}
+{% do part_list.append('shared-information-file') %}
+[shared-information-file]
+recipe = slapos.recipe.build
+directory = {{ shared_information_directory }}
+htpasswd-directory = {{ shared_information_htpasswd_directory }}
+{#- sort_keys are important in order to avoid shuffling parameters on each run #}
+frontend-node-information = {{ dumps(json_module.dumps(frontend_node_information_dict, sort_keys=True)) }}
+information = {{ dumps(json_module.dumps(shared_information_file_dict, sort_keys=True)) }}
+htpasswd =
+{%- for line in shared_information_htpasswd_list | sort %}
+  {{ line }}
+{%- endfor %}
+init =
+  import hashlib, json, os, shutil
+  directory = options['directory']
+  htpasswd_directory = options['htpasswd-directory']
+  digest = hashlib.sha256((
+    options['frontend-node-information'] + options['information']
+    + options['htpasswd']).encode()
+  ).hexdigest()
+  digest_file = os.path.join(directory, '.digest')
+  try:
+    with open(digest_file) as fh:
+      up_to_date = fh.read() == digest
+  except IOError:
+    up_to_date = False
+  def write(filename, content):
+    with open(filename + '.tmp', 'w') as fh:
+      fh.write(content)
+    os.rename(filename + '.tmp', filename)
+  def clean(directory, keep_set):
+    for name in os.listdir(directory):
+      if name not in keep_set and not name.startswith('.'):
+        path = os.path.join(directory, name)
+        if os.path.isdir(path):
+          shutil.rmtree(path)
+        else:
+          os.unlink(path)
+  if not up_to_date:
+    frontend_node_information = json.loads(options['frontend-node-information'])
+    information = json.loads(options['information'])
+    htpasswd = dict(
+      line.split(' ', 1) for line in options['htpasswd'].splitlines() if line)
+    for reference, value in information.items():
+      value['frontend-node-information'] = frontend_node_information
+      write(
+        os.path.join(htpasswd_directory, reference + '.htpasswd'),
+        '%s:%s\n' % (reference, htpasswd[reference]))
+      write(
+        os.path.join(directory, reference + '.json'),
+        json.dumps(value, indent=2, sort_keys=True))
+    clean(directory, {q + '.json' for q in information})
+    clean(htpasswd_directory, {q + '.htpasswd' for q in information})
+    with open(digest_file, 'w') as fh:
+      fh.write(digest)
 
 [buildout]
 extends = {{ profile_common }}

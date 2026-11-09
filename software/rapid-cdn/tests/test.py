@@ -1309,9 +1309,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         headers.add_header(header, value)
     return headers
 
-  def assertLogAccessUrlWithPop(self, parameter_dict):
-    log_access_url = parameter_dict.pop('log-access-url')
-
+  def assertLogAccessUrl(self, log_access_url):
     self.assertTrue(len(log_access_url) >= 1)
     # check only the first one, as second frontend will be stopped
     log_access = log_access_url[0]
@@ -1374,6 +1372,44 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
     )
 
     return generate_auth_url, upload_url
+
+  def getSharedInformation(self, shared_information_url):
+    result = mimikra.get(shared_information_url, verify=False)
+    self.assertEqual(http.client.OK, result.status_code)
+    return result.json()
+
+  def assertSharedInformationWithPop(
+    self, parameter_dict, replication_number=1, frontend_node_count=1):
+    shared_information_url = parameter_dict.pop('shared-information-url')
+    self.assertRegex(
+      shared_information_url,
+      r'^https://[^:/]+:[^@/]+@.*/shared-information/[^/]+\.json$')
+    shared_information = self.getSharedInformation(shared_information_url)
+    frontend_node_information = shared_information.pop(
+      'frontend-node-information')
+    self.assertEqual(
+      ['frontend-node-%s' % (q + 1,) for q in range(frontend_node_count)],
+      sorted(frontend_node_information))
+    node_information_dict = frontend_node_information['frontend-node-1']
+    self.assertIn("node-id", node_information_dict)
+    self.assertIn("version-hash-history", node_information_dict)
+    self.node_information_dict = node_information_dict
+    log_access_url = shared_information.pop('log-access-url')
+    self.assertEqual(replication_number, len(log_access_url))
+    if replication_number:
+      self.assertLogAccessUrl(log_access_url)
+    self.assertEqual(
+      {'replication_number': replication_number}, shared_information)
+    return shared_information_url
+
+  def getPublishSlaveSectionDict(self):
+    parser = configparser.RawConfigParser(strict=False)
+    parser.read(os.path.join(
+      self.getMasterPartitionPath(),
+      'instance-publish-slave-information.cfg'))
+    return {
+      section: dict(parser.items(section))
+      for section in parser.sections() if section.startswith('publish-')}
 
   def assertNodeInformationWithPop(self, parameter_dict):
     key = 'frontend-node-1-node-information-json'
@@ -1515,8 +1551,7 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         'rejected-slave-dict',
         'warning-slave-dict',
         'warning-list',
-        'request-error-list',
-        'log-access-url']:
+        'request-error-list']:
         value = json.loads(value)
       parsed_parameter_dict[key] = value
     return parsed_parameter_dict
@@ -1891,7 +1926,7 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
     if expected_parameter_dict is None:
       expected_parameter_dict = {}
     parameter_dict = self.parseSlaveParameterDict(reference)
-    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict)
     self.current_generate_auth, self.current_upload_url = \
         self.assertKedifaKeysWithPop(parameter_dict, '')
     # Redirect slaves never proxy a backend, so the master does not advertise a
@@ -1900,12 +1935,10 @@ class SlaveHttpFrontendTestCase(HttpFrontendTestCase):
       self.assertKeyWithPop('error-page-upload-url', parameter_dict)
     else:
       self.assertNotIn('error-page-upload-url', parameter_dict)
-    self.assertNodeInformationWithPop(parameter_dict)
     if hostname is None:
       hostname = reference.replace('_', '').replace('-', '').replace('.', '').lower()
     expected_parameter_dict.update(**{
       'domain': '%s.example.com' % (hostname,),
-      'replication_number': '1',
       'url': 'http://%s.example.com' % (hostname, ),
       'site_url': 'http://%s.example.com' % (hostname, ),
       'secure_access': 'https://%s.example.com' % (hostname, ),
@@ -2831,9 +2864,21 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         self.slap._force_slapos_node_instance_all = \
           slap_force_slapos_node_instance_all
 
-    self.addCleanup(
-      writeNodeInformation, current_node_information,
-      node_information_file_path)
+    slave_connection_parameter_dict_dict = \
+      self.slave_connection_parameter_dict_dict
+    publish_slave_section_dict = self.getPublishSlaveSectionDict()
+    shared_information_url = self.assertSharedInformationWithPop(
+      self.parseSlaveParameterDict('empty'))
+
+    def restoreNodeInformation():
+      writeNodeInformation(
+        current_node_information, node_information_file_path)
+      self.assertEqual(
+        {'frontend-node-1': current_node_information},
+        self.getSharedInformation(
+          shared_information_url)['frontend-node-information'])
+
+    self.addCleanup(restoreNodeInformation)
 
     # simulate that upgrade happened
     writeNodeInformation(
@@ -2842,13 +2887,58 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     parameter_dict = self.parseConnectionParameterDict()
     expected_node_information = {
       'node-id': current_node_information['node-id'],
-      'version-hash-history': current_node_information['version-hash-history']
+      'version-hash-history': dict(
+        current_node_information['version-hash-history'],
+        testhash='testurl')
     }
-    expected_node_information['version-hash-history']['testhash'] = 'testurl'
     self.assertEqual(
       json.loads(parameter_dict['frontend-node-1-node-information-json']),
       expected_node_information
     )
+
+    self.updateSlaveConnectionParameterDictDict()
+    self.assertEqual(
+      slave_connection_parameter_dict_dict,
+      self.slave_connection_parameter_dict_dict)
+    self.assertEqual(
+      publish_slave_section_dict, self.getPublishSlaveSectionDict())
+    self.assertEqual(
+      {'frontend-node-1': expected_node_information},
+      self.getSharedInformation(
+        shared_information_url)['frontend-node-information'])
+
+  def test_shared_information_url_protected(self):
+    shared_information_url = furl.furl(self.assertSharedInformationWithPop(
+      self.parseSlaveParameterDict('empty')))
+    self.assertEqual(
+      shared_information_url.username + '.json',
+      shared_information_url.path.segments[-1])
+    other_url = furl.furl(self.assertSharedInformationWithPop(
+      self.parseSlaveParameterDict('Url')))
+    self.assertNotEqual(
+      shared_information_url.password, other_url.password)
+    for url in [
+      shared_information_url.copy().remove(username=True, password=True),
+      shared_information_url.copy().set(password='wrong'),
+      shared_information_url.copy().set(
+        username=other_url.username, password=other_url.password),
+    ]:
+      self.assertEqual(
+        http.client.UNAUTHORIZED,
+        mimikra.get(url.tostr(), verify=False).status_code,
+        url)
+    base_url = shared_information_url.copy().set(
+      path=shared_information_url.path.segments[:-1] + [''])
+    for url in [
+      base_url,
+      base_url.copy().set(username=None, password=None),
+      base_url.copy().add(path='.digest'),
+      base_url.copy().add(path='unknown.json'),
+    ]:
+      self.assertEqual(
+        http.client.NOT_FOUND,
+        mimikra.get(url.tostr(), verify=False).status_code,
+        url)
 
   def test_monitor_conf(self):
     monitor_conf_list = glob.glob(
@@ -7785,36 +7875,32 @@ class TestReplicateSlave(
     return bool(prefixlen and int(prefixlen[0]) < 127)
 
   def test(self):
+    connection_parameter_dict = self.slave_connection_parameter_dict_dict[
+      'replicate']
+    parameter_dict = self.parseSlaveParameterDict('replicate')
+    shared_information_url = self.assertSharedInformationWithPop(
+      parameter_dict)
+    publish_slave_section_dict = self.getPublishSlaveSectionDict()
+
     self.requestSecondFrontend()
 
     self.updateSlaveConnectionParameterDictDict()
     # the real assertions follow...
+    self.assertEqual(
+      connection_parameter_dict,
+      self.slave_connection_parameter_dict_dict['replicate'])
+    self.assertEqual(
+      publish_slave_section_dict, self.getPublishSlaveSectionDict())
     parameter_dict = self.parseSlaveParameterDict('replicate')
-    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertEqual(
+      shared_information_url,
+      self.assertSharedInformationWithPop(
+        parameter_dict, replication_number=2, frontend_node_count=2))
     self.assertKedifaKeysWithPop(parameter_dict)
     self.assertKeyWithPop('error-page-upload-url', parameter_dict)
-    key_list = [
-      'frontend-node-1-node-information-json',
-      'frontend-node-2-node-information-json'
-    ]
-    node_information_json_dict = {}
-    for k in list(parameter_dict.keys()):
-      if k.startswith('frontend-node') and k.endswith(
-        'node-information-json'):
-        node_information_json_dict[k] = parameter_dict.pop(k)
-    self.assertEqual(
-      key_list,
-      list(node_information_json_dict.keys())
-    )
-
-    node_information_dict = json.loads(node_information_json_dict[key_list[0]])
-    self.assertIn("node-id", node_information_dict)
-    self.assertIn("version-hash-history", node_information_dict)
-    self.node_information_dict = node_information_dict
     self.assertEqual(
       {
         'domain': 'replicate.example.com',
-        'replication_number': '2',
         'url': 'http://replicate.example.com',
         'site_url': 'http://replicate.example.com',
         'secure_access': 'https://replicate.example.com',
@@ -7869,7 +7955,18 @@ class TestReplicateSlaveOtherDestroyed(
     }
 
   def test_extra_slave_instance_list_not_present_destroyed_request(self):
+    connection_parameter_dict = self.slave_connection_parameter_dict_dict[
+      'empty']
+    publish_slave_section_dict = self.getPublishSlaveSectionDict()
+
     self.requestSecondFrontend(final_state='destroyed')
+
+    self.updateSlaveConnectionParameterDictDict()
+    self.assertEqual(
+      connection_parameter_dict,
+      self.slave_connection_parameter_dict_dict['empty'])
+    self.assertEqual(
+      publish_slave_section_dict, self.getPublishSlaveSectionDict())
 
     buildout_file = os.path.join(
       self.getMasterPartitionPath(), 'instance-master.cfg')
@@ -9416,7 +9513,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_url(self):
     parameter_dict = self.parseSlaveParameterDict('URL')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': [
@@ -9427,7 +9524,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_https_url(self):
     parameter_dict = self.parseSlaveParameterDict('HTTPS-URL')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': [
@@ -9439,7 +9536,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_ssl_proxy_verify_ssl_proxy_ca_crt_damaged(self):
     parameter_dict = self.parseSlaveParameterDict(
       'SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {'request-error-list': ["ssl_proxy_ca_crt is invalid"]},
       parameter_dict
@@ -9448,7 +9545,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_ssl_proxy_verify_ssl_proxy_ca_crt_empty(self):
     parameter_dict = self.parseSlaveParameterDict(
       'SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_EMPTY')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {'request-error-list': ["ssl_proxy_ca_crt is invalid"]},
       parameter_dict
@@ -9457,7 +9554,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_health_check_failover_ssl_proxy_ca_crt_damaged(self):
     parameter_dict = self.parseSlaveParameterDict(
       'health-check-failover-SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_DAMAGED')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': [
@@ -9469,7 +9566,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_health_check_failover_ssl_proxy_ca_crt_empty(self):
     parameter_dict = self.parseSlaveParameterDict(
       'health-check-failover-SSL-PROXY-VERIFY_SSL_PROXY_CA_CRT_EMPTY')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': [
@@ -9493,7 +9590,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_custom_domain_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict('CUSTOM_DOMAIN-UNSAFE')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': [
@@ -9505,7 +9602,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_server_alias_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict('SERVER-ALIAS-UNSAFE')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': [
@@ -9517,7 +9614,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_bad_ciphers(self):
     parameter_dict = self.parseSlaveParameterDict('BAD-CIPHERS')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': [
@@ -9531,7 +9628,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_virtualhostroot_http_port_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict(
       'VIRTUALHOSTROOT-HTTP-PORT-UNSAFE')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': [
@@ -9544,7 +9641,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
   def test_virtualhostroot_https_port_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict(
       'VIRTUALHOSTROOT-HTTPS-PORT-UNSAFE')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': [
@@ -9556,13 +9653,11 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def default_path_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict('DEFAULT-PATH-UNSAFE')
-    self.assertLogAccessUrlWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict)
     self.assertKedifaKeysWithPop(parameter_dict, 'master-')
-    self.assertNodeInformationWithPop(parameter_dict)
     self.assertEqual(
       {
         'domain': 'defaultpathunsafe.example.com',
-        'replication_number': '1',
         'url': 'http://defaultpathunsafe.example.com',
         'site_url': 'http://defaultpathunsafe.example.com',
         'secure_access': 'https://defaultpathunsafe.example.com',
@@ -9594,7 +9689,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_site_2(self):
     parameter_dict = self.parseSlaveParameterDict('SITE_2')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': ["custom_domain 'duplicate.example.com' clashes"]
@@ -9604,7 +9699,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_site_3(self):
     parameter_dict = self.parseSlaveParameterDict('SITE_3')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': ["server-alias 'duplicate.example.com' clashes"]
@@ -9614,7 +9709,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_site_4(self):
     parameter_dict = self.parseSlaveParameterDict('SITE_4')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': ["custom_domain 'duplicate.example.com' clashes"]
@@ -9624,7 +9719,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_ssl_ca_crt_only(self):
     parameter_dict = self.parseSlaveParameterDict('SSL_CA_CRT_ONLY')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       parameter_dict,
       {
@@ -9638,7 +9733,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_ssl_key_ssl_crt_unsafe(self):
     parameter_dict = self.parseSlaveParameterDict('SSL_KEY-SSL_CRT-UNSAFE')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': ["slave ssl_key and ssl_crt does not match"],
@@ -9651,7 +9746,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_bad_backend(self):
     parameter_dict = self.parseSlaveParameterDict('BAD-BACKEND')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': [
@@ -9663,7 +9758,7 @@ class TestSlaveRejectReportUnsafeDamaged(SlaveHttpFrontendTestCase):
 
   def test_empty_backend(self):
     parameter_dict = self.parseSlaveParameterDict('EMPTY-BACKEND')
-    self.assertNodeInformationWithPop(parameter_dict)
+    self.assertSharedInformationWithPop(parameter_dict, replication_number=0)
     self.assertEqual(
       {
         'request-error-list': [
@@ -10847,12 +10942,14 @@ class TestFrontendRequestFailure(SlaveHttpFrontendTestCase):
       self.requestMaster().getConnectionParameterDict().items()
       if k.startswith('frontend-node-1-')}
 
-  def getSlaveFrontendNodeDict(self):
+  def getSlaveConnectionParameterDict(self):
     self.updateSlaveConnectionParameterDictDict()
-    return {
-      k: v for k, v in
-      self.slave_connection_parameter_dict_dict['request-failure'].items()
-      if k.startswith('frontend-node-')}
+    return self.slave_connection_parameter_dict_dict['request-failure']
+
+  def getSlaveFrontendNodeInformation(self):
+    return self.getSharedInformation(
+      self.getSlaveConnectionParameterDict()['shared-information-url'])[
+        'frontend-node-information']
 
   def test_destroyed_frontend_has_no_request_promise(self):
     self.assertEqual(
@@ -10864,9 +10961,9 @@ class TestFrontendRequestFailure(SlaveHttpFrontendTestCase):
   def test_failed_request_keeps_frontend_node_values(self):
     frontend_node_dict = self.getFrontendNodeDict()
     self.assertTrue(all(frontend_node_dict.values()), frontend_node_dict)
-    slave_frontend_node_dict = self.getSlaveFrontendNodeDict()
-    self.assertTrue(
-      slave_frontend_node_dict['frontend-node-1-node-information-json'])
+    slave_parameter_dict = self.getSlaveConnectionParameterDict()
+    slave_frontend_node_information = self.getSlaveFrontendNodeInformation()
+    self.assertEqual(['frontend-node-1'], list(slave_frontend_node_information))
     failure_file = os.path.join(
       self.getMasterPartitionPath(), 'var',
       'request-caddy-frontend-1-failure.txt')
@@ -10885,7 +10982,9 @@ class TestFrontendRequestFailure(SlaveHttpFrontendTestCase):
     self.assertNotIn('Installing publish-_request-failure', master_log)
     self.assertEqual(frontend_node_dict, self.getFrontendNodeDict())
     self.assertEqual(
-      slave_frontend_node_dict, self.getSlaveFrontendNodeDict())
+      slave_parameter_dict, self.getSlaveConnectionParameterDict())
+    self.assertEqual(
+      slave_frontend_node_information, self.getSlaveFrontendNodeInformation())
 
     self.cleanMasterLog()
     self.setFrontendRequestFailing(False)
@@ -10896,7 +10995,9 @@ class TestFrontendRequestFailure(SlaveHttpFrontendTestCase):
     self.assertIn('Updating publish-_request-failure', master_log)
     self.assertEqual(frontend_node_dict, self.getFrontendNodeDict())
     self.assertEqual(
-      slave_frontend_node_dict, self.getSlaveFrontendNodeDict())
+      slave_parameter_dict, self.getSlaveConnectionParameterDict())
+    self.assertEqual(
+      slave_frontend_node_information, self.getSlaveFrontendNodeInformation())
 
 
 class TestSlaveManagementDomainReuse(

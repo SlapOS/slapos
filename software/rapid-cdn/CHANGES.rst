@@ -52,6 +52,33 @@ promise names change at the upgrade. Destroying a frontend node does
 not rename the values and the promise of the other frontend nodes.
 (`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
 
+Frontend node information, log access and replication moved to ``shared-information-url``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+**Breaking:** a slave no longer publishes ``log-access-url``,
+``replication_number`` and ``frontend-node-N-node-information-json``. It
+publishes ``shared-information-url`` instead: a JSON document with
+``log-access-url``, ``replication_number`` and ``frontend-node-information``
+(the ``node-id`` and ``version-hash-history`` of each frontend node, to
+resolve the ``Via`` header). The URL carries the credentials: the slave
+reference as the user and a password generated per slave, like
+``log-access-url``. The URL does not change; the document follows the
+cluster. Read these values from the document.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
+A change of the frontend nodes no longer republishes every slave
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+Upgrading a frontend node, adding or removing one, or a failed or restored
+frontend request does not change the connection parameters of any slave, so
+the master partition republishes no slave. The values which follow the
+frontend nodes are served by the master partition at each slave's
+``shared-information-url``, under ``shared-information/`` of the master
+introspection URL, each protected by its own user and password.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 The generated domain drops the dots of the slave reference
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[user]**

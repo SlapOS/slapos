@@ -654,6 +654,12 @@ extra-context =
     key shared_error_page_information request-error-page-manager:connection-shared-error-page-information
     key error_page_manager_frontend_base_url error-page-manager-frontend-url:base-url
     key publish_failsafe_error directory:publish-failsafe-error-var
+    key shared_information_directory directory:shared-information
+    key shared_information_htpasswd_directory directory:shared-information-htpasswd
+    key shared_information_password_directory directory:shared-information-password
+    key shared_information_base_url shared-information-url:base-url
+    import furl_module furl
+    import urllib_module urllib
 
 [monitor-base-url-dict]
 kedifa = ${request-kedifa:connection-monitor-base-url}
@@ -672,6 +678,9 @@ backup-caucased = ${:backup}/caucased
 master-introspection-var = ${:var}/master-introspection-nginx
 publish-failsafe-error-var = ${:var}/publish-failsafe-error
 publish-failsafe-check-var = ${:var}/publish-failsafe-check
+shared-information = ${:srv}/shared-information
+shared-information-htpasswd = ${:etc}/shared-information-htpasswd
+shared-information-password = ${:etc}/shared-information-password
 
 {% if aikc_enabled %}
 [directory]
@@ -1025,6 +1034,16 @@ init =
     options['operator-url'] = options['direct-operator-url']
     options['base-url'] = ''
 
+[shared-information-url]
+recipe = slapos.recipe.build
+url = ${master-introspection-frontend:connection-secure_access}
+path = ${master-introspection-template:shared-information-path}
+init =
+  import furl
+  url = furl.furl(options['url'])
+  url.set(path=options['path'])
+  options['base-url'] = url.tostr()
+
 [rejected-slave-publish]
 url = ${master-introspection-frontend-url:frontend-url}/${master-introspection-template:rejected-slave-path}/${rejected-slave-json:filename}
 
@@ -1065,6 +1084,7 @@ var = ${directory:master-introspection-var}
 pid = ${directory:var}/nginx-master-introspection-server.pid
 rejected-slave-path = rejected-slave
 publish-failsafe-error-path = publish-failsafe-error
+shared-information-path = shared-information
 inline =
   daemon off;
   pid ${:pid};
@@ -1100,6 +1120,17 @@ inline =
         autoindex off;
         sendfile on;
         sendfile_max_chunk 1m;
+      }
+      location /${:shared-information-path}/ {
+        return 404;
+      }
+      location ~ ^/${:shared-information-path}/(?<shared_information_reference>[^/.][^/]*)\.json$ {
+        if (!-f ${directory:shared-information-htpasswd}/$shared_information_reference.htpasswd) {
+          return 404;
+        }
+        auth_basic "Shared Information $shared_information_reference";
+        auth_basic_user_file ${directory:shared-information-htpasswd}/$shared_information_reference.htpasswd;
+        alias ${directory:shared-information}/$shared_information_reference.json;
       }
       location /${master-slave-introspection-server:access-slave-list-path} {
           proxy_pass http://${master-slave-introspection-server:ip}:${master-slave-introspection-server:port};
