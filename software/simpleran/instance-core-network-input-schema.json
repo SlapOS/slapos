@@ -58,15 +58,9 @@
     },
     "pdn1": {
       "$ref": "#/$defs/pdn",
-      "title": "PDN1",
-      "description": "Only two PDNs are currently supported, this section defines the first PDN. It is the default APN or DNN used in case the UE does not explicitly request it. By default it has the following APN names: internet, default, sos",
+      "title": "Internet PDN",
+      "description": "Parameters of the Internet PDN. Internet PDN is the first of the two configured PDN. It is the default APN or DNN used in case the UE does not explicitly request it. APN names: internet, default, sos. QCI: 9",
       "default": {
-        "apn_list": [
-          "internet",
-          "default",
-          "sos"
-        ],
-        "qci": 9,
         "fixed_ips": false
       }
     },
@@ -74,8 +68,8 @@
       "allOf": [
         {
           "$ref": "#/$defs/pdn",
-          "title": "PDN2",
-          "description": "The second optional PDN, by default it has ims APN name and is used for IMS services."
+          "title": "IMS PDN",
+          "description": "Parameters of the IMS PDN. IMS PDN is the second of the two configured PDN. It is used for IMS services. APN names: ims. QCI: 5"
         },
         {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -97,24 +91,10 @@
       ],
       "type": "object",
       "default": {
-        "apn_list": [
-          "ims"
-        ],
-        "qci": 5,
         "ims": true,
-        "fixed_ips": false
+        "fixed_ips": false,
+        "disable_pdn": false
       }
-    },
-    "eps_5gs_interworking": {
-      "title": "EPS 5GS Interworking",
-      "type": "string",
-      "description": "Defines whether inter RAT mobility between EPS and 5GS is supported or not, and whether N26 interface is supported or not. Note that interworking with N26 is required to perform handover between EPS and 5GS.",
-      "enum": [
-        "None",
-        "With N26",
-        "Without N26"
-      ],
-      "default": "With N26"
     },
     "hss_addr": {
       "title": "HSS Address",
@@ -191,49 +171,11 @@
     "pdn": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
-      "required": [
-        "apn_list",
-        "qci"
-      ],
       "properties": {
-        "apn_list": {
-          "title": "APN list",
-          "description": "Access Point Name or Data Network Name network identifier list. Use dots (.) to separate the APN or DNN elements. Adding multiple items to this will create aliases of the first APN / DNN.",
-          "type": "array",
-          "items": {
-            "title": "APN Name",
-            "type": "string"
-          }
-        },
-        "qci": {
-          "title": "QCI of default E-RAB",
-          "description": "QoS Class Identifier of the default E-RAB",
-          "type": "number"
-        },
         "fixed_ips": {
           "title": "Fixed IP for the UE",
           "description": "Set to true to force a static IPv4 for each UE. If true, the number of UE is limited.",
           "type": "boolean"
-        },
-        "ipv4_start": {
-          "title": "First IPv4 address",
-          "description": "First available IPv4 address of the PDN",
-          "type": "string"
-        },
-        "ipv4_end": {
-          "title": "Last IPv4 address",
-          "description": "Last available IPv4 address of the PDN",
-          "type": "string"
-        },
-        "ipv6_start": {
-          "title": "First IPv6 prefix",
-          "description": "First available global IPv6 prefix used in Router Advertisement message sent to the UE (only the high 8 bytes of the IPv6 address are meaningful). Note that the selected prefix will also be used as the interface identifier sent in NAS signalling.",
-          "type": "string"
-        },
-        "ipv6_end": {
-          "title": "Last IPv6 prefix",
-          "description": "Last available global IPv6 prefix used in Router Advertisement message sent to the UE (only the high 8 bytes of the IPv6 address are meaningful). Note that the selected prefix will also be used as the interface identifier sent in NAS signalling.",
-          "type": "string"
         }
       }
     }

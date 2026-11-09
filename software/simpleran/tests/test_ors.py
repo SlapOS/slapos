@@ -44,21 +44,7 @@ core_network_param_dict = {
     'lte_mock': True,
     "core_network_plmn": "00102",
     "network_name": "TEST",
-    "network_short_name": "TEST",
-    "pdn1": {
-        "apn_list": [
-            "pdn1apn1",
-            "pdn1apn2"
-        ],
-        "qci": 3
-    },
-    "pdn2": {
-        "apn_list": [
-            "pdn2apn1"
-        ],
-        "qci": 6,
-        "ims": True
-    }
+    "network_short_name": "TEST"
 }
 
 rf_info = {
@@ -420,19 +406,9 @@ class TestCoreNetworkParameters(ORSTestCase):
     self.assertEqual(conf['plmn'], param['core_network_plmn'])
     self.assertEqual(conf['network_name'], param['network_name'])
     self.assertEqual(conf['network_short_name'], param['network_short_name'])
-    # Check APN and QCI's
-    for pdn_id in ['pdn1', 'pdn2']:
-        for pdn in conf['pdn_list']:
-            if param[pdn_id]['apn_list'][0] in pdn['access_point_name']:
-                break
-        for apn in param[pdn_id]['apn_list']:
-            self.assertIn(apn, pdn['access_point_name'])
-        for apn in pdn['access_point_name']:
-            self.assertIn(apn, param[pdn_id]['apn_list'])
-        self.assertEqual(param[pdn_id]['qci'], pdn['erabs'][0]['qci'])
     # Check IMS PDN
     for pdn in conf['pdn_list']:
-        if param['pdn2']['apn_list'][0] in pdn['access_point_name']:
+        if "ims" in pdn['access_point_name']:
             break
     self.assertIn('p_cscf_addr', pdn)
 
@@ -584,8 +560,8 @@ class TestSimCard(ORSTestCase):
       p = json.loads(p['_'])
       self.assertIn('info', p)
       if self.fixed_ips:
-        pdn1_name = core_network_param_dict["pdn1"]["apn_list"][0]
-        pdn2_name = core_network_param_dict["pdn1"]["apn_list"][0]
+        pdn1_name = "internet"
+        pdn2_name = "ims"
         self.assertIn(f'{pdn1_name}-ipv4-addr', p)
         self.assertIn(f'{pdn2_name}-ipv4-addr', p)
         if self.nb_sim_cards + 2 > self.tun_network.size:
