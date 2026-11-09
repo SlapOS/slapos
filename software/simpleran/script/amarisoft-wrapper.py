@@ -1,4 +1,5 @@
 import asyncio, hashlib, hmac, json, os, shutil, string, subprocess, sys, time, websockets
+import xbuildout
 from slapos.recipe.librecipe import GenericBaseRecipe, generateHashFromFiles
 
 async def websocket_connect(websocket, password):
@@ -14,17 +15,18 @@ async def websocket_connect(websocket, password):
 async def websocket_check(uri, password):
     for i in range(3):
         try:
-            async with websockets.connect(uri, origin='simpleran-sr') as websocket:
+            async with websockets.connect(uri, origin='simpleran-sr', open_timeout=1) as websocket:
                 await websocket_connect(websocket, password)
         except (ConnectionRefusedError,
                 websockets.exceptions.ConnectionClosedError,
-                websockets.exceptions.InvalidMessage) as e:
+                websockets.exceptions.InvalidMessage,
+                TimeoutError) as e:
             continue
         return True
     return False
 
 async def websocket_get_ssb(uri, password):
-    async with websockets.connect(uri, origin='simpleran-sr') as websocket:
+    async with websockets.connect(uri, origin='simpleran-sr', open_timeout=1) as websocket:
         await websocket_connect(websocket, password)
         try:
             await websocket.send(f'{{"message":"config_get"}}')
@@ -35,12 +37,13 @@ async def websocket_get_ssb(uri, password):
 
 async def websocket_quit(uri, password, ignore_error=False):
     try:
-        async with websockets.connect(uri, origin='simpleran-sr') as websocket:
+        async with websockets.connect(uri, origin='simpleran-sr', open_timeout=1) as websocket:
             await websocket_connect(websocket, password)
             await websocket.send(f'{{"message":"quit"}}')
     except (ConnectionRefusedError,
             websockets.exceptions.ConnectionClosedError,
-            websockets.exceptions.InvalidMessage) as e:
+            websockets.exceptions.InvalidMessage,
+            TimeoutError) as e:
         if not ignore_error:
             raise e
 
@@ -137,7 +140,7 @@ else:
 
     # Dry run amarisoft to check for any errors
     # Always dry run amarisoft even if configuration hasn't changed in case licenses are invalid
-    proc = subprocess.run([amarisoft_binary, '-d', options['amarisoft-config-file']], timeout=0.3,
+    proc = subprocess.run([amarisoft_binary, '-d', options['amarisoft-config-file']], timeout=1,
       stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, check=False)
 
     if proc.returncode or file_missing or new_hash != previous_hash or new_service not in service_list:
@@ -190,15 +193,21 @@ else:
                         # If previous lteenb has not yet quit, dummy lteenb will fail immediatly
                         # We sleep and retry if that is the case to wait for lteenb to quit
                         try:
-                            proc.communicate(timeout=0.2)
+                            proc.communicate(timeout=1)
                         except subprocess.TimeoutExpired:
                             break
-                        time.sleep(0.3)
+                        time.sleep(0.5)
+                        # Delete /tmp/.lteenb lock file as it may be blocking lteenb -n to run
+                        if not options['mock']:
+                            subprocess.run(
+                              options['rm-tmp-lte'].split(' '),
+                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                              check=False)
                     ssb_list = get_ssb()
                     # Kill dummy lteenb
                     asyncio.run(websocket_quit(options['ws-url'], options['ws-password']))
                     try:
-                        proc.communicate(timeout=0.2)
+                        proc.communicate(timeout=1)
                     except subprocess.TimeoutExpired:
                         proc.kill()
                         proc.communicate()
@@ -230,7 +239,7 @@ parts=
 recipe = slapos.cookbook:publish.serialised
 """
 for key in publish:
-    PUBLISH_BUILDOUT += f"{key} = {publish[key]}\n"
+    PUBLISH_BUILDOUT += f"{key} = {str(publish[key])}\n"
 
 with open(options['template-publish'], 'w+') as f:
   f.write(PUBLISH_BUILDOUT)

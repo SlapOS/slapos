@@ -540,8 +540,8 @@ class TestSimCard(ORSTestCase):
   def getInstanceParameterDict(cls):
     params = {}
     params.update(core_network_param_dict)
-    params['pdn1']['fixed_ips'] = cls.fixed_ips
-    params['pdn2']['fixed_ips'] = cls.fixed_ips
+    params.setdefault('pdn1', {})['fixed_ips'] = cls.fixed_ips
+    params.setdefault('pdn2', {})['fixed_ips'] = cls.fixed_ips
     return {'_': json.dumps(params)}
   @classmethod
   def getInstanceSoftwareType(cls):
