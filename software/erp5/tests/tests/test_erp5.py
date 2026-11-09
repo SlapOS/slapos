@@ -1199,7 +1199,7 @@ class TestAutoResetInituserPassword(ZopeSkinsMixin, CrontabMixin,
 
   def _getCrontabCommand(self, crontab_name):
     with open(os.path.join(
-        self.getComputerPartitionPath('zope-default'),
+        self.getComputerPartitionPath('zope-1'),
         'etc',
         'cron.d',
         crontab_name,
@@ -1212,7 +1212,7 @@ class TestAutoResetInituserPassword(ZopeSkinsMixin, CrontabMixin,
     with self.getXMLRPCClient() as erp5_xmlrpc_client:
       return erp5_xmlrpc_client.portal_activities.countMessage()
 
-  @unittest.skipIf(not ERP5PY3)
+  @unittest.skipIf(not ERP5PY3, "Feature uses secret, only compatible with py3")
   def test_reset_inituser_password(self):
     command = self._getCrontabCommand('reset-inituser-password').split()
     self.assertIn('reset-inituser-password', command[0])
