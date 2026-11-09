@@ -84,6 +84,19 @@ the SlapOS Master on every run, until it is re-attached. See `Detaching a
 frontend node` in the README for the procedure and its limitations.
 (`!2255 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2255>`__, `!2282 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2282>`__)
 
+A failed frontend request keeps the published values of the frontend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+When the SlapOS Master answers the request of a frontend node with an
+error, the master partition no longer blanks the ``frontend-node-i-*``
+values of that node nor republishes every slave: it publishes the values
+of the last successful request. The promise
+``check-request-caddy-frontend-i`` of the master partition fails until a
+request of the node succeeds again. The request of a destroyed node still
+fails silently.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 1.0.519 (2026-10-23)
 --------------------
 

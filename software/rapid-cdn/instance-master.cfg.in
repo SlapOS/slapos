@@ -428,6 +428,9 @@ state = {{ state }}
 {%-   endif %}
 {#-   Do not send additional parameters for destroyed nodes #}
 {%-   if state != 'destroyed' %}
+recipe = software:frontend-request
+last-connection-file = ${directory:var}/{{ section }}-last-connection.json
+failure-file = ${directory:var}/{{ section }}-failure.txt
 config-slave-kedifa-information = ${request-kedifa:connection-slave-kedifa-information}
 config-kedifa-caucase-url = ${request-kedifa:connection-caucase-url}
 config-backend-client-caucase-url = {{ caucase_url }}
@@ -531,6 +534,17 @@ promise = check_url_available
 name = check-backend-haproxy-statistic-url-frontend-node-{{ i }}.py
 config-url =
   {{ section_part }}:connection-backend-haproxy-statistic-url}
+{%- endfor %}
+
+{%- for frontend in frontend_list %}
+{%-   set part_name = 'promise-request-' + frontend %}
+{%-   do part_list.append(part_name) %}
+[{{ part_name }}]
+<= monitor-promise-base
+promise = check_file_state
+name = check-request-{{ frontend }}.py
+config-filename = ${request-{{ frontend }}:failure-file}
+config-state = absent
 {%- endfor %}
 
 {#- Publish slave information #}

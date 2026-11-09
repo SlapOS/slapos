@@ -14,6 +14,7 @@ setup(
   entry_points={
     'zc.buildout': [
       'default = software:Recipe',
+      'frontend-request = software:FrontendRequest',
     ],
     'console_scripts': [
       'smart-caucase-signer = software:smart_sign',

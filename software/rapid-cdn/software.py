@@ -1,5 +1,6 @@
 import caucase.client
 import caucase.utils
+import json
 import os
 import ssl
 import sys
@@ -19,6 +20,49 @@ class Recipe(object):
 
   def update(self):
     return self.install()
+
+
+class FrontendRequest(object):
+  """slapos.cookbook:requestoptional.serialised, but a failed request keeps
+  the connection parameters of the last successful one instead of emptying
+  them."""
+  def __init__(self, buildout, name, options):
+    # not a requirement of this egg: its console scripts do not need it, and
+    # buildout has it loaded already, as the section uses ${monitor-htpasswd}
+    from slapos.recipe.request import RequestOptionalJSONEncoded
+    self.request = RequestOptionalJSONEncoded(buildout, name, options)
+    self.options = options
+    self.return_list = options.get('return', '').split()
+    self.connection_file = options['last-connection-file']
+    self.failure_file = options['failure-file']
+    self.exception = self.request._raise_request_exception
+    if self.exception is not None:
+      try:
+        with open(self.connection_file) as f:
+          last_connection_dict = json.load(f)
+      except FileNotFoundError:
+        last_connection_dict = {}
+      for param in self.return_list:
+        if param in last_connection_dict:
+          options['connection-%s' % param] = last_connection_dict[param]
+
+  def install(self):
+    self.request.install()
+    if self.exception is None:
+      with open(self.connection_file + '.tmp', 'w') as f:
+        json.dump({
+          param: self.options['connection-%s' % param]
+          for param in self.return_list}, f, sort_keys=True)
+      os.rename(self.connection_file + '.tmp', self.connection_file)
+      if os.path.exists(self.failure_file):
+        os.unlink(self.failure_file)
+    else:
+      with open(self.failure_file, 'w') as f:
+        f.write('Request for %r failed: %r\n' % (
+          self.options['name'], self.exception))
+    return []
+
+  update = install
 
 
 def validate_netloc(netloc):

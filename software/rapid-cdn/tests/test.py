@@ -10777,6 +10777,128 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     self.assertIn('Uninstalling _deleted-', slapgrid_log)
     self.assertNotIn('Updating _deleted-', slapgrid_log)
 
+class TestFrontendRequestFailure(SlaveHttpFrontendTestCase):
+  instance_parameter_dict = {
+    'domain': 'example.com',
+    'port': HTTPS_PORT,
+    'plain_http_port': HTTP_PORT,
+    'kedifa_port': KEDIFA_PORT,
+    'caucase_port': CAUCASE_PORT,
+    '-frontend-quantity': 2,
+    '-frontend-2-state': 'destroyed',
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(cls.instance_parameter_dict)}
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {'request-failure': {'url': cls.backend_url}}
+
+  def setUp(self):
+    super().setUp()
+    self.master_parameter_dict = dict(self.instance_parameter_dict)
+
+  def getMasterLog(self):
+    log_file = os.path.join(
+      self.getMasterPartitionPath(), '.slapgrid', 'log', 'instance.log')
+    with open(log_file) as fh:
+      return fh.read()
+
+  def cleanMasterLog(self):
+    log_file = os.path.join(
+      self.getMasterPartitionPath(), '.slapgrid', 'log', 'instance.log')
+    os.rename(log_file, log_file + self.id())
+
+  def setFrontendRequestFailing(self, failing):
+    # slapproxy fails a request only when it allocates a partition, so detach
+    # caddy-frontend-1 from its requester and pin its request to an unknown
+    # computer
+    import contextlib
+    import sqlite3
+    from slapos.proxy.db_version import DB_VERSION
+    master_reference = self.default_partition_reference
+    detached_reference = 'detached-' + master_reference
+    with contextlib.closing(sqlite3.connect(self.slap._proxy_database)) as db:
+      db.execute(
+        "UPDATE partition%s SET requested_by=? "
+        "WHERE partition_reference='caddy-frontend-1' AND requested_by=?" % (
+          DB_VERSION,),
+        (detached_reference, master_reference) if failing else (
+          master_reference, detached_reference))
+      db.commit()
+    self.master_parameter_dict = dict(self.instance_parameter_dict)
+    if failing:
+      self.master_parameter_dict['-sla-1-computer_guid'] = 'unknown-computer'
+    self.requestMaster()
+
+  def requestMaster(self):
+    return self.slap.request(
+      software_release=self.getSoftwareURL(),
+      software_type=self.getInstanceSoftwareType(),
+      partition_reference=self.default_partition_reference,
+      partition_parameter_kw={'_': json.dumps(self.master_parameter_dict)},
+    )
+
+  def getFrontendNodeDict(self):
+    return {
+      k: v for k, v in
+      self.requestMaster().getConnectionParameterDict().items()
+      if k.startswith('frontend-node-1-')}
+
+  def getSlaveFrontendNodeDict(self):
+    self.updateSlaveConnectionParameterDictDict()
+    return {
+      k: v for k, v in
+      self.slave_connection_parameter_dict_dict['request-failure'].items()
+      if k.startswith('frontend-node-')}
+
+  def test_destroyed_frontend_has_no_request_promise(self):
+    self.assertEqual(
+      [],
+      glob.glob(os.path.join(
+        self.getMasterPartitionPath(), 'etc', 'plugin',
+        'check-request-caddy-frontend-2.py')))
+
+  def test_failed_request_keeps_frontend_node_values(self):
+    frontend_node_dict = self.getFrontendNodeDict()
+    self.assertTrue(all(frontend_node_dict.values()), frontend_node_dict)
+    slave_frontend_node_dict = self.getSlaveFrontendNodeDict()
+    self.assertTrue(
+      slave_frontend_node_dict['frontend-node-1-node-information-json'])
+    failure_file = os.path.join(
+      self.getMasterPartitionPath(), 'var',
+      'request-caddy-frontend-1-failure.txt')
+
+    self.addCleanup(self.slap.waitForInstance, self.instance_max_retry)
+    self.addCleanup(self.setFrontendRequestFailing, False)
+    self.cleanMasterLog()
+    self.setFrontendRequestFailing(True)
+    with self.assertRaises(SlapOSNodeInstanceError) as cm:
+      self.slap.waitForInstance()
+    self.assertIn('check-request-caddy-frontend-1.py', str(cm.exception))
+    with open(failure_file) as fh:
+      self.assertIn("Request for 'caddy-frontend-1' failed", fh.read())
+    master_log = self.getMasterLog()
+    self.assertIn("Request for 'caddy-frontend-1'", master_log)
+    self.assertNotIn('Installing publish-_request-failure', master_log)
+    self.assertEqual(frontend_node_dict, self.getFrontendNodeDict())
+    self.assertEqual(
+      slave_frontend_node_dict, self.getSlaveFrontendNodeDict())
+
+    self.cleanMasterLog()
+    self.setFrontendRequestFailing(False)
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.assertFalse(os.path.exists(failure_file))
+    master_log = self.getMasterLog()
+    self.assertNotIn('Installing publish-_request-failure', master_log)
+    self.assertIn('Updating publish-_request-failure', master_log)
+    self.assertEqual(frontend_node_dict, self.getFrontendNodeDict())
+    self.assertEqual(
+      slave_frontend_node_dict, self.getSlaveFrontendNodeDict())
+
+
 class TestSlaveManagementDomainReuse(
     SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   mock_dns = None
