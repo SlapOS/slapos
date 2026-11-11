@@ -10431,6 +10431,10 @@ class TestSlaveManagement(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   def getInstanceParameterDict(cls):
     return {
       '_': json.dumps({
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
         'instance-retention-delay': 0,
       })
     }
