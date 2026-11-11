@@ -93,7 +93,7 @@ boot_image_url_select_json_config = parameter_dict.get(
 virtual_hard_drive_url_json_config = parameter_dict.get(
   "virtual-hard-drive-url-json-config")
 virtual_hard_drive_gzipped = parameter_dict.get(
-  "virtual-hard-drive-gzipped").strip().lower()
+  "virtual-hard-drive-gzipped", False) in (True, 'true', 'True', '1')
 
 
 def md5Checksum(file_path):
@@ -135,7 +135,7 @@ if len(disk_info_list) == 1 and not os.path.exists(
       raise ValueError('virtual-hard-drive-url not present yet')
     # previous version was using disk in place, but here it would result with
     # redownload, so copy it
-    if virtual_hard_drive_gzipped == 'true':
+    if virtual_hard_drive_gzipped:
       try:
         with open(disk_info_list[0]['path'], 'wb') as d_fh:
           with gzip.open(downloaded_image, 'rb') as s_fh:
