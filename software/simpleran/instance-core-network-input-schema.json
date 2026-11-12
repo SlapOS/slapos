@@ -157,17 +157,6 @@
     }
   },
   "$defs": {
-    "private_key": {
-      "title": "Private Key",
-      "description": "Home network private key in hexadecimal format (32 bytes)",
-      "type": "string"
-    },
-    "key_id": {
-      "title": "Key ID",
-      "description": "Home network key identifier (range 0 to 255)",
-      "type": "number",
-      "default": 1
-    },
     "pdn": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
