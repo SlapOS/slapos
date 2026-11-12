@@ -9,14 +9,7 @@
   ],
   "properties": {
     "disable_sim": {
-      "title": "Disable SIM",
-      "description": "Disables SIM temporarily, an alternative to destroying the instance.",
-      "type": "string",
-      "enum": [
-        "Enable SIM",
-        "Disable SIM"
-      ],
-      "default": "Enable SIM"
+      "$ref": "common.json#/properties/disable_sim"
     },
     "sim_algo": {
       "$ref": "common.json#/properties/sim_algo",

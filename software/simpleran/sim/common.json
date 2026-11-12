@@ -11,6 +11,16 @@
     "impi"
   ],
   "properties": {
+    "disable_sim": {
+      "title": "Disable SIM",
+      "description": "Disables SIM temporarily, an alternative to destroying the instance.",
+      "type": "string",
+      "enum": [
+        "Enable SIM",
+        "Disable SIM"
+      ],
+      "default": "Enable SIM"
+    },
     "sim_algo": {
       "title": "Sim Algorithm",
       "description": "xor, milenage or tuak. Set the USIM authentication algorithm.",
@@ -154,53 +164,6 @@
       "title": "Enable IPv4 broadcast",
       "description": "Set to true to enable IPv4 broadcast",
       "type": "boolean"
-    },
-    "route_list": {
-      "title": "Route list",
-      "type": "array",
-      "items": {
-        "title": "Route",
-        "type": "object",
-        "oneOf": [
-          {
-            "title": "IPv6 Route",
-            "required": [
-              "ipv6_remote_addr_prefix",
-              "prefix_len"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "ipv6_remote_addr_prefix": {
-                "title": "IPv6 remote address prefix",
-                "type": "string"
-              },
-              "prefix_len": {
-                "title": "Prefix length",
-                "type": "number"
-              }
-            }
-          },
-          {
-            "title": "IPv4 Route",
-            "required": [
-              "ipv4_remote_addr",
-              "mask"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "ipv4_remote_addr": {
-                "title": "IPv4 remote address",
-                "type": "string"
-              },
-              "mask": {
-                "title": "Mask",
-                "type": "string"
-              }
-            }
-          }
-        ]
-      },
-      "default": []
     }
   }
 }
