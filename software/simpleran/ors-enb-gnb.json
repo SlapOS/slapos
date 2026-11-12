@@ -5,7 +5,7 @@
   "properties": {
     "gnb_id": {
       "$ref": "instance-enb-input-schema.json#/properties/gnb_id",
-      "description": "eNB ID. Equal to (ORS serial number + 524288) modulo 1048576 by default"
+      "description": "gNB ID. Equal to (ORS serial number + 524288) modulo 1048576 by default"
     },
     "gnb_id_bits": {
       "$ref": "instance-enb-input-schema.json#/properties/gnb_id_bits",
