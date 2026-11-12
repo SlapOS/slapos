@@ -43,6 +43,8 @@ import subprocess
 import tempfile
 import socketserver as SocketServer
 import multiprocessing
+import random
+import string
 import time
 import shutil
 import sys
@@ -906,6 +908,84 @@ class TestInstanceResilientBackupImporter(
 class TestInstanceResilientBackupImporterIde(
   TestInstanceResilientBackupImporter):
   disk_type = 'ide'
+
+
+def fetchKvmResiliencyTestKey(ipv6, path='get'):
+  # mirrors slapos.resiliencytest.suites.kvm.fetchKey
+  for _ in range(90):
+    try:
+      result = requests.get(
+        'http://[%s]:10080/%s' % (ipv6, path), timeout=10)
+      if result.status_code == httplib.OK:
+        return result.text.strip()
+    except requests.exceptions.RequestException:
+      pass
+    time.sleep(10)
+  raise AssertionError(
+    'VM get/set server on [%s] did not answer in time' % ipv6)
+
+
+@skipUnlessKvm
+class TestInstanceResilientDataIntegrity(
+  TestInstanceResilientBackupMixin, KVMTestCase):
+  """
+  Same scenario as slapos.resiliencytest.suites.kvm.KVMTestSuite (see
+  software/erp5testnode/testsuite/kvm.cfg): push a key to the main
+  instance's own get/set HTTP server, back it up, take over to the
+  importer clone, and check the key survived.
+  """
+  # Debian 13 image built with Packer (slapos.package's
+  # packer/scripts/vm-bootstrap.sh), published on shacache and listed at
+  # http://shadir.nxdcdn.com/packer-images. It is qcow2 v3, which qmpbackup
+  # needs for incremental backup (persistent bitmaps require qcow2 v3,
+  # unlike the older image published for this test, which is qcow2 v2).
+  #
+  # bootstrap-script-url installs the get/set key-value server this test
+  # talks to on port 10080; see
+  # software/kvm/tests/resiliency-image/vm-bootstrap.sh.
+  extra_parameter_dict = {
+    'virtual-hard-drive-url':
+      'https://shacache.nxdcdn.com/b25e214d92814f306f851f404e079aca19205c'
+      '641afc584b38f9e209d6042e7fb401211db0af1eaf8a5b471ac2578b1497ed637ad'
+      '03a75f75eaab91b829fdfb5',
+    'virtual-hard-drive-md5sum': '339bcf1fc211d5a576adaae52195087b',
+    'virtual-hard-drive-gzipped': True,
+    'enable-novnc-server': False,
+    'enable-http-server': True,
+    'bootstrap-script-url':
+      os.environ['SLAPOS_TEST_SOFTWARE_ROOT_URL']
+      + '/software/kvm/tests/resiliency-image/vm-bootstrap.sh'
+      '#92937e8c7847fbf21bab12eddd5ce26d',
+  }
+
+  def test(self):
+    key = ''.join(random.SystemRandom().sample(string.ascii_lowercase, 20))
+    ip = self.getConnectionParameterDictJson()['ipv6']
+    fetchKvmResiliencyTestKey(ip, path='set?key=%s' % key)
+
+    equeue_file = self.getPartitionPath(
+      'kvm-import', 'var', 'log', 'equeue.log')
+    self.call_exporter()
+    awaitBackup(equeue_file)
+
+    connection_parameter = self.getConnectionParameterDictJson()
+    takeover_result = requests.post(
+      connection_parameter['takeover-kvm-1-url'],
+      data={'password': connection_parameter['takeover-kvm-1-password']})
+    self.assertEqual(httplib.OK, takeover_result.status_code)
+    self.assertTrue(takeover_result.text.startswith('Success.'))
+    self.slap.waitForInstance(max_retry=10)
+
+    # getConnectionParameterDictJson() reads self.computer_partition's
+    # connection parameters, and the slap client library fetches those once
+    # and caches them for the ComputerPartition object's lifetime (see
+    # ComputerPartition.getConnectionParameterDict in slapos.slap.slap).
+    # The clone has its own ipv6, distinct from the original main
+    # instance's, so force a fresh fetch to pick it up.
+    self.computer_partition._fetchComputerPartitionInformation()
+    new_ip = self.getConnectionParameterDictJson()['ipv6']
+
+    self.assertEqual(key, fetchKvmResiliencyTestKey(new_ip))
 
 
 class TestInstanceResilientBackupExporterMixin(
