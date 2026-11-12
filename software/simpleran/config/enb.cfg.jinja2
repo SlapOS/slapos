@@ -531,61 +531,6 @@
           npusch_multi_tone_i_tbs: 4,
           npusch_n_rep: 1,
         },
-{%-   if cell.all_ce_level %}
-        {
-          npdcch_ra_n_rep: 4,
-          npdsch_ra_n_rep: 4,
-          npdsch_ra_i_tbs: 3,
-
-          ul_sc_spacing: 1,
-          msg3_n_sc: 1,
-          msg3_single_tone_mcs: 1,
-          msg3_n_rep: 4,
-
-          npdcch_paging_n_rep: 4,
-          npdsch_paging_i_tbs: 3,
-          npdsch_paging_n_rep: 4,
-
-          npdcch_uss_n_rep_max: 16,
-          npdcch_uss_n_rep: 4,
-          npdcch_uss_start_sf: 2,
-          npdcch_uss_offset: 0,
-          npdsch_i_tbs: 4,
-          npdsch_n_rep: 4,
-          npusch_n_sc: 3,
-          npusch_single_tone_i_tbs: 4,
-          npusch_multi_tone_i_tbs: 4,
-          npusch_n_rep: 4,
-          npusch_an_n_rep : 4,
-          inactivity_timer: 20000,
-        },
-        {
-          npdcch_ra_n_rep: 16,
-          npdsch_ra_n_rep: 8,
-          npdsch_ra_i_tbs: 1,
-
-          ul_sc_spacing: 1,
-          msg3_n_sc: 1,
-          msg3_single_tone_mcs: 0,
-          msg3_n_rep: 8,
-
-          npdcch_paging_n_rep: 8,
-          npdsch_paging_i_tbs: 1,
-          npdsch_paging_n_rep: 8,
-
-          npdcch_uss_n_rep_max: 32,
-          npdcch_uss_n_rep: 16,
-          npdcch_uss_start_sf: 1.5,
-          npdcch_uss_offset: 0,
-          npdsch_i_tbs: 1,
-          npdsch_n_rep: 8,
-          npusch_n_sc: 1,
-          npusch_single_tone_i_tbs: 1,
-          npusch_n_rep: 16,
-          npusch_an_n_rep: 8,
-          inactivity_timer: 50000,
-        },
-{%-   endif %}
       ],
     },
     {%- endfor %}
