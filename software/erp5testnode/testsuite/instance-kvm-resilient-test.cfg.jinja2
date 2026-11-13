@@ -47,6 +47,8 @@ name = Resilient Instance (Root Instance)
 config-virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
 config-virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
 config-virtual-hard-drive-gzipped = ${slap-parameter:virtual-hard-drive-gzipped}
+config-enable-http-server = ${slap-parameter:enable-http-server}
+config-bootstrap-script-url = ${slap-parameter:bootstrap-script-url}
 config-resiliency-backup-periodicity = */5 * * * *
 config-resilient-clone-number = 1
 return = ipv6
@@ -54,6 +56,8 @@ return = ipv6
 sla-computer_guid = ${slap-connection:computer-id}
 
 [slap-parameter]
-virtual-hard-drive-url = {{ default_test_image_url }} 
+virtual-hard-drive-url = {{ default_test_image_url }}
 virtual-hard-drive-md5sum = {{ default_test_image_md5sum }}
 virtual-hard-drive-gzipped = true
+enable-http-server = true
+bootstrap-script-url = {{ default_bootstrap_script_url }}#{{ default_bootstrap_script_md5sum }}
