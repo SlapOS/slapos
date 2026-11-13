@@ -6,6 +6,7 @@ Version 1.0.524 (2026-11-13)
 
 * Don't stop eNB / gNB / Core Network if wrong parameters are inputted
 * Report parameter validation issues in check-configuration-error promise output and connection parameters
+* Reduce the number of parameters, only keep well tested parameters
 * Improve low latency TDD configurations
   - Set MCS Table to 64qam for better reliability
   - Set n_rb_coreset0 to 48 and n_symb_coreset0 to 1 on 1ms TDD configuration
