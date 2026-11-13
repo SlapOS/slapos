@@ -58,6 +58,6 @@ sla-computer_guid = ${slap-connection:computer-id}
 [slap-parameter]
 virtual-hard-drive-url = {{ default_test_image_url }}
 virtual-hard-drive-md5sum = {{ default_test_image_md5sum }}
-virtual-hard-drive-gzipped = true
-enable-http-server = true
+virtual-hard-drive-gzipped = {{ dumps(True) }}
+enable-http-server = {{ dumps(True) }}
 bootstrap-script-url = {{ default_bootstrap_script_url }}#{{ default_bootstrap_script_md5sum }}
