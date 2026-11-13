@@ -732,7 +732,7 @@ class CronMixin(object):
       try:
         cron_environment = cls._loadCronEnvironment(cron_environment_path)
         break
-      except ValueError:
+      except (OSError, ValueError):
         time.sleep(1)
     else:
       raise ValueError('Empty cron environment', cron_environment_path)
