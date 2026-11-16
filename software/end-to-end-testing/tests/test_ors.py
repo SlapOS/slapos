@@ -1,6 +1,7 @@
 import json
 import hashlib
 import hmac
+import os
 import random
 import time
 import slapos.testing.e2e as e2e
@@ -11,7 +12,6 @@ CHECK_PROMISE      = True       # Disable to run tests faster
 RESET              = True       # Disable this if you already have the services in a good state to quickly run a single test
 LOCK               = False      # Disable to run tests faster, activates lock mechanism to prevent conflict if two tests run at the same time on the same services
 DEBUG              = False      # Sleep for 20 minutes after failure to give time to debug
-DEV                = True       # Use DEV services
 MAX_RETRY          = 3          # Max retries to connect UE after services have been checked
 RERUN_TEST         = 1767374328 # Increase to force test suite to run test again
 
@@ -25,21 +25,12 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             super().setUpClass()
 
             cls.logger.info("Setting up class")
-            
-            if DEV:
-                cls.enb_gnb_instance_name = "simbox005-enb-gnb-dev"
-                cls.core_network_instance_name = "simbox005-core-network-dev"
-                cls.core_network_sim_instance_name = "simbox005-simcard-dev"
-                cls.ue_instance_name = "simbox005-ue-dev"
-                cls.ue_cell_instance_name = "simbox005-ue-cell-dev"
-                cls.ue_ue_instance_name = "simbox005-ue-ue-dev"
-            else:
-                cls.enb_gnb_instance_name = "e2e-ors70-enb-2"
-                cls.core_network_instance_name = "e2e-ors70-mme-1737037360"
-                cls.core_network_sim_instance_name = "e2e-ors70-sim-card-1737037360"
-                cls.ue_instance_name = "e2e-sb005-ue-tagged"
-                cls.ue_cell_instance_name = "e2e-sb005-ue-cell-tagged"
-                cls.ue_ue_instance_name = "e2e-sb005-ue-ue-tagged"
+
+            with open(os.environ['SLAPOS_E2E_TEST_PARAMETER_FILE'], 'r') as f:
+                parameter_list = json.load(f)
+                for parameter in parameter_list:
+                    cls.logger.info(repr((parameter['key'], parameter['value'])))
+                    setattr(cls, parameter['key'], parameter['value'])
 
             # Retry configurations
             cls.max_retries = 1
@@ -88,11 +79,7 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
 
     @classmethod
     def setup_adb_websocket_connection(cls):
-        # TODO: do this properly
-        from os.path import expanduser
-        with open(expanduser('~/adb-websocket-address'), 'r') as f:
-            ws_url = f.read().strip()
-
+        ws_url = cls.adb_ws_url
         cls.logger.info(f"ADB Websocket URL: {ws_url}")
 
         ws = create_connection(ws_url)
