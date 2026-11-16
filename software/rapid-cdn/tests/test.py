@@ -2628,6 +2628,7 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     MASTER_IP = self.master_ipv6
     KEDIFA_IP = self.kedifa_ipv6
     CADDY_IP = self.caddy_frontend1_ipv6
+    ERROR_PAGE_MANAGER_IP = self.error_page_manager_ipv6
     self.monitor_configuration_list = [
       {
         'htmlUrl': 'https://[%s]:8401/public/feed' % (MASTER_IP,),
@@ -2646,6 +2647,15 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         'url': 'https://[%s]:8402/share/private/' % (KEDIFA_IP,),
         'version': 'RSS',
         'xmlUrl': 'https://[%s]:8402/public/feed' % (KEDIFA_IP,),
+      },
+      {
+        'htmlUrl': 'https://[%s]:8403/public/feed' % (ERROR_PAGE_MANAGER_IP,),
+        'text': 'error-page-manager',
+        'title': 'error-page-manager',
+        'type': 'rss',
+        'url': 'https://[%s]:8403/share/private/' % (ERROR_PAGE_MANAGER_IP,),
+        'version': 'RSS',
+        'xmlUrl': 'https://[%s]:8403/public/feed' % (ERROR_PAGE_MANAGER_IP,),
       },
       {
         'htmlUrl': 'https://[%s]:8411/public/feed' % (CADDY_IP,),
@@ -2691,8 +2701,22 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
     outline_list = body[0].findall('outline')
 
     self.assertEqual(
-      self.monitor_configuration_list,
-      [q.attrib for q in outline_list]
+      sorted(self.monitor_configuration_list, key=lambda q: q['xmlUrl']),
+      sorted([q.attrib for q in outline_list], key=lambda q: q['xmlUrl'])
+    )
+
+    node_feed_list = []
+    for monitor_conf in glob.glob(
+        os.path.join(self.instance_path, '*', 'etc', 'monitor.conf')):
+      config = configparser.RawConfigParser()
+      config.read(monitor_conf)
+      node_feed_list.append((
+        config.get('monitor', 'title'),
+        config.get('monitor', 'base-url') + '/public/feed'))
+    self.assertEqual(4, len(node_feed_list))
+    self.assertEqual(
+      sorted(node_feed_list),
+      sorted((q.attrib['title'], q.attrib['xmlUrl']) for q in outline_list)
     )
 
     expected_status_code_list = []

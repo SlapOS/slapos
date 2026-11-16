@@ -39,6 +39,17 @@ Network exposure information provided
 The "Network exposure" section of the README tells where to find each
 socket of the cluster and its client, to write the firewall rules.
 
+The cluster monitor includes the error-page-manager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The feed list of the master partition monitor (``monitor-setup-url``) now
+has an entry for the error-page-manager partition, next to kedifa and the
+frontend nodes. Before, the promises of the error-page-manager were not
+visible in the cluster monitor. An existing cluster gets the entry on the
+first run of the master partition after the upgrade.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 Published frontend node values keep the number of the frontend node
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**

@@ -662,7 +662,9 @@ extra-context =
     import urllib_module urllib
 
 [monitor-base-url-dict]
+{#- buildout requests the partitions in sorted key order: keep kedifa first #}
 kedifa = ${request-kedifa:connection-monitor-base-url}
+request-error-page-manager = ${request-error-page-manager:connection-monitor-base-url}
 {% for frontend in frontend_section_list %}
 {{ frontend }} = {{ '${' + frontend + ':connection-monitor-base-url}' }}
 {% endfor %}
