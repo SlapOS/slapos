@@ -27,12 +27,12 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             cls.logger.info("Setting up class")
             
             if DEV:
-                cls.enb_gnb_instance_name = "simbox005-enb-gnb"
-                cls.core_network_instance_name = "simbox005-core-network"
-                cls.core_network_sim_instance_name = "simbox005-simcard"
-                cls.ue_instance_name = "e2e-sb005-ue"
-                cls.ue_cell_instance_name = "e2e-sb005-ue-cell"
-                cls.ue_ue_instance_name = "e2e-sb005-ue-ue"
+                cls.enb_gnb_instance_name = "simbox005-enb-gnb-dev"
+                cls.core_network_instance_name = "simbox005-core-network-dev"
+                cls.core_network_sim_instance_name = "simbox005-simcard-dev"
+                cls.ue_instance_name = "simbox005-ue-dev"
+                cls.ue_cell_instance_name = "simbox005-ue-cell-dev"
+                cls.ue_ue_instance_name = "simbox005-ue-ue-dev"
             else:
                 cls.enb_gnb_instance_name = "e2e-ors70-enb-2"
                 cls.core_network_instance_name = "e2e-ors70-mme-1737037360"
