@@ -81,15 +81,17 @@ inline =
   directory = "{{ testdir }}"
   slapos_cfg = {{ repr(slapos_cfg) }}
   log_file = {{ repr(log_file) }}
-  dir_list = os.listdir(directory)
-  for filename in dir_list:
+  file_list = os.listdir(directory)
+  for filename in file_list:
     name, ext = os.path.splitext(filename)
     if name.startswith('test') and ext == '.py':
+      index = name.split('test')[1]
       TestCase(
         name,
         [{{ repr(python_for_test) }} , '-m', 'unittest',  '-v', name],
         cwd=directory,
         env={'SLAPOS_E2E_TEST_CLIENT_CFG': slapos_cfg,
+             'SLAPOS_E2E_TEST_PARAMETER_FILE': os.path.join(directory, 'parameter_dict%s.json' % index),
              'SLAPOS_E2E_TEST_LOG_FILE': log_file},
         summaryf=UnitTest.summary,
       )
@@ -99,6 +101,7 @@ recipe = slapos.recipe.build
 tests = $${slap-configuration:configuration.tests}
 location = $${directory:var}/tests
 install =
+  import json
   import os
   import shutil
   os.mkdir(location)
@@ -108,8 +111,11 @@ install =
     self.buildout['buildout']['offline'] = 'false'
     for i, test in enumerate(options['tests']):
       tmp = self.download(test['url'], test['md5sum'])
-      path = os.path.join(location, 'test%s.py' % i)
-      shutil.copy(tmp, path)
+      test_path      = os.path.join(location, 'test%s.py' % i)
+      parameter_path = os.path.join(location, 'parameter_dict%s.json' % i)
+      shutil.copy(tmp, test_path)
+      with open(parameter_path, 'w+') as f:
+        json.dump({parameter['key']: parameter['value'] for parameter in test['parameter_list']}, f)
   finally:
     # reset the parameter
     self.buildout['buildout']['offline'] = buildout_offline
