@@ -1,3 +1,4 @@
+import base64
 import json
 import hashlib
 import hmac
@@ -5,6 +6,8 @@ import os
 import random
 import time
 import slapos.testing.e2e as e2e
+from io import StringIO
+from paramiko import Ed25519Key, PKey, RejectPolicy, SSHClient
 from websocket import create_connection
 from websocket import _exceptions
 
@@ -28,9 +31,11 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
 
             with open(os.environ['SLAPOS_E2E_TEST_PARAMETER_FILE'], 'r') as f:
                 parameter_dict = json.load(f)
-                for key in parameter_dict:
-                    cls.logger.info(repr((key, parameter_dict[key])))
-                    setattr(cls, key, parameter_dict[key])
+            cls.logger.info(json.dumps(parameter_dict, indent=4))
+            for key in parameter_dict:
+                cls.logger.info(repr((key, parameter_dict[key])))
+                setattr(cls, key, parameter_dict[key])
+            cls.init_ssh_client()
 
             # Retry configurations
             cls.max_retries = 1
@@ -58,6 +63,20 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             raise
 
     @classmethod
+    def init_ssh_client(cls):
+        with StringIO(cls.ssh_private_key) as ssh_key_f:
+            private_key = Ed25519Key.from_private_key(ssh_key_f)
+        host_key_type, host_key_string = cls.ssh_host_key.split(' ')
+        host_key = PKey.from_type_string(host_key_type, base64.b64decode(host_key_string))
+
+        client = SSHClient()
+        client.set_missing_host_key_policy(RejectPolicy())
+        client.get_host_keys().add(cls.ssh_ip, host_key_type, host_key)
+
+        cls.ssh_client = client
+        cls.ssh_private_key = private_key
+
+    @classmethod
     def setup_websocket_connection(cls, name, ws_host, ws_port, ws_pass):
         ws_url = f"wss://{ws_host}/websocket:{ws_port}"
 
@@ -76,24 +95,6 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
         ws.recv()
         cls.logger.info(f"{name} Websocket authentication established.")
         return ws
-
-    @classmethod
-    def setup_adb_websocket_connection(cls):
-        ws_url = cls.adb_ws_url
-        cls.logger.info(f"ADB Websocket URL: {ws_url}")
-
-        ws = create_connection(ws_url)
-        cls.logger.info(f"ADB Websocket connection established.")
-        data = json.loads(ws.recv())
-        cls.adb_ws = ws
-
-    def adb_airplane_enable(self):
-        self.adb_ws.send(json.dumps({"message": "airplane_enable"}))
-        return self.adb_ws.recv()
-
-    def adb_airplane_disable(self):
-        self.adb_ws.send(json.dumps({"message": "airplane_disable"}))
-        return self.adb_ws.recv()
 
     @classmethod
     def setup_ue_websocket_connection(cls):
@@ -192,15 +193,6 @@ class WebsocketTestClass(e2e.EndToEndTestCase):
             if attempt < cls.max_retries - 1:
                 time.sleep(cls.retry_delay)
         return None
-
-    @classmethod
-    def close_adb_websocket_connection(cls):
-        if hasattr(cls, "adb_ws") and cls.adb_ws is not None:
-            cls.logger.info("Closing ADB websocket")
-            try:
-                cls.adb_ws.close()
-            except _exceptions.WebSocketConnectionClosedException:
-                pass
 
     @classmethod
     def close_ue_websocket_connection(cls):
@@ -972,11 +964,9 @@ class ORSTest(WebsocketTestClass):
 
 
     def test_vonr(self):
-        try:
-            self.setup_adb_websocket_connection()
-            self.adb_airplane_enable()
-        finally:
-            self.close_adb_websocket_connection()
+        self.ssh_client.connect(self.ssh_ip, username='root', pkey=self.ssh_private_key)
+        self.ssh_client.exec_command('adb shell cmd connectivity airplane-mode enable')
+        self.ssh_client.close()
 
         self.logger.info(f"Checking VoNR")
 
@@ -1012,8 +1002,8 @@ class ORSTest(WebsocketTestClass):
                 self.setup_core_network_websocket_connection()
                 self.setup_ims_websocket_connection()
                 self.setup_enb_websocket_connection()
-                self.setup_adb_websocket_connection()
-                self.adb_airplane_disable()
+                self.ssh_client.connect(self.ssh_ip, username='root', pkey=self.ssh_private_key)
+                self.ssh_client.exec_command('adb shell cmd connectivity airplane-mode disable')
                 time.sleep(1.5)
                 for i in range(20):
                     time.sleep(0.1)
@@ -1028,11 +1018,11 @@ class ORSTest(WebsocketTestClass):
             except (_exceptions.WebSocketConnectionClosedException, _exceptions.WebSocketBadStatusException, json.decoder.JSONDecodeError):
                 retry = True
             finally:
-                self.adb_airplane_enable()
+                self.ssh_client.exec_command('adb shell cmd connectivity airplane-mode enable')
+                self.ssh_client.close()
                 self.close_core_network_websocket_connection()
                 self.close_ims_websocket_connection()
                 self.close_enb_websocket_connection()
-                self.close_adb_websocket_connection()
         self.assertTrue(success, "VoNR check didn't pass")
 
     # TODO: uncomment these tests
