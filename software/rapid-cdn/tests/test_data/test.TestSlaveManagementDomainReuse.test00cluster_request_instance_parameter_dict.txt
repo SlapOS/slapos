@@ -70,15 +70,9 @@
       "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
-      "shared-list": [
-        {
-          "custom_domain": "bang-loop.example.com",
-          "slave_reference": "_bang-loop-invalid"
-        },
-        {
-          "custom_domain": "reuse.example.com",
-          "slave_reference": "_reuse-orig"
-        }
+      "shared-reference-list": [
+        "_bang-loop-invalid",
+        "_reuse-orig"
       ]
     },
     "full_address_list": [],

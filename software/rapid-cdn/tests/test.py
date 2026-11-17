@@ -12153,6 +12153,19 @@ class TestErrorPageSlaveOverride(SlaveHttpFrontendTestCase):
     parameter_dict = self.parseSlaveParameterDict('ov-redirect')
     self.assertNotIn('error-page-upload-url', parameter_dict)
 
+  def test_error_page_manager_request_has_only_references(self):
+    parser = configparser.RawConfigParser(strict=False)
+    parser.read(os.path.join(
+      self.getMasterPartitionPath(), 'instance-master.cfg'))
+    request_dict = dict(parser.items('request-error-page-manager'))
+    self.assertNotIn('config-shared-list', request_dict)
+    reference_list = request_dict['config-shared-reference-list']
+    for reference in [
+        'ov-plain', 'ov-reset', 'ov-slow', 'ov-failover', 'ov-cached']:
+      self.assertIn("'_%s'" % reference, reference_list)
+    self.assertNotIn('ov-redirect', reference_list)
+    self.assertNotIn('url', reference_list)
+
   # Shared-instance backends are named after the slave_reference, which the
   # SlapOS proxy prefixes with an underscore (e.g. request key ov-plain ->
   # backend _ov-plain-http), so error files live under shared/_ov-plain/.
@@ -12219,10 +12232,7 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
       '_': json.dumps({
         'monitor-password': 'test-monitor-password',
         'monitor-httpd-port': cls._EPM_MONITOR_PORT,
-        'shared-list': [
-          {'slave_reference': cls.TEST_SLAVE_REF},
-          {'slave_reference': cls.TEST_SLAVE_REF_2},
-        ],
+        'shared-reference-list': [cls.TEST_SLAVE_REF, cls.TEST_SLAVE_REF_2],
       }),
     }
 
@@ -13097,16 +13107,18 @@ class TestErrorPageManager(SlapOSInstanceTestCase):
       tls.close()
 
 
+def getErrorPageManagerPid(cls):
+  with cls.slap.instance_supervisor_rpc as supervisor:
+    pid_list = [
+      q['pid'] for q in supervisor.getAllProcessInfo()
+      if q['name'].startswith('error-page-manager')]
+  assert len(pid_list) == 1, pid_list
+  return pid_list[0]
+
+
 class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
-  """Regression test: EPM detects a shared ref added after initial startup.
-
-  Bug: SHARED_TOKEN_MAP is built once at process start.  When buildout adds a
-  new shared ref and rewrites the config JSON, the running EPM never restarts,
-  so the new ref's token is absent from the map and every request returns 401.
-
-  Fix: hash-existing-files on the EPM wrapper includes the config JSON, which
-  causes slapos.cookbook:wrapper to restart the EPM whenever the JSON changes.
-  """
+  """A slave added while the EPM runs gets a working token, without a restart
+  of the EPM."""
 
   __partition_reference__ = 'EPMNS'
 
@@ -13125,7 +13137,7 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
       '_': json.dumps({
         'monitor-password': 'test-monitor-password',
         'monitor-httpd-port': cls._EPM_MONITOR_PORT,
-        'shared-list': [{'slave_reference': cls.SLAVE_A_REF}],
+        'shared-reference-list': [cls.SLAVE_A_REF],
       }),
     }
 
@@ -13155,16 +13167,12 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
         raise TimeoutError('EPM (new-slave test) did not start within 120 s')
       time.sleep(2)
 
-    # Add slave-B: simulates adding a slave after the EPM is already running.
-    # This triggers the bug we're testing (SLAVE_TOKEN_MAP not refreshed).
+    cls._pid_before = getErrorPageManagerPid(cls)
     cls._instance_parameter_dict = {
       '_': json.dumps({
         'monitor-password': 'test-monitor-password',
         'monitor-httpd-port': cls._EPM_MONITOR_PORT,
-        'shared-list': [
-          {'slave_reference': cls.SLAVE_A_REF},
-          {'slave_reference': cls.SLAVE_B_REF},
-        ],
+        'shared-reference-list': [cls.SLAVE_A_REF, cls.SLAVE_B_REF],
       }),
     }
     cls.requestDefaultInstance()
@@ -13191,19 +13199,17 @@ class TestErrorPageManagerNewSlave(SlapOSInstanceTestCase):
   def _delete(self, url):
     return mimikra.delete(url, verify=self._EPM_CERT_FILE)
 
-  def test_new_slave_token_accepted(self):
-    """Slave-B added after EPM startup can upload error pages (204, not 401).
+  def test_epm_not_restarted(self):
+    self.assertEqual(self._pid_before, getErrorPageManagerPid(self))
 
-    Regression: without the fix, SHARED_TOKEN_MAP is not refreshed after the
-    config JSON changes, so slave-B's token is unknown and returns 401.
-    """
+  def test_new_slave_token_accepted(self):
     self.assertIn(self.SLAVE_B_REF, self.slave_info,
                   'slave-B should appear in shared-error-page-information')
     upload_url = self.slave_info[self.SLAVE_B_REF]['upload-url'] + '503'
     result = self._put(upload_url, '<html><body>test</body></html>')
     self.assertEqual(result.status_code, 204,
                      'slave-B upload should return 204; got %s '
-                     '(401 = bug not fixed: EPM did not restart after config change)'
+                     '(401: the EPM did not reload the slave list)'
                      % result.status_code)
     # Cleanup
     self._delete(self.slave_info[self.SLAVE_B_REF]['upload-url'] + '503')
@@ -13233,8 +13239,8 @@ class TestErrorPageManagerRemovedSlave(SlapOSInstanceTestCase):
   """A shared instance's override is dropped once the slave leaves the list.
 
   The shared list is retention-resolved by the master, so a ref that is gone
-  from it is destroyed for good; on the config change the EPM restarts and
-  prunes the override at startup.
+  from it is destroyed for good; the running EPM reloads the list and prunes
+  the override, without a restart.
   """
 
   __partition_reference__ = 'EPMRS'
@@ -13254,10 +13260,7 @@ class TestErrorPageManagerRemovedSlave(SlapOSInstanceTestCase):
       '_': json.dumps({
         'monitor-password': 'test-monitor-password',
         'monitor-httpd-port': cls._EPM_MONITOR_PORT,
-        'shared-list': [
-          {'slave_reference': cls.KEEP_REF},
-          {'slave_reference': cls.REMOVED_REF},
-        ],
+        'shared-reference-list': [cls.KEEP_REF, cls.REMOVED_REF],
       }),
     }
 
@@ -13300,13 +13303,12 @@ class TestErrorPageManagerRemovedSlave(SlapOSInstanceTestCase):
     if cls._removed_path not in manifest:
       raise RuntimeError('override was not published before removal')
 
-    # Drop the slave from the shared list; the EPM restarts on the config
-    # change and prunes it at startup.
+    cls._pid_before = getErrorPageManagerPid(cls)
     cls._instance_parameter_dict = {
       '_': json.dumps({
         'monitor-password': 'test-monitor-password',
         'monitor-httpd-port': cls._EPM_MONITOR_PORT,
-        'shared-list': [{'slave_reference': cls.KEEP_REF}],
+        'shared-reference-list': [cls.KEEP_REF],
       }),
     }
     cls.requestDefaultInstance()
@@ -13321,6 +13323,9 @@ class TestErrorPageManagerRemovedSlave(SlapOSInstanceTestCase):
     if cls._EPM_CERT_FILE and os.path.exists(cls._EPM_CERT_FILE):
       os.unlink(cls._EPM_CERT_FILE)
     super().tearDownClass()
+
+  def test_epm_not_restarted(self):
+    self.assertEqual(self._pid_before, getErrorPageManagerPid(self))
 
   def test_removed_slave_override_is_pruned(self):
     manifest = json.loads(
@@ -13364,7 +13369,7 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
       '_': json.dumps({
         'monitor-password': 'test-monitor-password',
         'monitor-httpd-port': cls._EPM_MONITOR_PORT,
-        'shared-list': [],
+        'shared-reference-list': [],
       }),
     }
 
@@ -13463,7 +13468,7 @@ class TestErrorPageManagerBuiltinChange(SlapOSInstanceTestCase):
       '_': json.dumps({
         'monitor-password': 'rotated-monitor-password',
         'monitor-httpd-port': self._EPM_MONITOR_PORT,
-        'shared-list': [],
+        'shared-reference-list': [],
       }),
     }
     self.requestDefaultInstance()

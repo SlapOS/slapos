@@ -39,6 +39,19 @@ Network exposure information provided
 The "Network exposure" section of the README tells where to find each
 socket of the cluster and its client, to write the firewall rules.
 
+The error-page-manager no longer restarts when slaves change
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The master partition passes the error-page-manager only the references of
+its slaves, so a change of a slave's parameters no longer re-requests the
+error-page-manager. When a slave is added or removed, the running
+error-page-manager reloads the slave list and drops the pages of removed
+slaves, without a restart.
+The error-page-manager needs ``shared-reference-list`` and fails to
+instantiate without it: upgrade the master partition first.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 The master partition runs before the error-page-manager has published
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**

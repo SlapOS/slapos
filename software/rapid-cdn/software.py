@@ -308,10 +308,9 @@ def error_page_manager_main():
 
   READ_TOKEN = open(config['read_token_file']).read().strip()
   OPERATOR_TOKEN = open(config['operator_token_file']).read().strip()
-  SHARED_TOKEN_MAP = {
-    open(token_file).read().strip(): shared_reference
-    for shared_reference, token_file in config['shared_token_files']
-  }
+  SHARED_FILE = config['shared_file']
+  # replaced as a whole, so a request never sees a half-built map
+  _shared = {'token_map': {}, 'stat': None}
 
   SUPPORTED_CODES = _EPM_SUPPORTED_CODES
   SHARED_CODES = _EPM_SHARED_CODES
@@ -522,6 +521,32 @@ def error_page_manager_main():
       SHARED_CODES,
       os.path.join(ERROR_PAGES_DIR, 'shared', ref))
 
+  def _refresh_shared():
+    # Buildout rewrites SHARED_FILE when slaves are added or removed: reload
+    # the token map and drop the overrides of removed slaves.
+    st = os.stat(SHARED_FILE)
+    stat = (st.st_ino, st.st_mtime_ns, st.st_size)
+    if stat == _shared['stat']:
+      return set()
+    with _lock:
+      if stat == _shared['stat']:
+        return set()
+      with open(SHARED_FILE) as f:
+        shared = json.load(f)
+      token_map = {}
+      for ref, token_file in shared:
+        with open(token_file) as f:
+          token_map[f.read().strip()] = ref
+      pruned = _prune_removed_shared_overrides(
+        ERROR_PAGES_DIR, set(token_map.values()))
+      if pruned:
+        _manifest_state['dirty'] = True
+      _shared['token_map'] = token_map
+      _shared['stat'] = stat
+    if pruned:
+      logger.info('Removed slaves pruned: %s', ' '.join(sorted(pruned)))
+    return pruned
+
   # Served by the threaded WSGI server below: each request runs in its own
   # thread, so one stalled client cannot block the others.
   def _parse_path(path):
@@ -532,6 +557,7 @@ def error_page_manager_main():
     return section, token, rest
 
   def application(environ, start_response):
+    _refresh_shared()
     method = environ['REQUEST_METHOD']
     path = environ.get('PATH_INFO', '') or ''
     section, token, rest = _parse_path(path)
@@ -588,7 +614,7 @@ def error_page_manager_main():
         else:
           return send(404, 'Unknown code')
       elif section == 'shared':
-        ref = SHARED_TOKEN_MAP.get(token)
+        ref = _shared['token_map'].get(token)
         if ref is None:
           return send(401, 'Unauthorized')
         if not rest:
@@ -608,8 +634,8 @@ def error_page_manager_main():
         source_dir = os.path.join(ERROR_PAGES_DIR, 'operator')
         def _refresh(code):
           _publish_haproxy_file('cluster', code)
-      elif section == 'shared' and SHARED_TOKEN_MAP.get(token) is not None:
-        ref = SHARED_TOKEN_MAP[token]
+      elif section == 'shared' and _shared['token_map'].get(token) is not None:
+        ref = _shared['token_map'][token]
         valid_codes = SHARED_CODES
         source_dir = os.path.join(ERROR_PAGES_DIR, 'shared', ref)
         def _refresh(code):
@@ -686,7 +712,7 @@ def error_page_manager_main():
           _publish_haproxy_file('cluster', code)
         return send(204, '')
       elif section == 'shared':
-        ref = SHARED_TOKEN_MAP.get(token)
+        ref = _shared['token_map'].get(token)
         if ref is None:
           return send(401, 'Unauthorized')
         code = rest
@@ -724,7 +750,7 @@ def error_page_manager_main():
           _publish_haproxy_file('cluster', code)
         return send(204, '')
       elif section == 'shared':
-        ref = SHARED_TOKEN_MAP.get(token)
+        ref = _shared['token_map'].get(token)
         if ref is None:
           return send(401, 'Unauthorized')
         code = rest
@@ -745,15 +771,12 @@ def error_page_manager_main():
     else:
       return send(404, 'Not found')
 
+  pruned = _refresh_shared()
   with _lock:
     for code in SUPPORTED_CODES:
       _publish_haproxy_file('cluster', code)
-    # Drop overrides of slaves removed from the shared list, then re-publish
-    # the survivors that still have an override on disk; the rest are never
-    # materialised. Runs only at startup -- the wrapper restarts the manager on
-    # every shared-list change (config JSON is in its hash-existing-files).
-    pruned = _prune_removed_shared_overrides(
-      ERROR_PAGES_DIR, set(SHARED_TOKEN_MAP.values()))
+    # Re-publish the survivors that still have an override on disk; the rest
+    # are never materialised.
     shared_source_dir = os.path.join(ERROR_PAGES_DIR, 'shared')
     if os.path.isdir(shared_source_dir):
       for ref in os.listdir(shared_source_dir):
@@ -765,7 +788,8 @@ def error_page_manager_main():
       for f in fs if f.endswith('.http'))
   logger.info(
     'Initialized error pages: %d shared slaves, %d overrides published, '
-    '%d removed slaves pruned', len(SHARED_TOKEN_MAP), published, len(pruned))
+    '%d removed slaves pruned', len(_shared['token_map']), published,
+    len(pruned))
 
   ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
   ctx.load_cert_chain(CERTIFICATE, KEY)

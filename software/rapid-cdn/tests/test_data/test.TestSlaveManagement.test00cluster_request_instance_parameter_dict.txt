@@ -63,13 +63,9 @@
       "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
-      "shared-list": [
-        {
-          "slave_reference": "_deleted"
-        },
-        {
-          "slave_reference": "_first"
-        }
+      "shared-reference-list": [
+        "_deleted",
+        "_first"
       ]
     },
     "full_address_list": [],

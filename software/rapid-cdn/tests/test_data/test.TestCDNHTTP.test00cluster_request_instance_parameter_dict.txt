@@ -140,46 +140,13 @@
       "monitor-interface-url": "https://monitor.app.officejs.com/#page=ojsm_landing",
       "monitor-password": "@@monitor-password@@",
       "monitor-username": "admin",
-      "shared-list": [
-        {
-          "enable-http2": false,
-          "enable-http3": false,
-          "https-only": false,
-          "slave_reference": "_backendhttp10cdhttp1",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-        },
-        {
-          "enable-http2": true,
-          "enable-http3": false,
-          "https-only": false,
-          "slave_reference": "_backendhttp10cdnhttp2",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-        },
-        {
-          "enable-http2": true,
-          "enable-http3": true,
-          "https-only": false,
-          "slave_reference": "_backendhttp10cdnhttp3",
-          "url": "http://@@_ipv4_address@@:@@_server_http_port@@/"
-        },
-        {
-          "enable-http2": false,
-          "enable-http3": false,
-          "https-only": false,
-          "slave_reference": "_cdnhttp1"
-        },
-        {
-          "enable-http2": true,
-          "enable-http3": false,
-          "https-only": false,
-          "slave_reference": "_cdnhttp2"
-        },
-        {
-          "enable-http2": true,
-          "enable-http3": true,
-          "https-only": false,
-          "slave_reference": "_cdnhttp3"
-        }
+      "shared-reference-list": [
+        "_backendhttp10cdhttp1",
+        "_backendhttp10cdnhttp2",
+        "_backendhttp10cdnhttp3",
+        "_cdnhttp1",
+        "_cdnhttp2",
+        "_cdnhttp3"
       ]
     },
     "full_address_list": [],

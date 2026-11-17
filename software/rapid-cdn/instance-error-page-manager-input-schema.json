@@ -2,6 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Error Page Manager Input Parameters",
   "type": "object",
+  "required": [
+    "shared-reference-list"
+  ],
   "properties": {
     "monitor-interface-url": {
       "title": "Monitor Web Interface URL",
@@ -31,9 +34,13 @@
       "title": "Cluster Identification",
       "type": "string"
     },
-    "shared-list": {
-      "title": "Shared instance list",
-      "type": "array"
+    "shared-reference-list": {
+      "title": "Shared instance reference list",
+      "description": "Sorted references of the shared instances which can upload error pages.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "error-page-manager-port": {
       "title": "Error Page Manager Port",

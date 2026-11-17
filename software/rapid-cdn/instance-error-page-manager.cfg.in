@@ -1,4 +1,5 @@
 {%- if instance_parameter_dict['slap-software-type'] == software_type -%}
+{%- set shared_reference_list = slapparameter_dict['shared-reference-list'] %}
 # Error Page Manager instance profile
 [buildout]
 extends =
@@ -12,9 +13,10 @@ parts =
   error-page-manager-certificate
   operator-token
   read-token
-{%- for slave in slapparameter_dict['shared-list'] %}
-  {{ slave['slave_reference'] }}-token
+{%- for ref in shared_reference_list %}
+  {{ ref }}-token
 {%- endfor %}
+  error-page-manager-shared
   error-page-manager-config
   error-page-manager
   promise-error-page-manager
@@ -108,8 +110,7 @@ init =
   with open(options['file']) as f:
     options['value'] = f.read().strip()
 
-{%- for slave in slapparameter_dict['shared-list'] %}
-{%-   set ref = slave['slave_reference'] %}
+{%- for ref in shared_reference_list %}
 [{{ ref }}-token]
 recipe = slapos.recipe.build
 file = ${directory:tokens}/{{ ref }}
@@ -124,6 +125,21 @@ init =
 
 {%- endfor %}
 
+[error-page-manager-shared]
+recipe = slapos.recipe.build
+output = ${directory:etc}/error-page-manager-shared.json
+shared-references = {{ shared_reference_list | join(' ') }}
+shared-token-dir = ${directory:tokens}
+init =
+  import json, os
+  shared = [
+    [ref, os.path.join(options['shared-token-dir'], ref)]
+    for ref in options['shared-references'].split()]
+  os.makedirs(os.path.dirname(options['output']), exist_ok=True)
+  with open(options['output'] + '.tmp', 'w') as f:
+    json.dump(shared, f)
+  os.rename(options['output'] + '.tmp', options['output'])
+
 [error-page-manager-config]
 recipe = slapos.recipe.build
 output = ${directory:etc}/error-page-manager.json
@@ -136,12 +152,9 @@ error-pages-dir = ${directory:error-pages}
 builtin-dir = {{ software_parameter_dict['error_pages_builtin_dir'] }}
 operator-token-file = ${operator-token:file}
 read-token-file = ${read-token:file}
-shared-references = {{ slapparameter_dict['shared-list'] | map(attribute='slave_reference') | join(' ') }}
-shared-token-dir = ${directory:tokens}
+shared-file = ${error-page-manager-shared:output}
 init =
   import json, os
-  refs = [r for r in options.get('shared-references', '').split() if r]
-  token_dir = options['shared-token-dir']
   config = {
     'ip': options['ip'],
     'port': int(options['port']),
@@ -152,7 +165,7 @@ init =
     'builtin_dir': options['builtin-dir'],
     'read_token_file': options['read-token-file'],
     'operator_token_file': options['operator-token-file'],
-    'shared_token_files': [[ref, os.path.join(token_dir, ref)] for ref in refs],
+    'shared_file': options['shared-file'],
   }
   os.makedirs(os.path.dirname(options['output']), exist_ok=True)
   with open(options['output'], 'w') as f:
@@ -163,10 +176,8 @@ recipe = slapos.cookbook:wrapper
 command-line = {{ software_parameter_dict['bin_directory'] }}/rapid-cdn-error-page-manager
   ${error-page-manager-config:output}
 wrapper-path = ${directory:service}/error-page-manager
-# The config output MUST stay listed here: the manager refreshes the token map
-# and prunes removed slaves' overrides only at startup, so it relies on
-# slapos.cookbook:wrapper restarting it whenever the shared-list (hence this
-# JSON) changes. Tested by TestErrorPageManager{NewSlave,RemovedSlave}.
+# error-page-manager-shared is not listed: the manager reloads it on change,
+# so adding or removing a slave does not restart it.
 hash-existing-files =
   ${buildout:directory}/software_release/buildout.cfg
   ${error-page-manager-config:output}
@@ -189,8 +200,7 @@ config-port = {{ slapparameter_dict['error-page-manager-port'] }}
 {%- set port = slapparameter_dict['error-page-manager-port'] %}
 {%- set base_url = 'https://[' + ip + ']:' + port|string %}
 {%- set shared_error_page_information = {} %}
-{%- for slave in slapparameter_dict['shared-list'] %}
-{%-   set ref = slave['slave_reference'] %}
+{%- for ref in shared_reference_list %}
 {%-   do shared_error_page_information.__setitem__(ref, {
         'upload-url': base_url + '/shared/${' + ref + '-token:value}/',
       }) %}
