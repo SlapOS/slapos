@@ -1402,11 +1402,16 @@ class TestZopePublisherTimeout(ZopeSkinsMixin, ERP5InstanceTestCase):
       '',
       '''if 1:
         import time
+        portal = context.getPortalObject()
         def recurse(o):
           time.sleep(0.1)
+          # Zope checks the deadline when it loads an object from the ZODB
+          # or runs a SQL query. Objects in the ZODB cache are not loaded,
+          # so also run a SQL query, to check the deadline at each step.
+          portal.portal_catalog.countResults()
           for sub in o.objectValues():
             recurse(sub)
-        recurse(context.getPortalObject())
+        recurse(portal)
       '''
     )
 
