@@ -19,6 +19,14 @@
       "title": "Custom Personal",
       "software-type": "single-custom-personal"
     },
+    "single-custom-personal-detach": {
+      "description": "Frontend node detached from its cluster: rendered from the last state received while attached.",
+      "index": 2,
+      "request": "instance-frontend-input-schema.json",
+      "response": "instance-frontend-node-output-schema.json",
+      "title": "Custom Personal (Detached)",
+      "software-type": "single-custom-personal-detach"
+    },
     "custom-personal-slave": {
       "description": "Custom Personal",
       "index": 1,

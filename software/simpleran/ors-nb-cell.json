@@ -28,18 +28,6 @@
       "$ref": "cell/lte/input-schema.json#/properties/ul_earfcn",
       "title": "UL EARFCN",
       "description": "Set the NB IOT UL EARFCN."
-    },
-    "all_ce_level": {
-      "title": "All CE Levels",
-      "type": "boolean",
-      "default": false,
-      "description": "Enable this to test several CE (Coverage Enhancement) levels"
-    },
-    "cipher_algo_pref": {
-      "$ref": "cell/lte/input-schema.json#/properties/cipher_algo_pref"
-    },
-    "integ_algo_pref": {
-      "$ref": "cell/lte/input-schema.json#/properties/integ_algo_pref"
     }
   }
 }

@@ -26,7 +26,7 @@
   com_addr: "{{ slapparameter_dict.com_addr }}:{{ slapparameter_dict.com_ws_port }}",
   com_auth: {
     password: "{{ websocket_password }}",
-    unsecure: false,
+    unsecure: true, // We use unsecure because websockets needs to work in offline mode without SSL as well
   },
 
 {# instantiate radio units #}
@@ -90,7 +90,9 @@
           ul_nr_arfcn:  {{ cell.ul_nr_arfcn }},
           ssb_nr_arfcn: {{ cell.ssb_nr_arfcn }},
           bandwidth:    {{ cell.bandwidth }},
-
+{%-     if 'rx_to_tx_latency' in cell %}
+          rx_to_tx_latency: {{ cell.rx_to_tx_latency }},
+{%-     endif %}
           subcarrier_spacing: {{ cell.subcarrier_spacing }},
         },
 {%-   endif %}

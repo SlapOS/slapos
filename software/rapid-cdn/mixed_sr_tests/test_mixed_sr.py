@@ -64,6 +64,8 @@ BASE_INSTANCE_PARAMETER_DICT = {
 
 UPGRADED_SLAVE_AMOUNT = 10
 UPGRADE_INSTANCE_RUN_AMOUNT = 4
+DETACHED_SLAVE_AMOUNT = 2
+DETACH_INSTANCE_RUN_AMOUNT = 3
 
 
 def setUpModule():
@@ -350,3 +352,123 @@ class TestUpgradeSlaveListNotEmptied(WholeClusterUpgradeTestCase):
       self._processInstance()
       self.assertSlaveListIntact(
         'after instance run %i of the upgrade' % (run_number,))
+
+
+class TestDetachedActiveNodeKeepsServing(WholeClusterUpgradeTestCase):
+  instance_parameter_dict = dict(BASE_INSTANCE_PARAMETER_DICT)
+  slave_state = 'started'
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {
+      'slave-%02i' % (i,): {
+        'url': cls.backend_url,
+      }
+      for i in range(1, DETACHED_SLAVE_AMOUNT + 1)
+    }
+
+  @classmethod
+  def requestSlaves(cls):
+    for slave_reference, partition_parameter_kw in sorted(
+      cls.getSlaveParameterDictDict().items()):
+      cls.requestSlaveInstance(
+        partition_reference=slave_reference,
+        partition_parameter_kw=partition_parameter_kw,
+        state=cls.slave_state,
+      )
+
+  def _requestCluster(self, **parameter_dict):
+    self.instance_parameter_dict.update(parameter_dict)
+    self.updateDefaultInstanceParameterDict(self.instance_parameter_dict)
+    self.requestDefaultInstance()
+
+  def _processInstanceRunList(self):
+    for _ in range(DETACH_INSTANCE_RUN_AMOUNT):
+      self._processInstance()
+
+  def _getDomainList(self):
+    return sorted(
+      self._getSlaveDomain(slave_reference)
+      for slave_reference in self.getSlaveParameterDictDict())
+
+  def _getFrontendPartitionId(self, frontend_index):
+    return self.getPartitionId('caddy-frontend-%i' % (frontend_index,))
+
+  def _getAttachmentStatePromisePath(self, frontend_index):
+    return os.path.join(
+      self.instance_path, self._getFrontendPartitionId(frontend_index),
+      'etc', 'plugin', 'attachment-state.py')
+
+  def _getFrontendServicePidDict(self, frontend_index):
+    # the one-shot runners of etc/run/ are re-run by every instantiation pass,
+    # detached or not, so only the services of etc/service/ are compared
+    partition_id = self._getFrontendPartitionId(frontend_index)
+    service_pid_dict = {
+      info['name']: info['pid']
+      for info in self.callSupervisorMethod('getAllProcessInfo')
+      if info['group'] == partition_id and info['statename'] == 'RUNNING'
+    }
+    self.assertTrue(service_pid_dict, partition_id)
+    return service_pid_dict
+
+  def test_detached_active_node_keeps_serving(self):
+    self._hotfixCompiledOldSoftwareRelease()
+    domain_list = self._getDomainList()
+    self.assertEqual(domain_list, self._getServedDomainList())
+
+    self._requestCluster(**{
+      '-frontend-quantity': 2,
+      '-sla-2-computer_guid': self.slap._computer_id,
+      '-frontend-2-state': 'stopped',
+    })
+    self._processInstanceRunList()
+    self.assertEqual(
+      domain_list, self._getServedDomainList(), 'standby added')
+
+    self._upgradeRootInstance()
+    # slapproxy matches a slave request to its master by release URL, so the
+    # old URL stops resolving once the upgrade reaches every partition
+    type(self).slave_software_release_url = NEW_SOFTWARE_RELEASE_URL
+    self._processInstanceRunList()
+    self.assertEqual(
+      domain_list, self._getServedDomainList(), 'cluster upgraded')
+
+    service_pid_dict = self._getFrontendServicePidDict(1)
+    self._requestCluster(**{'-frontend-1-detach': True})
+    self._processInstanceRunList()
+    self.assertEqual(
+      domain_list, self._getServedDomainList(), 'active node detached')
+    self.assertEqual(
+      service_pid_dict, self._getFrontendServicePidDict(1),
+      'active node detached')
+    self.assertTrue(os.path.exists(self._getAttachmentStatePromisePath(1)))
+    self.assertTrue(os.path.exists(self._getAttachmentStatePromisePath(2)))
+
+    # the 2026-08-28 incident: the cluster loses its shared instance list
+    type(self).slave_state = 'destroyed'
+    self._requestCluster()
+    self._processInstanceRunList()
+    self.assertEqual(
+      {
+        'request-caddy-frontend-1': [],
+        'request-caddy-frontend-2': [],
+      },
+      self._getPassedSlaveReferenceDict(),
+      'cluster emptied')
+    self.assertEqual(
+      domain_list, self._getServedDomainList(), 'cluster emptied')
+    self.assertEqual(
+      service_pid_dict, self._getFrontendServicePidDict(1), 'cluster emptied')
+    status, output = subprocess_status_output([
+      self.slap._slapos_wrapper, 'node', 'instance',
+      '--cfg', self.slap._slapos_config,
+    ])
+    self.assertNotEqual(0, status, output)
+    self.assertRegex(
+      output,
+      br'output: frontend node caddy-frontend-1 detached, serving '
+      br'snapshot \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\n')
+
+    self._requestCluster(**{'-frontend-1-detach': False})
+    self._processInstanceRunList()
+    self.assertEqual([], self._getServedDomainList(), 'node re-attached')

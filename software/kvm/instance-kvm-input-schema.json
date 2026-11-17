@@ -190,6 +190,12 @@
           "type": "boolean",
           "default": false
         },
+        "energy-monitoring": {
+          "title": "Expose host power metrics inside the VM",
+          "description": "Run scaphandre on the host side of this instance and share its power metrics for this VM into the guest over virtio-fs (device tag 'scaphandre'). Requires /sys/class/powercap to be readable on the host. Not compatible with a custom 'numa' parameter, as this option already attaches a memory-backend-memfd NUMA node of its own.",
+          "type": "boolean",
+          "default": false
+        },
         "monitor-interface-url": {
           "title": "Monitor Web Interface URL",
           "description": "Give Url of HTML web interface that will be used to render this monitor instance.",

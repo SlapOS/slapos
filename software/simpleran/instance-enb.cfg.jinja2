@@ -4,7 +4,6 @@
 {%- set enb_defaults = {
   'com_ws_port':  9001,
   'com_addr':     '127.0.1.2',
-  'com_unsecure':     False,
   'gnb_id_bits':  28,
   'nssai':        [{'sst': 1}],
   'handover_a1_rsrp':            -70,
@@ -14,10 +13,8 @@
   'handover_a2_hysteresis':      0,
   'handover_a2_time_to_trigger': 640,
   'handover_meas_gap_config': 'Gap Pattern 1',
-  'xlog_forwarding_enabled': True,
   'xlog_enabled': True,
   'check_core_network': True,
-  'websocket_url_ipv6': False,
   'wendelin_telecom_software_release_url': 'wendelin-telecom-enb-shared-instance',
   'xlog_fluentbit_forward_port': 24224,
   'nr_nr_handover': {
@@ -52,13 +49,7 @@
 {%- for k,v in enb_defaults|dictsort %}
 {%-   do slapparameter_dict.setdefault(k, v) %}
 {%- endfor %}
-{%- if slapparameter_dict.websocket_url_ipv6 %}
-{%-   do slapparameter_dict.update({"com_addr": my_ipv6}) %}
-{%-   do slapparameter_dict.update({"com_url": "[" + my_ipv6 + "]:" + str(slapparameter_dict.com_ws_port)}) %}
-{%-   do slapparameter_dict.update({"com_unsecure": True}) %}
-{%- else %}
-{%-   do slapparameter_dict.update({"com_url": slapparameter_dict.com_addr + ":" + str(slapparameter_dict.com_ws_port)}) %}
-{%- endif %}
+{%- do slapparameter_dict.update({"com_url": slapparameter_dict.com_addr + ":" + str(slapparameter_dict.com_ws_port)}) %}
 {%- set B = xbuildout.encode %}
 
 
@@ -70,11 +61,12 @@ parts =
   publish-enb-config
   enb-service
   enb-rotate-service
+  run-publish-buildout
 {%- if slapparameter_dict.xlog_enabled %}
   xamari-xlog-service
 {%- endif %}
   request-wendelin-telecom-shared
-{%- if slapparameter_dict.xlog_forwarding_enabled %}
+{%- if slapparameter_dict.xlog_enabled %}
   xlog-fluentbit-service
   check-xlog-fluentbit-forward-host.py
   check-xlog-fluentbit-health.py
@@ -88,8 +80,8 @@ parts =
 {%- if slapparameter_dict.check_core_network %}
   check-core-network.py
 {%- endif %}
+  check-configuration-error.py
   monitor-base
-  publish-connection-information
   ${:extra-parts}
 
 extends = {{ monitor_template }}
@@ -212,17 +204,81 @@ inline =
   date +"%Y%m%d.%T" > ${:start-date}
 
   # Start lteenb
-  {{ amarisoft['enb_dir'] }}/lteenb ${directory:etc}/enb.cfg >> ${:info-log} 2>> ${:info-log}
+  {{ amarisoft['enb_dir'] }}/lteenb ${directory:etc}/enb.cfg 2>&1 >> ${:info-log}
 
 [enb-service]
+recipe = slapos.recipe.build
+egg-paths =
+  {{ eggs_directory }}
+  {{ develop_eggs_directory }}
+eggs = websockets
+depends = ${enb-wrapper:recipe}
+# amarisoft-wrapper.py script parameters
+template-publish = ${directory:home}/template-publish.cfg
+publish-URL.websocket-hostname = ${frontend-urlparse:hostname}
+publish-URL.websocket-port = ${frontend-urlparse:port}
+publish-URL.websocket-password = ${websocket-password:passwd}
+publish-URL.websocket-amarisoft-gui = ${amarisoft-app:url}
+publish-AMARISOFT.version = {{ amarisoft['version_cn'] }}
+publish-AMARISOFT.host-id = {{ amarisoft['lteenb_host_id'] }}
+publish-AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
+publish-NODEB.ru-list   = {{ B(dumps(rulib.iru_dict.keys()   | sort)) }}
+publish-NODEB.cell-list = {{ B(dumps(rulib.icell_dict.keys() | sort)) }}
+publish-NODEB.peer-list = {{ B(dumps(ipeer_dict.keys()       | sort)) }}
+publish-NODEB.peer-cell-list = {{ B(dumps(ipeercell_dict.keys() | sort)) }}
+publish-URL.monitor-base = ${monitor-publish-connection-information:monitor-base-url}
+publish-URL.monitor-setup = ${monitor-publish-connection-information:monitor-setup-url}
+publish-URL.monitor-gadget = ${:publish-URL.monitor-base}/gadget/software.cfg.html
+{%- if slapparameter_dict.xlog_enabled %}
+publish-URL.wendelin-fluentbit-tag = ${xlog-fluentbit-tag:xlog-fluentbit-tag}
+publish-URL.wendelin = https://wendelin.rapid.space/
+{%- endif %}
+amarisoft-service = lteenb
+service-name = Radio
+ws-url = ws://{{ slapparameter_dict.com_url }}
+ws-password = ${websocket-password:passwd}
+mock = {{ amarisoft['mock'] }}
+rm-tmp-lte = sudo -n {{ amarisoft['dir'] }}/rm-tmp-lte enb
+{%- if slapparameter_dict.get('error') %}
+error = {{ slapparameter_dict.get('error') }}
+{%- endif %}
+script-path = {{ amarisoft_wrapper }}
+amarisoft-config-file = ${enb-config:output}
+amarisoft-directory = {{ amarisoft['enb_dir'] }}
+amarisoft-license-dir = {{ amarisoft['license_dir'] }}
+running-config-directory = ${directory:etc}
+bin-directory = ${directory:bin}
+service-directory = ${directory:service}
+hash-output-file = ${directory:var}/enb-service-hash
+dry-config-file-list =
+  ${enb-config:output}
+{%-   for cell_ref, icell in rulib.icell_dict|dictsort %}
+  ${drb-config-{{ B(cell_ref) }}:output}
+  ${sib23-config-{{ B(cell_ref) }}:output}
+{%- endfor %}
+
+init =
+  options['location'] = ''
+  import zc.buildout
+  import pkg_resources
+  zc.buildout.easy_install.install(
+    [e.strip() for e in options['eggs'].splitlines()],
+    dest=None,
+    working_set=pkg_resources.working_set,
+    path=[p.strip() for p in options['egg-paths'].splitlines()]
+  )
+update =
+  with open(options['script-path'], 'r') as f:
+    exec(f.read())
+
+[enb-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line = ${enb-sh-wrapper:output}
-wrapper-path = ${directory:service}/enb
+wrapper-path = ${directory:bin}/lteenb-service
 mode = 0775
 reserve-cpu = True
 pidfile = ${directory:run}/enb.pid
 hash-files =
-  ${enb-config:output}
   ${enb-sh-wrapper:output}
 environment =
   AMARISOFT_PATH={{ amarisoft['license_dir'] }}
@@ -232,7 +288,7 @@ recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 period = {{ slapparameter_dict.get("enb_stats_fetch_period", 60) }}
 stats_logspec = stats[samples,rf]/${:period}s
-{%- if slapparameter_dict.get("enb_drb_stats_enabled", True) %}
+{%- if slapparameter_dict.get("xlog_enabled", True) %}
 drb_stats_logspec = x.drb_stats/${:period}s
 {%- else %}
 drb_stats_logspec =
@@ -243,11 +299,7 @@ xamari = {{ buildout_directory }}/bin/xamari
 logfile = ${monitor-directory:public}/enb.xlog
 inline =
   #!/bin/sh
-{%- if slapparameter_dict.websocket_url_ipv6 %}
-  exec ${:xamari} xlog --rotate ${:rotatespec} ws://{{ slapparameter_dict.com_url }} ${:logfile} ${:logspec}
-{%- else %}
   exec ${:xamari} xlog --rotate ${:rotatespec} --password ${websocket-password:passwd} ws://{{ slapparameter_dict.com_url }} ${:logfile} ${:logspec}
-{%- endif %}
 
 [xamari-xlog-service]
 recipe = slapos.cookbook:wrapper
@@ -261,7 +313,7 @@ recipe = slapos.cookbook:requestoptional
 name = Wendelin Telecom Registration
 software-url = {{ slapparameter_dict.wendelin_telecom_software_release_url }}
 shared = true
-{%- if not slapparameter_dict.xlog_forwarding_enabled or slapparameter_dict.get("xlog_fluentbit_forward_host") %}
+{%- if not slapparameter_dict.xlog_enabled or slapparameter_dict.get("xlog_fluentbit_forward_host") %}
 state = destroyed
 {%- else %}
 state = {{ slap_configuration['instance-state'] }}
@@ -269,7 +321,7 @@ config-fluentbit-tag = ${xlog-fluentbit-tag:xlog-fluentbit-tag}
 return = gateway-host
 {%- endif %}
 
-{% if slapparameter_dict.xlog_forwarding_enabled %}
+{% if slapparameter_dict.xlog_enabled %}
 [xlog-fluentbit-tag]
 recipe = slapos.recipe.build
 computer = ${slap-connection:computer-id}
@@ -350,17 +402,15 @@ promise = check_url_available
 config-url = http://${xlog-fluentbit-config:monitoring-host}:${xlog-fluentbit-config:monitoring-port}/api/v1/health
 {%- endif %}
 
-{%- if slapparameter_dict.websocket_url_ipv6 %}
 [amarisoft-app]
 recipe = slapos.cookbook:simplehttpserver
 wrapper = ${directory:service}/${:_buildout_section_name_}
 base-path = {{ amarisoft['www_dir'] }}
 log-file = ${directory:log}/amarisoft-app.log
 host = {{ my_ipv6 }}
-port = 9004
+port = 9005
 url = http://[${:host}]:${:port}
 use-hash-url = false
-{%- endif %}
 
 [config-base]
 recipe = slapos.recipe.template:jinja2
@@ -382,7 +432,25 @@ target-directory = ${monitor-directory:private}
 [enb-config]
 <= config-base
 url = {{ enb_template }}
-output = ${directory:etc}/enb.cfg
+output = ${directory:var}/enb.cfg
+import-list =
+    rawfile slaplte.jinja2 {{ slaplte_template }}
+extra-context =
+    import json_module json
+    key iru_dict       :iru_dict
+    key icell_dict     :icell_dict
+    key ipeer_dict     :ipeer_dict
+    key ipeercell_dict :ipeercell_dict
+    key websocket_password websocket-password:passwd
+iru_dict       = {{ dumps(rulib.iru_dict) }}
+icell_dict     = {{ dumps(rulib.icell_dict) }}
+ipeer_dict     = {{ dumps(ipeer_dict) }}
+ipeercell_dict = {{ dumps(ipeercell_dict) }}
+
+[enb-dummy-config]
+<= config-base
+url = {{ enb_template }}
+output = ${directory:etc}/enb-dummy.cfg
 import-list =
     rawfile slaplte.jinja2 {{ slaplte_template }}
 extra-context =
@@ -404,37 +472,11 @@ link-binary = ${enb-config:output}
 [monitor-publish-connection-information]
 <= monitor-publish
 
-[publish-connection-information]
-recipe = slapos.cookbook:publish.serialised
-{%- if slapparameter_dict.websocket_url_ipv6 %}
-URL.websocket-hostname = {{ slapparameter_dict.com_addr }}
-URL.websocket-port = {{ slapparameter_dict.com_ws_port }}
-{%- else %}
-URL.websocket-hostname = ${frontend-urlparse:hostname}
-URL.websocket-port = ${frontend-urlparse:port}
-URL.websocket-password = ${websocket-password:passwd}
-{%- endif %}
-{%- if slapparameter_dict.websocket_url_ipv6 %}
-URL.websocket-amarisoft-gui = ${amarisoft-app:url}
-{%- else %}
-URL.websocket-amarisoft-gui = https://tech-academy.amarisoft.com/web-gui/
-{%- endif %}
-AMARISOFT.version = {{ amarisoft['version_cn'] }}
-AMARISOFT.host-id = {{ amarisoft['lteenb_host_id'] }}
-AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
-AMARISOFT.license-expiration = {{ amarisoft['lteenb_expiration'] }}
-NODEB.ru-list   = {{ dumps(rulib.iru_dict.keys()   | sort) }}
-NODEB.cell-list = {{ dumps(rulib.icell_dict.keys() | sort) }}
-NODEB.peer-list = {{ dumps(ipeer_dict.keys()       | sort) }}
-NODEB.peer-cell-list = {{ dumps(ipeercell_dict.keys() | sort) }}
-URL.monitor-base = ${monitor-publish-connection-information:monitor-base-url}
-URL.monitor-setup = ${monitor-publish-connection-information:monitor-setup-url}
-URL.monitor-gadget = ${:URL.monitor-base}/gadget/software.cfg.html
-{%- if slapparameter_dict.xlog_forwarding_enabled %}
-URL.wendelin-fluentbit-tag = ${xlog-fluentbit-tag:xlog-fluentbit-tag}
-URL.wendelin = https://wendelin.rapid.space/
-{%- endif %}
-
+[run-publish-buildout]
+recipe = slapos.cookbook:switch-softwaretype
+enb = enb-service:template-publish
+gnb = enb-service:template-publish
+enb-gnb = enb-service:template-publish
 
 [monitor-instance-parameter]
 {% if slapparameter_dict.get("name", None) %}
@@ -480,3 +522,20 @@ promise = check_gps_lock
 config-amarisoft-stats-log = ${ru_amarisoft-stats-template:log-output}
 config-stats-period = {{ slapparameter_dict.get("enb_stats_fetch_period", 60) }}
 {%- endif %}
+
+[check-configuration-error.py]
+recipe = slapos.cookbook:promise.plugin
+depends-enb-service = ${enb-service:recipe}
+eggs = slapos.core
+file = {{ check_configuration_error }}
+output = ${directory:plugins}/check-configuration-error.py
+{%- if slapparameter_dict.get('error') %}
+config-error = {{ slapparameter_dict.get('error') }}
+{%- endif %}
+config-running-config-directory = ${directory:etc}
+config-dry-config-file-list = ${enb-config:output}
+{#- #}
+{%-   for cell_ref, icell in rulib.icell_dict|dictsort %}
+{#- #} ${drb-config-{{ B(cell_ref) }}:output}
+{#- #} ${sib23-config-{{ B(cell_ref) }}:output}
+{%- endfor %}

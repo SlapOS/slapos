@@ -44,21 +44,7 @@ core_network_param_dict = {
     'lte_mock': True,
     "core_network_plmn": "00102",
     "network_name": "TEST",
-    "network_short_name": "TEST",
-    "pdn1": {
-        "apn_list": [
-            "pdn1apn1",
-            "pdn1apn2"
-        ],
-        "qci": 3
-    },
-    "pdn2": {
-        "apn_list": [
-            "pdn2apn1"
-        ],
-        "qci": 6,
-        "ims": True
-    }
+    "network_short_name": "TEST"
 }
 
 rf_info = {
@@ -145,8 +131,8 @@ enb_param_dict = {
     'nodeb': {
         'enb_id': '0x17',
         'plmn_list': [
-            {'attach_without_pdn': True, 'plmn': '00101', 'reserved': True},
-            {'attach_without_pdn': False, 'plmn': '00102', 'reserved': False},
+            {'attach_without_pdn': True, 'plmn': '00101'},
+            {'attach_without_pdn': False, 'plmn': '00102'},
         ],
         'mme_list': [
             {'name': '10.0.0.1',    'mme_addr': '10.0.0.1'},
@@ -154,7 +140,7 @@ enb_param_dict = {
         ],
     },
     'management': {
-        'xlog_forwarding_enabled': False,
+        'xlog_enabled': False,
         'check_core_network': False,
     },
 }
@@ -187,7 +173,7 @@ gnb_param_dict = {
         ],
     },
     'management': {
-        'xlog_forwarding_enabled': False,
+        'xlog_enabled': False,
         'check_core_network': False,
     },
 }
@@ -197,8 +183,8 @@ gnb_param_dict1 = {
     },
     'nodeb': {
         'plmn_list_5g': [
-            {'plmn': '00101', 'ranac': 1, 'reserved': True, 'tac': '0x01'},
-            {'plmn': '00102', 'ranac': 2, 'reserved': False, 'tac': '0x02'},
+            {'plmn': '00101', 'ranac': 1, 'tac': '0x01'},
+            {'plmn': '00102', 'ranac': 2, 'tac': '0x02'},
         ],
     },
 }
@@ -245,7 +231,7 @@ class TestENBParameters(ORSTestCase):
     return {'_': json.dumps(enb_param_dict)}
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "enb"
+    return "enb-gnb"
   def test_enb_conf(self):
 
     conf = load_yaml_conf(self.slap, 'enb')
@@ -266,7 +252,7 @@ class TestENBParameters(ORSTestCase):
       for plmn in enb_param_dict['nodeb']['plmn_list']:
           if plmn['plmn'] == p['plmn']:
               break
-      for n in "plmn attach_without_pdn reserved".split():
+      for n in "plmn attach_without_pdn".split():
         self.assertEqual(p[n], plmn[n])
     for p in conf['mme_list']:
       for mme in enb_param_dict['nodeb']['mme_list']:
@@ -306,7 +292,7 @@ class TestGNBParameters1(ORSTestCase):
     return {'_': json.dumps(gnb_param_dict1)}
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "gnb"
+    return "enb-gnb"
   def test_gnb_conf(self):
 
     conf = load_yaml_conf(self.slap, 'enb')
@@ -330,7 +316,7 @@ class TestGNBParameters1(ORSTestCase):
       for plmn in gnb_param_dict1['nodeb']['plmn_list_5g']:
           if plmn['plmn'] == p['plmn']:
               break
-      for n in "plmn ranac reserved".split():
+      for n in "plmn ranac".split():
         self.assertEqual(p[n], plmn[n])
       self.assertEqual(int(p["tac"]), int(plmn["tac"], 16))
     for p in conf['amf_list']:
@@ -384,7 +370,7 @@ class TestGNBParameters2(ORSTestCase):
     return {'_': json.dumps(gnb_param_dict2)}
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "gnb"
+    return "enb-gnb"
   def test_gnb_conf(self):
 
     conf = load_yaml_conf(self.slap, 'enb')
@@ -420,19 +406,9 @@ class TestCoreNetworkParameters(ORSTestCase):
     self.assertEqual(conf['plmn'], param['core_network_plmn'])
     self.assertEqual(conf['network_name'], param['network_name'])
     self.assertEqual(conf['network_short_name'], param['network_short_name'])
-    # Check APN and QCI's
-    for pdn_id in ['pdn1', 'pdn2']:
-        for pdn in conf['pdn_list']:
-            if param[pdn_id]['apn_list'][0] in pdn['access_point_name']:
-                break
-        for apn in param[pdn_id]['apn_list']:
-            self.assertIn(apn, pdn['access_point_name'])
-        for apn in pdn['access_point_name']:
-            self.assertIn(apn, param[pdn_id]['apn_list'])
-        self.assertEqual(param[pdn_id]['qci'], pdn['erabs'][0]['qci'])
     # Check IMS PDN
     for pdn in conf['pdn_list']:
-        if param['pdn2']['apn_list'][0] in pdn['access_point_name']:
+        if "ims" in pdn['access_point_name']:
             break
     self.assertIn('p_cscf_addr', pdn)
 
@@ -461,7 +437,7 @@ class TestENBMonitorGadgetUrl(ORSTestCase):
 
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "enb"
+    return "enb-gnb"
 
   def test_monitor_gadget_url(self):
     test_monitor_gadget_url(self)
@@ -473,7 +449,7 @@ class TestGNBMonitorGadgetUrl(ORSTestCase):
 
   @classmethod
   def getInstanceSoftwareType(cls):
-    return "gnb"
+    return "enb-gnb"
 
   def test_monitor_gadget_url(self):
     test_monitor_gadget_url(self)
@@ -540,8 +516,8 @@ class TestSimCard(ORSTestCase):
   def getInstanceParameterDict(cls):
     params = {}
     params.update(core_network_param_dict)
-    params['pdn1']['fixed_ips'] = cls.fixed_ips
-    params['pdn2']['fixed_ips'] = cls.fixed_ips
+    params.setdefault('pdn1', {})['fixed_ips'] = cls.fixed_ips
+    params.setdefault('pdn2', {})['fixed_ips'] = cls.fixed_ips
     return {'_': json.dumps(params)}
   @classmethod
   def getInstanceSoftwareType(cls):
@@ -584,8 +560,8 @@ class TestSimCard(ORSTestCase):
       p = json.loads(p['_'])
       self.assertIn('info', p)
       if self.fixed_ips:
-        pdn1_name = core_network_param_dict["pdn1"]["apn_list"][0]
-        pdn2_name = core_network_param_dict["pdn1"]["apn_list"][0]
+        pdn1_name = "internet"
+        pdn2_name = "ims"
         self.assertIn(f'{pdn1_name}-ipv4-addr', p)
         self.assertIn(f'{pdn2_name}-ipv4-addr', p)
         if self.nb_sim_cards + 2 > self.tun_network.size:

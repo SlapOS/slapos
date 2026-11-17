@@ -1,4 +1,4 @@
-import json, netaddr, netifaces, math, socket, re, subprocess, time
+import hashlib, json, math, netaddr, netifaces, os, socket, re, subprocess, time
 from copy import deepcopy
 
 """
@@ -16,7 +16,6 @@ Outputs:
 - slapparameter-dict : slap-configuration.configuration
 - shared-list        : slap-configuration.slave-instance-list
 - sim-list           : Core Network only, list of SIM Cards
-- dns-list           : Core Network only, list of DNS entries
 
 """
 
@@ -30,6 +29,25 @@ LTE_TDD_CONFIG_MAP = {
     '[Configuration 6] DSUUUDSUUD (5ms,  3DL/5UL), S-slot=10DL:2GP:2UL, high uplink'                 : 6,
 }
 NR_TDD_CONFIG_MAP = {
+    'default': {
+        'advanced_parameter': {'prach_config_index': 160},
+        'latency_parameter': {
+            'uss': {
+                'n_candidates': {
+                    'n_candidates_1': 0,
+                    'n_candidates_2': 4,
+                    'n_candidates_4': 0,
+                    'n_candidates_8': 0,
+                    'n_candidates_16': 0,
+                },
+                'dci_0_1_and_1_1': True,
+            },
+            'trs_presence': True,
+            'sr_period': 40,
+        },
+        'mcs_table_ul': 'qam256',
+        'mcs_table_dl': 'qam256',
+    },
     'DDDDDDDSUU (5ms,   7DL/2UL), S-slot=6DL:4GP:4UL, default': {
         'pattern1': '5ms 2UL 7DL S=4UL:6DL',
     },
@@ -75,6 +93,8 @@ NR_TDD_CONFIG_MAP = {
             'k_min': 2,
             'rx_to_tx_latency': 4,
         },
+        'mcs_table_ul': 'qam64',
+        'mcs_table_dl': 'qam64',
     },
     'DSUUU      (2.5ms, 1DL/3UL), S-slot=6DL:4GP:4UL, reduced latency, high uplink, no TRS': {
         'pattern1': '2.5ms 3UL 1DL S=4UL:6DL',
@@ -94,6 +114,8 @@ NR_TDD_CONFIG_MAP = {
             'k_min': 2,
             'rx_to_tx_latency': 4,
         },
+        'mcs_table_ul': 'qam64',
+        'mcs_table_dl': 'qam64',
     },
     'DSUUU      (2.5ms, 1DL/3UL), S-slot=9DL:4GP:1UL, reduced latency, high uplink': {
         'pattern1': '2.5ms 3UL 1DL S=1UL:9DL',
@@ -102,26 +124,20 @@ NR_TDD_CONFIG_MAP = {
             'k_min': 2,
             'rx_to_tx_latency': 4,
         },
+        'mcs_table_ul': 'qam64',
+        'mcs_table_dl': 'qam64',
     },
     'DS         (1ms, 1DL/0UL), S-slot=0DL:2GP:12UL, minimum latency, balanced downlink and uplink, no TRS': {
         'pattern1': '1ms 0UL 1DL S=12UL:0DL',
         'latency_parameter': {
-            'uss': {
-                'n_candidates': {
-                    'n_candidates_1': 0,
-                    'n_candidates_2': 8,
-                    'n_candidates_4': 0,
-                    'n_candidates_8': 0,
-                    'n_candidates_16': 0,
-                },
-                'dci_0_1_and_1_1': True,
-            },
             'trs_presence': False,
             'sr_period': 2,
             'k_min': 2,
             'rx_to_tx_latency': 4,
             'csi_srs_period': 40,
             'simultaneous_sr_csi': True,
+            'n_rb_coreset0': 48,
+            'n_symb_coreset0': 1,
         },
         'pusch_mapping_type': 'typeB',
         'csi_rs': {
@@ -133,9 +149,13 @@ NR_TDD_CONFIG_MAP = {
               'report_quantity': "CRI_RI_PMI_CQI",
           },
         },
-        'advanced_parameter': {'prach_config_index': 128}
+        'advanced_parameter': {'prach_config_index': 128},
+        'mcs_table_ul': 'qam64',
+        'mcs_table_dl': 'qam64',
     },
 }
+
+self.error = False
 
 # Get serial number of this ORS
 sn = 0
@@ -181,7 +201,7 @@ def ors_radio(config, publish, shared_list):
     with open(options.get('json-ors-defaults'), 'r') as f:
         DEFAULTS = json.load(f)
 
-    publish_sections = ['nodeb', 'cell', 'hardware', 'radio', 'id', 'power']
+    publish_sections = ['nodeb', 'cell', 'hardware', 'radio', 'id', 'power', '0-error']
     for s in publish_sections:
         publish.setdefault(s, {})
     for s in ['cell1', 'cell2', 'nodeb', 'management']:
@@ -382,21 +402,21 @@ def ors_radio(config, publish, shared_list):
     publish['id']['gnb-id'] = publish_hex(config['gnb_id'])
     publish['id']['enb-id'] = publish_hex(config['enb_id'])
 
-    def nr_frequency(dl_frequency, ssb_nr_arfcn):
-        dl_arfcn = nrarfcn.nrarfcn(dl_frequency, nearby=True)
-        if nr:
-            if 'ssb_nr_arfcn' not in config[c]:
-                for j in range(1, 11):
-                    try:
-                        _arfcn = dl_arfcn + (j // 2) * ((j % 2) * 2 - 1)
-                        config[c]['ssb_nr_arfcn'], _ = nrarfcn.dl2ssb(_arfcn, band)
-                    except KeyError as e:
-                        continue
-                    dl_arfcn = _arfcn
-                    dl_frequency = nrarfcn.frequency(dl_arfcn)
-                    break
-            ul_arfcn = nrarfcn.dl2ul(dl_arfcn, band)
-            ul_frequency = nrarfcn.frequency(ul_arfcn)
+    def dl_frequency_to_dl_nr_arfcn(dl_frequency, band):
+        # Convert frequency to nearest DL NR ARFCN
+        dl_nr_arfcn = nrarfcn.nrarfcn(dl_frequency, nearby=True)
+        # Get Raster table from NR ARFCN module
+        table = tables.applicable_nrarfcn_fr1.table_applicable_nrarfcn_fr1()
+        valid_band = False
+        for row in table.data:
+            if table.get_cell(row, 'band') == f'n{band}':
+                valid_band = True
+                dl_step   = table.get_cell(row, 'dl_step')
+                dl_first  = table.get_cell(row, 'dl_first')
+        if not valid_band:
+            return
+        # Choose nearest dl_nr_arfcn on raster
+        return dl_first + int(round((dl_nr_arfcn - dl_first) / dl_step)) * dl_step
 
     # RF parameters (frequency, band, arfcn...)
     def configure_rf_parameters(i):
@@ -422,7 +442,7 @@ def ors_radio(config, publish, shared_list):
         dl_arfcn_name = f"dl_{'e' if lte else 'nr_'}arfcn"
         ul_arfcn_name = f"ul_{'e' if lte else 'nr_'}arfcn"
         if dl_arfcn_name in config[c]:
-            dl_arfcn = config[c][dl_arfcn_name]
+            dl_arfcn = int(config[c][dl_arfcn_name])
             if lte:
                 dl_frequency = earfcn.frequency(dl_arfcn)
                 band         = earfcn.band(dl_arfcn)[0].band
@@ -433,32 +453,15 @@ def ors_radio(config, publish, shared_list):
             if rat == 'lte':
                 dl_arfcn = earfcn.earfcn(dl_frequency, band)
             else:
-                dl_arfcn = nrarfcn.nrarfcn(dl_frequency, nearby=True)
+                dl_arfcn = dl_frequency_to_dl_nr_arfcn(dl_frequency, band)
+                if dl_arfcn is None:
+                    publish['0-error'].setdefault('band', {})[c] = f'n{band} is not a valid NR band'
+                    self.error = True
+                    return
         if nr:
             config[c].setdefault('subcarrier_spacing', 15 if config[c]['rf_mode'] == 'fdd' else 30)
-            table = tables.applicable_nrarfcn_fr1.table_applicable_nrarfcn_fr1()
-            for row in table.data:
-                if table.get_cell(row, 'band') == f'n{band}':
-                    f_raster  = table.get_cell(row, 'f_raster')
-                    dl_step   = table.get_cell(row, 'dl_step')
-                    dl_first  = table.get_cell(row, 'dl_first')
-                    dl_last   = table.get_cell(row, 'dl_last')
-            if 'ssb_nr_arfcn' not in config[c]:
-                dl_arfcn = dl_first + ((dl_arfcn - dl_first) // dl_step) * dl_step
-                for j in range(1, 11):
-                    _arfcn = dl_arfcn + (j // 2) * dl_step * ((j % 2) * 2 - 1)
-                    try:
-                        config[c]['ssb_nr_arfcn'], _ = nrarfcn.dl2ssb(_arfcn, band)
-                    except KeyError as e:
-                        continue
-                    dl_arfcn = _arfcn
-                    dl_frequency = nrarfcn.frequency(dl_arfcn)
-                    if int(dl_frequency * 1000) % int(config[c]['subcarrier_spacing']):
-                        continue
-                    if int(dl_frequency * 1000) % int(f_raster):
-                        continue
-                    break
-            ul_arfcn = nrarfcn.dl2ul(dl_arfcn, band)
+            dl_frequency = nrarfcn.frequency(dl_arfcn)
+            ul_arfcn  = nrarfcn.dl2ul(dl_arfcn, band)
             ul_frequency = nrarfcn.frequency(ul_arfcn)
         else:
             ul_arfcn = earfcn.dl2ul(dl_arfcn)
@@ -535,10 +538,11 @@ def ors_radio(config, publish, shared_list):
         if config[c]['cell_type'] == 'gNB':
             publish['radio'].setdefault('dl-nr-arfcn', {})[c] = dl_arfcn
             publish['radio'].setdefault('ul-nr-arfcn', {})[c] = ul_arfcn
-            publish['radio'].setdefault('ssb-nr-arfcn', {})[c] = config[c]['ssb_nr_arfcn']
             publish['radio'].setdefault('bandwidth', {})[c] = f"{config[c]['nr_bandwidth']} MHz"
             if sr_type in ['enb', 'gnb', 'enb-gnb']:
                 publish['radio'].setdefault('ssb-pos-bitmap', {})[c] = config[c]['ssb_pos_bitmap']
+            # This will get updated by amarisoft-wrapper.py
+            publish['radio'].setdefault('ssb-nr-arfcn', {})[c] = '__SSB_NR_ARFCN__'
         elif config[c]['cell_type'] in ['eNB', 'NB']:
             publish['radio'].setdefault('dl-earfcn', {})[c] = dl_arfcn
             publish['radio'].setdefault('ul-earfcn', {})[c] = ul_arfcn
@@ -626,13 +630,15 @@ def ors_radio(config, publish, shared_list):
                 cid_len = 36 - config['gnb_id_bits']
                 nr_cell_id = global_id(config['gnb_id'], config[c]['cell_id'], cid_len)
                 publish['id']['nr-cell-id'][c] = publish_hex(nr_cell_id)
+                # CELLx_SSB_NR_ARFCN will get replaced in amarisoft-wrapper.py after we get ssb_nr_arfcn
+                # from lteenb
                 publish['id']['handover-json-export'][c] = json.dumps({
                     'name': hostname,
                     'nr_cell_id': nr_cell_id,
                     'gnb_id_bits': config['gnb_id_bits'],
                     'dl_nr_arfcn': dl_arfcn,
                     'nr_band': band,
-                    'ssb_nr_arfcn': config[c]['ssb_nr_arfcn'],
+                    'ssb_nr_arfcn': f'CELL{i}__SSB_NR_ARFCN__',
                     'ul_nr_arfcn': ul_arfcn,
                     'pci': config[c]['pci'],
                     'tac': config['plmn_list_5g'][0]['tac'],
@@ -642,8 +648,6 @@ def ors_radio(config, publish, shared_list):
             if config[c]['cell_type'] in ['eNB', 'gNB']:
                 publish['radio'].setdefault('root-sequence-index', {})[c] = config[c]['root_sequence_index']
                 publish['radio'].setdefault('tdd-ul-dl-config',      {})[c] = config[c]['tdd_ul_dl_config']
-        if config[c]['cell_type'] == 'gNB' and config[c]['nr_band'] == 79:
-            config[c]['amarisoft_ssb_computation'] = True
 
         if config[c]['cell_type'] == 'gNB':
             if type(config[c]['tdd_ul_dl_config']) is dict:
@@ -667,12 +671,12 @@ def ors_radio(config, publish, shared_list):
                         'dl_symbols': dl_symbols,
                     }
                 config[c]['tdd_ul_dl_config'] = tdd_ul_dl_config
+                for param in NR_TDD_CONFIG_MAP['default']:
+                    nr_tdd_config.setdefault(param, NR_TDD_CONFIG_MAP['default'][param])
                 for param in nr_tdd_config:
-                    if param in ['index', 'pattern1', 'pattern2', 'advanced_parameter']:
+                    if param in ['index', 'pattern1', 'pattern2']:
                         continue
                     config[c].setdefault(param, nr_tdd_config[param])
-                for param in nr_tdd_config.get('advanced_parameter', {}):
-                    config[c]['advanced_parameter'].setdefault(param, nr_tdd_config['advanced_parameter'][param])
 
     def configure_cpu():
         if options['sbc-model'] == 'LE-37SU7':
@@ -763,12 +767,40 @@ def ors_radio(config, publish, shared_list):
         if uplink_amount > 300 or (n_ul_layer >= 2 and uplink_amount > 150):
             publish['nodeb']['performance-warning'] = 'Warning: you might need to reduce the downlink / uplink bandwidth or number of antennas to avoid perfomance issues, your current settings exceed expected capacities of this SBC model.'
 
-    if len(sdr_list) >= 1:
-        configure_rf_parameters(0)
-    if len(sdr_list) >= 2:
-        configure_rf_parameters(1)
+    for i in range(2):
+        if len(sdr_list) >= i+1:
+            try:
+                configure_rf_parameters(i)
+            except ValueError as e:
+                publish['0-error'].setdefault('cell', {})[f'cell{i+1}'] = str(e)
+                self.error = True
+
+    if self.error:
+        error = f'n{band} is not a valid NR band'
+        config.setdefault("cell1", {})["enable_cell"] = False
+        config.setdefault("cell2", {})["enable_cell"] = False
+
+    cell_count = sum([int(config[cell]['enable_cell']) for cell in ['cell1', 'cell2']])
+    antenna_count = max(config['n_antenna_ul'], config['n_antenna_dl'])
+
+    if not cell_count:
+        return
+
+    # For ORS in FDD mode, RX Antenna should be connected to TX connector
+    # On ORS FDD SDR Boards this is done in hardware, but ORS Devboards require rx_antenna parameter to be set
+    #   to TX when used in FDD mode (this is the case for FDD ORS Brute)
+    # If there are two boards used then we assume none of them are devboards (which is the case for ORS Duo) as
+    #   we can only put one value in rx_antenna for both SDR devices
+    # For SDR100 boards rx_antenna value can be left to default value which is auto
+    if not config['sdr100']:
+        config['tdd_tx_mod'] = 1
+        if config[c]['rf_mode'] == 'fdd' and (cell_count * antenna_count) <= 2:
+            config['rx_antenna'] = "tx"
+        else:
+            config['rx_antenna'] = "tx_rx"
 
     configure_cpu()
+
 
     # ENB / GNB MODE
     if sr_type in ['enb', 'gnb', 'enb-gnb']:
@@ -902,14 +934,6 @@ def ors_radio(config, publish, shared_list):
                     'xn_addr'  : peer['xn_addr'],
                 })
             })
-
-    if sr_type == 'gnb' and options['software'] == 'software-ors':
-        # backward compatibility: if ORS is running in gnb mode, and gnb_* parameters
-        #       are present, replace their generic enb_* counterparts with gnb_* ones
-        if 'gnb_stats_fetch_period' in config:
-            config['enb_stats_fetch_period'] = config['gnb_stats_fetch_period']
-        if 'gnb_drb_stats_enabled' in config:
-            config['enb_drb_stats_enabled'] =  config['gnb_drb_stats_enabled']
 
     # UE MODE
     if sr_type == 'ue':
@@ -1118,8 +1142,6 @@ def core_network(config, publish, shared_list):
         'mme_com_addr': '127.0.1.3',
         'ims_com_ws_port':  9004,
         'ims_com_addr': '127.0.1.5',
-        'com_unsecure':     False,
-        'websocket_url_ipv6': False,
         'ims_addr': '127.0.0.1',
         'ims_bind': '127.0.0.2',
         'mme_bind_ipv6': slap_configuration['ipv6-random'],
@@ -1133,36 +1155,24 @@ def core_network(config, publish, shared_list):
     }
     for k,v in mme_defaults.items():
         config.setdefault(k, v)
-    if config['websocket_url_ipv6']:
-        ipv6 = slap_configuration['ipv6-random']
-        config['mme_com_addr'] = ipv6
-        config['mme_com_url' ] = f"[{ipv6}]:{config['mme_com_ws_port']}"
-        config['ims_com_addr'] = ipv6
-        config['ims_com_url' ] = f"[{ipv6}]:{config['ims_com_ws_port']}"
-        config['com_unsecure'] = True
-    else:
-        config['mme_com_url'] = f"{config['mme_com_addr']}:{config['mme_com_ws_port']}"
-        config['ims_com_url'] = f"{config['ims_com_addr']}:{config['ims_com_ws_port']}"
+    config['mme_com_url'] = f"{config['mme_com_addr']}:{config['mme_com_ws_port']}"
+    config['ims_com_url'] = f"{config['ims_com_addr']}:{config['ims_com_ws_port']}"
 
     sim_list = []
-    dns_list = []
     for shared in shared_list:
         p = json.loads(shared['_'])
         p.setdefault('slave_reference', shared['slave_reference'])
-        if p.get('subdomain', '') != '':
-            dns_list.append(p)
-        elif p.get('k', '') != '':
-            sim_list.append(p)
-            impi = f"{p['imsi']}@ims.mnc{p['mnc']}.mcc{p['mcc']}.3gppnetwork.org"
-            p.setdefault('impi', impi)
-            p.setdefault('impu', p['imsi'])
-            p['impu'] = f'"{p["impu"]}"'
-            if p.get('impu_list', ''):
-                impu_list = []
-                for x in p['impu_list']:
-                    impu_list.append(x['impu'])
-                impu_str = '", "'.join(impu_list)
-                p['impu'] = f'["{impu_str}"]'
+        sim_list.append(p)
+        impi = f"{p['imsi']}@ims.mnc{p['mnc']}.mcc{p['mcc']}.3gppnetwork.org"
+        p.setdefault('impi', impi)
+        p.setdefault('impu', p['imsi'])
+        p['impu'] = f'"{p["impu"]}"'
+        if p.get('impu_list', ''):
+            impu_list = []
+            for x in p['impu_list']:
+                impu_list.append(x['impu'])
+            impu_str = '", "'.join(impu_list)
+            p['impu'] = f'["{impu_str}"]'
 
     for s in sim_list:
         s['pdn_list'] = []
@@ -1184,10 +1194,7 @@ def core_network(config, publish, shared_list):
         pdn.setdefault('ipv6'      , str(netaddr.IPAddress(ipv6_start        )))
         pdn.setdefault('ipv6_start', str(netaddr.IPAddress(ipv6_start + 2**64)))
         pdn.setdefault('ipv6_end'  , str(netaddr.IPAddress(ipv6_end - 1      )))
-        if config.get('local_domain'):
-            pdn['dns_addr_list'] = [pdn_list[0]['ipv4']]
-        else:
-            pdn['dns_addr_list'] = ["8.8.8.8", "2001:4860:4860::8888"]
+        pdn['dns_addr_list'] = ["8.8.8.8", "2001:4860:4860::8888"]
 
         for sim in sim_list:
             sim_pdn = {
@@ -1338,18 +1345,6 @@ def core_network(config, publish, shared_list):
         publish_section['publish'] = p
         publish_section_list.append(publish_section)
 
-    for dns in dns_list:
-        publish_section = {}
-        publish_section['title'] = f"publish-{dns['slave_reference']}"
-        p = {}
-        p['-slave-reference'] = dns['slave_reference']
-        p['domain'] = f"{dns['subdomain']}.{dns.get('domain', config.get('local_domain', ''))}"
-        p['ip'] = dns.get('ip', '')
-        p['info'] = f"DNS entry has been attached to service {slap_configuration['instance-title']}."
-        publish_section['publish'] = p
-        publish_section_list.append(publish_section)
-
-
     return sim_list, publish_section_list
 
 def gtp_addr(gtp_localhost_addr):
@@ -1497,6 +1492,30 @@ if sr_type in ['enb', 'gnb', 'ue', 'enb-gnb']:
 
 if sr_type == 'core-network':
     gtp_localhost_addr = '127.0.1.100'
+    config.update(
+        {
+            "eps_5gs_interworking": "With N26",
+            "external_mme_list": [],
+            "pdn1": {
+                "apn_list": [
+                  "internet",
+                  "default",
+                  "sos"
+                ],
+                "qci": 9,
+                "fixed_ips": config["pdn1"].get("fixed_ips", False)
+            },
+            "pdn2": {
+                "apn_list": [
+                  "ims"
+                ],
+                "qci": 5,
+                "fixed_ips": config["pdn2"].get("fixed_ips", False),
+                "ims": config["pdn2"].get("ims", True),
+                "disable_pdn": config["pdn2"].get("disable_pdn", False),
+            }
+        }
+    )
     sim_list, publish_section_list = core_network(config, publish, shared_list)
 elif sr_type in ['enb-gnb', 'enb', 'gnb']:
     gtp_localhost_addr = '127.0.1.1'
@@ -1510,6 +1529,9 @@ if sr_type == 'core-network':
     publish['core']['gtp-addr-list'] = ', '.join(config['gtp_addr_list'])
 elif options['software'].startswith('software-ors') and sr_type in ['enb', 'gnb', 'enb-gnb']:
     publish['nodeb']['gtp-addr'] = config['gtp_addr_list'][0]
+
+if self.error:
+    config['error'] = ', '.join([f'{k}: {publish["0-error"][k]}' for k in publish['0-error']])
 
 publish = delete_empty(publish)
 publish = flatten(publish)
@@ -1531,4 +1553,3 @@ options['shared-list'] = shared_list
 if sr_type == 'core-network':
     options['sim-list'] = sim_list
     options['publish-section-list'] = publish_section_list
-

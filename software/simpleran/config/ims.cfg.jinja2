@@ -5,23 +5,21 @@
     log_filename: "{{ directory['log'] }}/ims.log",
 
     com_addr: "{{ slapparameter_dict.ims_com_url }}",
-{%- if not slapparameter_dict.com_unsecure %}
     com_auth: {
       password: "{{ websocket_password }}",
-      unsecure: false,
+      unsecure: true, // We use unsecure because websockets needs to work in offline mode without SSL as well
     },
-{%- endif %}
 
     sip_addr: [
         {addr: "{{ ims_pdn.ipv4 }}", bind_addr: "{{ ims_pdn.ipv4 }}", port_min: 10000, port_max: 20000
-{%- if 'trunk' in slapparameter_dict -%}
+{%- if slapparameter_dict.get('trunk') -%}
         , trunk: true
 {%- endif -%}
         },
         "{{ ims_pdn.ipv6_start }}",
     ],
 
-{%- if 'trunk' in slapparameter_dict %}
+{%- if slapparameter_dict.get('trunk') -%}
     trunk: {
       addr: "{{ slapparameter_dict['trunk']['addr'] }}",
       name: "{{ slapparameter_dict['trunk']['name'] }}",

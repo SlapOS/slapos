@@ -48,6 +48,7 @@ T-2/etc/plugin/monitor-http-frontend.py
 T-2/etc/plugin/monitor-httpd-listening-on-tcp.py
 T-2/etc/plugin/promise-logrotate-setup.py
 T-3/etc/plugin/__init__.py
+T-3/etc/plugin/attachment-state.py
 T-3/etc/plugin/backend-client-caucase-updater.py
 T-3/etc/plugin/backend-haproxy-configuration.py
 T-3/etc/plugin/backend-haproxy-statistic-frontend.py
@@ -74,6 +75,7 @@ T-3/etc/plugin/slave_introspection_https.py
 T-3/etc/plugin/trafficserver-cache-availability.py
 T-3/etc/plugin/trafficserver-port-listening.py
 T-4/etc/plugin/__init__.py
+T-4/etc/plugin/attachment-state.py
 T-4/etc/plugin/backend-client-caucase-updater.py
 T-4/etc/plugin/backend-haproxy-configuration.py
 T-4/etc/plugin/backend-haproxy-statistic-frontend.py

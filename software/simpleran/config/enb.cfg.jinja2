@@ -190,12 +190,10 @@
   ],
 {%- endif %}
   com_addr: "{{ slapparameter_dict.com_url }}",
-{%- if not slapparameter_dict.com_unsecure %}
   com_auth: {
     password: "{{ websocket_password }}",
-    unsecure: false,
+    unsecure: true, // We use unsecure because websockets needs to work in offline mode without SSL as well
   },
-{%- endif %}
 {%- if slapparameter_dict.get('mbmsgw_addr', '') %}
   mbmsgw_addr: "{{ slapparameter_dict.mbmsgw_addr }}",
 {%- endif %}
@@ -302,15 +300,8 @@
       root_sequence_index: {{ cell.root_sequence_index }},
       inactivity_timer: {{ cell.inactivity_timer }},
       ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
-      prach_freq_offset: {{ cell.advanced_parameter.prach_freq_offset }},
-      q_rx_lev_min: {{ cell.advanced_parameter.q_rx_lev_min }},
-{%-   if 'p_max' in cell.advanced_parameter %}
-      p_max: {{ cell.advanced_parameter.p_max }},
-{%-   endif %}
-{%-   if 'q_qual_min' in cell.advanced_parameter %}
-      q_qual_min: {{ cell.advanced_parameter.q_qual_min }},
-{%-   endif %}
-      q_rx_lev_min_offset: {{ cell.advanced_parameter.q_rx_lev_min_offset }},
+      prach_freq_offset: -1,
+      q_rx_lev_min: -70,
 {%-   if 'sr_period' in cell %}
       sr_period: {{ cell.sr_period }},
 {%-   endif %}
@@ -398,11 +389,7 @@
     pdsch_mcs: {{ cell.fixed_mcs_downlink }},
 {%- endif %}
     pdcch_format:       {{  1   if n_rb_dl == 6  else 2 }},
-{%- if "prach_config_index" in cell.advanced_parameter %}
-    prach_config_index: {{ cell.advanced_parameter.prach_config_index }},
-{%- else %}
     prach_config_index: {{  15  if n_rb_dl == 6  else 4 }},
-{%- endif %}
     initial_cqi:        {{  5   if n_rb_dl == 6  else 3 }},
     phr_link_adaptation: {{ cell.phr_link_adaptation |tojson }},
     pucch_dedicated: {
@@ -513,7 +500,7 @@
       ],
       sib_sched_list: [
         { 
-          filename: "{{ B('%s-sib2_nb.asn' % cell_ref) }}",
+          filename: "{{ B('%s-sib23.asn' % cell_ref) }}",
           si_periodicity: 128,
           si_repetition_pattern: 2,
           si_value_tag: 0, /* increment modulo 4 if SIB is modified */
@@ -544,61 +531,6 @@
           npusch_multi_tone_i_tbs: 4,
           npusch_n_rep: 1,
         },
-{%-   if cell.all_ce_level %}
-        {
-          npdcch_ra_n_rep: 4,
-          npdsch_ra_n_rep: 4,
-          npdsch_ra_i_tbs: 3,
-
-          ul_sc_spacing: 1,
-          msg3_n_sc: 1,
-          msg3_single_tone_mcs: 1,
-          msg3_n_rep: 4,
-
-          npdcch_paging_n_rep: 4,
-          npdsch_paging_i_tbs: 3,
-          npdsch_paging_n_rep: 4,
-
-          npdcch_uss_n_rep_max: 16,
-          npdcch_uss_n_rep: 4,
-          npdcch_uss_start_sf: 2,
-          npdcch_uss_offset: 0,
-          npdsch_i_tbs: 4,
-          npdsch_n_rep: 4,
-          npusch_n_sc: 3,
-          npusch_single_tone_i_tbs: 4,
-          npusch_multi_tone_i_tbs: 4,
-          npusch_n_rep: 4,
-          npusch_an_n_rep : 4,
-          inactivity_timer: 20000,
-        },
-        {
-          npdcch_ra_n_rep: 16,
-          npdsch_ra_n_rep: 8,
-          npdsch_ra_i_tbs: 1,
-
-          ul_sc_spacing: 1,
-          msg3_n_sc: 1,
-          msg3_single_tone_mcs: 0,
-          msg3_n_rep: 8,
-
-          npdcch_paging_n_rep: 8,
-          npdsch_paging_i_tbs: 1,
-          npdsch_paging_n_rep: 8,
-
-          npdcch_uss_n_rep_max: 32,
-          npdcch_uss_n_rep: 16,
-          npdcch_uss_start_sf: 1.5,
-          npdcch_uss_offset: 0,
-          npdsch_i_tbs: 1,
-          npdsch_n_rep: 8,
-          npusch_n_sc: 1,
-          npusch_single_tone_i_tbs: 1,
-          npusch_n_rep: 16,
-          npusch_an_n_rep: 8,
-          inactivity_timer: 50000,
-        },
-{%-   endif %}
       ],
     },
     {%- endfor %}
@@ -610,7 +542,7 @@
 {%- for plmn in slapparameter_dict.plmn_list %}
       {
         plmn: "{{ plmn.plmn }}",
-        reserved: {{ plmn.get('reserved', false) |tojson }},
+        reserved: false,
         attach_without_pdn: {{ plmn.get('attach_without_pdn', false) |tojson }},
       },
 {%- endfor %}
@@ -654,7 +586,7 @@
 {%- for plmn in slapparameter_dict.plmn_list %}
       {
         plmn: "{{ plmn.plmn }}",
-        reserved: {{ plmn.get('reserved', false) |tojson }},
+        reserved: false,
         attach_without_pdn: {{ plmn.get('attach_without_pdn', false) |tojson }},
       },
 {%- endfor %}
@@ -842,19 +774,15 @@
         bandwidth:    {{ cell.bandwidth }},
 {%-     endif %}
         subcarrier_spacing: {{ cell.subcarrier_spacing }},
-{%-     if not cell.get('amarisoft_ssb_computation', false) %}
+{%-     if cell.get('ssb_nr_arfcn') %}
         ssb_nr_arfcn:   {{ cell.ssb_nr_arfcn }},
 {%-     endif %}
         ssb_pos_bitmap: "{{ cell.ssb_pos_bitmap }}",
         root_sequence_index: {{ cell.root_sequence_index }},
         inactivity_timer: {{ cell.inactivity_timer }},
         ignore_gbr_congestion: {{ cell.ignore_gbr_congestion |tojson }},
-        q_rx_lev_min: {{ cell.advanced_parameter.q_rx_lev_min }},
-        delta_rx_lev_min: {{ cell.advanced_parameter.delta_rx_lev_min }},
-        q_qual_min: {{ cell.advanced_parameter.q_qual_min }},
-{%-   if 'p_max' in cell.advanced_parameter %}
-        p_max: {{ cell.advanced_parameter.p_max }},
-{%-   endif %}
+        q_rx_lev_min: -70,
+        q_qual_min: -20,
         sr_period: {{ cell.get('latency_parameter', {}).get('sr_period', 40) }},
 {%-   if 'rx_to_tx_latency' in cell.get('latency_parameter', {}) %}
         rx_to_tx_latency: {{ cell.latency_parameter.rx_to_tx_latency }},
@@ -1025,16 +953,16 @@
           ],
         },
         prach: {
-          preamble_received_target_power: {{ cell.advanced_parameter.prach_preamble_received_target_power }},
-          preamble_trans_max: {{ cell.advanced_parameter.prach_preamble_trans_max }},
-          power_ramping_step: {{ cell.advanced_parameter.prach_power_ramping_step }},
+          preamble_received_target_power: -110,
+          preamble_trans_max: 7,
+          power_ramping_step: 4,
 {%-     if ru.ru_type == "sunwave" %}
           msg1_frequency_start: 0,
-{%-     elif 'msg1_frequency_start' in cell.advanced_parameter %}
-          msg1_frequency_start: {{ cell.advanced_parameter.msg1_frequency_start }},
+{%-     else %}
+          msg1_frequency_start: -1,
 {%-     endif %}
           ra_response_window: {{ 20 if tdd else 10 }},
-{%-     if "prach_config_index" in cell.advanced_parameter %}
+{%-     if "prach_config_index" in cell.get('advanced_parameter', {}) %}
           prach_config_index: {{ cell.advanced_parameter.prach_config_index }},
 {%-     else %}
 {%-       if tdd %}
@@ -1045,7 +973,7 @@
 {%-     endif %}
         },
         pucch: {
-          p0_nominal: {{ cell.advanced_parameter.pucch_p0_nominal }},
+          p0_nominal: -96,
           resource_auto: {
           }
         },
@@ -1056,6 +984,12 @@
           dedicated_coreset: {
             duration: 1,
           },
+{%-     endif %}
+{%-     if 'n_rb_coreset0' in cell.get('latency_parameter', {}) %}
+          n_rb_coreset0: {{ cell.latency_parameter.n_rb_coreset0 }},
+{%-     endif %}
+{%-     if 'n_symb_coreset0' in cell.get('latency_parameter', {}) %}
+          n_symb_coreset0: {{ cell.latency_parameter.n_symb_coreset0 }},
 {%-     endif %}
 {%-     if 'uss' in cell.get('latency_parameter', {}) %}
           uss: {
@@ -1085,6 +1019,7 @@
 {%-     endif %}
         },
         pdsch: {
+          mcs_table: "{{ cell.mcs_table_dl }}",
 {%-     if "fixed_mcs_downlink" in cell %}
           mcs: {{ cell.fixed_mcs_downlink }},
 {%-     endif %}
@@ -1094,7 +1029,9 @@
 {%-     endif %}
         },
         pusch: {
-          p0_nominal_with_grant: {{ cell.advanced_parameter.pusch_p0_nominal }},
+          mcs_table: "{{ cell.mcs_table_ul }}",
+          mcs_table_tp: "{{ cell.mcs_table_ul }}",
+          p0_nominal_with_grant: -84,
           mapping_type: {{ cell.get('pusch_mapping_type', 'typeA') | tojson }},
 {%-     if "fixed_mcs_uplink" in cell %}
           mcs: {{ cell.fixed_mcs_uplink }},
@@ -1125,32 +1062,7 @@
           configuration_type: "{{ cell.configured_grant.configuration_type }}"
         },
 {%-     endif %}
-{%-     if cell.advanced_parameter.enable_sib2 | tojson == 'true' %}
-        sib_sched_list: [
-          {
-            filename: "{{ B('%s-sib23.asn' % cell_ref) }}",
-            si_periodicity: 16,
-          },
-        ],
-{%-     endif %}
         drb_config: "{{ B('%s-drb.cfg' % cell_ref) }}",
-{%-     if "redcap_ue" in cell and "allow" in cell.redcap_ue and cell.redcap_ue.allow %}
-        redcap_ue: {
-          allow: {{ cell.redcap_ue.allow |tojson }},
-          allow_1rx_ue: {{ cell.redcap_ue.allow_1rx_ue |tojson }},
-          allow_2rx_ue: {{ cell.redcap_ue.allow_2rx_ue |tojson }},
-{%-       if "eredcap_ue" in cell.redcap_ue and cell.redcap_ue.eredcap_ue.allow %}
-          eredcap_ue: {
-            allow_1rx_ue: {{ cell.redcap_ue.eredcap_ue.allow_1rx_ue |tojson }},
-            allow_2rx_ue: {{ cell.redcap_ue.eredcap_ue.allow_2rx_ue |tojson }},
-          },
-{%-       endif %}
-{%-       if "half_duplex" in cell.redcap_ue and cell.redcap_ue.half_duplex.enable %}
-          half_duplex: {
-          },
-{%-       endif %}
-        }
-{%-     endif %}
       },
 {%- endfor %}
   ],
@@ -1164,7 +1076,7 @@
 {%-   if plmn.get('ranac')  %}
         ranac: {{ plmn.ranac }},
 {%-   endif %}
-        reserved: {{ plmn.get('reserved', false) |tojson }},
+        reserved: false,
         nssai: [
 {%-   for nssai in slapparameter_dict.nssai %}
           {
@@ -1210,7 +1122,6 @@
       dmrs_add_pos: 1,
       dmrs_type: 1,
       dmrs_max_len: 1,
-      mcs_table: "qam256",
       rar_mcs: 2,
       si_mcs: 6,
     },
@@ -1219,8 +1130,6 @@
       dmrs_type: 1,
       dmrs_max_len: 1,
       tf_precoding: false,
-      mcs_table: "qam256",
-      mcs_table_tp: "qam256",
       ldpc_max_its: 5,
       msg3_mcs: 4,
       msg3_delta_power: 0,

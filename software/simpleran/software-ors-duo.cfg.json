@@ -35,30 +35,6 @@
       "response": "sim/schema.json",
       "shared": true,
       "index": 4
-    },
-    "test-model": {
-      "title": "Test Model",
-      "software-type": "test-model",
-      "description": "Play 3GPP Test Models, allows to measure power or radio quality",
-      "request": "instance-ors-duo-test-model-input-schema.json",
-      "response": "instance-test-model-schema.json",
-      "index": 5
-    },
-    "gnb": {
-      "title": "gNB (obsolete)",
-      "software-type": "gnb",
-      "description": "eNodeB / gNodeB Configuration",
-      "request": "instance-ors-duo-enb-gnb-input-schema.json",
-      "response": "instance-ors-gnb-schema.json",
-      "index": 6
-    },
-    "enb": {
-      "title": "eNB (obsolete)",
-      "software-type": "enb",
-      "description": "eNodeB / eNodeB Configuration",
-      "request": "instance-ors-duo-enb-gnb-input-schema.json",
-      "response": "instance-ors-enb-schema.json",
-      "index": 7
     }
   }
 }

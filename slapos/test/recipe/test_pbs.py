@@ -47,7 +47,7 @@ class PBSTest(unittest.TestCase):
             self.assertIn('--remote-schema TEST_REMOTE_SCHEMA', content)
             self.assertIn('TEST_LOCAL_DIR', content)
             self.assertIn('TEST_REMOTE_DIR', content)
-            self.assertIn('--remove-older-than TEST_OLDER', content)
+            self.assertIn('remove increments --older-than TEST_OLDER', content)
 
     def test_invalid_type(self):
         recipe = self.new_recipe()

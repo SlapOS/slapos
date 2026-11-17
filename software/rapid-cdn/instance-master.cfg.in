@@ -197,6 +197,8 @@ context =
                                   } %}
 {%-   set frontend_software_url_key = "-frontend-%s-software-release-url" % i %}
 {%-   do request_content_dict.__setitem__('software-url', slapparameter_dict.get(frontend_software_url_key) or '${slap-connection:software-release-url}') %}
+{%-   set detach_key = "-frontend-%s-detach" % i %}
+{%-   do request_content_dict.__setitem__('software-type', frontend_type ~ '-detach' if slapparameter_dict.pop(detach_key, False) else frontend_type) %}
 {%-   do request_dict.__setitem__(request_section_title, request_content_dict) %}
 {%- endfor %}
 
@@ -418,6 +420,7 @@ return = slave-instance-information-list monitor-base-url backend-client-csr-url
 <= replicate
 name = {{ frontend_request.get('name') }}
 software-url = {{ frontend_request['software-url'] }}
+software-type = {{ frontend_request['software-type'] }}
 {%-   if state %}
 state = {{ state }}
 {%-   endif %}

@@ -1,6 +1,7 @@
 import gzip
 import contextlib
 import json
+import os
 import pathlib
 import shutil
 import subprocess
@@ -47,6 +48,17 @@ class ZEOTestCase(ERP5InstanceTestCase):
     zeo_uri = f"zeo://{root['server']}?storage={root['storage']}"
     storage_factory, dbkw = zodburi.resolve_uri(zeo_uri)
     return contextlib.closing(DB(storage_factory(), **dbkw))
+
+  def _checkPromiseFailed(self, promise_status_filename, expected_message) -> None:
+    subprocess.call((
+      self.slap._slapos_bin, 'node', 'promise', '--cfg', self.slap._slapos_config))
+    promise_path = os.path.join(
+      self.computer_partition_root_path,
+      '.slapgrid', 'promise', 'result', promise_status_filename)
+    with open(promise_path) as f:
+      status = json.load(f)
+    self.assertTrue(status['result']['failed'])
+    self.assertIn(expected_message.replace('\n', '\\n'), status['result']['message'])
 
 
 class TestRepozo(ZEOTestCase, CrontabMixin):
@@ -119,6 +131,17 @@ class TestRepozo(ZEOTestCase, CrontabMixin):
       self.assertRegex(index, r'2000-01-02-00-\d\d-\d\d.index')
       self.assertEqual(index_latest, 'index.latest')
 
+  def test_repozo_cron_promise(self) -> None:
+    repozo_binary = os.path.join(self.computer_partition_root_path, 'bin', 'tidstorage-repozo')
+    repozo_binary_tmp = repozo_binary + '.tmp'
+    os.rename(repozo_binary, repozo_binary_tmp)
+    try:
+      self._executeCrontabAtDate('tidstorage', '2000-01-01 UTC')
+    except subprocess.CalledProcessError as e:
+      self._checkPromiseFailed('check-cron-entry-tidstorage-backup.status.json', e.output.decode())
+    finally:
+      os.rename(repozo_binary_tmp, repozo_binary)
+
 
 class TestBackupDirectory(ZEOTestCase, CrontabMixin):
   @classmethod
@@ -152,14 +175,17 @@ class TestCheckBackup(ZEOTestCase, CrontabMixin):
       try:
         self._executeCrontabAtDate("check-backup", "2000-01-02 UTC")
       except subprocess.CalledProcessError as e:
+        subprocess_output = e.output.decode()
         self.assertRegex(
-          e.output.decode(),
+          subprocess_output,
           r"Checking backup for root ...\n"
           r".*/srv/zodb/root.fs between \d+ and \d+ has checksum"
           " [0-9a-f]{32} instead of [0-9a-f]{32}\n"
           r"ERROR: root Backup check failed\.")
-      # restore the original file, to not break next assertions
-      file_storage.with_suffix(".save").rename(file_storage)
+        self._checkPromiseFailed('check-cron-entry-tidstorage-check-backup.status.json', subprocess_output,)
+      finally:
+        # restore the original file, to not break next assertions
+        file_storage.with_suffix(".save").rename(file_storage)
 
     # simulate a corrupted backup fsz
     fsz, = list((self.computer_partition_root_path / "srv" / "backup" / "zodb" / "root").glob("*.fsz"))
@@ -168,9 +194,11 @@ class TestCheckBackup(ZEOTestCase, CrontabMixin):
     try:
       self._executeCrontabAtDate("check-backup", "2000-01-02 UTC")
     except subprocess.CalledProcessError as e:
+      subprocess_output = e.output.decode()
       self.assertRegex(
-        e.output.decode(),
+        subprocess_output,
         r"Checking backup for root ...\n"
         r".*/srv/backup/zodb/root/2000-01-01-00-\d{2}-\d{2}\.fsz has checksum [0-9a-f]{32} \(when uncompressed\) "
         r"instead of [0-9a-f]{32}\n"
         r"ERROR: root Backup check failed\.")
+      self._checkPromiseFailed('check-cron-entry-tidstorage-check-backup.status.json', subprocess_output)
