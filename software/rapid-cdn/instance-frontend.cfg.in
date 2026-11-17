@@ -766,9 +766,13 @@ context =
 
 [promise-frontend-frontend-haproxy-configuration]
 <= monitor-promise-base
-promise = validate_frontend_configuration
+promise = check_command_execute
 name = frontend-frontend-haproxy-configuration-promise.py
-config-verification-script = ${promise-helper-last-configuration-state:output}
+config-command = ${promise-helper-last-configuration-state:output}
+config-frequency = 5
+{#- a configuration being regenerated fails transiently #}
+config-result_count = 5
+config-failure_amount = 5
 
 [promise-attachment-state-sense]
 recipe = slapos.recipe.template
@@ -972,9 +976,13 @@ extra-context =
 
 [promise-backend-haproxy-configuration]
 <= monitor-promise-base
-promise = validate_frontend_configuration
+promise = check_command_execute
 name = backend-haproxy-configuration.py
-config-verification-script = ${promise-backend-haproxy-configuration-helper:output}
+config-command = ${promise-backend-haproxy-configuration-helper:output}
+config-frequency = 5
+{#- a configuration being regenerated fails transiently #}
+config-result_count = 5
+config-failure_amount = 5
 
 [promise-backend-haproxy-configuration-helper]
 < = jinja2-template-base
@@ -1245,9 +1253,13 @@ extra-context =
 
 [promise-slave-introspection-configuration]
 <= monitor-promise-base
-promise = validate_frontend_configuration
+promise = check_command_execute
 name = slave-introspection-configuration.py
-config-verification-script = ${promise-slave-introspection-configuration-helper:output}
+config-command = ${promise-slave-introspection-configuration-helper:output}
+config-frequency = 5
+{#- a configuration being regenerated fails transiently #}
+config-result_count = 5
+config-failure_amount = 5
 
 [promise-slave-introspection-configuration-helper]
 < = jinja2-template-base

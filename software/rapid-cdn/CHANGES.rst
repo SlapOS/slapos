@@ -39,6 +39,18 @@ Network exposure information provided
 The "Network exposure" section of the README tells where to find each
 socket of the cluster and its client, to write the firewall rules.
 
+The frontend configuration promises tolerate a transient failure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+``frontend-frontend-haproxy-configuration-promise``,
+``backend-haproxy-configuration`` and ``slave-introspection-configuration``
+report an anomaly only after 5 failed checks in a row, instead of on the
+first one: the configuration of a busy frontend node fails the check for a
+moment while a slave change propagates. The partition is still reprocessed
+at the first failure.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 The master partition checks its logrotate setup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
