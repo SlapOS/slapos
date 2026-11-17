@@ -2,12 +2,8 @@
 
 How to deploy from scratch
 
-  1. Install Amarisoft binaries in /opt/amarisoft/v20XX-XX-XX with folders:
-     * enb: needs to contain libraries from trx_sdr
-     * trx_sdr
-     * mme: needs to contain libraries from libs folder
-  2. Install ors playbook
-  3. Deploy this SR
+  1. Install ors playbook
+  2. Deploy this SR
 
 ## Services
 
@@ -32,22 +28,12 @@ Is the core network.  This binary keep track of UEs and to which eNodeB they are
 It reroutes traffic when UE switches between eNodeBs.
 MME also serves as a service bus thus all services must register within MME. 
 
-## Gotchas!
-
-**trx_sdr.so** provided from archive MUST be placed next to `lteenb` binary. This library is the
-only one which does not follow standard `ld` path resolution.
-
-**rf_driver** has to be compiled and installed. Inside trx_sdr/kernel folder issue `# make` to compile the
-kernel module, and then `# ./init.sh` to create devices `/dev/sdr<N>` and insert compiled module.
-
 ## External dependencies for ORS
 
 Simpleran SR needs:
 
 | Path                               | Use                      | How to remove (if possible )             |
 |------------------------------------|--------------------------|------------------------------------------|
-| /opt/amarisoft/v20XX-XX-XX.X       | Binaries                 |                                          |
-| /opt/amarisoft/.amarisoft          | Licenses                 |                                          |
 | /opt/amarisoft/init-sdr            | Init SDR driver          |                                          |
 | /opt/amarisoft/get-amarisoft-info  | Get amarisoft info       |                                          |
 | /opt/amarisoft/rm-tmp-lte          | Remove files in /tmp     | Configure amarisoft to disable this lock |
@@ -56,9 +42,3 @@ Simpleran SR needs:
 | /opt/amarisoft/init-mme            |                          | Do it in playbook                        |
 | /opt/sdr/get-sdr-info              | Get SDR info             |                                          |
 | /opt/simpleran/format-ims          | Format IMS slaptun       | Do it in slapformat                      |
-
-Playbook needs:
-
-| Path                               | Use                      | How to remove (if possible )             |
-|------------------------------------|--------------------------|------------------------------------------|
-| /opt/amarisoft/get-amarisoft-info  | Get amarisoft info       |                                          |
