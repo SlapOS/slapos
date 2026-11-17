@@ -39,6 +39,28 @@ Network exposure information provided
 The "Network exposure" section of the README tells where to find each
 socket of the cluster and its client, to write the firewall rules.
 
+The master partition runs before the error-page-manager has published
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The master partition no longer fails while the error-page-manager or
+kedifa has not published its information yet, as on a new cluster or right
+after the upgrade which adds the error-page-manager. The slaves are
+published without the missing values, and get them on a later run.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
+``error-page-upload-url`` is published only through the CDN
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The master partition requests the "Error Page Manager Frontend" slave only
+once the error-page-manager has published its URL, so the slave is no
+longer rejected with ``slave url '' invalid``. A slave gets
+``error-page-upload-url`` only once it is reachable through the CDN;
+before, it got the direct IPv6 address of the error-page-manager until the
+frontend slave converged.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 The cluster monitor includes the error-page-manager
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**

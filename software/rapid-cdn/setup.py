@@ -15,6 +15,7 @@ setup(
     'zc.buildout': [
       'default = software:Recipe',
       'frontend-request = software:FrontendRequest',
+      'frontend-slave-request = software:FrontendSlaveRequest',
     ],
     'console_scripts': [
       'smart-caucase-signer = software:smart_sign',

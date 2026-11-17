@@ -11024,6 +11024,79 @@ class TestFrontendRequestFailure(SlaveHttpFrontendTestCase):
       slave_frontend_node_information, self.getSlaveFrontendNodeInformation())
 
 
+class TestErrorPageManagerNotPublished(SlaveHttpFrontendTestCase):
+  instance_parameter_dict = {
+    'domain': 'example.com',
+    'port': HTTPS_PORT,
+    'plain_http_port': HTTP_PORT,
+    'kedifa_port': KEDIFA_PORT,
+    'caucase_port': CAUCASE_PORT,
+    # slapproxy cannot allocate it, so it never publishes
+    '-sla-error-page-manager-computer_guid': 'unknown-computer',
+  }
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {'_': json.dumps(cls.instance_parameter_dict)}
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {'not-published': {'url': cls.backend_url}}
+
+  @classmethod
+  def getPartitionId(cls, instance_name):
+    if instance_name == 'error-page-manager':
+      return None
+    return super().getPartitionId(instance_name)
+
+  @classmethod
+  def getPartitionIPv6(cls, partition_id):
+    if partition_id is None:
+      return None
+    return super().getPartitionIPv6(partition_id)
+
+  def requestMaster(self, parameter_dict):
+    return self.slap.request(
+      software_release=self.getSoftwareURL(),
+      software_type=self.getInstanceSoftwareType(),
+      partition_reference=self.default_partition_reference,
+      partition_parameter_kw={'_': json.dumps(parameter_dict)},
+    )
+
+  def test(self):
+    last_connection_file = os.path.join(
+      self.getMasterPartitionPath(), 'var',
+      'request-error-page-manager-frontend-last-connection.json')
+    parameter_dict = self.parseSlaveParameterDict('not-published')
+    self.assertNotIn('error-page-upload-url', parameter_dict)
+    self.assertIn('shared-information-url', parameter_dict)
+    self.assertFalse(os.path.exists(last_connection_file))
+
+    published_parameter_dict = dict(self.instance_parameter_dict)
+    published_parameter_dict.pop('-sla-error-page-manager-computer_guid')
+    self.addCleanup(self.requestMaster, self.instance_parameter_dict)
+    self.requestMaster(published_parameter_dict)
+    # the master partition reads the values the error-page-manager publishes
+    # only on its next run
+    force_slapos_node_instance_all = self.slap._force_slapos_node_instance_all
+    self.slap._force_slapos_node_instance_all = True
+    try:
+      for _ in range(3):
+        self.slap.waitForInstance(self.instance_max_retry)
+    finally:
+      self.slap._force_slapos_node_instance_all = \
+        force_slapos_node_instance_all
+    self.updateSlaveConnectionParameterDictDict()
+    parameter_dict = self.parseSlaveParameterDict('not-published')
+    with open(last_connection_file) as fh:
+      secure_access = json.load(fh)['secure_access']
+    self.assertTrue(secure_access)
+    self.assertTrue(
+      parameter_dict['error-page-upload-url'].startswith(
+        str(furl.furl(secure_access).set(path='')).rstrip('/') + '/shared/'),
+      parameter_dict['error-page-upload-url'])
+
+
 class TestSlaveManagementDomainReuse(
     SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
   mock_dns = None

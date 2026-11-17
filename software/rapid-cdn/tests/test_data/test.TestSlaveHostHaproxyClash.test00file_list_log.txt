@@ -1,7 +1,6 @@
 T-0/var/log/cdn-instance-node.log
 T-0/var/log/monitor-httpd-access.log
 T-0/var/log/monitor-httpd-error.log
-T-0/var/log/slapgrid-T-0-error.log
 T-1/var/log/expose-csr.log
 T-1/var/log/kedifa.log
 T-1/var/log/monitor-httpd-access.log

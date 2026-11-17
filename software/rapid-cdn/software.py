@@ -25,18 +25,30 @@ class Recipe(object):
 class FrontendRequest(object):
   """slapos.cookbook:requestoptional.serialised, but a failed request keeps
   the connection parameters of the last successful one instead of emptying
-  them."""
+  them. No request is made, and the last parameters are kept, while an option
+  of required-option-list is empty."""
+  request_class_name = 'RequestOptionalJSONEncoded'
+
   def __init__(self, buildout, name, options):
     # not a requirement of this egg: its console scripts do not need it, and
     # buildout has it loaded already, as the section uses ${monitor-htpasswd}
-    from slapos.recipe.request import RequestOptionalJSONEncoded
-    self.request = RequestOptionalJSONEncoded(buildout, name, options)
+    from slapos.recipe import request
     self.options = options
     self.return_list = options.get('return', '').split()
     self.connection_file = options['last-connection-file']
-    self.failure_file = options['failure-file']
-    self.exception = self.request._raise_request_exception
-    if self.exception is not None:
+    self.failure_file = options.get('failure-file')
+    if all(options[q] for q in options.get('required-option-list', '').split()):
+      self.request = getattr(request, self.request_class_name)(
+        buildout, name, options)
+      self.exception = self.request._raise_request_exception
+      keep_last = self.exception is not None
+    else:
+      self.request = None
+      self.exception = None
+      keep_last = True
+      for param in self.return_list:
+        options['connection-%s' % param] = ''
+    if keep_last:
       try:
         with open(self.connection_file) as f:
           last_connection_dict = json.load(f)
@@ -47,6 +59,8 @@ class FrontendRequest(object):
           options['connection-%s' % param] = last_connection_dict[param]
 
   def install(self):
+    if self.request is None:
+      return []
     self.request.install()
     if self.exception is None:
       with open(self.connection_file + '.tmp', 'w') as f:
@@ -54,15 +68,21 @@ class FrontendRequest(object):
           param: self.options['connection-%s' % param]
           for param in self.return_list}, f, sort_keys=True)
       os.rename(self.connection_file + '.tmp', self.connection_file)
-      if os.path.exists(self.failure_file):
+      if self.failure_file and os.path.exists(self.failure_file):
         os.unlink(self.failure_file)
-    else:
+    elif self.failure_file:
       with open(self.failure_file, 'w') as f:
         f.write('Request for %r failed: %r\n' % (
           self.options['name'], self.exception))
     return []
 
   update = install
+
+
+class FrontendSlaveRequest(FrontendRequest):
+  """FrontendRequest with the parameters sent as is, like
+  slapos.cookbook:requestoptional."""
+  request_class_name = 'RequestOptional'
 
 
 def validate_netloc(netloc):

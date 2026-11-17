@@ -1012,7 +1012,9 @@ command-line = {{ software_parameter_dict['sqlite-web-bin'] }} -T -H ${:ip} -p $
 
 [error-page-manager-frontend]
 <= slap-connection
-recipe = slapos.cookbook:requestoptional
+recipe = software:frontend-slave-request
+required-option-list = config-url
+last-connection-file = ${directory:var}/request-error-page-manager-frontend-last-connection.json
 name = Error Page Manager Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 shared = true
