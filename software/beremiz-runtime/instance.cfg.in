@@ -55,10 +55,13 @@ webport = 8009
 # needed libraries and tools inside SlapOS context
 # We need to add to PATH our own gcc compiler and inkscape as
 # Beremiz uses them
+# OPEN62541_PATH tells Beremiz where open62541 is, as the part is no longer
+# in folder parts/open62541 (BEREMIZ_PATH/../open62541) Beremiz looks at by default
 environment =
   BEREMIZPYTHONPATH = {{ buildout['bin-directory'] }}/pythonwitheggs
   PATH={{ gcc_location }}/bin:{{ inkscape_location }}/bin
   LIBRARY_PATH={{ openssl_location }}/lib
+  OPEN62541_PATH={{ open62541_location }}
   BEREMIZ_LOCAL_HOST=${instance-parameter:ipv4-random}
 
 command-line =
