@@ -39,6 +39,15 @@ Network exposure information provided
 The "Network exposure" section of the README tells where to find each
 socket of the cluster and its client, to write the firewall rules.
 
+The master partition checks its logrotate setup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The master partition has the ``promise-logrotate-setup`` promise, like the
+other partitions: a broken logrotate configuration is reported instead of
+going unnoticed until the logs stop rotating.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 The error-page-manager no longer restarts when slaves change
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
