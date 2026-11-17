@@ -13,7 +13,7 @@ RESET              = True       # Disable this if you already have the services 
 LOCK               = False      # Disable to run tests faster, activates lock mechanism to prevent conflict if two tests run at the same time on the same services
 DEBUG              = False      # Sleep for 20 minutes after failure to give time to debug
 MAX_RETRY          = 3          # Max retries to connect UE after services have been checked
-RERUN_TEST         = 1767374328 # Increase to force test suite to run test again
+RERUN_TEST         = 1794915132 # Increase to force test suite to run test again
 
 RESET_DONE = False
 
