@@ -1,0 +1,26 @@
+Identity: use INBOX as the default Sent folder
+
+An identity without a Sent folder saves the sent messages in INBOX. The 
+"(Default)" choice in the identity settings also selects INBOX.
+The user can select a different Sent folder for each identity.
+
+--- a/app/libraries/RainLoop/Model/Identity.php
++++ b/app/libraries/RainLoop/Model/Identity.php
+@@ -20,7 +20,7 @@
+ 
+ 	private string $sSignature = '';
+ 
+-	private string $sSentFolder = '';
++	private string $sSentFolder = 'INBOX';
+ 
+ 	private bool $bSignatureInsertBefore = false;
+ 
+@@ -110,7 +110,7 @@
+ 			$this->sBcc = !empty($aData['Bcc']) ? $aData['Bcc'] : '';
+ 			$this->sSignature = !empty($aData['Signature']) ? $aData['Signature'] : '';
+ 			$this->bSignatureInsertBefore = !empty($aData['SignatureInsertBefore']);
+-			$this->sSentFolder = isset($aData['sentFolder']) ? $aData['sentFolder'] : '';
++			$this->sSentFolder = !empty($aData['sentFolder']) ? $aData['sentFolder'] : 'INBOX';
+ 			$this->pgpEncrypt = !empty($aData['pgpEncrypt']);
+ 			$this->pgpSign = !empty($aData['pgpSign']);
+ 			$this->smimeKey = new SensitiveString(isset($aData['smimeKey']) ? $aData['smimeKey'] : '');
