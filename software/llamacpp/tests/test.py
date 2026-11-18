@@ -24,14 +24,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from __future__ import unicode_literals
-
 import json
 import os
+
 import requests
-
 from slapos.testing.testcase import makeModuleSetUpAndTestCaseClass
-
 
 setUpModule, SlapOSInstanceTestCase = makeModuleSetUpAndTestCaseClass(
     os.path.abspath(
@@ -47,11 +44,40 @@ class TestLlamacpp(SlapOSInstanceTestCase):
 
   def setUp(self):
     self.connection_parameters = self.computer_partition.getConnectionParameterDict()
+    self.auth_headers = {
+        'Authorization': 'Bearer ' + self.connection_parameters['api-key']}
 
   def test_url_get(self):
-    print("*********************")
-    print("*********************")
-    print("*********************")
-    print(self.connection_parameters)
-    resp = requests.get(self.connection_parameters['backend-url'], verify=False)
+    resp = requests.get(
+        self.connection_parameters['backend-url'],
+        headers=self.auth_headers,
+        verify=False)
     self.assertEqual(requests.codes.ok, resp.status_code)
+
+  def test_models(self):
+    resp = requests.get(
+        f'{self.connection_parameters["backend-url"]}/v1/models',
+        verify=False)
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    model_list = resp.json()
+    self.assertEqual('list', model_list['object'])
+    self.assertTrue(model_list['data'])
+    self.assertIn(
+        self.connection_parameters['filename'], model_list['data'][0]['id'])
+
+  def test_tokenize_needs_token(self):
+    endpoint = f'{self.connection_parameters["backend-url"]}/tokenize'
+    payload = {'content': 'hello'}
+    with self.subTest('no api key'):
+      resp = requests.post(
+          endpoint, json=payload, verify=False,
+          headers={'Authorization': 'Bearer wrong'})
+      self.assertEqual(requests.codes.unauthorized, resp.status_code)
+    with self.subTest('wrong api key'):
+      resp = requests.post(endpoint, json=payload, verify=False)
+      self.assertEqual(requests.codes.unauthorized, resp.status_code)
+    with self.subTest('good api key'):
+      resp = requests.post(
+          endpoint, json=payload, headers=self.auth_headers, verify=False)
+      self.assertEqual(requests.codes.ok, resp.status_code)
+      self.assertTrue(resp.json()['tokens'])

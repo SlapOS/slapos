@@ -10,6 +10,7 @@ Injected variables (via Jinja):
 - model:           GGUF filename (e.g. Seed-OSS-36B-Instruct-IQ4_NL.gguf)
 - host, port, ngl, threads, ctx: runtime parameters
 - log_file:        path to log file for stdout/stderr redirection
+- api_key_file:    file containing the API key required by llama-server
 """
 
 import os
@@ -29,6 +30,7 @@ CACHE_TYPE_K     = "{{ cache_type_k }}"
 CACHE_TYPE_V     = "{{ cache_type_v }}"
 CTX              = "{{ ctx }}"
 LOG_FILE         = "{{ log_file }}"
+API_KEY_FILE     = "{{ api_key_file }}"
 EMBEDDING        = "{{ embedding }}"
 
 def ensure_parent_dir(path: str) -> None:
@@ -46,6 +48,9 @@ def main() -> None:
         fail(f"llama-server not absolute path: {LLAMA_SERVER_BIN}")
     if not os.path.exists(LLAMA_SERVER_BIN):
         fail(f"llama-server not found: {LLAMA_SERVER_BIN}")
+
+    if not os.path.exists(API_KEY_FILE) or os.path.getsize(API_KEY_FILE) <= 0:
+        fail(f"API key file not ready: {API_KEY_FILE}")
 
     model_path = os.path.join(MODELS_DIR, MODEL_FILENAME.split()[0])
     if not os.path.exists(model_path) or os.path.getsize(model_path) <= 0:
@@ -74,6 +79,7 @@ def main() -> None:
         "--mlock",
         "--no-warmup",
         "-fa", "on",
+        "--api-key-file", API_KEY_FILE,
     ]
 
     if int(EMBEDDING) == 1:

@@ -29,3 +29,7 @@ When you requesting the llama.cpp service, make sure you are using one of the so
 - software-cpu.cfg: Deploy and run llama.cpp purely on CPU
 - software-cuda.cfg: Deploy and run llama.cpp on Nvidia GPU
 - software-vulkan.cfg: Deploy and run llama.cpp on AMD Ryzen AI Max+ platform
+
+4. Authentication
+
+An API key is generated automatically and published as the `api-key` connection parameter. Clients must send `Authorization: Bearer <api-key>`.

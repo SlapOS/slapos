@@ -61,6 +61,17 @@ config-state = empty
 filename = huggingface-model-download.state
 config-filename = $${directory:log}/$${:filename}
 
+[llamacpp-api-key]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:etc}/.llamacpp-api-key
+bytes = 48
+
+[llamacpp-api-key-file]
+recipe = slapos.recipe.template
+inline = $${llamacpp-api-key:passwd}
+output = $${directory:etc}/llamacpp-api-key
+mode = 0600
+
 [llamacpp-server-run-script]
 recipe = slapos.recipe.template:jinja2
 url = {{ llamacpp_server_run_template }}
@@ -71,6 +82,7 @@ context =
     raw llama_server_bin ${llama-source:location}/build/bin/llama-server
     raw models_dir $${directory:models}
     raw log_file $${:log_filename}
+    raw api_key_file $${llamacpp-api-key-file:output}
     raw model {{ slapparameter_dict.get('hf_filename') }}
     raw host $${llamacpp-service:llamacpp-host}
     raw port {{ slapparameter_dict.get('port') }}
@@ -92,6 +104,7 @@ wrapper-path = $${directory:services}/llamacpp-service
 llamacpp-host = $${slap-configuration:ipv4-random}
 wait-for-files =
   $${directory:models}/{{ slapparameter_dict.get('hf_filename') }}
+  $${llamacpp-api-key-file:output}
 environment =
   LD_LIBRARY_PATH=/usr/local/cuda/lib64:%(LD_LIBRARY_PATH)s
   HF_HOME=$${directory:cache}
@@ -165,6 +178,7 @@ recipe = slapos.cookbook:publish
 url = $${request-frontend:connection-secure_access}
 ipv4_url =  http://$${llamacpp-service:llamacpp-host}:{{ slapparameter_dict.get('port') }}
 backend-url = $${request-frontend:config-url}
+api-key = $${llamacpp-api-key:passwd}
 repo = {{ slapparameter_dict.get('hf_repo_id') }}
 filename = {{ slapparameter_dict.get('hf_filename') }}
 model = $${:repo}:$${:filename}
