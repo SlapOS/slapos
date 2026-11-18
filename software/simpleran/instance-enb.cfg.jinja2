@@ -447,24 +447,6 @@ icell_dict     = {{ dumps(rulib.icell_dict) }}
 ipeer_dict     = {{ dumps(ipeer_dict) }}
 ipeercell_dict = {{ dumps(ipeercell_dict) }}
 
-[enb-dummy-config]
-<= config-base
-url = {{ enb_template }}
-output = ${directory:etc}/enb-dummy.cfg
-import-list =
-    rawfile slaplte.jinja2 {{ slaplte_template }}
-extra-context =
-    import json_module json
-    key iru_dict       :iru_dict
-    key icell_dict     :icell_dict
-    key ipeer_dict     :ipeer_dict
-    key ipeercell_dict :ipeercell_dict
-    key websocket_password websocket-password:passwd
-iru_dict       = {{ dumps(rulib.iru_dict) }}
-icell_dict     = {{ dumps(rulib.icell_dict) }}
-ipeer_dict     = {{ dumps(ipeer_dict) }}
-ipeercell_dict = {{ dumps(ipeercell_dict) }}
-
 [publish-enb-config]
 <= publish-config-base
 link-binary = ${enb-config:output}
