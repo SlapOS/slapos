@@ -477,10 +477,7 @@ class Recipe(object):
     is_valid = 'valid' if not instance_needs_reprocessing else 'invalid'
     if not is_new:
       # Preserve the existing timestamp when the row is observably
-      # identical. Without this, every reprocessed-invalid instance
-      # bumps its timestamp to now() every cycle, which trips the
-      # timestamp-based bang fallback in cdninstancenode's
-      # instanceNodePostProcessing and causes a bang loop.
+      # identical, so the timestamp changes only when the row changes.
       existing = self.requestinstance_db.getInstance(instance_reference)
       if (existing is not None
           and existing['json_parameters'] == params_json
@@ -544,20 +541,12 @@ class Recipe(object):
   def postDeployInstanceValidation(self, instance_reference, instance_data, publish_information):
     """
     Validate the instance after it has been deployed.
-
-    Returns a 4-tuple ``(is_valid, error_list, validation_info, needs_bang)``.
-    ``needs_bang`` lets the check request a bang() on the master partition
-    for the current cycle, regardless of comparison/timestamp signals. Set
-    it when the invalidity is expected to clear as the master rebuilds
-    (e.g. waiting for a downstream partition to publish connection
-    parameters) — otherwise leave it ``False`` to avoid a bang loop on
-    permanent failures.
     """
     if not publish_information:
       return False, [], {
           "message": "Your instance is valid the request has been transmitted to the master, waiting for its connection parameters"
-        }, False
-    return True, [], publish_information, False
+        }
+    return True, [], publish_information
 
   def _processInstance(self, instance_reference, instance_data, instance_hash, is_new=False):
     """
@@ -602,11 +591,9 @@ class Recipe(object):
 
     # Check Post Deployments Constraints
     if continue_processing:
-      is_valid, error_list, post_deploy_information, needs_bang = self.postDeployInstanceValidation(instance_reference, instance_data['parameters'], publish_information)
+      is_valid, error_list, post_deploy_information = self.postDeployInstanceValidation(instance_reference, instance_data['parameters'], publish_information)
       instance_needs_reprocessing = not is_valid
       publish_information = post_deploy_information
-      if needs_bang:
-        self._post_deploy_bang_requested = True
 
     if instance_needs_reprocessing:
       self.logger.debug(
@@ -668,14 +655,11 @@ class Recipe(object):
     Compare databases, make requests, and update requestinstance-db-path.
     """
     self.logger.info('Starting instance node processing')
-    # Reset the post-deploy bang signal at the start of every install() cycle.
-    self._post_deploy_bang_requested = False
     update_list = self._getUpdateList()
     stored_dict = self._getStoredDict()
 
     comparator = InstanceListComparator(update_list, stored_dict)
     comparison = comparator.compare()
-    self._comparison = comparison
 
     instance_map = {item['reference']: item for item in update_list}
     computed_hashes = comparator.update_dict

@@ -5,7 +5,6 @@ import hmac
 import hashlib
 import ipaddress
 import time
-import os
 if sys.version_info[0] == 2:
   from os import urandom
   token_hex = lambda n: urandom(n).encode('hex')
@@ -169,24 +168,20 @@ class DomainValidationDB(LocalDBAccessor):
 class Recipe(InstanceNodeRecipe):
   """
   RequestInstanceListRecipe with custom domain verification for CDN.
+
+  The recipe only audits the slaves. It keeps its results in the local
+  databases and never calls the master: no request, no bang, no error,
+  no connection parameters.
   """
 
   def __init__(self, buildout, name, options):
     super(Recipe, self).__init__(buildout, name, options)
     self.instance_retention_delay = int(options.get('instance-retention-delay', '7776000'))
-    self._already_retained_references = set()
     self.dns_entry_name = options.get('dns-entry-name', '_slapos-challenge')
     self.domain_validation_db = DomainValidationDB(self.options['domain-validation-db-path'])
     self.openssl_binary = options.get('openssl-binary')
     if not self.openssl_binary:
       self.logger.warning('openssl-binary option not provided, SSL certificate validation will be skipped')
-
-    # Timestamp used to detect new DB writes since last run (bang gating).
-    self.timestamp_path = options.get('timestamp-path')
-    if self.timestamp_path and os.path.exists(self.timestamp_path):
-      self.timestamp = os.path.getmtime(self.timestamp_path)
-    else:
-      self.timestamp = time.time()
 
     # Each comma-separated dns-nameserver entry may carry an explicit port
     # using `ip:port` (or `[ipv6]:port`); the default port is 53.
@@ -229,46 +224,6 @@ class Recipe(InstanceNodeRecipe):
       self.logger.info('Using custom nameserver(s) for DNS validation: %s', dns_nameserver)
     else:
       self.dns_nameservers = None
-
-    # Path to the master's rendered instance-publish-slave-information.cfg.
-    # When set, postDeployInstanceValidation rejects deployments whose
-    # [publish-<reference>] section is absent from the file and signals
-    # that a bang() is needed so the master rebuilds until it consumes
-    # the frontend's now-published slave-instance-information-list.
-    # Optional: when unset (or empty), the check is skipped (opt-in).
-    self.publish_slave_information_file = options.get(
-      'publish-slave-information-file') or None
-
-  def _check_slave_publish_state(self, instance_reference):
-    """
-    Check that the master's instance-publish-slave-information.cfg
-    already contains a ``[publish-<instance_reference>]`` section.
-
-    The file is rendered on the master partition by the
-    ``instance-publish-slave-information`` jinja2 template, which sources
-    each section from the frontend's
-    ``connection-slave-instance-information-list``. After a slave is added
-    to a converged cluster, the master rebuilds once with stale frontend
-    connection params (no section), then never re-rebuilds — leaving the
-    section permanently absent. This helper detects that gap.
-
-    Returns ``(is_valid, error_message, validation_info)`` following the
-    same shape as ``_verifyCustomDomainDNS``.
-    """
-    if not self.publish_slave_information_file:
-      return True, None, {}
-    try:
-      with open(self.publish_slave_information_file) as fh:
-        content = fh.read()
-    except IOError:
-      content = None
-    section = '[publish-%s]' % instance_reference
-    if content is not None and section in content:
-      return True, None, {}
-    message = (
-      'Cluster deployment in progress: slave publish entry not yet '
-      'rendered in master publish file')
-    return False, message, {'message': message}
 
   def _check_custom_domain(self, domain, token):
     """
@@ -396,7 +351,6 @@ class Recipe(InstanceNodeRecipe):
       disappeared_at = int(existing['timestamp'])
       if time.time() - disappeared_at >= self.instance_retention_delay:
         return True  # Retention expired → destroy
-      self._already_retained_references.add(instance_reference)
       return False  # Still within retention → keep
 
     # First disappearance — enter retention
@@ -797,24 +751,10 @@ class Recipe(InstanceNodeRecipe):
 
   def postDeployInstanceValidation(self, instance_reference, instance_data, publish_information):
     """
-    Verify the slave is in its desired post-deploy state. For CDN
-    instances this currently means: master's
-    ``instance-publish-slave-information.cfg`` already contains the
-    ``[publish-<reference>]`` section.
-
-    When the section is absent the validation reports invalid AND
-    signals ``needs_bang=True`` so the master is forced to re-render
-    until the frontend's published slave-instance-information-list has
-    propagated. The bang signal is the publish-file race's escape hatch:
-    without it, the row would settle as unchanged-invalid, the
-    timestamp-fallback in instanceNodePostProcessing would see no
-    change, and master would never wake up.
+    Override postDeployInstanceValidation to always return True.
+    For CDN instances, post-deploy validation always succeeds.
     """
-    is_valid, error_message, validation_info = self._check_slave_publish_state(
-      instance_reference)
-    if not is_valid:
-      return False, [error_message], validation_info, True
-    return True, [], publish_information, False
+    return True, [], publish_information
 
   def _publishConnectionParameters(self, instance_reference, conn_params):
     """
@@ -831,46 +771,12 @@ class Recipe(InstanceNodeRecipe):
     # No-op: don't publish connection parameters for successful CDN instances
     pass
 
-  def instanceNodePostProcessing(self):
+  def publishInstanceErrorInformation(self, instance_reference, publish_information, report_error=None):
     """
-    Post processing for the instance node.
-    Triggers bang when instances have changed so the master partition
-    re-reads validated-instance-db-path via slapconfiguration.instancenode.deferred.
+    Override to prevent calling setConnectionDict and error().
+    The validation result stays in the local database only.
     """
-    needs_bang = False
-    # Use the comparison result to detect added, modified, or removed
-    # instances. This avoids a same-second race between the slapgrid
-    # timestamp and the DB write timestamp, and also catches removed
-    # instances (which are deleted from the DB and invisible to a
-    # timestamp query).
-    comparison = getattr(self, '_comparison', None)
-    if comparison:
-      # Exclude instances that were already in retention (not first disappearance)
-      # from the removed set to avoid triggering bang every cycle during retention
-      effective_removed = set(comparison.get('removed', [])) - self._already_retained_references
-      if (comparison.get('added') or
-          comparison.get('modified') or
-          effective_removed):
-        needs_bang = True
-    if not needs_bang:
-      # Unchanged invalid instances that changed validity after
-      # reprocessing are only detectable via a timestamp comparison.
-      timestamp_int = int(self.timestamp)
-      changed_instance = self.requestinstance_db.db.fetchOne(
-        "SELECT * FROM instance WHERE CAST(timestamp AS INTEGER) > ?",
-        (timestamp_int,)
-      )
-      if changed_instance:
-        needs_bang = True
-    if not needs_bang and getattr(self, '_post_deploy_bang_requested', False):
-      # A postDeployInstanceValidation call asked for a bang even though
-      # the comparison/timestamp signals are silent. The publish-file
-      # race is the motivating case: an unchanged-invalid row whose
-      # state will only clear once the master rebuilds.
-      needs_bang = True
-    if needs_bang:
-      computer_partition = self._getComputerPartition()
-      computer_partition.bang(message='CDN instances have been deployed and instance need reprocessing')
+    pass
 
 def main():
   """
