@@ -235,37 +235,39 @@ class TestCDNRequestFullScenario(unittest.TestCase):
     with mock.patch('slapos.recipe.request.slapmodule.slap') as mock_slap:
       with mock.patch('dns.resolver.Resolver') as MockResolver:
         # Mock slap library for connection publishing (used by _publishConnectionParameters)
-        with mock.patch('slapos.recipe.instancenode.slap') as mock_slap_publish:
-          # Setup slap mock for RequestRecipe
-          slap_instance = mock.MagicMock()
-          request_instance = mock.MagicMock()
-          register_instance = mock.MagicMock()
-          requested_instance = mock.MagicMock()
-          # Configure getConnectionParameterDict to return a real dict instead of MagicMock
-          requested_instance.getConnectionParameterDict.return_value = {
-            "message": "Your instance is valid the request has been transmitted to the master"
-          }
-          request_instance.return_value = requested_instance
-          register_instance.request = request_instance
-          slap_instance.registerComputerPartition.return_value = register_instance
-          mock_slap.return_value = slap_instance
+        slap_publish_patch = mock.patch('slapos.recipe.instancenode.slap')
+        mock_slap_publish = slap_publish_patch.start()
+        self.addCleanup(slap_publish_patch.stop)
+        # Setup slap mock for RequestRecipe
+        slap_instance = mock.MagicMock()
+        request_instance = mock.MagicMock()
+        register_instance = mock.MagicMock()
+        requested_instance = mock.MagicMock()
+        # Configure getConnectionParameterDict to return a real dict instead of MagicMock
+        requested_instance.getConnectionParameterDict.return_value = {
+          "message": "Your instance is valid the request has been transmitted to the master"
+        }
+        request_instance.return_value = requested_instance
+        register_instance.request = request_instance
+        slap_instance.registerComputerPartition.return_value = register_instance
+        mock_slap.return_value = slap_instance
 
-          # Setup slap mock for connection publishing
-          slap_publish_instance = mock.MagicMock()
-          computer_partition = mock.MagicMock()
-          setConnectionDict = mock.MagicMock()
-          error_method = mock.MagicMock()
-          computer_partition.setConnectionDict = setConnectionDict
-          computer_partition.error = error_method
-          slap_publish_instance.registerComputerPartition.return_value = computer_partition
-          # slap.slap() is a function call, so we need to set return_value on the function
-          mock_slap_publish.slap.return_value = slap_publish_instance
-          # Also need to mock initializeConnection
-          slap_publish_instance.initializeConnection = mock.MagicMock()
+        # Setup slap mock for connection publishing
+        slap_publish_instance = mock.MagicMock()
+        computer_partition = mock.MagicMock()
+        setConnectionDict = mock.MagicMock()
+        error_method = mock.MagicMock()
+        computer_partition.setConnectionDict = setConnectionDict
+        computer_partition.error = error_method
+        slap_publish_instance.registerComputerPartition.return_value = computer_partition
+        # slap.slap() is a function call, so we need to set return_value on the function
+        mock_slap_publish.slap.return_value = slap_publish_instance
+        # Also need to mock initializeConnection
+        slap_publish_instance.initializeConnection = mock.MagicMock()
 
-          # Clear connection cache before test
-          from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
-          CONNECTION_CACHE.clear()
+        # Clear connection cache before test
+        from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
+        CONNECTION_CACHE.clear()
 
         # Setup DNS resolver mock
         mock_resolver_instance = MockResolver.return_value
@@ -414,66 +416,22 @@ class TestCDNRequestFullScenario(unittest.TestCase):
         # Verify setConnectionDict is never called for CDN instances
         setConnectionDict.assert_not_called()
 
-        # Verify error() is still called for instances with validation errors
-        # Helper to extract error calls for an instance from error() calls
-        def get_error_calls(instance_ref):
-          error_calls = []
-          for call in error_method.call_args_list:
-            # call[0] is tuple of positional args, call[1] is dict of keyword args
-            error_info = call[0][0] if len(call[0]) > 0 else {}
-            slave_ref = call[1].get('slave_reference')
-            if slave_ref == instance_ref:
-              error_calls.append(error_info)
-          return error_calls
-
-        # 1. new-instance: DNS validation failed - error() should be called
-        new_error_calls = get_error_calls('new-instance')
-        if len(new_error_calls) > 0:
-          self.assertEqual(len(new_error_calls), 1)
-          self.assertIn('txt_record', new_error_calls[0])
-          self.assertIn('txt_value', new_error_calls[0])
-          self.assertIn('message', new_error_calls[0])
-          self.assertEqual(new_error_calls[0]['txt_record'], '_slapos-challenge.new.example.com')
-
-        # 2. invalid-no-change: unchanged, error() should not be called
-        invalid_error_calls = get_error_calls('invalid-no-change')
-        self.assertEqual(len(invalid_error_calls), 0)
-
-        # 3. valid-no-change: success, error() should not be called
-        valid_no_change_error_calls = get_error_calls('valid-no-change')
-        self.assertEqual(len(valid_no_change_error_calls), 0)
-
-        # 4. valid-changed: success, error() should not be called
-        valid_changed_error_calls = get_error_calls('valid-changed')
-        self.assertEqual(len(valid_changed_error_calls), 0)
-
-        # 6. dns-pass: success, error() should not be called
-        dns_pass_error_calls = get_error_calls('dns-pass')
-        self.assertEqual(len(dns_pass_error_calls), 0)
-
-        # 7. dns-fail: DNS validation failed - error() should be called
-        dns_fail_error_calls = get_error_calls('dns-fail')
-        if len(dns_fail_error_calls) > 0:
-          self.assertEqual(len(dns_fail_error_calls), 1)
-          self.assertIn('txt_record', dns_fail_error_calls[0])
-          self.assertIn('txt_value', dns_fail_error_calls[0])
-          self.assertIn('message', dns_fail_error_calls[0])
-          self.assertEqual(dns_fail_error_calls[0]['txt_record'], '_slapos-challenge.dnsfail.example.com')
+        # Verify nothing is sent to the master: no call on the computer
+        # partition.
+        error_method.assert_not_called()
+        self.assertEqual(computer_partition.method_calls, [])
 
 
-class TestBangStability(unittest.TestCase):
+class TestNoMasterCall(unittest.TestCase):
   """
-  Regression tests for the bang() loop that happens when an unchanged
-  invalid instance has its DB timestamp bumped on every processing cycle.
-  instanceNodePostProcessing's timestamp-fallback query then fires bang()
-  on every run, causing slapgrid to reprocess the root partition in a loop.
+  The recipe only audits the slaves. A change of the validation result
+  of a slave must not cause any call to the master partition.
   """
 
   def setUp(self):
     self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
     self.instance_db_fd, self.instance_db_path = tempfile.mkstemp()
     self.requestinstance_db_fd, self.requestinstance_db_path = tempfile.mkstemp()
-    self.timestamp_file_fd, self.timestamp_file_path = tempfile.mkstemp()
 
     self.buildout = {
       "buildout": {},
@@ -488,7 +446,6 @@ class TestBangStability(unittest.TestCase):
       'domain-validation-db-path': self.domainvalidation_db_path,
       'instance-db-path': self.instance_db_path,
       'requestinstance-db-path': self.requestinstance_db_path,
-      'timestamp-path': self.timestamp_file_path,
       'server-url': 'http://test.example.com',
       'computer-id': 'test-computer',
       'partition-id': 'test-partition',
@@ -504,7 +461,6 @@ class TestBangStability(unittest.TestCase):
       (self.domainvalidation_db_fd, self.domainvalidation_db_path),
       (self.instance_db_fd, self.instance_db_path),
       (self.requestinstance_db_fd, self.requestinstance_db_path),
-      (self.timestamp_file_fd, self.timestamp_file_path),
     ):
       os.close(fd)
       if os.path.exists(path):
@@ -527,7 +483,7 @@ class TestBangStability(unittest.TestCase):
   def _runInstall(self, dns_returns_valid_token):
     """
     Run one Recipe.install() cycle with mocked slap and DNS.
-    Returns the computer_partition mock so the caller can inspect bang calls.
+    Fail if the recipe makes any call on the master partition.
     """
     from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
     CONNECTION_CACHE.clear()
@@ -569,27 +525,24 @@ class TestBangStability(unittest.TestCase):
       recipe = cdninstancenode.Recipe(
         self.buildout, 'test', self.options)
       recipe.install()
-      return computer_partition
+      # The recipe never opens a connection to the master.
+      mock_slap.slap.assert_not_called()
+      self.assertEqual(computer_partition.method_calls, [])
 
-  def _refreshTimestampFile(self, prev_write_ts):
+  def _waitNextSecond(self, prev_write_ts):
     """
-    Simulate slapgrid touching `timestamp-path` after handling a bang():
-    set mtime to the same integer second as `prev_write_ts`, then sleep
-    until the wall clock is strictly in a later integer second. This
-    guarantees the next run's `str(int(time.time()))` is > `self.timestamp`
-    (which uses integer-second comparison in the fallback query).
+    Sleep until the wall clock is in a later integer second than
+    `prev_write_ts`, so a timestamp bump of the row is visible.
     """
     prev_int = int(prev_write_ts)
-    os.utime(self.timestamp_file_path, (float(prev_int), float(prev_int)))
     to_sleep = (prev_int + 1) - time.time() + 0.05
     if to_sleep > 0:
       time.sleep(to_sleep)
 
-  def test_bang_not_called_for_unchanged_invalid_instance(self):
+  def test_unchanged_invalid_instance(self):
     """
-    Repeated runs against an unchanged invalid instance must not trigger bang().
-    Reproduces the loop where every cycle bumped the DB timestamp past
-    `self.timestamp` and retriggered instanceNodePostProcessing's fallback.
+    Repeated runs against an unchanged invalid instance must not call the
+    master and must not bump the row timestamp.
     """
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
@@ -598,12 +551,7 @@ class TestBangStability(unittest.TestCase):
       instance_db, 'inst1',
       {'custom_domain': 'dnsfail.example.com', 'url': 'http://dnsfail.example.com'})
 
-    # T_file well in the past so run 1 writes a newer row timestamp
-    old_ts = time.time() - 100
-    os.utime(self.timestamp_file_path, (old_ts, old_ts))
-
-    cp1 = self._runInstall(dns_returns_valid_token=False)
-    self.assertEqual(cp1.bang.call_count, 1)
+    self._runInstall(dns_returns_valid_token=False)
 
     row1 = requestinstance_db.getInstance('inst1')
     self.assertIsNotNone(row1)
@@ -611,33 +559,27 @@ class TestBangStability(unittest.TestCase):
     ts_after_run1 = row1['timestamp']
     err_after_run1 = row1['json_error']
 
-    self._refreshTimestampFile(ts_after_run1)
+    self._waitNextSecond(ts_after_run1)
 
-    # Run 2: same unchanged invalid instance → no bang, no timestamp bump
-    cp2 = self._runInstall(dns_returns_valid_token=False)
-    self.assertEqual(cp2.bang.call_count, 0)
+    # Run 2: same unchanged invalid instance → no timestamp bump
+    self._runInstall(dns_returns_valid_token=False)
     row2 = requestinstance_db.getInstance('inst1')
     self.assertEqual(row2['timestamp'], ts_after_run1)
     self.assertEqual(row2['json_error'], err_after_run1)
 
-    self._refreshTimestampFile(ts_after_run1)
+    self._waitNextSecond(ts_after_run1)
 
-    # Run 3: still unchanged → still no bang, still no timestamp bump
-    cp3 = self._runInstall(dns_returns_valid_token=False)
-    self.assertEqual(cp3.bang.call_count, 0)
+    # Run 3: still unchanged → still no timestamp bump
+    self._runInstall(dns_returns_valid_token=False)
     row3 = requestinstance_db.getInstance('inst1')
     self.assertEqual(row3['timestamp'], ts_after_run1)
     self.assertEqual(row3['json_error'], err_after_run1)
 
-  def test_bang_called_when_invalid_instance_becomes_valid(self):
+  def test_invalid_instance_becomes_valid(self):
     """
-    The fallback in instanceNodePostProcessing exists to catch validity
-    flips for instances whose parameters didn't change (hash unchanged).
     When an unchanged invalid instance becomes valid (e.g. the DNS TXT
-    record was finally published), bang() must fire so the master
-    reprocesses `validated-instance-db-path` and picks up the new valid row.
-    Regression guard that the no-op detection in updateInstanceInDB does
-    not mask real state transitions.
+    record was finally published), the row is updated and the master is
+    not called.
     """
     instance_db = HostedInstanceLocalDB(self.instance_db_path)
     requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
@@ -646,342 +588,23 @@ class TestBangStability(unittest.TestCase):
       instance_db, 'inst1',
       {'custom_domain': 'flip.example.com', 'url': 'http://flip.example.com'})
 
-    old_ts = time.time() - 100
-    os.utime(self.timestamp_file_path, (old_ts, old_ts))
-
     # Run 1: DNS fails → invalid.
-    cp1 = self._runInstall(dns_returns_valid_token=False)
-    self.assertEqual(cp1.bang.call_count, 1)
+    self._runInstall(dns_returns_valid_token=False)
     row1 = requestinstance_db.getInstance('inst1')
     self.assertNotEqual(row1['valid_parameter'], 'valid')
 
-    self._refreshTimestampFile(row1['timestamp'])
+    self._waitNextSecond(row1['timestamp'])
 
-    # Run 2: DNS now succeeds → invalid→valid. Hash unchanged, so only
-    # the timestamp fallback can detect this. bang must fire.
-    cp2 = self._runInstall(dns_returns_valid_token=True)
+    # Run 2: DNS now succeeds → invalid→valid.
+    self._runInstall(dns_returns_valid_token=True)
     row2 = requestinstance_db.getInstance('inst1')
     self.assertEqual(row2['valid_parameter'], 'valid')
-    self.assertEqual(cp2.bang.call_count, 1)
-
-
-class TestPublishFileSync(unittest.TestCase):
-  """
-  Tests for the master publish-file race documented in
-  test-rapid-cdn-instancenode.md (2026-05-12).
-
-  When a slave is added to an already-converged cluster, slapproxy bumps
-  master's timestamp once, master rebuilds with the frontend's stale
-  connection-slave-instance-information-list, then nothing wakes master
-  up again after the frontend builds and publishes. The slave's
-  [publish-<reference>] section never appears in master's
-  instance-publish-slave-information.cfg.
-
-  Fix: postDeployInstanceValidation now reads the publish file via a
-  dedicated helper _check_slave_publish_state. While the slave's
-  section is absent the helper reports invalid and postDeploy signals
-  needs_bang=True. instancenode.Recipe._processInstance captures the
-  signal into self._post_deploy_bang_requested, and
-  Recipe.instanceNodePostProcessing uses it as an extra
-  bang condition. Master then keeps rebuilding until the publish file
-  catches up.
-  """
-
-  def setUp(self):
-    self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
-    self.instance_db_fd, self.instance_db_path = tempfile.mkstemp()
-    self.requestinstance_db_fd, self.requestinstance_db_path = tempfile.mkstemp()
-    self.timestamp_file_fd, self.timestamp_file_path = tempfile.mkstemp()
-    self.publish_file_fd, self.publish_file_path = tempfile.mkstemp()
-
-    self.buildout = {
-      "buildout": {},
-      "slap-connection": {
-        "computer-id": "test-computer",
-        "partition-id": "test-partition",
-        "server-url": "http://test.example.com",
-        "requested": "started",
-      },
-    }
-    self.options = {
-      'domain-validation-db-path': self.domainvalidation_db_path,
-      'instance-db-path': self.instance_db_path,
-      'requestinstance-db-path': self.requestinstance_db_path,
-      'timestamp-path': self.timestamp_file_path,
-      'publish-slave-information-file': self.publish_file_path,
-      'server-url': 'http://test.example.com',
-      'computer-id': 'test-computer',
-      'partition-id': 'test-partition',
-      'software-url': 'http://test.example.com/software',
-      'software-type': 'default',
-      'verification-secret': 'test-secret',
-      'openssl-binary': 'openssl',
-      'instance-retention-delay': '0',
-    }
-
-  def tearDown(self):
-    for fd, path in (
-      (self.domainvalidation_db_fd, self.domainvalidation_db_path),
-      (self.instance_db_fd, self.instance_db_path),
-      (self.requestinstance_db_fd, self.requestinstance_db_path),
-      (self.timestamp_file_fd, self.timestamp_file_path),
-      (self.publish_file_fd, self.publish_file_path),
-    ):
-      try:
-        os.close(fd)
-      except OSError:
-        pass
-      if os.path.exists(path):
-        os.unlink(path)
-
-  def _seedInstance(self, instance_db, reference, params, valid='valid'):
-    instance_hash = hashlib.sha256(
-      json.dumps(params, sort_keys=True).encode('utf-8')
-    ).hexdigest()
-    instance_db.insertInstanceList([(
-      reference,
-      json.dumps(params, sort_keys=True),
-      '{}',
-      instance_hash,
-      str(int(time.time())),
-      valid,
-    )])
-    return instance_hash
-
-  def _makeRecipe(self, options_override=None):
-    """
-    Construct a Recipe instance directly for helper-level
-    tests, without running install(). DNS resolver is patched so the
-    constructor does not touch system DNS.
-    """
-    options = dict(self.options)
-    if options_override is not None:
-      for k, v in options_override.items():
-        if v is None:
-          options.pop(k, None)
-        else:
-          options[k] = v
-    with mock.patch('dns.resolver.Resolver'):
-      return cdninstancenode.Recipe(
-        self.buildout, 'test', options)
-
-  def _runInstall(self, dns_returns_valid_token, omit_publish_file_option=False):
-    """
-    Run one Recipe.install() cycle with mocked slap and DNS.
-    Returns the computer_partition mock so the caller can inspect bang calls.
-    """
-    from slapos.recipe.librecipe.genericslap import CONNECTION_CACHE
-    CONNECTION_CACHE.clear()
-
-    domainvalidation_db_path = self.domainvalidation_db_path
-    options = dict(self.options)
-    if omit_publish_file_option:
-      options.pop('publish-slave-information-file', None)
-
-    with mock.patch('slapos.recipe.instancenode.slap') as mock_slap, \
-         mock.patch('dns.resolver.Resolver') as MockResolver:
-      slap_instance = mock.MagicMock()
-      computer_partition = mock.MagicMock()
-      slap_instance.registerComputerPartition.return_value = computer_partition
-      mock_slap.slap.return_value = slap_instance
-
-      mock_resolver_instance = MockResolver.return_value
-      mock_answer = mock.MagicMock()
-      mock_rdata = mock.MagicMock()
-
-      def get_dns_response(challenge_domain, *args, **kwargs):
-        if challenge_domain.startswith('_slapos-challenge.'):
-          domain = challenge_domain[len('_slapos-challenge.'):]
-        else:
-          parts = challenge_domain.split('.', 1)
-          domain = parts[1] if len(parts) > 1 else challenge_domain
-        if dns_returns_valid_token:
-          db = cdninstancenode.DomainValidationDB(domainvalidation_db_path)
-          entries = db.fetchAll(
-            "SELECT token FROM domain_validation WHERE domain=?", (domain,))
-          if entries:
-            mock_rdata.strings = [entries[0]['token'].encode('utf-8')]
-          else:
-            mock_rdata.strings = [b'placeholder']
-        else:
-          mock_rdata.strings = [b'wrong-token']
-        mock_answer.__iter__.return_value = iter([mock_rdata])
-        return mock_answer
-
-      mock_resolver_instance.resolve.side_effect = get_dns_response
-
-      recipe = cdninstancenode.Recipe(
-        self.buildout, 'test', options)
-      recipe.install()
-      return computer_partition
-
-  def _refreshTimestampFile(self, prev_write_ts):
-    prev_int = int(prev_write_ts)
-    os.utime(self.timestamp_file_path, (float(prev_int), float(prev_int)))
-    to_sleep = (prev_int + 1) - time.time() + 0.05
-    if to_sleep > 0:
-      time.sleep(to_sleep)
-
-  # ----- helper-level tests on _check_slave_publish_state -----
-
-  def test_check_slave_publish_state_section_present(self):
-    with open(self.publish_file_path, 'w') as fh:
-      fh.write('[publish-_inst1]\nrecipe = noop\n')
-    recipe = self._makeRecipe()
-    is_valid, error, info = recipe._check_slave_publish_state('_inst1')
-    self.assertTrue(is_valid)
-    self.assertIsNone(error)
-    self.assertEqual(info, {})
-
-  def test_check_slave_publish_state_section_absent(self):
-    with open(self.publish_file_path, 'w') as fh:
-      fh.write('[publish-_other]\nrecipe = noop\n')
-    recipe = self._makeRecipe()
-    is_valid, error, info = recipe._check_slave_publish_state('_inst1')
-    self.assertFalse(is_valid)
-    self.assertIsNotNone(error)
-    self.assertIn('message', info)
-
-  def test_check_slave_publish_state_missing_file(self):
-    os.unlink(self.publish_file_path)
-    recipe = self._makeRecipe()
-    is_valid, error, info = recipe._check_slave_publish_state('_inst1')
-    self.assertFalse(is_valid)
-    self.assertIsNotNone(error)
-
-  def test_check_slave_publish_state_option_unset(self):
-    recipe = self._makeRecipe(
-      options_override={'publish-slave-information-file': None})
-    is_valid, error, info = recipe._check_slave_publish_state('_inst1')
-    self.assertTrue(is_valid)
-    self.assertIsNone(error)
-    self.assertEqual(info, {})
-
-  # ----- install-loop tests -----
-
-  def test_install_marks_invalid_when_publish_section_missing(self):
-    """
-    First install with publish file lacking the slave's section: row is
-    inserted as invalid; bang fires once (via comparison['added']).
-    """
-    instance_db = HostedInstanceLocalDB(self.instance_db_path)
-    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
-    self._seedInstance(
-      instance_db, 'inst1',
-      {'custom_domain': 'pub.example.com', 'url': 'http://pub.example.com'})
-
-    old_ts = time.time() - 100
-    os.utime(self.timestamp_file_path, (old_ts, old_ts))
-
-    cp = self._runInstall(dns_returns_valid_token=True)
-    self.assertEqual(cp.bang.call_count, 1)
-    row = requestinstance_db.getInstance('inst1')
-    self.assertIsNotNone(row)
-    self.assertNotEqual(row['valid_parameter'], 'valid')
-
-  def test_install_marks_valid_when_publish_section_present(self):
-    """
-    With publish file already containing the slave's section, row is
-    inserted as valid.
-    """
-    with open(self.publish_file_path, 'w') as fh:
-      fh.write('[publish-inst1]\nrecipe = noop\n')
-
-    instance_db = HostedInstanceLocalDB(self.instance_db_path)
-    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
-    self._seedInstance(
-      instance_db, 'inst1',
-      {'custom_domain': 'pub.example.com', 'url': 'http://pub.example.com'})
-
-    old_ts = time.time() - 100
-    os.utime(self.timestamp_file_path, (old_ts, old_ts))
-
-    cp = self._runInstall(dns_returns_valid_token=True)
-    self.assertEqual(cp.bang.call_count, 1)
-    row = requestinstance_db.getInstance('inst1')
-    self.assertEqual(row['valid_parameter'], 'valid')
-
-  def test_bang_keeps_firing_while_publish_pending(self):
-    """
-    On unchanged-invalid rows where postDeploy still reports
-    needs_bang=True, bang must keep firing each cycle. Otherwise master
-    never rebuilds and the publish file never catches up. Quiesces only
-    once the publish file is consistent.
-    """
-    instance_db = HostedInstanceLocalDB(self.instance_db_path)
-    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
-    self._seedInstance(
-      instance_db, 'inst1',
-      {'custom_domain': 'pub.example.com', 'url': 'http://pub.example.com'})
-
-    old_ts = time.time() - 100
-    os.utime(self.timestamp_file_path, (old_ts, old_ts))
-
-    # Run 1: empty publish file → invalid; bang from comparison['added']
-    cp1 = self._runInstall(dns_returns_valid_token=True)
-    self.assertEqual(cp1.bang.call_count, 1)
-    row1 = requestinstance_db.getInstance('inst1')
-    self.assertNotEqual(row1['valid_parameter'], 'valid')
-
-    self._refreshTimestampFile(row1['timestamp'])
-
-    # Run 2: publish file still empty, row unchanged-invalid. Bang must
-    # still fire — via the new _post_deploy_bang_requested path.
-    cp2 = self._runInstall(dns_returns_valid_token=True)
-    self.assertEqual(cp2.bang.call_count, 1)
-    row2 = requestinstance_db.getInstance('inst1')
-    self.assertNotEqual(row2['valid_parameter'], 'valid')
-
-    self._refreshTimestampFile(row2['timestamp'])
-
-    # Run 3: publish file now consistent → flip to valid → bang from
-    # valid_parameter transition.
-    with open(self.publish_file_path, 'w') as fh:
-      fh.write('[publish-inst1]\nrecipe = noop\n')
-    cp3 = self._runInstall(dns_returns_valid_token=True)
-    self.assertEqual(cp3.bang.call_count, 1)
-    row3 = requestinstance_db.getInstance('inst1')
-    self.assertEqual(row3['valid_parameter'], 'valid')
-
-    self._refreshTimestampFile(row3['timestamp'])
-
-    # Run 4: nothing changed → quiescence, no more bangs.
-    cp4 = self._runInstall(dns_returns_valid_token=True)
-    self.assertEqual(cp4.bang.call_count, 0)
-
-  def test_publish_file_option_unset_keeps_old_bang_stability(self):
-    """
-    When publish-slave-information-file option is unset, the new bang
-    condition must not fire. DNS-failure invalidity must NOT trip the
-    publish-pending path. Mirrors TestBangStability.test_bang_not_called_for_unchanged_invalid_instance.
-    """
-    instance_db = HostedInstanceLocalDB(self.instance_db_path)
-    requestinstance_db = HostedInstanceLocalDB(self.requestinstance_db_path)
-    self._seedInstance(
-      instance_db, 'inst1',
-      {'custom_domain': 'dnsfail.example.com', 'url': 'http://dnsfail.example.com'})
-
-    old_ts = time.time() - 100
-    os.utime(self.timestamp_file_path, (old_ts, old_ts))
-
-    cp1 = self._runInstall(
-      dns_returns_valid_token=False, omit_publish_file_option=True)
-    self.assertEqual(cp1.bang.call_count, 1)
-    row1 = requestinstance_db.getInstance('inst1')
-    self.assertNotEqual(row1['valid_parameter'], 'valid')
-
-    self._refreshTimestampFile(row1['timestamp'])
-
-    cp2 = self._runInstall(
-      dns_returns_valid_token=False, omit_publish_file_option=True)
-    self.assertEqual(cp2.bang.call_count, 0)
 
 
 class TestRecipe(unittest.TestCase):
 
   def setUp(self):
     self.domainvalidation_db_fd, self.domainvalidation_db_path = tempfile.mkstemp()
-    self.timestamp_file_fd, self.timestamp_file_path = tempfile.mkstemp()
 
     self.buildout = {
       "buildout": {},
@@ -1024,9 +647,6 @@ class TestRecipe(unittest.TestCase):
     os.close(self.domainvalidation_db_fd)
     if os.path.exists(self.domainvalidation_db_path):
       os.unlink(self.domainvalidation_db_path)
-    os.close(self.timestamp_file_fd)
-    if os.path.exists(self.timestamp_file_path):
-      os.unlink(self.timestamp_file_path)
 
   def test_validate_no_custom_domain(self):
     """Test validation when custom_domain is not provided"""
@@ -2016,185 +1636,20 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     # Verify each resolver has its own cache
     self.assertIsNot(recipe1.dns_resolver.cache, recipe2.dns_resolver.cache)
 
-  def test_timestamp_path_not_provided(self):
-    """Test that timestamp defaults to current time when timestamp-path is not provided"""
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
-    # timestamp should be set to current time (approximately)
-    self.assertIsNotNone(recipe.timestamp)
-    self.assertIsInstance(recipe.timestamp, float)
-    # Should be close to current time (within 1 second)
-    self.assertAlmostEqual(recipe.timestamp, time.time(), delta=1.0)
-
-  def test_timestamp_path_file_exists(self):
-    """Test that timestamp is read from file when timestamp-path is provided and file exists"""
-    # Create a timestamp file with a specific modification time
-    test_timestamp = 1234567890.0
-    os.utime(self.timestamp_file_path, (test_timestamp, test_timestamp))
-    
-    self.options['timestamp-path'] = self.timestamp_file_path
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
-    
-    # timestamp should be read from file modification time
-    self.assertEqual(recipe.timestamp, test_timestamp)
-
-  def test_timestamp_path_file_not_exists(self):
-    """Test that timestamp defaults to current time when file doesn't exist"""
-    non_existent_path = '/nonexistent/path/timestamp'
-    self.options['timestamp-path'] = non_existent_path
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
-    
-    # timestamp should be set to current time (approximately)
-    self.assertIsNotNone(recipe.timestamp)
-    self.assertIsInstance(recipe.timestamp, float)
-    # Should be close to current time (within 1 second)
-    self.assertAlmostEqual(recipe.timestamp, time.time(), delta=1.0)
-
-  def test_instanceNodePostProcessing_no_changes(self):
-    """Test no bang when no comparison set and no DB matches"""
-    mock_db = mock.MagicMock()
-    mock_db.db.fetchOne.return_value = None
-    self.mock_requestinstance_db.db = mock_db.db
-
+  def test_instanceNodePostProcessing_no_master_call(self):
+    """Test that instanceNodePostProcessing does not call the master"""
     recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     recipe.requestinstance_db = self.mock_requestinstance_db
-    recipe.timestamp = time.time()
 
-    mock_computer_partition = mock.MagicMock()
-    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
+    with mock.patch.object(recipe, '_getComputerPartition') as get_partition:
       recipe.instanceNodePostProcessing()
 
-    mock_computer_partition.bang.assert_not_called()
-
-  def test_instanceNodePostProcessing_added_instance(self):
-    """Test bang when comparison shows added instances"""
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
-    recipe.requestinstance_db = self.mock_requestinstance_db
-    recipe.timestamp = time.time()
-    recipe._comparison = {'added': ['inst1'], 'modified': [], 'removed': []}
-
-    mock_computer_partition = mock.MagicMock()
-    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
-      recipe.instanceNodePostProcessing()
-
-    mock_computer_partition.bang.assert_called_once_with(
-      message='CDN instances have been deployed and instance need reprocessing')
-
-  def test_instanceNodePostProcessing_modified_instance(self):
-    """Test bang when comparison shows modified instances"""
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
-    recipe.requestinstance_db = self.mock_requestinstance_db
-    recipe.timestamp = time.time()
-    recipe._comparison = {'added': [], 'modified': ['inst1'], 'removed': []}
-
-    mock_computer_partition = mock.MagicMock()
-    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
-      recipe.instanceNodePostProcessing()
-
-    mock_computer_partition.bang.assert_called_once_with(
-      message='CDN instances have been deployed and instance need reprocessing')
-
-  def test_instanceNodePostProcessing_removed_instance(self):
-    """Test bang when comparison shows removed instances (deleted from DB)"""
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
-    recipe.requestinstance_db = self.mock_requestinstance_db
-    recipe.timestamp = time.time()
-    recipe._comparison = {'added': [], 'modified': [], 'removed': ['inst1']}
-
-    mock_computer_partition = mock.MagicMock()
-    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
-      recipe.instanceNodePostProcessing()
-
-    mock_computer_partition.bang.assert_called_once_with(
-      message='CDN instances have been deployed and instance need reprocessing')
-
-  def test_instanceNodePostProcessing_no_comparison_but_newer_timestamp(self):
-    """Test bang via timestamp fallback when no comparison is set"""
-    mock_db = mock.MagicMock()
-    mock_db.db.fetchOne.return_value = {
-      'reference': 'test-instance',
-      'timestamp': str(int(time.time()) + 100),
-    }
-    self.mock_requestinstance_db.db = mock_db.db
-
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
-    recipe.requestinstance_db = self.mock_requestinstance_db
-    recipe.timestamp = time.time() - 200
-
-    mock_computer_partition = mock.MagicMock()
-    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
-      recipe.instanceNodePostProcessing()
-
-    mock_computer_partition.bang.assert_called_once_with(
-      message='CDN instances have been deployed and instance need reprocessing')
-
-  def test_instanceNodePostProcessing_no_comparison_older_timestamp(self):
-    """Test no bang when no comparison and DB has older timestamp"""
-    mock_db = mock.MagicMock()
-    mock_db.db.fetchOne.return_value = None
-    self.mock_requestinstance_db.db = mock_db.db
-
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
-    recipe.requestinstance_db = self.mock_requestinstance_db
-    recipe.timestamp = time.time()
-
-    mock_computer_partition = mock.MagicMock()
-    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
-      recipe.instanceNodePostProcessing()
-
-    mock_computer_partition.bang.assert_not_called()
-
-  def test_instanceNodePostProcessing_empty_comparison_newer_timestamp(self):
-    """Test bang via timestamp fallback when comparison has no changes"""
-    mock_db = mock.MagicMock()
-    mock_db.db.fetchOne.return_value = {
-      'reference': 'test-instance',
-      'timestamp': str(int(time.time()) + 100),
-    }
-    self.mock_requestinstance_db.db = mock_db.db
-
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
-    recipe.requestinstance_db = self.mock_requestinstance_db
-    recipe.timestamp = time.time() - 200
-    recipe._comparison = {'added': [], 'modified': [], 'removed': []}
-
-    mock_computer_partition = mock.MagicMock()
-    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
-      recipe.instanceNodePostProcessing()
-
-    mock_computer_partition.bang.assert_called_once_with(
-      message='CDN instances have been deployed and instance need reprocessing')
-
-  def test_instanceNodePostProcessing_timestamp_query_no_valid_parameter_filter(self):
-    """Test that the fallback SQL query does not filter on valid_parameter"""
-    mock_db = mock.MagicMock()
-    mock_db.db.fetchOne.return_value = None
-    self.mock_requestinstance_db.db = mock_db.db
-
-    recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
-    recipe.requestinstance_db = self.mock_requestinstance_db
-    recipe.timestamp = time.time()
-
-    mock_computer_partition = mock.MagicMock()
-    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
-      recipe.instanceNodePostProcessing()
-
-    # Verify the SQL query was called
-    mock_db.db.fetchOne.assert_called_once()
-    call_args = mock_db.db.fetchOne.call_args
-    sql_query = call_args[0][0]
-    query_params = call_args[0][1]
-
-    # Query should check timestamp but NOT filter on valid_parameter
-    self.assertIn('CAST(timestamp AS INTEGER) > ?', sql_query)
-    self.assertNotIn('valid_parameter', sql_query)
-    self.assertEqual(len(query_params), 1)
-    self.assertEqual(query_params[0], int(recipe.timestamp))
+    get_partition.assert_not_called()
 
   def test_instanceNodePostProcessing_called_during_install(self):
     """Test that instanceNodePostProcessing is called during install()"""
     self.mock_instance_db.getInstanceList.return_value = []
     self.mock_requestinstance_db.getInstanceList.return_value = []
-    self.mock_requestinstance_db.db.fetchOne.return_value = None
 
     recipe = cdninstancenode.Recipe(self.buildout, 'test', self.options)
     recipe.instance_db = self.mock_instance_db
@@ -2204,12 +1659,13 @@ MIIDXTCCAkWgAwIBAgIJAKL2Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z5Z
     with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_computer_partition):
       with mock.patch.object(recipe, '_getUpdateList', return_value=[]):
         with mock.patch.object(recipe, '_getStoredDict', return_value={}):
-          recipe.install()
+          with mock.patch.object(
+              recipe, 'instanceNodePostProcessing',
+              wraps=recipe.instanceNodePostProcessing) as post_processing:
+            recipe.install()
 
-    # Verify _comparison was set during install
-    self.assertIsInstance(recipe._comparison, dict)
-    # Verify fetchOne was called (from instanceNodePostProcessing fallback)
-    self.mock_requestinstance_db.db.fetchOne.assert_called()
+    post_processing.assert_called_once_with()
+    self.assertEqual(mock_computer_partition.method_calls, [])
 
 
 class TestDomainValidationDB(unittest.TestCase):
@@ -2498,8 +1954,6 @@ class TestInstanceRetentionDelay(unittest.TestCase):
 
     result = recipe.shouldDestroyInstance('inst1')
     self.assertFalse(result)
-    # Should be tracked as already retained
-    self.assertIn('inst1', recipe._already_retained_references)
 
   def test_instance_returns_no_conflict(self):
     """Test that a returning retained instance with no domain conflict is restored."""
@@ -2576,57 +2030,3 @@ class TestInstanceRetentionDelay(unittest.TestCase):
       'instA', {'custom_domain': 'example.com'})
     self.assertFalse(is_valid)
     self.assertIn('can not be validated', info.get('message', ''))
-
-  def test_bang_only_on_first_disappearance(self):
-    """Test that bang fires on first disappearance but not on subsequent cycles."""
-    recipe = self._makeRecipe(retention_delay=604800)
-
-    # First disappearance: instance is valid, enters retention
-    recipe.requestinstance_db.insertInstanceList([(
-      'inst1', '{}', '{}', 'hash1', '1000000000', 'valid'
-    )])
-
-    # First call: not in _already_retained_references
-    recipe.shouldDestroyInstance('inst1')
-    self.assertNotIn('inst1', recipe._already_retained_references)
-
-    # Simulate second cycle: instance is now 'stopped'
-    recipe2 = self._makeRecipe(retention_delay=604800)
-    recipe2.requestinstance_db = recipe.requestinstance_db
-
-    recipe2.shouldDestroyInstance('inst1')
-    # Second call: should be in _already_retained_references
-    self.assertIn('inst1', recipe2._already_retained_references)
-
-    # Simulate instanceNodePostProcessing with already_retained filtering
-    recipe2._comparison = {'added': [], 'modified': [], 'removed': ['inst1']}
-    mock_cp = mock.MagicMock()
-    with mock.patch.object(recipe2, '_getComputerPartition', return_value=mock_cp):
-      recipe2.instanceNodePostProcessing()
-    # Bang should NOT fire (inst1 is in _already_retained_references)
-    mock_cp.bang.assert_not_called()
-
-  def test_bang_on_retention_expiry(self):
-    """Test that bang fires when a retained instance is finally destroyed."""
-    recipe = self._makeRecipe(retention_delay=10)
-
-    # Instance expired from retention
-    stopped_timestamp = str(int(time.time()) - 11)
-    recipe.requestinstance_db.insertInstanceList([(
-      'inst1', '{}', '{}', 'hash1', stopped_timestamp, 'stopped'
-    )])
-    recipe.domain_validation_db.setDomainValidation('inst1', 'example.com', 'tok1', False)
-
-    # shouldDestroyInstance returns True (expired)
-    result = recipe.shouldDestroyInstance('inst1')
-    self.assertTrue(result)
-    # inst1 is NOT in _already_retained_references (it's being destroyed)
-    self.assertNotIn('inst1', recipe._already_retained_references)
-
-    # instanceNodePostProcessing with inst1 in removed (not filtered out)
-    recipe._comparison = {'added': [], 'modified': [], 'removed': ['inst1']}
-    mock_cp = mock.MagicMock()
-    with mock.patch.object(recipe, '_getComputerPartition', return_value=mock_cp):
-      recipe.instanceNodePostProcessing()
-    # Bang should fire
-    mock_cp.bang.assert_called_once()

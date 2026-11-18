@@ -131,14 +131,12 @@ class TestPidFile(WrapperTestCase):
   def getOptions(self):
     self.pidfile = self.getTempPath('hello.pid')
     return {
-      'command-line': "/bin/sleep 10",
+      'command-line': "/bin/sleep 60",
       'wrapper-path': self.wrapper_path,
       'pidfile': self.pidfile
     }
 
-  def test_install_and_execute(self):
-    installed = self.recipe.install()
-    self.assertEqual(installed, self.wrapper_path)
+  def startWrapper(self, installed):
     process = subprocess.Popen(
       installed,
       stdout=subprocess.PIPE,
@@ -146,50 +144,38 @@ class TestPidFile(WrapperTestCase):
       universal_newlines=True,
     )
     self.addCleanup(self.terminate_process, process)
-    if process.poll():
-      self.fail(process.stdout.read())
-
-    for _ in range(20):
-      time.sleep(0.1)
-      if os.path.exists(self.pidfile):
+    # The wrapper writes the pidfile after it imports its Python modules.
+    # On a loaded machine, this import can take several seconds.
+    for _ in range(300):
+      if process.poll() is not None:
         break
-    else:
-      self.fail(process.stdout.read())
+      try:
+        with open(self.pidfile) as f:
+          if int(f.read()) == process.pid:
+            return process
+      except (IOError, ValueError):
+        pass
+      time.sleep(0.1)
+    self.terminate_process(process)
+    self.fail('pidfile not updated: %s' % process.stdout.read())
 
-    with open(self.pidfile) as f:
-      pid = int(f.read())
-    self.assertEqual(process.pid, pid)
+  def test_install_and_execute(self):
+    installed = self.recipe.install()
+    self.assertEqual(installed, self.wrapper_path)
+    process = self.startWrapper(installed)
 
     with self.assertRaises(subprocess.CalledProcessError) as ctx:
       subprocess.check_output(
         installed, stderr=subprocess.STDOUT, universal_newlines=True)
     self.assertEqual(
-      ctx.exception.output, 'Already running with pid %s.\n' % pid)
+      ctx.exception.output, 'Already running with pid %s.\n' % process.pid)
 
   def test_stale_pidfile_is_ignored(self):
     installed = self.recipe.install()
     self.assertEqual(installed, self.wrapper_path)
     with open(self.pidfile, 'w') as f:
       f.write('1234')
-
-    process = subprocess.Popen(
-      installed,
-      stdout=subprocess.PIPE,
-      stderr=subprocess.STDOUT,
-      universal_newlines=True,
-    )
-    self.addCleanup(self.terminate_process, process)
-    if process.poll():
-      self.fail(process.stdout.read())
-
-    for _ in range(20):
-      time.sleep(0.1)
-      with open(self.pidfile) as f:
-        pid = int(f.read())
-      if process.pid == pid:
-        break
-    else:
-      self.fail('pidfile not updated: %s' % process.stdout.read())
+    self.startWrapper(installed)
 
 
 class TestWaitForFiles(WrapperTestCase):

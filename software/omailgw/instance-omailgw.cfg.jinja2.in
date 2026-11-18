@@ -347,8 +347,21 @@ context =
 extensions = jinja2.ext.do
 
 [apache-php-wrapper]
+recipe = slapos.recipe.template:jinja2
+url = ${template-monitor-httpd-wrapper:target}
+output = $${directory:bin}/apache-wrapper
+pid-file = $${apache-php-configuration:pid-file}
+monitor-httpd-wrapper-path = $${php-httpd:wrapper-path}
+monitor-httpd-conf = $${apache-php-conf:output}
+context =
+  key pid_file :pid-file
+  key monitor_httpd_wrapper_path :monitor-httpd-wrapper-path
+  key monitor_httpd_conf :monitor-httpd-conf
+  raw dash_binary ${dash:location}/bin/dash
+
+[php-httpd]
 recipe = slapos.cookbook:wrapper
-wrapper-path = $${directory:bin}/apache-wrapper
+wrapper-path = $${directory:bin}/php-httpd
 command-line = "${apache:location}/bin/httpd" -f "$${apache-php-conf:output}" -DFOREGROUND
 wait-for-files =
   $${ca-directory:certs}/httpd.crt
