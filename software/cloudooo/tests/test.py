@@ -363,7 +363,7 @@ def get_referenced_fonts(
 class TestDefaultInstance(CloudOooTestCase, ImageComparisonTestCase):
   """Tests for CloudOoo instance with default configuration."""
 
-  __partition_reference__ = "co_default"
+  __partition_reference__ = "cd"
 
   def assert_pdf_conversion_metadata(
     self,
@@ -535,7 +535,7 @@ def _convert_html_to_text(
 class TestLibreOfficeCluster(CloudOooTestCase):
   """Class for testing a cluster with multiple backends."""
 
-  __partition_reference__ = "co_cluster"
+  __partition_reference__ = "cc"
 
   @classmethod
   def getInstanceParameterDict(cls):
@@ -587,7 +587,7 @@ class TestLibreOfficeCluster(CloudOooTestCase):
 class TestLibreOfficeScripting(CloudOooTestCase):
   """Class with scripting enabled, to try that functionality."""
 
-  __partition_reference__ = "co_script"
+  __partition_reference__ = "cs"
 
   @classmethod
   def getInstanceParameterDict(cls):
