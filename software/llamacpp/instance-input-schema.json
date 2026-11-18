@@ -63,7 +63,7 @@
       "title": "Is embedding model",
       "description": "This service runs embedding model",
       "type": "integer",
-      "default": 0
+      "default": 1
     },
     "hf_repo_id": {
       "title": "Hugging Face repository ID",

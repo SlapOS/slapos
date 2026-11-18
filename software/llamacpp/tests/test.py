@@ -81,3 +81,13 @@ class TestLlamacpp(SlapOSInstanceTestCase):
           endpoint, json=payload, headers=self.auth_headers, verify=False)
       self.assertEqual(requests.codes.ok, resp.status_code)
       self.assertTrue(resp.json()['tokens'])
+
+  def test_embeddings(self):
+    resp = requests.post(
+        f'{self.connection_parameters["backend-url"]}/v1/embeddings',
+        json={'input': 'hello'},
+        verify=False,
+        headers=self.auth_headers,
+    )
+    self.assertEqual(requests.codes.ok, resp.status_code)
+    self.assertTrue(resp.json()['data'])
