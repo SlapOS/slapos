@@ -27,8 +27,8 @@
 ##############################################################################
 """Assure a rapid-cdn cluster can mix software releases across frontend nodes.
 
-Bump the pinned OLD tag as releases advance (same convention as
-``software/theia/test/upgrade_tests.py``).
+Bump the pinned OLD tag in ``old-software.cfg`` as releases advance
+(same convention as ``software/theia/test/upgrade_tests.py``).
 """
 
 import ast
@@ -49,9 +49,19 @@ import test
 from test import CurlException, fakeHTTPSResult, subprocess_status_output
 
 
-OLD_SOFTWARE_RELEASE_URL = (
-  'https://lab.nexedi.com/nexedi/slapos/-/raw/1.0.519'
-  '/software/rapid-cdn/software.cfg')
+
+def getSoftwareReleaseUrl(path):
+  # the test runner supplies paths under its served checkout by their URL,
+  # and the software directory is named after that URL
+  root_dir = os.environ.get('SLAPOS_TEST_SOFTWARE_ROOT_DIR')
+  if root_dir and path.startswith(root_dir.rstrip('/') + '/'):
+    return os.environ['SLAPOS_TEST_SOFTWARE_ROOT_URL'].rstrip('/') + \
+      path[len(root_dir.rstrip('/')):]
+  return path
+
+
+OLD_SOFTWARE_RELEASE_URL = getSoftwareReleaseUrl(os.path.join(
+  os.path.dirname(os.path.abspath(__file__)), 'old-software.cfg'))
 NEW_SOFTWARE_RELEASE_URL = test.SlapOSInstanceTestCase.getSoftwareURL()
 
 BASE_INSTANCE_PARAMETER_DICT = {
