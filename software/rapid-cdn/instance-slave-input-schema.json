@@ -115,9 +115,9 @@
     },
     "normalize-accept-encoding": {
       "default": "true",
-      "description": "If true (the default), the frontend normalises the client's Accept-Encoding to a small canonical set before forwarding to the backend, so that responses cached with Vary: Accept-Encoding collapse into a handful of variants instead of one per browser-specific Accept-Encoding string. The rewrite preserves the best encoding the client supports: zstd-capable -> 'zstd, br, gzip, deflate'; br-capable -> 'br, gzip, deflate'; gzip-capable -> 'gzip, deflate'; deflate-capable -> 'deflate'; otherwise unchanged. Set to false to disable the rewrite and forward the client's Accept-Encoding verbatim.",
+      "description": "If true (the default), the frontend normalizes the client's Accept-Encoding to a small canonical set before forwarding to the backend, so that responses cached with Vary: Accept-Encoding collapse into a handful of variants instead of one per browser-specific Accept-Encoding string. The rewrite preserves the best encoding the client supports: zstd-capable -> 'zstd, br, gzip, deflate'; br-capable -> 'br, gzip, deflate'; gzip-capable -> 'gzip, deflate'; deflate-capable -> 'deflate'; otherwise unchanged. Set to false to disable the rewrite and forward the client's Accept-Encoding verbatim.",
       "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
-      "title": "Normalise Accept-Encoding for Backend",
+      "title": "Normalize Accept-Encoding for Backend",
       "type": "string"
     },
     "enforced-compression": {
