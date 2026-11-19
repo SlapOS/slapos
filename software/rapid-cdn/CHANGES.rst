@@ -39,6 +39,17 @@ Network exposure information provided
 The "Network exposure" section of the README tells where to find each
 socket of the cluster and its client, to write the firewall rules.
 
+All slave switches accept the same boolean values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+``disable-no-cache-request`` and ``websocket-transparent`` accept
+``yes``, ``no``, ``1``, ``0`` and any case of ``true`` and ``false``,
+like the other slave switches. Before, the schema accepted only ``true``
+and ``false`` and rejected the slave on other values that the frontend
+understands.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 The frontend configuration promises tolerate a transient failure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**

@@ -57,10 +57,7 @@
     "disable-no-cache-request": {
       "default": "false",
       "description": "If set to true, Cache-Control and Pragma requests headers will not be sent to cache and backend servers. This prevents clients from bypassing cache when enable_cache is true",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "enable_cache: Disable 'no-cache' requests",
       "type": "string"
     },
@@ -106,10 +103,7 @@
     "websocket-transparent": {
       "default": "true",
       "description": "If set to false, websocket slave will be without passing X-Real-Ip, X-Forwarded-Proto and X-Forwarded-Port. Depending on the application the setting shall be false or true. Defaults to true for transparent proxying.",
-      "enum": [
-        "false",
-        "true"
-      ],
+      "pattern": "^([Yy]([Ee][Ss])?|1|[Tt][Rr][Uu][Ee]|[Nn]([Oo])?|0|[Ff][Aa][Ll][Ss][Ee])$",
       "title": "type:websocket Transparent proxy",
       "type": "string"
     },
