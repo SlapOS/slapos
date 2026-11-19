@@ -7868,7 +7868,7 @@ class TestDetachedFrontendNode(SlaveHttpFrontendTestCase):
       os.path.exists(
         os.path.join(
           self._getFrontendPartitionPath(),
-          '.slapos-detach-snapshot.json')))
+          '.slapos-detach-snapshot')))
     self.assertEqual(
       {'failed': False, 'message': 'frontend node caddy-frontend-1 attached'},
       self._getAttachmentStateResultDict())
@@ -7931,7 +7931,7 @@ class TestDetachedFrontendNode(SlaveHttpFrontendTestCase):
     # a node detached before it rendered this release once while attached
     os.unlink(
       os.path.join(
-        self._getFrontendPartitionPath(), '.slapos-detach-snapshot.json'))
+        self._getFrontendPartitionPath(), '.slapos-detach-snapshot'))
     self._requestCluster(**{'-frontend-1-detach': True})
     self._instantiate()
     status, output = subprocess_status_output([

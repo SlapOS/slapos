@@ -1,11 +1,5 @@
 {% import "caucase" as caucase with context %}
 {%- set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
-{%- set DETACHED = detach_snapshot is defined %}
-{%- if DETACHED %}
-{%-   set slapparameter_dict = detach_snapshot['configuration'] %}
-{%-   do instance_parameter_dict.update({
-        'slave-instance-list': detach_snapshot['slave-instance-list']}) %}
-{%- endif %}
 {%- set HTTP3_PORT = slapparameter_dict['http3-port'] %}
 {%- set FRONTEND_HTTP3 = slapparameter_dict['enable-http3'] %}
 {%- if FRONTEND_HTTP3 %}
@@ -780,6 +774,7 @@ config-verification-script = ${promise-helper-last-configuration-state:output}
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
 inline =
+  import os, time
   from zope.interface import implementer
   from slapos.grid.promise import interface
   from slapos.grid.promise.generic import GenericPromise
@@ -791,14 +786,16 @@ inline =
       self.setPeriodicity(1)
 
     def sense(self):
-{%- if DETACHED %}
-      self.logger.error(
-        "frontend node {{ slapparameter_dict['frontend-name'] }} detached,"
-        " serving snapshot {{ detach_snapshot['timestamp'] }}")
-{%- else %}
-      self.logger.info(
-        "frontend node {{ slapparameter_dict['frontend-name'] }} attached")
-{%- endif %}
+      {#- Decided at run time: a detached node does not render this profile. #}
+      if os.path.exists('{{ detached_path }}'):
+        self.logger.error(
+          "frontend node {{ slapparameter_dict['frontend-name'] }} detached,"
+          " serving snapshot %s" % time.strftime(
+            '%Y-%m-%dT%H:%M:%SZ',
+            time.gmtime(os.path.getmtime('{{ detach_snapshot_path }}'))))
+      else:
+        self.logger.info(
+          "frontend node {{ slapparameter_dict['frontend-name'] }} attached")
 
 [promise-attachment-state]
 recipe = slapos.cookbook:promise.plugin

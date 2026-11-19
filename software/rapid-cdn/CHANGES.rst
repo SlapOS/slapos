@@ -50,7 +50,7 @@ afterwards, so that an operation which damages the cluster leaves a node
 serving what was being served before it. A detached node reports an error to
 the SlapOS Master on every run, until it is re-attached. See `Detaching a
 frontend node` in the README for the procedure and its limitations.
-(`!2255 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2255>`__)
+(`!2255 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2255>`__, `!2282 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2282>`__)
 
 1.0.519 (2026-10-23)
 --------------------
