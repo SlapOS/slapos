@@ -101,6 +101,10 @@ amarisoft_service = options['amarisoft-service']
 service_name = options['service-name']
 amarisoft_binary = os.path.join(options['amarisoft-directory'], amarisoft_service)
 
+if not os.path.isfile(amarisoft_binary):
+    options['error'] = 'Amarisoft binaries are missing'
+    publish['0-ERROR.amarisoft'] = 'Amarisoft binaries are missing'
+
 os.environ['AMARISOFT_PATH'] = options['amarisoft-license-dir']
 
 # If an error occured during parameter parsing
