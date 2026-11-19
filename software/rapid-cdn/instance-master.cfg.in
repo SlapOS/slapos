@@ -787,11 +787,11 @@ config-command = ${aikc-sign-promise-wrapper:wrapper-path}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/aikc-{{ csr }}-wrapper
 command-line = {{ software_parameter_dict['smart_caucase_signer'] }}
-  ${aikc-config:caucase-url}
+  "${aikc-config:caucase-url}"
   ${aikc-config:ca-certificate}
   ${directory:aikc}/{{ csr }}-done
   ${aikc-config:key}
-  ${request-{{ csr }}:connection-kedifa-csr-url}
+  "${request-{{ csr }}:connection-kedifa-csr-url}"
   "${request-{{ csr }}:connection-csr-certificate}"
 
 {% do part_list.append('aikc-%s' % (csr,)) %}
@@ -911,11 +911,11 @@ config-command = ${aibcc-sign-promise-wrapper:wrapper-path}
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/aibcc-{{ csr }}-wrapper
 command-line = {{ software_parameter_dict['smart_caucase_signer'] }}
-  ${aibcc-config:caucase-url}
+  "${aibcc-config:caucase-url}"
   ${aibcc-config:ca-certificate}
   ${directory:aibcc}/{{ csr }}-done
   ${aibcc-config:key}
-  ${request-{{ csr }}:connection-backend-client-csr-url}
+  "${request-{{ csr }}:connection-backend-client-csr-url}"
   "${request-{{ csr }}:connection-csr-certificate}"
 
 {% do part_list.append('aibcc-%s' % (csr,)) %}

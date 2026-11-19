@@ -39,6 +39,17 @@ Network exposure information provided
 The "Network exposure" section of the README tells where to find each
 socket of the cluster and its client, to write the firewall rules.
 
+A frontend without a published CSR URL is reported as not ready
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+While a frontend node has not published its CSR URL, or kedifa its CA
+URL, the master partition logs ``Not ready: CSR URL not published yet``
+(or ``CA URL``) with the done file it waits for, and retries on the next
+run. Before, the node log showed a
+``ValueError`` traceback of ``smart-caucase-signer``.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 All slave switches accept the same boolean values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[user]**

@@ -10975,6 +10975,26 @@ class TestFrontendRequestFailure(SlaveHttpFrontendTestCase):
       self.getSlaveConnectionParameterDict()['shared-information-url'])[
         'frontend-node-information']
 
+  def test_unpublished_url_is_not_ready(self):
+    signer, = glob.glob(os.path.join(
+      self.slap.software_directory, '*', 'bin', 'smart-caucase-signer'))
+    master_path = self.getMasterPartitionPath()
+    ca_crt = os.path.join(master_path, 'srv', 'aikc', 'cas-ca-certificate.pem')
+    key = os.path.join(master_path, 'srv', 'aikc', 'key.pem')
+    done_file = os.path.join(tempfile.mkdtemp(), 'done')
+    self.addCleanup(shutil.rmtree, os.path.dirname(done_file))
+    for name, ca_url, csr_url, csr_url_certificate in [
+        ('CA URL', '', 'https://csr', 'certificate'),
+        ('CSR URL', 'https://ca', '', 'certificate'),
+        ('CSR URL certificate', 'https://ca', 'https://csr', '')]:
+      self.assertEqual(
+        (1, ('Not ready: %s not published yet, %s not done\n' % (
+          name, done_file)).encode()),
+        subprocess_status_output([
+          signer, ca_url, ca_crt, done_file, key, csr_url,
+          csr_url_certificate]))
+    self.assertFalse(os.path.exists(done_file))
+
   def test_destroyed_frontend_has_no_request_promise(self):
     self.assertEqual(
       [],

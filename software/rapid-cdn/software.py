@@ -169,6 +169,13 @@ def smart_sign():
     csr_url_certificate = sys.argv[1:]
   if _is_done(done_file):
     return
+  for name, value in (
+      ('CA URL', ca_url), ('CSR URL', csr_url),
+      ('CSR URL certificate', csr_url_certificate)):
+    if not value:
+      print('Not ready: %s not published yet, %s not done' % (
+        name, done_file))
+      sys.exit(1)
   exposed_csr = _get_exposed_csr(csr_url, csr_url_certificate)
   caucase_csr_list = _get_caucase_csr_list(ca_url, ca_crt, user_key)
   if _sign_csr(
