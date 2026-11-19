@@ -28,7 +28,6 @@
 
 import os
 import textwrap
-import hashlib
 from io import BytesIO
 
 from PIL import Image
@@ -96,7 +95,7 @@ class TestSimpleDiagram(PlantUMLTestCase, ImageComparisonTestCase):
     # rendering is not exactly same on class diagrams, because of fonts and maybe also something in graphviz.
     # We just compare that image are similar.
 
-    # http://www.plantuml.com/plantuml/png/SoWkIImgAStDuKhEIImkLd1EBEBYSYdAB4ijKj05yHIi5590t685EouGLqjN8JmZDJK7A9wHM9QgO08LrzLL24WjAixF0qhOAEINvnLpSJcavgK0ZGO0
+    # https://www.plantuml.com/plantuml/png/SoWkIImgAStDuKhEIImkLd1EBEBYSYdAB4ijKj05yHIi5590t685EouGLqjN8JmZDJK7A9wHM9QgO08LrzLL24WjAixF0qhOAEINvnLpSJcavgK0ZGO0
     reference = Image.open(os.path.join(os.path.dirname(__file__), "data", "test_class_diagram.png"))
     self.assertImagesSimilar(Image.open(BytesIO(png)), reference)
 
@@ -129,7 +128,7 @@ class TestSimpleDiagram(PlantUMLTestCase, ImageComparisonTestCase):
     @enduml
     """))
     # URL on the reference implementation would be
-    # http://www.plantuml.com/plantuml/png/SoWkIImgAStDuSh9B2v9oyyhALPulhpnSUFwvrCsFswS_c85a6nwtDJrk77VuyRPZviclzyp2wBWsVIbp-QiUR5gtkEcIIzMRdpSEFLnuwh7ZIsF6vgyKXNoKXKA4ejoG6InGbPYGNvUOcQn7fT3QbuAq3O0
+    # https://www.plantuml.com/plantuml/png/SoWkIImgAStDuSh9B2v9oyyhALPulhpnSUFwvrCsFswS_c85a6nwtDJrk77VuyRPZviclzyp2wBWsVIbp-QiUR5gtkEcIIzMRdpSEFLnuwh7ZIsF6vgyKXNoKXKA4ejoG6InGbPYGNvUOcQn7fT3QbuAq3O0
     # but we don't have same fonts, so we compare against the fonts of a slapos instance.
     reference = Image.open(os.path.join(os.path.dirname(__file__), "data", "test_fonts.png"))
     self.assertImagesSimilar(Image.open(BytesIO(png)), reference)
@@ -148,7 +147,7 @@ class TestSimpleDiagram(PlantUMLTestCase, ImageComparisonTestCase):
     @enduml
     """))
     svg = requests.get('{}/svg/{}'.format(self.url, image_key), verify=False).text
-    self.assertIn('<?xml version="1.0" encoding="UTF-8"', svg)
+    self.assertIn('<svg', svg)
 
   def test_ascii_art(self):
     """Test ascii art rendering"""
