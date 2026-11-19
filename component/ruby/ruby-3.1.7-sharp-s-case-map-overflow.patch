@@ -1,0 +1,168 @@
+diff -urN ruby-3.1.7.orig/enc/iso_8859_1.c ruby-3.1.7/enc/iso_8859_1.c
+--- a/enc/iso_8859_1.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/iso_8859_1.c	2026-11-19 19:04:06.587151107 +0900
+@@ -264,7 +264,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/iso_8859_10.c ruby-3.1.7/enc/iso_8859_10.c
+--- a/enc/iso_8859_10.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/iso_8859_10.c	2026-11-19 19:04:06.587151107 +0900
+@@ -233,7 +233,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/iso_8859_13.c ruby-3.1.7/enc/iso_8859_13.c
+--- a/enc/iso_8859_13.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/iso_8859_13.c	2026-11-19 19:04:06.587151107 +0900
+@@ -226,7 +226,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/iso_8859_14.c ruby-3.1.7/enc/iso_8859_14.c
+--- a/enc/iso_8859_14.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/iso_8859_14.c	2026-11-19 19:04:06.587151107 +0900
+@@ -235,7 +235,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/iso_8859_15.c ruby-3.1.7/enc/iso_8859_15.c
+--- a/enc/iso_8859_15.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/iso_8859_15.c	2026-11-19 19:04:06.587151107 +0900
+@@ -229,7 +229,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/iso_8859_16.c ruby-3.1.7/enc/iso_8859_16.c
+--- a/enc/iso_8859_16.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/iso_8859_16.c	2026-11-19 19:04:06.587151107 +0900
+@@ -231,7 +231,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/iso_8859_2.c ruby-3.1.7/enc/iso_8859_2.c
+--- a/enc/iso_8859_2.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/iso_8859_2.c	2026-11-19 19:04:06.587151107 +0900
+@@ -229,7 +229,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/iso_8859_3.c ruby-3.1.7/enc/iso_8859_3.c
+--- a/enc/iso_8859_3.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/iso_8859_3.c	2026-11-19 19:04:06.591151079 +0900
+@@ -231,7 +231,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/iso_8859_4.c ruby-3.1.7/enc/iso_8859_4.c
+--- a/enc/iso_8859_4.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/iso_8859_4.c	2026-11-19 19:04:06.591151079 +0900
+@@ -232,7 +232,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/iso_8859_9.c ruby-3.1.7/enc/iso_8859_9.c
+--- a/enc/iso_8859_9.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/iso_8859_9.c	2026-11-19 19:04:06.591151079 +0900
+@@ -224,7 +224,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/windows_1250.c ruby-3.1.7/enc/windows_1250.c
+--- a/enc/windows_1250.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/windows_1250.c	2026-11-19 19:04:06.591151079 +0900
+@@ -199,7 +199,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/windows_1252.c ruby-3.1.7/enc/windows_1252.c
+--- a/enc/windows_1252.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/windows_1252.c	2026-11-19 19:04:06.591151079 +0900
+@@ -190,7 +190,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/windows_1254.c ruby-3.1.7/enc/windows_1254.c
+--- a/enc/windows_1254.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/windows_1254.c	2026-11-19 19:04:06.591151079 +0900
+@@ -232,7 +232,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
+diff -urN ruby-3.1.7.orig/enc/windows_1257.c ruby-3.1.7/enc/windows_1257.c
+--- a/enc/windows_1257.c	2025-03-26 13:20:36.000000000 +0900
++++ b/enc/windows_1257.c	2026-11-19 19:04:06.591151079 +0900
+@@ -236,7 +236,7 @@
+   OnigUChar *to_start = to;
+   OnigCaseFoldType flags = *flagP;
+ 
+-  while (*pp < end && to < to_end) {
++  while (*pp < end && to_end - to > 1) {
+     code = *(*pp)++;
+     if (code == SHARP_s) {
+       if (flags & ONIGENC_CASE_UPCASE) {
