@@ -466,6 +466,51 @@ class TestBalancerPortsStable(ERP5InstanceTestCase):
     self.assertNotEqual(balancer_param_dict_before['url-backend-zzz'], balancer_param_dict_after['url-backend-aaa'])
 
 
+class TestZopePartitionState(ERP5InstanceTestCase):
+  """A zope partition with state "stopped" is requested stopped and runs no
+  zope, while the other zope partitions run.
+  """
+  __partition_reference__ = 'zs'
+  __test_matrix__ = matrix((default,))
+
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_':
+      json.dumps(
+        {
+          "zope-partition-dict": {
+            "active": {
+              "family": "active",
+            },
+            "idle": {
+              "family": "idle",
+              "state": "stopped",
+            },
+          },
+        })
+    }
+
+  def getZopeProcessStateDict(self, partition_reference):
+    partition_id = self.getComputerPartition(partition_reference).getId()
+    with self.slap.instance_supervisor_rpc as supervisor:
+      return {
+        p['name']: p['statename']
+        for p in supervisor.getAllProcessInfo()
+        if p['group'] == partition_id and p['name'].startswith('zope-')
+      }
+
+  def test_requested_state(self):
+    self.assertEqual(self.getComputerPartition('zope-active').getState(), 'started')
+    self.assertEqual(self.getComputerPartition('zope-idle').getState(), 'stopped')
+
+  def test_zope_processes(self):
+    active = self.getZopeProcessStateDict('zope-active')
+    self.assertTrue(active)
+    self.assertEqual(set(active.values()), {'RUNNING'})
+    self.assertNotIn('RUNNING', self.getZopeProcessStateDict('zope-idle').values())
+
+
 class TestSeleniumTestRunner(ERP5InstanceTestCase, TestPublishedURLIsReachableMixin):
   """Test ERP5 can be instantiated with selenium server for test runner.
   """

@@ -304,6 +304,9 @@ config-dos-protection = {{ dumps(dos_protection) }}
 [{{ section_name }}]
 <= request-zope-base
 name = {{ partition_name }}
+{%   if zope_parameter_dict.get('state') == 'stopped' -%}
+state = stopped
+{%   endif -%}
 {% do monitor_base_url_dict.__setitem__(section_name, '${' ~ section_name ~ ':connection-monitor-base-url}') -%}
 {{ root_common.sla(partition_name) }}
 config-name = {{ dumps(custom_name) }}

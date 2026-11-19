@@ -242,6 +242,15 @@
               "type": "string",
               "pattern": "^[a-zA-Z0-9_-]+$"
             },
+            "state": {
+              "description": "Requested state of this partition. With 'stopped', the Zope processes of this partition do not run, for example on the instance of a NEO backup cluster. With 'started', the partition gets the state of the root instance.",
+              "default": "started",
+              "type": "string",
+              "enum": [
+                "started",
+                "stopped"
+              ]
+            },
             "instance-count": {
               "description": "Number of Zopes to setup on this partition",
               "default": 1,
