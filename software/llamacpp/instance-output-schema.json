@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Values returned by llama.cpp",
+  "type": "object",
+  "properties": {
+    "url": {
+      "description": "URL of llama.cpp server behind a frontend, with a publicly trusted certificate",
+      "type": "string"
+    },
+    "ipv4-url": {
+      "description": "Direct URL of llama.cpp server on IPv4",
+      "type": "string"
+    },
+    "backend-url": {
+      "description": "Direct URL of llama.cpp server. The CA certificate must be retrieved from caucase-url",
+      "type": "string"
+    },
+    "caucase-url": {
+      "description": "URL of Caucase managing the server certificate",
+      "type": "string"
+    },
+    "api-key": {
+      "description": "API key for llama.cpp server authentication",
+      "type": "string"
+    },
+    "repo": {
+      "description": "Hugging Face repository of the model",
+      "type": "string"
+    },
+    "filename": {
+      "description": "Filename of the model in the Hugging Face repository",
+      "type": "string"
+    },
+    "model": {
+      "description": "Model identifier in repository:filename format",
+      "type": "string"
+    },
+    "model-download-log": {
+      "description": "Path to the model download log",
+      "type": "string"
+    },
+    "service-log": {
+      "description": "Path to the llama.cpp server log",
+      "type": "string"
+    }
+  }
+}

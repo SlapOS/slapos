@@ -28,10 +28,12 @@ context =
   raw software_bin ${buildout:bin-directory}
   raw nginx_conf_in ${nginx.conf.in:target}
   raw nginx_location ${nginx:location}
-  raw openssl_location ${openssl:location}
+  raw openssl_bin ${openssl:location}/bin/openssl
   raw prebaked_repo_id  ${prebaked-model:repo_id}
   raw prebaked_filename ${prebaked-model:filename}
   raw prebaked_dir      ${prebaked-model:destdir}
+import-list =
+  rawfile caucase ${caucase-jinja2-library:target}
 
 [dynamic-template-llamacpp]
 <= jinja2-template-base

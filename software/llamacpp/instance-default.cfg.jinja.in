@@ -1,13 +1,15 @@
+{% import "caucase" as caucase with context %}
+
 [buildout]
 parts =
   huggingface-cli-download-script
   huggingface-cli-download
   huggingface-download-promise
   llamacpp-server-run-script
-  nginx-certificate
   nginx-service
   nginx-frontend-promise
   llamacpp-frontend-promise
+  promises
   publish-connection-parameter
 
 extends =
@@ -29,7 +31,7 @@ models = $${:var}/models
 cache = $${:var}/hf-cache
 httpd-log = $${:var}/log/apache
 www = $${:srv}/www
-ssl = $${:etc}/ssl
+backup-caucased = $${:srv}/backup/caucased/
 
 [huggingface-cli-download-script]
 recipe = slapos.recipe.template:jinja2
@@ -110,22 +112,93 @@ environment =
   HF_HOME=$${directory:cache}
   HUGGING_FACE_HUB_TOKEN={{ slapparameter_dict.get('hf_token') }}
 
+[nginx-certificate-init-certificate]
+recipe = slapos.recipe.build
+init =
+  # pre-create a file at the path of the certificate,
+  # so that we can use hash-existing-files options
+  import pathlib
+  cert_file = pathlib.Path(self.buildout['nginx-certificate']['cert-file'])
+  if not cert_file.parent.exists():
+    cert_file.parent.mkdir()
+  if not cert_file.exists():
+    cert_file.touch()
+
 [nginx-certificate]
+init = $${nginx-certificate-init-certificate:init}
+key-file = $${directory:etc}/$${:_buildout_section_name_}.key
+cert-file = $${directory:etc}/$${:_buildout_section_name_}.crt
+common-name = $${:_buildout_section_name_}
+ca-file = $${directory:etc}/$${:_buildout_section_name_}.ca.crt
+crl-file = $${directory:etc}/$${:_buildout_section_name_}.crl
+
+{{
+caucase.updater(
+    prefix='nginx-certificate',
+    buildout_bin_directory=software_bin,
+    updater_path='$${directory:services}/nginx-certificate-updater',
+    url='$${caucased:url}',
+    data_dir='$${directory:srv}/caucase-updater',
+    crt_path='$${nginx-certificate:cert-file}',
+    ca_path='$${nginx-certificate:ca-file}',
+    crl_path='$${nginx-certificate:crl-file}',
+    key_path='$${nginx-certificate:key-file}',
+    template_csr='$${nginx-certificate-prepare-csr:csr}',
+    openssl=openssl_bin,
+)}}
+
+[nginx-certificate-csr-config]
+recipe = slapos.recipe.template
+inline =
+  [req]
+  prompt = no
+  req_extensions = req_ext
+  distinguished_name = dn
+  [ dn ]
+  CN = nginx-certificate
+  [ req_ext ]
+  subjectAltName = @alt_names
+  [ alt_names ]
+  IP.1 = $${slap-configuration:ipv4-random}
+  IP.2 = $${slap-configuration:ipv6-random}
+output = $${buildout:parts-directory}/$${:_buildout_section_name_}/$${:_buildout_section_name_}.txt
+
+[nginx-certificate-prepare-csr]
 recipe = plone.recipe.command
 command =
-  if [ ! -e $${:key-file} ]
-  then
-    mkdir -p $${directory:ssl}
-    {{ openssl_location }}/bin/openssl req -x509 -nodes -sha256 -days 3650 \
-      -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${nginx-parameters:ipv6}" \
-      -newkey rsa -keyout $${:key-file} \
-      -out $${:cert-file}
+  if [ ! -f '$${:csr}' ] ; then
+   {{ openssl_bin }} req \
+      -newkey rsa \
+      -batch \
+      -new \
+      -sha256 \
+      -nodes \
+      -keyout /dev/null \
+      -config '$${nginx-certificate-csr-config:output}' \
+      -out '$${:csr}'
   fi
-update-command = $${:command}
-key-file = $${nginx-parameters:ssl-key}
-cert-file = $${nginx-parameters:ssl-certificate}
-common-name = $${nginx-parameters:ipv6}
 stop-on-error = true
+csr = $${directory:srv}/$${:_buildout_section_name_}.csr.pem
+
+[caucased]
+port = 18080
+ip = $${slap-configuration:ipv6-random}
+netloc = [$${:ip}]:$${:port}
+url = http://$${:netloc}/
+
+{{
+caucase.caucased(
+    prefix='caucased',
+    buildout_bin_directory=software_bin,
+    caucased_path='$${directory:services}/caucased',
+    backup_dir='$${directory:backup-caucased}',
+    data_dir='$${directory:srv}/caucased',
+    netloc='$${caucased:netloc}',
+    tmp='$${directory:tmp}',
+    service_auto_approve_count=1,
+    user_auto_approve_count=0,
+    key_len=2048,
+)}}
 
 [nginx-parameters]
 ipv6 = $${slap-configuration:ipv6-random}
@@ -136,8 +209,8 @@ access-log = $${directory:httpd-log}/nginx-access.log
 error-log = $${directory:httpd-log}/nginx-error.log
 nginx-mime-types = {{ nginx_location }}/conf/mime.types
 backend-url = http://$${llamacpp-service:llamacpp-host}:{{ slapparameter_dict.get('port') }}
-ssl-certificate = $${directory:etc}/ssl/nginx.crt
-ssl-key = $${directory:etc}/ssl/nginx.key
+ssl-certificate = $${nginx-certificate:cert-file}
+ssl-key = $${nginx-certificate:key-file}
 
 [nginx-conf]
 recipe = slapos.recipe.template:jinja2
@@ -153,6 +226,8 @@ wrapper-path = $${directory:services}/nginx-service
 wait-for-files =
   $${nginx-parameters:ssl-certificate}
   $${nginx-parameters:ssl-key}
+hash-existing-files =
+  $${nginx-parameters:ssl-certificate}
 
 [nginx-frontend-promise]
 <= monitor-promise-base
@@ -173,11 +248,20 @@ name = llamacpp-http-frontend.py
 url = $${request-frontend:connection-secure_access}
 config-url = $${:url}
 
+[promises]
+recipe =
+instance-promises =
+  $${caucased-promise:recipe}
+  $${nginx-certificate-promise:recipe}
+  $${nginx-frontend-promise:recipe}
+  $${llamacpp-frontend-promise:recipe}
+
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 url = $${request-frontend:connection-secure_access}
-ipv4_url =  http://$${llamacpp-service:llamacpp-host}:{{ slapparameter_dict.get('port') }}
+ipv4-url =  http://$${llamacpp-service:llamacpp-host}:{{ slapparameter_dict.get('port') }}
 backend-url = $${request-frontend:config-url}
+caucase-url = $${caucased:url}
 api-key = $${llamacpp-api-key:passwd}
 repo = {{ slapparameter_dict.get('hf_repo_id') }}
 filename = {{ slapparameter_dict.get('hf_filename') }}

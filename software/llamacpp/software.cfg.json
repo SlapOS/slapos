@@ -7,7 +7,7 @@
       "title": "Default",
       "description": "Default Llama.cpp server configuration",
       "request": "instance-input-schema.json",
-      "response": "",
+      "response": "instance-output-schema.json",
       "index": 0
     }
   }
