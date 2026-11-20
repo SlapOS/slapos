@@ -11,6 +11,7 @@ T-3/var/run/backend_haproxy_configuration_last_state
 T-3/var/run/backend_haproxy_graceful_configuration_state_signature
 T-3/var/run/bhlog.sck
 T-3/var/run/fhlog.sck
+T-3/var/run/frontend-haproxy-master.sock
 T-3/var/run/frontend-haproxy-rsyslogd.pid
 T-3/var/run/graceful_configuration_state_signature
 T-3/var/run/httpd.pid
@@ -23,6 +24,7 @@ T-3/var/run/trafficserver-introspection.pid
 T-4/var/run/backend-haproxy.pid
 T-4/var/run/backend_haproxy_configuration_last_state
 T-4/var/run/backend_haproxy_graceful_configuration_state_signature
+T-4/var/run/frontend-haproxy-master.sock
 T-4/var/run/graceful_configuration_state_signature
 T-4/var/run/httpd.pid
 T-4/var/run/logrotate-setup.state

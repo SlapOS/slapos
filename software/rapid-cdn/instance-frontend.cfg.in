@@ -476,7 +476,9 @@ log-socket = ${frontend-haproxy-rsyslogd-config:log-socket}
 access-log = ${directory:log}/frontend-access.log
 error-log = ${directory:log}/frontend-error.log
 pid-file = ${directory:run}/httpd.pid
-frontend-graceful-command = ${frontend-haproxy-validate:output} && kill -USR2 $(cat ${:pid-file})
+master-socket-name = frontend-haproxy-master.sock
+master-socket = ${directory:run}/${:master-socket-name}
+frontend-graceful-command = ${frontend-haproxy-validate:output} && {{ software_parameter_dict['haproxy_master_reload'] }} ${:master-socket}
 master-certificate = ${frontend-directory:master-autocert-dir}/master.pem
 self-signed-fallback-certificate = ${self-signed-fallback-access:certificate}
 http-port = ${configuration:plain_http_port}
@@ -872,7 +874,9 @@ error-pages-dir = ${directory:error-pages}
 
 [frontend-haproxy]
 recipe = slapos.cookbook:wrapper
-command-line = {{ FRONTEND_HAPROXY_EXECUTABLE }} -f ${frontend-haproxy-configuration:file}
+# the master CLI socket path is relative, as a socket path is limited to 97
+# characters and partition paths can be longer
+command-line = {{ software_parameter_dict['dash'] }}/bin/dash -c 'cd ${directory:run} && exec {{ FRONTEND_HAPROXY_EXECUTABLE }} -W -f ${frontend-haproxy-configuration:file} -S unix@${frontend-haproxy-configuration:master-socket-name}'
 wrapper-path = ${directory:service}/frontend-haproxy
 hash-existing-files = ${buildout:directory}/software_release/buildout.cfg
 

@@ -39,6 +39,19 @@ Network exposure information provided
 The "Network exposure" section of the README tells where to find each
 socket of the cluster and its client, to write the firewall rules.
 
+The frontend reloads haproxy and waits for the new configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The frontend haproxy has a master CLI socket,
+``var/run/frontend-haproxy-master.sock``. A configuration or certificate
+change reloads haproxy through this socket and waits until the new
+worker serves. A failed reload is reported by the command that requested
+it. Before, the reload signal returned at once, so a new certificate was
+served a moment later. The upgrade restarts the frontend haproxy once, as
+its command line changes.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 A frontend without a published CSR URL is reported as not ready
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**

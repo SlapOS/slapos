@@ -2,8 +2,10 @@ import caucase.client
 import caucase.utils
 import json
 import os
+import socket
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -183,6 +185,34 @@ def smart_sign():
     _mark_done(done_file)
   else:
     print('Failed to sign %s' % (csr_url,))
+
+
+def haproxy_master_reload():
+  master_socket, = sys.argv[1:]
+  os.chdir(os.path.dirname(master_socket))
+  deadline = time.time() + 600
+  while True:
+    client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    client.connect(os.path.basename(master_socket))
+    client.sendall(b'reload\n')
+    # a refused reload leaves the session open until the client half-closes
+    client.shutdown(socket.SHUT_WR)
+    response = b''
+    while True:
+      chunk = client.recv(65536)
+      if not chunk:
+        break
+      response += chunk
+    client.close()
+    response = response.decode(errors='replace')
+    if response.splitlines()[:1] == ['Success=1']:
+      return
+    # refused while a starting worker initializes
+    if 'Another reload is still in progress.' not in response \
+        or time.time() > deadline:
+      print(response)
+      sys.exit(1)
+    time.sleep(1)
 
 
 def caucase_csr_sign_check():

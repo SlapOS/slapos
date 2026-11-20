@@ -5,8 +5,6 @@
 {%- endif %}
 global
   pidfile {{ configuration['pid-file'] }}
-  # master-worker is compatible with foreground with process management
-  master-worker
   expose-experimental-directives
   tune.bufsize 65536
   tune.http.logurilen 16384

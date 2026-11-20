@@ -598,8 +598,13 @@ class TestDataMixin(object):
 
   def test00supervisor_state(self):
     # test00 name chosen to be run just after setup
-    # give a chance for etc/run scripts to finish
-    time.sleep(1)
+    # the etc/run graceful scripts wait for the reload they request
+    for _ in range(60):
+      if not any(
+          q['statename'] == 'RUNNING' and q['name'].endswith('-graceful')
+          for q in self.callSupervisorMethod('getAllProcessInfo')):
+        break
+      time.sleep(1)
 
     hash_file_list = [os.path.join(
         self.computer_partition_root_path, 'software_release/buildout.cfg')]
@@ -1116,9 +1121,6 @@ class HttpFrontendTestCase(SlapOSInstanceTestCase):
         time.sleep(2)
       # assert that in the worst case last run was correct
       assert return_code == 0, output
-      # give haproxy a moment to refresh its config, as sending signal does not
-      # block until haproxy is refreshed
-      time.sleep(2)
 
   @classmethod
   def runCDNInstanceNode(cls):
@@ -9158,6 +9160,47 @@ class TestSlaveSlapOSMasterCertificateCompatibilityUpdate(
       result.certificate)
 
     self.assertEqualResultJson(result, 'Path', '/test-path')
+
+
+class TestKedifaUpdaterReload(SlaveHttpFrontendTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+      })
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {'reload': {'url': cls.backend_url}}
+
+  def test_new_certificate_served_when_updater_returns(self):
+    parameter_dict = self.assertSlaveBase('reload')
+    kedifa_updater, = glob.glob(os.path.join(
+      self.instance_path, '*', 'etc', 'service', 'kedifa-updater*'))
+    auth = mimikra.get(
+      self.current_generate_auth,
+      verify=self.kedifa_caucase_ca_certificate_file)
+    self.assertEqual(http.client.CREATED, auth.status_code)
+    for _ in range(5):
+      _, key_pem, _, certificate_pem = createSelfSignedCertificate(
+        [parameter_dict['domain']])
+      upload = mimikra.put(
+        self.current_upload_url + auth.text,
+        data=certificate_pem + key_pem,
+        verify=self.kedifa_caucase_ca_certificate_file)
+      self.assertEqual(http.client.CREATED, upload.status_code)
+      return_code, output = subprocess_status_output(
+        [kedifa_updater, '--once'])
+      self.assertEqual(0, return_code, output)
+      self.assertEqual(
+        certificate_pem,
+        fakeHTTPSResult(parameter_dict['domain'], 'test-path').certificate)
 
 
 class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
