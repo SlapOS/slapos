@@ -179,6 +179,52 @@ class PostfixTestCase(SlapOSInstanceTestCase):
     except Exception as e:
       self.fail(f"Webmail access failed: {e}")
 
+  def test_webmail_defaults(self):
+    """SnappyMail shows the messages in threads, saves a reply in the folder
+    of the original message, and saves a new message in INBOX."""
+    parameter_dict = json.loads(
+      self.computer_partition.getConnectionParameterDict()["_"])
+    webmail_url = parameter_dict["webmail-url"].rstrip('/') + '/'
+    opener = urllib.request.build_opener(
+      urllib.request.HTTPCookieProcessor(),
+      urllib.request.HTTPSHandler(context=self._get_ssl_context()))
+    with opener.open(webmail_url + '?/AppData/0/0/', timeout=10) as response:
+      token = json.load(response)['System']['token']
+
+    def json_action(action, **params):
+      request = urllib.request.Request(
+        webmail_url + '?/Json/&q[]=/0/',
+        data=json.dumps(dict(params, Action=action)).encode(),
+        headers={'Content-Type': 'application/json', 'X-SM-Token': token})
+      with opener.open(request, timeout=30) as response:
+        result = json.load(response)
+      self.assertTrue(result.get('Result'), result)
+      return result['Result']
+
+    app_data = json_action(
+      'Login', Email='testmail@example.com', Password='password123')
+    # The login starts a new session, with a new token.
+    token = app_data['System']['token']
+    self.assertIs(app_data['useThreads'], True)
+    self.assertIs(app_data['ReplySameFolder'], True)
+    identity_list = json_action('AccountsAndIdentities')['Identities']
+    self.assertEqual(
+      [identity['sentFolder'] for identity in identity_list], ['INBOX'])
+
+    # Without an algorithm, SnappyMail uses THREAD=REFS if the server has it.
+    self.assertEqual(app_data['threadAlgorithm'], '')
+    imap = imaplib.IMAP4(
+      parameter_dict["imap-smtp-ipv6"], int(parameter_dict["imap-port"]),
+      timeout=10)
+    try:
+      imap.starttls(ssl_context=self._get_ssl_context())
+      imap.login('testmail@example.com', 'password123')
+      result, data = imap.capability()
+    finally:
+      imap.logout()
+    self.assertEqual(result, 'OK')
+    self.assertIn(b'THREAD=REFS', data[0].split())
+
   def test_slaves(self):
     parameter_dict = json.loads(self.computer_partition.getConnectionParameterDict()["_"])
     pw_url = parameter_dict.get("password-url", "<missing>")
