@@ -133,9 +133,9 @@
         },
         "mailbox-size-limit": {
           "title": "Mailbox Size Limit",
-          "description": "Storage size limit per individual user mailbox in MiB",
+          "description": "Storage size limit per individual user mailbox in MiB. 0 means no limit.",
           "type": "integer",
-          "minimum": 1,
+          "minimum": 0,
           "default": 1024
         }
       },

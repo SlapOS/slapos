@@ -11,6 +11,7 @@ ignore_repeated_errors = Off
 ignore_repeated_source = Off
 session.save_path = "{{ parameter_dict['tmp-dir'] }}"
 session.auto_start = 0
+session.upload_progress.enabled = 0
 date.timezone = {{ instance_dict.get('php.date.timezone', 'Europe/Paris') }}
 file_uploads = On
 upload_max_filesize = {{ instance_dict.get('php.upload_max_filesize', '10240M') }}

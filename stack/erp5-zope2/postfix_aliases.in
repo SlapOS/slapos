@@ -1,4 +1,0 @@
-# See http://www.postfix.org/aliases.5.html for format
-{% for name, alias_list in alias_dict.items() -%}
-{{ name }}: {{ alias_list | join(', ') }}
-{% endfor %}

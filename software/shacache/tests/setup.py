@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2018 Nexedi SA and Contributors. All Rights Reserved.
+# Copyright (c) 2026 Nexedi SA and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,32 +24,27 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+
 from setuptools import setup, find_packages
 
 version = '0.0.1.dev0'
-name = 'slapos.test.erp5-zope2'
+name = 'slapos.test.shacache'
 with open("README.md") as f:
   long_description = f.read()
 
-setup(name=name,
-      version=version,
-      description="Test for SlapOS' ERP5 software release",
-      long_description=long_description,
-      long_description_content_type='text/markdown',
-      maintainer="Nexedi",
-      maintainer_email="info@nexedi.com",
-      url="https://lab.nexedi.com/nexedi/slapos",
-      packages=find_packages(),
-      install_requires=[
+setup(
+    name=name,
+    version=version,
+    description="Test for SlapOS' shacache software release",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    maintainer="Nexedi",
+    maintainer_email="info@nexedi.com",
+    url="https://lab.nexedi.com/nexedi/slapos",
+    packages=find_packages(),
+    install_requires=[
         'slapos.core',
-        'supervisor',
-        'slapos.libnetworkcache',
-        'erp5.util',
-        'psutil',
         'requests',
-        'mysqlclient',
-        'cryptography',
-        'pexpect',
-        'pyOpenSSL',
-      ],
-    )
+    ],
+    zip_safe=True,
+)

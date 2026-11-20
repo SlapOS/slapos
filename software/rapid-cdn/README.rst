@@ -60,9 +60,9 @@ Detach a node with::
 
 and re-attach it by setting the same parameter to ``false``, or by removing it.
 
-The node takes its snapshot every time it renders while attached, so detaching
-freezes the state it saw on its *last run*, not the state it had when it was
-last known to be healthy. Detach **before** starting the operation, not after
+The snapshot is the frontend profile the node rendered on its last attached
+run, so detaching freezes the state it saw on its *last run*, not the state it
+had when it was last known to be healthy. Detach **before** starting the operation, not after
 noticing that it went wrong.
 
 Every node runs the ``attachment-state`` promise, which passes while the node
@@ -95,6 +95,8 @@ Limitations
     detached and stopped reports nothing.
   * **The software release is not covered.** Detaching does not pin the
     release the node runs; pin it with ``-frontend-i-software-release-url``.
+    A detached node moved to another release keeps the profile rendered by the
+    previous one, which works only as long as that release stays installed.
   * **The arming travels through the master partition**, which is the
     component an upgrade is most likely to damage. A bug there can re-attach a
     node.

@@ -26,6 +26,8 @@
 ##############################################################################
 
 import base64
+import email
+import email.policy
 import os
 import json
 import imaplib
@@ -431,7 +433,8 @@ class E2ETestCase(SlapOSInstanceTestCase):
       to_account,
       body,
       send_as=None,
-      login=None
+      login=None,
+      header='',
   ):
     sender = send_as or from_account.mail
     smtp_addr = from_account.server.smtp_addr
@@ -441,7 +444,7 @@ class E2ETestCase(SlapOSInstanceTestCase):
       smtp.sendmail(
         from_addr=sender,
         to_addrs=[to_account.mail],
-        msg=f"Subject: Test email from {sender}\n\n{body}",
+        msg=f"{header}Subject: Test email from {sender}\n\n{body}",
       )
 
   def check_inbox(self, account, expected):
@@ -1335,49 +1338,80 @@ class E2E(E2ETestCase):
     )
 
   def test_sieve_redirect(self):
-    """Upload a sieve redirect script via ManageSieve on mail2,
-    send from mail1, and verify the mail arrives at mail3."""
+    """Upload via ManageSieve on mail2 the sieve script that SnappyMail
+    generates for a forwarding rule, send from mail1, and verify that the
+    mail arrives at mail3 with the header that bin/dovecot-sendmail edits."""
     mail1, mail2, mail3 = self.mail_servers
-
-    sieve_script = (
-      'require ["editheader", "variables", "envelope"];\n'
-      '\n'
-      '# Capture original sender and envelope recipient (forwarder)\n'
-      'if header :matches "From" "*" { set "original_from" "${1}"; }\n'
-      'if envelope :matches "to" "*" { set "forward_from" "${1}"; }\n'
-      '\n'
-      '# Add forwarding trace headers\n'
-      'addheader "X-Forwarded-For" "${forward_from} %(u)s";\n'
-      'addheader "X-Forwarded-To" "%(u)s";\n'
-      '\n'
-      '# If no Reply-To, set it to the original sender\n'
-      'if not header :matches "Reply-To" "*" {\n'
-      '  addheader "Reply-To" "${original_from}";\n'
-      '}\n'
-      '\n'
-      '# Remove spam classification header\n'
-      'deleteheader "X-Bogosity";\n'
-      '\n'
-      '# Rewrite From to the forwarding user\n'
-      'deleteheader "From";\n'
-      'addheader "From" "${forward_from}";\n'
-      '\n'
-      'redirect "%(u)s";\n'
-    ) % {'u': mail3.testmail}
-    self._managesieve(mail2, 'redirect', sieve_script)
+    self._managesieve(mail2, 'redirect', 'redirect "%s";\n' % mail3.testmail)
     self.addCleanup(self._managesieve, mail2, None, None)
 
     body = "Sieve redirect via ManageSieve test"
-    self.send_email(mail1.test, mail2.test, body)
+    # The display name is encoded and contains a comma.
+    self.send_email(mail1.test, mail2.test, body, header=(
+      'From: =?UTF-8?Q?M=C3=BCller=2C_Hans?= <%s>\n' % mail1.testmail))
     mailmsg = self.check_inbox(mail3.test, body)
-    self.assertIn("Reply-To: " + mail1.testmail, mailmsg)
-    self.assertIn("From: " + mail2.testmail, mailmsg)
-    self.assertIn("Return-Path: <%s>" % mail2.testmail, mailmsg)
-    self.assertIn(
-      "X-Forwarded-For: %s %s" % (mail2.testmail, mail3.testmail),
-      mailmsg,
+    msg = email.message_from_string(mailmsg, policy=email.policy.default)
+    self.assertEqual(
+      [(a.display_name, a.addr_spec) for a in msg['Reply-To'].addresses],
+      [('Müller, Hans', mail1.testmail)],
     )
-    self.assertIn("X-Forwarded-To: " + mail3.testmail, mailmsg)
+    self.assertEqual(msg.get_all('From'), [mail2.testmail])
+    self.assertEqual(msg.get_all('X-Forwarded-To'), [mail3.testmail])
+    self.assertIn("Return-Path: <%s>" % mail2.testmail, mailmsg)
+
+  def test_sieve_redirect_two_rules(self):
+    """Two forwarding rules of mail2 match the same mail. Each recipient
+    gets only its own address in X-Forwarded-To. The second rule tests the
+    original From. The copy that the second rule keeps in INBOX is the
+    original mail."""
+    mail1, mail2, mail3 = self.mail_servers
+    external = self.external_mail_server
+    sieve_script = (
+      'require ["fileinto"];\n'
+      'redirect "%(mail3)s";\n'
+      'if address :is "from" "%(mail1)s" {\n'
+      '  fileinto "INBOX";\n'
+      '  redirect "%(external)s";\n'
+      '}\n'
+    ) % {
+      'mail1': mail1.testmail,
+      'mail3': mail3.testmail,
+      'external': external.testmail,
+    }
+    self._managesieve(mail2, 'redirect', sieve_script)
+    self.addCleanup(self._managesieve, mail2, None, None)
+
+    body = "Sieve redirect with two rules test"
+    self.send_email(mail1.test, mail2.test, body,
+      header='From: %s\n' % mail1.testmail)
+    for account in (mail3.test, external.test):
+      msg = email.message_from_string(
+        self.check_inbox(account, body), policy=email.policy.default)
+      self.assertEqual(msg.get_all('From'), [mail2.testmail])
+      self.assertEqual(msg.get_all('Reply-To'), [mail1.testmail])
+      self.assertEqual(msg.get_all('X-Forwarded-To'), [account.mail])
+    msg = email.message_from_string(
+      self.check_inbox(mail2.test, body), policy=email.policy.default)
+    self.assertEqual(msg.get_all('From'), [mail1.testmail])
+    self.assertIsNone(msg['Reply-To'])
+    self.assertIsNone(msg['X-Forwarded-To'])
+
+  def test_sieve_redirect_to_author(self):
+    """mail2 redirects to all its members, like a shared address. The
+    author of the mail is a member, and does not get the mail back. The
+    other member gets the mail."""
+    mail1, mail2, mail3 = self.mail_servers
+    # The redirect to the author comes first, so that its mail goes out
+    # before the mail that check_inbox waits for.
+    self._managesieve(mail2, 'redirect', 'redirect "%s";\nredirect "%s";\n'
+      % (mail1.testmail, mail3.testmail))
+    self.addCleanup(self._managesieve, mail2, None, None)
+
+    body = "Sieve redirect to author test"
+    self.send_email(mail1.test, mail2.test, body,
+      header='From: Author <%s>\n' % mail1.testmail)
+    self.check_inbox(mail3.test, body)
+    self.check_not_in_inbox(mail1.test, body)
 
   def test_server_certificate_rotation(self):
     server = self.mail_servers[0]
