@@ -1,4 +1,4 @@
-import asyncio, hashlib, hmac, json, os, shutil, string, subprocess, sys, time, websockets
+import asyncio, hashlib, hmac, json, os, shutil, string, subprocess, sys, textwrap, time, websockets
 import xbuildout
 from slapos.recipe.librecipe import GenericBaseRecipe, generateHashFromFiles
 
@@ -252,16 +252,22 @@ else:
         ssb_list = get_ssb()
         publish_ssb(publish, ssb_list)
 
-PUBLISH_BUILDOUT="""
-[buildout]
-parts=
-  publish-connection-information
-
-[publish-connection-information]
-recipe = slapos.cookbook:publish.serialised
-"""
-for key in publish:
-    PUBLISH_BUILDOUT += f"{key} = {str(publish[key])}\n"
+if amarisoft_service != "lteims":
+    PUBLISH_BUILDOUT= textwrap.dedent("""\
+    [buildout]
+    parts=
+      publish-connection-information
+    
+    [publish-connection-information]
+    recipe = slapos.cookbook:publish.serialised
+    """)
+    for key in publish:
+        PUBLISH_BUILDOUT += f"{key} = {str(publish[key])}\n"
+else:
+    PUBLISH_BUILDOUT= textwrap.dedent("""\
+    [buildout]
+    parts=
+    """)
 
 with open(options['template-publish'], 'w+') as f:
   f.write(PUBLISH_BUILDOUT)
