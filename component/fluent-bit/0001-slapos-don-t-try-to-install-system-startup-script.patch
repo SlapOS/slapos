@@ -13,7 +13,7 @@ diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
 index 520d7ff3c..42fa734c2 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -563,50 +563,6 @@ if(FLB_BINARY)
+@@ -672,50 +672,6 @@ if(FLB_BINARY)
        DESTINATION "${FLB_INSTALL_BINDIR}")
    endif()
  
