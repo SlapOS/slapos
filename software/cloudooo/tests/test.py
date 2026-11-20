@@ -222,8 +222,8 @@ QT_FONT_MAPPING = {
   "DejaVu Serif": "DejaVuSerif",
   "DejaVu Serif Condensed": "LiberationSans",
   "Garamond": "LiberationSans",
-  "Gentium Basic": "GentiumBasic",
-  "Gentium Book Basic": "GentiumBookBasic",
+  "Gentium Basic": "LiberationSans",
+  "Gentium Book Basic": "LiberationSans",
   "Georgia": "LiberationSans",
   "Helvetica": "LiberationSans",
   "IPAex Gothic": "LiberationSans",
@@ -262,8 +262,8 @@ LIBREOFFICE_FONT_MAPPING = {
   "DejaVu Serif": "DejaVuSerif",
   "DejaVu Serif Condensed": "DejaVuSerifCondensed",
   "Garamond": "NotoSerif-Regular",
-  "Gentium Basic": "GentiumBasic",
-  "Gentium Book Basic": "GentiumBookBasic",
+  "Gentium Basic": "NotoSans-Regular",
+  "Gentium Book Basic": "NotoSans-Regular",
   "Georgia": "NotoSerif-Regular",
   "Helvetica": "LiberationSans",
   "IPAex Gothic": "IPAexGothic",
@@ -434,7 +434,7 @@ class TestDefaultInstance(CloudOooTestCase, ImageComparisonTestCase):
     """Test HTML to PDF conversion using wkhtmltopdf."""
     self.assert_pdf_conversion_metadata(
       self.html_to_pdf_libreoffice_convert,
-      expected_producer="LibreOffice 26.2.1.2 (X86_64)",
+      expected_producer="LibreOffice 26.8.3.1 (X86_64)",
       expected_font_mapping=LIBREOFFICE_FONT_MAPPING,
     )
 
