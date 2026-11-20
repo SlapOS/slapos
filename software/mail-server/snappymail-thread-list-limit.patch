@@ -1,0 +1,18 @@
+MailClient: show the thread when the folder is over message_list_limit
+
+A folder with more messages than message_list_limit uses the limited
+message list. That list ignores threadUid, so the thread view shows the
+latest messages of the folder instead of the messages of the thread.
+Use the threaded message list when a threadUid is given.
+
+--- a/app/libraries/MailSo/Mail/MailClient.php
++++ b/app/libraries/MailSo/Mail/MailClient.php
+@@ -820,7 +820,7 @@
+ 			}
+ 		}
+
+-		if ($message_list_limit && !$aUids) {
++		if ($message_list_limit && !$aUids && !$oParams->iThreadUid) {
+ //		if ($message_list_limit || (!$this->oImapClient->hasCapability('SORT') && !$this->oImapClient->CapabilityValue('THREAD'))) {
+ 			// Don't use THREAD for speed
+ 			$oMessageCollection->Limited = true;
