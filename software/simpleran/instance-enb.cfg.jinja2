@@ -179,7 +179,7 @@ inline =
 {%- if not amarisoft['mock'] %}
   # Amarisoft init scripts
   sudo -n {{ amarisoft['script_dir'] }}/rm-tmp-lte enb
-  sudo -n {{ amarisoft['script_dir'] }}/init-sdr {{ amarisoft['amarisoft_dir'] }};
+  sudo -n {{ amarisoft['script_dir'] }}/init-sdr {{ amarisoft['amarisoft_dir'] }}
   sudo -n {{ amarisoft['script_dir'] }}/init-enb
 {%- endif %}
   # Print hardware and software info in info-log
