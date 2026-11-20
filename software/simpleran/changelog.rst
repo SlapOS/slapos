@@ -4,7 +4,7 @@ Changelog
 Version 1.0.524 (2026-11-13)
 -------------
 
-* Don't stop eNB / gNB / Core Network if wrong parameters are inputted
+* Don't stop eNB / gNB if wrong parameters are inputted
 * Report parameter validation issues in check-configuration-error promise output and connection parameters
 * Reduce the number of parameters, only keep well tested parameters
 * Improve low latency TDD configurations
