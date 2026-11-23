@@ -9203,6 +9203,77 @@ class TestKedifaUpdaterReload(SlaveHttpFrontendTestCase):
         fakeHTTPSResult(parameter_dict['domain'], 'test-path').certificate)
 
 
+class TestFrontendReloadHttp3(SlaveHttpFrontendTestCase):
+  @classmethod
+  def getInstanceParameterDict(cls):
+    return {
+      '_': json.dumps({
+        'domain': 'example.com',
+        'port': HTTPS_PORT,
+        'plain_http_port': HTTP_PORT,
+        'kedifa_port': KEDIFA_PORT,
+        'caucase_port': CAUCASE_PORT,
+        'enable-http3': True,
+        'http3-port': HTTPS_PORT,
+      })
+    }
+
+  @classmethod
+  def getSlaveParameterDictDict(cls):
+    return {'reload-http3': {'url': cls.backend_url}}
+
+  def reloadFrontendHaproxy(self):
+    master_socket, = glob.glob(os.path.join(
+      self.instance_path, '*', 'var', 'run', 'frontend-haproxy-master.sock'))
+    # the socket path can exceed the 107 characters of sun_path
+    directory_fd = os.open(os.path.dirname(master_socket), os.O_PATH)
+    try:
+      with socket.socket(socket.AF_UNIX) as master:
+        master.connect('/proc/self/fd/%s/%s' % (
+          directory_fd, os.path.basename(master_socket)))
+        master.sendall(b'reload\n')
+        master.shutdown(socket.SHUT_WR)
+        response = b''.join(iter(lambda: master.recv(4096), b''))
+    finally:
+      os.close(directory_fd)
+    self.assertTrue(response.startswith(b'Success=1'), response)
+
+  def test_no_request_hangs_during_reload(self):
+    parameter_dict = self.assertSlaveBase('reload-http3')
+    url = 'https://%s:%s/test-path' % (parameter_dict['domain'], HTTPS_PORT)
+    stop = threading.Event()
+    hung_list = []
+    request_count = [0]
+
+    def request_loop():
+      while not stop.is_set():
+        request_count[0] += 1
+        try:
+          mimikra.request(
+            'GET', url, headers=fakeSetupHeaders(None), verify=False,
+            source_ip=SOURCE_IP, resolve_all={HTTPS_PORT: TEST_IP},
+            http3_only=True, timeout=10)
+        except CurlException as e:
+          # 28: operation timeout
+          if e.command_returncode == 28:
+            hung_list.append(e.command_error)
+
+    thread_list = [
+      threading.Thread(target=request_loop) for _ in range(10)]
+    for thread in thread_list:
+      thread.start()
+    try:
+      for _ in range(30):
+        time.sleep(1)
+        self.reloadFrontendHaproxy()
+    finally:
+      stop.set()
+      for thread in thread_list:
+        thread.join()
+    self.assertGreater(request_count[0], 300)
+    self.assertEqual([], hung_list)
+
+
 class TestSlaveCiphers(SlaveHttpFrontendTestCase, TestDataMixin):
   @classmethod
   def getInstanceParameterDict(cls):

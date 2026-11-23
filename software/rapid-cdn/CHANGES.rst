@@ -39,6 +39,27 @@ Network exposure information provided
 The "Network exposure" section of the README tells where to find each
 socket of the cluster and its client, to write the firewall rules.
 
+An HTTP/3 request does not stop during a frontend reload
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+When the frontend haproxy reloads, an HTTP/3 connection can complete its
+handshake on the stopping haproxy worker. Before, the request on this
+connection got no response until the client timeout. The stopping worker
+now refuses the connection at once, so the client can retry. This is a
+backport of the haproxy fix for
+`haproxy issue #3578 <https://github.com/haproxy/haproxy/issues/3578>`__.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
+A stopping frontend haproxy worker does not use full CPUs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+Before, a stopping frontend haproxy worker with an HTTP/3 connection
+that it could not accept used one or more full CPUs until its connections
+closed. The same haproxy backport removes this loop.
+(`!2273 <https://lab.nexedi.com/nexedi/slapos/-/merge_requests/2273>`__)
+
 The frontend reloads haproxy and waits for the new configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**

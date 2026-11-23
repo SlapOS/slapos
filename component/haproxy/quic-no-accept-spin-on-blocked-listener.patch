@@ -1,0 +1,127 @@
+From 5515125880b981adfc6934fc93b38c66bec9e5cc Mon Sep 17 00:00:00 2001
+From: Olivier Houchard <ohouchard@haproxy.com>
+Date: Thu, 19 Nov 2026 18:08:33 +0100
+Subject: [PATCH] BUG/MEDIUM: quic: do not spin on the accept tasklet of a
+ blocked listener
+
+Since commit 4377dbd75 ("BUG/MINOR: quic: Missing listener accept queue
+tasklet wakeups") in 2.8-dev5, quic_accept_run() wakes itself up again as
+long as connections remain in a listener's accept queue, so that those
+beyond the maxaccept budget are accepted. But when the listener cannot
+accept anymore, because it is full (bind maxconn) or limited (rate limit,
+global maxconn), the tasklet runs in a loop and uses 100% of a thread
+until the listener is resumed.
+
+Let's only retry at once when the listener is still ready. Otherwise,
+the accept tasklets of the threads with queued connections are woken up
+when the listener is enabled again, and when it is unbound so that these
+connections are refused.
+
+This should be backported to all stable versions, with the previous
+commit.
+
+This was reported in GitHub issue #3578.
+---
+ include/haproxy/quic_sock.h |  1 +
+ src/proto_quic.c            | 17 +++++++++++++++--
+ src/quic_sock.c             | 19 +++++++++++++++++--
+ 3 files changed, 33 insertions(+), 4 deletions(-)
+
+diff --git a/include/haproxy/quic_sock.h b/include/haproxy/quic_sock.h
+index dad9115ec655..a5ac28711cc2 100644
+--- a/include/haproxy/quic_sock.h
++++ b/include/haproxy/quic_sock.h
+@@ -61,6 +61,7 @@ void qc_release_fd(struct quic_conn *qc, int reinit);
+ void qc_want_recv(struct quic_conn *qc);
+ 
+ void quic_accept_push_qc(struct quic_conn *qc);
++void quic_accept_wakeup(struct listener *l);
+ 
+ int quic_listener_max_handshake(const struct listener *l);
+ int quic_listener_max_accept(const struct listener *l);
+diff --git a/src/proto_quic.c b/src/proto_quic.c
+index b0f795298bad..3c5652dbd7be 100644
+--- a/src/proto_quic.c
++++ b/src/proto_quic.c
+@@ -63,6 +63,7 @@ static int quic_bind_listener(struct listener *listener, char *errmsg, int errle
+ static int quic_connect_server(struct connection *conn, int flags);
+ static void quic_enable_listener(struct listener *listener);
+ static void quic_disable_listener(struct listener *listener);
++static void quic_unbind_listener(struct listener *listener);
+ static int quic_bind_tid_prep(struct connection *conn, int new_tid);
+ static void quic_bind_tid_commit(struct connection *conn);
+ static void quic_bind_tid_reset(struct connection *conn);
+@@ -78,7 +79,7 @@ struct protocol proto_quic4 = {
+ 	.enable         = quic_enable_listener,
+ 	.disable        = quic_disable_listener,
+ 	.add            = default_add_listener,
+-	.unbind         = default_unbind_listener,
++	.unbind         = quic_unbind_listener,
+ 	.suspend        = default_suspend_listener,
+ 	.resume         = default_resume_listener,
+ 	.accept_conn    = quic_sock_accept_conn,
+@@ -123,7 +124,7 @@ struct protocol proto_quic6 = {
+ 	.enable         = quic_enable_listener,
+ 	.disable        = quic_disable_listener,
+ 	.add            = default_add_listener,
+-	.unbind         = default_unbind_listener,
++	.unbind         = quic_unbind_listener,
+ 	.suspend        = default_suspend_listener,
+ 	.resume         = default_resume_listener,
+ 	.accept_conn    = quic_sock_accept_conn,
+@@ -522,6 +523,18 @@ static void quic_enable_listener(struct listener *l)
+ 	 */
+ 	if (fd_updt)
+ 		fd_want_recv(l->rx.fd);
++
++	/* connections may wait in the accept queues */
++	quic_accept_wakeup(l);
++}
++
++/* Unbinds listener <l>. Connections queued for accept are then refused. */
++static void quic_unbind_listener(struct listener *l)
++{
++	default_unbind_listener(l);
++
++	/* parked accept tasklets must run to refuse their queued connections */
++	quic_accept_wakeup(l);
+ }
+ 
+ /* Disable receipt of incoming connections for listener <l>. The receiver must
+diff --git a/src/quic_sock.c b/src/quic_sock.c
+index de665d5f87f5..62c0150c70ff 100644
+--- a/src/quic_sock.c
++++ b/src/quic_sock.c
+@@ -1088,6 +1088,18 @@ static void quic_accept_refuse_qc(struct quic_conn *qc)
+ 	tasklet_wakeup(qc->wait_event.tasklet);
+ }
+ 
++/* Wakes up the accept tasklets of the threads with connections queued on <l>. */
++void quic_accept_wakeup(struct listener *l)
++{
++	const struct tgroup_info *tg = &ha_tgroup_info[(l->rx.bind_tgroup ? l->rx.bind_tgroup : 1) - 1];
++	int i;
++
++	for (i = 0; i < tg->count; i++) {
++		if (!MT_LIST_ISEMPTY(&l->per_thr[i].quic_accept.conns))
++			tasklet_wakeup(quic_accept_queues[tg->base + i].tasklet);
++	}
++}
++
+ /* Install <qc> on the queue ready to be accepted. The queue task is then woken
+  * up.
+  */
+@@ -1150,8 +1162,11 @@ struct task *quic_accept_run(struct task *t, void *ctx, unsigned int i)
+ 			listener_accept(lthr->li);
+ 
+ 		if (!MT_LIST_ISEMPTY(&lthr->quic_accept.conns)) {
+-			/* entry is left in queue */
+-			tasklet_wakeup((struct tasklet*)t);
++			/* entry is left in queue, retry only if the listener
++			 * can still accept, it is woken up on resume otherwise.
++			 */
++			if (lthr->li->state == LI_READY)
++				tasklet_wakeup((struct tasklet*)t);
+ 		}
+ 		else {
+ 			mt_list_unlock_self(&lthr->quic_accept.list);
