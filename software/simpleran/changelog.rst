@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 1.0.530 (2026-11-23)
+-------------
+
+* Amarisoft licenses are now automatically updated by the software release when a newer one is available
+* Don't stop Core Network if wrong parameters are inputted
+
 Version 1.0.524 (2026-11-13)
 -------------
 
