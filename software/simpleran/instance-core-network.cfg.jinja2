@@ -1,4 +1,6 @@
 {%- set fixed_ip = slapparameter_dict.fixed_ips %}
+{%- do slapparameter_dict.update({"mme_com_url": slapparameter_dict.mme_com_addr + ":" + str(slapparameter_dict.mme_com_ws_port)}) %}
+{%- do slapparameter_dict.update({"ims_com_url": slapparameter_dict.ims_com_addr + ":" + str(slapparameter_dict.ims_com_ws_port)}) %}
 
 {% set part_list = [] -%}
 {%- for section in publish_section_list %}
@@ -13,26 +15,29 @@ recipe = slapos.cookbook:publish.serialised
 [buildout]
 parts =
   directory
-  mme-config
-  mme-service
-{%- if slapparameter_dict.get('ims_pdn') %}
-  ims-config
-  ims-service
-  publish-ims-config
-  ws-ims-websocket-promise
-  ws-ims-nginx-launcher
-  ws-ims-nginx-graceful
-{%- endif %}
-  mt-call-config
+  as-mme-service
+  as-mme-rotate-service
+  as-mme-config
   publish-mme-config
-  publish-mt-call-config
   publish-ue-db-config
-  monitor-base
-  check-interface-up.py
-  publish-connection-information
   ws-mme-websocket-promise
   ws-mme-nginx-launcher
   ws-mme-nginx-graceful
+{%- if slapparameter_dict.get('ims_pdn') %}
+  as-ims-service
+  as-ims-rotate-service
+  as-ims-config
+  publish-ims-config
+  mt-call-config
+  publish-mt-call-config
+  ws-ims-websocket-promise
+  ws-ims-nginx-launcher
+  ws-ims-nginx-graceful
+  run-ims-publish-buildout
+{%- endif %}
+  run-mme-publish-buildout
+  monitor-base
+  check-interface-up.py
 # Don't add these sections during unit tests as there is no TUN IPv4 available
 {% if not slapparameter_dict.testing %}
 {%-  if slapparameter_dict.get('ims_pdn') %}
@@ -60,20 +65,6 @@ slapparameter_dict = {{ dumps(slapparameter_dict) }}
 slap_configuration = {{ dumps(slap_configuration) }}
 sim_list = {{ dumps(sim_list) }}
 
-[monitor-httpd-conf-parameter]
-httpd-include-file = {{ buildout_directory }}/etc/httpd-include-file.conf
-port = ${monitor-instance-parameter:monitor-httpd-port}
-url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}
-
-[monitor-instance-parameter]
-monitor-httpd-port = ${monitor-address:port}
-
-[monitor-address]
-recipe = slapos.cookbook:free_port
-minimum = 8035
-maximum = 8055
-ip = ${monitor-instance-parameter:monitor-httpd-ipv6}
-
 [directory]
 recipe = slapos.cookbook:mkdirectory
 software = {{ buildout_directory }}
@@ -88,111 +79,183 @@ service = ${:etc}/service
 promise = ${:etc}/promise
 log = ${:var}/log
 
-[ims-sh-wrapper]
+{%- macro amarisoft_service(name, template)  %}
+
+[as-{{ name }}-rotate-sh-wrapper]
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
-ims-log = ${directory:log}/ims.log
-info-log = ${directory:log}/ims-info.log
-start-date = ${directory:run}/ims-start.date
-max-combined-ims-log-kb-size   = 1000000
-max-combined-info-log-kb-size  = 500000
+{{ name }}-log = ${directory:log}/{{ name }}.log
+info-log = ${directory:log}/{{ name }}-info.log
+start-date = ${directory:run}/{{ name }}-start.date
+max-combined-{{ name }}-log-kb-size = 2000000
+max-combined-info-log-kb-size  = 1000000
 max-info-log-kb-size           = 100000
+max-log-file-number            = 1000
 inline =
   #!/bin/sh
-{%- if not amarisoft['mock'] %}
-  # Amarisoft init scripts
-  sudo -n {{ amarisoft['dir'] }}/init-mme;
-{%- endif %}
-  # Print hardware and software info in info-log
-  cat >> ${:info-log} << EOF
-
-
-
-  $(date "+[%Y/%m/%d %T.%N %Z] Starting IMS...")
-  System info: $(uname -a)
-
-  EOF
-  # Remove obsolete logs
-  rm -f ${directory:log}/ims-output*
   /bin/sh {{ amarisoft_log_rotate_sh }} \
             ${:start-date} \
-            ${:ims-log} \
+            ${:{{ name }}-log} \
             ${:info-log} \
-            ${:max-combined-ims-log-kb-size} \
+            ${:max-combined-{{ name }}-log-kb-size} \
             ${:max-combined-info-log-kb-size} \
             ${:max-info-log-kb-size}
-  {{ amarisoft['ims_dir'] }}/lteims ${directory:etc}/ims.cfg >> ${:info-log} 2>> ${:info-log};
+            ${:max-log-file-number}
 
-### IMS
-[ims-service]
+[as-{{ name }}-rotate-service]
 recipe = slapos.cookbook:wrapper
-command-line = ${ims-sh-wrapper:output}
-wrapper-path = ${directory:service}/ims
+command-line = ${as-{{ name }}-rotate-sh-wrapper:output}
+wrapper-path = ${directory:service}/{{ name }}-rotate
 mode = 0775
-pidfile = ${directory:run}/ims.pid
+pidfile = ${directory:run}/{{ name }}.pid
 hash-files =
-  ${ims-config:output}
-  ${mt-call-config:output}
-  ${ue-db-config:output}
-  ${ims-sh-wrapper:output}
-environment =
-  AMARISOFT_PATH={{ amarisoft['license_dir'] }}
+  ${as-{{ name }}-rotate-sh-wrapper:output}
 
-[mme-sh-wrapper]
+[as-{{ name }}-sh-wrapper]
 recipe = slapos.recipe.template
 output = ${directory:bin}/${:_buildout_section_name_}
-mme-log = ${directory:log}/mme.log
-info-log = ${directory:log}/mme-info.log
-start-date = ${directory:run}/mme-start.date
-max-combined-mme-log-kb-size   = 1000000
-max-combined-info-log-kb-size  = 500000
-max-info-log-kb-size           = 100000
+{{ name }}-log = ${directory:log}/{{ name }}.log
+info-log = ${directory:log}/{{ name }}-info.log
+start-date = ${directory:run}/{{ name }}-start.date
 inline =
   #!/bin/sh
 {%- if not amarisoft['mock'] %}
   # Amarisoft init scripts
-  sudo -n {{ amarisoft['dir'] }}/init-mme;
+  sudo -n {{ amarisoft['script_dir'] }}/init-mme;
 {%- endif %}
   # Print hardware and software info in info-log
   cat >> ${:info-log} << EOF
 
 
 
-  $(date "+[%Y/%m/%d %T.%N %Z] Starting MME...")
+  $(date "+[%Y/%m/%d %T.%N %Z] Starting {{ name }}...")
   System info: $(uname -a)
   
   EOF
   # Remove obsolete logs
-  rm -f ${directory:log}/mme-output*
-  /bin/sh {{ amarisoft_log_rotate_sh }} \
-            ${:start-date} \
-            ${:mme-log} \
-            ${:info-log} \
-            ${:max-combined-mme-log-kb-size} \
-            ${:max-combined-info-log-kb-size} \
-            ${:max-info-log-kb-size}
-  {{ amarisoft['mme_dir'] }}/ltemme ${directory:etc}/mme.cfg >> ${:info-log} 2>> ${:info-log};
+  rm -f ${directory:log}/{{ name }}-output*
+  # Archive current log
+  stat ${:start-date} && mv ${:{{ name }}-log} ${:{{ name }}-log}.$(cat ${:start-date})
+  # Add start date
+  date +"%Y%m%d.%T" > ${:start-date}
 
-### MME
-[mme-service]
+  # Start lte{{ name }}
+  {{ amarisoft[name + '_dir'] }}/lte{{ name }} ${directory:etc}/{{ name }}.cfg 2>&1 >> ${:info-log}
+
+[as-{{ name }}-service]
+recipe = slapos.recipe.build
+egg-paths =
+  {{ eggs_directory }}
+  {{ develop_eggs_directory }}
+eggs = websockets
+depends = ${as-{{ name }}-wrapper:recipe}
+# amarisoft-wrapper.py script parameters
+template-publish = ${directory:home}/template-publish-{{ name }}.cfg
+amarisoft-service = lte{{ name }}
+service-name = Core Network
+ws-url = ws://{{ slapparameter_dict[name + '_com_url'] }}
+ws-password = ${ws-{{ name }}-websocket-password:passwd}
+mock = {{ amarisoft['mock'] }}
+rm-tmp-lte = sudo -n {{ amarisoft['script_dir'] }}/rm-tmp-lte {{ name }}
+{%- if slapparameter_dict.get('error') %}
+error = {{ slapparameter_dict.get('error') }}
+{%- endif %}
+script-path = {{ amarisoft_wrapper }}
+amarisoft-config-file = ${as-{{ name }}-config:output}
+amarisoft-directory = {{ amarisoft[name + '_dir'] }}
+amarisoft-license-dir = {{ amarisoft['license_dir'] }}
+running-config-directory = ${directory:etc}
+bin-directory = ${directory:bin}
+service-directory = ${directory:service}
+hash-output-file = ${directory:var}/{{ name }}-service-hash
+
+init =
+  options['location'] = ''
+  import zc.buildout
+  import pkg_resources
+  zc.buildout.easy_install.install(
+    [e.strip() for e in options['eggs'].splitlines()],
+    dest=None,
+    working_set=pkg_resources.working_set,
+    path=[p.strip() for p in options['egg-paths'].splitlines()]
+  )
+update =
+  with open(options['script-path'], 'r') as f:
+    exec(f.read())
+
+[as-{{ name }}-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = ${mme-sh-wrapper:output}
-wrapper-path = ${directory:service}/mme
+command-line = ${as-{{ name }}-sh-wrapper:output}
+wrapper-path = ${directory:bin}/lte{{ name }}-service
 mode = 0775
-pidfile = ${directory:run}/mme.pid
+pidfile = ${directory:run}/{{ name }}.pid
 hash-files =
-  ${mme-config:output}
-  ${ue-db-config:output}
-  ${mme-sh-wrapper:output}
+  ${as-{{ name }}-sh-wrapper:output}
 environment =
   AMARISOFT_PATH={{ amarisoft['license_dir'] }}
 
-### EMPTY mme-ifup script
-[mme-ifup-empty]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/mme-ifup-empty
-command-line = echo Using interface
-mode = 775
+[as-{{ name }}-config]
+<= config-base
+url = {{ template }}
+output = ${directory:var}/{{ name }}.cfg
+extra-context =
+    key websocket_password ws-{{ name }}-websocket-password:passwd
+
+[publish-{{ name }}-config]
+<= publish-config-base
+link-binary = ${as-{{ name }}-config:output}
+
+[run-{{ name }}-publish-buildout]
+recipe = slapos.cookbook:switch-softwaretype
+core-network = as-{{ name }}-service:template-publish
+
+{%- endmacro    %}
+
+{{ amarisoft_service("mme", mme_template) }}
+{{ amarisoft_service("ims", ims_template) }}
+
+{% set imsi_list = [] -%}
+{%- for s in sim_list %}
+{%-   if s.get('disable_sim', '') != 'Disable SIM' %}
+{%-     do imsi_list.append(s.imsi) %}
+{%-   endif %}
+{%- endfor %}
+
+[as-mme-service]
+{%- for p in publish %}
+publish-{{ p }} = {{ publish[p] }}
+{%- endfor %}
+publish-URL.websocket-amarisoft-gui = https://tech-academy.amarisoft.com/web-gui/
+publish-NETWORK.core-network-ipv6 = {{ my_ipv6 }}
+publish-AMARISOFT.version = {{ amarisoft['version_cn'] }}
+publish-AMARISOFT.host-id = {{ amarisoft['ltemme_host_id'] }}
+publish-CORE.plmn = {{ slapparameter_dict.core_network_plmn }}
+{%- if not slapparameter_dict.testing  %}
+{%-   if slapparameter_dict.iperf3 %}
+publish-IPERF3.server-ipv4 = ${iperf-service-0:ip}
+{%-   endif %}
+{%-   for i in range(1, slapparameter_dict.iperf3 + 1) %}
+publish-IPERF3.server-{{ i - 1 }}-port = ${iperf-service-{{ i - 1 }}:port}
+{%-   endfor %}
+{%  endif%}
+publish-URL.monitor-base = ${monitor-publish-connection-information:monitor-base-url}
+publish-URL.monitor-setup = ${monitor-publish-connection-information:monitor-setup-url}
+publish-URL.monitor-gadget = ${:publish-URL.monitor-base}/gadget/software.cfg.html
+publish-SIM.sim-list = {{ imsi_list | join(', ') }}
+publish-URL.websocket-mme-hostname = ${ws-mme-frontend-urlparse:hostname}
+publish-URL.websocket-mme-port = ${ws-mme-frontend-urlparse:port}
+publish-URL.websocket-mme-password = ${ws-mme-websocket-password:passwd}
+publish-URL.websocket-ims-hostname = ${ws-ims-frontend-urlparse:hostname}
+publish-URL.websocket-ims-port = ${ws-ims-frontend-urlparse:port}
+publish-URL.websocket-ims-password = ${ws-ims-websocket-password:passwd}
+dry-config-file-list =
+  ${as-mme-config:output}
+  ${ue-db-config:output}
+
+[as-ims-service]
+dry-config-file-list =
+  ${as-ims-config:output}
+  ${mt-call-config:output}
 
 {%- for i in range(slapparameter_dict.iperf3) %}
 [iperf-service-{{ i }}]
@@ -230,21 +293,17 @@ context =
   ${:extra-context}
   key ue_db_config ue-db-config:output
 
-[ims-config]
-<= config-base
-url = {{ ims_template }}
-output = ${directory:etc}/ims.cfg
-extra-context =
-    key websocket_password ws-ims-websocket-password:passwd
-
-[publish-ims-config]
-<= publish-config-base
-link-binary = ${ims-config:output}
+### EMPTY mme-ifup script
+[mme-ifup-empty]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/mme-ifup-empty
+command-line = echo Using interface
+mode = 775
 
 [mt-call-config]
 <= config-base
 url = {{ mt_call_template }}
-output = ${directory:etc}/mt_call_qos.sdp
+output = ${directory:var}/mt_call_qos.sdp
 
 [publish-mt-call-config]
 <= publish-config-base
@@ -253,24 +312,13 @@ link-binary = ${mt-call-config:output}
 [ue-db-config]
 <= config-base
 url = {{ ue_db_template }}
-output = ${directory:etc}/ue_db.cfg
+output = ${directory:var}/ue_db.cfg
 extra-context =
   key sim_list myslap:sim_list
 
 [publish-ue-db-config]
 <= publish-config-base
 link-binary = ${ue-db-config:output}
-
-[mme-config]
-<= config-base
-url = {{ mme_template }}
-output = ${directory:etc}/mme.cfg
-extra-context =
-    key websocket_password ws-mme-websocket-password:passwd
-
-[publish-mme-config]
-<= publish-config-base
-link-binary = ${mme-config:output}
 
 [ims-mms-listen-promise]
 <= monitor-promise-base
@@ -279,23 +327,7 @@ name = ims-mms-port-listening.py
 config-host = {{ slapparameter_dict.default_pdn.ipv4 }}
 config-port = 1111
 
-[monitor-instance-parameter]
-{% if slapparameter_dict.get("name", None) %}
-monitor-title = {{ slapparameter_dict['name'] | string }}
-{% endif %}
-{% if slapparameter_dict.get("monitor-password", None) %}
-password = {{ slapparameter_dict['monitor-password'] | string }}
-{% endif %}
-
-{% set imsi_list = [] -%}
-{%- for s in sim_list %}
-{%-   if s.get('disable_sim', '') != 'Disable SIM' %}
-{%-     do imsi_list.append(s.imsi) %}
-{%-   endif %}
-{%- endfor %}
-
 {%- macro websocket_frontend(name, nginx_port, addr, port)  %}
-
 
 [ws-{{ name }}-websocket-password]
 recipe = slapos.cookbook:generate.password
@@ -403,43 +435,36 @@ promise = check_socket_listening
 name = {{ name }}_websocket_promise.py
 config-host = ${ws-{{ name }}-frontend-urlparse:raw_hostname}
 config-port = ${ws-{{ name }}-frontend-urlparse:port}
+
 {%- endmacro    %}
 
 {{ websocket_frontend("mme", 6081, slapparameter_dict.mme_com_addr, slapparameter_dict.mme_com_ws_port) }}
 {{ websocket_frontend("ims", 6082, slapparameter_dict.ims_com_addr, slapparameter_dict.ims_com_ws_port) }}
 
+[monitor-instance-parameter]
+{% if slapparameter_dict.get("name", None) %}
+monitor-title = {{ slapparameter_dict['name'] | string }}
+{% endif %}
+{% if slapparameter_dict.get("monitor-password", None) %}
+password = {{ slapparameter_dict['monitor-password'] | string }}
+{% endif %}
+
 [monitor-publish-connection-information]
 <= monitor-publish
 
-[publish-connection-information]
-recipe = slapos.cookbook:publish.serialised
-{%- for p in publish %}
-{{ p }} = {{ publish[p] }}
-{%- endfor %}
-URL.websocket-mme-hostname = ${ws-mme-frontend-urlparse:hostname}
-URL.websocket-mme-port = ${ws-mme-frontend-urlparse:port}
-URL.websocket-mme-password = ${ws-mme-websocket-password:passwd}
-URL.websocket-ims-hostname = ${ws-ims-frontend-urlparse:hostname}
-URL.websocket-ims-port = ${ws-ims-frontend-urlparse:port}
-URL.websocket-ims-password = ${ws-ims-websocket-password:passwd}
-URL.websocket-amarisoft-gui = https://tech-academy.amarisoft.com/web-gui/
-NETWORK.core-network-ipv6 = {{ my_ipv6 }}
-AMARISOFT.version = {{ amarisoft['version_cn'] }}
-AMARISOFT.host-id = {{ amarisoft['ltemme_host_id'] }}
-AMARISOFT.installed-version = {{ amarisoft['version_installed'] }}
-CORE.plmn = {{ slapparameter_dict.core_network_plmn }}
-{%- if not slapparameter_dict.testing  %}
-{%-   if slapparameter_dict.iperf3 %}
-IPERF3.server-ipv4 = ${iperf-service-0:ip}
-{%-   endif %}
-{%-   for i in range(1, slapparameter_dict.iperf3 + 1) %}
-IPERF3.server-{{ i - 1 }}-port = ${iperf-service-{{ i - 1 }}:port}
-{%-   endfor %}
-{%  endif%}
-URL.monitor-base = ${monitor-publish-connection-information:monitor-base-url}
-URL.monitor-setup = ${monitor-publish-connection-information:monitor-setup-url}
-URL.monitor-gadget = ${:URL.monitor-base}/gadget/software.cfg.html
-SIM.sim-list = {{ imsi_list | join(', ') }}
+[monitor-httpd-conf-parameter]
+httpd-include-file = {{ buildout_directory }}/etc/httpd-include-file.conf
+port = ${monitor-instance-parameter:monitor-httpd-port}
+url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}
+
+[monitor-instance-parameter]
+monitor-httpd-port = ${monitor-address:port}
+
+[monitor-address]
+recipe = slapos.cookbook:free_port
+minimum = 8035
+maximum = 8055
+ip = ${monitor-instance-parameter:monitor-httpd-ipv6}
 
 [macro.promise]
 <= monitor-promise-base

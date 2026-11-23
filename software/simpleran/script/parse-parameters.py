@@ -156,6 +156,7 @@ NR_TDD_CONFIG_MAP = {
 }
 
 self.error = False
+options['sdr100'] = "0"
 
 # Get serial number of this ORS
 sn = 0
@@ -254,6 +255,8 @@ def ors_radio(config, publish, shared_list):
         elif sdr_info['model'] == 'SDR100':
             config['sdr100'] = True
             sdr_info['power'] = '15mW'
+
+    options['sdr100'] = "1" if config['sdr100'] else "0"
 
     rf_info.setdefault('max_antenna', max_antenna)
     rf_info.setdefault('flavour', 'ORS')
@@ -691,18 +694,6 @@ def ors_radio(config, publish, shared_list):
             c = 'cell1'
         else:
             c = 'cell2'
-        if config[c]['performance_mode'] == 'Maximum Uplink':
-            config[c]['nb_threads_ul'] = 3
-            config[c]['nb_threads_dl'] = 1
-            return
-        elif config[c]['performance_mode'] == 'Balanced':
-            config[c]['nb_threads_ul'] = 2
-            config[c]['nb_threads_dl'] = 2
-            return
-        elif config[c]['performance_mode'] == 'Maximum Downlink':
-            config[c]['nb_threads_ul'] = 1
-            config[c]['nb_threads_dl'] = 3
-            return
         # Define number of UL threads
         if config[c]['cell_type'] == 'gNB':
             if config[c]['rf_mode'] == 'tdd':
