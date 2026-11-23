@@ -574,9 +574,10 @@ class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
     f.write('This is the new file.')
     f.close()
     output = subprocess.check_output(('git', 'add', '.'), cwd=repo_path, universal_newlines=True)
-    output = subprocess.check_output(('git', 'config', '--global', 'user.name', 'Resilience Test'), cwd=repo_path, universal_newlines=True)
-    output = subprocess.check_output(('git', 'config', '--global', 'user.email', 'resilience-test@example.com'), cwd=repo_path, universal_newlines=True)
-    output = subprocess.check_output(('git', 'commit', '-m', 'Initial commit'), cwd=repo_path, universal_newlines=True)
+    output = subprocess.check_output((
+      'git', '-c', 'user.name=Resilience Test',
+      '-c', 'user.email=resilience-test@example.com',
+      'commit', '-m', 'Initial commit'), cwd=repo_path, universal_newlines=True)
     output = subprocess.check_output(('git', 'push', 'origin'), cwd=repo_path, universal_newlines=True)
 
     # Do a fake periodically update
