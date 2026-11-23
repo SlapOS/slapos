@@ -46,6 +46,7 @@ import ssl
 import time
 import tempfile
 import ipaddress
+import psutil
 import re
 from slapos.recipe.librecipe import generateHashFromFiles
 import xml.etree.ElementTree as ET
@@ -143,6 +144,31 @@ def startRawBackend(ip, port, handler):
 # has to be not partition one
 SOURCE_IP = '127.0.0.1'
 SOURCE_IPV6 = '::1'
+
+# Every socket of a cluster, with its client. A socket listens on IPv6 only
+# for a client outside the computer. "CDN" is the shared frontend requested
+# for the endpoint: only the operator knows its addresses, and restricts the
+# port to them in the firewall.
+LISTENING_SOCKET_PLAN = (
+  # service                            protocol address client
+  ('frontend-haproxy',                  'tcp', 'ipv4', 'browsers, through NAT'),
+  ('frontend-haproxy',                  'tcp', 'ipv6', 'browsers'),
+  ('frontend-haproxy',                  'udp', 'ipv4', 'browsers, through NAT, HTTP/3'),
+  ('frontend-haproxy',                  'udp', 'ipv6', 'browsers, HTTP/3'),
+  ('backend-haproxy',                   'tcp', 'ipv4', 'frontend-haproxy and trafficserver'),
+  ('backend-haproxy',                   'tcp', 'ipv6', 'CDN, statistic'),
+  ('trafficserver',                     'tcp', 'ipv4', 'frontend-haproxy'),
+  ('slave-introspection-nginx',         'tcp', 'ipv6', 'CDN'),
+  ('trafficserver-introspection-nginx', 'tcp', 'ipv6', 'CDN'),
+  ('expose-csr',                        'tcp', 'ipv6', 'master, operator'),
+  ('kedifa',                            'tcp', 'ipv6', 'frontend nodes, users uploading keys'),
+  ('caucased',                          'tcp', 'ipv6', 'frontend nodes, master, operator'),
+  ('caucased-backend-client',           'tcp', 'ipv6', 'frontend nodes, backends'),
+  ('master-introspection-server',       'tcp', 'ipv6', 'CDN'),
+  ('sqlite-web-slave-introspection',    'tcp', 'ipv4', 'master-introspection-server'),
+  ('error-page-manager',                'tcp', 'ipv6', 'frontend nodes, CDN'),
+  ('monitor-httpd',                     'tcp', 'ipv6', 'CDN'),
+)
 
 # IP on which test run, in order to mimic HTTP[s] access
 TEST_IP = os.environ['SLAPOS_TEST_IPV4']
@@ -646,6 +672,51 @@ class TestDataMixin(object):
             option_dict[option_match.group('key')] = \
               option_match.group('value').strip()
     return option_dict
+
+  def test_listening_socket(self):
+    def scope(ip):
+      address = ipaddress.ip_address(ip)
+      if address.is_loopback:
+        return 'loopback'
+      if address.is_unspecified:
+        return 'any-ipv%s' % (address.version,)
+      return 'ipv%s' % (address.version,)
+
+    listening_set = set()
+    for process_info in self.callSupervisorMethod('getAllProcessInfo'):
+      if not process_info['pid'] or process_info['group'] == 'watchdog':
+        continue
+      name = re.sub(r'(-[0-9a-f]{32})?-on-watch$', '', process_info['name'])
+      try:
+        process = psutil.Process(process_info['pid'])
+        process_list = [process] + process.children(recursive=True)
+      except psutil.NoSuchProcess:
+        continue
+      for process in process_list:
+        try:
+          connection_list = process.net_connections(kind='inet')
+        except psutil.NoSuchProcess:
+          continue
+        except psutil.AccessDenied as access_denied:
+          # an exiting process denies access to its file descriptors
+          try:
+            process.wait(timeout=10)
+          except psutil.TimeoutExpired:
+            raise access_denied
+          continue
+        for connection in connection_list:
+          if connection.type == socket.SOCK_STREAM:
+            if connection.status != psutil.CONN_LISTEN:
+              continue
+            protocol = 'tcp'
+          elif connection.raddr:
+            continue
+          else:
+            protocol = 'udp'
+          listening_set.add((name, protocol, scope(connection.laddr.ip)))
+    self.assertNotEqual(set(), listening_set)
+    self.assertEqual(set(), listening_set - {
+      entry[:3] for entry in LISTENING_SOCKET_PLAN})
 
   def test_error_page_manager_request_sla(self):
     # Without an SLA the master allocates error-page-manager to a random

@@ -406,7 +406,6 @@ local_ipv4 = {{ dumps('' ~ instance_parameter_dict['ipv4-random']) }}
 {#- ############################################## #}
 {#- ## Prepare virtualhost for slaves using cache  #}
 [slave-introspection-parameters]
-local-ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 global-ipv6 = {{ dumps(global_ipv6) }}
 https-port = {{ frontend_configuration['slave-introspection-https-port'] }}
 ip-access-certificate = {{ frontend_configuration.get('ip-access-certificate') }}

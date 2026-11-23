@@ -1107,7 +1107,6 @@ command =
   {{ software_parameter_dict['htpasswd'] }} -cib ${:htpasswd-path} "${monitor-instance-parameter:username}" "${monitor-htpasswd:passwd}"
 
 [trafficserver-introspection-parameters]
-local-ipv4 = {{ dumps(instance_parameter_dict['ipv4-random']) }}
 global-ipv6 = ${slap-configuration:ipv6-random}
 https-port = ${trafficserver-configuration:introspection-port}
 ip-access-certificate = ${trafficserver-configuration:introspection-certificate}

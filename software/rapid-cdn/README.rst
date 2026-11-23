@@ -802,6 +802,16 @@ In case of slaves using cache (``enable_cache = True``) the request will travel 
 
 Usage of Haproxy as a relay to the backend allows much better control of the backend, removes the hassle of checking the backend from frontend Haproxy and allows future developments like client SSL certificates to the backend or even health checks.
 
+Network exposure
+----------------
+
+``LISTENING_SOCKET_PLAN`` in ``tests/test.py`` lists every socket of the
+cluster with its address family and its client, and the test
+``test_listening_socket`` checks it. A service listens on IPv6 only for
+a client outside the computer. Use this list to write the firewall
+rules. The ports are parameters of the instance, with defaults in the
+input schemas.
+
 Instance Node
 -------------
 

@@ -20,6 +20,18 @@ Unreleased
 
 Changes on ``master`` since 1.0.519 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.519...master>`__).
 
+Introspection endpoints of a frontend node listen only on IPv6
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[operator]**
+
+The slave and the trafficserver introspection servers of a frontend
+node binds only to IPv6.
+
+Network exposure information provided
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The "Network exposure" section of the README tells where to find each
+socket of the cluster and its client, to write the firewall rules.
+
 The generated domain drops the dots of the slave reference
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[user]**
