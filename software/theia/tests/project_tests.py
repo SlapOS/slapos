@@ -37,7 +37,7 @@ import requests
 import tempfile
 
 from datetime import datetime, timedelta
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from mimetypes import guess_type
 from json.decoder import JSONDecodeError
 
@@ -558,11 +558,12 @@ class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
     self.assertIn("sample-test", projects[0]['name_with_namespace'])
 
     # Get repo url, default one is https://lab.example.com/root/sample-test.git
-    # We need the path like https://[2001:67c:1254:e:c4::5041]:7777/root/sample-test
+    # We need the path like https://[2001:67c:1254:e:c4::5041]:7777/root/sample-test.git
     project_1 = projects[0]
-    repo_url = backend_url.replace("https://", "") + "/" + project_1['path_with_namespace']
-    # Clone the repo with token
-    clone_url = 'https://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
+    backend = urlparse(backend_url)
+    clone_url = backend._replace(
+      netloc=f'oauth2:SLurtnxPscPsU-SDm4oN@{backend.netloc}',
+      path=f"/{project_1['path_with_namespace']}.git").geturl()
     repo_path = os.path.join(os.getcwd(), project_1['name'])
     print(repo_path)
     if os.path.exists(repo_path):
@@ -635,8 +636,10 @@ class TestTheiaResilienceGitlab(TestTheiaResilienceWithShortPaths):
     # The project name is sample-test, which we created above.
     self.assertIn("sample-test", projects[0]['name_with_namespace'])
     project_1 = projects[0]
-    repo_url = backend_url.replace("https://", "") + "/" + project_1['path_with_namespace']
-    clone_url = 'https://oauth2:' + 'SLurtnxPscPsU-SDm4oN@' + repo_url
+    backend = urlparse(backend_url)
+    clone_url = backend._replace(
+      netloc=f'oauth2:SLurtnxPscPsU-SDm4oN@{backend.netloc}',
+      path=f"/{project_1['path_with_namespace']}.git").geturl()
     repo_path = os.path.join(os.getcwd(), project_1['name'])
 
     # Check the file we committed in the original theia is exist and the content is matching.
