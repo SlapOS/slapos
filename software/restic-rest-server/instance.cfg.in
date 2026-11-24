@@ -49,10 +49,6 @@ rest-server-data-dir = ${:srv}/restic
 backup-caucased = ${:srv}/backup/caucased/
 
 # Macros
-[check-port-listening-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/${:_buildout_section_name_}
-
 [check-url-available-promise]
 recipe = slapos.cookbook:check_url_available
 path = ${directory:promise}/${:_buildout_section_name_}
@@ -214,10 +210,10 @@ depends =
 hash-existing-files =
   ${rest-server-certificate:cert-file}
 
-[rest-server-listen-promise]
-<= check-port-listening-promise
-hostname= ${rest-server:ip}
-port = ${rest-server:port}
+[rest-server-health-promise]
+<= check-url-available-promise
+url = ${rest-server:url}/healthz
+http_code = 204
 
 [logrotate-entry-rest-server]
 <= logrotate-entry-base
@@ -237,8 +233,8 @@ return = domain secure_access
 
 [frontend-available-promise]
 <= check-url-available-promise
-url = ${frontend:connection-secure_access}
-check-secure = 1
+url = ${frontend:connection-secure_access}/healthz
+http_code = 204
 
 
 [promises]
@@ -246,7 +242,7 @@ recipe =
 instance-promises =
   ${caucased-promise:recipe}
   ${rest-server-certificate-promise:recipe}
-  ${rest-server-listen-promise:path}
+  ${rest-server-health-promise:path}
   ${frontend-available-promise:path}
 
 [publish-connection-parameter]
