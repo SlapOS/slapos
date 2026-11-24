@@ -927,6 +927,8 @@ Client ``Accept-Encoding``       Forwarded to origin
 ``identity``                     ``identity``   (no recognised token)
 ``weirdcoding``                  ``weirdcoding`` (no recognised token)
 ``*``                            ``*``          (no recognised token)
+``gzip;q=0``                     ``gzip;q=0``   (parameters present)
+``br;q=1.0, gzip;q=0.5``         ``br;q=1.0, gzip;q=0.5`` (parameters present)
 (header absent)                  (header absent)
 ================================ ===================================
 
@@ -939,7 +941,7 @@ Two deviations are deliberate and match real implementations:
 
 2. **Dropping unrecognised tokens that appear alongside a recognised one** (``gzip, weirdcoding, deflate`` → ``gzip, deflate``). This is a forward-compatibility hazard: when a new encoding emerges (br in 2015, zstd in 2020), normalize-AE will demote clients that advertise it alongside known codings until the haproxy ACL chain is extended to recognise the new token.
 
-q-values are silently stripped. Per §12.5.3, ``gzip;q=0`` means "I refuse gzip" -- rewriting it to ``gzip, deflate`` flips a refusal into an acceptance. No mainstream browser emits q=0, so this is a paper risk; bespoke clients (curl scripts, embedded devices) should not rely on this CDN to honour it.
+A header carrying any parameter (``;``, e.g. q-values) or sent as several ``Accept-Encoding`` fields is forwarded verbatim: rewriting it could turn a refusal such as ``gzip;q=0``, ``identity;q=0`` or ``*;q=0`` into an acceptance. Mainstream browsers send neither, so their requests still collapse into the canonical set.
 
 Enforced Accept-Encoding compression
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

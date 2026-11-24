@@ -7011,6 +7011,46 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
       result.headers['Location']
     )
 
+  def test_normalize_accept_encoding_verbatim_with_parameters(self):
+    parameter_dict = self.assertSlaveBase('normalize-accept-encoding')
+
+    for client_ae in (
+        'gzip;q=0',
+        'gzip, deflate, br;q=0',
+        'gzip, identity;q=0',
+        'gzip, *;q=0',
+        'br;q=1.0, gzip;q=0.5',
+    ):
+      result = fakeHTTPSResult(
+        parameter_dict['domain'],
+        'test-path/deep/.././deeper',
+        headers={'Accept-Encoding': client_ae},
+      )
+      self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+      self.assertRequestHeaders(
+        result.json()['Incoming Headers'], parameter_dict['domain'])
+      self.assertEqual(
+        client_ae,
+        result.json()['Incoming Headers']['accept-encoding'])
+
+  def test_normalize_accept_encoding_verbatim_with_split_header(self):
+    parameter_dict = self.assertSlaveBase('normalize-accept-encoding')
+
+    headers = http.client.HTTPMessage()
+    headers.add_header('Accept-Encoding', 'gzip;q=0')
+    headers.add_header('Accept-Encoding', 'br')
+    result = fakeHTTPSResult(
+      parameter_dict['domain'],
+      'test-path/deep/.././deeper',
+      headers=headers,
+    )
+    self.assertEqualResultJson(result, 'Path', '/test-path/deeper')
+    self.assertRequestHeaders(
+      result.json()['Incoming Headers'], parameter_dict['domain'])
+    self.assertEqual(
+      ['gzip;q=0', 'br'],
+      result.json()['Incoming Headers']['accept-encoding'])
+
   def test_no_normalize_accept_encoding(self):
     # Opt-out: `normalize-accept-encoding: false` forwards the client's
     # AE verbatim. See README "Accept-Encoding normalization".

@@ -20,6 +20,13 @@ Unreleased
 
 Changes on ``master`` since 1.0.519 (`compare <https://lab.nexedi.com/nexedi/slapos/-/compare/1.0.519...master>`__).
 
+Accept-Encoding with q-values reaches the backend unchanged
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**[user]**
+
+``normalize-accept-encoding`` now honors client's ``Accept-Encoding`` with
+values like ``gzip;q=0`` and other unusual and does not change them.
+
 Introspection endpoints of a frontend node listen only on IPv6
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **[operator]**
