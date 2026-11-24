@@ -596,6 +596,31 @@ class TestDataMixin(object):
         checked_list.append(promise)
     self.assertNotEqual([], checked_list)
 
+  # The configuration of a busy frontend node fails its check for a moment
+  # while a slave change propagates.
+  TOLERANT_CONFIGURATION_PROMISE_TUPLE = (
+    'frontend-frontend-haproxy-configuration-promise',
+    'backend-haproxy-configuration',
+    'slave-introspection-configuration',
+  )
+
+  def test_frontend_configuration_promise_tolerant(self):
+    frontend_path_list = [
+      os.path.dirname(os.path.dirname(q)) for q in glob.glob(os.path.join(
+        self.instance_path, '*', 'etc', 'frontend-haproxy.cfg'))]
+    self.assertNotEqual([], frontend_path_list)
+    for frontend_path in frontend_path_list:
+      for promise in self.TOLERANT_CONFIGURATION_PROMISE_TUPLE:
+        promise_path = os.path.join(
+          frontend_path, 'etc', 'plugin', '%s.py' % (promise,))
+        parameter_dict = getPromisePluginParameterDict(promise_path)
+        self.assertEqual(
+          {'frequency': '5', 'result_count': '5', 'failure_amount': '5'},
+          {
+            key: parameter_dict.get(key)
+            for key in ('frequency', 'result_count', 'failure_amount')},
+          promise_path)
+
   def test00supervisor_state(self):
     # test00 name chosen to be run just after setup
     # the etc/run graceful scripts wait for the reload they request
@@ -2045,6 +2070,66 @@ class TestMasterRequest(HttpFrontendTestCase, TestDataMixin):
       parameter_dict
     )
 
+  def runPromise(self, partition_path, promise, check_anomaly=False):
+    command = [
+      os.path.join(
+        self.getMasterPartitionPath(), 'software_release', 'bin',
+        'monitor.runpromise'),
+      '--partition-folder', partition_path,
+      '--run-only', promise + '.py',
+      '--force',
+    ]
+    if check_anomaly:
+      command.append('--check-anomaly')
+    return subprocess.run(
+      command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+      universal_newlines=True)
+
+  def test_frontend_configuration_promise_anomaly_after_5_failures(self):
+    frontend_path, = [
+      os.path.dirname(os.path.dirname(q)) for q in glob.glob(os.path.join(
+        self.instance_path, '*', 'etc', 'frontend-haproxy.cfg'))]
+    promise = 'backend-haproxy-configuration'
+    promise_path = os.path.join(
+      frontend_path, 'etc', 'plugin', promise + '.py')
+    parameter_dict = getPromisePluginParameterDict(promise_path)
+    with open(promise_path) as fh:
+      import_list = [
+        q for q in fh.read().splitlines() if q.startswith(('from ', 'import '))]
+    # a copy of the frontend partition promise, with a failing command, keeps
+    # the frontend partition promise history out of the test
+    partition_path = tempfile.mkdtemp()
+    self.addCleanup(shutil.rmtree, partition_path)
+    os.makedirs(os.path.join(partition_path, 'etc', 'plugin'))
+    with open(os.path.join(
+        partition_path, 'etc', 'plugin', promise + '.py'), 'w') as fh:
+      fh.write('\n'.join(import_list + [
+        'extra_config_dict = %r' % (dict(parameter_dict, command='false'),)]))
+
+    for check in range(1, 5):
+      result = self.runPromise(partition_path, promise, check_anomaly=True)
+      self.assertEqual(0, result.returncode, (check, result.stdout))
+    result = self.runPromise(partition_path, promise, check_anomaly=True)
+    self.assertEqual(1, result.returncode, result.stdout)
+
+  def test_logrotate_setup_promise(self):
+    master_path = self.getMasterPartitionPath()
+    promise = 'promise-logrotate-setup'
+    validate = os.path.join(master_path, 'etc', 'run', 'logrotate-setup-validate')
+    self.assertTrue(os.path.exists(
+      os.path.join(master_path, 'etc', 'plugin', promise + '.py')))
+    self.assertEqual(0, self.runPromise(master_path, promise).returncode)
+
+    broken_entry = os.path.join(
+      master_path, 'etc', 'logrotate.d', 'broken-entry')
+    with open(broken_entry, 'w') as fh:
+      fh.write('/nonexistent.log {\n  unknown-directive\n}\n')
+    self.addCleanup(subprocess.check_call, [validate])
+    self.addCleanup(os.unlink, broken_entry)
+    subprocess.check_call([validate])
+    result = self.runPromise(master_path, promise)
+    self.assertEqual(1, result.returncode, result.stdout)
+
 
 class TestMasterAIKCDisabledAIBCCDisabledRequest(
   HttpFrontendTestCase, TestDataMixin):
@@ -2965,6 +3050,55 @@ class TestSlave(SlaveHttpFrontendTestCase, TestDataMixin, AtsMixin):
         http.client.NOT_FOUND,
         mimikra.get(url.tostr(), verify=False).status_code,
         url)
+
+  def test_shared_information_url_isolation(self):
+    url_dict = {
+      reference: furl.furl(
+        self.slave_connection_parameter_dict_dict[reference][
+          'shared-information-url'])
+      for reference in ['empty', 'Url']}
+    self.assertNotEqual(
+      url_dict['empty'].password, url_dict['Url'].password)
+    for reference, other_reference in [('empty', 'Url'), ('Url', 'empty')]:
+      url = url_dict[reference]
+      other_url = url_dict[other_reference]
+      self.assertEqual(
+        http.client.UNAUTHORIZED,
+        mimikra.get(
+          url.copy().set(
+            username=other_url.username, password=other_url.password).tostr(),
+          verify=False).status_code,
+        reference)
+      # the SlapOS proxy prefixes the slave reference with an underscore
+      slave_reference = '_' + reference
+      for log_access in self.getSharedInformation(url.tostr())[
+          'log-access-url']:
+        log_access_url = furl.furl(log_access.split(': ', 1)[1])
+        self.assertEqual(
+          (slave_reference.lower(), [slave_reference, '']),
+          (log_access_url.username, log_access_url.path.segments),
+          reference)
+
+  def test_shared_information_url_stable(self):
+    def getSharedInformationUrlDict():
+      self.updateSlaveConnectionParameterDictDict()
+      return {
+        reference: connection_parameter_dict.get('shared-information-url')
+        for reference, connection_parameter_dict
+        in self.slave_connection_parameter_dict_dict.items()}
+    shared_information_url_dict = getSharedInformationUrlDict()
+    self.assertIsNotNone(shared_information_url_dict['empty'])
+
+    slap_force_slapos_node_instance_all = \
+      self.slap._force_slapos_node_instance_all
+    self.slap._force_slapos_node_instance_all = True
+    try:
+      self.waitForInstance()
+    finally:
+      self.slap._force_slapos_node_instance_all = \
+        slap_force_slapos_node_instance_all
+    self.assertEqual(
+      shared_information_url_dict, getSharedInformationUrlDict())
 
   def test_monitor_conf(self):
     monitor_conf_list = glob.glob(
@@ -7954,6 +8088,31 @@ class TestReplicateSlave(
             '._replicate.htpasswd')))
     )
 
+  def test_remove_frontend(self):
+    if self.instance_parameter_dict.get('-frontend-quantity') != 2:
+      self.requestSecondFrontend()
+    self.updateSlaveConnectionParameterDictDict()
+    connection_parameter_dict = self.slave_connection_parameter_dict_dict[
+      'replicate']
+    publish_slave_section_dict = self.getPublishSlaveSectionDict()
+
+    self.instance_parameter_dict['-frontend-2-state'] = 'destroyed'
+    self.updateDefaultInstanceParameterDict(self.instance_parameter_dict)
+    self.requestDefaultInstance()
+    self.slap.waitForInstance(self.instance_max_retry)
+
+    self.updateSlaveConnectionParameterDictDict()
+    self.assertEqual(
+      connection_parameter_dict,
+      self.slave_connection_parameter_dict_dict['replicate'])
+    self.assertEqual(
+      publish_slave_section_dict, self.getPublishSlaveSectionDict())
+    self.assertEqual(
+      connection_parameter_dict['shared-information-url'],
+      self.assertSharedInformationWithPop(
+        self.parseSlaveParameterDict('replicate'),
+        replication_number=1, frontend_node_count=1))
+
 
 class TestReplicateSlaveOtherDestroyed(
   SlaveHttpFrontendTestCase, ReplicateSlaveMixin):
@@ -8073,6 +8232,72 @@ class TestFrontendNodeNumberingFirstDestroyed(
     )
     self.assertEqual(
       ['check-backend-haproxy-statistic-url-frontend-node-2.py'],
+      self.getPluginList()
+    )
+
+
+class TestFrontendNodeNumberingMiddleDestroyed(
+  TestFrontendNodeNumberingFirstDestroyed):
+  instance_parameter_dict = {
+      'domain': 'example.com',
+      'port': HTTPS_PORT,
+      'plain_http_port': HTTP_PORT,
+      'kedifa_port': KEDIFA_PORT,
+      'caucase_port': CAUCASE_PORT,
+    }
+
+  def requestFrontendList(self, state_list):
+    self.instance_parameter_dict['-frontend-quantity'] = len(state_list)
+    for i, state in enumerate(state_list, 1):
+      self.instance_parameter_dict['-frontend-%i-state' % (i,)] = state
+      if i > 1:
+        self.instance_parameter_dict['-sla-%i-computer_guid' % (i,)] = \
+          self.slap._computer_id
+    self.updateDefaultInstanceParameterDict(self.instance_parameter_dict)
+    self.requestDefaultInstance()
+    self.requestSlaves()
+    # the frontend nodes share their ports, so only the started one passes
+    # its promises
+    for _ in range(3):
+      try:
+        self.slap.waitForInstance(self.instance_max_retry)
+      except SlapOSNodeInstanceError:
+        if not self.frontends1And2HaveDifferentIPv6():
+          raise
+
+  def test(self):
+    self.requestFrontendList(['stopped', 'stopped', 'started'])
+    connection_parameter_dict = \
+      self.requestDefaultInstance().getConnectionParameterDict()
+    self.assertIn(
+      'frontend-node-2-backend-haproxy-statistic-url',
+      connection_parameter_dict)
+    node_3_statistic_url = connection_parameter_dict[
+      'frontend-node-3-backend-haproxy-statistic-url']
+
+    self.requestFrontendList(['started', 'destroyed', 'stopped'])
+
+    self.assertEqual(
+      [
+        'frontend-node-1-backend-haproxy-statistic-url',
+        'frontend-node-1-node-information-json',
+        'frontend-node-1-trafficserver-introspection-url',
+        'frontend-node-3-backend-haproxy-statistic-url',
+        'frontend-node-3-node-information-json',
+        'frontend-node-3-trafficserver-introspection-url',
+      ],
+      self.getFrontendNodeKeyList()
+    )
+    self.assertEqual(
+      node_3_statistic_url,
+      self.requestDefaultInstance().getConnectionParameterDict()[
+        'frontend-node-3-backend-haproxy-statistic-url']
+    )
+    self.assertEqual(
+      [
+        'check-backend-haproxy-statistic-url-frontend-node-1.py',
+        'check-backend-haproxy-statistic-url-frontend-node-3.py',
+      ],
       self.getPluginList()
     )
 
@@ -11157,6 +11382,37 @@ class TestFrontendRequestFailure(SlaveHttpFrontendTestCase):
     self.assertEqual(
       slave_frontend_node_information, self.getSlaveFrontendNodeInformation())
 
+  def test_request_recovery(self):
+    frontend_node_dict = self.getFrontendNodeDict()
+    master_path = self.getMasterPartitionPath()
+    last_connection_file = os.path.join(
+      master_path, 'var', 'request-caddy-frontend-1-last-connection.json')
+    stale_url = 'https://stale.example.com/'
+
+    self.addCleanup(self.slap.waitForInstance, self.instance_max_retry)
+    self.addCleanup(self.setFrontendRequestFailing, False)
+    self.setFrontendRequestFailing(True)
+    # the kept values differ from the answer of the next successful request
+    with open(last_connection_file) as fh:
+      last_connection_dict = json.load(fh)
+    last_connection_dict['backend-haproxy-statistic-url'] = stale_url
+    with open(last_connection_file, 'w') as fh:
+      json.dump(last_connection_dict, fh)
+    with self.assertRaises(SlapOSNodeInstanceError):
+      self.slap.waitForInstance()
+    self.assertEqual(
+      stale_url,
+      self.getFrontendNodeDict()[
+        'frontend-node-1-backend-haproxy-statistic-url'])
+
+    self.setFrontendRequestFailing(False)
+    self.slap.waitForInstance(self.instance_max_retry)
+    self.assertEqual(frontend_node_dict, self.getFrontendNodeDict())
+    with open(os.path.join(
+        master_path, '.slapgrid', 'promise', 'result',
+        'check-request-caddy-frontend-1.status.json')) as fh:
+      self.assertFalse(json.load(fh)['result']['failed'])
+
 
 class TestErrorPageManagerNotPublished(SlaveHttpFrontendTestCase):
   instance_parameter_dict = {
@@ -12299,6 +12555,37 @@ class TestErrorPageSlaveOverride(SlaveHttpFrontendTestCase):
       self.assertIn("'_%s'" % reference, reference_list)
     self.assertNotIn('ov-redirect', reference_list)
     self.assertNotIn('url', reference_list)
+
+  def getMasterConfiguration(self):
+    with open(os.path.join(
+        self.getMasterPartitionPath(), 'instance-master.cfg')) as fh:
+      return fh.read()
+
+  def getErrorPageManagerRequestSection(self):
+    match = re.search(
+      r'(?ms)^\[request-error-page-manager\]\n.*?(?=^\[)',
+      self.getMasterConfiguration())
+    self.assertIsNotNone(match)
+    return match.group(0)
+
+  def test_slave_change_keeps_error_page_manager(self):
+    master_configuration = self.getMasterConfiguration()
+    request_section = self.getErrorPageManagerRequestSection()
+    pid = getErrorPageManagerPid(self)
+    reference = 'ov-plain'
+    parameter_dict = self.getSlaveParameterDictDict()[reference]
+
+    def requestSlave(partition_parameter_kw):
+      self.requestSlaveInstance(
+        partition_reference=reference,
+        partition_parameter_kw=partition_parameter_kw)
+      self.slap.waitForInstance(self.instance_max_retry)
+    self.addCleanup(requestSlave, parameter_dict)
+    requestSlave(dict(parameter_dict, **{'request-timeout': 5}))
+
+    self.assertNotEqual(master_configuration, self.getMasterConfiguration())
+    self.assertEqual(request_section, self.getErrorPageManagerRequestSection())
+    self.assertEqual(pid, getErrorPageManagerPid(self))
 
   # Shared-instance backends are named after the slave_reference, which the
   # SlapOS proxy prefixes with an underscore (e.g. request key ov-plain ->
