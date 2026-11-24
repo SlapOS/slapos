@@ -208,10 +208,7 @@ inline =
 
 [enb-service]
 recipe = slapos.recipe.build
-egg-paths =
-  {{ eggs_directory }}
-  {{ develop_eggs_directory }}
-eggs = websockets
+setup-eggs = websockets
 depends = ${enb-wrapper:recipe}
 # amarisoft-wrapper.py script parameters
 template-publish = ${directory:home}/template-publish.cfg
@@ -258,14 +255,6 @@ dry-config-file-list =
 
 init =
   options['location'] = ''
-  import zc.buildout
-  import pkg_resources
-  zc.buildout.easy_install.install(
-    [e.strip() for e in options['eggs'].splitlines()],
-    dest=None,
-    working_set=pkg_resources.working_set,
-    path=[p.strip() for p in options['egg-paths'].splitlines()]
-  )
 update =
   with open(options['script-path'], 'r') as f:
     exec(f.read())

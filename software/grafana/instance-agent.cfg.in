@@ -99,23 +99,12 @@ nice =
 
 [telegraf-config-file]
 recipe = slapos.recipe.build
+setup-eggs = toml
 output = ${directory:etc}/${:_buildout_section_name_}.toml
 telegraf-input-slapos-bin = {{ telegraf_input_slapos_bin }}
 slapparameter-dict = ${slap-configuration:configuration}
 input-socket = ${directory:var}/tg.sock
 init =
-  import zc.buildout
-  import pkg_resources
-
-  buildout_options = self.buildout["buildout"]
-  zc.buildout.easy_install.install(
-    ["toml"],
-    dest=None,
-    working_set=pkg_resources.working_set,
-    path=[
-      buildout_options["develop-eggs-directory"],
-      buildout_options["eggs-directory"]])
-
   import collections
   import hashlib
   import json
@@ -489,6 +478,7 @@ url = http://${:ip}:${:http-port}
 
 [fluent-bit-config-file]
 recipe = slapos.recipe.build
+setup-eggs = pytz
 location = ${directory:etc}/${:_buildout_section_name_}.yaml
 slapparameter-dict = ${slap-configuration:configuration}
 filters-lua = {{ fluent_bit_filters_lua }}
@@ -497,18 +487,6 @@ tail-db-base-path = ${directory:fluent-bit-dir}
 depends = ${loki-fluent-bit-client-certificate:recipe}
 {% raw %}
 init =
-  import zc.buildout
-  import pkg_resources
-
-  buildout_options = self.buildout["buildout"]
-  zc.buildout.easy_install.install(
-    ["pytz"],
-    dest=None,
-    working_set=pkg_resources.working_set,
-    path=[
-      buildout_options["develop-eggs-directory"],
-      buildout_options["eggs-directory"]])
-
   import datetime
   import hashlib
   import itertools
