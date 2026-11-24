@@ -4,19 +4,65 @@ import argparse, os, re, subprocess, sys
 from time import gmtime, strftime, time
 from erp5.util import taskdistribution
 from erp5.util.testsuite import SubprocessError, TestSuite
-from pkg_resources import get_distribution, parse_requirements
 from zc.buildout.buildout import Buildout
 
-if str is bytes:
-  str2bytes = lambda s: s
+if sys.version_info[0] >= 3:
+  from importlib import metadata
+  # setuptools provides packaging as a vendored module
+  from setuptools._vendor.packaging.requirements import Requirement
+  from setuptools._vendor.packaging.utils import canonicalize_name
+
+  def get_versions(requirements, got_versions):
+    """gather versions from requirements recursively
+    """
+    versions = []
+    for requirement in requirements:
+      requirement = Requirement(requirement)
+      name = canonicalize_name(requirement.name)
+      for distribution in metadata.distributions():
+        if canonicalize_name(distribution.metadata['Name'] or '') == name:
+          break
+      else:
+        raise metadata.PackageNotFoundError(name)
+      key = canonicalize_name(distribution.metadata['Name'])
+      if key not in got_versions:
+        got_versions.add(key)
+        versions.append((distribution.metadata['Name'], distribution.version))
+        environments = tuple(
+          {'extra': extra} for extra in requirement.extras) or ({},)
+        required = []
+        for required_string in distribution.requires or ():
+          dependency = Requirement(required_string)
+          if dependency.marker is None or any(
+              dependency.marker.evaluate(environment)
+              for environment in environments):
+            required.append(required_string)
+        versions.extend(get_versions(required, got_versions))
+    return versions
 else:
-  str2bytes = lambda s: s.encode()
+  import pkg_resources
+
+  def get_versions(requirements, got_versions):
+    """gather versions from requirements recursively
+    """
+    versions = []
+    for requirement in requirements:
+      requirement = pkg_resources.Requirement.parse(requirement)
+      distribution = pkg_resources.get_distribution(requirement)
+      if distribution not in got_versions:
+        got_versions.add(distribution)
+        versions.append((distribution.project_name, distribution.version))
+        versions.extend(get_versions(
+          [str(req) for req in distribution.requires(requirement.extras)],
+          got_versions))
+    return versions
 
 slapos_buildout = {{repr(slapos_buildout)}}
 test_dict = {
   'zc.buildout': slapos_buildout,
   'zc.recipe.egg': os.path.join(slapos_buildout, 'zc.recipe.egg_'),
 }
+
 
 class DummyTestResult:
 
@@ -68,19 +114,6 @@ class BuildoutTestSuite(TestSuite):
     return status_dict
 
 
-def get_versions(requirements, got_versions):
-  """gather versions from requirements recursively
-  """
-  versions = []
-  for req in requirements:
-    distribution = get_distribution(req)
-    if distribution not in got_versions:
-      got_versions.add(distribution)
-      versions.append((distribution.project_name, distribution.version))
-      versions.extend(get_versions(distribution.requires(req.extras), got_versions))
-  return versions
-
-
 def main():
   os.environ['TEMP'] = {{repr(temp_directory)}}
   parser = argparse.ArgumentParser(description='Run a test suite.')
@@ -108,18 +141,16 @@ def main():
   else:
     test_result = DummyTestResult(list(test_dict))
 
-  versions = get_versions(
-    parse_requirements('''
-      zc.buildout[test]
-      zc.recipe.egg
-      zope.testing
-      zope.testrunner
-    '''),
-    set())
+  versions = get_versions([
+    'zc.buildout[test]',
+    'zc.recipe.egg',
+    'zope.testing',
+    'zope.testrunner',
+  ], set())
 
   fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
   try:
-    os.write(fd, str2bytes("""\
+    os.write(fd, ("""\
 [buildout]
 develop =%s
 parts = testrunner
@@ -143,7 +174,7 @@ scripts =
 """ % (''.join('\n  ' + x for x in test_dict.values()),
        '\n'.join('%s = %s' % x for x in versions),
        '\n'.join(x + ' =' for x in test_dict),
-       )))
+       )).encode())
   finally:
     os.close(fd)
   Buildout('buildout.cfg', {}).install(None)
