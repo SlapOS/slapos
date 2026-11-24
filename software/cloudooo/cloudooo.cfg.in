@@ -1,0 +1,54 @@
+[app:main]
+use = egg:cloudooo
+#
+## System config
+#
+debug_mode = True
+# Folder where pid files, lock files and virtual frame buffer mappings
+# are stored. In this folder is necessary create a folder tmp, because this
+# folder is used to create all temporary documents.
+working_path = {{ working_path }}
+# Folder where UNO library is installed
+uno_path = {{ uno_path }}
+# Folder where soffice.bin is installed
+office_binary_path = {{ office_binary_path }}
+# Whether running scripts on the loaded document is allowed
+ooo_enable_scripting = {{ ooo_enable_scripting }}
+#
+## Monitor Settings
+#
+# Limit to use the Openoffice Instance. if pass of the limit, the instance is
+# stopped and another is started.
+limit_number_request = 100
+# Interval to check the factory
+monitor_interval = 10
+timeout_response = 180
+enable_memory_monitor = True
+# Set the limit in MB
+# e.g 1000 = 1 GB, 100 = 100 MB
+limit_memory_used = 3000
+#
+## OOFactory Settings
+#
+# The pool consist of several OpenOffice.org instances
+application_hostname = {{ ip }}
+# OpenOffice Port
+openoffice_port = {{ openoffice_port }}
+
+# LD_LIBRARY_PATH and other environment variables
+# passed to OpenOffice
+{% for key, value in environment_variable_dict.items() -%}
+env-{{ key }} = {{ value }}
+{% endfor %}
+#
+# Mimetype Registry
+# It is used to select the handler that will be used in conversion.
+# Priority matters, first match take precedence on next lines.
+mimetype_registry =
+{% for entry in mimetype_entry_list %}  {{ entry }}
+{% endfor %}
+[server:main]
+use = waitress
+host = {{ ip }}
+port = {{ port }}
+threads = 10

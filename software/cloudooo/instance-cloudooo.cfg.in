@@ -45,9 +45,75 @@
 {% endif -%}
 
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
-{% set section_list = [] -%}
-{% set cloudooo_section_list = [] -%}
-{% macro cloudooo(name) %}{% do cloudooo_section_list.append(name) %}{{ name }}{% endmacro -%}
+{% set cloudooo_server = bin_directory ~ '/cloudooo-server' -%}
+{% set cloudooo_backend_list = [] -%}
+
+{# The "*" wildcard has priority over any other character. Sorting by a
+   transformed key where "*" is mapped to a character just below the final
+   sentinel keeps the same priority and also puts longer entries before their
+   prefixes. #}
+{% set default_mimetype_entry_list = [
+  "application/vnd.oasis.opendocument* * ooo",
+  "application/vnd.sun.xml* * ooo",
+  "application/pdf text/* pdf",
+  "application/pdf * ooo",
+  "video/* * ffmpeg",
+  "audio/* * ffmpeg",
+  "application/x-shockwave-flash * ffmpeg",
+  "application/ogg * ffmpeg",
+  "application/ogv * ffmpeg",
+  "image/png image/jpeg imagemagick",
+  "image/png * ooo",
+  "image/* image/* imagemagick",
+  "text/* * ooo",
+  "application/zip * ooo",
+  "application/msword * ooo",
+  "application/vnd* * ooo",
+  "application/x-vnd* * ooo",
+  "application/postscript * ooo",
+  "application/wmf * ooo",
+  "application/csv * ooo",
+  "application/x-openoffice-gdimetafile * ooo",
+  "application/x-emf * ooo",
+  "application/emf * ooo",
+  "application/octet* * ooo",
+  "* application/vnd.oasis.opendocument* ooo",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document application/x-asc-text x2t",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/x-asc-spreadsheet x2t",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation application/x-asc-presentation x2t",
+  "application/x-asc-text application/vnd.openxmlformats-officedocument.wordprocessingml.document x2t",
+  "application/x-asc-spreadsheet application/vnd.openxmlformats-officedocument.spreadsheetml.sheet x2t",
+  "application/x-asc-presentation application/vnd.openxmlformats-officedocument.presentationml.presentation x2t",
+  "application/vnd.oasis.opendocument.text application/x-asc-text x2t",
+  "application/vnd.oasis.opendocument.spreadsheet application/x-asc-spreadsheet x2t",
+  "application/vnd.oasis.opendocument.presentation application/x-asc-presentation x2t",
+  "application/x-asc-text application/vnd.oasis.opendocument.text x2t",
+  "application/x-asc-spreadsheet application/vnd.oasis.opendocument.spreadsheet x2t",
+  "application/x-asc-presentation application/vnd.oasis.opendocument.presentation x2t",
+] -%}
+{% set mimetype_sort_list = [] -%}
+{% for entry in mimetype_entry_addition.splitlines() + default_mimetype_entry_list -%}
+{%   set entry = entry.strip() -%}
+{%   if entry -%}
+{%     do mimetype_sort_list.append((entry.replace('*', '\ufffe') ~ '\uffff', entry)) -%}
+{%   endif -%}
+{% endfor -%}
+{% set mimetype_entry_list = [] -%}
+{% for sort_key, entry in mimetype_sort_list | sort(attribute=0) -%}
+{%   do mimetype_entry_list.append(entry) -%}
+{% endfor -%}
+
+{% set environment_variable_list = [
+  'LD_LIBRARY_PATH=' ~ parameter_dict['avahi'] ~ '/lib:' ~ parameter_dict['cairo'] ~ '/lib:' ~ parameter_dict['cups'] ~ '/lib:' ~ parameter_dict['dbus'] ~ '/lib:' ~ parameter_dict['dbus-glib'] ~ '/lib:' ~ parameter_dict['file'] ~ '/lib:' ~ parameter_dict['fontconfig'] ~ '/lib:' ~ parameter_dict['freetype'] ~ '/lib:' ~ parameter_dict['glib'] ~ '/lib:' ~ parameter_dict['glu'] ~ '/lib:' ~ parameter_dict['icu4c'] ~ '/lib:' ~ parameter_dict['kerberos'] ~ '/lib:' ~ parameter_dict['libICE'] ~ '/lib:' ~ parameter_dict['libSM'] ~ '/lib:' ~ parameter_dict['libX11'] ~ '/lib:' ~ parameter_dict['libXau'] ~ '/lib:' ~ parameter_dict['libXdmcp'] ~ '/lib:' ~ parameter_dict['libXext'] ~ '/lib:' ~ parameter_dict['libXrender'] ~ '/lib:' ~ parameter_dict['libexpat'] ~ '/lib:' ~ parameter_dict['libffi'] ~ '/lib:' ~ parameter_dict['libffi'] ~ '/lib64:' ~ parameter_dict['libpng'] ~ '/lib:' ~ parameter_dict['libxcb'] ~ '/lib:' ~ parameter_dict['libxml2'] ~ '/lib:' ~ parameter_dict['libxslt'] ~ '/lib:' ~ parameter_dict['mesa'] ~ '/lib:' ~ parameter_dict['nss'] ~ '/lib:' ~ parameter_dict['nspr'] ~ '/lib:' ~ parameter_dict['pixman'] ~ '/lib:' ~ parameter_dict['xdamage'] ~ '/lib:' ~ parameter_dict['xfixes'] ~ '/lib:' ~ parameter_dict['zlib'] ~ '/lib',
+  'FONTCONFIG_FILE=${fontconfig-conf:output}',
+  'PATH=${binary-link:target-directory}',
+  'LANG=C.UTF-8',
+] -%}
+{% set environment_variable_dict = {} -%}
+{% for line in environment_variable_list -%}
+{%   set key, value = line.split('=', 1) -%}
+{%   do environment_variable_dict.__setitem__(key, value) -%}
+{% endfor -%}
 
 {% macro simplefile(section_name, file_path, content, mode='') -%}
 {%   set content_section_name = section_name ~ '-content' -%}
@@ -59,23 +125,6 @@ recipe = slapos.recipe.template
 output = {{ file_path }}
 inline = {{ '${' + content_section_name + ':content}' }}
 {%- endmacro %}
-
-
-[buildout]
-extends =
-  {{ parameter_dict['template-logrotate-base'] }}
-  {{ parameter_dict['template-monitor'] }}
-parts =
-  monitor-base
-  publish
-  apache
-  apache-conf
-  apache-promise
-  apache-logrotate
-  cloudooo-test-runner
-  haproxy-service
-  xvfb-instance
-  wkhtmltopdf-on-xvfb
 
 
 [apache]
@@ -156,34 +205,38 @@ includes =
    {{ include }}
 {% endfor%}
 
-[cloudooo-base]
-recipe = slapos.cookbook:generic.cloudooo
-ip = {{ ipv4 }}
-environment =
-  LD_LIBRARY_PATH = {{ parameter_dict['avahi'] }}/lib:{{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['icu4c'] }}/lib:{{ parameter_dict['kerberos'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['libxml2'] }}/lib:{{ parameter_dict['libxslt'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['nss'] }}/lib:{{ parameter_dict['nspr'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
-  FONTCONFIG_FILE = ${fontconfig-conf:output}
-  PATH = ${binary-link:target-directory}
-  LANG = C.UTF-8
-mimetype_entry_addition =
-{% for entry in mimetype_entry_addition.splitlines() -%}
-{{ "  " ~ entry.strip() }}
-{% endfor -%}
-# Binary information
-# cloudooo specific configuration
-ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
-ooo-paster = {{ bin_directory }}/cloudooo_paster
-ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
-ooo_enable_scripting = {{ ooo_enable_scripting }}
-
+{% set cloudooo_part_list = [] %}
 {% for index in range(1, backend_count + 1) -%}
 {%   set name = 'cloudooo-' ~ index -%}
-[{{ cloudooo(name) }}]
-< = cloudooo-base
-port = {{ next_port() }}
-openoffice-port = {{ next_port() }}
-configuration-file = ${directory:etc}/{{ name }}.cfg
-data-directory = ${directory:srv}/{{ name }}
-wrapper = ${directory:services}/{{ name }}
+{%   do cloudooo_part_list.append(name) -%}
+{%   set port = next_port() -%}
+{%   set openoffice_port = next_port() -%}
+{%   do cloudooo_backend_list.append((ipv4, port)) -%}
+{%   set config_reference = '${' ~ name ~ '-config:output}' -%}
+
+[{{ name }}-config]
+recipe = slapos.recipe.template:jinja2
+url = {{ parameter_dict['template-cloudooo-cfg'] }}
+output = ${directory:etc}/{{ name }}.cfg
+context =
+  raw working_path ${directory:srv}/{{ name }}
+  raw uno_path {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
+  raw office_binary_path {{ parameter_dict['libreoffice-bin'] }}/program
+  raw ooo_enable_scripting {{ ooo_enable_scripting }}
+  raw ip {{ ipv4 }}
+  raw port {{ port }}
+  raw openoffice_port {{ openoffice_port }}
+  json environment_variable_dict {{ environment_variable_dict | tojson }}
+  json mimetype_entry_list {{ mimetype_entry_list | tojson }}
+
+[{{ name }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/{{ name }}
+command-line = "{{ cloudooo_server }}" serve {{ config_reference }}
+environment =
+{%   for line in environment_variable_list %}  {{ line }}
+{%   endfor %}
+hash-files = {{ config_reference }}
 
 {% endfor -%}
 
@@ -210,22 +263,25 @@ port = {{ haproxy_port }}
 # rather than the proxy
 timeout = {{ timeout + 10 }}s
 backend-list =
-{%- for section_name in cloudooo_section_list %}
-  {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
+{%- for backend_ip, backend_port in cloudooo_backend_list %}
+  {{ backend_ip }}:{{ backend_port }}
 {%- endfor %}
 
-[cloudooo-test-runner]
-recipe = slapos.cookbook:cloudooo.test
+[cloudooo-run-unit-test]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${buildout:bin-directory}/runUnitTest
+command-line =
+  "{{ bin_directory }}/runCloudoooUnitTest" --server_path "{{ cloudooo_server }}" ${cloudooo-1-config:output}
+environment =
+  PATH=${buildout:bin-directory}:/bin:/usr/bin
 
-prepend-path = ${buildout:bin-directory}
-run-unit-test = ${buildout:bin-directory}/runUnitTest
-run-test-suite = ${buildout:bin-directory}/runTestSuite
-
-ooo-paster = ${cloudooo-1:ooo-paster}
-configuration-file = ${cloudooo-1:configuration-file}
-
-run-unit-test-binary = {{ bin_directory }}/runCloudoooUnitTest
-run-test-suite-binary = {{ bin_directory }}/runCloudoooTestSuite
+[cloudooo-run-test-suite]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${buildout:bin-directory}/runTestSuite
+command-line =
+  "{{ bin_directory }}/runCloudoooTestSuite"
+environment =
+  PATH=${buildout:bin-directory}:/bin:/usr/bin
 
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
@@ -288,3 +344,23 @@ environment =
   DISPLAY=${xvfb-instance:display}
   XORG_LOCK_DIR=${xvfb-instance:lock-dir}
 command-line = {{ parameter_dict['wkhtmltopdf'] }}/wkhtmltopdf --use-xserver
+
+[buildout]
+extends =
+  {{ parameter_dict['template-logrotate-base'] }}
+  {{ parameter_dict['template-monitor'] }}
+parts =
+  monitor-base
+  publish
+  apache
+  apache-conf
+  apache-promise
+  apache-logrotate
+  cloudooo-run-unit-test
+  cloudooo-run-test-suite
+  haproxy-service
+  xvfb-instance
+  wkhtmltopdf-on-xvfb
+{% for name in cloudooo_part_list %}
+  {{ name }}
+{% endfor %}
