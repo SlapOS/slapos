@@ -133,6 +133,11 @@ class CloudOooTestCase(_CloudOooTestCase):
   instance_max_retry = 30
 
   def setUp(self):
+    # Ensure monitoring is reachable
+    json.loads(self.computer_partition.getConnectionParameterDict()["_"])[
+      "monitor-url"
+    ]
+
     self.url = json.loads(self.computer_partition.getConnectionParameterDict()["_"])[
       "cloudooo"
     ]
