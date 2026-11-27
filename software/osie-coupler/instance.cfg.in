@@ -1,76 +1,29 @@
-#############################
-#
-# Deploy coupler instance
-#
-#############################
 [buildout]
 parts =
-  directory
-  publish-connection-parameter
-  coupler-opc-ua
-  opc-ua-port-promise
+  switch-softwaretype
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
-extends = {{ template_monitor }}
 
-[coupler-opc-ua]
-recipe = slapos.cookbook:wrapper
-command-line =
-    {{ coupler_location }}server -d ${instance-parameter:configuration.coupler_block_device} -s ${instance-parameter:configuration.coupler_i2c_slave_list} -p ${instance-parameter:configuration.opc_ua_port} -u ${instance-parameter:configuration.username} -w ${instance-parameter:configuration.password} -b ${instance-parameter:configuration.heart_beat} -t ${instance-parameter:configuration.heart_beat_interval} -l ${instance-parameter:configuration.heart_beat_id_list} -n ${instance-parameter:configuration.network_address_url_data_type} -o ${instance-parameter:configuration.heart_beat_timeout_interval} -i ${instance-parameter:configuration.id} -m ${instance-parameter:configuration.mode} -j ${instance-parameter:configuration.network_interface} -x ${instance-parameter:configuration.max_connections} -q ${instance-parameter:configuration.mqtt_broker} -e ${instance-parameter:configuration.mqtt_port} -f ${instance-parameter:configuration.mqtt_topic} -g ${instance-parameter:configuration.mqtt_interval} -r ${instance-parameter:configuration.mqtt_username} -y ${instance-parameter:configuration.mqtt_password} -B ${instance-parameter:configuration.board} -R ${instance-parameter:configuration.revpi_relay_list} -I ${instance-parameter:configuration.revpi_input_list} -O ${instance-parameter:configuration.revpi_output_list}
-wrapper-path = ${directory:service}/coupler-opc-ua
+[slap-configuration]
+<= slap-connection
+recipe = slapos.cookbook:slapconfiguration.jsonschema
+jsonschema = {{ software_json }}
+set-default = main
+validate-parameters = main
+unstringify = main
 
-[instance-parameter]
-recipe = slapos.cookbook:slapconfiguration
-computer = ${slap-connection:computer-id}
-partition = ${slap-connection:partition-id}
-url = ${slap-connection:server-url}
-key = ${slap-connection:key-file}
-cert = ${slap-connection:cert-file}
-configuration.coupler_block_device = /dev/i2c-1
-configuration.coupler_i2c_slave_list = 0x58
-configuration.mode = 0
-configuration.username = ""
-configuration.password = ""
-configuration.interface = 0.0.0.0
-configuration.opc_ua_port = 4840
-configuration.id = 0
-configuration.heart_beat = 0
-configuration.heart_beat_interval = 50
-configuration.heart_beat_id_list = ""
-configuration.network_address_url_data_type = opc.udp://224.0.0.22:4840/
-configuration.heart_beat_timeout_interval = 100
-configuration.network_interface = ""
-configuration.max_connections = 1
-configuration.mqtt_broker = ""
-configuration.mqtt_port = 1883
-configuration.mqtt_topic = coupler/status
-configuration.mqtt_interval = 1000
-configuration.mqtt_username = ""
-configuration.mqtt_password = ""
-configuration.board = mod-io
-configuration.revpi_relay_list = RelayOutput_1,RelayOutput_2,RelayOutput_3,RelayOutput_4
-configuration.revpi_input_list = ""
-configuration.revpi_output_list = ""
+[instance-coupler]
+recipe = slapos.recipe.template:jinja2
+url = {{ template_coupler }}
+output = ${buildout:parts-directory}/${:_buildout_section_name_}/instance-coupler.cfg
+context =
+  raw coupler_location {{ coupler_location }}
+  raw template_monitor {{ template_monitor }}
+  key slapparameter_dict slap-configuration:configuration
+  import shlex shlex
 
-[directory]
-recipe = slapos.cookbook:mkdirectory
-home = ${buildout:directory}
-etc = ${:home}/etc
-var = ${:home}/var
-script = ${:etc}/run/
-service = ${:etc}/service
-promise = ${:etc}/promise
-
-[publish-connection-parameter]
-recipe = slapos.cookbook:publish
-url-ipv6 = opc.tcp://[${instance-parameter:ipv6-random}]:${instance-parameter:configuration.opc_ua_port}
-username = ${instance-parameter:configuration.username}
-password = ${instance-parameter:configuration.password}
-
-[opc-ua-port-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/${:_buildout_section_name_}
-hostname = ${instance-parameter:ipv6-random}
-port = ${instance-parameter:configuration.opc_ua_port}
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = instance-coupler:output

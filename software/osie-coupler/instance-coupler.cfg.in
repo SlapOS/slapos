@@ -1,0 +1,66 @@
+#############################
+#
+# Deploy coupler instance
+#
+#############################
+[buildout]
+parts =
+  directory
+  publish-connection-parameter
+  coupler-opc-ua
+  opc-ua-port-promise
+
+extends = {{ template_monitor }}
+
+[coupler-opc-ua]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ coupler_location }}server
+    -d {{ shlex.quote(slapparameter_dict['coupler_block_device'] | string) }}
+    -s {{ shlex.quote(slapparameter_dict['coupler_i2c_slave_list'] | string) }}
+    -p {{ shlex.quote(slapparameter_dict['opc_ua_port'] | string) }}
+    -u {{ shlex.quote(slapparameter_dict['username'] | string) }}
+    -w {{ shlex.quote(slapparameter_dict['password'] | string) }}
+    -b {{ shlex.quote(slapparameter_dict['heart_beat'] | string) }}
+    -t {{ shlex.quote(slapparameter_dict['heart_beat_interval'] | string) }}
+    -l {{ shlex.quote(slapparameter_dict['heart_beat_id_list'] | string) }}
+    -n {{ shlex.quote(slapparameter_dict['network_address_url_data_type'] | string) }}
+    -o {{ shlex.quote(slapparameter_dict['heart_beat_timeout_interval'] | string) }}
+    -i {{ shlex.quote(slapparameter_dict['id'] | string) }}
+    -m {{ shlex.quote(slapparameter_dict['mode'] | string) }}
+    -j {{ shlex.quote(slapparameter_dict['network_interface'] | string) }}
+    -x {{ shlex.quote(slapparameter_dict['max_connections'] | string) }}
+    -q {{ shlex.quote(slapparameter_dict['mqtt_broker'] | string) }}
+    -e {{ shlex.quote(slapparameter_dict['mqtt_port'] | string) }}
+    -f {{ shlex.quote(slapparameter_dict['mqtt_topic'] | string) }}
+    -g {{ shlex.quote(slapparameter_dict['mqtt_interval'] | string) }}
+    -r {{ shlex.quote(slapparameter_dict['mqtt_username'] | string) }}
+    -y {{ shlex.quote(slapparameter_dict['mqtt_password'] | string) }}
+    -B {{ shlex.quote(slapparameter_dict['board'] | string) }}
+{%- if slapparameter_dict['board'] == 'revpi' %}
+    -R {{ shlex.quote(slapparameter_dict['revpi_relay_list'] | string) }}
+    -I {{ shlex.quote(slapparameter_dict['revpi_input_list'] | string) }}
+    -O {{ shlex.quote(slapparameter_dict['revpi_output_list'] | string) }}
+{%- endif %}
+wrapper-path = ${directory:service}/coupler-opc-ua
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+script = ${:etc}/run/
+service = ${:etc}/service
+promise = ${:etc}/promise
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url-ipv6 = opc.tcp://[${slap-configuration:ipv6-random}]:{{ slapparameter_dict['opc_ua_port'] }}
+username = {{ slapparameter_dict['username'] }}
+password = {{ slapparameter_dict['password'] }}
+
+[opc-ua-port-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/${:_buildout_section_name_}
+hostname = ${slap-configuration:ipv6-random}
+port = {{ slapparameter_dict['opc_ua_port'] }}

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Parameters to instantiate coupler",
   "type": "object",
-  "configuration": {
+  "properties": {
     "coupler_block_device": {
       "description": "The Linux block device using I2C protocol,",
       "type": "string",
@@ -40,13 +40,15 @@
     },
     "heart_beat": {
       "description": "Indication if coupler should send heart beats over a keep-alive network.",
-      "type": "boolean",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1,
       "default": 0
     },
     "heart_beat_interval": {
       "description": "The heart beat interval (in ms)",
       "type": "integer",
-      "default": 500
+      "default": 50
     },
     "heart_beat_id_list": {
       "description": "A comma separated list of couplers' IDs which should send to us keep-alive messages. ",
@@ -56,7 +58,7 @@
     "heart_beat_timeout_interval": {
       "description": "The timeout (in ms) which when expired without a keep alive message will cause the coupler to go to a safe mode. ",
       "type": "integer",
-      "default": 2000
+      "default": 100
     },
     "network_address_url_data_type": {
       "description": "Network address URL type used for Pub/Sub.",
@@ -113,19 +115,52 @@
       "default": "mod-io"
     },
     "revpi_relay_list": {
-      "description": "Comma separated list of RevPi relay variable names (from PiCtory). Each group of 4 is exposed as one device (i2c0, i2c1, ...). Used only with board revpi, which ignores coupler_i2c_slave_list.",
-      "type": "string",
-      "default": "RelayOutput_1,RelayOutput_2,RelayOutput_3,RelayOutput_4"
+      "description": "Comma separated list of RevPi relay variable names (from PiCtory). Each group of 4 is exposed as one device (i2c0, i2c1, ...). Valid only with board revpi, which ignores coupler_i2c_slave_list. Required with board revpi, e.g. RelayOutput_1,RelayOutput_2,RelayOutput_3,RelayOutput_4.",
+      "type": "string"
     },
     "revpi_input_list": {
-      "description": "Comma separated list of RevPi digital input variable names (from PiCtory), e.g. I_1,I_2,...,I_14 for a RevPi DIO. All are exposed under the first device (i2c0.in0, i2c0.in1, ...). Used only with board revpi. If empty, no inputs are read.",
-      "type": "string",
-      "default": ""
+      "description": "Comma separated list of RevPi digital input variable names (from PiCtory), e.g. I_1,I_2,...,I_14 for a RevPi DIO. All are exposed under the first device (i2c0.in0, i2c0.in1, ...). Valid only with board revpi. If empty, no inputs are read.",
+      "type": "string"
     },
     "revpi_output_list": {
-      "description": "Comma separated list of RevPi digital output variable names (from PiCtory), e.g. O_1,O_2,...,O_14 for a RevPi DIO. All are exposed under the first device (i2c0.out0, i2c0.out1, ...) and like relays are switched off at start, stop and in safe mode. Used only with board revpi. If empty, no outputs are controlled.",
-      "type": "string",
-      "default": ""
+      "description": "Comma separated list of RevPi digital output variable names (from PiCtory), e.g. O_1,O_2,...,O_14 for a RevPi DIO. All are exposed under the first device (i2c0.out0, i2c0.out1, ...) and like relays are switched off at start, stop and in safe mode. Valid only with board revpi. If empty, no outputs are controlled.",
+      "type": "string"
+    }
+  },
+  "if": {
+    "properties": {
+      "board": {
+        "const": "revpi"
+      }
+    },
+    "required": [
+      "board"
+    ]
+  },
+  "then": {
+    "properties": {
+      "revpi_relay_list": {
+        "default": ""
+      },
+      "revpi_input_list": {
+        "default": ""
+      },
+      "revpi_output_list": {
+        "default": ""
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "revpi_relay_list": {
+        "not": {}
+      },
+      "revpi_input_list": {
+        "not": {}
+      },
+      "revpi_output_list": {
+        "not": {}
+      }
     }
   }
 }
