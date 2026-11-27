@@ -79,6 +79,9 @@ def parse_amarisoft_stderr(stderr):
     amarisoft_error = ''.join(filter(lambda x: x in set(string.printable), stderr))
     if 'no license found' in amarisoft_error:
         amarisoft_error = 'License error: no license found\n' + amarisoft_error.split('\n')[-2]
+    # NW200 error
+    if 'License error' in amarisoft_error:
+        amarisoft_error = ' '.join(amarisoft_error.split('\n')[:2])
     return amarisoft_error
 
 def remove_enb_gnb_publish(publish):
