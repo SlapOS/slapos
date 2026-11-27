@@ -109,7 +109,7 @@ os.makedirs(amarisoft_license_dir, exist_ok=True)
 
 # Check current Amarisoft licenses
 license_list = [license for license in \
-  os.listdir(amarisoft_license_dir) if re.match(fr"{product}-[0-9]*.[0-9]{4}-[0-9]{2}-[0-9]{2}.key", license)]
+  os.listdir(amarisoft_license_dir) if re.match(product + r"-[0-9]*.[0-9]{4}-[0-9]{2}-[0-9]{2}.key", license)]
 try:
     last_license_timestamp, last_license_expiration = sorted([license.split(f"{product}-")[1].split('.license')[0].split('.') for license in license_list])[0]
 except IndexError:
@@ -173,10 +173,11 @@ if check_amarisoft or check_fpga or download_license:
                     for l in f:
                         if l.startswith('version='):
                             license_expiration = l.split('=')[1].strip()
-                license_path = amarisoft_license_dir / f'{product}-{license_timestamp}.{license_expiration}.key'
-                with open(opt_license_path, 'rb') as opt_license:
-                    with open(license_path, 'wb+') as f:
-                        f.write(opt_license.read())
+                if license_expiration > last_license_expiration:
+                    license_path = amarisoft_license_dir / f'{product}-{license_timestamp}.{license_expiration}.key'
+                    with open(opt_license_path, 'rb') as opt_license:
+                        with open(license_path, 'wb+') as f:
+                            f.write(opt_license.read())
             except FileNotFoundError as e:
                 pass
 
