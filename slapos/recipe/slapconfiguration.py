@@ -580,9 +580,19 @@ class DefaultValidator(object):
               except ValueError:
                 pass
 
-def str_to_bool(s):
-  """Convert string to boolean"""
-  return bool(('False', 'True').index(s))
+def str_to_bool(
+  s,  # type: str
+):
+  # type: (...) -> bool
+  """Convert string to boolean."""
+  if s in ("true", "True"):
+    return True
+
+  if s in ("false", "False"):
+    return False
+
+  msg = "Invalid boolean value: {s}".format(s=s)
+  raise ValueError(msg)
 
 class JsonSchema(Recipe):
   """

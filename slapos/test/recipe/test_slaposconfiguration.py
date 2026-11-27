@@ -492,7 +492,6 @@ class JsonSchemaTest(JsonSchemaTestCase):
       self.assertIsInstance(received['enabled'], bool)
 
 
-  @unittest.expectedFailure
   def test_jsonschema_unstringify_boolean_input(self):
     """
     Test that booleans are unstingified correctly.
