@@ -286,10 +286,10 @@ if check_amarisoft or check_fpga or download_license:
                 src = nc.download(fpga_data_list[0]['sha512']) # Download from shacache
                 reader = DecryptingReader(src, private_symmetric_key, nonce) # Decrypt
                 with tempfile.TemporaryDirectory() as tmpdir:
-                    with open(tmpdir / 'fpga.bin', 'wb+') as f:
+                    with open(f'{tmpdir}/fpga.bin', 'wb+') as f:
                         shutil.copyfileobj(reader, f)
-                    write_timestamp('f{tmpdir}/timestamp', fpga_timestamp)
-                    write_timestamp('f{tmpdir}/download_time', int(time.time()))
+                    write_timestamp(f'{tmpdir}/timestamp', fpga_timestamp)
+                    write_timestamp(f'{tmpdir}/download_time', int(time.time()))
                     shutil.rmtree(fpga_path, ignore_errors=True) 
                     shutil.move(tmpdir, fpga_path)
 
