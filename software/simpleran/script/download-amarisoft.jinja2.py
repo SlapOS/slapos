@@ -183,19 +183,20 @@ if check_amarisoft or check_fpga or download_license:
 
     if check_amarisoft or check_fpga:
 
+        flavour = "unpatched" if sdr100 else "patched"
         meta = [
           f'cn=="{cn}"',
           f'version=="{version}"',
           f'revision=="{revision}"',
+          f'flavour=="{flavour}"',
           f'timestamp>>"{current_amarisoft_timestamp}"',
         ]
-        if sdr100:
-            meta.append(f'flavour=="unpatched"')
         key_data_list = NetworkcacheFilter(meta)(list(nc.select('key-private:amarisoft')))
         meta = [
           f'fpga_version=="{fpga_version}"',
           f'version=="{version}"',
           f'revision=="{revision}"',
+          f'flavour=="{flavour}"',
           f'timestamp>>"{current_fpga_timestamp}"',
         ]
         fpga_data_list = NetworkcacheFilter(meta)(list(nc.select('file-private:fpga')))
@@ -216,10 +217,9 @@ if check_amarisoft or check_fpga or download_license:
             meta = [
               f'version=="{version}"',
               f'revision=="{revision}"',
+              f'flavour=="{flavour}"',
               f'timestamp>>"0"',
             ]
-            if sdr100:
-                meta.append(f'flavour=="unpatched"')
             amarisoft_data_list = NetworkcacheFilter(meta)(list(nc.select('file-private:amarisoft')))
             amarisoft_timestamp = int(amarisoft_data_list[0]['timestamp'])
             # Get Nonce / IV
