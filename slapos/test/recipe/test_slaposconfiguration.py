@@ -465,18 +465,59 @@ class JsonSchemaTest(JsonSchemaTestCase):
       recovered = self.recoverStrToInt(parameters, ('number',))
       self.assertEqual(received, recovered)
 
-  def test_jsonschema_unstringify_boolean_input(self):
+  def assert_unstringify_boolean_value(
+    self,
+    stringified_value,  # type: str
+    unstringified_value,  # type: bool
+  ):
+    #: type: (...) -> None
+    """
+    Check that a particular boolean value is unstringified correctly.
+
+    Args:
+      stringified_value: The value received as a string.
+      unstringified_value: The corresponding value it should be unstringified to.
+
+    """
     schema_path = self.writeObjectSchema(
       'boolean-unstringify',
       {"enabled": {"type": "boolean"}}
     )
     self.writeSoftwareJson([('default', schema_path)], [])
-    parameters = {"enabled": "True"}
-    expected = {"enabled": True}
+    parameters = {"enabled": stringified_value}
+    expected = {"enabled": unstringified_value}
     with self.patchSlap(parameters):
       received = self.receiveParameters({'unstringify': 'main'})
       self.assertEqual(received, expected)
       self.assertIsInstance(received['enabled'], bool)
+
+
+  @unittest.expectedFailure
+  def test_jsonschema_unstringify_boolean_input(self):
+    """
+    Test that booleans are unstingified correctly.
+
+    It checks both for titlecase booleans (Python style) and for lowercase
+    booleans (Javascript style), as both can be passed depending in the type of
+    serialization.
+
+    """
+    self.assert_unstringify_boolean_value(
+      stringified_value="True",
+      unstringified_value=True,
+    )
+    self.assert_unstringify_boolean_value(
+      stringified_value="False",
+      unstringified_value=False,
+    )
+    self.assert_unstringify_boolean_value(
+      stringified_value="true",
+      unstringified_value=True,
+    )
+    self.assert_unstringify_boolean_value(
+      stringified_value="false",
+      unstringified_value=False,
+    )
 
   def test_jsonschema_incomplete_input(self):
     self.writeJsonSchema()
